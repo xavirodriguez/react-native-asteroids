@@ -1,28 +1,3 @@
-The react-native-asteroids project is a modern implementation of the classic Asteroids arcade game, leveraging Expo's cross-platform capabilities to deploy a single codebase across multiple platforms. The project is configured as "asteroides" in
-package.json2 and uses "expo-router/entry" as its main entry point
-
-package.json3
-
-The application implements a component-based architecture where the core game logic is separated from platform-specific rendering and user interface concerns. The main game component App.tsx orchestrates the interaction between the AsteroidsGame engine, GameRenderer for visual output, GameControls for user input, and GameUI for interface elements
-
-app/App.tsx2-6
-Application Architecture Overview
-
-The following diagram shows the high-level relationship between the main code entities and their dependencies:
-
-Application Component Architecture
-
-Component Responsibilities
-Component Purpose Key Methods
-RootLayout HTML document structure Renders children prop
-App Game orchestration and state management handleInput(), state hooks
-GameUI Display game status information Receives gameState prop
-GameRenderer Render game world entities Receives world prop
-GameControls Handle user input events Emits input callbacks
-
-The App component maintains the primary game instance through a useRef hook and manages UI updates via a 16ms interval timer that triggers at approximately 60 FPS.
-Excelente iniciativa documentar antes de refactorizar. Te ayudo a expandir la documentación **solo basándome en el código fuente**. Aquí tienes extensiones precisas:
-
 ## Arquitectura del Motor de Juego
 
 ### Sistema ECS (Entity-Component-System)
@@ -132,11 +107,3 @@ const uiUpdateInterval = setInterval(() => {
 ```
 
 El `forceUpdate({})` (línea 29) es necesario porque las entidades del juego cambian por referencia sin activar re-renders de React.
-
-¿Qué sección te gustaría expandir a continuación? ¿Los controles multiplataforma, el rendering, o algún sistema específico?
-Game Application Structure
-The game application implements a Model-View-Controller pattern where AsteroidsGame serves as the model, rendering components provide the view, and input handling bridges user interactions to game state changes.
-
-Game Loop Integration
-
-The game loop operates through a dual-timing system: the AsteroidsGame instance manages its internal game logic timing, while the React application layer maintains a separate UI update interval to synchronize React state with game state.
