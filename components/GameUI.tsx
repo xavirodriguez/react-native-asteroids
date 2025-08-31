@@ -23,6 +23,7 @@ export const GameUI: React.FC<GameUIProps> = ({ gameState }) => {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     top: 0,
     left: 0,
     right: 0,

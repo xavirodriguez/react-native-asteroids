@@ -1,4 +1,4 @@
-import type { World } from "./World"
+import type { World } from "./ecs-world"
 import { type Entity, GAME_CONFIG } from "../types/GameTypes"
 
 export function createShip(world: World, x: number, y: number): Entity {
@@ -10,7 +10,7 @@ export function createShip(world: World, x: number, y: number): Entity {
     type: "Render",
     shape: "triangle",
     size: 10,
-    color: "#FFFFFF",
+    color: "#CCCCCC",
     rotation: 0,
   })
   world.addComponent(ship, { type: "Collider", radius: 8 })

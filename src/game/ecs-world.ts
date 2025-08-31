@@ -5,6 +5,14 @@ export abstract class System {
 }
 
 export class World {
+/**
+ * ECS World class to manage entities, components, and systems.
+ * - Entities are represented by unique IDs (numbers).
+ * - Components are stored in a map, associating component types with entities.
+ *   There are 9 component types: Position, Velocity, Render, Collider, Health, Input, TTL, Asteroid, GameState.
+ * - Systems are stored in an array and can be updated each frame.
+ */
+
   private entities = new Set<Entity>()
   private components = new Map<ComponentType, Map<Entity, Component>>()
   private systems: System[] = []

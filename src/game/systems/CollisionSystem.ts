@@ -6,8 +6,12 @@ import type {
   HealthComponent,
   GameStateComponent,
 } from "../../types/GameTypes"
+
 import { createAsteroid } from "../EntityFactory"
 
+/**
+ * CollisionSystem handles collision detection and response between entities.
+ */
 export class CollisionSystem extends System {
   update(world: World, deltaTime: number): void {
     const colliders = world.query("Position", "Collider")
@@ -25,11 +29,17 @@ export class CollisionSystem extends System {
     }
   }
 
+
   private checkCollision(world: World, entityA: number, entityB: number): boolean {
-    const posA = world.getComponent<PositionComponent>(entityA, "Position")!
-    const posB = world.getComponent<PositionComponent>(entityB, "Position")!
-    const colliderA = world.getComponent<ColliderComponent>(entityA, "Collider")!
-    const colliderB = world.getComponent<ColliderComponent>(entityB, "Collider")!
+    const posA = world.getComponent<PositionComponent>(entityA, "Position")
+    const posB = world.getComponent<PositionComponent>(entityB, "Position")
+    const colliderA = world.getComponent<ColliderComponent>(entityA, "Collider")
+    const colliderB = world.getComponent<ColliderComponent>(entityB, "Collider")
+
+    // Guard clauses: verificar que todos los componentes existen
+    if (!posA || !posB || !colliderA || !colliderB) {
+      return false
+    }
 
     const dx = posA.x - posB.x
     const dy = posA.y - posB.y
@@ -46,6 +56,14 @@ export class CollisionSystem extends System {
     const ttlA = world.getComponent(entityA, "TTL")
     const ttlB = world.getComponent(entityB, "TTL")
 
+    // Verificar que las entidades aún existen antes de procesar colisión
+    const posA = world.getComponent<PositionComponent>(entityA, "Position")
+    const posB = world.getComponent<PositionComponent>(entityB, "Position")
+    
+    if (!posA || !posB) {
+      return // Una de las entidades fue eliminada por otro sistema
+    }
+
     // Bullet hits asteroid
     if (asteroidA && ttlB) {
       this.splitAsteroid(world, entityA)
@@ -57,19 +75,25 @@ export class CollisionSystem extends System {
       this.addScore(world, 10)
     }
 
-    // Ship hits asteroid
+    // Ship hits asteroid - nave pierde vida, asteroide permanece
     if (healthA && asteroidB) {
       healthA.current--
-      world.removeEntity(entityB)
+      // NO eliminar asteroide - solo reduce vidas de la nave
     } else if (healthB && asteroidA) {
       healthB.current--
-      world.removeEntity(entityA)
+      // NO eliminar asteroide - solo reduce vidas de la nave
     }
+  
   }
 
   private splitAsteroid(world: World, asteroidEntity: number): void {
-    const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid")!
-    const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position")!
+    const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid")
+    const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position")
+
+    // Guard clause: verificar componentes antes de usar
+    if (!asteroid || !pos) {
+      return
+    }
 
     if (asteroid.size === "large") {
       createAsteroid(world, pos.x + 10, pos.y + 10, "medium")
@@ -85,8 +109,10 @@ export class CollisionSystem extends System {
   private addScore(world: World, points: number): void {
     const gameStates = world.query("GameState")
     if (gameStates.length > 0) {
-      const gameState = world.getComponent<GameStateComponent>(gameStates[0], "GameState")!
-      gameState.score += points
+      const gameState = world.getComponent<GameStateComponent>(gameStates[0], "GameState")
+      if (gameState) {
+        gameState.score += points
+      }
     }
   }
 }

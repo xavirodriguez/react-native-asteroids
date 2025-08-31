@@ -26,7 +26,11 @@ export interface RenderComponent extends Component {
   color: string
   rotation: number
 }
-
+/*
+Los componentes Collider definen la forma de un objeto para los propósitos de colisiones físicas. 
+Un collider, el cual es invisible, necesita no estar con la misma forma exacta que el mesh del objeto y de hecho, 
+una aproximación a menudo es más eficiente e indistinguible en el juego.
+*/
 export interface ColliderComponent extends Component {
   type: "Collider"
   radius: number

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { StyleSheet } from "react-native";
 import { AsteroidsGame } from "../src/game/AsteroidsGame";
 import { GameRenderer } from "@/components/GameRenderer";
 import { GameControls } from "@/components/GameControls";
@@ -54,13 +55,11 @@ export default function App() {
   };
 
   if (!game) {
-    return (
-      <div className="w-full h-screen bg-black flex items-center justify-center" />
-    );
+    return <div />;
   }
 
   return (
-    <div className="w-full h-screen bg-black flex flex-col items-center justify-center relative">
+    <div style={styles.container}>
       <GameUI gameState={gameState} />
       <GameRenderer world={game.getWorld()} />
       <GameControls
@@ -72,3 +71,12 @@ export default function App() {
     </div>
   );
 }
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "black",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+});

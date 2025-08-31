@@ -1,5 +1,7 @@
 import type React from "react";
 import type { World } from "../src/game/ecs-world";
+import { StyleSheet } from "react-native";
+
 import {
   type PositionComponent,
   type RenderComponent,
@@ -31,8 +33,7 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
               -render.size / 2
             },${render.size / 2}`}
             fill="none"
-            stroke="#CCC"
-            /* stroke={render.color} */
+            stroke={render.color}
             strokeWidth="2"
             transform={transform}
           />
@@ -68,15 +69,26 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
   };
 
   return (
-    <div className="flex-1 bg-black">
+    <div style={styles.container}>
       <svg
         width={GAME_CONFIG.SCREEN_WIDTH}
         height={GAME_CONFIG.SCREEN_HEIGHT}
         viewBox={`0 0 ${GAME_CONFIG.SCREEN_WIDTH} ${GAME_CONFIG.SCREEN_HEIGHT}`}
-        className="border border-gray-800"
+        style={styles.svg}
       >
         {renderables.map(renderEntity)}
       </svg>
     </div>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "black",
+  },
+  svg: {
+    borderColor: "#1F2937", // Tailwind's gray-800
+    borderWidth: 1,
+  },
+});

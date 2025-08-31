@@ -25,10 +25,10 @@ export class GameStateSystem extends System {
     const ships = world.query("Health", "Input")
     const shipHealths = ships.map((ship) => world.getComponent<HealthComponent>(ship, "Health")!.current)
 
-    if (shipHealths.every((health) => health <= 0)) {
-      console.log(`Game Over! Score: ${gameState.score}`)
-      // Could emit game over event here
-    }
+if (shipHealths.every((health) => health <= 0)) {
+  console.log(`Game Over! Score: ${gameState.score}`)  // Se ejecuta cada frame!
+  // Could emit game over event here
+}
   }
 
   private spawnAsteroidWave(world: World, level: number): void {
