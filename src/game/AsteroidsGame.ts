@@ -10,8 +10,10 @@ import type { GameStateComponent } from "../types/GameTypes"
 export class AsteroidsGame {
   private world: World
   private inputSystem: InputSystem
+  private gameStateSystem: GameStateSystem
   private lastTime = 0
   private isRunning = false
+  private isPaused = false  // Nuevo flag de pausa
   private gameLoopId: number | null = null
 
   constructor() {
@@ -22,11 +24,12 @@ export class AsteroidsGame {
 
   private setupSystems(): void {
     this.inputSystem = new InputSystem()
+    this.gameStateSystem = new GameStateSystem(this) // Pasar referencia de this
     this.world.addSystem(this.inputSystem)
     this.world.addSystem(new MovementSystem())
     this.world.addSystem(new CollisionSystem())
     this.world.addSystem(new TTLSystem())
-    this.world.addSystem(new GameStateSystem())
+    this.world.addSystem(this.gameStateSystem)
   }
 
   private initializeGame(): void {
@@ -54,15 +57,52 @@ export class AsteroidsGame {
 
   start(): void {
     this.isRunning = true
+    this.isPaused = false
     this.lastTime = performance.now()
     this.gameLoop()
   }
 
   stop(): void {
     this.isRunning = false
+    this.isPaused = false
     if (this.gameLoopId) {
       cancelAnimationFrame(this.gameLoopId)
     }
+  }
+
+  // Nuevo método: pausar juego
+  pause(): void {
+    this.isPaused = true
+    console.log("Game Paused")
+  }
+
+  // Nuevo método: reanudar juego
+  resume(): void {
+    if (this.isPaused && this.isRunning) {
+      this.isPaused = false
+      this.lastTime = performance.now() // Reset tiempo para evitar deltaTime gigante
+      console.log("Game Resumed")
+    }
+  }
+
+  // Nuevo método: reiniciar juego después de Game Over
+  restart(): void {
+    // Limpiar mundo actual
+    const allEntities = this.world.getAllEntities()
+    allEntities.forEach(entity => this.world.removeEntity(entity))
+
+    // Reset flags de sistemas
+    this.gameStateSystem.resetGameOverState()
+
+    // Re-inicializar juego
+    this.initializeGame()
+    
+    // Reiniciar game loop si estaba pausado
+    if (this.isPaused) {
+      this.start()
+    }
+    
+    console.log("Game Restarted")
   }
 
   private gameLoop = (): void => {
@@ -72,10 +112,22 @@ export class AsteroidsGame {
     const deltaTime = currentTime - this.lastTime
     this.lastTime = currentTime
 
-    // Update all systems
-    this.world.update(deltaTime)
+    // Solo actualizar sistemas si no está pausado
+    if (!this.isPaused) {
+      this.world.update(deltaTime)
+    }
 
     this.gameLoopId = requestAnimationFrame(this.gameLoop)
+  }
+
+  // Getter para estado de pausa
+  getIsPaused(): boolean {
+    return this.isPaused
+  }
+
+  // Getter para estado de game over
+  getIsGameOver(): boolean {
+    return this.gameStateSystem.isGameOver()
   }
 
   getWorld(): World {
@@ -92,6 +144,9 @@ export class AsteroidsGame {
 
   // Mobile control methods
   setInput(thrust: boolean, rotateLeft: boolean, rotateRight: boolean, shoot: boolean): void {
-    this.inputSystem.setInput(thrust, rotateLeft, rotateRight, shoot)
+    // Solo procesar input si no está pausado o en game over
+    if (!this.isPaused && !this.getIsGameOver()) {
+      this.inputSystem.setInput(thrust, rotateLeft, rotateRight, shoot)
+    }
   }
 }
