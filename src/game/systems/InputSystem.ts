@@ -21,7 +21,7 @@ export class InputSystem extends System {
       window.addEventListener("keyup", (e) => this.keys.delete(e.code))
     }
   }
-
+  
   // Method for mobile touch controls
   setInput(thrust: boolean, rotateLeft: boolean, rotateRight: boolean, shoot: boolean): void {
     this.keys.clear()
