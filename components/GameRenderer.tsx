@@ -1,10 +1,9 @@
 import type React from "react";
 import type { World } from "../src/game/ecs-world";
-import { StyleSheet } from "react-native";
-
 import {
   type PositionComponent,
   type RenderComponent,
+  type InputComponent,
   GAME_CONFIG,
 } from "../src/types/GameTypes";
 
@@ -26,17 +25,67 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
 
     switch (render.shape) {
       case "triangle":
+        const time = Date.now() * 0.005;
+        const pulse = Math.sin(time) * 0.1 + 1;
+        // Verificar si es una nave (tiene componente Input)
+        const inputComponent = world.getComponent<InputComponent>(
+          entity,
+          "Input"
+        );
+        const hasThrust = inputComponent?.thrust || false;
         return (
-          <polygon
-            key={key}
-            points={`${render.size},0 ${-render.size / 2},${-render.size / 2} ${
-              -render.size / 2
-            },${render.size / 2}`}
-            fill="none"
-            stroke={render.color}
-            strokeWidth="2"
-            transform={transform}
-          />
+          <g key={key} transform={transform}>
+            {hasThrust && (
+              <polygon
+                points={`${-render.size / 2},${render.size / 3} ${
+                  -render.size * 1.5
+                },0 ${-render.size / 2},${-render.size / 3}`}
+                fill="#FF6600"
+                stroke="#FF9900"
+                strokeWidth="1"
+                opacity="0.8"
+              />
+            )}
+            {/* Núcleo central pulsante */}
+            <circle
+              cx="0"
+              cy="0"
+              r={(render.size / 3) * pulse}
+              fill="#FFFF00"
+              opacity="0.6"
+            />
+            {/* Cuerpo principal */}
+            <polygon
+              points={`${render.size},0 ${-render.size / 2},${
+                render.size / 2
+              } ${-render.size / 4},0 ${-render.size / 2},${-render.size / 2}`}
+              fill="#DDDDDD"
+              stroke="#FFFFFF"
+              strokeWidth="1"
+            />
+            {/* Propulsores laterales */}
+            <rect
+              x={-render.size / 2}
+              y={-render.size / 4}
+              width={render.size / 8}
+              height={render.size / 2}
+              fill="#666666"
+            />
+            <rect
+              x={-render.size / 2}
+              y={render.size / 6}
+              width={render.size / 6}
+              height={render.size / 8}
+              fill="#FF0000"
+            />
+            <rect
+              x={-render.size / 2}
+              y={-render.size / 6 - render.size / 8}
+              width={render.size / 6}
+              height={render.size / 8}
+              fill="#FF0000"
+            />
+          </g>
         );
       case "circle":
         return (
@@ -45,11 +94,12 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
             cx={pos.x}
             cy={pos.y}
             r={render.size}
-            fill="none"
+            fill="#999"
             stroke={render.color}
             strokeWidth="2"
           />
         );
+
       case "line":
         return (
           <line
@@ -63,6 +113,7 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
             transform={transform}
           />
         );
+
       default:
         return null;
     }
@@ -82,13 +133,12 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = {
   container: {
-    flex: 1,
     backgroundColor: "black",
   },
   svg: {
-    borderColor: "#1F2937", // Tailwind's gray-800
-    borderWidth: 1,
+    border: "1px solid #1F2937",
+    backgroundColor: "black",
   },
-});
+};
