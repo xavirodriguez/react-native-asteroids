@@ -1,4 +1,6 @@
 import type React from "react";
+import { View, StyleSheet } from "react-native";
+import Svg, { Polygon, Circle, Line, Rect, G } from "react-native-svg";
 import type { World } from "../src/game/ecs-world";
 import {
   type PositionComponent,
@@ -16,15 +18,20 @@ interface GameRendererProps {
 }
 
 /**
- * Component responsible for rendering the game world using SVG.
+ * Component responsible for rendering the game world using react-native-svg.
  *
  * @param props - Component properties.
  * @returns A React functional component.
  *
  * @remarks
  * This component queries the world for entities with both {@link PositionComponent}
- * and {@link RenderComponent} and renders them as SVG elements (polygons, circles, or lines)
- * within a fixed-size SVG container.
+ * and {@link RenderComponent} and renders them using cross-platform SVG components
+ * from `react-native-svg` within a fixed-size container.
+ *
+ * @example
+ * ```tsx
+ * <GameRenderer world={myWorld} />
+ * ```
  */
 export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
   const renderables = world.query("Position", "Render");
@@ -40,25 +47,27 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
     const render = world.getComponent<RenderComponent>(entity, "Render")!;
 
     const key = `entity-${entity}`;
-    // Calculate SVG transform for position and rotation
-    const transform = `translate(${pos.x}, ${pos.y}) rotate(${
-      (render.rotation * 180) / Math.PI
-    })`;
+    // Calculate rotation in degrees for react-native-svg
+    const rotationDegrees = (render.rotation * 180) / Math.PI;
 
     switch (render.shape) {
-      case "triangle":
+      case "triangle": {
         const time = Date.now() * 0.005;
         const pulse = Math.sin(time) * 0.1 + 1;
-        // Verificar si es una nave (tiene componente Input)
+        // Check if it is a ship (has Input component)
         const inputComponent = world.getComponent<InputComponent>(
           entity,
           "Input"
         );
         const hasThrust = inputComponent?.thrust || false;
         return (
-          <g key={key} transform={transform}>
+          <G
+            key={key}
+            translate={`${pos.x}, ${pos.y}`}
+            rotation={rotationDegrees}
+          >
             {hasThrust && (
-              <polygon
+              <Polygon
                 points={`${-render.size / 2},${render.size / 3} ${
                   -render.size * 1.5
                 },0 ${-render.size / 2},${-render.size / 3}`}
@@ -68,16 +77,16 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
                 opacity="0.8"
               />
             )}
-            {/* Núcleo central pulsante */}
-            <circle
+            {/* Pulsating central core */}
+            <Circle
               cx="0"
               cy="0"
               r={(render.size / 3) * pulse}
               fill="#FFFF00"
               opacity="0.6"
             />
-            {/* Cuerpo principal */}
-            <polygon
+            {/* Main body */}
+            <Polygon
               points={`${render.size},0 ${-render.size / 2},${
                 render.size / 2
               } ${-render.size / 4},0 ${-render.size / 2},${-render.size / 2}`}
@@ -85,33 +94,34 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
               stroke="#FFFFFF"
               strokeWidth="1"
             />
-            {/* Propulsores laterales */}
-            <rect
+            {/* Side thrusters */}
+            <Rect
               x={-render.size / 2}
               y={-render.size / 4}
               width={render.size / 8}
               height={render.size / 2}
               fill="#666666"
             />
-            <rect
+            <Rect
               x={-render.size / 2}
               y={render.size / 6}
               width={render.size / 6}
               height={render.size / 8}
               fill="#FF0000"
             />
-            <rect
+            <Rect
               x={-render.size / 2}
               y={-render.size / 6 - render.size / 8}
               width={render.size / 6}
               height={render.size / 8}
               fill="#FF0000"
             />
-          </g>
+          </G>
         );
+      }
       case "circle":
         return (
-          <circle
+          <Circle
             key={key}
             cx={pos.x}
             cy={pos.y}
@@ -124,7 +134,7 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
 
       case "line":
         return (
-          <line
+          <Line
             key={key}
             x1={pos.x - render.size / 2}
             y1={pos.y}
@@ -132,7 +142,8 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
             y2={pos.y}
             stroke={render.color}
             strokeWidth="2"
-            transform={transform}
+            translate={`${pos.x}, ${pos.y}`}
+            rotation={rotationDegrees}
           />
         );
 
@@ -142,25 +153,26 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
   };
 
   return (
-    <div style={styles.container}>
-      <svg
+    <View style={styles.container}>
+      <Svg
         width={GAME_CONFIG.SCREEN_WIDTH}
         height={GAME_CONFIG.SCREEN_HEIGHT}
         viewBox={`0 0 ${GAME_CONFIG.SCREEN_WIDTH} ${GAME_CONFIG.SCREEN_HEIGHT}`}
         style={styles.svg}
       >
         {renderables.map(renderEntity)}
-      </svg>
-    </div>
+      </Svg>
+    </View>
   );
 };
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     backgroundColor: "black",
   },
   svg: {
-    border: "1px solid #1F2937",
+    borderWidth: 1,
+    borderColor: "#1F2937",
     backgroundColor: "black",
   },
-};
+});

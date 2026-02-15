@@ -1,8 +1,12 @@
 import type { Component, ComponentType, Entity } from "../types/GameTypes"
 
 /**
- * Base class for all game systems.
- * Systems implement game logic by processing entities with specific sets of components.
+ * Base class for all game systems in the ECS architecture.
+ * Systems implement the game logic by processing entities that possess specific sets of components.
+ *
+ * @remarks
+ * All concrete systems must implement the {@link System.update} method.
+ * Systems are executed sequentially by the {@link World} in the order they were added.
  */
 export abstract class System {
   /**
@@ -10,6 +14,16 @@ export abstract class System {
    *
    * @param world - The ECS world containing entities and components.
    * @param deltaTime - The time elapsed since the last frame in milliseconds.
+   *
+   * @example
+   * ```typescript
+   * class MySystem extends System {
+   *   update(world: World, deltaTime: number): void {
+   *     const entities = world.query("Position");
+   *     // logic here
+   *   }
+   * }
+   * ```
    */
   abstract update(world: World, deltaTime: number): void
 }
@@ -19,8 +33,8 @@ export abstract class System {
  *
  * @remarks
  * The World is the central container for the ECS architecture:
- * - **Entities**: Unique numerical IDs.
- * - **Components**: Data structures attached to entities, grouped by type.
+ * - **Entities**: Unique numerical IDs representing individual objects in the game.
+ * - **Components**: Pure data structures attached to entities, grouped by type.
  * - **Systems**: Logic that operates on entities that have a specific combination of components.
  *
  * Performance note: Component queries are currently performed by filtering all entities,
@@ -32,6 +46,8 @@ export abstract class System {
  * const entity = world.createEntity();
  * world.addComponent(entity, { type: "Position", x: 0, y: 0 });
  * world.addSystem(new MovementSystem());
+ *
+ * // In the game loop
  * world.update(16.67);
  * ```
  */
@@ -42,9 +58,14 @@ export class World {
   private nextEntityId = 1
 
   /**
-   * Creates a new unique entity.
+   * Creates a new unique entity in the world.
    *
-   * @returns The newly created entity ID.
+   * @returns The newly created {@link Entity} ID.
+   *
+   * @example
+   * ```typescript
+   * const entityId = world.createEntity();
+   * ```
    */
   createEntity(): Entity {
     const id = this.nextEntityId++
@@ -59,6 +80,11 @@ export class World {
    * @param entity - The entity to attach the component to.
    * @param component - The component instance to attach.
    * @typeParam T - The specific component type, must extend {@link Component}.
+   *
+   * @example
+   * ```typescript
+   * world.addComponent(player, { type: "Position", x: 10, y: 20 });
+   * ```
    */
   addComponent<T extends Component>(entity: Entity, component: T): void {
     const type = component.type
@@ -75,6 +101,14 @@ export class World {
    * @param type - The type of the component to retrieve.
    * @returns The component instance if found, otherwise `undefined`.
    * @typeParam T - The expected component type.
+   *
+   * @example
+   * ```typescript
+   * const pos = world.getComponent<PositionComponent>(entity, "Position");
+   * if (pos) {
+   *   console.log(pos.x, pos.y);
+   * }
+   * ```
    */
   getComponent<T extends Component>(entity: Entity, type: ComponentType): T | undefined {
     return this.components.get(type)?.get(entity) as T
@@ -85,6 +119,11 @@ export class World {
    *
    * @param entity - The entity to remove the component from.
    * @param type - The type of the component to remove.
+   *
+   * @example
+   * ```typescript
+   * world.removeComponent(entity, "Position");
+   * ```
    */
   removeComponent(entity: Entity, type: ComponentType): void {
     this.components.get(type)?.delete(entity)
@@ -94,7 +133,15 @@ export class World {
    * Queries entities that possess all of the specified component types.
    *
    * @param componentTypes - One or more component types to filter by.
-   * @returns An array of entity IDs that have all the required components.
+   * @returns An array of {@link Entity} IDs that have all the required components.
+   *
+   * @remarks
+   * This method is the primary way for systems to find entities they need to process.
+   *
+   * @example
+   * ```typescript
+   * const movingEntities = world.query("Position", "Velocity");
+   * ```
    */
   query(...componentTypes: ComponentType[]): Entity[] {
     return Array.from(this.entities).filter((entity) =>
@@ -106,6 +153,11 @@ export class World {
    * Removes an entity and all of its attached components from the world.
    *
    * @param entity - The entity to remove.
+   *
+   * @example
+   * ```typescript
+   * world.removeEntity(bullet);
+   * ```
    */
   removeEntity(entity: Entity): void {
     this.components.forEach((componentMap) => {
@@ -117,25 +169,35 @@ export class World {
   /**
    * Registers a system to be updated by the world.
    *
-   * @param system - The system instance to add.
+   * @param system - The {@link System} instance to add.
+   *
+   * @example
+   * ```typescript
+   * world.addSystem(new MovementSystem());
+   * ```
    */
   addSystem(system: System): void {
     this.systems.push(system)
   }
 
   /**
-   * Updates all registered systems.
+   * Updates all registered systems in the order they were added.
    *
    * @param deltaTime - Time elapsed since the last update in milliseconds.
+   *
+   * @example
+   * ```typescript
+   * world.update(16.67);
+   * ```
    */
   update(deltaTime: number): void {
     this.systems.forEach((system) => system.update(this, deltaTime))
   }
 
   /**
-   * Returns a list of all active entities in the world.
+   * Returns a list of all active entities currently in the world.
    *
-   * @returns An array of all entity IDs.
+   * @returns An array of all {@link Entity} IDs.
    */
   getAllEntities(): Entity[] {
     return Array.from(this.entities)

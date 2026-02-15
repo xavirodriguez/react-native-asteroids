@@ -8,26 +8,59 @@ import { createShip, createAsteroid } from "./EntityFactory"
 import type { GameStateComponent } from "../types/GameTypes"
 
 /**
+ * Type definition for a callback function triggered on every game update.
+ */
+export type UpdateListener = (game: IAsteroidsGame) => void;
+
+/**
+ * Interface defining the public API for the Asteroids game controller.
+ */
+export interface IAsteroidsGame {
+  /** Pauses the game logic. */
+  pause(): void;
+  /** Resumes the game logic. */
+  resume(): void;
+  /** Restarts the game from scratch. */
+  restart(): void;
+  /** Returns the current ECS world. */
+  getWorld(): World;
+  /** Checks if the game is paused. */
+  getIsPaused(): boolean;
+  /** Checks if the game is over. */
+  getIsGameOver(): boolean;
+  /** Retrieves the current game state component. */
+  getGameState(): GameStateComponent | null;
+  /** Subscribes to update events. */
+  subscribe(listener: UpdateListener): () => void;
+}
+
+/**
  * Main controller for the Asteroids game.
  * Manages the game loop, systems initialization, and high-level game state transitions.
  *
  * @remarks
- * This class orchestrates the interaction between the ECS {@link World} and the browser's
- * animation frames. It handles pausing, resuming, and restarting the game.
+ * This class orchestrates the interaction between the ECS {@link World} and the environment's
+ * animation frames. It handles starting, stopping, pausing, resuming, and restarting the game.
+ *
+ * @example
+ * ```typescript
+ * const game = new AsteroidsGame();
+ * game.start();
+ * ```
  */
-export class AsteroidsGame {
+export class AsteroidsGame implements IAsteroidsGame {
   /** The ECS world instance containing all game entities and systems. */
   private world: World
 
   /**
    * System responsible for handling user input.
-   * Initialized in {@link setupSystems}.
+   * Initialized in {@link AsteroidsGame.setupSystems}.
    */
   private inputSystem!: InputSystem;
 
   /**
    * System responsible for global game state (score, lives, levels).
-   * Initialized in {@link setupSystems}.
+   * Initialized in {@link AsteroidsGame.setupSystems}.
    */
   private gameStateSystem!: GameStateSystem
 
@@ -42,6 +75,9 @@ export class AsteroidsGame {
 
   /** ID of the current requestAnimationFrame, used for stopping the loop. */
   private gameLoopId: number | null = null
+
+  /** Set of listeners to be notified on every update. */
+  private listeners = new Set<UpdateListener>();
 
   /**
    * Creates a new Asteroids game instance.
@@ -73,6 +109,9 @@ export class AsteroidsGame {
 
   /**
    * Resets the world and creates initial entities (player ship, game state, initial asteroids).
+   *
+   * @remarks
+   * This is called during construction and also by {@link AsteroidsGame.restart}.
    */
   private initializeGame(): void {
     createShip(this.world, 400, 300)
@@ -94,7 +133,7 @@ export class AsteroidsGame {
    *
    * @param total - Number of asteroids to spawn.
    */
-  private spawnInitialAsteroids(total:number): void {
+  private spawnInitialAsteroids(total: number): void {
     for (let i = 0; i < total; i++) {
       const angle = (Math.PI * 2 * i) / 4
       const x = 400 + Math.cos(angle) * 150
@@ -105,6 +144,9 @@ export class AsteroidsGame {
 
   /**
    * Starts or resumes the game loop.
+   *
+   * @remarks
+   * Sets {@link AsteroidsGame.isRunning} to true and begins the `requestAnimationFrame` loop.
    */
   start(): void {
     this.isRunning = true
@@ -125,18 +167,19 @@ export class AsteroidsGame {
   }
 
   /**
-   * Pauses the game logic execution while keeping the loop running.
+   * Pauses the game logic execution while keeping the animation loop running.
    */
   pause(): void {
     this.isPaused = true
     console.log("Game Paused")
+    this.notifyListeners();
   }
 
   /**
    * Resumes the game logic execution.
    *
    * @remarks
-   * Resets the `lastTime` to the current time to prevent a large `deltaTime` spike
+   * Resets the {@link AsteroidsGame.lastTime} to the current time to prevent a large `deltaTime` spike
    * after being paused for a long duration.
    */
   resume(): void {
@@ -144,6 +187,7 @@ export class AsteroidsGame {
       this.isPaused = false
       this.lastTime = performance.now()
       console.log("Game Resumed")
+      this.notifyListeners();
     }
   }
 
@@ -157,12 +201,31 @@ export class AsteroidsGame {
     this.gameStateSystem.resetGameOverState()
     this.initializeGame()
     
-    // Reiniciar game loop si estaba pausado
+    // Restart game loop if it was paused
     if (this.isPaused) {
       this.start()
     }
     
     console.log("Game Restarted")
+    this.notifyListeners();
+  }
+
+  /**
+   * Subscribes a listener to update events.
+   *
+   * @param listener - Callback function to be called on every update.
+   * @returns An unsubscribe function.
+   */
+  subscribe(listener: UpdateListener): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  /**
+   * Internal method to notify all subscribers.
+   */
+  private notifyListeners(): void {
+    this.listeners.forEach(listener => listener(this));
   }
 
   /**
@@ -176,10 +239,13 @@ export class AsteroidsGame {
     const deltaTime = currentTime - this.lastTime
     this.lastTime = currentTime
 
-    // Solo actualizar sistemas si no está pausado
+    // Only update systems if not paused
     if (!this.isPaused) {
       this.world.update(deltaTime)
     }
+
+    // Notify listeners on every frame to synchronize UI
+    this.notifyListeners();
 
     this.gameLoopId = requestAnimationFrame(this.gameLoop)
   }
@@ -205,14 +271,14 @@ export class AsteroidsGame {
   /**
    * Returns the ECS world instance.
    *
-   * @returns The {@link World} instance.
+   * @returns The {@link World} instance managed by this game.
    */
   getWorld(): World {
     return this.world
   }
 
   /**
-   * Retrieves the current game state component.
+   * Retrieves the current game state component from the world.
    *
    * @returns The {@link GameStateComponent} if it exists, otherwise `null`.
    */
@@ -233,7 +299,7 @@ export class AsteroidsGame {
    * @param shoot - Whether shooting is active.
    */
   setInput(thrust: boolean, rotateLeft: boolean, rotateRight: boolean, shoot: boolean): void {
-    // Solo procesar input si no está pausado o en game over
+    // Only process input if not paused or in game over
     if (!this.isPaused && !this.getIsGameOver()) {
       this.inputSystem.setInput(thrust, rotateLeft, rotateRight, shoot)
     }

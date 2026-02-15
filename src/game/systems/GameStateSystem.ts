@@ -1,6 +1,7 @@
 import { System, type World } from "../ecs-world"
 import type { GameStateComponent, HealthComponent } from "../../types/GameTypes"
 import { createAsteroid } from "../EntityFactory"
+import type { IAsteroidsGame } from "../AsteroidsGame"
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.
@@ -14,15 +15,17 @@ export class GameStateSystem extends System {
   /** Flag to prevent multiple game over logs and actions. */
   private gameOverLogged = false
 
-  /** Reference to the main game instance for triggering high-level actions. */
-  private gameInstance: any
+  /**
+   * Reference to the main game instance for triggering high-level actions.
+   */
+  private gameInstance: IAsteroidsGame | undefined
 
   /**
    * Creates a new GameStateSystem.
    *
-   * @param gameInstance - Optional reference to the {@link AsteroidsGame} instance.
+   * @param gameInstance - Optional reference to the main game instance.
    */
-  constructor(gameInstance?: any) {
+  constructor(gameInstance?: IAsteroidsGame) {
     super()
     this.gameInstance = gameInstance
   }
@@ -31,9 +34,10 @@ export class GameStateSystem extends System {
    * Updates the game state, checks for wave completion and game over.
    *
    * @param world - The ECS world.
-   * @param deltaTime - Time since last frame.
+   * @param _deltaTime - Time since last frame in milliseconds.
    */
-  update(world: World, deltaTime: number): void {
+  update(world: World, _deltaTime: number): void {
+    void _deltaTime;
     const gameStates = world.query("GameState")
 
     if (gameStates.length === 0) return
@@ -62,7 +66,7 @@ export class GameStateSystem extends System {
         this.gameOverLogged = true
         
         // Pause the game automatically via the game instance reference
-        if (this.gameInstance?.pause) {
+        if (this.gameInstance) {
           this.gameInstance.pause()
         }
       }

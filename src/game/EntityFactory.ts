@@ -2,21 +2,20 @@ import type { World } from "./ecs-world"
 import { type Entity, GAME_CONFIG } from "../types/GameTypes"
 
 /**
- * Creates a player ship entity with all necessary components.
+ * Creates a new player ship entity in the world.
  *
- * @param world - The ECS world to create the ship in.
- * @param x - Initial X-coordinate.
- * @param y - Initial Y-coordinate.
- * @returns The newly created ship entity ID.
+ * @param world - The ECS world.
+ * @param x - Initial X position.
+ * @param y - Initial Y position.
+ * @returns The newly created {@link Entity}.
  *
  * @remarks
- * The ship is initialized with:
- * - `Position`: At the specified (x, y).
- * - `Velocity`: Set to (0, 0).
- * - `Render`: A triangle shape.
- * - `Collider`: Circular boundary for collision detection.
- * - `Health`: Starting with 3/3 lives.
- * - `Input`: Empty input state for player control.
+ * The ship entity is created with Position, Velocity, Render, Collider, Health, and Input components.
+ *
+ * @example
+ * ```typescript
+ * const player = createShip(world, 400, 300);
+ * ```
  */
 export function createShip(world: World, x: number, y: number): Entity {
   const ship = world.createEntity()
@@ -44,17 +43,22 @@ export function createShip(world: World, x: number, y: number): Entity {
 }
 
 /**
- * Creates an asteroid entity.
+ * Creates a new asteroid entity in the world.
  *
- * @param world - The ECS world to create the asteroid in.
- * @param x - Initial X-coordinate.
- * @param y - Initial Y-coordinate.
- * @param size - The size category of the asteroid.
- * @returns The newly created asteroid entity ID.
+ * @param world - The ECS world.
+ * @param x - Initial X position.
+ * @param y - Initial Y position.
+ * @param size - The size category of the asteroid ("large", "medium", or "small").
+ * @returns The newly created {@link Entity}.
  *
  * @remarks
- * Asteroids are initialized with a random velocity.
- * When destroyed, large and medium asteroids split into smaller ones via {@link CollisionSystem}.
+ * Asteroids are created with Position, Velocity, Render, Collider, and Asteroid components.
+ * Their velocity is randomized.
+ *
+ * @example
+ * ```typescript
+ * const asteroid = createAsteroid(world, 100, 100, "large");
+ * ```
  */
 export function createAsteroid(world: World, x: number, y: number, size: "large" | "medium" | "small"): Entity {
   const asteroid = world.createEntity()
@@ -80,17 +84,22 @@ export function createAsteroid(world: World, x: number, y: number, size: "large"
 }
 
 /**
- * Creates a bullet entity.
+ * Creates a new bullet entity in the world.
  *
- * @param world - The ECS world to create the bullet in.
- * @param x - Initial X-coordinate.
- * @param y - Initial Y-coordinate.
- * @param angle - The direction in radians the bullet will travel.
- * @returns The newly created bullet entity ID.
+ * @param world - The ECS world.
+ * @param x - Initial X position.
+ * @param y - Initial Y position.
+ * @param angle - The angle in radians at which the bullet is fired.
+ * @returns The newly created {@link Entity}.
  *
  * @remarks
- * Bullets have a limited lifespan defined by `GAME_CONFIG.BULLET_TTL`.
- * They move at a constant speed defined by `GAME_CONFIG.BULLET_SPEED`.
+ * Bullets are created with Position, Velocity, Render, Collider, and TTL (Time-To-Live) components.
+ * Their velocity is determined by the `angle` and `GAME_CONFIG.BULLET_SPEED`.
+ *
+ * @example
+ * ```typescript
+ * createBullet(world, playerPos.x, playerPos.y, playerRotation);
+ * ```
  */
 export function createBullet(world: World, x: number, y: number, angle: number): Entity {
   const bullet = world.createEntity()
