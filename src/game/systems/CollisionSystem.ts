@@ -10,13 +10,25 @@ import type {
 import { createAsteroid } from "../EntityFactory"
 
 /**
- * CollisionSystem handles collision detection and response between entities.
+ * System responsible for detecting and resolving collisions between entities.
+ *
+ * @remarks
+ * This system performs a pairwise check between all entities with {@link PositionComponent}
+ * and {@link ColliderComponent}. It handles specific interactions:
+ * - **Bullet vs Asteroid**: Splits the asteroid and increases the score.
+ * - **Ship vs Asteroid**: Decreases ship health.
  */
 export class CollisionSystem extends System {
+  /**
+   * Updates the collision state for all relevant entities.
+   *
+   * @param world - The ECS world.
+   * @param deltaTime - Time since last frame (not used for collision detection but part of the System interface).
+   */
   update(world: World, deltaTime: number): void {
     const colliders = world.query("Position", "Collider")
 
-    // Check all pairs
+    // Check all pairs ($O(N^2)$ complexity)
     for (let i = 0; i < colliders.length; i++) {
       for (let j = i + 1; j < colliders.length; j++) {
         const entityA = colliders[i]
@@ -29,14 +41,20 @@ export class CollisionSystem extends System {
     }
   }
 
-
+  /**
+   * Checks if two entities are colliding based on their circular colliders.
+   *
+   * @param world - The ECS world.
+   * @param entityA - First entity ID.
+   * @param entityB - Second entity ID.
+   * @returns `true` if colliding, `false` otherwise.
+   */
   private checkCollision(world: World, entityA: number, entityB: number): boolean {
     const posA = world.getComponent<PositionComponent>(entityA, "Position")
     const posB = world.getComponent<PositionComponent>(entityB, "Position")
     const colliderA = world.getComponent<ColliderComponent>(entityA, "Collider")
     const colliderB = world.getComponent<ColliderComponent>(entityB, "Collider")
 
-    // Guard clauses: verificar que todos los componentes existen
     if (!posA || !posB || !colliderA || !colliderB) {
       return false
     }
@@ -48,6 +66,13 @@ export class CollisionSystem extends System {
     return distance < colliderA.radius + colliderB.radius
   }
 
+  /**
+   * Resolves the collision between two entities based on their types.
+   *
+   * @param world - The ECS world.
+   * @param entityA - First entity ID.
+   * @param entityB - Second entity ID.
+   */
   private handleCollision(world: World, entityA: number, entityB: number): void {
     const asteroidA = world.getComponent(entityA, "Asteroid")
     const asteroidB = world.getComponent(entityB, "Asteroid")
@@ -56,12 +81,11 @@ export class CollisionSystem extends System {
     const ttlA = world.getComponent(entityA, "TTL")
     const ttlB = world.getComponent(entityB, "TTL")
 
-    // Verificar que las entidades aún existen antes de procesar colisión
     const posA = world.getComponent<PositionComponent>(entityA, "Position")
     const posB = world.getComponent<PositionComponent>(entityB, "Position")
     
     if (!posA || !posB) {
-      return // Una de las entidades fue eliminada por otro sistema
+      return
     }
 
     // Bullet hits asteroid
@@ -75,22 +99,25 @@ export class CollisionSystem extends System {
       this.addScore(world, 10)
     }
 
-    // Ship hits asteroid - nave pierde vida, asteroide permanece
+    // Ship hits asteroid
     if (healthA && asteroidB) {
       healthA.current--
-      // NO eliminar asteroide - solo reduce vidas de la nave
     } else if (healthB && asteroidA) {
       healthB.current--
-      // NO eliminar asteroide - solo reduce vidas de la nave
     }
   
   }
 
+  /**
+   * Splits an asteroid into two smaller ones or removes it if it's already small.
+   *
+   * @param world - The ECS world.
+   * @param asteroidEntity - The asteroid entity to split.
+   */
   private splitAsteroid(world: World, asteroidEntity: number): void {
     const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid")
     const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position")
 
-    // Guard clause: verificar componentes antes de usar
     if (!asteroid || !pos) {
       return
     }
@@ -106,6 +133,12 @@ export class CollisionSystem extends System {
     world.removeEntity(asteroidEntity)
   }
 
+  /**
+   * Adds points to the global game score.
+   *
+   * @param world - The ECS world.
+   * @param points - Number of points to add.
+   */
   private addScore(world: World, points: number): void {
     const gameStates = world.query("GameState")
     if (gameStates.length > 0) {
