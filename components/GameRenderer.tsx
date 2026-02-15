@@ -49,6 +49,7 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
     const key = `entity-${entity}`;
     // Calculate rotation in degrees for react-native-svg
     const rotationDegrees = (render.rotation * 180) / Math.PI;
+    const transform = `translate(${pos.x}, ${pos.y}) rotate(${rotationDegrees})`;
 
     switch (render.shape) {
       case "triangle": {
@@ -61,11 +62,7 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
         );
         const hasThrust = inputComponent?.thrust || false;
         return (
-          <G
-            key={key}
-            translate={`${pos.x}, ${pos.y}`}
-            rotation={rotationDegrees}
-          >
+          <G key={key} transform={transform}>
             {hasThrust && (
               <Polygon
                 points={`${-render.size / 2},${render.size / 3} ${
@@ -136,14 +133,13 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
         return (
           <Line
             key={key}
-            x1={pos.x - render.size / 2}
-            y1={pos.y}
-            x2={pos.x + render.size / 2}
-            y2={pos.y}
+            x1={-render.size / 2}
+            y1={0}
+            x2={render.size / 2}
+            y2={0}
             stroke={render.color}
             strokeWidth="2"
-            translate={`${pos.x}, ${pos.y}`}
-            rotation={rotationDegrees}
+            transform={transform}
           />
         );
 
