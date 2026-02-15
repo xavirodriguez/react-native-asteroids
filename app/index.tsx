@@ -71,7 +71,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <GameUI gameState={gameState} />
+      <GameUI gameState={gameState} onRestart={() => game.restart()} />
       <GameRenderer world={game.getWorld()} />
       <GameControls
         onThrust={(pressed) => handleInput("thrust", pressed)}

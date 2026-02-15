@@ -151,6 +151,8 @@ export interface GameStateComponent extends Component {
   level: number
   /** Count of asteroids currently in the world */
   asteroidsRemaining: number
+  /** Whether the game is currently in a Game Over state */
+  isGameOver: boolean
 }
 
 /**
