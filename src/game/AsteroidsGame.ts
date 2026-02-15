@@ -122,6 +122,7 @@ export class AsteroidsGame implements IAsteroidsGame {
       score: 0,
       level: 1,
       asteroidsRemaining: 0,
+      isGameOver: false,
     })
 
     // Spawn initial asteroids

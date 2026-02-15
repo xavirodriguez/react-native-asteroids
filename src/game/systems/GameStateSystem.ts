@@ -59,7 +59,12 @@ export class GameStateSystem extends System {
     const ships = world.query("Health", "Input")
     const shipHealths = ships.map((ship) => world.getComponent<HealthComponent>(ship, "Health")!.current)
 
-    if (shipHealths.every((health) => health <= 0)) {
+    const isDead = shipHealths.length > 0 && shipHealths.every((health) => health <= 0);
+
+    // Update the game state component's isGameOver flag
+    gameState.isGameOver = isDead;
+
+    if (isDead) {
       if (!this.gameOverLogged) {
         console.log(`Game Over! Score: ${gameState.score}`)
         console.log("Press 'R' to restart or call game.restart()")
