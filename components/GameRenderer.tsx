@@ -7,18 +7,40 @@ import {
   GAME_CONFIG,
 } from "../src/types/GameTypes";
 
+/**
+ * Properties for the {@link GameRenderer} component.
+ */
 interface GameRendererProps {
+  /** The ECS world containing the entities to be rendered. */
   world: World;
 }
 
+/**
+ * Component responsible for rendering the game world using SVG.
+ *
+ * @param props - Component properties.
+ * @returns A React functional component.
+ *
+ * @remarks
+ * This component queries the world for entities with both {@link PositionComponent}
+ * and {@link RenderComponent} and renders them as SVG elements (polygons, circles, or lines)
+ * within a fixed-size SVG container.
+ */
 export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
   const renderables = world.query("Position", "Render");
 
+  /**
+   * Renders a single entity based on its RenderComponent.
+   *
+   * @param entity - The entity ID to render.
+   * @returns An SVG element or `null` if the shape is unknown.
+   */
   const renderEntity = (entity: number) => {
     const pos = world.getComponent<PositionComponent>(entity, "Position")!;
     const render = world.getComponent<RenderComponent>(entity, "Render")!;
 
     const key = `entity-${entity}`;
+    // Calculate SVG transform for position and rotation
     const transform = `translate(${pos.x}, ${pos.y}) rotate(${
       (render.rotation * 180) / Math.PI
     })`;

@@ -2,10 +2,24 @@ import type React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import type { GameStateComponent } from "../src/types/GameTypes";
 
+/**
+ * Properties for the {@link GameUI} component.
+ */
 interface GameUIProps {
+  /** The current game state containing score, lives, and level, or `null` if not available. */
   gameState: GameStateComponent | null;
 }
 
+/**
+ * HUD (Heads-Up Display) component that shows the current game status.
+ *
+ * @param props - Component properties.
+ * @returns A React functional component.
+ *
+ * @remarks
+ * This component displays the player's remaining lives, current score, and current level
+ * at the top of the screen. It renders nothing if the game state is not provided.
+ */
 export const GameUI: React.FC<GameUIProps> = ({ gameState }) => {
   if (!gameState) return null;
 

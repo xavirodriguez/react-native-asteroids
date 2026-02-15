@@ -1,13 +1,31 @@
 import type React from "react"
 import { View, TouchableOpacity, Text, StyleSheet, Platform } from "react-native"
 
+/**
+ * Properties for the {@link GameControls} component.
+ */
 interface GameControlsProps {
+  /** Callback triggered when the thrust control state changes. */
   onThrust: (pressed: boolean) => void
+  /** Callback triggered when the rotate left control state changes. */
   onRotateLeft: (pressed: boolean) => void
+  /** Callback triggered when the rotate right control state changes. */
   onRotateRight: (pressed: boolean) => void
+  /** Callback triggered when the shoot control state changes. */
   onShoot: (pressed: boolean) => void
 }
 
+/**
+ * Overlay component providing on-screen controls for mobile or instructions for web.
+ *
+ * @param props - Component properties.
+ * @returns A React functional component.
+ *
+ * @remarks
+ * This component adaptively renders:
+ * - **On Web**: A simple instruction text explaining keyboard controls.
+ * - **On Mobile**: Touch-sensitive buttons for rotation, thrust, and shooting.
+ */
 export const GameControls: React.FC<GameControlsProps> = ({ onThrust, onRotateLeft, onRotateRight, onShoot }) => {
   // Only show touch controls on mobile
   if (Platform.OS === "web") {

@@ -2,15 +2,37 @@ import { System, type World } from "../ecs-world"
 import type { GameStateComponent, HealthComponent } from "../../types/GameTypes"
 import { createAsteroid } from "../EntityFactory"
 
+/**
+ * System responsible for managing global game state, wave spawning, and game over conditions.
+ *
+ * @remarks
+ * This system monitors the number of asteroids in the world and spawns new waves when
+ * they are all destroyed. It also monitors player health to detect game over states.
+ * It interacts with the main game instance to pause the game when the player loses.
+ */
 export class GameStateSystem extends System {
+  /** Flag to prevent multiple game over logs and actions. */
   private gameOverLogged = false
-  private gameInstance: any // Referencia al AsteroidsGame
 
+  /** Reference to the main game instance for triggering high-level actions. */
+  private gameInstance: any
+
+  /**
+   * Creates a new GameStateSystem.
+   *
+   * @param gameInstance - Optional reference to the {@link AsteroidsGame} instance.
+   */
   constructor(gameInstance?: any) {
     super()
     this.gameInstance = gameInstance
   }
 
+  /**
+   * Updates the game state, checks for wave completion and game over.
+   *
+   * @param world - The ECS world.
+   * @param deltaTime - Time since last frame.
+   */
   update(world: World, deltaTime: number): void {
     const gameStates = world.query("GameState")
 
@@ -23,13 +45,13 @@ export class GameStateSystem extends System {
     const asteroids = world.query("Asteroid")
     gameState.asteroidsRemaining = asteroids.length
 
-    // Spawn new wave if no asteroids
+    // Spawn new wave if no asteroids remain
     if (gameState.asteroidsRemaining === 0) {
       this.spawnAsteroidWave(world, gameState.level)
       gameState.level++
     }
 
-    // Check game over - pausar juego cuando termine
+    // Check game over
     const ships = world.query("Health", "Input")
     const shipHealths = ships.map((ship) => world.getComponent<HealthComponent>(ship, "Health")!.current)
 
@@ -39,27 +61,43 @@ export class GameStateSystem extends System {
         console.log("Press 'R' to restart or call game.restart()")
         this.gameOverLogged = true
         
-        // Pausar el juego automáticamente
+        // Pause the game automatically via the game instance reference
         if (this.gameInstance?.pause) {
           this.gameInstance.pause()
         }
       }
     } else {
-      // Reset flag si la nave vuelve a tener vida
+      // Reset flag if the ship gains health (e.g., after a restart)
       this.gameOverLogged = false
     }
   }
 
-  // Método público para verificar game over
+  /**
+   * Checks if the game is currently in a game over state.
+   *
+   * @returns `true` if game over, `false` otherwise.
+   */
   isGameOver(): boolean {
     return this.gameOverLogged
   }
 
-  // Método para resetear estado de game over
+  /**
+   * Resets the game over state flag.
+   */
   resetGameOverState(): void {
     this.gameOverLogged = false
   }
 
+  /**
+   * Spawns a new wave of asteroids based on the current level.
+   *
+   * @param world - The ECS world.
+   * @param level - The current game level.
+   *
+   * @remarks
+   * The number of asteroids increases with the level, capped at 12.
+   * Asteroids are spawned in a circular pattern around the center.
+   */
   private spawnAsteroidWave(world: World, level: number): void {
     const asteroidCount = Math.min(4 + level, 12)
 
