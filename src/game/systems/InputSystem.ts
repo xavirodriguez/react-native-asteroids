@@ -9,26 +9,24 @@ import {
 import { createBullet } from "../EntityFactory"
 
 /**
- * System responsible for processing user input and applying it to controlled entities.
+ * System responsible for processing user input and applying it to the ship's state.
  *
  * @remarks
- * This system handles both keyboard events (for web) and manual input settings
- * (typically for mobile touch controls). It updates the {@link InputComponent} of
- * entities and translates those inputs into physical changes (rotation, thrust)
- * or actions (shooting).
+ * This system supports both keyboard input (web) and manual input setting (mobile/touch).
+ * It updates the ship's rotation, velocity (thrust), and handles bullet spawning (shooting).
  */
 export class InputSystem extends System {
-  /** Set of currently pressed keyboard keys (by their `code`). */
+  /** Set of currently pressed keys (for web/keyboard). */
   private keys: Set<string> = new Set()
 
-  /** Timestamp of the last shot fired to handle cooldown. */
+  /** Timestamp of the last shot fired. */
   private lastShootTime = 0
 
-  /** Minimum delay between shots in milliseconds. */
+  /** Cooldown time between shots in milliseconds. */
   private shootCooldown = 200
 
   /**
-   * Initializes the InputSystem and sets up global keyboard event listeners if in a browser environment.
+   * Creates a new InputSystem and sets up keyboard listeners if in a browser environment.
    */
   constructor() {
     super()
@@ -40,7 +38,7 @@ export class InputSystem extends System {
   }
   
   /**
-   * Manually updates the internal key state, primarily used for mobile touch controls.
+   * Manually sets the input state. Useful for mobile touch controls.
    *
    * @param thrust - Whether thrust is active.
    * @param rotateLeft - Whether rotating left is active.
@@ -56,19 +54,10 @@ export class InputSystem extends System {
   }
 
   /**
-   * Updates controlled entities based on the current input state.
+   * Updates ship rotation, velocity, and shooting based on current input state.
    *
    * @param world - The ECS world.
    * @param deltaTime - Time since last frame in milliseconds.
-   *
-   * @remarks
-   * For each entity with {@link InputComponent}, {@link PositionComponent},
-   * {@link VelocityComponent}, and {@link RenderComponent}:
-   * 1. Updates the `InputComponent` state from the current key set.
-   * 2. Adjusts `RenderComponent.rotation` based on rotation inputs.
-   * 3. Applies acceleration to `VelocityComponent` based on thrust input.
-   * 4. Applies a small friction factor to the velocity.
-   * 5. Spawns bullets if shooting and cooldown has elapsed.
    */
   update(world: World, deltaTime: number): void {
     const ships = world.query("Input", "Position", "Velocity", "Render")
@@ -80,23 +69,23 @@ export class InputSystem extends System {
       const render = world.getComponent<RenderComponent>(entity, "Render")!
       const pos = world.getComponent<PositionComponent>(entity, "Position")!
 
-      // Update input state
+      // Update component input state from the raw keys/input
       input.thrust = this.keys.has("ArrowUp")
       input.rotateLeft = this.keys.has("ArrowLeft")
       input.rotateRight = this.keys.has("ArrowRight")
       input.shoot = this.keys.has("Space")
 
-      // Rotation
+      // Apply rotation
       if (input.rotateLeft) render.rotation -= (GAME_CONFIG.SHIP_ROTATION_SPEED * deltaTime) / 1000
       if (input.rotateRight) render.rotation += (GAME_CONFIG.SHIP_ROTATION_SPEED * deltaTime) / 1000
 
-      // Thrust
+      // Apply thrust
       if (input.thrust) {
         vel.dx += (Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTime) / 1000
         vel.dy += (Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTime) / 1000
       }
 
-      // Apply friction (simple damping)
+      // Apply friction (damping)
       vel.dx *= 0.99
       vel.dy *= 0.99
 

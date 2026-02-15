@@ -1,17 +1,20 @@
 import { System, type World } from "../ecs-world"
-import { type PositionComponent, type VelocityComponent, GAME_CONFIG } from "../../types/GameTypes"
+import {
+  type PositionComponent,
+  type VelocityComponent,
+  GAME_CONFIG,
+} from "../../types/GameTypes"
 
 /**
- * System responsible for updating the position of entities based on their velocity.
+ * System responsible for updating entity positions based on their velocity.
  *
  * @remarks
- * This system applies basic linear motion physics: $position = position + velocity \times deltaTime$.
- * It also implements "screen wrapping", where entities that move off one edge of the
- * screen appear on the opposite edge.
+ * This system also implements "screen wrapping", where entities that move off
+ * one edge of the screen reappear on the opposite edge.
  */
 export class MovementSystem extends System {
   /**
-   * Updates positions and handles screen wrapping for all moving entities.
+   * Updates positions and handles screen wrapping.
    *
    * @param world - The ECS world.
    * @param deltaTime - Time since last frame in milliseconds.
@@ -23,7 +26,7 @@ export class MovementSystem extends System {
       const pos = world.getComponent<PositionComponent>(entity, "Position")!
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!
 
-      // Apply velocity to position
+      // Update position based on velocity and elapsed time
       pos.x += (vel.dx * deltaTime) / 1000
       pos.y += (vel.dy * deltaTime) / 1000
 

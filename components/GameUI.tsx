@@ -6,19 +6,24 @@ import type { GameStateComponent } from "../src/types/GameTypes";
  * Properties for the {@link GameUI} component.
  */
 interface GameUIProps {
-  /** The current game state containing score, lives, and level, or `null` if not available. */
+  /** The current game state component containing lives, score, and level. */
   gameState: GameStateComponent | null;
 }
 
 /**
- * HUD (Heads-Up Display) component that shows the current game status.
+ * Component responsible for rendering the Head-Up Display (HUD) overlay.
  *
  * @param props - Component properties.
  * @returns A React functional component.
  *
  * @remarks
- * This component displays the player's remaining lives, current score, and current level
- * at the top of the screen. It renders nothing if the game state is not provided.
+ * Displays essential game information such as remaining lives, current score,
+ * and current level at the top of the screen.
+ *
+ * @example
+ * ```tsx
+ * <GameUI gameState={currentGameState} />
+ * ```
  */
 export const GameUI: React.FC<GameUIProps> = ({ gameState }) => {
   if (!gameState) return null;

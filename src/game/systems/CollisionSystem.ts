@@ -17,15 +17,18 @@ import { createAsteroid } from "../EntityFactory"
  * and {@link ColliderComponent}. It handles specific interactions:
  * - **Bullet vs Asteroid**: Splits the asteroid and increases the score.
  * - **Ship vs Asteroid**: Decreases ship health.
+ *
+ * Performance note: This system currently has $O(N^2)$ complexity where $N$ is the number of colliders.
  */
 export class CollisionSystem extends System {
   /**
    * Updates the collision state for all relevant entities.
    *
    * @param world - The ECS world.
-   * @param deltaTime - Time since last frame (not used for collision detection but part of the System interface).
+   * @param _deltaTime - Time since last frame (not used for collision detection but part of the System interface).
    */
-  update(world: World, deltaTime: number): void {
+  update(world: World, _deltaTime: number): void {
+    void _deltaTime;
     const colliders = world.query("Position", "Collider")
 
     // Check all pairs ($O(N^2)$ complexity)
@@ -48,6 +51,9 @@ export class CollisionSystem extends System {
    * @param entityA - First entity ID.
    * @param entityB - Second entity ID.
    * @returns `true` if colliding, `false` otherwise.
+   *
+   * @remarks
+   * Uses simple circle-circle collision detection based on the distance between centers.
    */
   private checkCollision(world: World, entityA: number, entityB: number): boolean {
     const posA = world.getComponent<PositionComponent>(entityA, "Position")
@@ -72,6 +78,9 @@ export class CollisionSystem extends System {
    * @param world - The ECS world.
    * @param entityA - First entity ID.
    * @param entityB - Second entity ID.
+   *
+   * @remarks
+   * Handles Bullet vs Asteroid and Ship vs Asteroid collisions.
    */
   private handleCollision(world: World, entityA: number, entityB: number): void {
     const asteroidA = world.getComponent(entityA, "Asteroid")
@@ -113,6 +122,9 @@ export class CollisionSystem extends System {
    *
    * @param world - The ECS world.
    * @param asteroidEntity - The asteroid entity to split.
+   *
+   * @remarks
+   * Large asteroids split into two medium ones, medium into two small ones, and small ones are destroyed.
    */
   private splitAsteroid(world: World, asteroidEntity: number): void {
     const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid")

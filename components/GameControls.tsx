@@ -24,10 +24,19 @@ interface GameControlsProps {
  * @remarks
  * This component adaptively renders:
  * - **On Web**: A simple instruction text explaining keyboard controls.
- * - **On Mobile**: Touch-sensitive buttons for rotation, thrust, and shooting.
+ * - **On Mobile/Native**: Touch-sensitive buttons for rotation, thrust, and shooting.
+ *
+ * @example
+ * ```tsx
+ * <GameControls
+ *   onThrust={(pressed) => handleThrust(pressed)}
+ *   onShoot={() => fireBullet()}
+ *   // ... other props
+ * />
+ * ```
  */
 export const GameControls: React.FC<GameControlsProps> = ({ onThrust, onRotateLeft, onRotateRight, onShoot }) => {
-  // Only show touch controls on mobile
+  // Only show touch controls on native platforms
   if (Platform.OS === "web") {
     return (
       <View style={styles.webInstructions}>
