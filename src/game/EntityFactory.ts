@@ -1,6 +1,23 @@
 import type { World } from "./ecs-world"
 import { type Entity, GAME_CONFIG } from "../types/GameTypes"
 
+/**
+ * Creates a player ship entity with all necessary components.
+ *
+ * @param world - The ECS world to create the ship in.
+ * @param x - Initial X-coordinate.
+ * @param y - Initial Y-coordinate.
+ * @returns The newly created ship entity ID.
+ *
+ * @remarks
+ * The ship is initialized with:
+ * - `Position`: At the specified (x, y).
+ * - `Velocity`: Set to (0, 0).
+ * - `Render`: A triangle shape.
+ * - `Collider`: Circular boundary for collision detection.
+ * - `Health`: Starting with 3/3 lives.
+ * - `Input`: Empty input state for player control.
+ */
 export function createShip(world: World, x: number, y: number): Entity {
   const ship = world.createEntity()
 
@@ -26,6 +43,19 @@ export function createShip(world: World, x: number, y: number): Entity {
   return ship
 }
 
+/**
+ * Creates an asteroid entity.
+ *
+ * @param world - The ECS world to create the asteroid in.
+ * @param x - Initial X-coordinate.
+ * @param y - Initial Y-coordinate.
+ * @param size - The size category of the asteroid.
+ * @returns The newly created asteroid entity ID.
+ *
+ * @remarks
+ * Asteroids are initialized with a random velocity.
+ * When destroyed, large and medium asteroids split into smaller ones via {@link CollisionSystem}.
+ */
 export function createAsteroid(world: World, x: number, y: number, size: "large" | "medium" | "small"): Entity {
   const asteroid = world.createEntity()
   const sizeMap = { large: 30, medium: 20, small: 10 }
@@ -49,6 +79,19 @@ export function createAsteroid(world: World, x: number, y: number, size: "large"
   return asteroid
 }
 
+/**
+ * Creates a bullet entity.
+ *
+ * @param world - The ECS world to create the bullet in.
+ * @param x - Initial X-coordinate.
+ * @param y - Initial Y-coordinate.
+ * @param angle - The direction in radians the bullet will travel.
+ * @returns The newly created bullet entity ID.
+ *
+ * @remarks
+ * Bullets have a limited lifespan defined by `GAME_CONFIG.BULLET_TTL`.
+ * They move at a constant speed defined by `GAME_CONFIG.BULLET_SPEED`.
+ */
 export function createBullet(world: World, x: number, y: number, angle: number): Entity {
   const bullet = world.createEntity()
 
