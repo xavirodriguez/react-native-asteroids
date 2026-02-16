@@ -2,135 +2,123 @@
 
 ### Arquitectura de Renderizado
 
-El sistema de renderizado implementa una separación clara entre la lógica de juego y la representación visual, utilizando React como capa de presentación sobre el motor ECS.
+El sistema de renderizado implementa una separación clara entre la lógica de juego y la representación visual, utilizando React y `react-native-svg` como capa de presentación sobre el motor ECS.
 
 ### GameRenderer Component
 
-El componente `GameRenderer` (`components/GameRenderer.tsx`) actúa como puente entre el `World` ECS y la representación SVG:
+El componente `GameRenderer` (`components/GameRenderer.tsx`) actúa como puente entre el `World` ECS y la representación SVG nativa:
 
 ```typescript
-// Línea 7: Recibe el mundo como prop
+// Propiedades del componente
 interface GameRendererProps {
   world: World;
 }
 
-// Líneas 11-12: Query por entidades renderizables
+// Consulta de entidades renderizables
 const renderables = world.query("Position", "Render");
 ```
 
 ### Sistema de Consultas ECS
 
-El renderizado utiliza el sistema de queries del ECS para obtener solo entidades con componentes `Position` y `Render`. La query se ejecuta en cada render de React (línea 11), filtrando automáticamente entidades sin representación visual.
+El renderizado utiliza el sistema de queries del ECS para obtener solo entidades con componentes `Position` y `Render`. La query se ejecuta en cada ciclo de renderizado de React, filtrando automáticamente entidades sin representación visual.
 
-### Transformaciones SVG
+### Transformaciones SVG Cross-Platform
 
-Cada entidad renderable se transforma mediante coordenadas SVG con el patrón:
+Para garantizar la compatibilidad óptima entre plataformas (iOS, Android y Web) con `react-native-svg`, cada entidad renderable se posiciona y rota mediante la propiedad `transform` en lugar de coordenadas individuales:
 
 ```typescript
-// Líneas 16-19: Cálculo de transformación
-const transform = `translate(${pos.x}, ${pos.y}) rotate(${
-  (render.rotation * 180) / Math.PI
-})`;
+// Cálculo de transformación (Posición + Rotación)
+const rotationDegrees = (render.rotation * 180) / Math.PI;
+const transform = `translate(${pos.x}, ${pos.y}) rotate(${rotationDegrees})`;
 ```
 
-**Nota importante**: La rotación se convierte de radianes (usado internamente) a grados (requerido por SVG) multiplicando por `180/π`.
+**Nota importante**: La rotación se convierte de radianes (usado internamente por el motor físico) a grados (requerido por los componentes SVG) multiplicando por `180/π`.
 
-### Tipos de Formas Renderizables
+### Componentes de Forma (Shapes)
 
-El sistema soporta 3 tipos de formas definidas en `RenderComponent.shape` (`src/types/GameTypes.ts` línea 19):
+El sistema utiliza componentes de `react-native-svg` definidos en `RenderComponent.shape` (`src/types/GameTypes.ts`):
 
 #### 1. Triangle (Nave del jugador)
 
+Representado mediante el componente `Polygon`. La nave incluye efectos visuales adicionales como propulsores y un núcleo pulsante:
+
 ```typescript
-// Líneas 22-30: Polígono con 3 vértices
-<polygon
-  points={`${render.size},0 ${-render.size / 2},${-render.size / 2} ${
-    -render.size / 2
-  },${render.size / 2}`}
-  stroke="#CCC" // Hardcodeado, ignora render.color
+<Polygon
+  points={`${render.size},0 ${-render.size / 2},${render.size / 2} ${-render.size / 4},0 ${-render.size / 2},${-render.size / 2}`}
+  fill="#DDDDDD"
+  stroke="#FFFFFF"
+  strokeWidth="1"
+/>
+```
+
+#### 2. Circle (Asteroides y balas)
+
+Representado mediante el componente `Circle`. Para máxima compatibilidad, se utiliza `transform` para el posicionamiento:
+
+```typescript
+<Circle
+  cx="0"
+  cy="0"
+  r={render.size}
+  fill="#999"
+  stroke={render.color}
+  strokeWidth="2"
   transform={transform}
 />
 ```
 
-**Bug identificado**: El color está hardcodeado como `"#CCC"` (línea 26) en lugar de usar `render.color`.
+#### 3. Line (Efectos o trazos)
 
-#### 2. Circle (Asteroides y balas)
-
-```typescript
-// Líneas 32-40: Círculo centrado
-<circle
-  cx={pos.x}
-  cy={pos.y}
-  r={render.size}
-  stroke={render.color} // Usa el color correcto
-/>
-```
-
-#### 3. Line (Sin uso actual)
+Representado mediante el componente `Line`.
 
 ```typescript
-// Líneas 42-51: Línea horizontal
-<line
-  x1={pos.x - render.size / 2}
-  x2={pos.x + render.size / 2}
+<Line
+  x1={-render.size / 2}
+  y1={0}
+  x2={render.size / 2}
+  y2={0}
   stroke={render.color}
+  strokeWidth="2"
   transform={transform}
 />
 ```
 
 ### Configuración del Viewport SVG
 
-El SVG container está configurado con dimensiones fijas:
+El contenedor SVG está configurado con dimensiones fijas y estilos definidos mediante `StyleSheet`:
 
 ```typescript
-// Líneas 57-62: Configuración del viewport
-<svg
-  width={GAME_CONFIG.SCREEN_WIDTH} // 800px
+<Svg
+  width={GAME_CONFIG.SCREEN_WIDTH}  // 800px
   height={GAME_CONFIG.SCREEN_HEIGHT} // 600px
   viewBox={`0 0 ${GAME_CONFIG.SCREEN_WIDTH} ${GAME_CONFIG.SCREEN_HEIGHT}`}
-  className="border border-gray-800"
+  style={styles.svg}
 />
 ```
 
-### Mapeo de Entidades a Elementos
+### Integración con el ciclo de vida de React
 
-El renderizado utiliza un mapeo directo entidad→elemento:
+El `GameRenderer` se re-ejecuta cada frame gracias a la suscripción en `App.tsx`. Aunque se realiza una nueva query en cada render, el uso de componentes nativos de `react-native-svg` permite un rendimiento fluido en dispositivos móviles.
 
-```typescript
-// Línea 65: Mapeo con key único por entidad
-{
-  renderables.map(renderEntity);
-}
+### Análisis de Performance
 
-// Línea 14: Key generation
-const key = `entity-${entity}`;
-```
+1. **Uso de `transform`**: Centraliza el posicionamiento y la rotación en una sola propiedad optimizada para el motor de renderizado.
+2. **Representación Declarativa**: Permite a React gestionar el ciclo de vida de los elementos visuales basándose en el estado del ECS.
+3. **Escalabilidad**: El sistema soporta la adición de nuevas formas o efectos complejos (como el núcleo pulsante de la nave) de manera sencilla.
 
-Esta estrategia garantiza que React pueda trackear cambios de entidades individuales, aunque puede causar re-renders innecesarios cuando las posiciones cambian.
+### Estilos Aplicados
 
-### Integración con el Game Loop
-
-El `GameRenderer` se re-ejecuta cada 16ms debido al `forceUpdate({})` en `App.tsx` línea 29. Esto significa:
-
-1. **App timer (16ms)** → `forceUpdate()` → React re-render
-2. **React re-render** → `GameRenderer` re-ejecuta → Nueva query al `World`
-3. **Nueva query** → Renderizado de todas las entidades visibles
-
-### Problemas de Performance Identificados
-
-1. **Query en cada render**: `world.query()` se ejecuta en cada frame sin memoización
-2. **Re-render completo**: Todas las entidades se re-renderizan aunque solo algunas cambien posición
-3. **Falta de culling**: No hay eliminación de entidades fuera del viewport
-4. **Transform calculations**: Los cálculos de `transform` se repiten en cada frame
-
-### Estilos CSS Aplicados
-
-El contenedor SVG recibe estilos Tailwind:
+Los estilos se gestionan mediante `StyleSheet` de React Native:
 
 ```typescript
-// Línea 56: Styling del container
-<div className="flex-1 bg-black">
-
-// Línea 63: Border del juego
-className="border border-gray-800"
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: "black",
+  },
+  svg: {
+    borderWidth: 1,
+    borderColor: "#1F2937",
+    backgroundColor: "black",
+  },
+});
 ```

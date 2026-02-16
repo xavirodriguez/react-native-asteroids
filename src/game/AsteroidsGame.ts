@@ -36,11 +36,26 @@ export interface IAsteroidsGame {
 
 /**
  * Main controller for the Asteroids game.
- * Manages the game loop, systems initialization, and high-level game state transitions.
  *
  * @remarks
- * This class orchestrates the interaction between the ECS {@link World} and the environment's
- * animation frames. It handles starting, stopping, pausing, resuming, and restarting the game.
+ * **What it does**: Manages the core game loop, initializes all ECS systems, and handles high-level state transitions (start, stop, pause, resume, restart).
+ *
+ * **Why it exists**: It acts as the central orchestrator that bridges the pure ECS logic with the execution environment's animation frames and the React UI.
+ *
+ * **Contract**:
+ * - Provides a public API through the {@link IAsteroidsGame} interface.
+ * - Manages an internal {@link World} instance.
+ * - Guarantees that systems are updated sequentially in each frame.
+ * - Notifies subscribers after every state update.
+ *
+ * **Edge Cases**:
+ * - Handles the transition from a paused state back to running by resetting the `lastTime` timestamp to avoid physics spikes.
+ * - Ensures input is only processed when the game is active and not over.
+ *
+ * **Performance/Security Implications**:
+ * - The game loop runs at the environment's native refresh rate via `requestAnimationFrame`.
+ * - UI synchronization is event-driven to minimize overhead compared to polling.
+ * - Does not expose internal system states directly, maintaining encapsulation.
  *
  * @example
  * ```typescript

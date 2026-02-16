@@ -32,13 +32,25 @@ export abstract class System {
  * ECS World class that manages the lifecycle of entities, components, and systems.
  *
  * @remarks
- * The World is the central container for the ECS architecture:
- * - **Entities**: Unique numerical IDs representing individual objects in the game.
- * - **Components**: Pure data structures attached to entities, grouped by type.
- * - **Systems**: Logic that operates on entities that have a specific combination of components.
+ * **What it does**: Acts as a central registry and orchestrator for the Entity-Component-System architecture. It handles entity creation/destruction, component management (CRUD), system registration, and the sequential execution of systems.
  *
- * Performance note: Component queries are currently performed by filtering all entities,
- * which is $O(N)$ where $N$ is the number of entities.
+ * **Why it exists**: To provide a decoupled and highly modular structure for game logic, where data (Components) is separated from behavior (Systems), and Entities serve as simple glue between them.
+ *
+ * **Contract**:
+ * - Entities are always unique numerical IDs.
+ * - Components are grouped by type for efficient lookup.
+ * - Systems must implement the {@link System} abstract class.
+ * - `update()` executes systems in the exact order they were added.
+ *
+ * **Edge Cases**:
+ * - Removing an entity automatically cleans up all associated components across all internal maps.
+ * - Adding a component of a type that the entity already possesses will overwrite the existing one.
+ * - Queries for multiple component types return the intersection of entities possessing all requested types.
+ *
+ * **Performance/Security Implications**:
+ * - **Query Performance**: Component queries are currently $O(N \times C)$ where $N$ is the total number of entities and $C$ is the number of component types in the query. For very large entity counts, a reactive query system or spatial partitioning would be recommended.
+ * - **Memory**: Components are stored in nested Maps, providing $O(1)$ access once the entity and type are known.
+ * - **Encapsulation**: The world does not enforce component invariants; systems are responsible for maintaining data integrity.
  *
  * @example
  * ```typescript
