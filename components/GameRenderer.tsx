@@ -120,12 +120,13 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
         return (
           <Circle
             key={key}
-            cx={pos.x}
-            cy={pos.y}
+            cx="0"
+            cy="0"
             r={render.size}
             fill="#999"
             stroke={render.color}
             strokeWidth="2"
+            transform={transform}
           />
         );
 
