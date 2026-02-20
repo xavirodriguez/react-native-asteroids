@@ -30,7 +30,12 @@ export function createShip(world: World, x: number, y: number): Entity {
     rotation: 0,
   })
   world.addComponent(ship, { type: "Collider", radius: 8 })
-  world.addComponent(ship, { type: "Health", current: 3, max: 3 })
+  world.addComponent(ship, {
+    type: "Health",
+    current: 3,
+    max: 3,
+    invulnerableRemaining: 0,
+  })
   world.addComponent(ship, {
     type: "Input",
     thrust: false,

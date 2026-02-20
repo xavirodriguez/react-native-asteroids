@@ -1,10 +1,11 @@
 import { System, type World } from "../ecs-world"
-import type {
-  PositionComponent,
-  ColliderComponent,
-  AsteroidComponent,
-  HealthComponent,
-  GameStateComponent,
+import {
+  type PositionComponent,
+  type ColliderComponent,
+  type AsteroidComponent,
+  type HealthComponent,
+  type GameStateComponent,
+  GAME_CONFIG,
 } from "../../types/GameTypes"
 
 import { createAsteroid } from "../EntityFactory"
@@ -110,9 +111,15 @@ export class CollisionSystem extends System {
 
     // Ship hits asteroid
     if (healthA && asteroidB) {
-      healthA.current--
+      if (!healthA.invulnerableRemaining || healthA.invulnerableRemaining <= 0) {
+        healthA.current--
+        healthA.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION
+      }
     } else if (healthB && asteroidA) {
-      healthB.current--
+      if (!healthB.invulnerableRemaining || healthB.invulnerableRemaining <= 0) {
+        healthB.current--
+        healthB.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION
+      }
     }
   
   }
