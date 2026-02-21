@@ -36,8 +36,7 @@ export class GameStateSystem extends System {
    * @param world - The ECS world.
    * @param _deltaTime - Time since last frame in milliseconds.
    */
-  update(world: World, _deltaTime: number): void {
-    void _deltaTime;
+  update(world: World, deltaTime: number): void {
     const gameStates = world.query("GameState")
 
     if (gameStates.length === 0) return
@@ -55,8 +54,22 @@ export class GameStateSystem extends System {
       gameState.level++
     }
 
-    // Check game over
+    // Update invulnerability and synchronize lives
     const ships = world.query("Health", "Input")
+    if (ships.length > 0) {
+      const shipEntity = ships[0]
+      const health = world.getComponent<HealthComponent>(shipEntity, "Health")!
+
+      // Decrement invulnerability timer
+      if (health.invulnerableRemaining > 0) {
+        health.invulnerableRemaining -= deltaTime
+      }
+
+      // Synchronize lives with ship health
+      gameState.lives = health.current
+    }
+
+    // Check game over
     const shipHealths = ships.map((ship) => world.getComponent<HealthComponent>(ship, "Health")!.current)
 
     const isDead = shipHealths.length > 0 && shipHealths.every((health) => health <= 0);
