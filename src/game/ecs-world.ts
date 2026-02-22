@@ -56,6 +56,11 @@ export class World {
   private components = new Map<ComponentType, Map<Entity, Component>>()
   private systems: System[] = []
   private nextEntityId = 1
+  /**
+   * Current version of the world structure.
+   * Incremented whenever an entity or component is added or removed.
+   */
+  public version = 0
 
   /**
    * Creates a new unique entity in the world.
@@ -70,6 +75,7 @@ export class World {
   createEntity(): Entity {
     const id = this.nextEntityId++
     this.entities.add(id)
+    this.version++
     return id
   }
 
@@ -92,6 +98,7 @@ export class World {
       this.components.set(type, new Map())
     }
     this.components.get(type)!.set(entity, component)
+    this.version++
   }
 
   /**
@@ -126,7 +133,9 @@ export class World {
    * ```
    */
   removeComponent(entity: Entity, type: ComponentType): void {
-    this.components.get(type)?.delete(entity)
+    if (this.components.get(type)?.delete(entity)) {
+      this.version++
+    }
   }
 
   /**
@@ -163,7 +172,9 @@ export class World {
     this.components.forEach((componentMap) => {
       componentMap.delete(entity)
     })
-    this.entities.delete(entity)
+    if (this.entities.delete(entity)) {
+      this.version++
+    }
   }
 
   /**

@@ -36,10 +36,10 @@ El sistema define 9 tipos de componentes en `src/types/GameTypes.ts` (líneas 7-
 | `RenderComponent`    | Representación visual   | `shape, size, color, rotation`            |
 | `ColliderComponent`  | Detección de colisiones | `radius: number`                          |
 | `InputComponent`     | Entrada del jugador     | `thrust, rotateLeft, rotateRight, shoot`  |
-| `HealthComponent`    | Sistema de vida         | `current, max: number`                    |
+| `HealthComponent`    | Sistema de vida         | `current, max, invulnerableRemaining`      |
 | `TTLComponent`       | Tiempo de vida          | `remaining: number`                       |
-| `AsteroidComponent`  | Metadatos de asteroide  | `size: "large"                            | "medium" | "small"` |
-| `GameStateComponent` | Estado global           | `lives, score, level, asteroidsRemaining` |
+| `AsteroidComponent`  | Metadatos de asteroide  | `size: "large" | "medium" | "small"`      |
+| `GameStateComponent` | Estado global           | `lives, score, level, isGameOver`         |
 
 ### Sistemas de Procesamiento
 
@@ -73,12 +73,13 @@ El juego ejecuta 5 sistemas principales en `AsteroidsGame.setupSystems()` (líne
 
 ### Configuración del Juego
 
-Las constantes están centralizadas en `GAME_CONFIG` (`src/types/GameTypes.ts` líneas 84-91):
+Las constantes están centralizadas en `GAME_CONFIG` (`src/types/GameTypes.ts` líneas 125-142):
 
 ```typescript
 SCREEN_WIDTH: 800, SCREEN_HEIGHT: 600
 SHIP_THRUST: 200, SHIP_ROTATION_SPEED: 3
 BULLET_SPEED: 300, BULLET_TTL: 2000
+INVULNERABILITY_DURATION: 2000
 ```
 
 ### Factory Pattern para Entidades
@@ -91,19 +92,25 @@ BULLET_SPEED: 300, BULLET_TTL: 2000
 
 ### Gestión de Estado React-Game
 
-En `App.tsx`, la sincronización ocurre mediante:
+En `app/index.tsx`, la sincronización ocurre mediante un modelo de suscripción:
 
 ```typescript
-// Línea 17: Referencia mutable al juego
-const gameRef = useRef<AsteroidsGame | null>(null);
+// Suscripción a las actualizaciones del juego en lugar de polling
+useEffect(() => {
+  const newGame = new AsteroidsGame();
+  setGame(newGame);
+  newGame.start();
 
-// Líneas 25-30: Timer de 16ms (~60 FPS) para UI
-const uiUpdateInterval = setInterval(() => {
-  if (gameRef.current) {
-    setGameState(gameRef.current.getGameState());
-    forceUpdate({}); // Fuerza re-render
-  }
-}, 16);
+  const unsubscribe = newGame.subscribe((updatedGame) => {
+    setGameState(updatedGame.getGameState());
+    forceUpdate({}); // Fuerza re-render para entidades del juego
+  });
+
+  return () => {
+    unsubscribe();
+    newGame.stop();
+  };
+}, []);
 ```
 
-El `forceUpdate({})` (línea 29) es necesario porque las entidades del juego cambian por referencia sin activar re-renders de React.
+El `forceUpdate({})` es necesario porque las entidades del juego mutan por referencia y no activan automáticamente el ciclo de renderizado de React.
