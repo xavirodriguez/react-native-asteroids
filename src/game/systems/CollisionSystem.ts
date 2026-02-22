@@ -12,159 +12,128 @@ import { createAsteroid } from "../EntityFactory"
 
 /**
  * System responsible for detecting and resolving collisions between entities.
- *
- * @remarks
- * This system performs a pairwise check between all entities with {@link PositionComponent}
- * and {@link ColliderComponent}. It handles specific interactions:
- * - **Bullet vs Asteroid**: Splits the asteroid and increases the score.
- * - **Ship vs Asteroid**: Decreases ship health.
- *
- * Performance note: This system currently has $O(N^2)$ complexity where $N$ is the number of colliders.
  */
 export class CollisionSystem extends System {
   /**
    * Updates the collision state for all relevant entities.
-   *
-   * @param world - The ECS world.
-   * @param _deltaTime - Time since last frame (not used for collision detection but part of the System interface).
    */
-  update(world: World, _deltaTime: number): void {
-    void _deltaTime;
-    const colliders = world.query("Position", "Collider")
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public update(world: World, deltaTime: number): void {
+    const colliders = world.query("Position", "Collider");
 
-    // Check all pairs ($O(N^2)$ complexity)
     for (let i = 0; i < colliders.length; i++) {
       for (let j = i + 1; j < colliders.length; j++) {
-        const entityA = colliders[i]
-        const entityB = colliders[j]
+        const entityA = colliders[i];
+        const entityB = colliders[j];
 
-        if (this.checkCollision(world, entityA, entityB)) {
-          this.handleCollision(world, entityA, entityB)
+        if (this.isColliding(world, entityA, entityB)) {
+          this.resolveCollision(world, entityA, entityB);
         }
       }
     }
   }
 
-  /**
-   * Checks if two entities are colliding based on their circular colliders.
-   *
-   * @param world - The ECS world.
-   * @param entityA - First entity ID.
-   * @param entityB - Second entity ID.
-   * @returns `true` if colliding, `false` otherwise.
-   *
-   * @remarks
-   * Uses simple circle-circle collision detection based on the distance between centers.
-   */
-  private checkCollision(world: World, entityA: number, entityB: number): boolean {
-    const posA = world.getComponent<PositionComponent>(entityA, "Position")
-    const posB = world.getComponent<PositionComponent>(entityB, "Position")
-    const colliderA = world.getComponent<ColliderComponent>(entityA, "Collider")
-    const colliderB = world.getComponent<ColliderComponent>(entityB, "Collider")
+  private isColliding(world: World, entityA: number, entityB: number): boolean {
+    const posA = world.getComponent<PositionComponent>(entityA, "Position");
+    const posB = world.getComponent<PositionComponent>(entityB, "Position");
+    const colA = world.getComponent<ColliderComponent>(entityA, "Collider");
+    const colB = world.getComponent<ColliderComponent>(entityB, "Collider");
 
-    if (!posA || !posB || !colliderA || !colliderB) {
-      return false
-    }
+    if (!posA || !posB || !colA || !colB) return false;
 
-    const dx = posA.x - posB.x
-    const dy = posA.y - posB.y
-    const distance = Math.sqrt(dx * dx + dy * dy)
+    const dx = posA.x - posB.x;
+    const dy = posA.y - posB.y;
+    const distanceSq = dx * dx + dy * dy;
+    const combinedRadius = colA.radius + colB.radius;
 
-    return distance < colliderA.radius + colliderB.radius
+    return distanceSq < combinedRadius * combinedRadius;
   }
 
-  /**
-   * Resolves the collision between two entities based on their types.
-   *
-   * @param world - The ECS world.
-   * @param entityA - First entity ID.
-   * @param entityB - Second entity ID.
-   *
-   * @remarks
-   * Handles Bullet vs Asteroid and Ship vs Asteroid collisions.
-   */
-  private handleCollision(world: World, entityA: number, entityB: number): void {
-    const asteroidA = world.getComponent(entityA, "Asteroid")
-    const asteroidB = world.getComponent(entityB, "Asteroid")
-    const healthA = world.getComponent<HealthComponent>(entityA, "Health")
-    const healthB = world.getComponent<HealthComponent>(entityB, "Health")
-    const ttlA = world.getComponent(entityA, "TTL")
-    const ttlB = world.getComponent(entityB, "TTL")
-
-    const posA = world.getComponent<PositionComponent>(entityA, "Position")
-    const posB = world.getComponent<PositionComponent>(entityB, "Position")
+  private resolveCollision(world: World, entityA: number, entityB: number): void {
+    if (this.checkBulletAsteroid(world, entityA, entityB)) return;
+    if (this.checkBulletAsteroid(world, entityB, entityA)) return;
     
-    if (!posA || !posB) {
-      return
-    }
-
-    // Bullet hits asteroid
-    if (asteroidA && ttlB) {
-      this.splitAsteroid(world, entityA)
-      world.removeEntity(entityB)
-      this.addScore(world, 10)
-    } else if (asteroidB && ttlA) {
-      this.splitAsteroid(world, entityB)
-      world.removeEntity(entityA)
-      this.addScore(world, 10)
-    }
-
-    // Ship hits asteroid
-    if (healthA && asteroidB) {
-      if (healthA.invulnerableRemaining <= 0) {
-        healthA.current--
-        healthA.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION
-      }
-    } else if (healthB && asteroidA) {
-      if (healthB.invulnerableRemaining <= 0) {
-        healthB.current--
-        healthB.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION
-      }
-    }
-  
+    if (this.checkShipAsteroid(world, entityA, entityB)) return;
+    if (this.checkShipAsteroid(world, entityB, entityA)) return;
   }
 
-  /**
-   * Splits an asteroid into two smaller ones or removes it if it's already small.
-   *
-   * @param world - The ECS world.
-   * @param asteroidEntity - The asteroid entity to split.
-   *
-   * @remarks
-   * Large asteroids split into two medium ones, medium into two small ones, and small ones are destroyed.
-   */
+  private checkBulletAsteroid(world: World, entityA: number, entityB: number): boolean {
+    const asteroid = world.getComponent<AsteroidComponent>(entityA, "Asteroid");
+    const isBullet = world.getComponent(entityB, "TTL") !== undefined;
+
+    if (asteroid && isBullet) {
+      this.handleBulletAsteroidCollision(world, entityA, entityB);
+      return true;
+    }
+    return false;
+  }
+
+  private checkShipAsteroid(world: World, entityA: number, entityB: number): boolean {
+    const health = world.getComponent<HealthComponent>(entityA, "Health");
+    const isAsteroid = world.getComponent(entityB, "Asteroid") !== undefined;
+
+    if (health && isAsteroid) {
+      this.handleShipAsteroidCollision(health);
+      return true;
+    }
+    return false;
+  }
+
+  private handleBulletAsteroidCollision(world: World, asteroidEntity: number, bulletEntity: number): void {
+    this.splitAsteroid(world, asteroidEntity);
+    world.removeEntity(bulletEntity);
+    this.addScore(world, GAME_CONFIG.ASTEROID_SCORE);
+  }
+
+  private handleShipAsteroidCollision(health: HealthComponent): void {
+    const invulnerableTime = health.invulnerableRemaining;
+    if (invulnerableTime <= 0) {
+      health.current--;
+      health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+    }
+  }
+
   private splitAsteroid(world: World, asteroidEntity: number): void {
-    const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid")
-    const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position")
+    const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
+    const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position");
 
-    if (!asteroid || !pos) {
-      return
+    if (!asteroid || !pos) return;
+
+    // Split strategy mapping to avoid multiple if/else blocks
+    const splitStrategies: Record<string, () => void> = {
+      large: () => this.spawnSplitAsteroids(world, pos, "medium", GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE),
+      medium: () => this.spawnSplitAsteroids(world, pos, "small", GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM),
+      small: () => { /* Small asteroids just disappear */ }
+    };
+
+    const strategy = splitStrategies[asteroid.size];
+    if (strategy) {
+      strategy();
     }
 
-    if (asteroid.size === "large") {
-      createAsteroid(world, pos.x + 10, pos.y + 10, "medium")
-      createAsteroid(world, pos.x - 10, pos.y - 10, "medium")
-    } else if (asteroid.size === "medium") {
-      createAsteroid(world, pos.x + 5, pos.y + 5, "small")
-      createAsteroid(world, pos.x - 5, pos.y - 5, "small")
-    }
-
-    world.removeEntity(asteroidEntity)
+    world.removeEntity(asteroidEntity);
   }
 
-  /**
-   * Adds points to the global game score.
-   *
-   * @param world - The ECS world.
-   * @param points - Number of points to add.
-   */
+  private spawnSplitAsteroids(
+    world: World,
+    pos: PositionComponent,
+    newSize: "medium" | "small",
+    offset: number
+  ): void {
+    const posX = pos.x;
+    const posY = pos.y;
+
+    createAsteroid(world, posX + offset, posY + offset, newSize);
+    createAsteroid(world, posX - offset, posY - offset, newSize);
+  }
+
   private addScore(world: World, points: number): void {
-    const gameStates = world.query("GameState")
-    if (gameStates.length > 0) {
-      const gameState = world.getComponent<GameStateComponent>(gameStates[0], "GameState")
-      if (gameState) {
-        gameState.score += points
-      }
+    const gameStates = world.query("GameState");
+    if (gameStates.length === 0) return;
+
+    const gameState = world.getComponent<GameStateComponent>(gameStates[0], "GameState");
+    if (gameState) {
+      gameState.score += points;
     }
   }
 }

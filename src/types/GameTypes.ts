@@ -165,14 +165,39 @@ export const GAME_CONFIG = {
   SCREEN_WIDTH: 800,
   /** Height of the game arena in pixels */
   SCREEN_HEIGHT: 600,
+  /** Center X position of the screen */
+  SCREEN_CENTER_X: 400,
+  /** Center Y position of the screen */
+  SCREEN_CENTER_Y: 300,
+
   /** Acceleration force applied to the ship (pixels/sec²) */
   SHIP_THRUST: 200,
   /** Speed of rotation in radians per second */
   SHIP_ROTATION_SPEED: 3,
+  /** Initial number of lives for the player */
+  SHIP_INITIAL_LIVES: 3,
+
   /** Velocity of bullets in pixels per second */
   BULLET_SPEED: 300,
   /** Lifespan of bullets in milliseconds */
   BULLET_TTL: 2000,
+
   /** Duration of invulnerability after being hit, in milliseconds */
   INVULNERABILITY_DURATION: 2000,
+
+  /** Initial number of asteroids in the first wave */
+  INITIAL_ASTEROID_COUNT: 4,
+  /** Maximum number of asteroids allowed in a single wave */
+  MAX_WAVE_ASTEROIDS: 12,
+  /** Distance from the center where new asteroid waves spawn */
+  WAVE_SPAWN_DISTANCE: 200,
+  /** Radius for spawning initial asteroids around the center */
+  INITIAL_ASTEROID_SPAWN_RADIUS: 150,
+
+  /** Position offset when a large asteroid splits into medium ones */
+  ASTEROID_SPLIT_OFFSET_LARGE: 10,
+  /** Position offset when a medium asteroid splits into small ones */
+  ASTEROID_SPLIT_OFFSET_MEDIUM: 5,
+  /** Points awarded for destroying an asteroid */
+  ASTEROID_SCORE: 10,
 }

@@ -37,23 +37,13 @@ export abstract class System {
  * - **Components**: Pure data structures attached to entities, grouped by type.
  * - **Systems**: Logic that operates on entities that have a specific combination of components.
  *
- * Performance note: Component queries are currently performed by filtering all entities,
- * which is $O(N)$ where $N$ is the number of entities.
- *
- * @example
- * ```typescript
- * const world = new World();
- * const entity = world.createEntity();
- * world.addComponent(entity, { type: "Position", x: 0, y: 0 });
- * world.addSystem(new MovementSystem());
- *
- * // In the game loop
- * world.update(16.67);
- * ```
+ * Performance note: Component queries are optimized via an internal index,
+ * making them $O(M)$ where $M$ is the number of entities with the rarest component in the query.
  */
 export class World {
   private entities = new Set<Entity>()
   private components = new Map<ComponentType, Map<Entity, Component>>()
+  private componentIndex = new Map<ComponentType, Set<Entity>>()
   private systems: System[] = []
   private nextEntityId = 1
   /**
@@ -66,11 +56,6 @@ export class World {
    * Creates a new unique entity in the world.
    *
    * @returns The newly created {@link Entity} ID.
-   *
-   * @example
-   * ```typescript
-   * const entityId = world.createEntity();
-   * ```
    */
   createEntity(): Entity {
     const id = this.nextEntityId++
@@ -85,19 +70,18 @@ export class World {
    *
    * @param entity - The entity to attach the component to.
    * @param component - The component instance to attach.
-   * @typeParam T - The specific component type, must extend {@link Component}.
-   *
-   * @example
-   * ```typescript
-   * world.addComponent(player, { type: "Position", x: 10, y: 20 });
-   * ```
    */
   addComponent<T extends Component>(entity: Entity, component: T): void {
     const type = component.type
+
+    // Ensure storage for this component type exists
     if (!this.components.has(type)) {
       this.components.set(type, new Map())
+      this.componentIndex.set(type, new Set())
     }
+
     this.components.get(type)!.set(entity, component)
+    this.componentIndex.get(type)!.add(entity)
     this.version++
   }
 
@@ -107,15 +91,6 @@ export class World {
    * @param entity - The entity to get the component from.
    * @param type - The type of the component to retrieve.
    * @returns The component instance if found, otherwise `undefined`.
-   * @typeParam T - The expected component type.
-   *
-   * @example
-   * ```typescript
-   * const pos = world.getComponent<PositionComponent>(entity, "Position");
-   * if (pos) {
-   *   console.log(pos.x, pos.y);
-   * }
-   * ```
    */
   getComponent<T extends Component>(entity: Entity, type: ComponentType): T | undefined {
     return this.components.get(type)?.get(entity) as T
@@ -126,14 +101,11 @@ export class World {
    *
    * @param entity - The entity to remove the component from.
    * @param type - The type of the component to remove.
-   *
-   * @example
-   * ```typescript
-   * world.removeComponent(entity, "Position");
-   * ```
    */
   removeComponent(entity: Entity, type: ComponentType): void {
-    if (this.components.get(type)?.delete(entity)) {
+    const componentMap = this.components.get(type)
+    if (componentMap && componentMap.delete(entity)) {
+      this.componentIndex.get(type)!.delete(entity)
       this.version++
     }
   }
@@ -145,16 +117,25 @@ export class World {
    * @returns An array of {@link Entity} IDs that have all the required components.
    *
    * @remarks
-   * This method is the primary way for systems to find entities they need to process.
-   *
-   * @example
-   * ```typescript
-   * const movingEntities = world.query("Position", "Velocity");
-   * ```
+   * This method uses an internal index to quickly find candidates.
    */
   query(...componentTypes: ComponentType[]): Entity[] {
-    return Array.from(this.entities).filter((entity) =>
-      componentTypes.every((type) => this.components.get(type)?.has(entity)),
+    if (componentTypes.length === 0) return []
+
+    // Find the smallest set of entities for the given types to minimize checks
+    const sortedTypes = [...componentTypes].sort((a, b) => {
+      const countA = this.componentIndex.get(a)?.size ?? 0
+      const countB = this.componentIndex.get(b)?.size ?? 0
+      return countA - countB
+    })
+
+    const rarestType = sortedTypes[0]
+    const candidates = this.componentIndex.get(rarestType)
+
+    if (!candidates || candidates.size === 0) return []
+
+    return Array.from(candidates).filter((entity) =>
+      sortedTypes.slice(1).every((type) => this.componentIndex.get(type)?.has(entity)),
     )
   }
 
@@ -162,30 +143,34 @@ export class World {
    * Removes an entity and all of its attached components from the world.
    *
    * @param entity - The entity to remove.
-   *
-   * @example
-   * ```typescript
-   * world.removeEntity(bullet);
-   * ```
    */
   removeEntity(entity: Entity): void {
-    this.components.forEach((componentMap) => {
-      componentMap.delete(entity)
+    this.components.forEach((componentMap, type) => {
+      if (componentMap.delete(entity)) {
+        this.componentIndex.get(type)!.delete(entity)
+      }
     })
+
     if (this.entities.delete(entity)) {
       this.version++
     }
   }
 
   /**
+   * Resets the entire world, removing all entities and components.
+   * Systems remain registered.
+   */
+  clear(): void {
+    this.entities.clear()
+    this.components.clear()
+    this.componentIndex.clear()
+    this.version++
+  }
+
+  /**
    * Registers a system to be updated by the world.
    *
    * @param system - The {@link System} instance to add.
-   *
-   * @example
-   * ```typescript
-   * world.addSystem(new MovementSystem());
-   * ```
    */
   addSystem(system: System): void {
     this.systems.push(system)
@@ -195,11 +180,6 @@ export class World {
    * Updates all registered systems in the order they were added.
    *
    * @param deltaTime - Time elapsed since the last update in milliseconds.
-   *
-   * @example
-   * ```typescript
-   * world.update(16.67);
-   * ```
    */
   update(deltaTime: number): void {
     this.systems.forEach((system) => system.update(this, deltaTime))
