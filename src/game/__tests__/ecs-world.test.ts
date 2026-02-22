@@ -1,5 +1,4 @@
 import { World, System } from "../ecs-world";
-import { Component, ComponentType, Entity } from "../../types/GameTypes";
 
 describe("ECS World", () => {
   let world: World;

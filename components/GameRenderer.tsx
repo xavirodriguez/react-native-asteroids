@@ -1,4 +1,4 @@
-import type React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import Svg, { Polygon, Circle, Line, Rect, G } from "react-native-svg";
 import type { World } from "../src/game/ecs-world";
@@ -34,19 +34,48 @@ interface GameRendererProps {
  * ```
  */
 export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
-  const renderables = world.query("Position", "Render");
-
   /**
-   * Renders a single entity based on its RenderComponent.
-   *
-   * @param entity - The entity ID to render.
-   * @returns An SVG element or `null` if the shape is unknown.
+   * Memoize the list of renderable entities based on the world's structural version.
+   * This avoids re-querying the world unless entities or components are added/removed.
    */
-  const renderEntity = (entity: number) => {
-    const pos = world.getComponent<PositionComponent>(entity, "Position")!;
-    const render = world.getComponent<RenderComponent>(entity, "Render")!;
+  const renderables = useMemo(
+    () => world.query("Position", "Render"),
+    [world.version]
+  );
 
-    const key = `entity-${entity}`;
+  return (
+    <View style={styles.container}>
+      <Svg
+        width={GAME_CONFIG.SCREEN_WIDTH}
+        height={GAME_CONFIG.SCREEN_HEIGHT}
+        viewBox={`0 0 ${GAME_CONFIG.SCREEN_WIDTH} ${GAME_CONFIG.SCREEN_HEIGHT}`}
+        style={styles.svg}
+      >
+        {renderables.map((entity) => (
+          <EntityRenderer key={entity} entity={entity} world={world} />
+        ))}
+      </Svg>
+    </View>
+  );
+};
+
+/**
+ * Properties for the {@link EntityRenderer} component.
+ */
+interface EntityRendererProps {
+  entity: number;
+  world: World;
+}
+
+/**
+ * Component for rendering a single entity.
+ */
+const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world }) => {
+    const pos = world.getComponent<PositionComponent>(entity, "Position");
+    const render = world.getComponent<RenderComponent>(entity, "Render");
+
+    if (!pos || !render) return null;
+
     // Calculate rotation in degrees for react-native-svg
     const rotationDegrees = (render.rotation * 180) / Math.PI;
     const transform = `translate(${pos.x}, ${pos.y}) rotate(${rotationDegrees})`;
@@ -62,7 +91,7 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
         );
         const hasThrust = inputComponent?.thrust || false;
         return (
-          <G key={key} transform={transform}>
+          <G transform={transform}>
             {hasThrust && (
               <Polygon
                 points={`${-render.size / 2},${render.size / 3} ${
@@ -92,34 +121,35 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
               strokeWidth="1"
             />
             {/* Side thrusters */}
-            <Rect
-              x={-render.size / 2}
-              y={-render.size / 4}
-              width={render.size / 8}
-              height={render.size / 2}
-              fill="#666666"
-            />
-            <Rect
-              x={-render.size / 2}
-              y={render.size / 6}
-              width={render.size / 6}
-              height={render.size / 8}
-              fill="#FF0000"
-            />
-            <Rect
-              x={-render.size / 2}
-              y={-render.size / 6 - render.size / 8}
-              width={render.size / 6}
-              height={render.size / 8}
-              fill="#FF0000"
-            />
+            <G opacity={0.8}>
+              <Rect
+                x={-render.size / 2}
+                y={-render.size / 4}
+                width={render.size / 8}
+                height={render.size / 2}
+                fill="#666666"
+              />
+              <Rect
+                x={-render.size / 2}
+                y={render.size / 6}
+                width={render.size / 6}
+                height={render.size / 8}
+                fill="#FF0000"
+              />
+              <Rect
+                x={-render.size / 2}
+                y={-render.size / 6 - render.size / 8}
+                width={render.size / 6}
+                height={render.size / 8}
+                fill="#FF0000"
+              />
+            </G>
           </G>
         );
       }
       case "circle":
         return (
           <Circle
-            key={key}
             cx={pos.x}
             cy={pos.y}
             r={render.size}
@@ -132,7 +162,6 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
       case "line":
         return (
           <Line
-            key={key}
             x1={-render.size / 2}
             y1={0}
             x2={render.size / 2}
@@ -146,21 +175,8 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
       default:
         return null;
     }
-  };
-
-  return (
-    <View style={styles.container}>
-      <Svg
-        width={GAME_CONFIG.SCREEN_WIDTH}
-        height={GAME_CONFIG.SCREEN_HEIGHT}
-        viewBox={`0 0 ${GAME_CONFIG.SCREEN_WIDTH} ${GAME_CONFIG.SCREEN_HEIGHT}`}
-        style={styles.svg}
-      >
-        {renderables.map(renderEntity)}
-      </Svg>
-    </View>
-  );
 };
+EntityRenderer.displayName = "EntityRenderer";
 
 const styles = StyleSheet.create({
   container: {

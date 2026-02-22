@@ -90,18 +90,23 @@ if (asteroidA && ttlB) {
 #### 2. Colisión Nave-Asteroide
 
 ```typescript
-// Líneas 49-54: Nave (Health) vs Asteroide
+// Líneas 94-105: Nave (Health) vs Asteroide con Invulnerabilidad
 if (healthA && asteroidB) {
-  healthA.current--; // -1 vida
-  world.removeEntity(entityB); // Asteroide desaparece
+  if (healthA.invulnerableRemaining <= 0) {
+    healthA.current--; // -1 vida
+    healthA.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+  }
+  // El asteroide NO desaparece en la colisión con la nave
 } else if (healthB && asteroidA) {
-  healthB.current--;
-  world.removeEntity(entityA);
+  if (healthB.invulnerableRemaining <= 0) {
+    healthB.current--;
+    healthB.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+  }
 }
 ```
 
-**Identificación**: Entidades con componente `Health` son naves
-**Consecuencias**: Nave pierde vida, asteroide desaparece
+**Identificación**: Entidades con componente `Health` son naves.
+**Consecuencias**: Nave pierde vida (si no es invulnerable) y gana un periodo de gracia. El asteroide permanece en pantalla.
 
 ### Sistema de Fragmentación de Asteroides
 
@@ -168,13 +173,12 @@ world.addComponent(bullet, { type: "Collider", radius: 2 });
 
 ### Limitaciones del Sistema Actual
 
-1. **Algoritmo O(n²)**: No escala con muchas entidades
-2. **Sin spatial partitioning**: No usa quadtrees o grids
-3. **Colisiones simples**: Solo círculos, no formas complejas
-4. **Sin continuous collision detection**: Objetos rápidos pueden atravesarse
-5. **Hardcoded offsets**: Los offsets de fragmentación (+10, +5) son fijos
-6. **Sin invulnerabilidad**: La nave puede perder múltiples vidas instantáneamente
-7. **Sin diferenciación de puntos**: Todos los asteroides valen lo mismo
+1. **Algoritmo O(n²)**: No escala con muchas entidades.
+2. **Sin spatial partitioning**: No usa quadtrees o grids.
+3. **Colisiones simples**: Solo círculos, no formas complejas.
+4. **Sin continuous collision detection**: Objetos rápidos pueden atravesarse.
+5. **Hardcoded offsets**: Los offsets de fragmentación (+10, +5) son fijos.
+6. **Diferenciación de puntos limitada**: Todos los asteroides valen lo mismo independientemente del tamaño.
 
 ### Interacción con Otros Sistemas
 

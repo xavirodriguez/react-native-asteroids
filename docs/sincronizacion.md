@@ -8,72 +8,46 @@ La sincronización entre **React** (modelo declarativo) y **ECS** (modelo impera
 - **ECS**: Modifica entidades y componentes por referencia directa
 - **Challenge**: El World ECS cambia sin notificar a React
 
-## Arquitectura de Sincronización en App.tsx
+## Arquitectura de Sincronización en app/index.tsx
 
-### Inicialización del Game Engine
+### Inicialización del Game Engine y Suscripción
+
+Anteriormente se utilizaba un sistema de polling basado en `setInterval`, pero ha sido reemplazado por un modelo de suscripción más eficiente y sincronizado con el game loop nativo.
 
 ```typescript
-// Línea 17: Referencia mutable al juego
-const gameRef = useRef<AsteroidsGame | null>(null);
-
-// Líneas 19-24: Inicialización en useEffect
 useEffect(() => {
-  const game = new AsteroidsGame(); // Instancia ECS independiente
-  gameRef.current = game;
-  game.start(); // Inicia game loop nativo (requestAnimationFrame)
+  const newGame = new AsteroidsGame();
+  setGame(newGame);
+  newGame.start();
+
+  // Suscripción a las actualizaciones del juego
+  const unsubscribe = newGame.subscribe((updatedGame) => {
+    setGameState(updatedGame.getGameState());
+    forceUpdate({}); // Trigger re-render para entidades del juego
+  });
 
   return () => {
-    game.stop(); // Cleanup: detiene RAF loop
-    gameRef.current = null;
+    unsubscribe();
+    newGame.stop();
   };
-}, []); // Dependency array vacía = mount/unmount únicamente
+}, []);
 ```
 
-**Patrón utilizado**: `useRef` para mantener referencia **estable** al game engine sin causar re-renders.
+**Beneficios**:
+- **Sincronización perfecta**: La UI se actualiza inmediatamente después de que el motor de juego completa un frame.
+- **Sin timers duplicados**: Se elimina el overhead de `setInterval`.
 
-### Sistema de Polling Temporal
-
-#### Timer de Sincronización UI
+### Mecanismo de Force Update
 
 ```typescript
-// Líneas 25-30: Interval de sincronización a 60Hz
-const uiUpdateInterval = setInterval(() => {
-  if (gameRef.current) {
-    setGameState(gameRef.current.getGameState()); // Pull state del ECS
-    forceUpdate({}); // Forzar re-render de componentes
-  }
-}, 16); // 16ms ≈ 60 FPS
+// Hack para forzar re-renderizado
+forceUpdate({});
 ```
 
-**Análisis del intervalo 16ms**:
-
-- **Frecuencia**: 62.5 Hz (1000ms / 16ms)
-- **Sincronización**: Intenta igualar la frecuencia del game loop nativo
-- **Overhead**: Timer independiente del game loop principal
-
-#### Mecanismo de Force Update
-
-```typescript
-// Línea 29: Hack para forzar re-renderizado
-forceUpdate({}); // Cambia referencia del objeto para triggerar render
-```
-
-**Análisis técnico**:
-
-```typescript
-// Interno de React (conceptual)
-const [, setTrigger] = useState({});
-const forceUpdate = () => setTrigger({}); // Nueva referencia = re-render
-
-// Cada llamada:
-setTrigger({}); // {} !== {} siempre, React detecta cambio
-```
-
-**Por qué es necesario**:
-
-- El World ECS modifica componentes **in-place**
-- React no detecta mutaciones profundas
-- GameRenderer necesita re-ejecutar `world.query()` para ver cambios
+**Por qué sigue siendo necesario**:
+- El World ECS modifica componentes **in-place** (mutación por referencia).
+- React no detecta mutaciones internas en los objetos del World.
+- `GameRenderer` necesita re-ejecutar el renderizado para reflejar los nuevos estados de los componentes.
 
 ### Flujo de Datos Bidireccional
 
@@ -154,36 +128,20 @@ App re-render
 
 ### Problemas Identificados
 
-#### 1. Double Rendering Loop
+#### 1. Double Rendering Loop (RESUELTO)
+
+Se ha unificado la sincronización utilizando el método `subscribe` en `AsteroidsGame`, el cual es notificado al final de cada ciclo de `gameLoop`.
+
+#### 2. Unnecessary Re-renders (OPTIMIZADO)
+
+Se ha implementado memoización en `GameRenderer` para reducir el impacto de los re-renderizados constantes.
 
 ```typescript
-// Game Loop Nativo (requestAnimationFrame)
-gameLoop() {
-  world.update(deltaTime)       // 60 FPS - modifica World
-  requestAnimationFrame(gameLoop)
-}
-
-// React Sync Loop (setInterval)
-setInterval(() => {
-  forceUpdate({})               // 60 FPS - re-renderiza React
-}, 16)
-```
-
-**Problema**: Dos loops independientes pueden **desincronizarse**
-
-- Game loop: Variable timing basado en monitor refresh
-- React timer: Fixed 16ms timing
-
-#### 2. Unnecessary Re-renders
-
-```typescript
-// GameRenderer ejecuta en cada forceUpdate
-const renderables = world.query("Position", "Render")  // No memoized!
-
-// Aunque solo una entidad cambió posición, todas se re-procesan
-renderables.map(entity => (
-  <SomeComponent key={entity} ... />  // Full SVG regeneration
-))
+// En GameRenderer.tsx
+const renderables = useMemo(
+  () => world.query("Position", "Render"),
+  [world.version] // Solo re-calcula si cambia la estructura del mundo
+);
 ```
 
 #### 3. Memory Pressure
