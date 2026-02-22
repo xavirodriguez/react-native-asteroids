@@ -55,9 +55,23 @@ export class GameStateSystem extends System {
       gameState.level++
     }
 
-    // Check game over
+    // Check game over and update lives
     const ships = world.query("Health", "Input")
-    const shipHealths = ships.map((ship) => world.getComponent<HealthComponent>(ship, "Health")!.current)
+    const shipHealths = ships.map((ship) => {
+      const health = world.getComponent<HealthComponent>(ship, "Health")!
+
+      // Decrement invulnerability timer
+      if (health.invulnerableRemaining && health.invulnerableRemaining > 0) {
+        health.invulnerableRemaining -= deltaTime
+      }
+
+      return health.current
+    })
+
+    // Update lives in game state based on player ship health
+    if (shipHealths.length > 0) {
+      gameState.lives = Math.max(0, shipHealths[0])
+    }
 
     const isDead = shipHealths.length > 0 && shipHealths.every((health) => health <= 0);
 
