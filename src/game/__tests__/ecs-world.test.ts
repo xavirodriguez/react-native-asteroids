@@ -1,17 +1,5 @@
 import { World, System } from "../ecs-world";
-import type { Component } from "../../types/GameTypes";
-
-interface TestComponent extends Component {
-  type: "Test";
-  value: number;
-}
-
-class TestSystem extends System {
-  updated = false;
-  update(): void {
-    this.updated = true;
-  }
-}
+import { Component, ComponentType, Entity } from "../../types/GameTypes";
 
 describe("ECS World", () => {
   let world: World;
@@ -20,77 +8,74 @@ describe("ECS World", () => {
     world = new World();
   });
 
-  test("should create unique entity IDs", () => {
+  it("should create unique entities", () => {
     const e1 = world.createEntity();
     const e2 = world.createEntity();
     expect(e1).not.toBe(e2);
-    expect(typeof e1).toBe("number");
+    expect(world.getAllEntities()).toContain(e1);
+    expect(world.getAllEntities()).toContain(e2);
   });
 
-  test("should add and get components", () => {
+  it("should add and retrieve components", () => {
     const entity = world.createEntity();
-    const component: TestComponent = { type: "Test", value: 42 };
-
+    const component = { type: "Position", x: 10, y: 20 } as any;
     world.addComponent(entity, component);
-    const retrieved = world.getComponent<TestComponent>(entity, "Test");
 
+    const retrieved = world.getComponent(entity, "Position");
     expect(retrieved).toBe(component);
-    expect(retrieved?.value).toBe(42);
   });
 
-  test("should return undefined for non-existent components", () => {
+  it("should remove components", () => {
     const entity = world.createEntity();
-    const retrieved = world.getComponent<TestComponent>(entity, "Test");
-    expect(retrieved).toBeUndefined();
+    world.addComponent(entity, { type: "Position", x: 10, y: 20 } as any);
+    world.removeComponent(entity, "Position");
+
+    expect(world.getComponent(entity, "Position")).toBeUndefined();
   });
 
-  test("should remove components", () => {
-    const entity = world.createEntity();
-    world.addComponent(entity, { type: "Test", value: 10 } as TestComponent);
-
-    world.removeComponent(entity, "Test");
-    expect(world.getComponent(entity, "Test")).toBeUndefined();
-  });
-
-  test("should query entities by component types", () => {
+  it("should query entities by components", () => {
     const e1 = world.createEntity();
     const e2 = world.createEntity();
     const e3 = world.createEntity();
 
-    world.addComponent(e1, { type: "Test", value: 1 } as TestComponent);
-    world.addComponent(e1, { type: "Position", x: 0, y: 0 } as Component);
+    world.addComponent(e1, { type: "Position", x: 0, y: 0 } as any);
+    world.addComponent(e1, { type: "Velocity", dx: 0, dy: 0 } as any);
 
-    world.addComponent(e2, { type: "Test", value: 2 } as TestComponent);
+    world.addComponent(e2, { type: "Position", x: 0, y: 0 } as any);
 
-    // e3 has no components
+    world.addComponent(e3, { type: "Velocity", dx: 0, dy: 0 } as any);
 
-    const testEntities = world.query("Test");
-    expect(testEntities).toContain(e1);
-    expect(testEntities).toContain(e2);
-    expect(testEntities).not.toContain(e3);
-    expect(testEntities.length).toBe(2);
+    const posEntities = world.query("Position");
+    expect(posEntities).toContain(e1);
+    expect(posEntities).toContain(e2);
+    expect(posEntities).not.toContain(e3);
 
-    const complexQuery = world.query("Test", "Position");
-    expect(complexQuery).toContain(e1);
-    expect(complexQuery.length).toBe(1);
+    const bothEntities = world.query("Position", "Velocity");
+    expect(bothEntities).toContain(e1);
+    expect(bothEntities).not.toContain(e2);
+    expect(bothEntities).not.toContain(e3);
   });
 
-  test("should remove entities and all their components", () => {
+  it("should remove entities and their components", () => {
     const entity = world.createEntity();
-    world.addComponent(entity, { type: "Test", value: 100 } as TestComponent);
-
+    world.addComponent(entity, { type: "Position", x: 10, y: 20 } as any);
     world.removeEntity(entity);
 
-    expect(world.getComponent(entity, "Test")).toBeUndefined();
     expect(world.getAllEntities()).not.toContain(entity);
+    expect(world.getComponent(entity, "Position")).toBeUndefined();
   });
 
-  test("should update systems", () => {
-    const system = new TestSystem();
-    world.addSystem(system);
+  it("should update systems", () => {
+    const mockUpdate = jest.fn();
+    class MockSystem extends System {
+      update(world: World, deltaTime: number): void {
+        mockUpdate(world, deltaTime);
+      }
+    }
 
-    expect(system.updated).toBe(false);
+    world.addSystem(new MockSystem());
     world.update(16);
-    expect(system.updated).toBe(true);
+
+    expect(mockUpdate).toHaveBeenCalledWith(world, 16);
   });
 });

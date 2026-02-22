@@ -94,6 +94,8 @@ export interface HealthComponent extends Component {
   current: number
   /** Maximum health points or lives */
   max: number
+  /** Remaining time in milliseconds for which the entity is invulnerable to damage */
+  invulnerableRemaining: number
 }
 
 /**
@@ -171,4 +173,6 @@ export const GAME_CONFIG = {
   BULLET_SPEED: 300,
   /** Lifespan of bullets in milliseconds */
   BULLET_TTL: 2000,
+  /** Duration of invulnerability after being hit, in milliseconds */
+  INVULNERABILITY_DURATION: 2000,
 }
