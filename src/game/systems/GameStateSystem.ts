@@ -1,135 +1,133 @@
 import { System, type World } from "../ecs-world"
-import type { GameStateComponent, HealthComponent } from "../../types/GameTypes"
+import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../../types/GameTypes"
 import { createAsteroid } from "../EntityFactory"
 import type { IAsteroidsGame } from "../AsteroidsGame"
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.
- *
- * @remarks
- * This system monitors the number of asteroids in the world and spawns new waves when
- * they are all destroyed. It also monitors player health to detect game over states.
- * It interacts with the main game instance to pause the game when the player loses.
  */
 export class GameStateSystem extends System {
-  /** Flag to prevent multiple game over logs and actions. */
-  private gameOverLogged = false
+  private gameOverLogged = false;
+  private gameInstance: IAsteroidsGame | undefined;
 
-  /**
-   * Reference to the main game instance for triggering high-level actions.
-   */
-  private gameInstance: IAsteroidsGame | undefined
-
-  /**
-   * Creates a new GameStateSystem.
-   *
-   * @param gameInstance - Optional reference to the main game instance.
-   */
   constructor(gameInstance?: IAsteroidsGame) {
-    super()
-    this.gameInstance = gameInstance
+    super();
+    this.gameInstance = gameInstance;
   }
 
   /**
-   * Updates the game state, checks for wave completion and game over.
-   *
-   * @param world - The ECS world.
-   * @param _deltaTime - Time since last frame in milliseconds.
+   * Updates the game state by processing various sub-tasks.
    */
-  update(world: World, deltaTime: number): void {
-    const gameStates = world.query("GameState")
-
-    if (gameStates.length === 0) return
-
-    const gameEntity = gameStates[0]
-    const gameState = world.getComponent<GameStateComponent>(gameEntity, "GameState")!
-
-    // Count remaining asteroids
-    const asteroids = world.query("Asteroid")
-    gameState.asteroidsRemaining = asteroids.length
-
-    // Spawn new wave if no asteroids remain
-    if (gameState.asteroidsRemaining === 0) {
-      this.spawnAsteroidWave(world, gameState.level)
-      gameState.level++
+  public update(world: World, deltaTime: number): void {
+    const gameState = this.getGameState(world);
+    if (!gameState) {
+      return;
     }
 
-    // Update invulnerability and synchronize lives
-    const ships = world.query("Health", "Input")
-    if (ships.length > 0) {
-      const shipEntity = ships[0]
-      const health = world.getComponent<HealthComponent>(shipEntity, "Health")!
+    this.updateAsteroidsCount(world, gameState);
+    this.spawnWaveIfCleared(world, gameState);
+    this.updatePlayerStatus(world, gameState, deltaTime);
+    this.checkGameOver(world, gameState);
+  }
 
-      // Decrement invulnerability timer
-      if (health.invulnerableRemaining > 0) {
-        health.invulnerableRemaining -= deltaTime
-      }
+  public isGameOver(): boolean {
+    const status = this.gameOverLogged;
+    return status;
+  }
 
-      // Synchronize lives with ship health
-      gameState.lives = health.current
+  public resetGameOverState(): void {
+    console.log("Resetting game over state flag");
+    this.gameOverLogged = false;
+  }
+
+  private getGameState(world: World): GameStateComponent | undefined {
+    const gameStates = world.query("GameState");
+    if (gameStates.length === 0) {
+      return undefined;
     }
 
-    // Check game over
-    const shipHealths = ships.map((ship) => world.getComponent<HealthComponent>(ship, "Health")!.current)
+    const component = world.getComponent<GameStateComponent>(gameStates[0], "GameState");
+    return component;
+  }
 
-    const isDead = shipHealths.length > 0 && shipHealths.every((health) => health <= 0);
+  private updateAsteroidsCount(world: World, gameState: GameStateComponent): void {
+    const asteroids = world.query("Asteroid");
+    const count = asteroids.length;
+    gameState.asteroidsRemaining = count;
+  }
 
-    // Update the game state component's isGameOver flag
+  private spawnWaveIfCleared(world: World, gameState: GameStateComponent): void {
+    const isCleared = gameState.asteroidsRemaining === 0;
+    if (isCleared) {
+      this.spawnAsteroidWave(world, gameState.level);
+      gameState.level++;
+    }
+  }
+
+  private updatePlayerStatus(world: World, gameState: GameStateComponent, deltaTime: number): void {
+    const ships = world.query("Health", "Input");
+    if (ships.length === 0) {
+      return;
+    }
+
+    const shipEntity = ships[0];
+    const health = world.getComponent<HealthComponent>(shipEntity, "Health")!;
+
+    this.updateInvulnerability(health, deltaTime);
+    gameState.lives = health.current;
+  }
+
+  private updateInvulnerability(health: HealthComponent, deltaTime: number): void {
+    const currentInvulnerable = health.invulnerableRemaining;
+    if (currentInvulnerable > 0) {
+      health.invulnerableRemaining = currentInvulnerable - deltaTime;
+    }
+  }
+
+  private checkGameOver(world: World, gameState: GameStateComponent): void {
+    const ships = world.query("Health", "Input");
+    const isDead = ships.length > 0 && ships.every((ship) => {
+      const health = world.getComponent<HealthComponent>(ship, "Health");
+      return health ? health.current <= 0 : true;
+    });
+
     gameState.isGameOver = isDead;
-
     if (isDead) {
-      if (!this.gameOverLogged) {
-        console.log(`Game Over! Score: ${gameState.score}`)
-        console.log("Press 'R' to restart or call game.restart()")
-        this.gameOverLogged = true
-        
-        // Pause the game automatically via the game instance reference
-        if (this.gameInstance) {
-          this.gameInstance.pause()
-        }
-      }
+      this.handleGameOver(gameState);
     } else {
-      // Reset flag if the ship gains health (e.g., after a restart)
-      this.gameOverLogged = false
+      this.gameOverLogged = false;
     }
   }
 
-  /**
-   * Checks if the game is currently in a game over state.
-   *
-   * @returns `true` if game over, `false` otherwise.
-   */
-  isGameOver(): boolean {
-    return this.gameOverLogged
-  }
+  private handleGameOver(gameState: GameStateComponent): void {
+    if (!this.gameOverLogged) {
+      const finalScore = gameState.score;
+      console.log(`Game Over! Final Score: ${finalScore}`);
+      this.gameOverLogged = true;
 
-  /**
-   * Resets the game over state flag.
-   */
-  resetGameOverState(): void {
-    this.gameOverLogged = false
+      if (this.gameInstance) {
+        this.gameInstance.pause();
+      }
+    }
   }
 
   /**
    * Spawns a new wave of asteroids based on the current level.
-   *
-   * @param world - The ECS world.
-   * @param level - The current game level.
-   *
-   * @remarks
-   * The number of asteroids increases with the level, capped at 12.
-   * Asteroids are spawned in a circular pattern around the center.
    */
   private spawnAsteroidWave(world: World, level: number): void {
-    const asteroidCount = Math.min(4 + level, 12)
+    const initialCount = GAME_CONFIG.INITIAL_ASTEROID_COUNT;
+    const maxCount = GAME_CONFIG.MAX_WAVE_ASTEROIDS;
+    const asteroidCount = Math.min(initialCount + level, maxCount);
+
+    const centerX = GAME_CONFIG.SCREEN_CENTER_X;
+    const centerY = GAME_CONFIG.SCREEN_CENTER_Y;
+    const distance = GAME_CONFIG.WAVE_SPAWN_DISTANCE;
 
     for (let i = 0; i < asteroidCount; i++) {
-      const angle = (Math.PI * 2 * i) / asteroidCount
-      const distance = 200
-      const x = 400 + Math.cos(angle) * distance
-      const y = 300 + Math.sin(angle) * distance
-
-      createAsteroid(world, x, y, "large")
+      const angle = (Math.PI * 2 * i) / asteroidCount;
+      const x = centerX + Math.cos(angle) * distance;
+      const y = centerY + Math.sin(angle) * distance;
+      createAsteroid(world, x, y, "large");
     }
   }
 }

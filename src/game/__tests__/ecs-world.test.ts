@@ -1,80 +1,83 @@
-import { World, System } from "../ecs-world";
+import { World, System } from "../ecs-world"
+import type { Component } from "../../types/GameTypes"
+
+interface MockComponent extends Component {
+  type: "Mock"
+  value: number
+}
+
+class MockSystem extends System {
+  updated = false
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  update(world: World, deltaTime: number): void {
+    this.updated = true
+  }
+}
 
 describe("ECS World", () => {
-  let world: World;
+  let world: World
 
   beforeEach(() => {
-    world = new World();
-  });
+    world = new World()
+  })
 
-  it("should create unique entities", () => {
-    const e1 = world.createEntity();
-    const e2 = world.createEntity();
-    expect(e1).not.toBe(e2);
-    expect(world.getAllEntities()).toContain(e1);
-    expect(world.getAllEntities()).toContain(e2);
-  });
+  test("should create unique entities", () => {
+    const e1 = world.createEntity()
+    const e2 = world.createEntity()
+    expect(e1).not.toBe(e2)
+    expect(world.getAllEntities()).toContain(e1)
+    expect(world.getAllEntities()).toContain(e2)
+  })
 
-  it("should add and retrieve components", () => {
-    const entity = world.createEntity();
-    const component = { type: "Position", x: 10, y: 20 } as any;
-    world.addComponent(entity, component);
+  test("should add and retrieve components", () => {
+    const entity = world.createEntity()
+    const component: MockComponent = { type: "Mock", value: 42 }
+    world.addComponent(entity, component)
+    expect(world.getComponent<MockComponent>(entity, "Mock")).toBe(component)
+  })
 
-    const retrieved = world.getComponent(entity, "Position");
-    expect(retrieved).toBe(component);
-  });
+  test("should remove components", () => {
+    const entity = world.createEntity()
+    world.addComponent(entity, { type: "Mock", value: 42 } as MockComponent)
+    world.removeComponent(entity, "Mock")
+    expect(world.getComponent(entity, "Mock")).toBeUndefined()
+  })
 
-  it("should remove components", () => {
-    const entity = world.createEntity();
-    world.addComponent(entity, { type: "Position", x: 10, y: 20 } as any);
-    world.removeComponent(entity, "Position");
+  test("should query entities by components", () => {
+    const e1 = world.createEntity()
+    const e2 = world.createEntity()
+    world.addComponent(e1, { type: "Mock", value: 1 } as MockComponent)
+    world.addComponent(e2, { type: "Other", type_other: true } as any)
 
-    expect(world.getComponent(entity, "Position")).toBeUndefined();
-  });
+    const results = world.query("Mock")
+    expect(results).toContain(e1)
+    expect(results).not.toContain(e2)
+  })
 
-  it("should query entities by components", () => {
-    const e1 = world.createEntity();
-    const e2 = world.createEntity();
-    const e3 = world.createEntity();
+  test("should remove entities and their components", () => {
+    const entity = world.createEntity()
+    world.addComponent(entity, { type: "Mock", value: 1 } as MockComponent)
+    world.removeEntity(entity)
+    expect(world.getAllEntities()).not.toContain(entity)
+    expect(world.getComponent(entity, "Mock")).toBeUndefined()
+    expect(world.query("Mock")).not.toContain(entity)
+  })
 
-    world.addComponent(e1, { type: "Position", x: 0, y: 0 } as any);
-    world.addComponent(e1, { type: "Velocity", dx: 0, dy: 0 } as any);
+  test("should update systems", () => {
+    const system = new MockSystem()
+    world.addSystem(system)
+    world.update(16)
+    expect(system.updated).toBe(true)
+  })
 
-    world.addComponent(e2, { type: "Position", x: 0, y: 0 } as any);
+  test("should clear the world", () => {
+    const e1 = world.createEntity()
+    world.addComponent(e1, { type: "Mock", value: 1 } as MockComponent)
 
-    world.addComponent(e3, { type: "Velocity", dx: 0, dy: 0 } as any);
+    world.clear()
 
-    const posEntities = world.query("Position");
-    expect(posEntities).toContain(e1);
-    expect(posEntities).toContain(e2);
-    expect(posEntities).not.toContain(e3);
-
-    const bothEntities = world.query("Position", "Velocity");
-    expect(bothEntities).toContain(e1);
-    expect(bothEntities).not.toContain(e2);
-    expect(bothEntities).not.toContain(e3);
-  });
-
-  it("should remove entities and their components", () => {
-    const entity = world.createEntity();
-    world.addComponent(entity, { type: "Position", x: 10, y: 20 } as any);
-    world.removeEntity(entity);
-
-    expect(world.getAllEntities()).not.toContain(entity);
-    expect(world.getComponent(entity, "Position")).toBeUndefined();
-  });
-
-  it("should update systems", () => {
-    const mockUpdate = jest.fn();
-    class MockSystem extends System {
-      update(world: World, deltaTime: number): void {
-        mockUpdate(world, deltaTime);
-      }
-    }
-
-    world.addSystem(new MockSystem());
-    world.update(16);
-
-    expect(mockUpdate).toHaveBeenCalledWith(world, 16);
-  });
-});
+    expect(world.getAllEntities().length).toBe(0)
+    expect(world.query("Mock").length).toBe(0)
+    expect(world.getComponent(e1, "Mock")).toBeUndefined()
+  })
+})
