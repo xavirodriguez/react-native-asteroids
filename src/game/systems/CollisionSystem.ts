@@ -41,12 +41,13 @@ export class CollisionSystem extends System {
 
     if (!posA || !posB || !colA || !colB) return false;
 
-    const dx = posA.x - posB.x;
-    const dy = posA.y - posB.y;
-    const distanceSq = dx * dx + dy * dy;
-    const combinedRadius = colA.radius + colB.radius;
+    const { x: x1, y: y1 } = posA;
+    const { x: x2, y: y2 } = posB;
+    const dx = x1 - x2;
+    const dy = y1 - y2;
+    const radiusSum = colA.radius + colB.radius;
 
-    return distanceSq < combinedRadius * combinedRadius;
+    return dx * dx + dy * dy < radiusSum * radiusSum;
   }
 
   private resolveCollision(world: World, entityA: number, entityB: number): void {
@@ -86,8 +87,7 @@ export class CollisionSystem extends System {
   }
 
   private handleShipAsteroidCollision(health: HealthComponent): void {
-    const invulnerableTime = health.invulnerableRemaining;
-    if (invulnerableTime <= 0) {
+    if (health.invulnerableRemaining <= 0) {
       health.current--;
       health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
     }
