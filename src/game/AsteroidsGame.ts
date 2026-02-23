@@ -74,8 +74,7 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   public resume(): void {
-    const isResumable = this.isPaused && this.isRunning;
-    if (isResumable) {
+    if (this.isPaused && this.isRunning) {
       this.isPaused = false;
       this.lastTime = performance.now();
       console.log("Game state changed: RESUMED");
@@ -105,18 +104,15 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   public getIsPaused(): boolean {
-    const currentPausedStatus = this.isPaused;
-    return currentPausedStatus;
+    return this.isPaused;
   }
 
   public getIsGameOver(): boolean {
-    const isGameOverState = this.gameStateSystem.isGameOver();
-    return isGameOverState;
+    return this.gameStateSystem.isGameOver();
   }
 
   public getWorld(): World {
-    const currentWorldInstance = this.world;
-    return currentWorldInstance;
+    return this.world;
   }
 
   public getGameState(): GameStateComponent | undefined {

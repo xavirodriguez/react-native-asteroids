@@ -69,31 +69,50 @@ export class InputSystem extends System {
       const render = world.getComponent<RenderComponent>(entity, "Render")!
       const pos = world.getComponent<PositionComponent>(entity, "Position")!
 
-      // Update component input state from the raw keys/input
-      input.thrust = this.keys.has("ArrowUp")
-      input.rotateLeft = this.keys.has("ArrowLeft")
-      input.rotateRight = this.keys.has("ArrowRight")
-      input.shoot = this.keys.has("Space")
-
-      // Apply rotation
-      if (input.rotateLeft) render.rotation -= (GAME_CONFIG.SHIP_ROTATION_SPEED * deltaTime) / 1000
-      if (input.rotateRight) render.rotation += (GAME_CONFIG.SHIP_ROTATION_SPEED * deltaTime) / 1000
-
-      // Apply thrust
-      if (input.thrust) {
-        vel.dx += (Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTime) / 1000
-        vel.dy += (Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTime) / 1000
-      }
-
-      // Apply friction (damping)
-      vel.dx *= 0.99
-      vel.dy *= 0.99
-
-      // Shoot with cooldown
-      if (input.shoot && currentTime - this.lastShootTime > this.shootCooldown) {
-        createBullet(world, pos.x, pos.y, render.rotation)
-        this.lastShootTime = currentTime
-      }
+      this.updateShipInputState(input)
+      this.applyShipMovement(vel, render, input, deltaTime)
+      this.handleShipShooting(world, pos, render, input, currentTime)
     })
+  }
+
+  private updateShipInputState(input: InputComponent): void {
+    input.thrust = this.keys.has("ArrowUp")
+    input.rotateLeft = this.keys.has("ArrowLeft")
+    input.rotateRight = this.keys.has("ArrowRight")
+    input.shoot = this.keys.has("Space")
+  }
+
+  private applyShipMovement(
+    vel: VelocityComponent,
+    render: RenderComponent,
+    input: InputComponent,
+    deltaTime: number,
+  ): void {
+    const dt = deltaTime / 1000
+
+    if (input.rotateLeft) render.rotation -= GAME_CONFIG.SHIP_ROTATION_SPEED * dt
+    if (input.rotateRight) render.rotation += GAME_CONFIG.SHIP_ROTATION_SPEED * dt
+
+    if (input.thrust) {
+      vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt
+      vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt
+    }
+
+    vel.dx *= 0.99
+    vel.dy *= 0.99
+  }
+
+  private handleShipShooting(
+    world: World,
+    pos: PositionComponent,
+    render: RenderComponent,
+    input: InputComponent,
+    currentTime: number,
+  ): void {
+    const canShoot = input.shoot && currentTime - this.lastShootTime > this.shootCooldown
+    if (canShoot) {
+      createBullet(world, pos.x, pos.y, render.rotation)
+      this.lastShootTime = currentTime
+    }
   }
 }

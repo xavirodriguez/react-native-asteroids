@@ -20,30 +20,23 @@ export class MovementSystem extends System {
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!;
 
       this.updatePosition(pos, vel, deltaTime);
-      this.wrapScreen(pos);
+      this.wrapPosition(pos);
     });
   }
 
   private updatePosition(pos: PositionComponent, vel: VelocityComponent, deltaTime: number): void {
-    const timeDeltaSeconds = deltaTime / 1000;
-    pos.x += vel.dx * timeDeltaSeconds;
-    pos.y += vel.dy * timeDeltaSeconds;
+    const dt = deltaTime / 1000;
+    pos.x += vel.dx * dt;
+    pos.y += vel.dy * dt;
   }
 
-  private wrapScreen(pos: PositionComponent): void {
-    const width = GAME_CONFIG.SCREEN_WIDTH;
-    const height = GAME_CONFIG.SCREEN_HEIGHT;
+  private wrapPosition(pos: PositionComponent): void {
+    const { SCREEN_WIDTH: width, SCREEN_HEIGHT: height } = GAME_CONFIG;
 
-    if (pos.x < 0) {
-      pos.x = width;
-    } else if (pos.x > width) {
-      pos.x = 0;
-    }
+    if (pos.x < 0) pos.x = width;
+    else if (pos.x > width) pos.x = 0;
 
-    if (pos.y < 0) {
-      pos.y = height;
-    } else if (pos.y > height) {
-      pos.y = 0;
-    }
+    if (pos.y < 0) pos.y = height;
+    else if (pos.y > height) pos.y = 0;
   }
 }

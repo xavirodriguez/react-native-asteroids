@@ -40,8 +40,8 @@ export function createShip(world: World, x: number, y: number): Entity {
  */
 export function createAsteroid(world: World, x: number, y: number, size: "large" | "medium" | "small"): Entity {
   const asteroid = world.createEntity();
-  const sizeMap = { large: 30, medium: 20, small: 10 };
-  const radius = sizeMap[size];
+  const asteroidRadiusMap = { large: 30, medium: 20, small: 10 };
+  const radius = asteroidRadiusMap[size];
 
   world.addComponent(asteroid, { type: "Position", x, y });
   world.addComponent(asteroid, {

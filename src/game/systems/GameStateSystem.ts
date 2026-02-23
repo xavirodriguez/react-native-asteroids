@@ -86,17 +86,18 @@ export class GameStateSystem extends System {
 
   private checkGameOver(world: World, gameState: GameStateComponent): void {
     const ships = world.query("Health", "Input");
-    const isDead = ships.length > 0 && ships.every((ship) => {
+    const isGameOver = ships.length > 0 && ships.every((ship) => {
       const health = world.getComponent<HealthComponent>(ship, "Health");
-      return health ? health.current <= 0 : true;
+      return !health || health.current <= 0;
     });
 
-    gameState.isGameOver = isDead;
-    if (isDead) {
+    gameState.isGameOver = isGameOver;
+    if (isGameOver) {
       this.handleGameOver(gameState);
-    } else {
-      this.gameOverLogged = false;
+      return;
     }
+
+    this.gameOverLogged = false;
   }
 
   private handleGameOver(gameState: GameStateComponent): void {

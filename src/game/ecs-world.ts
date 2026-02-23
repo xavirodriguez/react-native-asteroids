@@ -130,11 +130,13 @@ export class World {
     })
 
     const rarestType = sortedTypes[0]
-    const candidates = this.componentIndex.get(rarestType)
+    const entitiesWithRarestComponent = this.componentIndex.get(rarestType)
 
-    if (!candidates || candidates.size === 0) return []
+    if (!entitiesWithRarestComponent || entitiesWithRarestComponent.size === 0) {
+      return []
+    }
 
-    return Array.from(candidates).filter((entity) =>
+    return Array.from(entitiesWithRarestComponent).filter((entity) =>
       sortedTypes.slice(1).every((type) => this.componentIndex.get(type)?.has(entity)),
     )
   }
