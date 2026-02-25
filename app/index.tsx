@@ -4,7 +4,7 @@ import { AsteroidsGame } from "../src/game/AsteroidsGame";
 import { GameRenderer } from "@/components/GameRenderer";
 import { GameControls } from "@/components/GameControls";
 import { GameUI } from "@/components/GameUI";
-import type { GameStateComponent } from "../src/types/GameTypes";
+import { type GameStateComponent, INITIAL_GAME_STATE } from "../src/types/GameTypes";
 
 /**
  * Main application component that integrates the game engine with the React UI.
@@ -17,7 +17,7 @@ import type { GameStateComponent } from "../src/types/GameTypes";
  */
 export default function App() {
   const [game, setGame] = useState<AsteroidsGame | null>(null);
-  const [gameState, setGameState] = useState<GameStateComponent | null>(null);
+  const [gameState, setGameState] = useState<GameStateComponent>(INITIAL_GAME_STATE);
   const [, forceUpdate] = useState({});
 
   useEffect(() => {

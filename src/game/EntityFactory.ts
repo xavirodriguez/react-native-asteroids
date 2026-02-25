@@ -75,6 +75,7 @@ export function createBullet(world: World, x: number, y: number, angle: number):
   world.addComponent(bullet, { type: "Render", shape: "circle", size: 2, color: "#FFFF00", rotation: 0 });
   world.addComponent(bullet, { type: "Collider", radius: 2 });
   world.addComponent(bullet, { type: "TTL", remaining: ttl });
+  world.addComponent(bullet, { type: "Bullet" });
 
   return bullet;
 }

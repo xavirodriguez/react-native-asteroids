@@ -5,7 +5,7 @@ import { CollisionSystem } from "./systems/CollisionSystem"
 import { TTLSystem } from "./systems/TTLSystem"
 import { GameStateSystem } from "./systems/GameStateSystem"
 import { createShip, createAsteroid } from "./EntityFactory"
-import { type GameStateComponent, GAME_CONFIG } from "../types/GameTypes"
+import { type GameStateComponent, GAME_CONFIG, INITIAL_GAME_STATE } from "../types/GameTypes"
 
 /**
  * Type definition for a callback function triggered on every game update.
@@ -22,7 +22,7 @@ export interface IAsteroidsGame {
   getWorld(): World;
   getIsPaused(): boolean;
   getIsGameOver(): boolean;
-  getGameState(): GameStateComponent | undefined;
+  getGameState(): GameStateComponent;
   subscribe(listener: UpdateListener): () => void;
 }
 
@@ -115,14 +115,14 @@ export class AsteroidsGame implements IAsteroidsGame {
     return this.world;
   }
 
-  public getGameState(): GameStateComponent | undefined {
+  public getGameState(): GameStateComponent {
     const entities = this.world.query("GameState");
     if (entities.length === 0) {
-      return undefined;
+      return INITIAL_GAME_STATE;
     }
 
     const gameState = this.world.getComponent<GameStateComponent>(entities[0], "GameState");
-    return gameState;
+    return gameState || INITIAL_GAME_STATE;
   }
 
   public setInput(thrust: boolean, rotateLeft: boolean, rotateRight: boolean, shoot: boolean): void {
