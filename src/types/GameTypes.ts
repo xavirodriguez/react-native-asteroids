@@ -129,6 +129,13 @@ export interface TTLComponent extends Component {
 }
 
 /**
+ * Marker component for bullet entities.
+ */
+export interface BulletComponent extends Component {
+  type: "Bullet"
+}
+
+/**
  * Marker component for asteroid entities.
  */
 export interface AsteroidComponent extends Component {
@@ -155,6 +162,18 @@ export interface GameStateComponent extends Component {
   asteroidsRemaining: number
   /** Whether the game is currently in a Game Over state */
   isGameOver: boolean
+}
+
+/**
+ * Null Object for GameStateComponent to avoid returning null/undefined.
+ */
+export const INITIAL_GAME_STATE: GameStateComponent = {
+  type: "GameState",
+  lives: 0,
+  score: 0,
+  level: 0,
+  asteroidsRemaining: 0,
+  isGameOver: false,
 }
 
 /**

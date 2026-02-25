@@ -1,5 +1,5 @@
 import { System, type World } from "../ecs-world"
-import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../../types/GameTypes"
+import { type GameStateComponent, type HealthComponent, GAME_CONFIG, INITIAL_GAME_STATE } from "../../types/GameTypes"
 import { createAsteroid } from "../EntityFactory"
 import type { IAsteroidsGame } from "../AsteroidsGame"
 
@@ -40,14 +40,14 @@ export class GameStateSystem extends System {
     this.gameOverLogged = false;
   }
 
-  private getGameState(world: World): GameStateComponent | undefined {
+  private getGameState(world: World): GameStateComponent {
     const gameStates = world.query("GameState");
     if (gameStates.length === 0) {
-      return undefined;
+      return INITIAL_GAME_STATE;
     }
 
     const component = world.getComponent<GameStateComponent>(gameStates[0], "GameState");
-    return component;
+    return component || INITIAL_GAME_STATE;
   }
 
   private updateAsteroidsCount(world: World, gameState: GameStateComponent): void {

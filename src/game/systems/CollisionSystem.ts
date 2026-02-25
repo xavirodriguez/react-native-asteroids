@@ -60,7 +60,7 @@ export class CollisionSystem extends System {
 
   private checkBulletAsteroid(world: World, entityA: number, entityB: number): boolean {
     const asteroid = world.getComponent<AsteroidComponent>(entityA, "Asteroid");
-    const isBullet = world.getComponent(entityB, "TTL") !== undefined;
+    const isBullet = world.getComponent(entityB, "Bullet") !== undefined;
 
     if (asteroid && isBullet) {
       this.handleBulletAsteroidCollision(world, entityA, entityB);
