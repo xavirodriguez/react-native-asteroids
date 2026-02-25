@@ -68,6 +68,75 @@ interface EntityRendererProps {
 }
 
 /**
+ * Component for rendering a ship with thrust and pulsating effects.
+ */
+const ShipRenderer = React.memo(({ x, y, rotation, size, hasThrust }: {
+  x: number, y: number, rotation: number, size: number, hasThrust: boolean
+}) => {
+  const rotationDegrees = (rotation * 180) / Math.PI;
+  const transform = `translate(${x}, ${y}) rotate(${rotationDegrees})`;
+
+  // Use a more deterministic pulsate if we had a time prop,
+  // but for now we keep Date.now() but isolated.
+  const time = Date.now() * 0.005;
+  const pulse = Math.sin(time) * 0.1 + 1;
+
+  return (
+    <G transform={transform}>
+      {hasThrust && (
+        <Polygon
+          points={`${-size / 2},${size / 3} ${-size * 1.5},0 ${-size / 2},${-size / 3}`}
+          fill="#FF6600"
+          stroke="#FF9900"
+          strokeWidth="1"
+          opacity="0.8"
+        />
+      )}
+      <Circle cx="0" cy="0" r={(size / 3) * pulse} fill="#FFFF00" opacity="0.6" />
+      <Polygon
+        points={`${size},0 ${-size / 2},${size / 2} ${-size / 4},0 ${-size / 2},${-size / 2}`}
+        fill="#DDDDDD"
+        stroke="#FFFFFF"
+        strokeWidth="1"
+      />
+      <G opacity={0.8}>
+        <Rect x={-size / 2} y={-size / 4} width={size / 8} height={size / 2} fill="#666666" />
+        <Rect x={-size / 2} y={size / 6} width={size / 6} height={size / 8} fill="#FF0000" />
+        <Rect x={-size / 2} y={-size / 6 - size / 8} width={size / 6} height={size / 8} fill="#FF0000" />
+      </G>
+    </G>
+  );
+});
+ShipRenderer.displayName = "ShipRenderer";
+
+/**
+ * Component for rendering an asteroid.
+ */
+const AsteroidRenderer = React.memo(({ x, y, size, color }: {
+  x: number, y: number, size: number, color: string
+}) => (
+  <Circle cx={x} cy={y} r={size} fill="#999" stroke={color} strokeWidth="2" />
+));
+AsteroidRenderer.displayName = "AsteroidRenderer";
+
+/**
+ * Component for rendering a bullet/line.
+ */
+const BulletRenderer = React.memo(({ x, y, rotation, size, color }: {
+  x: number, y: number, rotation: number, size: number, color: string
+}) => {
+  const rotationDegrees = (rotation * 180) / Math.PI;
+  const transform = `translate(${x}, ${y}) rotate(${rotationDegrees})`;
+  return (
+    <Line
+      x1={-size / 2} y1={0} x2={size / 2} y2={0}
+      stroke={color} strokeWidth="2" transform={transform}
+    />
+  );
+});
+BulletRenderer.displayName = "BulletRenderer";
+
+/**
  * Component for rendering a single entity.
  */
 const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world }) => {
@@ -76,101 +145,21 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world }) => {
 
     if (!pos || !render) return null;
 
-    // Calculate rotation in degrees for react-native-svg
-    const rotationDegrees = (render.rotation * 180) / Math.PI;
-    const transform = `translate(${pos.x}, ${pos.y}) rotate(${rotationDegrees})`;
-
     switch (render.shape) {
       case "triangle": {
-        const time = Date.now() * 0.005;
-        const pulse = Math.sin(time) * 0.1 + 1;
-        // Check if it is a ship (has Input component)
-        const inputComponent = world.getComponent<InputComponent>(
-          entity,
-          "Input"
-        );
-        const hasThrust = inputComponent?.thrust || false;
+        const input = world.getComponent<InputComponent>(entity, "Input");
         return (
-          <G transform={transform}>
-            {hasThrust && (
-              <Polygon
-                points={`${-render.size / 2},${render.size / 3} ${
-                  -render.size * 1.5
-                },0 ${-render.size / 2},${-render.size / 3}`}
-                fill="#FF6600"
-                stroke="#FF9900"
-                strokeWidth="1"
-                opacity="0.8"
-              />
-            )}
-            {/* Pulsating central core */}
-            <Circle
-              cx="0"
-              cy="0"
-              r={(render.size / 3) * pulse}
-              fill="#FFFF00"
-              opacity="0.6"
-            />
-            {/* Main body */}
-            <Polygon
-              points={`${render.size},0 ${-render.size / 2},${
-                render.size / 2
-              } ${-render.size / 4},0 ${-render.size / 2},${-render.size / 2}`}
-              fill="#DDDDDD"
-              stroke="#FFFFFF"
-              strokeWidth="1"
-            />
-            {/* Side thrusters */}
-            <G opacity={0.8}>
-              <Rect
-                x={-render.size / 2}
-                y={-render.size / 4}
-                width={render.size / 8}
-                height={render.size / 2}
-                fill="#666666"
-              />
-              <Rect
-                x={-render.size / 2}
-                y={render.size / 6}
-                width={render.size / 6}
-                height={render.size / 8}
-                fill="#FF0000"
-              />
-              <Rect
-                x={-render.size / 2}
-                y={-render.size / 6 - render.size / 8}
-                width={render.size / 6}
-                height={render.size / 8}
-                fill="#FF0000"
-              />
-            </G>
-          </G>
+          <ShipRenderer
+            x={pos.x} y={pos.y} rotation={render.rotation}
+            size={render.size} hasThrust={input?.thrust || false}
+          />
         );
       }
       case "circle":
-        return (
-          <Circle
-            cx={pos.x}
-            cy={pos.y}
-            r={render.size}
-            fill="#999"
-            stroke={render.color}
-            strokeWidth="2"
-          />
-        );
+        return <AsteroidRenderer x={pos.x} y={pos.y} size={render.size} color={render.color} />;
 
       case "line":
-        return (
-          <Line
-            x1={-render.size / 2}
-            y1={0}
-            x2={render.size / 2}
-            y2={0}
-            stroke={render.color}
-            strokeWidth="2"
-            transform={transform}
-          />
-        );
+        return <BulletRenderer x={pos.x} y={pos.y} rotation={render.rotation} size={render.size} color={render.color} />;
 
       default:
         return null;

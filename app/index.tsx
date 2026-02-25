@@ -49,20 +49,9 @@ export default function App() {
   ) => {
     if (!game) return;
 
-    const currentInputs = {
-      thrust: false,
-      rotateLeft: false,
-      rotateRight: false,
-      shoot: false,
-    };
-
-    currentInputs[type] = pressed;
-    game.setInput(
-      currentInputs.thrust,
-      currentInputs.rotateLeft,
-      currentInputs.rotateRight,
-      currentInputs.shoot
-    );
+    game.setInput({
+      [type]: pressed,
+    });
   };
 
   if (!game) {
