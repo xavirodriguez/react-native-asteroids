@@ -85,30 +85,30 @@ export class GameStateSystem extends System {
   }
 
   private checkGameOver(world: World, gameState: GameStateComponent): void {
-    const ships = world.query("Health", "Input");
-    const isGameOver = ships.length > 0 && ships.every((ship) => {
-      const health = world.getComponent<HealthComponent>(ship, "Health");
-      return !health || health.current <= 0;
-    });
+    const isGameOver = this.evaluateGameOverCondition(world);
 
     gameState.isGameOver = isGameOver;
     if (isGameOver) {
-      this.handleGameOver(gameState);
+      this.handleGameOverOnce(gameState);
       return;
     }
 
     this.gameOverLogged = false;
   }
 
-  private handleGameOver(gameState: GameStateComponent): void {
-    if (!this.gameOverLogged) {
-      const finalScore = gameState.score;
-      console.log(`Game Over! Final Score: ${finalScore}`);
-      this.gameOverLogged = true;
+  private evaluateGameOverCondition(world: World): boolean {
+    const ships = world.query("Health", "Input");
+    return ships.length > 0 && ships.every((ship) => {
+      const health = world.getComponent<HealthComponent>(ship, "Health");
+      return !health || health.current <= 0;
+    });
+  }
 
-      if (this.gameInstance) {
-        this.gameInstance.pause();
-      }
+  private handleGameOverOnce(gameState: GameStateComponent): void {
+    if (!this.gameOverLogged) {
+      console.log(`Game Over! Final Score: ${gameState.score}`);
+      this.gameOverLogged = true;
+      this.gameInstance?.pause();
     }
   }
 

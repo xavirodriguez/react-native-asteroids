@@ -41,10 +41,8 @@ export class CollisionSystem extends System {
 
     if (!posA || !posB || !colA || !colB) return false;
 
-    const { x: x1, y: y1 } = posA;
-    const { x: x2, y: y2 } = posB;
-    const dx = x1 - x2;
-    const dy = y1 - y2;
+    const dx = posA.x - posB.x;
+    const dy = posA.y - posB.y;
     const radiusSum = colA.radius + colB.radius;
 
     return dx * dx + dy * dy < radiusSum * radiusSum;
@@ -120,11 +118,8 @@ export class CollisionSystem extends System {
     newSize: "medium" | "small",
     offset: number
   ): void {
-    const posX = pos.x;
-    const posY = pos.y;
-
-    createAsteroid(world, posX + offset, posY + offset, newSize);
-    createAsteroid(world, posX - offset, posY - offset, newSize);
+    createAsteroid(world, pos.x + offset, pos.y + offset, newSize);
+    createAsteroid(world, pos.x - offset, pos.y - offset, newSize);
   }
 
   private addScore(world: World, points: number): void {
