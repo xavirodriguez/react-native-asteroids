@@ -4,6 +4,7 @@ import {
   type VelocityComponent,
   type RenderComponent,
   type PositionComponent,
+  type InputState,
   GAME_CONFIG,
 } from "../../types/GameTypes"
 import { createBullet } from "../EntityFactory"
@@ -40,17 +41,22 @@ export class InputSystem extends System {
   /**
    * Manually sets the input state. Useful for mobile touch controls.
    *
-   * @param thrust - Whether thrust is active.
-   * @param rotateLeft - Whether rotating left is active.
-   * @param rotateRight - Whether rotating right is active.
-   * @param shoot - Whether shooting is active.
+   * @param input - The new input state.
    */
-  setInput(thrust: boolean, rotateLeft: boolean, rotateRight: boolean, shoot: boolean): void {
-    this.keys.clear()
-    if (thrust) this.keys.add("ArrowUp")
-    if (rotateLeft) this.keys.add("ArrowLeft")
-    if (rotateRight) this.keys.add("ArrowRight")
-    if (shoot) this.keys.add("Space")
+  setInput(input: Partial<InputState>): void {
+    this.updateKey("ArrowUp", input.thrust)
+    this.updateKey("ArrowLeft", input.rotateLeft)
+    this.updateKey("ArrowRight", input.rotateRight)
+    this.updateKey("Space", input.shoot)
+  }
+
+  private updateKey(keyCode: string, isActive?: boolean): void {
+    if (isActive === undefined) return
+    if (isActive) {
+      this.keys.add(keyCode)
+    } else {
+      this.keys.delete(keyCode)
+    }
   }
 
   /**

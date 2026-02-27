@@ -99,13 +99,9 @@ export interface HealthComponent extends Component {
 }
 
 /**
- * Stores the current input state for controllable entities.
- *
- * @remarks
- * Usually attached to the player ship entity.
+ * Represents the current state of user inputs.
  */
-export interface InputComponent extends Component {
-  type: "Input"
+export interface InputState {
   /** Whether the thrust (acceleration) action is active */
   thrust: boolean
   /** Whether the rotate left action is active */
@@ -114,6 +110,16 @@ export interface InputComponent extends Component {
   rotateRight: boolean
   /** Whether the shoot action is active */
   shoot: boolean
+}
+
+/**
+ * Stores the current input state for controllable entities.
+ *
+ * @remarks
+ * Usually attached to the player ship entity.
+ */
+export interface InputComponent extends Component, InputState {
+  type: "Input"
 }
 
 /**

@@ -5,7 +5,12 @@ import { CollisionSystem } from "./systems/CollisionSystem"
 import { TTLSystem } from "./systems/TTLSystem"
 import { GameStateSystem } from "./systems/GameStateSystem"
 import { createShip, createAsteroid } from "./EntityFactory"
-import { type GameStateComponent, GAME_CONFIG, INITIAL_GAME_STATE } from "../types/GameTypes"
+import {
+  type GameStateComponent,
+  type InputState,
+  GAME_CONFIG,
+  INITIAL_GAME_STATE,
+} from "../types/GameTypes"
 
 /**
  * Type definition for a callback function triggered on every game update.
@@ -125,10 +130,10 @@ export class AsteroidsGame implements IAsteroidsGame {
     return gameState || INITIAL_GAME_STATE;
   }
 
-  public setInput(thrust: boolean, rotateLeft: boolean, rotateRight: boolean, shoot: boolean): void {
+  public setInput(input: Partial<InputState>): void {
     const canProcessInput = !this.isPaused && !this.getIsGameOver();
     if (canProcessInput) {
-      this.inputSystem.setInput(thrust, rotateLeft, rotateRight, shoot);
+      this.inputSystem.setInput(input);
     }
   }
 
@@ -146,23 +151,27 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private initializeGame(): void {
+    this.setupShip();
+    this.setupGameState();
+    this.spawnInitialAsteroids(GAME_CONFIG.INITIAL_ASTEROID_COUNT);
+  }
+
+  private setupShip(): void {
     const centerX = GAME_CONFIG.SCREEN_CENTER_X;
     const centerY = GAME_CONFIG.SCREEN_CENTER_Y;
-    const initialLives = GAME_CONFIG.SHIP_INITIAL_LIVES;
-
     createShip(this.world, centerX, centerY);
+  }
 
+  private setupGameState(): void {
     const gameStateEntity = this.world.createEntity();
     this.world.addComponent(gameStateEntity, {
       type: "GameState",
-      lives: initialLives,
+      lives: GAME_CONFIG.SHIP_INITIAL_LIVES,
       score: 0,
       level: 1,
       asteroidsRemaining: 0,
       isGameOver: false,
     });
-
-    this.spawnInitialAsteroids(GAME_CONFIG.INITIAL_ASTEROID_COUNT);
   }
 
   private spawnInitialAsteroids(total: number): void {
@@ -171,11 +180,15 @@ export class AsteroidsGame implements IAsteroidsGame {
     const spawnRadius = GAME_CONFIG.INITIAL_ASTEROID_SPAWN_RADIUS;
 
     for (let i = 0; i < total; i++) {
-      const angle = (Math.PI * 2 * i) / total;
-      const x = centerX + Math.cos(angle) * spawnRadius;
-      const y = centerY + Math.sin(angle) * spawnRadius;
-      createAsteroid(this.world, x, y, "large");
+      this.spawnAsteroidAtAngle(i, total, centerX, centerY, spawnRadius);
     }
+  }
+
+  private spawnAsteroidAtAngle(index: number, total: number, centerX: number, centerY: number, radius: number): void {
+    const angle = (Math.PI * 2 * index) / total;
+    const x = centerX + Math.cos(angle) * radius;
+    const y = centerY + Math.sin(angle) * radius;
+    createAsteroid(this.world, x, y, "large");
   }
 
   private notifyListeners(): void {
@@ -191,11 +204,14 @@ export class AsteroidsGame implements IAsteroidsGame {
     const deltaTime = currentTime - this.lastTime;
     this.lastTime = currentTime;
 
+    this.updateWorld(deltaTime);
+    this.notifyListeners();
+    this.gameLoopId = requestAnimationFrame(this.gameLoop);
+  }
+
+  private updateWorld(deltaTime: number): void {
     if (!this.isPaused) {
       this.world.update(deltaTime);
     }
-
-    this.notifyListeners();
-    this.gameLoopId = requestAnimationFrame(this.gameLoop);
   }
 }
