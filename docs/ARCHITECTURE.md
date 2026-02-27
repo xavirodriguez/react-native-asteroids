@@ -34,7 +34,7 @@ The codebase follows a clear separation of concerns:
 The core game logic is organized into three main directories:
 
 #### `src/game/` - Game Engine
-- **`ecs-world.ts`** - Core ECS implementation managing entities, components, and systems. Includes structural versioning for performance optimization.
+- **`ecs-world.ts`** - Core ECS implementation managing entities, components, and systems. Includes structural versioning and optimized queries.
 - **`AsteroidsGame.ts`** - Main game orchestrator. It manages the game loop and provides a subscription API for UI synchronization.
 - **`EntityFactory.ts`** - Factory functions for creating pre-configured entities (Ship, Asteroid, Bullet).
 - **`systems/`** - Individual game systems implementing specific logic (Movement, Collision, etc.).
@@ -55,8 +55,9 @@ The ECS implementation is a pure design with three core abstractions:
 The `World` class manages all entities, components, and systems:
 - **Entities**: Unique numeric IDs.
 - **Components**: Stored in nested Maps for O(1) access.
+- **Component Index**: An internal mapping from Component Type to a Set of Entities, allowing for highly efficient queries.
 - **Structural Versioning**: A `version` property that increments on structural changes to help React determine when to re-query entities.
-- **Query System**: Efficiently filters entities by component composition.
+- **Query System**: Efficiently filters entities by component composition using the component index.
 
 #### 2. **System Abstract Class** - Processing Logic
 All game systems extend this base class and implement the `update` method.
@@ -77,39 +78,42 @@ The game runs systems in a specific sequential order:
 
 ## Game Orchestration
 
-### AsteroidsGame Class
+### IAsteroidsGame Interface
+A public API definition that decouples the React UI from the concrete `AsteroidsGame` implementation.
 
-The `AsteroidsGame` class coordinates the ECS world and the game loop:
+### AsteroidsGame Class
+The main game class coordinates the ECS world and the game loop:
 - **Game Loop**: Runs at ~60 FPS using `requestAnimationFrame`.
-- **Subscription API**: Allows the React UI to subscribe to frame updates instead of using polling.
-- **Input Bridge**: Provides methods to pass mobile touch inputs into the ECS world.
+- **Subscription API**: Allows the React UI to subscribe to frame updates, ensuring the UI is always in sync with the latest engine state.
+- **Input Bridge**: Provides methods to pass mobile touch inputs or keyboard states into the ECS world.
 
 ## React Integration Layer
 
 ### Application Entry Point (`app/index.tsx`)
 
 The main app component bridges React and the game engine:
-- **Event-Driven Sync**: Uses the `subscribe` method of `AsteroidsGame` to synchronize game state with React state.
-- **Force Update**: Triggers re-renders to reflect changes in the mutated ECS components.
+- **Event-Driven Sync**: Uses the `subscribe` method of `IAsteroidsGame` to synchronize game state with React state at the end of every game frame.
+- **Force Update**: Triggers re-renders to reflect changes in the mutated ECS components which are passed by reference.
 
 ### React Components
 
 #### GameRenderer - Visual Output
-Queries the ECS world and renders entities using `react-native-svg` components. It utilizes `useMemo` with `world.version` to optimize rendering performance.
+Queries the ECS world and renders entities using `react-native-svg` components. It utilizes `useMemo` with `world.version` to avoid expensive re-querying when the world structure hasn't changed.
 
 #### GameUI - HUD Display
 Shows lives, score, and level. Handles the "GAME OVER" state and provides a "RESTART" trigger.
 
 #### GameControls - Input Interface
-Platform-aware controls (Touch buttons for mobile, instructions for web).
+Platform-aware controls (Touch buttons for mobile, keyboard instructions for web).
 
 ## Styling and Configuration
 
 - **Styling**: Standard React Native `StyleSheet` for components, with Tailwind CSS v4 configuration for global web styles.
-- **Constants**: Game mechanics (thrust, speed, cooldowns) are centralized in `GAME_CONFIG`.
+- **Constants**: Game mechanics (thrust, speed, cooldowns, score) are centralized in `GAME_CONFIG` within `src/types/GameTypes.ts`.
 
 ## Design Considerations
 
-- **Collision Efficiency**: Uses squared distance calculations to avoid expensive square root operations.
-- **Invulnerability**: The ship receives a temporary grace period after damage to prevent rapid life loss.
-- **Cross-Platform**: Decoupled engine logic allows for consistent behavior across Web and Native platforms.
+- **Collision Efficiency**: Uses squared distance calculations to avoid expensive square root operations in the hot path.
+- **Invulnerability**: The ship receives a temporary grace period after damage to prevent rapid life loss, managed by a timer in the `HealthComponent`.
+- **Cross-Platform**: Decoupled engine logic and platform-aware input controllers allow for consistent behavior across Web, iOS, and Android.
+- **Performance**: Structural versioning and primitive prop passing in the rendering layer ensure efficient React updates despite high-frequency game state changes.
