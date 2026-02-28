@@ -120,6 +120,8 @@ export interface InputState {
  */
 export interface InputComponent extends Component, InputState {
   type: "Input"
+  /** Remaining cooldown time between shots in milliseconds */
+  shootCooldownRemaining: number
 }
 
 /**
@@ -195,6 +197,14 @@ export const GAME_CONFIG = {
   /** Center Y position of the screen */
   SCREEN_CENTER_Y: 300,
 
+  /** Input keys mapping */
+  KEYS: {
+    THRUST: "ArrowUp",
+    ROTATE_LEFT: "ArrowLeft",
+    ROTATE_RIGHT: "ArrowRight",
+    SHOOT: "Space",
+  },
+
   /** Acceleration force applied to the ship (pixels/sec²) */
   SHIP_THRUST: 200,
   /** Speed of rotation in radians per second */
@@ -206,6 +216,8 @@ export const GAME_CONFIG = {
   BULLET_SPEED: 300,
   /** Lifespan of bullets in milliseconds */
   BULLET_TTL: 2000,
+  /** Cooldown between bullets in milliseconds */
+  BULLET_SHOOT_COOLDOWN: 200,
 
   /** Duration of invulnerability after being hit, in milliseconds */
   INVULNERABILITY_DURATION: 2000,

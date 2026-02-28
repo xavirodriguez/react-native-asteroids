@@ -18,7 +18,14 @@ export function createShip(world: World, x: number, y: number): Entity {
   world.addComponent(ship, { type: "Render", shape: "triangle", size: 10, color: "#CCCCCC", rotation: 0 });
   world.addComponent(ship, { type: "Collider", radius: 8 });
   world.addComponent(ship, { type: "Health", current: initialLives, max: initialLives, invulnerableRemaining: 0 });
-  world.addComponent(ship, { type: "Input", thrust: false, rotateLeft: false, rotateRight: false, shoot: false });
+  world.addComponent(ship, {
+    type: "Input",
+    thrust: false,
+    rotateLeft: false,
+    rotateRight: false,
+    shoot: false,
+    shootCooldownRemaining: 0,
+  });
 
   return ship;
 }

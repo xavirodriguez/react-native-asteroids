@@ -1,16 +1,4 @@
-/**
- * Represents the state of all game-related action inputs.
- */
-export interface GameInputs {
-  /** Whether the thrust action is currently active. */
-  thrust: boolean;
-  /** Whether the rotation to the left is currently active. */
-  rotateLeft: boolean;
-  /** Whether the rotation to the right is currently active. */
-  rotateRight: boolean;
-  /** Whether the shoot action is currently active. */
-  shoot: boolean;
-}
+import { GAME_CONFIG, type InputState } from "../types/GameTypes";
 
 /**
  * Abstract base class for handling user inputs.
@@ -21,7 +9,7 @@ export interface GameInputs {
  */
 export abstract class InputController {
   /** The current state of inputs. */
-  protected inputs: GameInputs = {
+  protected inputs: InputState = {
     thrust: false,
     rotateLeft: false,
     rotateRight: false,
@@ -41,9 +29,9 @@ export abstract class InputController {
   /**
    * Returns a read-only snapshot of the current input state.
    *
-   * @returns A copy of the current {@link GameInputs}.
+   * @returns A copy of the current {@link InputState}.
    */
-  getCurrentInputs(): Readonly<GameInputs> {
+  getCurrentInputs(): Readonly<InputState> {
     return { ...this.inputs };
   }
 }
@@ -92,7 +80,7 @@ export class KeyboardController extends InputController {
   };
 
   /**
-   * Maps current key states to {@link GameInputs}.
+   * Maps current key states to {@link InputState}.
    *
    * @remarks
    * Maps:
@@ -103,10 +91,10 @@ export class KeyboardController extends InputController {
    */
   private updateInputs(): void {
     this.inputs = {
-      thrust: this.keys.has("ArrowUp"),
-      rotateLeft: this.keys.has("ArrowLeft"),
-      rotateRight: this.keys.has("ArrowRight"),
-      shoot: this.keys.has("Space"),
+      thrust: this.keys.has(GAME_CONFIG.KEYS.THRUST),
+      rotateLeft: this.keys.has(GAME_CONFIG.KEYS.ROTATE_LEFT),
+      rotateRight: this.keys.has(GAME_CONFIG.KEYS.ROTATE_RIGHT),
+      shoot: this.keys.has(GAME_CONFIG.KEYS.SHOOT),
     };
   }
 }
@@ -132,9 +120,9 @@ export class TouchController extends InputController {
   /**
    * Manually updates the input state.
    *
-   * @param inputs - Partial set of {@link GameInputs} to update.
+   * @param inputs - Partial set of {@link InputState} to update.
    */
-  setInputs(inputs: Partial<GameInputs>): void {
+  setInputs(inputs: Partial<InputState>): void {
     this.inputs = { ...this.inputs, ...inputs };
   }
 }
