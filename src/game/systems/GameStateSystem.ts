@@ -31,8 +31,7 @@ export class GameStateSystem extends System {
   }
 
   public isGameOver(): boolean {
-    const status = this.gameOverLogged;
-    return status;
+    return this.gameOverLogged;
   }
 
   public resetGameOverState(): void {
@@ -52,13 +51,11 @@ export class GameStateSystem extends System {
 
   private updateAsteroidsCount(world: World, gameState: GameStateComponent): void {
     const asteroids = world.query("Asteroid");
-    const count = asteroids.length;
-    gameState.asteroidsRemaining = count;
+    gameState.asteroidsRemaining = asteroids.length;
   }
 
   private spawnWaveIfCleared(world: World, gameState: GameStateComponent): void {
-    const isCleared = gameState.asteroidsRemaining === 0;
-    if (isCleared) {
+    if (gameState.asteroidsRemaining === 0) {
       this.spawnAsteroidWave(world, gameState.level);
       gameState.level++;
     }
@@ -78,9 +75,8 @@ export class GameStateSystem extends System {
   }
 
   private updateInvulnerability(health: HealthComponent, deltaTime: number): void {
-    const currentInvulnerable = health.invulnerableRemaining;
-    if (currentInvulnerable > 0) {
-      health.invulnerableRemaining = currentInvulnerable - deltaTime;
+    if (health.invulnerableRemaining > 0) {
+      health.invulnerableRemaining -= deltaTime;
     }
   }
 

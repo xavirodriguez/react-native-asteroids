@@ -20,19 +20,13 @@ export class InputSystem extends System {
   /** Set of currently pressed keys (for web/keyboard). */
   private keys: Set<string> = new Set()
 
-  /** Timestamp of the last shot fired. */
-  private lastShootTime = 0
-
-  /** Cooldown time between shots in milliseconds. */
-  private shootCooldown = 200
-
   /**
    * Creates a new InputSystem and sets up keyboard listeners if in a browser environment.
    */
   constructor() {
     super()
     // Web keyboard support
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
       window.addEventListener("keydown", (e) => this.keys.add(e.code))
       window.addEventListener("keyup", (e) => this.keys.delete(e.code))
     }
@@ -44,10 +38,10 @@ export class InputSystem extends System {
    * @param input - The new input state.
    */
   setInput(input: Partial<InputState>): void {
-    this.updateKey("ArrowUp", input.thrust)
-    this.updateKey("ArrowLeft", input.rotateLeft)
-    this.updateKey("ArrowRight", input.rotateRight)
-    this.updateKey("Space", input.shoot)
+    this.updateKey(GAME_CONFIG.KEYS.THRUST, input.thrust)
+    this.updateKey(GAME_CONFIG.KEYS.ROTATE_LEFT, input.rotateLeft)
+    this.updateKey(GAME_CONFIG.KEYS.ROTATE_RIGHT, input.rotateRight)
+    this.updateKey(GAME_CONFIG.KEYS.SHOOT, input.shoot)
   }
 
   private updateKey(keyCode: string, isActive?: boolean): void {
@@ -67,7 +61,6 @@ export class InputSystem extends System {
    */
   update(world: World, deltaTime: number): void {
     const ships = world.query("Input", "Position", "Velocity", "Render")
-    const currentTime = Date.now()
 
     ships.forEach((entity) => {
       const input = world.getComponent<InputComponent>(entity, "Input")!
@@ -75,17 +68,21 @@ export class InputSystem extends System {
       const render = world.getComponent<RenderComponent>(entity, "Render")!
       const pos = world.getComponent<PositionComponent>(entity, "Position")!
 
+      if (input.shootCooldownRemaining > 0) {
+        input.shootCooldownRemaining -= deltaTime
+      }
+
       this.updateShipInputState(input)
       this.applyShipMovement(vel, render, input, deltaTime)
-      this.handleShipShooting(world, pos, render, input, currentTime)
+      this.handleShipShooting(world, pos, render, input)
     })
   }
 
   private updateShipInputState(input: InputComponent): void {
-    input.thrust = this.keys.has("ArrowUp")
-    input.rotateLeft = this.keys.has("ArrowLeft")
-    input.rotateRight = this.keys.has("ArrowRight")
-    input.shoot = this.keys.has("Space")
+    input.thrust = this.keys.has(GAME_CONFIG.KEYS.THRUST)
+    input.rotateLeft = this.keys.has(GAME_CONFIG.KEYS.ROTATE_LEFT)
+    input.rotateRight = this.keys.has(GAME_CONFIG.KEYS.ROTATE_RIGHT)
+    input.shoot = this.keys.has(GAME_CONFIG.KEYS.SHOOT)
   }
 
   private applyShipMovement(
@@ -113,12 +110,11 @@ export class InputSystem extends System {
     pos: PositionComponent,
     render: RenderComponent,
     input: InputComponent,
-    currentTime: number,
   ): void {
-    const canShoot = input.shoot && currentTime - this.lastShootTime > this.shootCooldown
+    const canShoot = input.shoot && input.shootCooldownRemaining <= 0
     if (canShoot) {
       createBullet(world, pos.x, pos.y, render.rotation)
-      this.lastShootTime = currentTime
+      input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN
     }
   }
 }
