@@ -1,6 +1,6 @@
 import { World } from "../../ecs-world";
 import { InputSystem } from "../InputSystem";
-import { GAME_CONFIG, type Entity, type PositionComponent, type VelocityComponent, type RenderComponent, type InputComponent } from "../../../types/GameTypes";
+import { GAME_CONFIG, type Entity, type VelocityComponent, type RenderComponent, type InputComponent } from "../../../types/GameTypes";
 
 describe("InputSystem", () => {
   let world: World;

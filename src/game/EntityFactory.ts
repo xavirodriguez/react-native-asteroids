@@ -2,21 +2,55 @@ import type { World } from "./ecs-world"
 import { type Entity, GAME_CONFIG } from "../types/GameTypes"
 
 /**
+ * Parameters for creating a ship entity.
+ */
+export interface CreateShipParams {
+  world: World;
+  x: number;
+  y: number;
+}
+
+/**
+ * Parameters for creating an asteroid entity.
+ */
+export interface CreateAsteroidParams {
+  world: World;
+  x: number;
+  y: number;
+  size: "large" | "medium" | "small";
+}
+
+/**
+ * Parameters for creating a bullet entity.
+ */
+export interface CreateBulletParams {
+  world: World;
+  x: number;
+  y: number;
+  angle: number;
+}
+
+/**
  * Creates a new player ship entity in the world.
  *
- * @param world - The ECS world.
- * @param x - Initial X position.
- * @param y - Initial Y position.
+ * @param params - Configuration parameters for the ship.
  * @returns The newly created {@link Entity}.
  */
-export function createShip(world: World, x: number, y: number): Entity {
+export function createShip(params: CreateShipParams): Entity {
+  const { world, x, y } = params;
   const ship = world.createEntity();
   const initialLives = GAME_CONFIG.SHIP_INITIAL_LIVES;
 
   world.addComponent(ship, { type: "Position", x, y });
   world.addComponent(ship, { type: "Velocity", dx: 0, dy: 0 });
-  world.addComponent(ship, { type: "Render", shape: "triangle", size: 10, color: "#CCCCCC", rotation: 0 });
-  world.addComponent(ship, { type: "Collider", radius: 8 });
+  world.addComponent(ship, {
+    type: "Render",
+    shape: "triangle",
+    size: GAME_CONFIG.SHIP_RENDER_SIZE,
+    color: "#CCCCCC",
+    rotation: 0,
+  });
+  world.addComponent(ship, { type: "Collider", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS });
   world.addComponent(ship, { type: "Health", current: initialLives, max: initialLives, invulnerableRemaining: 0 });
   world.addComponent(ship, {
     type: "Input",
@@ -33,16 +67,13 @@ export function createShip(world: World, x: number, y: number): Entity {
 /**
  * Creates a new asteroid entity in the world.
  *
- * @param world - The ECS world.
- * @param x - Initial X position.
- * @param y - Initial Y position.
- * @param size - The size category of the asteroid ("large", "medium", or "small").
+ * @param params - Configuration parameters for the asteroid.
  * @returns The newly created {@link Entity}.
  */
-export function createAsteroid(world: World, x: number, y: number, size: "large" | "medium" | "small"): Entity {
+export function createAsteroid(params: CreateAsteroidParams): Entity {
+  const { world, x, y, size } = params;
   const asteroid = world.createEntity();
-  const asteroidRadiusMap = { large: 30, medium: 20, small: 10 };
-  const radius = asteroidRadiusMap[size];
+  const radius = GAME_CONFIG.ASTEROID_RADII[size];
 
   world.addComponent(asteroid, { type: "Position", x, y });
   world.addComponent(asteroid, {
@@ -60,21 +91,25 @@ export function createAsteroid(world: World, x: number, y: number, size: "large"
 /**
  * Creates a new bullet entity in the world.
  *
- * @param world - The ECS world.
- * @param x - Initial X position.
- * @param y - Initial Y position.
- * @param angle - The angle in radians at which the bullet is fired.
+ * @param params - Configuration parameters for the bullet.
  * @returns The newly created {@link Entity}.
  */
-export function createBullet(world: World, x: number, y: number, angle: number): Entity {
+export function createBullet(params: CreateBulletParams): Entity {
+  const { world, x, y, angle } = params;
   const bullet = world.createEntity();
   const speed = GAME_CONFIG.BULLET_SPEED;
   const ttl = GAME_CONFIG.BULLET_TTL;
 
   world.addComponent(bullet, { type: "Position", x, y });
   world.addComponent(bullet, { type: "Velocity", dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed });
-  world.addComponent(bullet, { type: "Render", shape: "circle", size: 2, color: "#FFFF00", rotation: 0 });
-  world.addComponent(bullet, { type: "Collider", radius: 2 });
+  world.addComponent(bullet, {
+    type: "Render",
+    shape: "circle",
+    size: GAME_CONFIG.BULLET_RENDER_SIZE,
+    color: "#FFFF00",
+    rotation: 0,
+  });
+  world.addComponent(bullet, { type: "Collider", radius: GAME_CONFIG.BULLET_COLLIDER_RADIUS });
   world.addComponent(bullet, { type: "TTL", remaining: ttl });
   world.addComponent(bullet, { type: "Bullet" });
 
