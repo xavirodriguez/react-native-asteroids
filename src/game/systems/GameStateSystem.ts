@@ -124,7 +124,7 @@ export class GameStateSystem extends System {
       const angle = (Math.PI * 2 * i) / asteroidCount;
       const x = centerX + Math.cos(angle) * distance;
       const y = centerY + Math.sin(angle) * distance;
-      createAsteroid(world, x, y, "large");
+      createAsteroid({ world, x, y, size: "large" });
     }
   }
 }

@@ -34,6 +34,9 @@ export interface IAsteroidsGame {
 /**
  * Main controller for the Asteroids game.
  * Manages the game loop, systems initialization, and high-level game state transitions.
+ *
+ * @remarks
+ * This class follows the controller pattern, orchestrating the ECS world and its systems.
  */
 export class AsteroidsGame implements IAsteroidsGame {
   private world: World;
@@ -53,6 +56,9 @@ export class AsteroidsGame implements IAsteroidsGame {
 
   // --- Public Methods ---
 
+  /**
+   * Starts the game loop.
+   */
   public start(): void {
     const now = performance.now();
     this.isRunning = true;
@@ -61,6 +67,9 @@ export class AsteroidsGame implements IAsteroidsGame {
     this.gameLoop();
   }
 
+  /**
+   * Stops the game loop and cancels any pending frames.
+   */
   public stop(): void {
     if (this.gameLoopId) {
       cancelAnimationFrame(this.gameLoopId);
@@ -70,42 +79,53 @@ export class AsteroidsGame implements IAsteroidsGame {
     this.isPaused = false;
   }
 
+  /**
+   * Pauses the game execution.
+   */
   public pause(): void {
     if (this.isRunning && !this.isPaused) {
       this.isPaused = true;
-      console.log("Game state changed: PAUSED");
       this.notifyListeners();
     }
   }
 
+  /**
+   * Resumes the game execution from a paused state.
+   */
   public resume(): void {
     if (this.isPaused && this.isRunning) {
       this.isPaused = false;
       this.lastTime = performance.now();
-      console.log("Game state changed: RESUMED");
       this.notifyListeners();
     }
   }
 
+  /**
+   * Resets the game to its initial state.
+   */
   public restart(): void {
     this.world.clear();
     this.gameStateSystem.resetGameOverState();
     this.initializeGame();
-    
+
     if (this.isPaused) {
       this.start();
     }
-    
-    console.log("Game state changed: RESTARTED");
+
     this.notifyListeners();
   }
 
+  /**
+   * Subscribes a listener to game updates.
+   *
+   * @param listener - Callback function called on every frame.
+   * @returns Unsubscribe function.
+   */
   public subscribe(listener: UpdateListener): () => void {
     this.listeners.add(listener);
-    const unsubscribe = () => {
+    return () => {
       this.listeners.delete(listener);
     };
-    return unsubscribe;
   }
 
   public getIsPaused(): boolean {
@@ -120,6 +140,11 @@ export class AsteroidsGame implements IAsteroidsGame {
     return this.world;
   }
 
+  /**
+   * Retrieves the current global game state component.
+   *
+   * @returns The GameStateComponent or INITIAL_GAME_STATE if not found.
+   */
   public getGameState(): GameStateComponent {
     const entities = this.world.query("GameState");
     if (entities.length === 0) {
@@ -130,6 +155,11 @@ export class AsteroidsGame implements IAsteroidsGame {
     return gameState || INITIAL_GAME_STATE;
   }
 
+  /**
+   * Updates the input state processed by the InputSystem.
+   *
+   * @param input - Partial input state to update.
+   */
   public setInput(input: Partial<InputState>): void {
     const canProcessInput = !this.isPaused && !this.getIsGameOver();
     if (canProcessInput) {
@@ -157,9 +187,9 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private setupShip(): void {
-    const centerX = GAME_CONFIG.SCREEN_CENTER_X;
-    const centerY = GAME_CONFIG.SCREEN_CENTER_Y;
-    createShip(this.world, centerX, centerY);
+    const x = GAME_CONFIG.SCREEN_CENTER_X;
+    const y = GAME_CONFIG.SCREEN_CENTER_Y;
+    createShip({ world: this.world, x, y });
   }
 
   private setupGameState(): void {
@@ -175,12 +205,12 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private spawnInitialAsteroids(total: number): void {
-    const centerX = GAME_CONFIG.SCREEN_CENTER_X;
-    const centerY = GAME_CONFIG.SCREEN_CENTER_Y;
-    const spawnRadius = GAME_CONFIG.INITIAL_ASTEROID_SPAWN_RADIUS;
+    const x = GAME_CONFIG.SCREEN_CENTER_X;
+    const y = GAME_CONFIG.SCREEN_CENTER_Y;
+    const radius = GAME_CONFIG.INITIAL_ASTEROID_SPAWN_RADIUS;
 
     for (let i = 0; i < total; i++) {
-      this.spawnAsteroidAtAngle(i, total, centerX, centerY, spawnRadius);
+      this.spawnAsteroidAtAngle(i, total, x, y, radius);
     }
   }
 
@@ -188,7 +218,7 @@ export class AsteroidsGame implements IAsteroidsGame {
     const angle = (Math.PI * 2 * index) / total;
     const x = centerX + Math.cos(angle) * radius;
     const y = centerY + Math.sin(angle) * radius;
-    createAsteroid(this.world, x, y, "large");
+    createAsteroid({ world: this.world, x, y, size: "large" });
   }
 
   private notifyListeners(): void {
