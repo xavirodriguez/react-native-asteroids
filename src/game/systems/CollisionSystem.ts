@@ -20,16 +20,20 @@ export class CollisionSystem extends System {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public update(world: World, deltaTime: number): void {
     const colliders = world.query("Position", "Collider");
+    this.processCollisions(world, colliders);
+  }
 
+  private processCollisions(world: World, colliders: number[]): void {
     for (let i = 0; i < colliders.length; i++) {
       for (let j = i + 1; j < colliders.length; j++) {
-        const entityA = colliders[i];
-        const entityB = colliders[j];
-
-        if (this.isColliding(world, entityA, entityB)) {
-          this.resolveCollision(world, entityA, entityB);
-        }
+        this.checkAndResolve(world, colliders[i], colliders[j]);
       }
+    }
+  }
+
+  private checkAndResolve(world: World, entityA: number, entityB: number): void {
+    if (this.isColliding(world, entityA, entityB)) {
+      this.resolveCollision(world, entityA, entityB);
     }
   }
 
@@ -92,34 +96,36 @@ export class CollisionSystem extends System {
   }
 
   private splitAsteroid(world: World, asteroidEntity: number): void {
-    const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
-    const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position");
+    const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid")
+    const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position")
 
-    if (!asteroid || !pos) return;
+    if (!asteroid || !pos) return
 
-    // Split strategy mapping to avoid multiple if/else blocks
-    const splitStrategies: Record<string, () => void> = {
-      large: () => this.spawnSplitAsteroids(world, pos, "medium", GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE),
-      medium: () => this.spawnSplitAsteroids(world, pos, "small", GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM),
-      small: () => { /* Small asteroids just disappear */ }
-    };
-
-    const strategy = splitStrategies[asteroid.size];
-    if (strategy) {
-      strategy();
-    }
-
-    world.removeEntity(asteroidEntity);
+    this.executeSplitStrategy(world, pos, asteroid.size)
+    world.removeEntity(asteroidEntity)
   }
 
-  private spawnSplitAsteroids(
-    world: World,
-    pos: PositionComponent,
-    newSize: "medium" | "small",
+  private executeSplitStrategy(world: World, pos: PositionComponent, size: string): void {
+    if (size === "large") {
+      this.spawnSplit(world, pos, "medium", GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE)
+    } else if (size === "medium") {
+      this.spawnSplit(world, pos, "small", GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM)
+    }
+  }
+
+  private spawnSplit(world: World, pos: PositionComponent, newSize: "medium" | "small", offset: number): void {
+    this.spawnSplitAsteroids({ world, pos, newSize, offset })
+  }
+
+  private spawnSplitAsteroids(params: {
+    world: World
+    pos: PositionComponent
+    newSize: "medium" | "small"
     offset: number
-  ): void {
-    createAsteroid(world, pos.x + offset, pos.y + offset, newSize);
-    createAsteroid(world, pos.x - offset, pos.y - offset, newSize);
+  }): void {
+    const { world, pos, newSize, offset } = params
+    createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size: newSize })
+    createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size: newSize })
   }
 
   private addScore(world: World, points: number): void {

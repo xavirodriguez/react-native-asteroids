@@ -68,14 +68,17 @@ export class InputSystem extends System {
       const render = world.getComponent<RenderComponent>(entity, "Render")!
       const pos = world.getComponent<PositionComponent>(entity, "Position")!
 
-      if (input.shootCooldownRemaining > 0) {
-        input.shootCooldownRemaining -= deltaTime
-      }
-
+      this.updateShootingCooldown(input, deltaTime)
       this.updateShipInputState(input)
       this.applyShipMovement(vel, render, input, deltaTime)
       this.handleShipShooting(world, pos, render, input)
     })
+  }
+
+  private updateShootingCooldown(input: InputComponent, deltaTime: number): void {
+    if (input.shootCooldownRemaining > 0) {
+      input.shootCooldownRemaining -= deltaTime
+    }
   }
 
   private updateShipInputState(input: InputComponent): void {
@@ -113,7 +116,7 @@ export class InputSystem extends System {
   ): void {
     const canShoot = input.shoot && input.shootCooldownRemaining <= 0
     if (canShoot) {
-      createBullet(world, pos.x, pos.y, render.rotation)
+      createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation })
       input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN
     }
   }

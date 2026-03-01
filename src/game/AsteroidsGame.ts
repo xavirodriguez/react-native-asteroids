@@ -25,8 +25,8 @@ export interface IAsteroidsGame {
   resume(): void;
   restart(): void;
   getWorld(): World;
-  getIsPaused(): boolean;
-  getIsGameOver(): boolean;
+  isPausedState(): boolean;
+  isGameOver(): boolean;
   getGameState(): GameStateComponent;
   subscribe(listener: UpdateListener): () => void;
 }
@@ -108,12 +108,12 @@ export class AsteroidsGame implements IAsteroidsGame {
     return unsubscribe;
   }
 
-  public getIsPaused(): boolean {
-    return this.isPaused;
+  public isPausedState(): boolean {
+    return this.isPaused
   }
 
-  public getIsGameOver(): boolean {
-    return this.gameStateSystem.isGameOver();
+  public isGameOver(): boolean {
+    return this.gameStateSystem.isGameOver()
   }
 
   public getWorld(): World {
@@ -131,7 +131,7 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   public setInput(input: Partial<InputState>): void {
-    const canProcessInput = !this.isPaused && !this.getIsGameOver();
+    const canProcessInput = !this.isPaused && !this.isGameOver();
     if (canProcessInput) {
       this.inputSystem.setInput(input);
     }
@@ -157,9 +157,9 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private setupShip(): void {
-    const centerX = GAME_CONFIG.SCREEN_CENTER_X;
-    const centerY = GAME_CONFIG.SCREEN_CENTER_Y;
-    createShip(this.world, centerX, centerY);
+    const x = GAME_CONFIG.SCREEN_CENTER_X;
+    const y = GAME_CONFIG.SCREEN_CENTER_Y;
+    createShip({ world: this.world, x, y });
   }
 
   private setupGameState(): void {
@@ -188,7 +188,7 @@ export class AsteroidsGame implements IAsteroidsGame {
     const angle = (Math.PI * 2 * index) / total;
     const x = centerX + Math.cos(angle) * radius;
     const y = centerY + Math.sin(angle) * radius;
-    createAsteroid(this.world, x, y, "large");
+    createAsteroid({ world: this.world, x, y, size: "large" });
   }
 
   private notifyListeners(): void {
