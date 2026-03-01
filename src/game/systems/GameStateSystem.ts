@@ -63,15 +63,13 @@ export class GameStateSystem extends System {
 
   private updatePlayerStatus(world: World, gameState: GameStateComponent, deltaTime: number): void {
     const ships = world.query("Health", "Input");
-    if (ships.length === 0) {
-      return;
-    }
+    if (ships.length === 0) return
 
-    const shipEntity = ships[0];
-    const health = world.getComponent<HealthComponent>(shipEntity, "Health")!;
+    const shipEntity = ships[0]
+    const health = world.getComponent<HealthComponent>(shipEntity, "Health")!
 
-    this.updateInvulnerability(health, deltaTime);
-    gameState.lives = health.current;
+    this.updateInvulnerability(health, deltaTime)
+    gameState.lives = health.current
   }
 
   private updateInvulnerability(health: HealthComponent, deltaTime: number): void {
@@ -81,15 +79,15 @@ export class GameStateSystem extends System {
   }
 
   private checkGameOver(world: World, gameState: GameStateComponent): void {
-    const isGameOver = this.evaluateGameOverCondition(world);
+    const isGameOver = this.evaluateGameOverCondition(world)
 
-    gameState.isGameOver = isGameOver;
+    gameState.isGameOver = isGameOver
     if (isGameOver) {
-      this.handleGameOverOnce(gameState);
-      return;
+      this.handleGameOverOnce(gameState)
+      return
     }
 
-    this.gameOverLogged = false;
+    this.gameOverLogged = false
   }
 
   private evaluateGameOverCondition(world: World): boolean {
@@ -124,7 +122,7 @@ export class GameStateSystem extends System {
       const angle = (Math.PI * 2 * i) / asteroidCount;
       const x = centerX + Math.cos(angle) * distance;
       const y = centerY + Math.sin(angle) * distance;
-      createAsteroid(world, x, y, "large");
+      createAsteroid({ world, x, y, size: "large" });
     }
   }
 }
