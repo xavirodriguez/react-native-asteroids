@@ -39,13 +39,34 @@ export interface CreateBulletParams {
 export function createShip(params: CreateShipParams): Entity {
   const { world, x, y } = params
   const ship = world.createEntity()
-  const initialLives = GAME_CONFIG.SHIP_INITIAL_LIVES
 
+  addShipMovementComponents(world, ship, x, y)
+  addShipCombatComponents(world, ship)
+
+  return ship
+}
+
+function addShipMovementComponents(world: World, ship: Entity, x: number, y: number): void {
   world.addComponent(ship, { type: "Position", x, y })
   world.addComponent(ship, { type: "Velocity", dx: 0, dy: 0 })
-  world.addComponent(ship, { type: "Render", shape: "triangle", size: 10, color: "#CCCCCC", rotation: 0 })
+  world.addComponent(ship, {
+    type: "Render",
+    shape: "triangle",
+    size: 10,
+    color: "#CCCCCC",
+    rotation: 0,
+  })
+}
+
+function addShipCombatComponents(world: World, ship: Entity): void {
+  const initialLives = GAME_CONFIG.SHIP_INITIAL_LIVES
   world.addComponent(ship, { type: "Collider", radius: 8 })
-  world.addComponent(ship, { type: "Health", current: initialLives, max: initialLives, invulnerableRemaining: 0 })
+  world.addComponent(ship, {
+    type: "Health",
+    current: initialLives,
+    max: initialLives,
+    invulnerableRemaining: 0,
+  })
   world.addComponent(ship, {
     type: "Input",
     thrust: false,
@@ -54,8 +75,6 @@ export function createShip(params: CreateShipParams): Entity {
     shoot: false,
     shootCooldownRemaining: 0,
   })
-
-  return ship
 }
 
 /**

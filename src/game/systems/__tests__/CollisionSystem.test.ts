@@ -1,6 +1,6 @@
 import { World } from "../../ecs-world";
 import { CollisionSystem } from "../CollisionSystem";
-import { GAME_CONFIG } from "../../../types/GameTypes";
+import { GAME_CONFIG, type HealthComponent } from "../../../types/GameTypes";
 
 describe("CollisionSystem", () => {
   let world: World;
@@ -26,9 +26,9 @@ describe("CollisionSystem", () => {
     // Distance is 15. Sum of radii is 20. Should collide.
     world.update(0);
 
-    const health = world.getComponent(e1, "Health") as any;
-    expect(health.current).toBe(2);
-    expect(health.invulnerableRemaining).toBe(GAME_CONFIG.INVULNERABILITY_DURATION);
+    const health = world.getComponent<HealthComponent>(e1, "Health");
+    expect(health?.current).toBe(2);
+    expect(health?.invulnerableRemaining).toBe(GAME_CONFIG.INVULNERABILITY_DURATION);
   });
 
   it("should respect invulnerability", () => {
@@ -44,7 +44,7 @@ describe("CollisionSystem", () => {
 
     world.update(0);
 
-    const health = world.getComponent(e1, "Health") as any;
-    expect(health.current).toBe(3); // No health lost
+    const health = world.getComponent<HealthComponent>(e1, "Health");
+    expect(health?.current).toBe(3); // No health lost
   });
 });

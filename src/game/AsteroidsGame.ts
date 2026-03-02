@@ -121,13 +121,8 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   public getGameState(): GameStateComponent {
-    const entities = this.world.query("GameState");
-    if (entities.length === 0) {
-      return INITIAL_GAME_STATE;
-    }
-
-    const gameState = this.world.getComponent<GameStateComponent>(entities[0], "GameState");
-    return gameState || INITIAL_GAME_STATE;
+    const [entity] = this.world.query("GameState")
+    return this.world.getComponent<GameStateComponent>(entity, "GameState") ?? INITIAL_GAME_STATE
   }
 
   public setInput(input: Partial<InputState>): void {

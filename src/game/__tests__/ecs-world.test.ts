@@ -6,6 +6,11 @@ interface MockComponent extends Component {
   value: number
 }
 
+interface OtherComponent extends Component {
+  type: "Other"
+  type_other: boolean
+}
+
 class MockSystem extends System {
   updated = false
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -47,7 +52,7 @@ describe("ECS World", () => {
     const e1 = world.createEntity()
     const e2 = world.createEntity()
     world.addComponent(e1, { type: "Mock", value: 1 } as MockComponent)
-    world.addComponent(e2, { type: "Other", type_other: true } as any)
+    world.addComponent(e2, { type: "Other", type_other: true } as OtherComponent)
 
     const results = world.query("Mock")
     expect(results).toContain(e1)
