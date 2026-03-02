@@ -110,19 +110,24 @@ export class GameStateSystem extends System {
    * Spawns a new wave of asteroids based on the current level.
    */
   private spawnAsteroidWave(world: World, level: number): void {
-    const initialCount = GAME_CONFIG.INITIAL_ASTEROID_COUNT;
-    const maxCount = GAME_CONFIG.MAX_WAVE_ASTEROIDS;
-    const asteroidCount = Math.min(initialCount + level, maxCount);
-
-    const centerX = GAME_CONFIG.SCREEN_CENTER_X;
-    const centerY = GAME_CONFIG.SCREEN_CENTER_Y;
-    const distance = GAME_CONFIG.WAVE_SPAWN_DISTANCE;
+    const asteroidCount = this.calculateWaveCount(level)
+    const distance = GAME_CONFIG.WAVE_SPAWN_DISTANCE
 
     for (let i = 0; i < asteroidCount; i++) {
-      const angle = (Math.PI * 2 * i) / asteroidCount;
-      const x = centerX + Math.cos(angle) * distance;
-      const y = centerY + Math.sin(angle) * distance;
-      createAsteroid({ world, x, y, size: "large" });
+      const angle = (Math.PI * 2 * i) / asteroidCount
+      this.spawnAsteroidAtAngle(world, angle, distance)
     }
+  }
+
+  private calculateWaveCount(level: number): number {
+    const initialCount = GAME_CONFIG.INITIAL_ASTEROID_COUNT
+    const maxCount = GAME_CONFIG.MAX_WAVE_ASTEROIDS
+    return Math.min(initialCount + level, maxCount)
+  }
+
+  private spawnAsteroidAtAngle(world: World, angle: number, distance: number): void {
+    const x = GAME_CONFIG.SCREEN_CENTER_X + Math.cos(angle) * distance
+    const y = GAME_CONFIG.SCREEN_CENTER_Y + Math.sin(angle) * distance
+    createAsteroid({ world, x, y, size: "large" })
   }
 }

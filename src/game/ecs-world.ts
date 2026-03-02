@@ -122,23 +122,25 @@ export class World {
   query(...componentTypes: ComponentType[]): Entity[] {
     if (componentTypes.length === 0) return []
 
-    // Find the smallest set of entities for the given types to minimize checks
-    const sortedTypes = [...componentTypes].sort((a, b) => {
+    const sortedTypes = this.getSortedTypes(componentTypes)
+    const rarestType = sortedTypes[0]
+    const candidates = this.componentIndex.get(rarestType)
+
+    if (!candidates || candidates.size === 0) {
+      return []
+    }
+
+    return Array.from(candidates).filter((entity) =>
+      sortedTypes.slice(1).every((type) => this.componentIndex.get(type)?.has(entity)),
+    )
+  }
+
+  private getSortedTypes(types: ComponentType[]): ComponentType[] {
+    return [...types].sort((a, b) => {
       const countA = this.componentIndex.get(a)?.size ?? 0
       const countB = this.componentIndex.get(b)?.size ?? 0
       return countA - countB
     })
-
-    const rarestType = sortedTypes[0]
-    const entitiesWithRarestComponent = this.componentIndex.get(rarestType)
-
-    if (!entitiesWithRarestComponent || entitiesWithRarestComponent.size === 0) {
-      return []
-    }
-
-    return Array.from(entitiesWithRarestComponent).filter((entity) =>
-      sortedTypes.slice(1).every((type) => this.componentIndex.get(type)?.has(entity)),
-    )
   }
 
   /**
