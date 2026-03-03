@@ -175,11 +175,18 @@ export class AsteroidsGame implements IAsteroidsGame {
     const spawnRadius = GAME_CONFIG.INITIAL_ASTEROID_SPAWN_RADIUS;
 
     for (let i = 0; i < total; i++) {
-      this.spawnAsteroidAtAngle(i, total, centerX, centerY, spawnRadius);
+      this.spawnAsteroidAtAngle({ index: i, total, centerX, centerY, radius: spawnRadius });
     }
   }
 
-  private spawnAsteroidAtAngle(index: number, total: number, centerX: number, centerY: number, radius: number): void {
+  private spawnAsteroidAtAngle(params: {
+    index: number
+    total: number
+    centerX: number
+    centerY: number
+    radius: number
+  }): void {
+    const { index, total, centerX, centerY, radius } = params;
     const angle = (Math.PI * 2 * index) / total;
     const x = centerX + Math.cos(angle) * radius;
     const y = centerY + Math.sin(angle) * radius;

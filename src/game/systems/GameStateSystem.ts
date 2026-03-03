@@ -115,7 +115,7 @@ export class GameStateSystem extends System {
 
     for (let i = 0; i < asteroidCount; i++) {
       const angle = (Math.PI * 2 * i) / asteroidCount
-      this.spawnAsteroidAtAngle(world, angle, distance)
+      this.spawnAsteroidAtAngle({ world, angle, distance })
     }
   }
 
@@ -125,7 +125,8 @@ export class GameStateSystem extends System {
     return Math.min(initialCount + level, maxCount)
   }
 
-  private spawnAsteroidAtAngle(world: World, angle: number, distance: number): void {
+  private spawnAsteroidAtAngle(params: { world: World; angle: number; distance: number }): void {
+    const { world, angle, distance } = params
     const x = GAME_CONFIG.SCREEN_CENTER_X + Math.cos(angle) * distance
     const y = GAME_CONFIG.SCREEN_CENTER_Y + Math.sin(angle) * distance
     createAsteroid({ world, x, y, size: "large" })

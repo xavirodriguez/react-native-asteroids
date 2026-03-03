@@ -52,7 +52,7 @@ function addShipMovementComponents(world: World, ship: Entity, x: number, y: num
   world.addComponent(ship, {
     type: "Render",
     shape: "triangle",
-    size: 10,
+    size: GAME_CONFIG.SHIP_RENDER_SIZE,
     color: "#CCCCCC",
     rotation: 0,
   })
@@ -60,7 +60,7 @@ function addShipMovementComponents(world: World, ship: Entity, x: number, y: num
 
 function addShipCombatComponents(world: World, ship: Entity): void {
   const initialLives = GAME_CONFIG.SHIP_INITIAL_LIVES
-  world.addComponent(ship, { type: "Collider", radius: 8 })
+  world.addComponent(ship, { type: "Collider", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS })
   world.addComponent(ship, {
     type: "Health",
     current: initialLives,
@@ -86,8 +86,7 @@ function addShipCombatComponents(world: World, ship: Entity): void {
 export function createAsteroid(params: CreateAsteroidParams): Entity {
   const { world, x, y, size } = params
   const asteroid = world.createEntity()
-  const asteroidRadiusMap = { large: 30, medium: 20, small: 10 }
-  const radius = asteroidRadiusMap[size]
+  const radius = GAME_CONFIG.ASTEROID_RADII[size]
 
   world.addComponent(asteroid, { type: "Position", x, y })
   world.addComponent(asteroid, {
@@ -113,11 +112,12 @@ export function createBullet(params: CreateBulletParams): Entity {
   const bullet = world.createEntity()
   const speed = GAME_CONFIG.BULLET_SPEED
   const ttl = GAME_CONFIG.BULLET_TTL
+  const size = GAME_CONFIG.BULLET_SIZE
 
   world.addComponent(bullet, { type: "Position", x, y })
   world.addComponent(bullet, { type: "Velocity", dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed })
-  world.addComponent(bullet, { type: "Render", shape: "circle", size: 2, color: "#FFFF00", rotation: 0 })
-  world.addComponent(bullet, { type: "Collider", radius: 2 })
+  world.addComponent(bullet, { type: "Render", shape: "circle", size, color: "#FFFF00", rotation: 0 })
+  world.addComponent(bullet, { type: "Collider", radius: size })
   world.addComponent(bullet, { type: "TTL", remaining: ttl })
   world.addComponent(bullet, { type: "Bullet" })
 

@@ -211,6 +211,12 @@ export const GAME_CONFIG = {
   SHIP_ROTATION_SPEED: 3,
   /** Initial number of lives for the player */
   SHIP_INITIAL_LIVES: 3,
+  /** Base size of the ship for rendering */
+  SHIP_RENDER_SIZE: 10,
+  /** Radius of the ship's collider */
+  SHIP_COLLIDER_RADIUS: 8,
+  /** Friction applied to ship velocity (0-1) */
+  SHIP_FRICTION: 0.99,
 
   /** Velocity of bullets in pixels per second */
   BULLET_SPEED: 300,
@@ -218,6 +224,8 @@ export const GAME_CONFIG = {
   BULLET_TTL: 2000,
   /** Cooldown between bullets in milliseconds */
   BULLET_SHOOT_COOLDOWN: 200,
+  /** Radius of the bullet's collider and render size */
+  BULLET_SIZE: 2,
 
   /** Duration of invulnerability after being hit, in milliseconds */
   INVULNERABILITY_DURATION: 2000,
@@ -231,6 +239,12 @@ export const GAME_CONFIG = {
   /** Radius for spawning initial asteroids around the center */
   INITIAL_ASTEROID_SPAWN_RADIUS: 150,
 
+  /** Mapping of asteroid sizes to their radii */
+  ASTEROID_RADII: {
+    large: 30,
+    medium: 20,
+    small: 10,
+  },
   /** Position offset when a large asteroid splits into medium ones */
   ASTEROID_SPLIT_OFFSET_LARGE: 10,
   /** Position offset when a medium asteroid splits into small ones */
