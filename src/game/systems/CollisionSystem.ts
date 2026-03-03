@@ -5,6 +5,7 @@ import {
   type AsteroidComponent,
   type HealthComponent,
   type GameStateComponent,
+  type Entity,
   GAME_CONFIG,
 } from "../../types/GameTypes"
 
@@ -23,7 +24,7 @@ export class CollisionSystem extends System {
     this.processCollisions(world, colliders);
   }
 
-  private processCollisions(world: World, colliders: number[]): void {
+  private processCollisions(world: World, colliders: Entity[]): void {
     for (let i = 0; i < colliders.length; i++) {
       for (let j = i + 1; j < colliders.length; j++) {
         this.checkAndResolve(world, colliders[i], colliders[j]);
@@ -31,13 +32,13 @@ export class CollisionSystem extends System {
     }
   }
 
-  private checkAndResolve(world: World, entityA: number, entityB: number): void {
+  private checkAndResolve(world: World, entityA: Entity, entityB: Entity): void {
     if (this.isColliding(world, entityA, entityB)) {
       this.resolveCollision(world, entityA, entityB);
     }
   }
 
-  private isColliding(world: World, entityA: number, entityB: number): boolean {
+  private isColliding(world: World, entityA: Entity, entityB: Entity): boolean {
     const posA = world.getComponent<PositionComponent>(entityA, "Position");
     const posB = world.getComponent<PositionComponent>(entityB, "Position");
     const colA = world.getComponent<ColliderComponent>(entityA, "Collider");
@@ -52,15 +53,18 @@ export class CollisionSystem extends System {
     return dx * dx + dy * dy < radiusSum * radiusSum;
   }
 
-  private resolveCollision(world: World, entityA: number, entityB: number): void {
-    if (this.checkBulletAsteroid(world, entityA, entityB)) return;
-    if (this.checkBulletAsteroid(world, entityB, entityA)) return;
-    
-    if (this.checkShipAsteroid(world, entityA, entityB)) return;
-    if (this.checkShipAsteroid(world, entityB, entityA)) return;
+  private resolveCollision(world: World, entityA: Entity, entityB: Entity): void {
+    const wasBulletCollision =
+      this.checkBulletAsteroid(world, entityA, entityB) ||
+      this.checkBulletAsteroid(world, entityB, entityA);
+
+    if (wasBulletCollision) return;
+
+    this.checkShipAsteroid(world, entityA, entityB);
+    this.checkShipAsteroid(world, entityB, entityA);
   }
 
-  private checkBulletAsteroid(world: World, entityA: number, entityB: number): boolean {
+  private checkBulletAsteroid(world: World, entityA: Entity, entityB: Entity): boolean {
     const asteroid = world.getComponent<AsteroidComponent>(entityA, "Asteroid");
     const isBullet = world.getComponent(entityB, "Bullet") !== undefined;
 
@@ -71,7 +75,7 @@ export class CollisionSystem extends System {
     return false;
   }
 
-  private checkShipAsteroid(world: World, entityA: number, entityB: number): boolean {
+  private checkShipAsteroid(world: World, entityA: Entity, entityB: Entity): boolean {
     const health = world.getComponent<HealthComponent>(entityA, "Health");
     const isAsteroid = world.getComponent(entityB, "Asteroid") !== undefined;
 
@@ -82,7 +86,7 @@ export class CollisionSystem extends System {
     return false;
   }
 
-  private handleBulletAsteroidCollision(world: World, asteroidEntity: number, bulletEntity: number): void {
+  private handleBulletAsteroidCollision(world: World, asteroidEntity: Entity, bulletEntity: Entity): void {
     this.splitAsteroid(world, asteroidEntity);
     world.removeEntity(bulletEntity);
     this.addScore(world, GAME_CONFIG.ASTEROID_SCORE);
@@ -95,7 +99,7 @@ export class CollisionSystem extends System {
     }
   }
 
-  private splitAsteroid(world: World, asteroidEntity: number): void {
+  private splitAsteroid(world: World, asteroidEntity: Entity): void {
     const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid")
     const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position")
 
