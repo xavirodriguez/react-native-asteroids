@@ -25,8 +25,12 @@ export class InputSystem extends System {
    */
   constructor() {
     super()
-    // Web keyboard support
-    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+    this.registerKeyboardListeners()
+  }
+
+  private registerKeyboardListeners(): void {
+    const isBrowser = typeof window !== "undefined" && typeof window.addEventListener === "function"
+    if (isBrowser) {
       window.addEventListener("keydown", (e) => this.keys.add(e.code))
       window.addEventListener("keyup", (e) => this.keys.delete(e.code))
     }
@@ -97,14 +101,31 @@ export class InputSystem extends System {
     const { vel, render, input, deltaTime } = params
     const dt = deltaTime / 1000
 
+    this.applyRotation({ render, input, dt })
+    this.applyThrust({ vel, render, input, dt })
+    this.applyFriction(vel)
+  }
+
+  private applyRotation(params: { render: RenderComponent; input: InputComponent; dt: number }): void {
+    const { render, input, dt } = params
     if (input.rotateLeft) render.rotation -= GAME_CONFIG.SHIP_ROTATION_SPEED * dt
     if (input.rotateRight) render.rotation += GAME_CONFIG.SHIP_ROTATION_SPEED * dt
+  }
 
+  private applyThrust(params: {
+    vel: VelocityComponent
+    render: RenderComponent
+    input: InputComponent
+    dt: number
+  }): void {
+    const { vel, render, input, dt } = params
     if (input.thrust) {
       vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt
       vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt
     }
+  }
 
+  private applyFriction(vel: VelocityComponent): void {
     vel.dx *= GAME_CONFIG.SHIP_FRICTION
     vel.dy *= GAME_CONFIG.SHIP_FRICTION
   }
