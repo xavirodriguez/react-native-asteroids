@@ -6,11 +6,14 @@ import {
 } from "../../types/GameTypes"
 
 /**
- * System responsible for updating entity positions based on their velocity.
+ * Updates entity positions based on their velocity and handles screen wrapping.
  */
 export class MovementSystem extends System {
   /**
    * Updates positions and handles screen wrapping.
+   *
+   * @param world - The ECS world instance.
+   * @param deltaTime - Time since last update in milliseconds.
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Position", "Velocity");

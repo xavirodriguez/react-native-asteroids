@@ -13,9 +13,9 @@ interface GameUIProps {
 }
 
 /**
- * Component responsible for rendering the Head-Up Display (HUD) overlay.
+ * Renders the Head-Up Display (HUD) overlay.
  *
- * @param props - Component properties.
+ * @param props - The component props.
  * @returns A React functional component.
  *
  * @remarks

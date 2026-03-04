@@ -17,54 +17,56 @@ export type ComponentType = string
 export type Entity = number
 
 /**
- * Base interface for all components.
- * Every component must have a type discriminator.
+ * Base interface for all components in the ECS.
+ *
+ * @remarks
+ * Every component must have a unique type discriminator used for indexing and queries.
  */
 export interface Component {
-  /** Discriminator for the component type */
+  /** The discriminator for the component type. */
   type: ComponentType
 }
 
 /**
- * Represents a position in 2D space.
+ * Defines a position in 2D space.
  *
  * @remarks
  * Attached to entities that exist at a specific location in the game world.
  */
 export interface PositionComponent extends Component {
   type: "Position"
-  /** X-coordinate on the screen in pixels */
+  /** The X-coordinate on the screen in pixels. */
   x: number
-  /** Y-coordinate on the screen in pixels */
+  /** The Y-coordinate on the screen in pixels. */
   y: number
 }
 
 /**
- * Represents velocity in 2D space.
+ * Defines velocity in 2D space.
  *
  * @remarks
  * Attached to entities that move over time.
  */
 export interface VelocityComponent extends Component {
   type: "Velocity"
-  /** Change in X position per second (pixels/sec) */
+  /** The change in X position per second (pixels/sec). */
   dx: number
-  /** Change in Y position per second (pixels/sec) */
+  /** The change in Y position per second (pixels/sec). */
   dy: number
 }
 
 /**
- * Defines how an entity should be rendered by the {@link GameRenderer}.
+ * Defines how an entity should be rendered.
  */
 export interface RenderComponent extends Component {
   type: "Render"
-  /** The geometric shape to draw */
+  /** The geometric shape to draw. */
   shape: "triangle" | "circle" | "line"
-  /** Base size of the shape in pixels */
+  /** The base size of the shape in pixels. */
   size: number
-  /** CSS color string (e.g., "#FFFFFF", "red") */
+  /** The CSS color string (e.g., "#FFFFFF", "red"). */
   color: string
-  /** Rotation in radians */
+  /** The rotation in radians. */
   rotation: number
 }
 
@@ -83,32 +85,32 @@ export interface ColliderComponent extends Component {
 }
 
 /**
- * Tracks the health or durability of an entity.
+ * Tracks the health and durability of an entity.
  *
  * @remarks
  * Typically used for the player ship to track remaining lives or hits it can take.
  */
 export interface HealthComponent extends Component {
   type: "Health"
-  /** Current health points or lives */
+  /** The current health points or lives. */
   current: number
-  /** Maximum health points or lives */
+  /** The maximum health points or lives. */
   max: number
-  /** Remaining time in milliseconds for which the entity is invulnerable to damage */
+  /** The remaining time in milliseconds for which the entity is invulnerable to damage. */
   invulnerableRemaining: number
 }
 
 /**
- * Represents the current state of user inputs.
+ * Defines the current state of user inputs.
  */
 export interface InputState {
-  /** Whether the thrust (acceleration) action is active */
+  /** Indicates whether the thrust (acceleration) action is active. */
   thrust: boolean
-  /** Whether the rotate left action is active */
+  /** Indicates whether the rotate left action is active. */
   rotateLeft: boolean
-  /** Whether the rotate right action is active */
+  /** Indicates whether the rotate right action is active. */
   rotateRight: boolean
-  /** Whether the shoot action is active */
+  /** Indicates whether the shoot action is active. */
   shoot: boolean
 }
 
@@ -137,7 +139,7 @@ export interface TTLComponent extends Component {
 }
 
 /**
- * Marker component for bullet entities.
+ * Identifies an entity as a bullet.
  */
 export interface BulletComponent extends Component {
   type: "Bullet"
@@ -173,7 +175,7 @@ export interface GameStateComponent extends Component {
 }
 
 /**
- * Null Object for GameStateComponent to avoid returning null/undefined.
+ * Default initial game state.
  */
 export const INITIAL_GAME_STATE: GameStateComponent = {
   type: "GameState",

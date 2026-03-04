@@ -18,16 +18,40 @@ import { getGameState } from "./GameUtils"
 export type UpdateListener = (game: IAsteroidsGame) => void;
 
 /**
- * Interface defining the public API for the Asteroids game controller.
+ * Defines the public API for the Asteroids game controller.
  */
 export interface IAsteroidsGame {
+  /** Pauses the game execution. */
   pause(): void;
+  /** Resumes the game execution from a paused state. */
   resume(): void;
+  /** Restarts the game to its initial state. */
   restart(): void;
+  /**
+   * Retrieves the ECS world instance.
+   * @returns The {@link World} instance.
+   */
   getWorld(): World;
+  /**
+   * Checks if the game is currently paused.
+   * @returns `true` if paused; otherwise `false`.
+   */
   isPausedState(): boolean;
+  /**
+   * Checks if the game is in a Game Over state.
+   * @returns `true` if game over; otherwise `false`.
+   */
   isGameOver(): boolean;
+  /**
+   * Retrieves the current global game state.
+   * @returns The {@link GameStateComponent}.
+   */
   getGameState(): GameStateComponent;
+  /**
+   * Subscribes a listener to game update events.
+   * @param listener - The callback function to be triggered.
+   * @returns A function to unsubscribe the listener.
+   */
   subscribe(listener: UpdateListener): () => void;
 }
 
@@ -53,6 +77,9 @@ export class AsteroidsGame implements IAsteroidsGame {
 
   // --- Public Methods ---
 
+  /**
+   * Starts the game loop.
+   */
   public start(): void {
     const now = performance.now();
     this.isRunning = true;
@@ -61,6 +88,9 @@ export class AsteroidsGame implements IAsteroidsGame {
     this.gameLoop();
   }
 
+  /**
+   * Stops the game loop and cleans up resources.
+   */
   public stop(): void {
     if (this.gameLoopId) {
       cancelAnimationFrame(this.gameLoopId);

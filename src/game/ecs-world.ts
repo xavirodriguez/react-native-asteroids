@@ -55,7 +55,7 @@ export class World {
   /**
    * Creates a new unique entity in the world.
    *
-   * @returns The newly created {@link Entity} ID.
+   * @returns The newly created {@link Entity} identifier.
    */
   createEntity(): Entity {
     const id = this.nextEntityId++
@@ -88,9 +88,9 @@ export class World {
   /**
    * Retrieves a component of a specific type from an entity.
    *
-   * @param entity - The entity to get the component from.
-   * @param type - The type of the component to retrieve.
-   * @returns The component instance if found, otherwise `undefined`.
+   * @param entity - The entity identifier to get the component from.
+   * @param type - The type discriminator of the component to retrieve.
+   * @returns The component instance if found; otherwise `undefined`.
    */
   getComponent<T extends Component>(entity: Entity, type: ComponentType): T | undefined {
     return this.components.get(type)?.get(entity) as T
@@ -99,8 +99,8 @@ export class World {
   /**
    * Removes a component of a specific type from an entity.
    *
-   * @param entity - The entity to remove the component from.
-   * @param type - The type of the component to remove.
+   * @param entity - The entity identifier to remove the component from.
+   * @param type - The type discriminator of the component to remove.
    */
   removeComponent(entity: Entity, type: ComponentType): void {
     const componentMap = this.components.get(type)
@@ -192,7 +192,7 @@ export class World {
   /**
    * Returns a list of all active entities currently in the world.
    *
-   * @returns An array of all {@link Entity} IDs.
+   * @returns An array containing all active {@link Entity} identifiers.
    */
   getAllEntities(): Entity[] {
     return Array.from(this.entities)

@@ -2,31 +2,42 @@ import type { World } from "./ecs-world"
 import { type Entity, GAME_CONFIG } from "../types/GameTypes"
 
 /**
- * Parameters for creating a player ship entity.
+ * Defines the parameters for creating a player ship entity.
  */
 export interface CreateShipParams {
+  /** The ECS world to create the ship in. */
   world: World
+  /** The initial X position. */
   x: number
+  /** The initial Y position. */
   y: number
 }
 
 /**
- * Parameters for creating an asteroid entity.
+ * Defines the parameters for creating an asteroid entity.
  */
 export interface CreateAsteroidParams {
+  /** The ECS world to create the asteroid in. */
   world: World
+  /** The initial X position. */
   x: number
+  /** The initial Y position. */
   y: number
+  /** The size category of the asteroid. */
   size: "large" | "medium" | "small"
 }
 
 /**
- * Parameters for creating a bullet entity.
+ * Defines the parameters for creating a bullet entity.
  */
 export interface CreateBulletParams {
+  /** The ECS world to create the bullet in. */
   world: World
+  /** The initial X position. */
   x: number
+  /** The initial Y position. */
   y: number
+  /** The firing angle in radians. */
   angle: number
 }
 

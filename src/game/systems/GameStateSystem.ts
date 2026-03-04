@@ -5,12 +5,21 @@ import type { IAsteroidsGame } from "../AsteroidsGame"
 import { getGameState } from "../GameUtils"
 
 /**
- * System responsible for managing global game state, wave spawning, and game over conditions.
+ * Manages global game state, wave spawning, and game over conditions.
+ *
+ * @remarks
+ * This system synchronizes the {@link GameStateComponent} with the current world state,
+ * handles player lives, and triggers new asteroid waves when the field is cleared.
  */
 export class GameStateSystem extends System {
   private gameOverLogged = false;
   private gameInstance: IAsteroidsGame | undefined;
 
+  /**
+   * Creates a new GameStateSystem.
+   *
+   * @param gameInstance - Optional reference to the game controller for signaling transitions.
+   */
   constructor(gameInstance?: IAsteroidsGame) {
     super();
     this.gameInstance = gameInstance;
@@ -18,6 +27,9 @@ export class GameStateSystem extends System {
 
   /**
    * Updates the game state by processing various sub-tasks.
+   *
+   * @param world - The ECS world instance.
+   * @param deltaTime - Time since last update in milliseconds.
    */
   public update(world: World, deltaTime: number): void {
     const gameState = this.getGameState(world);
@@ -31,10 +43,18 @@ export class GameStateSystem extends System {
     this.checkGameOver(world, gameState);
   }
 
+  /**
+   * Checks if the game is currently in a Game Over state.
+   *
+   * @returns `true` if game over; otherwise `false`.
+   */
   public isGameOver(): boolean {
     return this.gameOverLogged;
   }
 
+  /**
+   * Resets the game over tracking state.
+   */
   public resetGameOverState(): void {
     console.log("Resetting game over state flag");
     this.gameOverLogged = false;

@@ -12,11 +12,18 @@ import {
 import { createAsteroid } from "../EntityFactory"
 
 /**
- * System responsible for detecting and resolving collisions between entities.
+ * Detects and resolves collisions between entities.
+ *
+ * @remarks
+ * Processes all entities with a {@link ColliderComponent} and {@link PositionComponent}
+ * to check for circular overlaps and execute specific resolution logic based on entity types.
  */
 export class CollisionSystem extends System {
   /**
    * Updates the collision state for all relevant entities.
+   *
+   * @param world - The ECS world instance.
+   * @param deltaTime - Time since last update in milliseconds.
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public update(world: World, deltaTime: number): void {

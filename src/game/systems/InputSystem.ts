@@ -10,7 +10,7 @@ import {
 import { createBullet } from "../EntityFactory"
 
 /**
- * System responsible for processing user input and applying it to the ship's state.
+ * Processes user input and applies it to the ship's state.
  *
  * @remarks
  * This system supports both keyboard input (web) and manual input setting (mobile/touch).
@@ -60,8 +60,8 @@ export class InputSystem extends System {
   /**
    * Updates ship rotation, velocity, and shooting based on current input state.
    *
-   * @param world - The ECS world.
-   * @param deltaTime - Time since last frame in milliseconds.
+   * @param world - The ECS world instance.
+   * @param deltaTime - Time since last update in milliseconds.
    */
   update(world: World, deltaTime: number): void {
     const ships = world.query("Input", "Position", "Velocity", "Render")

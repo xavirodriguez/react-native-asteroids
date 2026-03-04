@@ -2,11 +2,14 @@ import { System, type World } from "../ecs-world"
 import type { TTLComponent, Entity } from "../../types/GameTypes"
 
 /**
- * System responsible for managing the lifetime of entities with a TTLComponent.
+ * Manages the lifetime of entities with a {@link TTLComponent}.
  */
 export class TTLSystem extends System {
   /**
    * Updates the remaining time for TTL entities and removes expired ones.
+   *
+   * @param world - The ECS world instance.
+   * @param deltaTime - Time since last update in milliseconds.
    */
   public update(world: World, deltaTime: number): void {
     const ttlEntities = world.query("TTL");

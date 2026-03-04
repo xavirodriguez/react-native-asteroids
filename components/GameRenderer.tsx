@@ -18,9 +18,9 @@ interface GameRendererProps {
 }
 
 /**
- * Component responsible for rendering the game world using react-native-svg.
+ * Renders the game world using SVG.
  *
- * @param props - Component properties.
+ * @param props - The component props.
  * @returns A React functional component.
  */
 export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
