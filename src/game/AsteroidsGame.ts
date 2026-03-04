@@ -9,8 +9,8 @@ import {
   type GameStateComponent,
   type InputState,
   GAME_CONFIG,
-  INITIAL_GAME_STATE,
 } from "../types/GameTypes"
+import { getGameState } from "./GameUtils"
 
 /**
  * Type definition for a callback function triggered on every game update.
@@ -121,8 +121,7 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   public getGameState(): GameStateComponent {
-    const [entity] = this.world.query("GameState")
-    return this.world.getComponent<GameStateComponent>(entity, "GameState") ?? INITIAL_GAME_STATE
+    return getGameState(this.world)
   }
 
   public setInput(input: Partial<InputState>): void {

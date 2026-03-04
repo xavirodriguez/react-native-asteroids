@@ -46,11 +46,16 @@ export class CollisionSystem extends System {
 
     if (!posA || !posB || !colA || !colB) return false;
 
-    const dx = posA.x - posB.x;
-    const dy = posA.y - posB.y;
+    const squaredDistance = this.calculateSquaredDistance(posA, posB);
     const radiusSum = colA.radius + colB.radius;
 
-    return dx * dx + dy * dy < radiusSum * radiusSum;
+    return squaredDistance < radiusSum * radiusSum;
+  }
+
+  private calculateSquaredDistance(posA: PositionComponent, posB: PositionComponent): number {
+    const dx = posA.x - posB.x;
+    const dy = posA.y - posB.y;
+    return dx * dx + dy * dy;
   }
 
   private resolveCollision(world: World, entityA: Entity, entityB: Entity): void {

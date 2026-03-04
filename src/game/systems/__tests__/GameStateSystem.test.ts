@@ -29,10 +29,10 @@ describe("GameStateSystem", () => {
 
     world.update(100);
 
-    const health = world.getComponent(ship, "Health") as HealthComponent;
-    expect(health.invulnerableRemaining).toBe(900);
+    const health = world.getComponent<HealthComponent>(ship, "Health");
+    expect(health?.invulnerableRemaining).toBe(900);
 
-    const gameState = world.getComponent(state, "GameState") as GameStateComponent;
-    expect(gameState.lives).toBe(2);
+    const gameState = world.getComponent<GameStateComponent>(state, "GameState");
+    expect(gameState?.lives).toBe(2);
   });
 });

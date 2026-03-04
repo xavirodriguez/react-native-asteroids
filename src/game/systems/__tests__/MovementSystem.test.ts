@@ -1,6 +1,6 @@
 import { World } from "../../ecs-world";
 import { MovementSystem } from "../MovementSystem";
-import { GAME_CONFIG } from "../../../types/GameTypes";
+import { GAME_CONFIG, type PositionComponent } from "../../../types/GameTypes";
 
 describe("MovementSystem", () => {
   let world: World;
@@ -20,9 +20,9 @@ describe("MovementSystem", () => {
     // deltaTime is in ms. 1000ms = 1s
     world.update(1000);
 
-    const pos = world.getComponent(entity, "Position") as any;
-    expect(pos.x).toBe(200);
-    expect(pos.y).toBe(50);
+    const pos = world.getComponent<PositionComponent>(entity, "Position");
+    expect(pos?.x).toBe(200);
+    expect(pos?.y).toBe(50);
   });
 
   it("should wrap around the screen", () => {
@@ -32,7 +32,7 @@ describe("MovementSystem", () => {
 
     world.update(1000);
 
-    const pos = world.getComponent(entity, "Position") as any;
-    expect(pos.x).toBe(0); // Current implementation sets to 0 when exceeding SCREEN_WIDTH
+    const pos = world.getComponent<PositionComponent>(entity, "Position");
+    expect(pos?.x).toBe(0); // Current implementation sets to 0 when exceeding SCREEN_WIDTH
   });
 });

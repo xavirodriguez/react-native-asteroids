@@ -1,7 +1,8 @@
 import { System, type World } from "../ecs-world"
-import { type GameStateComponent, type HealthComponent, GAME_CONFIG, INITIAL_GAME_STATE } from "../../types/GameTypes"
+import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../../types/GameTypes"
 import { createAsteroid } from "../EntityFactory"
 import type { IAsteroidsGame } from "../AsteroidsGame"
+import { getGameState } from "../GameUtils"
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.
@@ -40,13 +41,7 @@ export class GameStateSystem extends System {
   }
 
   private getGameState(world: World): GameStateComponent {
-    const gameStates = world.query("GameState");
-    if (gameStates.length === 0) {
-      return INITIAL_GAME_STATE;
-    }
-
-    const component = world.getComponent<GameStateComponent>(gameStates[0], "GameState");
-    return component || INITIAL_GAME_STATE;
+    return getGameState(world)
   }
 
   private updateAsteroidsCount(world: World, gameState: GameStateComponent): void {
