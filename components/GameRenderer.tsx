@@ -68,42 +68,21 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world }) => {
 
   if (!pos || !render) return null;
 
+  return renderByShape({ entity, world, pos, render });
+};
+
+const renderByShape = (params: {
+  entity: number;
+  world: World;
+  pos: PositionComponent;
+  render: RenderComponent;
+}) => {
+  const { entity, world, pos, render } = params;
   switch (render.shape) {
-    case "triangle": {
-      const inputComponent = world.getComponent<InputComponent>(entity, "Input");
-      const hasThrust = inputComponent?.thrust || false;
-      return (
-        <ShipRenderer
-          x={pos.x}
-          y={pos.y}
-          size={render.size}
-          rotation={render.rotation}
-          color={render.color}
-          hasThrust={hasThrust}
-        />
-      );
-    }
-    case "circle": {
-      const isAsteroid = world.getComponent(entity, "Asteroid") !== undefined;
-      if (isAsteroid) {
-        return (
-          <AsteroidRenderer
-            x={pos.x}
-            y={pos.y}
-            size={render.size}
-            color={render.color}
-          />
-        );
-      }
-      return (
-        <BulletRenderer
-          x={pos.x}
-          y={pos.y}
-          size={render.size}
-          color={render.color}
-        />
-      );
-    }
+    case "triangle":
+      return renderShip({ entity, world, pos, render });
+    case "circle":
+      return renderCircleShape({ entity, world, pos, render });
     case "line":
       return (
         <LineRenderer
@@ -119,9 +98,57 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world }) => {
   }
 };
 
+const renderShip = (params: {
+  entity: number;
+  world: World;
+  pos: PositionComponent;
+  render: RenderComponent;
+}) => {
+  const { entity, world, pos, render } = params;
+  const inputComponent = world.getComponent<InputComponent>(entity, "Input");
+  const hasThrust = inputComponent?.thrust || false;
+  return (
+    <ShipRenderer
+      x={pos.x}
+      y={pos.y}
+      size={render.size}
+      rotation={render.rotation}
+      color={render.color}
+      hasThrust={hasThrust}
+    />
+  );
+};
+
+const renderCircleShape = (params: {
+  entity: number;
+  world: World;
+  pos: PositionComponent;
+  render: RenderComponent;
+}) => {
+  const { entity, world, pos, render } = params;
+  const isAsteroid = world.getComponent(entity, "Asteroid") !== undefined;
+  if (isAsteroid) {
+    return (
+      <AsteroidRenderer
+        x={pos.x}
+        y={pos.y}
+        size={render.size}
+        color={render.color}
+      />
+    );
+  }
+  return (
+    <BulletRenderer
+      x={pos.x}
+      y={pos.y}
+      size={render.size}
+      color={render.color}
+    />
+  );
+};
+
 /**
  * Specialized renderer for the player ship.
- * Note: Not memoized because it contains internal animation (pulsating core).
  */
 const ShipRenderer: React.FC<{
   x: number;
@@ -133,62 +160,75 @@ const ShipRenderer: React.FC<{
 }> = ({ x, y, size, rotation, color, hasThrust }) => {
   const rotationDegrees = (rotation * 180) / Math.PI;
   const transform = `translate(${x}, ${y}) rotate(${rotationDegrees})`;
-  const time = Date.now() * 0.005;
-  const pulse = Math.sin(time) * 0.1 + 1;
 
   return (
     <G transform={transform}>
-      {hasThrust && (
-        <Polygon
-          points={`${-size / 2},${size / 3} ${-size * 1.5},0 ${-size / 2},${-size / 3}`}
-          fill="#FF6600"
-          stroke="#FF9900"
-          strokeWidth="1"
-          opacity="0.8"
-        />
-      )}
-      {/* Pulsating central core */}
-      <Circle
-        cx="0"
-        cy="0"
-        r={(size / 3) * pulse}
-        fill="#FFFF00"
-        opacity="0.6"
-      />
-      {/* Main body */}
-      <Polygon
-        points={`${size},0 ${-size / 2},${size / 2} ${-size / 4},0 ${-size / 2},${-size / 2}`}
-        fill="#DDDDDD"
-        stroke={color}
-        strokeWidth="1"
-      />
-      {/* Side thrusters */}
-      <G opacity={0.8}>
-        <Rect
-          x={-size / 2}
-          y={-size / 4}
-          width={size / 8}
-          height={size / 2}
-          fill="#666666"
-        />
-        <Rect
-          x={-size / 2}
-          y={size / 6}
-          width={size / 6}
-          height={size / 8}
-          fill="#FF0000"
-        />
-        <Rect
-          x={-size / 2}
-          y={-size / 6 - size / 8}
-          width={size / 6}
-          height={size / 8}
-          fill="#FF0000"
-        />
-      </G>
+      {hasThrust && <ShipThrusters size={size} />}
+      <ShipCore size={size} />
+      <ShipBody size={size} color={color} />
+      <ShipDetails size={size} />
     </G>
   );
 };
+
+const ShipThrusters: React.FC<{ size: number }> = ({ size }) => (
+  <Polygon
+    points={`${-size / 2},${size / 3} ${-size * 1.5},0 ${-size / 2},${-size / 3}`}
+    fill="#FF6600"
+    stroke="#FF9900"
+    strokeWidth="1"
+    opacity="0.8"
+  />
+);
+
+const ShipCore: React.FC<{ size: number }> = ({ size }) => {
+  const time = Date.now() * 0.005;
+  const pulse = Math.sin(time) * 0.1 + 1;
+  return (
+    <Circle
+      cx="0"
+      cy="0"
+      r={(size / 3) * pulse}
+      fill="#FFFF00"
+      opacity="0.6"
+    />
+  );
+};
+
+const ShipBody: React.FC<{ size: number; color: string }> = ({ size, color }) => (
+  <Polygon
+    points={`${size},0 ${-size / 2},${size / 2} ${-size / 4},0 ${-size / 2},${-size / 2}`}
+    fill="#DDDDDD"
+    stroke={color}
+    strokeWidth="1"
+  />
+);
+
+const ShipDetails: React.FC<{ size: number }> = ({ size }) => (
+  <G opacity={0.8}>
+    <Rect
+      x={-size / 2}
+      y={-size / 4}
+      width={size / 8}
+      height={size / 2}
+      fill="#666666"
+    />
+    <Rect
+      x={-size / 2}
+      y={size / 6}
+      width={size / 6}
+      height={size / 8}
+      fill="#FF0000"
+    />
+    <Rect
+      x={-size / 2}
+      y={-size / 6 - size / 8}
+      width={size / 6}
+      height={size / 8}
+      fill="#FF0000"
+    />
+  </G>
+);
 
 /**
  * Specialized renderer for asteroids.

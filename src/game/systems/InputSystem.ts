@@ -103,7 +103,7 @@ export class InputSystem extends System {
 
     this.applyRotation({ render, input, dt })
     this.applyThrust({ vel, render, input, dt })
-    this.applyFriction(vel)
+    this.applyFriction(vel, deltaTime)
   }
 
   private applyRotation(params: { render: RenderComponent; input: InputComponent; dt: number }): void {
@@ -125,9 +125,10 @@ export class InputSystem extends System {
     }
   }
 
-  private applyFriction(vel: VelocityComponent): void {
-    vel.dx *= GAME_CONFIG.SHIP_FRICTION
-    vel.dy *= GAME_CONFIG.SHIP_FRICTION
+  private applyFriction(vel: VelocityComponent, deltaTime: number): void {
+    const frictionFactor = Math.pow(GAME_CONFIG.SHIP_FRICTION, deltaTime / (1000 / 60))
+    vel.dx *= frictionFactor
+    vel.dy *= frictionFactor
   }
 
   private handleShipShooting(params: {
