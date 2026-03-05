@@ -49,6 +49,7 @@ export class AsteroidsGame implements IAsteroidsGame {
     this.world = new World();
     this.setupSystems();
     this.initializeGame();
+    this.registerGlobalKeyboardListeners();
   }
 
   // --- Public Methods ---
@@ -202,8 +203,11 @@ export class AsteroidsGame implements IAsteroidsGame {
     if (!this.isRunning) return;
 
     const currentTime = performance.now();
-    const deltaTime = currentTime - this.lastTime;
+    const rawDeltaTime = currentTime - this.lastTime;
     this.lastTime = currentTime;
+
+    // Cap deltaTime at 100ms (0.1s) to prevent physics explosions after long pauses
+    const deltaTime = Math.min(rawDeltaTime, 100);
 
     this.updateWorld(deltaTime);
     this.notifyListeners();
@@ -213,6 +217,27 @@ export class AsteroidsGame implements IAsteroidsGame {
   private updateWorld(deltaTime: number): void {
     if (!this.isPaused) {
       this.world.update(deltaTime);
+    }
+  }
+
+  private registerGlobalKeyboardListeners(): void {
+    const isBrowser = typeof window !== "undefined" && typeof window.addEventListener === "function";
+    if (!isBrowser) return;
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "KeyP") {
+        this.togglePause();
+      } else if (e.code === "KeyR") {
+        this.restart();
+      }
+    });
+  }
+
+  private togglePause(): void {
+    if (this.isPaused) {
+      this.resume();
+    } else {
+      this.pause();
     }
   }
 }

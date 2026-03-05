@@ -57,9 +57,14 @@ describe("InputSystem", () => {
 
     const vel = world.getComponent<VelocityComponent>(ship, "Velocity")!;
     // dx should be close to 0, dy should be close to SHIP_THRUST
-    // Note: friction (0.99) is applied in the InputSystem
+    // Note: friction (0.99) is applied in the InputSystem using a frame-rate independent formula
+    // expected dy = (thrust * dt) * pow(friction, deltaTime / (1000/60))
+    // expected dy = (200 * 1) * pow(0.99, 1000 / 16.666) = 200 * pow(0.99, 60) ≈ 109.43
+    const frictionFactor = Math.pow(GAME_CONFIG.SHIP_FRICTION, 1000 / (1000 / 60));
+    const expectedDy = GAME_CONFIG.SHIP_THRUST * frictionFactor;
+
     expect(vel.dx).toBeCloseTo(0);
-    expect(vel.dy).toBeCloseTo(GAME_CONFIG.SHIP_THRUST * 0.99);
+    expect(vel.dy).toBeCloseTo(expectedDy);
   });
 
   it("should handle shooting and respect cooldown", () => {
