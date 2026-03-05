@@ -65,18 +65,20 @@ export class InputSystem extends System {
    */
   update(world: World, deltaTime: number): void {
     const ships = world.query("Input", "Position", "Velocity", "Render")
+    ships.forEach((entity) => this.updateShipEntity({ world, entity, deltaTime }))
+  }
 
-    ships.forEach((entity) => {
-      const input = world.getComponent<InputComponent>(entity, "Input")!
-      const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!
-      const render = world.getComponent<RenderComponent>(entity, "Render")!
-      const pos = world.getComponent<PositionComponent>(entity, "Position")!
+  private updateShipEntity(params: { world: World; entity: number; deltaTime: number }): void {
+    const { world, entity, deltaTime } = params
+    const input = world.getComponent<InputComponent>(entity, "Input")!
+    const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!
+    const render = world.getComponent<RenderComponent>(entity, "Render")!
+    const pos = world.getComponent<PositionComponent>(entity, "Position")!
 
-      this.updateShootingCooldown(input, deltaTime)
-      this.updateShipInputState(input)
-      this.applyShipMovement({ vel, render, input, deltaTime })
-      this.handleShipShooting({ world, pos, render, input })
-    })
+    this.updateShootingCooldown(input, deltaTime)
+    this.updateShipInputState(input)
+    this.applyShipMovement({ vel, render, input, deltaTime })
+    this.handleShipShooting({ world, pos, render, input })
   }
 
   private updateShootingCooldown(input: InputComponent, deltaTime: number): void {
