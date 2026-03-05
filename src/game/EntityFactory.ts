@@ -86,19 +86,33 @@ function addShipCombatComponents(world: World, ship: Entity): void {
 export function createAsteroid(params: CreateAsteroidParams): Entity {
   const { world, x, y, size } = params
   const asteroid = world.createEntity()
-  const radius = GAME_CONFIG.ASTEROID_RADII[size]
 
+  addAsteroidMovementComponents(world, asteroid, x, y)
+  addAsteroidTypeComponents(world, asteroid, size)
+
+  return asteroid
+}
+
+function addAsteroidMovementComponents(world: World, asteroid: Entity, x: number, y: number): void {
   world.addComponent(asteroid, { type: "Position", x, y })
   world.addComponent(asteroid, {
     type: "Velocity",
     dx: (Math.random() - 0.5) * 100,
     dy: (Math.random() - 0.5) * 100,
   })
-  world.addComponent(asteroid, { type: "Render", shape: "circle", size: radius, color: "#888888", rotation: 0 })
+}
+
+function addAsteroidTypeComponents(world: World, asteroid: Entity, size: "large" | "medium" | "small"): void {
+  const radius = GAME_CONFIG.ASTEROID_RADII[size]
+  world.addComponent(asteroid, {
+    type: "Render",
+    shape: "circle",
+    size: radius,
+    color: "#888888",
+    rotation: 0,
+  })
   world.addComponent(asteroid, { type: "Collider", radius })
   world.addComponent(asteroid, { type: "Asteroid", size })
-
-  return asteroid
 }
 
 /**
@@ -110,16 +124,29 @@ export function createAsteroid(params: CreateAsteroidParams): Entity {
 export function createBullet(params: CreateBulletParams): Entity {
   const { world, x, y, angle } = params
   const bullet = world.createEntity()
+
+  addBulletMovementComponents(world, bullet, { x, y, angle })
+  addBulletLifeCycleComponents(world, bullet)
+
+  return bullet
+}
+
+function addBulletMovementComponents(world: World, bullet: Entity, params: { x: number; y: number; angle: number }): void {
+  const { x, y, angle } = params
   const speed = GAME_CONFIG.BULLET_SPEED
+  world.addComponent(bullet, { type: "Position", x, y })
+  world.addComponent(bullet, {
+    type: "Velocity",
+    dx: Math.cos(angle) * speed,
+    dy: Math.sin(angle) * speed,
+  })
+}
+
+function addBulletLifeCycleComponents(world: World, bullet: Entity): void {
   const ttl = GAME_CONFIG.BULLET_TTL
   const size = GAME_CONFIG.BULLET_SIZE
-
-  world.addComponent(bullet, { type: "Position", x, y })
-  world.addComponent(bullet, { type: "Velocity", dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed })
   world.addComponent(bullet, { type: "Render", shape: "circle", size, color: "#FFFF00", rotation: 0 })
   world.addComponent(bullet, { type: "Collider", radius: size })
   world.addComponent(bullet, { type: "TTL", remaining: ttl })
   world.addComponent(bullet, { type: "Bullet" })
-
-  return bullet
 }

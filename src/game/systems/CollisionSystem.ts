@@ -59,36 +59,35 @@ export class CollisionSystem extends System {
   }
 
   private resolveCollision(world: World, entityA: Entity, entityB: Entity): void {
-    const wasBulletCollision =
-      this.checkBulletAsteroid(world, entityA, entityB) ||
-      this.checkBulletAsteroid(world, entityB, entityA);
-
-    if (wasBulletCollision) return;
-
-    this.checkShipAsteroid(world, entityA, entityB);
-    this.checkShipAsteroid(world, entityB, entityA);
-  }
-
-  private checkBulletAsteroid(world: World, entityA: Entity, entityB: Entity): boolean {
-    const asteroid = world.getComponent<AsteroidComponent>(entityA, "Asteroid");
-    const isBullet = world.getComponent(entityB, "Bullet") !== undefined;
-
-    if (asteroid && isBullet) {
+    if (this.isBulletAsteroidPair(world, entityA, entityB)) {
       this.handleBulletAsteroidCollision(world, entityA, entityB);
-      return true;
+      return;
     }
-    return false;
+    if (this.isBulletAsteroidPair(world, entityB, entityA)) {
+      this.handleBulletAsteroidCollision(world, entityB, entityA);
+      return;
+    }
+
+    this.resolveShipAsteroidCollision(world, entityA, entityB);
+    this.resolveShipAsteroidCollision(world, entityB, entityA);
   }
 
-  private checkShipAsteroid(world: World, entityA: Entity, entityB: Entity): boolean {
-    const health = world.getComponent<HealthComponent>(entityA, "Health");
-    const isAsteroid = world.getComponent(entityB, "Asteroid") !== undefined;
+  private isBulletAsteroidPair(world: World, entityA: Entity, entityB: Entity): boolean {
+    const hasAsteroid = world.getComponent(entityA, "Asteroid") !== undefined;
+    const hasBullet = world.getComponent(entityB, "Bullet") !== undefined;
+    return hasAsteroid && hasBullet;
+  }
 
-    if (health && isAsteroid) {
-      this.handleShipAsteroidCollision(health);
-      return true;
+  private resolveShipAsteroidCollision(world: World, entityA: Entity, entityB: Entity): void {
+    if (this.isShipAsteroidPair(world, entityA, entityB)) {
+      this.handleShipAsteroidCollision(world, entityA);
     }
-    return false;
+  }
+
+  private isShipAsteroidPair(world: World, entityA: Entity, entityB: Entity): boolean {
+    const hasHealth = world.getComponent(entityA, "Health") !== undefined;
+    const hasAsteroid = world.getComponent(entityB, "Asteroid") !== undefined;
+    return hasHealth && hasAsteroid;
   }
 
   private handleBulletAsteroidCollision(world: World, asteroidEntity: Entity, bulletEntity: Entity): void {
@@ -97,8 +96,9 @@ export class CollisionSystem extends System {
     this.addScore(world, GAME_CONFIG.ASTEROID_SCORE);
   }
 
-  private handleShipAsteroidCollision(health: HealthComponent): void {
-    if (health.invulnerableRemaining <= 0) {
+  private handleShipAsteroidCollision(world: World, shipEntity: Entity): void {
+    const health = world.getComponent<HealthComponent>(shipEntity, "Health");
+    if (health && health.invulnerableRemaining <= 0) {
       health.current--;
       health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
     }

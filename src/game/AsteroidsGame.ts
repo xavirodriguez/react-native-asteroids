@@ -224,13 +224,15 @@ export class AsteroidsGame implements IAsteroidsGame {
     const isBrowser = typeof window !== "undefined" && typeof window.addEventListener === "function";
     if (!isBrowser) return;
 
-    window.addEventListener("keydown", (e) => {
-      if (e.code === "KeyP") {
-        this.togglePause();
-      } else if (e.code === "KeyR") {
-        this.restart();
-      }
-    });
+    window.addEventListener("keydown", (e) => this.handleGlobalKeyDown(e));
+  }
+
+  private handleGlobalKeyDown(e: KeyboardEvent): void {
+    if (e.code === "KeyP") {
+      this.togglePause();
+    } else if (e.code === "KeyR") {
+      this.restart();
+    }
   }
 
   private togglePause(): void {
