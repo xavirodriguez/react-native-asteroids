@@ -77,25 +77,33 @@ const renderByShape = (params: {
   pos: PositionComponent;
   render: RenderComponent;
 }) => {
-  const { entity, world, pos, render } = params;
+  const { render } = params;
   switch (render.shape) {
     case "triangle":
-      return renderShip({ entity, world, pos, render });
+      return renderShip(params);
     case "circle":
-      return renderCircleShape({ entity, world, pos, render });
+      return renderCircleShape(params);
     case "line":
-      return (
-        <LineRenderer
-          x={pos.x}
-          y={pos.y}
-          size={render.size}
-          rotation={render.rotation}
-          color={render.color}
-        />
-      );
+      return renderLineShape(params);
     default:
       return null;
   }
+};
+
+const renderLineShape = (params: {
+  pos: PositionComponent;
+  render: RenderComponent;
+}) => {
+  const { pos, render } = params;
+  return (
+    <LineRenderer
+      x={pos.x}
+      y={pos.y}
+      size={render.size}
+      rotation={render.rotation}
+      color={render.color}
+    />
+  );
 };
 
 const renderShip = (params: {
@@ -105,8 +113,7 @@ const renderShip = (params: {
   render: RenderComponent;
 }) => {
   const { entity, world, pos, render } = params;
-  const inputComponent = world.getComponent<InputComponent>(entity, "Input");
-  const hasThrust = inputComponent?.thrust || false;
+  const input = world.getComponent<InputComponent>(entity, "Input");
   return (
     <ShipRenderer
       x={pos.x}
@@ -114,7 +121,7 @@ const renderShip = (params: {
       size={render.size}
       rotation={render.rotation}
       color={render.color}
-      hasThrust={hasThrust}
+      hasThrust={input?.thrust ?? false}
     />
   );
 };
@@ -127,25 +134,34 @@ const renderCircleShape = (params: {
 }) => {
   const { entity, world, pos, render } = params;
   const isAsteroid = world.getComponent(entity, "Asteroid") !== undefined;
-  if (isAsteroid) {
-    return (
-      <AsteroidRenderer
-        x={pos.x}
-        y={pos.y}
-        size={render.size}
-        color={render.color}
-      />
-    );
-  }
-  return (
-    <BulletRenderer
-      x={pos.x}
-      y={pos.y}
-      size={render.size}
-      color={render.color}
-    />
-  );
+  return isAsteroid
+    ? renderAsteroid({ pos, render })
+    : renderBullet({ pos, render });
 };
+
+const renderAsteroid = (params: {
+  pos: PositionComponent;
+  render: RenderComponent;
+}) => (
+  <AsteroidRenderer
+    x={params.pos.x}
+    y={params.pos.y}
+    size={params.render.size}
+    color={params.render.color}
+  />
+);
+
+const renderBullet = (params: {
+  pos: PositionComponent;
+  render: RenderComponent;
+}) => (
+  <BulletRenderer
+    x={params.pos.x}
+    y={params.pos.y}
+    size={params.render.size}
+    color={params.render.color}
+  />
+);
 
 /**
  * Specialized renderer for the player ship.

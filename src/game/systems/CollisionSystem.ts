@@ -59,17 +59,29 @@ export class CollisionSystem extends System {
   }
 
   private resolveCollision(world: World, entityA: Entity, entityB: Entity): void {
+    const isBulletAsteroid = this.checkBulletAsteroid(world, entityA, entityB);
+    if (isBulletAsteroid) return;
+
+    this.checkShipAsteroid(world, entityA, entityB);
+    this.checkShipAsteroid(world, entityB, entityA);
+  }
+
+  private checkBulletAsteroid(world: World, entityA: Entity, entityB: Entity): boolean {
     if (this.isBulletAsteroidPair(world, entityA, entityB)) {
       this.handleBulletAsteroidCollision(world, entityA, entityB);
-      return;
+      return true;
     }
     if (this.isBulletAsteroidPair(world, entityB, entityA)) {
       this.handleBulletAsteroidCollision(world, entityB, entityA);
-      return;
+      return true;
     }
+    return false;
+  }
 
-    this.resolveShipAsteroidCollision(world, entityA, entityB);
-    this.resolveShipAsteroidCollision(world, entityB, entityA);
+  private checkShipAsteroid(world: World, entityA: Entity, entityB: Entity): void {
+    if (this.isShipAsteroidPair(world, entityA, entityB)) {
+      this.handleShipAsteroidCollision(world, entityA);
+    }
   }
 
   private isBulletAsteroidPair(world: World, entityA: Entity, entityB: Entity): boolean {
@@ -78,63 +90,48 @@ export class CollisionSystem extends System {
     return hasAsteroid && hasBullet;
   }
 
-  private resolveShipAsteroidCollision(world: World, entityA: Entity, entityB: Entity): void {
-    if (this.isShipAsteroidPair(world, entityA, entityB)) {
-      this.handleShipAsteroidCollision(world, entityA);
-    }
-  }
-
   private isShipAsteroidPair(world: World, entityA: Entity, entityB: Entity): boolean {
     const hasHealth = world.getComponent(entityA, "Health") !== undefined;
     const hasAsteroid = world.getComponent(entityB, "Asteroid") !== undefined;
     return hasHealth && hasAsteroid;
   }
 
-  private handleBulletAsteroidCollision(world: World, asteroidEntity: Entity, bulletEntity: Entity): void {
-    this.splitAsteroid(world, asteroidEntity);
-    world.removeEntity(bulletEntity);
+  private handleBulletAsteroidCollision(world: World, asteroid: Entity, bullet: Entity): void {
+    this.splitAsteroid(world, asteroid);
+    world.removeEntity(bullet);
     this.addScore(world, GAME_CONFIG.ASTEROID_SCORE);
   }
 
   private handleShipAsteroidCollision(world: World, shipEntity: Entity): void {
     const health = world.getComponent<HealthComponent>(shipEntity, "Health");
-    if (health && health.invulnerableRemaining <= 0) {
+    const canTakeDamage = health && health.invulnerableRemaining <= 0;
+    if (canTakeDamage) {
       health.current--;
       health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
     }
   }
 
   private splitAsteroid(world: World, asteroidEntity: Entity): void {
-    const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid")
-    const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position")
+    const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
+    const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position");
 
-    if (!asteroid || !pos) return
-
-    this.executeSplitStrategy(world, pos, asteroid.size)
-    world.removeEntity(asteroidEntity)
+    if (asteroid && pos) {
+      this.executeSplitStrategy(world, pos, asteroid.size);
+    }
+    world.removeEntity(asteroidEntity);
   }
 
   private executeSplitStrategy(world: World, pos: PositionComponent, size: string): void {
     if (size === "large") {
-      this.spawnSplit(world, pos, "medium", GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE)
+      this.spawnSplit(world, pos, "medium", GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE);
     } else if (size === "medium") {
-      this.spawnSplit(world, pos, "small", GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM)
+      this.spawnSplit(world, pos, "small", GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM);
     }
   }
 
-  private spawnSplit(world: World, pos: PositionComponent, newSize: "medium" | "small", offset: number): void {
-    this.spawnSplitAsteroids({ world, pos, newSize, offset })
-  }
-
-  private spawnSplitAsteroids(params: {
-    world: World
-    pos: PositionComponent
-    newSize: "medium" | "small"
-    offset: number
-  }): void {
-    const { world, pos, newSize, offset } = params
-    createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size: newSize })
-    createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size: newSize })
+  private spawnSplit(world: World, pos: PositionComponent, size: "medium" | "small", offset: number): void {
+    createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size });
+    createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size });
   }
 
   private addScore(world: World, points: number): void {
