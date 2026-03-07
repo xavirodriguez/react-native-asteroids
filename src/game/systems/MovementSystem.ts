@@ -19,12 +19,17 @@ export class MovementSystem extends System {
       const pos = world.getComponent<PositionComponent>(entity, "Position")!;
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!;
 
-      this.updatePosition(pos, vel, deltaTime);
+      this.updatePosition({ pos, vel, deltaTime });
       this.wrapPosition(pos);
     });
   }
 
-  private updatePosition(pos: PositionComponent, vel: VelocityComponent, deltaTime: number): void {
+  private updatePosition(params: {
+    pos: PositionComponent
+    vel: VelocityComponent
+    deltaTime: number
+  }): void {
+    const { pos, vel, deltaTime } = params;
     const dt = deltaTime / 1000;
     pos.x += vel.dx * dt;
     pos.y += vel.dy * dt;

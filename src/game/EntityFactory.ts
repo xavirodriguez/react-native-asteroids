@@ -40,13 +40,19 @@ export function createShip(params: CreateShipParams): Entity {
   const { world, x, y } = params
   const ship = world.createEntity()
 
-  addShipMovementComponents(world, ship, x, y)
+  addShipMovementComponents({ world, ship, x, y })
   addShipCombatComponents(world, ship)
 
   return ship
 }
 
-function addShipMovementComponents(world: World, ship: Entity, x: number, y: number): void {
+function addShipMovementComponents(params: {
+  world: World
+  ship: Entity
+  x: number
+  y: number
+}): void {
+  const { world, ship, x, y } = params
   world.addComponent(ship, { type: "Position", x, y })
   world.addComponent(ship, { type: "Velocity", dx: 0, dy: 0 })
   world.addComponent(ship, {
@@ -87,13 +93,19 @@ export function createAsteroid(params: CreateAsteroidParams): Entity {
   const { world, x, y, size } = params
   const asteroid = world.createEntity()
 
-  addAsteroidMovementComponents(world, asteroid, x, y)
-  addAsteroidTypeComponents(world, asteroid, size)
+  addAsteroidMovementComponents({ world, asteroid, x, y })
+  addAsteroidTypeComponents({ world, asteroid, size })
 
   return asteroid
 }
 
-function addAsteroidMovementComponents(world: World, asteroid: Entity, x: number, y: number): void {
+function addAsteroidMovementComponents(params: {
+  world: World
+  asteroid: Entity
+  x: number
+  y: number
+}): void {
+  const { world, asteroid, x, y } = params
   world.addComponent(asteroid, { type: "Position", x, y })
   world.addComponent(asteroid, {
     type: "Velocity",
@@ -102,7 +114,12 @@ function addAsteroidMovementComponents(world: World, asteroid: Entity, x: number
   })
 }
 
-function addAsteroidTypeComponents(world: World, asteroid: Entity, size: "large" | "medium" | "small"): void {
+function addAsteroidTypeComponents(params: {
+  world: World
+  asteroid: Entity
+  size: "large" | "medium" | "small"
+}): void {
+  const { world, asteroid, size } = params
   const radius = GAME_CONFIG.ASTEROID_RADII[size]
   world.addComponent(asteroid, {
     type: "Render",

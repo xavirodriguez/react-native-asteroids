@@ -24,7 +24,7 @@ export function useAsteroidsGame() {
 
     return () => {
       unsubscribe();
-      newGame.stop();
+      newGame.destroy();
     };
   }, []);
 

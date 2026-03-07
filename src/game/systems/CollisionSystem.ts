@@ -21,24 +21,31 @@ export class CollisionSystem extends System {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public update(world: World, deltaTime: number): void {
     const colliders = world.query("Position", "Collider");
-    this.processCollisions(world, colliders);
+    const hasEnoughColliders = colliders.length >= 2;
+    if (hasEnoughColliders) {
+      this.processCollisions({ world, colliders });
+    }
   }
 
-  private processCollisions(world: World, colliders: Entity[]): void {
+  private processCollisions(params: { world: World; colliders: Entity[] }): void {
+    const { world, colliders } = params;
     for (let i = 0; i < colliders.length; i++) {
       for (let j = i + 1; j < colliders.length; j++) {
-        this.checkAndResolve(world, colliders[i], colliders[j]);
+        this.checkAndResolve({ world, entityA: colliders[i], entityB: colliders[j] });
       }
     }
   }
 
-  private checkAndResolve(world: World, entityA: Entity, entityB: Entity): void {
-    if (this.isColliding(world, entityA, entityB)) {
-      this.resolveCollision(world, entityA, entityB);
+  private checkAndResolve(params: { world: World; entityA: Entity; entityB: Entity }): void {
+    const { world, entityA, entityB } = params;
+    const isColliding = this.isColliding({ world, entityA, entityB });
+    if (isColliding) {
+      this.resolveCollision({ world, entityA, entityB });
     }
   }
 
-  private isColliding(world: World, entityA: Entity, entityB: Entity): boolean {
+  private isColliding(params: { world: World; entityA: Entity; entityB: Entity }): boolean {
+    const { world, entityA, entityB } = params;
     const posA = world.getComponent<PositionComponent>(entityA, "Position");
     const posB = world.getComponent<PositionComponent>(entityB, "Position");
     const colA = world.getComponent<ColliderComponent>(entityA, "Collider");
@@ -55,54 +62,63 @@ export class CollisionSystem extends System {
   private calculateSquaredDistance(posA: PositionComponent, posB: PositionComponent): number {
     const dx = posA.x - posB.x;
     const dy = posA.y - posB.y;
-    return dx * dx + dy * dy;
+    const squaredX = dx * dx;
+    const squaredY = dy * dy;
+    return squaredX + squaredY;
   }
 
-  private resolveCollision(world: World, entityA: Entity, entityB: Entity): void {
-    const isBulletAsteroid = this.checkBulletAsteroid(world, entityA, entityB);
+  private resolveCollision(params: { world: World; entityA: Entity; entityB: Entity }): void {
+    const { world, entityA, entityB } = params;
+    const isBulletAsteroid = this.checkBulletAsteroid({ world, entityA, entityB });
     if (isBulletAsteroid) return;
 
-    this.checkShipAsteroid(world, entityA, entityB);
-    this.checkShipAsteroid(world, entityB, entityA);
+    this.checkShipAsteroid({ world, ship: entityA, asteroid: entityB });
+    this.checkShipAsteroid({ world, ship: entityB, asteroid: entityA });
   }
 
-  private checkBulletAsteroid(world: World, entityA: Entity, entityB: Entity): boolean {
-    if (this.isBulletAsteroidPair(world, entityA, entityB)) {
-      this.handleBulletAsteroidCollision(world, entityA, entityB);
+  private checkBulletAsteroid(params: { world: World; entityA: Entity; entityB: Entity }): boolean {
+    const { world, entityA, entityB } = params;
+    if (this.isBulletAsteroidPair({ world, entityA, entityB })) {
+      this.handleBulletAsteroidCollision({ world, asteroid: entityA, bullet: entityB });
       return true;
     }
-    if (this.isBulletAsteroidPair(world, entityB, entityA)) {
-      this.handleBulletAsteroidCollision(world, entityB, entityA);
+    if (this.isBulletAsteroidPair({ world, entityA: entityB, entityB: entityA })) {
+      this.handleBulletAsteroidCollision({ world, asteroid: entityB, bullet: entityA });
       return true;
     }
     return false;
   }
 
-  private checkShipAsteroid(world: World, entityA: Entity, entityB: Entity): void {
-    if (this.isShipAsteroidPair(world, entityA, entityB)) {
-      this.handleShipAsteroidCollision(world, entityA);
+  private checkShipAsteroid(params: { world: World; ship: Entity; asteroid: Entity }): void {
+    const { world, ship, asteroid } = params;
+    if (this.isShipAsteroidPair({ world, ship, asteroid })) {
+      this.handleShipAsteroidCollision({ world, shipEntity: ship });
     }
   }
 
-  private isBulletAsteroidPair(world: World, entityA: Entity, entityB: Entity): boolean {
+  private isBulletAsteroidPair(params: { world: World; entityA: Entity; entityB: Entity }): boolean {
+    const { world, entityA, entityB } = params;
     const hasAsteroid = world.getComponent(entityA, "Asteroid") !== undefined;
     const hasBullet = world.getComponent(entityB, "Bullet") !== undefined;
     return hasAsteroid && hasBullet;
   }
 
-  private isShipAsteroidPair(world: World, entityA: Entity, entityB: Entity): boolean {
-    const hasHealth = world.getComponent(entityA, "Health") !== undefined;
-    const hasAsteroid = world.getComponent(entityB, "Asteroid") !== undefined;
+  private isShipAsteroidPair(params: { world: World; ship: Entity; asteroid: Entity }): boolean {
+    const { world, ship, asteroid } = params;
+    const hasHealth = world.getComponent(ship, "Health") !== undefined;
+    const hasAsteroid = world.getComponent(asteroid, "Asteroid") !== undefined;
     return hasHealth && hasAsteroid;
   }
 
-  private handleBulletAsteroidCollision(world: World, asteroid: Entity, bullet: Entity): void {
-    this.splitAsteroid(world, asteroid);
+  private handleBulletAsteroidCollision(params: { world: World; asteroid: Entity; bullet: Entity }): void {
+    const { world, asteroid, bullet } = params;
+    this.splitAsteroid({ world, asteroidEntity: asteroid });
     world.removeEntity(bullet);
-    this.addScore(world, GAME_CONFIG.ASTEROID_SCORE);
+    this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
   }
 
-  private handleShipAsteroidCollision(world: World, shipEntity: Entity): void {
+  private handleShipAsteroidCollision(params: { world: World; shipEntity: Entity }): void {
+    const { world, shipEntity } = params;
     const health = world.getComponent<HealthComponent>(shipEntity, "Health");
     const canTakeDamage = health && health.invulnerableRemaining <= 0;
     if (canTakeDamage) {
@@ -111,30 +127,39 @@ export class CollisionSystem extends System {
     }
   }
 
-  private splitAsteroid(world: World, asteroidEntity: Entity): void {
+  private splitAsteroid(params: { world: World; asteroidEntity: Entity }): void {
+    const { world, asteroidEntity } = params;
     const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
     const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position");
 
     if (asteroid && pos) {
-      this.executeSplitStrategy(world, pos, asteroid.size);
+      this.executeSplitStrategy({ world, pos, size: asteroid.size });
     }
     world.removeEntity(asteroidEntity);
   }
 
-  private executeSplitStrategy(world: World, pos: PositionComponent, size: string): void {
+  private executeSplitStrategy(params: { world: World; pos: PositionComponent; size: string }): void {
+    const { world, pos, size } = params;
     if (size === "large") {
-      this.spawnSplit(world, pos, "medium", GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE);
+      this.spawnSplit({ world, pos, size: "medium", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE });
     } else if (size === "medium") {
-      this.spawnSplit(world, pos, "small", GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM);
+      this.spawnSplit({ world, pos, size: "small", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM });
     }
   }
 
-  private spawnSplit(world: World, pos: PositionComponent, size: "medium" | "small", offset: number): void {
+  private spawnSplit(params: {
+    world: World
+    pos: PositionComponent
+    size: "medium" | "small"
+    offset: number
+  }): void {
+    const { world, pos, size, offset } = params
     createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size });
     createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size });
   }
 
-  private addScore(world: World, points: number): void {
+  private addScore(params: { world: World; points: number }): void {
+    const { world, points } = params;
     const gameStates = world.query("GameState");
     if (gameStates.length === 0) return;
 

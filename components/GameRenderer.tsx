@@ -66,7 +66,7 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world }) => {
   const pos = world.getComponent<PositionComponent>(entity, "Position");
   const render = world.getComponent<RenderComponent>(entity, "Render");
 
-  if (!pos || !render) return null;
+  if (!pos || !render) return <></>;
 
   return renderByShape({ entity, world, pos, render });
 };
@@ -86,7 +86,7 @@ const renderByShape = (params: {
     case "line":
       return renderLineShape(params);
     default:
-      return null;
+      return <></>;
   }
 };
 

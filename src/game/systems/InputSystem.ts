@@ -19,6 +19,8 @@ import { createBullet } from "../EntityFactory"
 export class InputSystem extends System {
   /** Set of currently pressed keys (for web/keyboard). */
   private keys: Set<string> = new Set()
+  private keyDownListener = (e: KeyboardEvent) => this.keys.add(e.code)
+  private keyUpListener = (e: KeyboardEvent) => this.keys.delete(e.code)
 
   /**
    * Creates a new InputSystem and sets up keyboard listeners if in a browser environment.
@@ -28,11 +30,22 @@ export class InputSystem extends System {
     this.registerKeyboardListeners()
   }
 
+  /**
+   * Cleans up event listeners when the system is no longer needed.
+   */
+  public cleanup(): void {
+    const isBrowser = typeof window !== "undefined" && typeof window.removeEventListener === "function"
+    if (isBrowser) {
+      window.removeEventListener("keydown", this.keyDownListener)
+      window.removeEventListener("keyup", this.keyUpListener)
+    }
+  }
+
   private registerKeyboardListeners(): void {
     const isBrowser = typeof window !== "undefined" && typeof window.addEventListener === "function"
     if (isBrowser) {
-      window.addEventListener("keydown", (e) => this.keys.add(e.code))
-      window.addEventListener("keyup", (e) => this.keys.delete(e.code))
+      window.addEventListener("keydown", this.keyDownListener)
+      window.addEventListener("keyup", this.keyUpListener)
     }
   }
   
