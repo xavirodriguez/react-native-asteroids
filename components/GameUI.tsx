@@ -29,7 +29,7 @@ interface GameUIProps {
  * ```
  */
 export const GameUI: React.FC<GameUIProps> = ({ gameState, onRestart }) => {
-  if (!gameState) return null;
+  if (!gameState) return <></>;
 
   return (
     <View style={styles.container}>

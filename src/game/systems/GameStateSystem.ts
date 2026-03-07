@@ -27,7 +27,7 @@ export class GameStateSystem extends System {
 
     this.updateAsteroidsCount(world, gameState);
     this.spawnWaveIfCleared(world, gameState);
-    this.updatePlayerStatus(world, gameState, deltaTime);
+    this.updatePlayerStatus({ world, gameState, deltaTime });
     this.checkGameOver(world, gameState);
   }
 
@@ -56,7 +56,12 @@ export class GameStateSystem extends System {
     }
   }
 
-  private updatePlayerStatus(world: World, gameState: GameStateComponent, deltaTime: number): void {
+  private updatePlayerStatus(params: {
+    world: World
+    gameState: GameStateComponent
+    deltaTime: number
+  }): void {
+    const { world, gameState, deltaTime } = params
     const ships = world.query("Health", "Input");
     if (ships.length === 0) return
 

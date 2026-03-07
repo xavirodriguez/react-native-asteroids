@@ -29,6 +29,7 @@ export interface IAsteroidsGame {
   isGameOver(): boolean;
   getGameState(): GameStateComponent;
   subscribe(listener: UpdateListener): () => void;
+  destroy(): void;
 }
 
 /**
@@ -44,6 +45,7 @@ export class AsteroidsGame implements IAsteroidsGame {
   private isPaused = false;
   private gameLoopId: number | undefined = undefined;
   private listeners = new Set<UpdateListener>();
+  private globalKeyDownListener = (e: KeyboardEvent) => this.handleGlobalKeyDown(e);
 
   constructor() {
     this.world = new World();
@@ -119,6 +121,13 @@ export class AsteroidsGame implements IAsteroidsGame {
 
   public getWorld(): World {
     return this.world;
+  }
+
+  public destroy(): void {
+    this.stop();
+    this.inputSystem.cleanup();
+    this.unregisterGlobalKeyboardListeners();
+    this.listeners.clear();
   }
 
   public getGameState(): GameStateComponent {
@@ -224,7 +233,14 @@ export class AsteroidsGame implements IAsteroidsGame {
     const isBrowser = typeof window !== "undefined" && typeof window.addEventListener === "function";
     if (!isBrowser) return;
 
-    window.addEventListener("keydown", (e) => this.handleGlobalKeyDown(e));
+    window.addEventListener("keydown", this.globalKeyDownListener);
+  }
+
+  private unregisterGlobalKeyboardListeners(): void {
+    const isBrowser = typeof window !== "undefined" && typeof window.removeEventListener === "function";
+    if (!isBrowser) return;
+
+    window.removeEventListener("keydown", this.globalKeyDownListener);
   }
 
   private handleGlobalKeyDown(e: KeyboardEvent): void {
