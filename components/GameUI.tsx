@@ -33,24 +33,42 @@ export const GameUI: React.FC<GameUIProps> = ({ gameState, onRestart }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
-        <Text style={styles.text}>Lives: {gameState.lives}</Text>
-        <Text style={styles.text}>Score: {gameState.score}</Text>
-        <Text style={styles.text}>Level: {gameState.level}</Text>
-      </View>
-
+      <HUD
+        lives={gameState.lives}
+        score={gameState.score}
+        level={gameState.level}
+      />
       {gameState.isGameOver && (
-        <View style={styles.gameOverOverlay}>
-          <Text style={styles.gameOverText}>GAME OVER</Text>
-          <Text style={styles.finalScoreText}>Final Score: {gameState.score}</Text>
-          <TouchableOpacity style={styles.restartButton} onPress={onRestart}>
-            <Text style={styles.restartButtonText}>RESTART</Text>
-          </TouchableOpacity>
-        </View>
+        <GameOverOverlay score={gameState.score} onRestart={onRestart} />
       )}
     </View>
   );
 };
+
+const HUD: React.FC<{ lives: number; score: number; level: number }> = ({
+  lives,
+  score,
+  level,
+}) => (
+  <View style={styles.topBar}>
+    <Text style={styles.text}>Lives: {lives}</Text>
+    <Text style={styles.text}>Score: {score}</Text>
+    <Text style={styles.text}>Level: {level}</Text>
+  </View>
+);
+
+const GameOverOverlay: React.FC<{ score: number; onRestart?: () => void }> = ({
+  score,
+  onRestart,
+}) => (
+  <View style={styles.gameOverOverlay}>
+    <Text style={styles.gameOverText}>GAME OVER</Text>
+    <Text style={styles.finalScoreText}>Final Score: {score}</Text>
+    <TouchableOpacity style={styles.restartButton} onPress={onRestart}>
+      <Text style={styles.restartButtonText}>RESTART</Text>
+    </TouchableOpacity>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
