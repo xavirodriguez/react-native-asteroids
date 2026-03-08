@@ -69,14 +69,14 @@ export class CollisionSystem extends System {
 
   private resolveCollision(params: { world: World; entityA: Entity; entityB: Entity }): void {
     const { world, entityA, entityB } = params;
-    const isBulletAsteroid = this.checkBulletAsteroid({ world, entityA, entityB });
+    const isBulletAsteroid = this.resolveBulletAsteroidCollision({ world, entityA, entityB });
     if (isBulletAsteroid) return;
 
-    this.checkShipAsteroid({ world, ship: entityA, asteroid: entityB });
-    this.checkShipAsteroid({ world, ship: entityB, asteroid: entityA });
+    this.resolveShipAsteroidCollision({ world, ship: entityA, asteroid: entityB });
+    this.resolveShipAsteroidCollision({ world, ship: entityB, asteroid: entityA });
   }
 
-  private checkBulletAsteroid(params: { world: World; entityA: Entity; entityB: Entity }): boolean {
+  private resolveBulletAsteroidCollision(params: { world: World; entityA: Entity; entityB: Entity }): boolean {
     const { world, entityA, entityB } = params;
     if (this.isBulletAsteroidPair({ world, entityA, entityB })) {
       this.handleBulletAsteroidCollision({ world, asteroid: entityA, bullet: entityB });
@@ -89,7 +89,7 @@ export class CollisionSystem extends System {
     return false;
   }
 
-  private checkShipAsteroid(params: { world: World; ship: Entity; asteroid: Entity }): void {
+  private resolveShipAsteroidCollision(params: { world: World; ship: Entity; asteroid: Entity }): void {
     const { world, ship, asteroid } = params;
     if (this.isShipAsteroidPair({ world, ship, asteroid })) {
       this.handleShipAsteroidCollision({ world, shipEntity: ship });
@@ -98,15 +98,15 @@ export class CollisionSystem extends System {
 
   private isBulletAsteroidPair(params: { world: World; entityA: Entity; entityB: Entity }): boolean {
     const { world, entityA, entityB } = params;
-    const hasAsteroid = world.getComponent(entityA, "Asteroid") !== undefined;
-    const hasBullet = world.getComponent(entityB, "Bullet") !== undefined;
+    const hasAsteroid = world.hasComponent(entityA, "Asteroid");
+    const hasBullet = world.hasComponent(entityB, "Bullet");
     return hasAsteroid && hasBullet;
   }
 
   private isShipAsteroidPair(params: { world: World; ship: Entity; asteroid: Entity }): boolean {
     const { world, ship, asteroid } = params;
-    const hasHealth = world.getComponent(ship, "Health") !== undefined;
-    const hasAsteroid = world.getComponent(asteroid, "Asteroid") !== undefined;
+    const hasHealth = world.hasComponent(ship, "Health");
+    const hasAsteroid = world.hasComponent(asteroid, "Asteroid");
     return hasHealth && hasAsteroid;
   }
 

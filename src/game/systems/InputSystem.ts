@@ -19,8 +19,8 @@ import { createBullet } from "../EntityFactory"
 export class InputSystem extends System {
   /** Set of currently pressed keys (for web/keyboard). */
   private keys: Set<string> = new Set()
-  private keyDownListener = (e: KeyboardEvent) => this.keys.add(e.code)
-  private keyUpListener = (e: KeyboardEvent) => this.keys.delete(e.code)
+  private keyDownListener = (e: KeyboardEvent) => this.activateKey(e.code)
+  private keyUpListener = (e: KeyboardEvent) => this.deactivateKey(e.code)
 
   /**
    * Creates a new InputSystem and sets up keyboard listeners if in a browser environment.
@@ -55,19 +55,23 @@ export class InputSystem extends System {
    * @param input - The new input state.
    */
   setInput(input: Partial<InputState>): void {
-    this.updateKey(GAME_CONFIG.KEYS.THRUST, input.thrust)
-    this.updateKey(GAME_CONFIG.KEYS.ROTATE_LEFT, input.rotateLeft)
-    this.updateKey(GAME_CONFIG.KEYS.ROTATE_RIGHT, input.rotateRight)
-    this.updateKey(GAME_CONFIG.KEYS.SHOOT, input.shoot)
+    this.syncInputKey(GAME_CONFIG.KEYS.THRUST, input.thrust)
+    this.syncInputKey(GAME_CONFIG.KEYS.ROTATE_LEFT, input.rotateLeft)
+    this.syncInputKey(GAME_CONFIG.KEYS.ROTATE_RIGHT, input.rotateRight)
+    this.syncInputKey(GAME_CONFIG.KEYS.SHOOT, input.shoot)
   }
 
-  private updateKey(keyCode: string, isActive?: boolean): void {
-    if (isActive === undefined) return
-    if (isActive) {
-      this.keys.add(keyCode)
-    } else {
-      this.keys.delete(keyCode)
-    }
+  private syncInputKey(keyCode: string, isActive?: boolean): void {
+    if (isActive === true) this.activateKey(keyCode)
+    if (isActive === false) this.deactivateKey(keyCode)
+  }
+
+  private activateKey(keyCode: string): void {
+    this.keys.add(keyCode)
+  }
+
+  private deactivateKey(keyCode: string): void {
+    this.keys.delete(keyCode)
   }
 
   /**
