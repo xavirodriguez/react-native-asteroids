@@ -41,7 +41,7 @@ export function createShip(params: CreateShipParams): Entity {
   const ship = world.createEntity()
 
   addShipMovementComponents({ world, ship, x, y })
-  addShipCombatComponents(world, ship)
+  addShipCombatComponents({ world, ship })
 
   return ship
 }
@@ -64,7 +64,8 @@ function addShipMovementComponents(params: {
   })
 }
 
-function addShipCombatComponents(world: World, ship: Entity): void {
+function addShipCombatComponents(params: { world: World; ship: Entity }): void {
+  const { world, ship } = params
   const initialLives = GAME_CONFIG.SHIP_INITIAL_LIVES
   world.addComponent(ship, { type: "Collider", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS })
   world.addComponent(ship, {
@@ -142,14 +143,20 @@ export function createBullet(params: CreateBulletParams): Entity {
   const { world, x, y, angle } = params
   const bullet = world.createEntity()
 
-  addBulletMovementComponents(world, bullet, { x, y, angle })
-  addBulletLifeCycleComponents(world, bullet)
+  addBulletMovementComponents({ world, bullet, x, y, angle })
+  addBulletLifeCycleComponents({ world, bullet })
 
   return bullet
 }
 
-function addBulletMovementComponents(world: World, bullet: Entity, params: { x: number; y: number; angle: number }): void {
-  const { x, y, angle } = params
+function addBulletMovementComponents(params: {
+  world: World
+  bullet: Entity
+  x: number
+  y: number
+  angle: number
+}): void {
+  const { world, bullet, x, y, angle } = params
   const speed = GAME_CONFIG.BULLET_SPEED
   world.addComponent(bullet, { type: "Position", x, y })
   world.addComponent(bullet, {
@@ -159,7 +166,8 @@ function addBulletMovementComponents(world: World, bullet: Entity, params: { x: 
   })
 }
 
-function addBulletLifeCycleComponents(world: World, bullet: Entity): void {
+function addBulletLifeCycleComponents(params: { world: World; bullet: Entity }): void {
+  const { world, bullet } = params
   const ttl = GAME_CONFIG.BULLET_TTL
   const size = GAME_CONFIG.BULLET_SIZE
   world.addComponent(bullet, { type: "Render", shape: "circle", size, color: "#FFFF00", rotation: 0 })

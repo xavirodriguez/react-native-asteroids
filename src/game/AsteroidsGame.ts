@@ -76,30 +76,39 @@ export class AsteroidsGame implements IAsteroidsGame {
   public pause(): void {
     if (this.isRunning && !this.isPaused) {
       this.isPaused = true;
-      console.log("Game state changed: PAUSED");
-      this.notifyListeners();
+      this.notifyStatusChange("PAUSED");
     }
   }
 
   public resume(): void {
-    if (this.isPaused && this.isRunning) {
+    const canResume = this.isPaused && this.isRunning;
+    if (canResume) {
       this.isPaused = false;
       this.lastTime = performance.now();
-      console.log("Game state changed: RESUMED");
-      this.notifyListeners();
+      this.notifyStatusChange("RESUMED");
     }
   }
 
   public restart(): void {
+    this.resetGameState();
+    this.initializeGame();
+    this.resumeIfPaused();
+    this.notifyStatusChange("RESTARTED");
+  }
+
+  private resetGameState(): void {
     this.world.clear();
     this.gameStateSystem.resetGameOverState();
-    this.initializeGame();
-    
+  }
+
+  private resumeIfPaused(): void {
     if (this.isPaused) {
       this.start();
     }
-    
-    console.log("Game state changed: RESTARTED");
+  }
+
+  private notifyStatusChange(status: string): void {
+    console.log(`Game state changed: ${status}`);
     this.notifyListeners();
   }
 

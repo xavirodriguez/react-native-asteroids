@@ -97,6 +97,17 @@ export class World {
   }
 
   /**
+   * Checks if an entity has a component of a specific type.
+   *
+   * @param entity - The entity to check.
+   * @param type - The component type to look for.
+   * @returns `true` if the entity has the component, otherwise `false`.
+   */
+  hasComponent(entity: Entity, type: ComponentType): boolean {
+    return this.componentIndex.get(type)?.has(entity) ?? false
+  }
+
+  /**
    * Removes a component of a specific type from an entity.
    *
    * @param entity - The entity to remove the component from.
@@ -123,15 +134,18 @@ export class World {
     if (componentTypes.length === 0) return []
 
     const sortedTypes = this.getSortedTypes(componentTypes)
-    const rarestType = sortedTypes[0]
-    const candidates = this.componentIndex.get(rarestType)
+    const candidates = this.componentIndex.get(sortedTypes[0])
 
     if (!candidates || candidates.size === 0) {
       return []
     }
 
-    return Array.from(candidates).filter((entity) =>
-      sortedTypes.slice(1).every((type) => this.componentIndex.get(type)?.has(entity)),
+    return this.filterByComponents(candidates, sortedTypes.slice(1))
+  }
+
+  private filterByComponents(entities: Set<Entity>, types: ComponentType[]): Entity[] {
+    return Array.from(entities).filter((entity) =>
+      types.every((type) => this.componentIndex.get(type)?.has(entity)),
     )
   }
 
