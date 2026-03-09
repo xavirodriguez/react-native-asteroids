@@ -175,3 +175,22 @@ function addBulletLifeCycleComponents(params: { world: World; bullet: Entity }):
   world.addComponent(bullet, { type: "TTL", remaining: ttl })
   world.addComponent(bullet, { type: "Bullet" })
 }
+
+/**
+ * Spawns a wave of asteroids in a circular pattern around the screen center.
+ *
+ * @param params - The world and the number of asteroids to spawn.
+ */
+export function spawnAsteroidWave(params: { world: World; count: number }): void {
+  const { world, count } = params
+  const centerX = GAME_CONFIG.SCREEN_CENTER_X
+  const centerY = GAME_CONFIG.SCREEN_CENTER_Y
+  const distance = GAME_CONFIG.WAVE_SPAWN_DISTANCE
+
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count
+    const x = centerX + Math.cos(angle) * distance
+    const y = centerY + Math.sin(angle) * distance
+    createAsteroid({ world, x, y, size: "large" })
+  }
+}
