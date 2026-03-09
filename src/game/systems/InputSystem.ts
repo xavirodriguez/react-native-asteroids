@@ -41,37 +41,13 @@ export class InputSystem extends System {
     }
   }
 
-  private registerKeyboardListeners(): void {
-    const isBrowser = typeof window !== "undefined" && typeof window.addEventListener === "function"
-    if (isBrowser) {
-      window.addEventListener("keydown", this.keyDownListener)
-      window.addEventListener("keyup", this.keyUpListener)
-    }
-  }
-  
   /**
    * Manually sets the input state. Useful for mobile touch controls.
    *
    * @param input - The new input state.
    */
-  setInput(input: Partial<InputState>): void {
-    this.syncInputKey(GAME_CONFIG.KEYS.THRUST, input.thrust)
-    this.syncInputKey(GAME_CONFIG.KEYS.ROTATE_LEFT, input.rotateLeft)
-    this.syncInputKey(GAME_CONFIG.KEYS.ROTATE_RIGHT, input.rotateRight)
-    this.syncInputKey(GAME_CONFIG.KEYS.SHOOT, input.shoot)
-  }
-
-  private syncInputKey(keyCode: string, isActive?: boolean): void {
-    if (isActive === true) this.activateKey(keyCode)
-    if (isActive === false) this.deactivateKey(keyCode)
-  }
-
-  private activateKey(keyCode: string): void {
-    this.keys.add(keyCode)
-  }
-
-  private deactivateKey(keyCode: string): void {
-    this.keys.delete(keyCode)
+  public setInput(input: Partial<InputState>): void {
+    this.syncAllInputs(input)
   }
 
   /**
@@ -80,9 +56,42 @@ export class InputSystem extends System {
    * @param world - The ECS world.
    * @param deltaTime - Time since last frame in milliseconds.
    */
-  update(world: World, deltaTime: number): void {
+  public update(world: World, deltaTime: number): void {
     const ships = world.query("Input", "Position", "Velocity", "Render")
     ships.forEach((entity) => this.updateShipEntity({ world, entity, deltaTime }))
+  }
+
+  private syncAllInputs(input: Partial<InputState>): void {
+    this.syncAction(GAME_CONFIG.KEYS.THRUST, input.thrust)
+    this.syncAction(GAME_CONFIG.KEYS.ROTATE_LEFT, input.rotateLeft)
+    this.syncAction(GAME_CONFIG.KEYS.ROTATE_RIGHT, input.rotateRight)
+    this.syncAction(GAME_CONFIG.KEYS.SHOOT, input.shoot)
+  }
+
+  private syncAction(keyCode: string, isActive: boolean | undefined): void {
+    if (isActive === undefined) return
+
+    if (isActive) {
+      this.activateKey(keyCode)
+    } else {
+      this.deactivateKey(keyCode)
+    }
+  }
+
+  private registerKeyboardListeners(): void {
+    const isBrowser = typeof window !== "undefined" && typeof window.addEventListener === "function"
+    if (isBrowser) {
+      window.addEventListener("keydown", this.keyDownListener)
+      window.addEventListener("keyup", this.keyUpListener)
+    }
+  }
+
+  private activateKey(keyCode: string): void {
+    this.keys.add(keyCode)
+  }
+
+  private deactivateKey(keyCode: string): void {
+    this.keys.delete(keyCode)
   }
 
   private updateShipEntity(params: { world: World; entity: number; deltaTime: number }): void {

@@ -1,6 +1,6 @@
 import { System, type World } from "../ecs-world"
 import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../../types/GameTypes"
-import { createAsteroid } from "../EntityFactory"
+import { spawnAsteroidWave } from "../EntityFactory"
 import type { IAsteroidsGame } from "../AsteroidsGame"
 import { getGameState } from "../GameUtils"
 
@@ -20,10 +20,7 @@ export class GameStateSystem extends System {
    * Updates the game state by processing various sub-tasks.
    */
   public update(world: World, deltaTime: number): void {
-    const gameState = this.getGameState(world);
-    if (!gameState) {
-      return;
-    }
+    const gameState = getGameState(world);
 
     this.updateAsteroidsCount(world, gameState);
     this.spawnWaveIfCleared(world, gameState);
@@ -40,10 +37,6 @@ export class GameStateSystem extends System {
     this.gameOverLogged = false;
   }
 
-  private getGameState(world: World): GameStateComponent {
-    return getGameState(world)
-  }
-
   private updateAsteroidsCount(world: World, gameState: GameStateComponent): void {
     const asteroids = world.query("Asteroid");
     gameState.asteroidsRemaining = asteroids.length;
@@ -51,8 +44,9 @@ export class GameStateSystem extends System {
 
   private spawnWaveIfCleared(world: World, gameState: GameStateComponent): void {
     if (gameState.asteroidsRemaining === 0) {
-      this.spawnAsteroidWave(world, gameState.level);
-      gameState.level++;
+      const asteroidCount = this.calculateWaveCount(gameState.level)
+      spawnAsteroidWave({ world, count: asteroidCount })
+      gameState.level++
     }
   }
 
@@ -106,29 +100,9 @@ export class GameStateSystem extends System {
     }
   }
 
-  /**
-   * Spawns a new wave of asteroids based on the current level.
-   */
-  private spawnAsteroidWave(world: World, level: number): void {
-    const asteroidCount = this.calculateWaveCount(level)
-    const distance = GAME_CONFIG.WAVE_SPAWN_DISTANCE
-
-    for (let i = 0; i < asteroidCount; i++) {
-      const angle = (Math.PI * 2 * i) / asteroidCount
-      this.spawnAsteroidAtAngle({ world, angle, distance })
-    }
-  }
-
   private calculateWaveCount(level: number): number {
     const initialCount = GAME_CONFIG.INITIAL_ASTEROID_COUNT
     const maxCount = GAME_CONFIG.MAX_WAVE_ASTEROIDS
     return Math.min(initialCount + level, maxCount)
-  }
-
-  private spawnAsteroidAtAngle(params: { world: World; angle: number; distance: number }): void {
-    const { world, angle, distance } = params
-    const x = GAME_CONFIG.SCREEN_CENTER_X + Math.cos(angle) * distance
-    const y = GAME_CONFIG.SCREEN_CENTER_Y + Math.sin(angle) * distance
-    createAsteroid({ world, x, y, size: "large" })
   }
 }
