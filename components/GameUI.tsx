@@ -7,7 +7,7 @@ import type { GameStateComponent } from "../src/types/GameTypes";
  */
 interface GameUIProps {
   /** The current game state component containing lives, score, and level. */
-  gameState: GameStateComponent | null;
+  gameState: GameStateComponent;
   /** Callback triggered when the restart button is pressed. */
   onRestart?: () => void;
 }
@@ -29,8 +29,6 @@ interface GameUIProps {
  * ```
  */
 export const GameUI: React.FC<GameUIProps> = ({ gameState, onRestart }) => {
-  if (!gameState) return <></>;
-
   return (
     <View style={styles.container}>
       <HUD

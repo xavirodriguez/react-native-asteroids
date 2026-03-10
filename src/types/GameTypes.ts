@@ -251,4 +251,21 @@ export const GAME_CONFIG = {
   ASTEROID_SPLIT_OFFSET_MEDIUM: 5,
   /** Points awarded for destroying an asteroid */
   ASTEROID_SCORE: 10,
+
+  /** Visual styles and colors */
+  COLORS: {
+    SHIP: "#CCCCCC",
+    SHIP_THRUST: "#FF6600",
+    SHIP_THRUST_STROKE: "#FF9900",
+    SHIP_CORE: "#FFFF00",
+    SHIP_BODY: "#DDDDDD",
+    SHIP_DETAIL_GRAY: "#666666",
+    SHIP_DETAIL_RED: "#FF0000",
+    ASTEROID: "#888888",
+    ASTEROID_FILL: "#999999",
+    BULLET: "#FFFF00",
+  },
+
+  /** Asteroid movement configuration */
+  ASTEROID_SPEED_MULTIPLIER: 100,
 }
