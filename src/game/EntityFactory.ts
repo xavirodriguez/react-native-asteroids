@@ -59,7 +59,7 @@ function addShipMovementComponents(params: {
     type: "Render",
     shape: "triangle",
     size: GAME_CONFIG.SHIP_RENDER_SIZE,
-    color: "#CCCCCC",
+    color: GAME_CONFIG.COLORS.SHIP,
     rotation: 0,
   })
 }
@@ -108,10 +108,11 @@ function addAsteroidMovementComponents(params: {
 }): void {
   const { world, asteroid, x, y } = params
   world.addComponent(asteroid, { type: "Position", x, y })
+  const multiplier = GAME_CONFIG.ASTEROID_SPEED_MULTIPLIER
   world.addComponent(asteroid, {
     type: "Velocity",
-    dx: (Math.random() - 0.5) * 100,
-    dy: (Math.random() - 0.5) * 100,
+    dx: (Math.random() - 0.5) * multiplier,
+    dy: (Math.random() - 0.5) * multiplier,
   })
 }
 
@@ -126,7 +127,7 @@ function addAsteroidTypeComponents(params: {
     type: "Render",
     shape: "circle",
     size: radius,
-    color: "#888888",
+    color: GAME_CONFIG.COLORS.ASTEROID,
     rotation: 0,
   })
   world.addComponent(asteroid, { type: "Collider", radius })
@@ -170,7 +171,13 @@ function addBulletLifeCycleComponents(params: { world: World; bullet: Entity }):
   const { world, bullet } = params
   const ttl = GAME_CONFIG.BULLET_TTL
   const size = GAME_CONFIG.BULLET_SIZE
-  world.addComponent(bullet, { type: "Render", shape: "circle", size, color: "#FFFF00", rotation: 0 })
+  world.addComponent(bullet, {
+    type: "Render",
+    shape: "circle",
+    size,
+    color: GAME_CONFIG.COLORS.BULLET,
+    rotation: 0,
+  })
   world.addComponent(bullet, { type: "Collider", radius: size })
   world.addComponent(bullet, { type: "TTL", remaining: ttl })
   world.addComponent(bullet, { type: "Bullet" })
@@ -193,4 +200,24 @@ export function spawnAsteroidWave(params: { world: World; count: number }): void
     const y = centerY + Math.sin(angle) * distance
     createAsteroid({ world, x, y, size: "large" })
   }
+}
+
+/**
+ * Creates the global game state entity.
+ *
+ * @param params - The world instance.
+ * @returns The newly created {@link Entity}.
+ */
+export function createGameState(params: { world: World }): Entity {
+  const { world } = params
+  const gameStateEntity = world.createEntity()
+  world.addComponent(gameStateEntity, {
+    type: "GameState",
+    lives: GAME_CONFIG.SHIP_INITIAL_LIVES,
+    score: 0,
+    level: 1,
+    asteroidsRemaining: 0,
+    isGameOver: false,
+  })
+  return gameStateEntity
 }

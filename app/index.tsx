@@ -10,10 +10,6 @@ import { useAsteroidsGame } from "../src/hooks/useAsteroidsGame";
 export default function App() {
   const { game, gameState, handleInput } = useAsteroidsGame();
 
-  if (!game) {
-    return <View />;
-  }
-
   return (
     <View style={styles.container}>
       <GameUI gameState={gameState} onRestart={() => game.restart()} />

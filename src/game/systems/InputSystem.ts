@@ -94,17 +94,19 @@ export class InputSystem extends System {
     this.keys.delete(keyCode)
   }
 
-  private updateShipEntity(params: { world: World; entity: number; deltaTime: number }): void {
-    const { world, entity, deltaTime } = params
-    const input = world.getComponent<InputComponent>(entity, "Input")!
-    const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!
-    const render = world.getComponent<RenderComponent>(entity, "Render")!
-    const pos = world.getComponent<PositionComponent>(entity, "Position")!
+  private updateShipEntity(context: { world: World; entity: number; deltaTime: number }): void {
+    const { world, entity, deltaTime } = context
+    const input = world.getComponent<InputComponent>(entity, "Input")
+    const vel = world.getComponent<VelocityComponent>(entity, "Velocity")
+    const render = world.getComponent<RenderComponent>(entity, "Render")
+    const pos = world.getComponent<PositionComponent>(entity, "Position")
 
-    this.updateShootingCooldown(input, deltaTime)
-    this.updateShipInputState(input)
-    this.applyShipMovement({ vel, render, input, deltaTime })
-    this.handleShipShooting({ world, pos, render, input })
+    if (input && vel && render && pos) {
+      this.updateShootingCooldown(input, deltaTime)
+      this.updateShipInputState(input)
+      this.applyShipMovement({ vel, render, input, deltaTime })
+      this.handleShipShooting({ world, pos, render, input })
+    }
   }
 
   private updateShootingCooldown(input: InputComponent, deltaTime: number): void {
@@ -120,13 +122,13 @@ export class InputSystem extends System {
     input.shoot = this.keys.has(GAME_CONFIG.KEYS.SHOOT)
   }
 
-  private applyShipMovement(params: {
+  private applyShipMovement(context: {
     vel: VelocityComponent
     render: RenderComponent
     input: InputComponent
     deltaTime: number
   }): void {
-    const { vel, render, input, deltaTime } = params
+    const { vel, render, input, deltaTime } = context
     const dt = deltaTime / 1000
 
     this.applyRotation({ render, input, dt })
@@ -134,19 +136,19 @@ export class InputSystem extends System {
     this.applyFriction(vel, deltaTime)
   }
 
-  private applyRotation(params: { render: RenderComponent; input: InputComponent; dt: number }): void {
-    const { render, input, dt } = params
+  private applyRotation(context: { render: RenderComponent; input: InputComponent; dt: number }): void {
+    const { render, input, dt } = context
     if (input.rotateLeft) render.rotation -= GAME_CONFIG.SHIP_ROTATION_SPEED * dt
     if (input.rotateRight) render.rotation += GAME_CONFIG.SHIP_ROTATION_SPEED * dt
   }
 
-  private applyThrust(params: {
+  private applyThrust(context: {
     vel: VelocityComponent
     render: RenderComponent
     input: InputComponent
     dt: number
   }): void {
-    const { vel, render, input, dt } = params
+    const { vel, render, input, dt } = context
     if (input.thrust) {
       vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt
       vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt
@@ -159,13 +161,13 @@ export class InputSystem extends System {
     vel.dy *= frictionFactor
   }
 
-  private handleShipShooting(params: {
+  private handleShipShooting(context: {
     world: World
     pos: PositionComponent
     render: RenderComponent
     input: InputComponent
   }): void {
-    const { world, pos, render, input } = params
+    const { world, pos, render, input } = context
     const canShoot = input.shoot && input.shootCooldownRemaining <= 0
     if (canShoot) {
       createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation })

@@ -4,10 +4,11 @@ import { InputSystem } from "./systems/InputSystem"
 import { CollisionSystem } from "./systems/CollisionSystem"
 import { TTLSystem } from "./systems/TTLSystem"
 import { GameStateSystem } from "./systems/GameStateSystem"
-import { createShip, spawnAsteroidWave } from "./EntityFactory"
+import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory"
 import {
   type GameStateComponent,
   type InputState,
+  INITIAL_GAME_STATE,
   GAME_CONFIG,
 } from "../types/GameTypes"
 import { getGameState } from "./GameUtils"
@@ -30,6 +31,36 @@ export interface IAsteroidsGame {
   getGameState(): GameStateComponent;
   subscribe(listener: UpdateListener): () => void;
   destroy(): void;
+  setInput(input: Partial<InputState>): void;
+}
+
+/**
+ * Null Object implementation of the Asteroids game controller.
+ * Provides safe, no-op behaviors to avoid null checks.
+ */
+export class NullAsteroidsGame implements IAsteroidsGame {
+  private readonly world = new World()
+
+  public pause(): void {}
+  public resume(): void {}
+  public restart(): void {}
+  public getWorld(): World {
+    return this.world
+  }
+  public isPausedState(): boolean {
+    return false
+  }
+  public isGameOver(): boolean {
+    return false
+  }
+  public getGameState(): GameStateComponent {
+    return INITIAL_GAME_STATE
+  }
+  public subscribe(_listener: UpdateListener): () => void {
+    return () => {}
+  }
+  public destroy(): void {}
+  public setInput(_input: Partial<InputState>): void {}
 }
 
 /**
@@ -165,7 +196,7 @@ export class AsteroidsGame implements IAsteroidsGame {
 
   private initializeGame(): void {
     this.setupShip();
-    this.setupGameState();
+    createGameState({ world: this.world });
     spawnAsteroidWave({ world: this.world, count: GAME_CONFIG.INITIAL_ASTEROID_COUNT });
   }
 
@@ -173,18 +204,6 @@ export class AsteroidsGame implements IAsteroidsGame {
     const x = GAME_CONFIG.SCREEN_CENTER_X;
     const y = GAME_CONFIG.SCREEN_CENTER_Y;
     createShip({ world: this.world, x, y });
-  }
-
-  private setupGameState(): void {
-    const gameStateEntity = this.world.createEntity();
-    this.world.addComponent(gameStateEntity, {
-      type: "GameState",
-      lives: GAME_CONFIG.SHIP_INITIAL_LIVES,
-      score: 0,
-      level: 1,
-      asteroidsRemaining: 0,
-      isGameOver: false,
-    });
   }
 
   private notifyListeners(): void {

@@ -190,8 +190,8 @@ const ShipRenderer: React.FC<{
 const ShipThrusters: React.FC<{ size: number }> = ({ size }) => (
   <Polygon
     points={`${-size / 2},${size / 3} ${-size * 1.5},0 ${-size / 2},${-size / 3}`}
-    fill="#FF6600"
-    stroke="#FF9900"
+    fill={GAME_CONFIG.COLORS.SHIP_THRUST}
+    stroke={GAME_CONFIG.COLORS.SHIP_THRUST_STROKE}
     strokeWidth="1"
     opacity="0.8"
   />
@@ -205,7 +205,7 @@ const ShipCore: React.FC<{ size: number }> = ({ size }) => {
       cx="0"
       cy="0"
       r={(size / 3) * pulse}
-      fill="#FFFF00"
+      fill={GAME_CONFIG.COLORS.SHIP_CORE}
       opacity="0.6"
     />
   );
@@ -214,7 +214,7 @@ const ShipCore: React.FC<{ size: number }> = ({ size }) => {
 const ShipBody: React.FC<{ size: number; color: string }> = ({ size, color }) => (
   <Polygon
     points={`${size},0 ${-size / 2},${size / 2} ${-size / 4},0 ${-size / 2},${-size / 2}`}
-    fill="#DDDDDD"
+    fill={GAME_CONFIG.COLORS.SHIP_BODY}
     stroke={color}
     strokeWidth="1"
   />
@@ -227,21 +227,21 @@ const ShipDetails: React.FC<{ size: number }> = ({ size }) => (
       y={-size / 4}
       width={size / 8}
       height={size / 2}
-      fill="#666666"
+      fill={GAME_CONFIG.COLORS.SHIP_DETAIL_GRAY}
     />
     <Rect
       x={-size / 2}
       y={size / 6}
       width={size / 6}
       height={size / 8}
-      fill="#FF0000"
+      fill={GAME_CONFIG.COLORS.SHIP_DETAIL_RED}
     />
     <Rect
       x={-size / 2}
       y={-size / 6 - size / 8}
       width={size / 6}
       height={size / 8}
-      fill="#FF0000"
+      fill={GAME_CONFIG.COLORS.SHIP_DETAIL_RED}
     />
   </G>
 );
@@ -259,7 +259,7 @@ const AsteroidRenderer: React.FC<{
     cx={x}
     cy={y}
     r={size}
-    fill="#999"
+    fill={GAME_CONFIG.COLORS.ASTEROID_FILL}
     stroke={color}
     strokeWidth="2"
   />

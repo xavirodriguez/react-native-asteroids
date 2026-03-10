@@ -50,20 +50,22 @@ export class GameStateSystem extends System {
     }
   }
 
-  private updatePlayerStatus(params: {
+  private updatePlayerStatus(context: {
     world: World
     gameState: GameStateComponent
     deltaTime: number
   }): void {
-    const { world, gameState, deltaTime } = params
+    const { world, gameState, deltaTime } = context
     const ships = world.query("Health", "Input");
     if (ships.length === 0) return
 
     const shipEntity = ships[0]
-    const health = world.getComponent<HealthComponent>(shipEntity, "Health")!
+    const health = world.getComponent<HealthComponent>(shipEntity, "Health")
 
-    this.updateInvulnerability(health, deltaTime)
-    gameState.lives = health.current
+    if (health) {
+      this.updateInvulnerability(health, deltaTime)
+      gameState.lives = health.current
+    }
   }
 
   private updateInvulnerability(health: HealthComponent, deltaTime: number): void {
