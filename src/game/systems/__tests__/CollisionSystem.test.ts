@@ -14,6 +14,7 @@ describe("CollisionSystem", () => {
 
   it("should detect collision between two circles", () => {
     const e1 = world.createEntity();
+    world.addComponent(e1, { type: "Ship" });
     world.addComponent(e1, { type: "Position", x: 100, y: 100 });
     world.addComponent(e1, { type: "Collider", radius: 10 });
     world.addComponent(e1, { type: "Health", current: 3, max: 3, invulnerableRemaining: 0 });
@@ -33,6 +34,7 @@ describe("CollisionSystem", () => {
 
   it("should respect invulnerability", () => {
     const e1 = world.createEntity();
+    world.addComponent(e1, { type: "Ship" });
     world.addComponent(e1, { type: "Position", x: 100, y: 100 });
     world.addComponent(e1, { type: "Collider", radius: 10 });
     world.addComponent(e1, { type: "Health", current: 3, max: 3, invulnerableRemaining: 1000 });

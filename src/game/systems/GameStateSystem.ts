@@ -56,7 +56,7 @@ export class GameStateSystem extends System {
     deltaTime: number
   }): void {
     const { world, gameState, deltaTime } = params
-    const ships = world.query("Health", "Input");
+    const ships = world.query("Ship", "Health", "Input");
     if (ships.length === 0) return
 
     const shipEntity = ships[0]
@@ -85,7 +85,7 @@ export class GameStateSystem extends System {
   }
 
   private evaluateGameOverCondition(world: World): boolean {
-    const ships = world.query("Health", "Input");
+    const ships = world.query("Ship", "Health", "Input");
     return ships.length > 0 && ships.every((ship) => {
       const health = world.getComponent<HealthComponent>(ship, "Health");
       return !health || health.current <= 0;

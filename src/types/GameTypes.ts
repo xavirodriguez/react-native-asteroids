@@ -144,6 +144,13 @@ export interface BulletComponent extends Component {
 }
 
 /**
+ * Marker component for the player ship.
+ */
+export interface ShipComponent extends Component {
+  type: "Ship"
+}
+
+/**
  * Marker component for asteroid entities.
  */
 export interface AsteroidComponent extends Component {
@@ -203,6 +210,8 @@ export const GAME_CONFIG = {
     ROTATE_LEFT: "ArrowLeft",
     ROTATE_RIGHT: "ArrowRight",
     SHOOT: "Space",
+    PAUSE: "KeyP",
+    RESTART: "KeyR",
   },
 
   /** Acceleration force applied to the ship (pixels/sec²) */

@@ -14,6 +14,7 @@ describe("GameStateSystem", () => {
 
   it("should decrement invulnerability and synchronize lives", () => {
     const ship = world.createEntity();
+    world.addComponent(ship, { type: "Ship" });
     world.addComponent(ship, { type: "Health", current: 2, max: 3, invulnerableRemaining: 1000 });
     world.addComponent(ship, { type: "Input", thrust: false, rotateLeft: false, rotateRight: false, shoot: false });
 

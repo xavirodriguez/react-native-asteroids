@@ -13,6 +13,7 @@ describe("InputSystem", () => {
     world.addSystem(system);
 
     ship = world.createEntity();
+    world.addComponent(ship, { type: "Ship" });
     world.addComponent(ship, { type: "Position", x: 400, y: 300 });
     world.addComponent(ship, { type: "Velocity", dx: 0, dy: 0 });
     world.addComponent(ship, { type: "Render", shape: "triangle", size: 10, color: "white", rotation: 0 });

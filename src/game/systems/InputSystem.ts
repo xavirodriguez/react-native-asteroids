@@ -57,7 +57,7 @@ export class InputSystem extends System {
    * @param deltaTime - Time since last frame in milliseconds.
    */
   public update(world: World, deltaTime: number): void {
-    const ships = world.query("Input", "Position", "Velocity", "Render")
+    const ships = world.query("Ship", "Input", "Position", "Velocity", "Render")
     ships.forEach((entity) => this.updateShipEntity({ world, entity, deltaTime }))
   }
 
