@@ -4,7 +4,7 @@ import { InputSystem } from "./systems/InputSystem"
 import { CollisionSystem } from "./systems/CollisionSystem"
 import { TTLSystem } from "./systems/TTLSystem"
 import { GameStateSystem } from "./systems/GameStateSystem"
-import { createShip, spawnAsteroidWave } from "./EntityFactory"
+import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory"
 import {
   type GameStateComponent,
   type InputState,
@@ -176,15 +176,7 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private setupGameState(): void {
-    const gameStateEntity = this.world.createEntity();
-    this.world.addComponent(gameStateEntity, {
-      type: "GameState",
-      lives: GAME_CONFIG.SHIP_INITIAL_LIVES,
-      score: 0,
-      level: 1,
-      asteroidsRemaining: 0,
-      isGameOver: false,
-    });
+    createGameState({ world: this.world })
   }
 
   private notifyListeners(): void {
@@ -229,9 +221,9 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private handleGlobalKeyDown(e: KeyboardEvent): void {
-    if (e.code === "KeyP") {
+    if (e.code === GAME_CONFIG.KEYS.PAUSE) {
       this.togglePause();
-    } else if (e.code === "KeyR") {
+    } else if (e.code === GAME_CONFIG.KEYS.RESTART) {
       this.restart();
     }
   }

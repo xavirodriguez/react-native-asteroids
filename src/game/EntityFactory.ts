@@ -67,6 +67,7 @@ function addShipMovementComponents(params: {
 function addShipCombatComponents(params: { world: World; ship: Entity }): void {
   const { world, ship } = params
   const initialLives = GAME_CONFIG.SHIP_INITIAL_LIVES
+  world.addComponent(ship, { type: "Ship" })
   world.addComponent(ship, { type: "Collider", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS })
   world.addComponent(ship, {
     type: "Health",
@@ -174,6 +175,26 @@ function addBulletLifeCycleComponents(params: { world: World; bullet: Entity }):
   world.addComponent(bullet, { type: "Collider", radius: size })
   world.addComponent(bullet, { type: "TTL", remaining: ttl })
   world.addComponent(bullet, { type: "Bullet" })
+}
+
+/**
+ * Creates a global game state entity.
+ *
+ * @param params - The world instance.
+ * @returns The newly created {@link Entity}.
+ */
+export function createGameState(params: { world: World }): Entity {
+  const { world } = params
+  const gameState = world.createEntity()
+  world.addComponent(gameState, {
+    type: "GameState",
+    lives: GAME_CONFIG.SHIP_INITIAL_LIVES,
+    score: 0,
+    level: 1,
+    asteroidsRemaining: 0,
+    isGameOver: false,
+  })
+  return gameState
 }
 
 /**

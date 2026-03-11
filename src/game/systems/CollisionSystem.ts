@@ -105,9 +105,9 @@ export class CollisionSystem extends System {
 
   private isShipAsteroidPair(params: { world: World; ship: Entity; asteroid: Entity }): boolean {
     const { world, ship, asteroid } = params;
-    const hasHealth = world.hasComponent(ship, "Health");
-    const hasAsteroid = world.hasComponent(asteroid, "Asteroid");
-    return hasHealth && hasAsteroid;
+    const isShip = world.hasComponent(ship, "Ship");
+    const isAsteroid = world.hasComponent(asteroid, "Asteroid");
+    return isShip && isAsteroid;
   }
 
   private handleBulletAsteroidCollision(params: { world: World; asteroid: Entity; bullet: Entity }): void {
@@ -140,10 +140,14 @@ export class CollisionSystem extends System {
 
   private executeSplitStrategy(params: { world: World; pos: PositionComponent; size: string }): void {
     const { world, pos, size } = params;
-    if (size === "large") {
-      this.spawnSplit({ world, pos, size: "medium", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE });
-    } else if (size === "medium") {
-      this.spawnSplit({ world, pos, size: "small", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM });
+    const splitConfigs: Record<string, { nextSize: "medium" | "small"; offset: number }> = {
+      large: { nextSize: "medium", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE },
+      medium: { nextSize: "small", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM },
+    };
+
+    const config = splitConfigs[size];
+    if (config) {
+      this.spawnSplit({ world, pos, size: config.nextSize, offset: config.offset });
     }
   }
 
