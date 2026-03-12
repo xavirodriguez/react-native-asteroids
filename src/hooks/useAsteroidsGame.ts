@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { AsteroidsGame } from "../game/AsteroidsGame";
+import { AsteroidsGame, NullAsteroidsGame, type IAsteroidsGame } from "../game/AsteroidsGame";
 import { type GameStateComponent, INITIAL_GAME_STATE, type InputState } from "../types/GameTypes";
 
 /**
@@ -8,7 +8,7 @@ import { type GameStateComponent, INITIAL_GAME_STATE, type InputState } from "..
  * @returns An object containing the game instance, current state, and input handler.
  */
 export function useAsteroidsGame() {
-  const [game, setGame] = useState<AsteroidsGame | null>(null);
+  const [game, setGame] = useState<IAsteroidsGame>(new NullAsteroidsGame());
   const [gameState, setGameState] = useState<GameStateComponent>(INITIAL_GAME_STATE);
   const [, forceUpdate] = useState({});
 
@@ -30,7 +30,7 @@ export function useAsteroidsGame() {
 
   const handleInput = useCallback(
     (input: Partial<InputState>) => {
-      game?.setInput(input);
+      game.setInput(input);
     },
     [game]
   );
