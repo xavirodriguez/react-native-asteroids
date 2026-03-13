@@ -143,20 +143,6 @@ export class World {
     return this.filterByComponents(candidates, sortedTypes.slice(1))
   }
 
-  private filterByComponents(entities: Set<Entity>, types: ComponentType[]): Entity[] {
-    return Array.from(entities).filter((entity) =>
-      types.every((type) => this.componentIndex.get(type)?.has(entity)),
-    )
-  }
-
-  private getSortedTypes(types: ComponentType[]): ComponentType[] {
-    return [...types].sort((a, b) => {
-      const countA = this.componentIndex.get(a)?.size ?? 0
-      const countB = this.componentIndex.get(b)?.size ?? 0
-      return countA - countB
-    })
-  }
-
   /**
    * Removes an entity and all of its attached components from the world.
    *
@@ -210,5 +196,19 @@ export class World {
    */
   getAllEntities(): Entity[] {
     return Array.from(this.entities)
+  }
+
+  private filterByComponents(entities: Set<Entity>, types: ComponentType[]): Entity[] {
+    return Array.from(entities).filter((entity) =>
+      types.every((type) => this.componentIndex.get(type)?.has(entity)),
+    )
+  }
+
+  private getSortedTypes(types: ComponentType[]): ComponentType[] {
+    return [...types].sort((a, b) => {
+      const countA = this.componentIndex.get(a)?.size ?? 0
+      const countB = this.componentIndex.get(b)?.size ?? 0
+      return countA - countB
+    })
   }
 }

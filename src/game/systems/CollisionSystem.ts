@@ -10,6 +10,7 @@ import {
 } from "../../types/GameTypes"
 
 import { createAsteroid } from "../EntityFactory"
+import { getGameState } from "../GameUtils"
 
 /**
  * System responsible for detecting and resolving collisions between entities.
@@ -69,24 +70,29 @@ export class CollisionSystem extends System {
 
   private resolveCollision(params: { world: World; entityA: Entity; entityB: Entity }): void {
     const { world, entityA, entityB } = params;
-    const isBulletAsteroid = this.resolveBulletAsteroidCollision({ world, entityA, entityB });
+    const isBulletAsteroid = this.resolveBulletAsteroidPair({ world, entityA, entityB });
     if (isBulletAsteroid) return;
 
-    this.resolveShipAsteroidCollision({ world, ship: entityA, asteroid: entityB });
-    this.resolveShipAsteroidCollision({ world, ship: entityB, asteroid: entityA });
+    this.resolveShipAsteroidPair({ world, entityA, entityB });
   }
 
-  private resolveBulletAsteroidCollision(params: { world: World; entityA: Entity; entityB: Entity }): boolean {
+  private resolveBulletAsteroidPair(params: { world: World; entityA: Entity; entityB: Entity }): boolean {
     const { world, entityA, entityB } = params;
-    if (this.isBulletAsteroidPair({ world, entityA, entityB })) {
+    if (this.isBulletAsteroidPair({ world, asteroid: entityA, bullet: entityB })) {
       this.handleBulletAsteroidCollision({ world, asteroid: entityA, bullet: entityB });
       return true;
     }
-    if (this.isBulletAsteroidPair({ world, entityA: entityB, entityB: entityA })) {
+    if (this.isBulletAsteroidPair({ world, asteroid: entityB, bullet: entityA })) {
       this.handleBulletAsteroidCollision({ world, asteroid: entityB, bullet: entityA });
       return true;
     }
     return false;
+  }
+
+  private resolveShipAsteroidPair(params: { world: World; entityA: Entity; entityB: Entity }): void {
+    const { world, entityA, entityB } = params;
+    this.resolveShipAsteroidCollision({ world, ship: entityA, asteroid: entityB });
+    this.resolveShipAsteroidCollision({ world, ship: entityB, asteroid: entityA });
   }
 
   private resolveShipAsteroidCollision(params: { world: World; ship: Entity; asteroid: Entity }): void {
@@ -96,10 +102,10 @@ export class CollisionSystem extends System {
     }
   }
 
-  private isBulletAsteroidPair(params: { world: World; entityA: Entity; entityB: Entity }): boolean {
-    const { world, entityA, entityB } = params;
-    const hasAsteroid = world.hasComponent(entityA, "Asteroid");
-    const hasBullet = world.hasComponent(entityB, "Bullet");
+  private isBulletAsteroidPair(params: { world: World; asteroid: Entity; bullet: Entity }): boolean {
+    const { world, asteroid, bullet } = params;
+    const hasAsteroid = world.hasComponent(asteroid, "Asteroid");
+    const hasBullet = world.hasComponent(bullet, "Bullet");
     return hasAsteroid && hasBullet;
   }
 
@@ -164,12 +170,7 @@ export class CollisionSystem extends System {
 
   private addScore(params: { world: World; points: number }): void {
     const { world, points } = params;
-    const gameStates = world.query("GameState");
-    if (gameStates.length === 0) return;
-
-    const gameState = world.getComponent<GameStateComponent>(gameStates[0], "GameState");
-    if (gameState) {
-      gameState.score += points;
-    }
+    const gameState = getGameState(world);
+    gameState.score += points;
   }
 }

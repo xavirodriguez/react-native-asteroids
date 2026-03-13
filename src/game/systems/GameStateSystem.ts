@@ -23,9 +23,9 @@ export class GameStateSystem extends System {
     const gameState = getGameState(world);
 
     this.updateAsteroidsCount(world, gameState);
-    this.spawnWaveIfCleared(world, gameState);
+    this.manageWaveProgression(world, gameState);
     this.updatePlayerStatus({ world, gameState, deltaTime });
-    this.checkGameOver(world, gameState);
+    this.updateGameOverStatus(world, gameState);
   }
 
   public isGameOver(): boolean {
@@ -42,12 +42,16 @@ export class GameStateSystem extends System {
     gameState.asteroidsRemaining = asteroids.length;
   }
 
-  private spawnWaveIfCleared(world: World, gameState: GameStateComponent): void {
+  private manageWaveProgression(world: World, gameState: GameStateComponent): void {
     if (gameState.asteroidsRemaining === 0) {
-      const asteroidCount = this.calculateWaveCount(gameState.level)
-      spawnAsteroidWave({ world, count: asteroidCount })
-      gameState.level++
+      this.advanceLevelAndSpawnWave(world, gameState);
     }
+  }
+
+  private advanceLevelAndSpawnWave(world: World, gameState: GameStateComponent): void {
+    const asteroidCount = this.calculateWaveCount(gameState.level);
+    spawnAsteroidWave({ world, count: asteroidCount });
+    gameState.level++;
   }
 
   private updatePlayerStatus(params: {
@@ -72,16 +76,15 @@ export class GameStateSystem extends System {
     }
   }
 
-  private checkGameOver(world: World, gameState: GameStateComponent): void {
-    const isGameOver = this.evaluateGameOverCondition(world)
+  private updateGameOverStatus(world: World, gameState: GameStateComponent): void {
+    const isGameOver = this.evaluateGameOverCondition(world);
+    gameState.isGameOver = isGameOver;
 
-    gameState.isGameOver = isGameOver
     if (isGameOver) {
-      this.handleGameOverOnce(gameState)
-      return
+      this.handleGameOverOnce(gameState);
+    } else {
+      this.gameOverLogged = false;
     }
-
-    this.gameOverLogged = false
   }
 
   private evaluateGameOverCondition(world: World): boolean {
