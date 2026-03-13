@@ -11,6 +11,7 @@ import {
   GAME_CONFIG,
 } from "../types/GameTypes"
 import { getGameState } from "./GameUtils"
+import { INITIAL_GAME_STATE } from "../types/GameTypes"
 
 /**
  * Type definition for a callback function triggered on every game update.
@@ -28,6 +29,7 @@ export interface IAsteroidsGame {
   isPausedState(): boolean;
   isGameOver(): boolean;
   getGameState(): GameStateComponent;
+  setInput(input: Partial<InputState>): void;
   subscribe(listener: UpdateListener): () => void;
   destroy(): void;
 }
@@ -36,6 +38,38 @@ export interface IAsteroidsGame {
  * Main controller for the Asteroids game.
  * Manages the game loop, systems initialization, and high-level game state transitions.
  */
+/**
+ * Null Object implementation of the Asteroids game.
+ * Used to avoid null checks in React components and hooks.
+ */
+export class NullAsteroidsGame implements IAsteroidsGame {
+  private world = new World()
+
+  public pause(): void {}
+  public resume(): void {}
+  public restart(): void {}
+  public getWorld(): World {
+    return this.world
+  }
+  public isPausedState(): boolean {
+    return false
+  }
+  public isGameOver(): boolean {
+    return false
+  }
+  public getGameState(): GameStateComponent {
+    return INITIAL_GAME_STATE
+  }
+  public setInput(input: Partial<InputState>): void {
+    void input
+  }
+  public subscribe(listener: UpdateListener): () => void {
+    void listener
+    return () => {}
+  }
+  public destroy(): void {}
+}
+
 export class AsteroidsGame implements IAsteroidsGame {
   private world: World;
   private inputSystem!: InputSystem;
@@ -57,6 +91,8 @@ export class AsteroidsGame implements IAsteroidsGame {
   // --- Public Methods ---
 
   public start(): void {
+    if (this.isRunning) return
+
     const now = performance.now();
     this.isRunning = true;
     this.isPaused = false;
