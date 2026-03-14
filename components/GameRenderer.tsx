@@ -78,16 +78,14 @@ const renderByShape = (params: {
   render: RenderComponent;
 }) => {
   const { render } = params;
-  switch (render.shape) {
-    case "triangle":
-      return renderShip(params);
-    case "circle":
-      return renderCircleShape(params);
-    case "line":
-      return renderLineShape(params);
-    default:
-      return <></>;
-  }
+  const rendererMap: Record<string, (p: typeof params) => React.ReactElement> = {
+    triangle: renderShip,
+    circle: renderCircleShape,
+    line: renderLineShape,
+  };
+
+  const renderer = rendererMap[render.shape];
+  return renderer ? renderer(params) : <></>;
 };
 
 const renderLineShape = (params: {

@@ -61,6 +61,34 @@ export class InputSystem extends System {
     ships.forEach((entity) => this.updateShipEntity({ world, entity, deltaTime }))
   }
 
+  private updateShipEntity(params: { world: World; entity: number; deltaTime: number }): void {
+    const { world, entity, deltaTime } = params
+    const input = world.getComponent<InputComponent>(entity, "Input")!
+
+    this.updateShipState(input, deltaTime)
+    this.processShipActions({ world, entity, input, deltaTime })
+  }
+
+  private updateShipState(input: InputComponent, deltaTime: number): void {
+    this.updateShootingCooldown(input, deltaTime)
+    this.updateShipInputState(input)
+  }
+
+  private processShipActions(params: {
+    world: World
+    entity: number
+    input: InputComponent
+    deltaTime: number
+  }): void {
+    const { world, entity, input, deltaTime } = params
+    const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!
+    const render = world.getComponent<RenderComponent>(entity, "Render")!
+    const pos = world.getComponent<PositionComponent>(entity, "Position")!
+
+    this.applyShipMovement({ vel, render, input, deltaTime })
+    this.handleShipShooting({ world, pos, render, input })
+  }
+
   private syncAllInputs(input: Partial<InputState>): void {
     this.syncAction(GAME_CONFIG.KEYS.THRUST, input.thrust)
     this.syncAction(GAME_CONFIG.KEYS.ROTATE_LEFT, input.rotateLeft)
@@ -92,19 +120,6 @@ export class InputSystem extends System {
 
   private deactivateKey(keyCode: string): void {
     this.keys.delete(keyCode)
-  }
-
-  private updateShipEntity(params: { world: World; entity: number; deltaTime: number }): void {
-    const { world, entity, deltaTime } = params
-    const input = world.getComponent<InputComponent>(entity, "Input")!
-    const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!
-    const render = world.getComponent<RenderComponent>(entity, "Render")!
-    const pos = world.getComponent<PositionComponent>(entity, "Position")!
-
-    this.updateShootingCooldown(input, deltaTime)
-    this.updateShipInputState(input)
-    this.applyShipMovement({ vel, render, input, deltaTime })
-    this.handleShipShooting({ world, pos, render, input })
   }
 
   private updateShootingCooldown(input: InputComponent, deltaTime: number): void {

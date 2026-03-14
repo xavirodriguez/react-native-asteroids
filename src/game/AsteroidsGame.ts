@@ -74,10 +74,12 @@ export class AsteroidsGame implements IAsteroidsGame {
   private world: World;
   private inputSystem!: InputSystem;
   private gameStateSystem!: GameStateSystem;
-  private lastTime = 0;
-  private isRunning = false;
-  private isPaused = false;
-  private gameLoopId: number | undefined = undefined;
+  private loopState = {
+    isRunning: false,
+    isPaused: false,
+    lastTime: 0,
+    gameLoopId: undefined as number | undefined,
+  };
   private listeners = new Set<UpdateListener>();
   private globalKeyDownListener = (e: KeyboardEvent) => this.handleGlobalKeyDown(e);
 
@@ -91,36 +93,36 @@ export class AsteroidsGame implements IAsteroidsGame {
   // --- Public Methods ---
 
   public start(): void {
-    if (this.isRunning) return
+    if (this.loopState.isRunning) return
 
     const now = performance.now();
-    this.isRunning = true;
-    this.isPaused = false;
-    this.lastTime = now;
+    this.loopState.isRunning = true;
+    this.loopState.isPaused = false;
+    this.loopState.lastTime = now;
     this.gameLoop();
   }
 
   public stop(): void {
-    if (this.gameLoopId) {
-      cancelAnimationFrame(this.gameLoopId);
-      this.gameLoopId = undefined;
+    if (this.loopState.gameLoopId) {
+      cancelAnimationFrame(this.loopState.gameLoopId);
+      this.loopState.gameLoopId = undefined;
     }
-    this.isRunning = false;
-    this.isPaused = false;
+    this.loopState.isRunning = false;
+    this.loopState.isPaused = false;
   }
 
   public pause(): void {
-    if (this.isRunning && !this.isPaused) {
-      this.isPaused = true;
+    if (this.loopState.isRunning && !this.loopState.isPaused) {
+      this.loopState.isPaused = true;
       this.notifyStatusChange("PAUSED");
     }
   }
 
   public resume(): void {
-    const canResume = this.isPaused && this.isRunning;
+    const canResume = this.loopState.isPaused && this.loopState.isRunning;
     if (canResume) {
-      this.isPaused = false;
-      this.lastTime = performance.now();
+      this.loopState.isPaused = false;
+      this.loopState.lastTime = performance.now();
       this.notifyStatusChange("RESUMED");
     }
   }
@@ -141,7 +143,7 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   public isPausedState(): boolean {
-    return this.isPaused
+    return this.loopState.isPaused
   }
 
   public isGameOver(): boolean {
@@ -164,7 +166,7 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   public setInput(input: Partial<InputState>): void {
-    const canProcessInput = !this.isPaused && !this.isGameOver();
+    const canProcessInput = !this.loopState.isPaused && !this.isGameOver();
     if (canProcessInput) {
       this.inputSystem.setInput(input);
     }
@@ -178,7 +180,7 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private resumeIfPaused(): void {
-    if (this.isPaused) {
+    if (this.loopState.isPaused) {
       this.start();
     }
   }
@@ -222,22 +224,22 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private gameLoop = (): void => {
-    if (!this.isRunning) return;
+    if (!this.loopState.isRunning) return;
 
     const currentTime = performance.now();
-    const rawDeltaTime = currentTime - this.lastTime;
-    this.lastTime = currentTime;
+    const rawDeltaTime = currentTime - this.loopState.lastTime;
+    this.loopState.lastTime = currentTime;
 
     // Cap deltaTime at 100ms (0.1s) to prevent physics explosions after long pauses
     const deltaTime = Math.min(rawDeltaTime, 100);
 
     this.updateWorld(deltaTime);
     this.notifyListeners();
-    this.gameLoopId = requestAnimationFrame(this.gameLoop);
+    this.loopState.gameLoopId = requestAnimationFrame(this.gameLoop);
   }
 
   private updateWorld(deltaTime: number): void {
-    if (!this.isPaused) {
+    if (!this.loopState.isPaused) {
       this.world.update(deltaTime);
     }
   }
@@ -257,15 +259,19 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private handleGlobalKeyDown(e: KeyboardEvent): void {
-    if (e.code === GAME_CONFIG.KEYS.PAUSE) {
-      this.togglePause();
-    } else if (e.code === GAME_CONFIG.KEYS.RESTART) {
-      this.restart();
+    const actionMap: Record<string, () => void> = {
+      [GAME_CONFIG.KEYS.PAUSE]: () => this.togglePause(),
+      [GAME_CONFIG.KEYS.RESTART]: () => this.restart(),
+    };
+
+    const action = actionMap[e.code];
+    if (action) {
+      action();
     }
   }
 
   private togglePause(): void {
-    if (this.isPaused) {
+    if (this.loopState.isPaused) {
       this.resume();
     } else {
       this.pause();
