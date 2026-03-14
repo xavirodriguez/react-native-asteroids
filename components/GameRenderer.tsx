@@ -24,10 +24,6 @@ interface GameRendererProps {
  * @returns A React functional component.
  */
 export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
-  /**
-   * Memoize the list of renderable entities based on the world's structural version.
-   * This avoids re-querying the world unless entities or components are added/removed.
-   */
   const renderables = useMemo(
     () => world.query("Position", "Render"),
     [world.version]
@@ -35,19 +31,28 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
 
   return (
     <View style={styles.container}>
-      <Svg
-        width={GAME_CONFIG.SCREEN_WIDTH}
-        height={GAME_CONFIG.SCREEN_HEIGHT}
-        viewBox={`0 0 ${GAME_CONFIG.SCREEN_WIDTH} ${GAME_CONFIG.SCREEN_HEIGHT}`}
-        style={styles.svg}
-      >
-        {renderables.map((entity) => (
-          <EntityRenderer key={entity} entity={entity} world={world} />
-        ))}
-      </Svg>
+      <WorldView world={world} renderables={renderables} />
     </View>
   );
 };
+
+interface WorldViewProps {
+  world: World;
+  renderables: number[];
+}
+
+const WorldView: React.FC<WorldViewProps> = ({ world, renderables }) => (
+  <Svg
+    width={GAME_CONFIG.SCREEN_WIDTH}
+    height={GAME_CONFIG.SCREEN_HEIGHT}
+    viewBox={`0 0 ${GAME_CONFIG.SCREEN_WIDTH} ${GAME_CONFIG.SCREEN_HEIGHT}`}
+    style={styles.svg}
+  >
+    {renderables.map((entity) => (
+      <EntityRenderer key={entity} entity={entity} world={world} />
+    ))}
+  </Svg>
+);
 
 /**
  * Properties for the {@link EntityRenderer} component.

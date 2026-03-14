@@ -64,7 +64,8 @@ export class GameStateSystem extends System {
     if (ships.length === 0) return
 
     const shipEntity = ships[0]
-    const health = world.getComponent<HealthComponent>(shipEntity, "Health")!
+    const health = world.getComponent<HealthComponent>(shipEntity, "Health")
+    if (!health) return
 
     this.updateInvulnerability(health, deltaTime)
     gameState.lives = health.current

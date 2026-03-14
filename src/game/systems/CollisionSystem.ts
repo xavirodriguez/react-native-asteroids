@@ -69,51 +69,35 @@ export class CollisionSystem extends System {
   }
 
   private resolveCollision(params: { world: World; entityA: Entity; entityB: Entity }): void {
-    const { world, entityA, entityB } = params;
-    const isBulletAsteroid = this.resolveBulletAsteroidPair({ world, entityA, entityB });
-    if (isBulletAsteroid) return;
+    const { world, entityA, entityB } = params
+    const pair = { entityA, entityB }
 
-    this.resolveShipAsteroidPair({ world, entityA, entityB });
-  }
-
-  private resolveBulletAsteroidPair(params: { world: World; entityA: Entity; entityB: Entity }): boolean {
-    const { world, entityA, entityB } = params;
-    if (this.isBulletAsteroidPair({ world, asteroid: entityA, bullet: entityB })) {
-      this.handleBulletAsteroidCollision({ world, asteroid: entityA, bullet: entityB });
-      return true;
+    const isBulletAsteroid = this.matchPair(world, pair, "Bullet", "Asteroid")
+    if (isBulletAsteroid) {
+      this.handleBulletAsteroidCollision({ world, asteroid: isBulletAsteroid.Asteroid, bullet: isBulletAsteroid.Bullet })
+      return
     }
-    if (this.isBulletAsteroidPair({ world, asteroid: entityB, bullet: entityA })) {
-      this.handleBulletAsteroidCollision({ world, asteroid: entityB, bullet: entityA });
-      return true;
-    }
-    return false;
-  }
 
-  private resolveShipAsteroidPair(params: { world: World; entityA: Entity; entityB: Entity }): void {
-    const { world, entityA, entityB } = params;
-    this.resolveShipAsteroidCollision({ world, ship: entityA, asteroid: entityB });
-    this.resolveShipAsteroidCollision({ world, ship: entityB, asteroid: entityA });
-  }
-
-  private resolveShipAsteroidCollision(params: { world: World; ship: Entity; asteroid: Entity }): void {
-    const { world, ship, asteroid } = params;
-    if (this.isShipAsteroidPair({ world, ship, asteroid })) {
-      this.handleShipAsteroidCollision({ world, shipEntity: ship });
+    const isShipAsteroid = this.matchPair(world, pair, "Ship", "Asteroid")
+    if (isShipAsteroid) {
+      this.handleShipAsteroidCollision({ world, shipEntity: isShipAsteroid.Ship })
     }
   }
 
-  private isBulletAsteroidPair(params: { world: World; asteroid: Entity; bullet: Entity }): boolean {
-    const { world, asteroid, bullet } = params;
-    const hasAsteroid = world.hasComponent(asteroid, "Asteroid");
-    const hasBullet = world.hasComponent(bullet, "Bullet");
-    return hasAsteroid && hasBullet;
-  }
-
-  private isShipAsteroidPair(params: { world: World; ship: Entity; asteroid: Entity }): boolean {
-    const { world, ship, asteroid } = params;
-    const isShip = world.hasComponent(ship, "Ship");
-    const isAsteroid = world.hasComponent(asteroid, "Asteroid");
-    return isShip && isAsteroid;
+  private matchPair<T1 extends string, T2 extends string>(
+    world: World,
+    pair: { entityA: Entity; entityB: Entity },
+    type1: T1,
+    type2: T2
+  ): Record<T1 | T2, Entity> | undefined {
+    const { entityA, entityB } = pair
+    if (world.hasComponent(entityA, type1) && world.hasComponent(entityB, type2)) {
+      return { [type1]: entityA, [type2]: entityB } as Record<T1 | T2, Entity>
+    }
+    if (world.hasComponent(entityB, type1) && world.hasComponent(entityA, type2)) {
+      return { [type1]: entityB, [type2]: entityA } as Record<T1 | T2, Entity>
+    }
+    return undefined
   }
 
   private handleBulletAsteroidCollision(params: { world: World; asteroid: Entity; bullet: Entity }): void {

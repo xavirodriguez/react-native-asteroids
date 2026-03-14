@@ -63,7 +63,8 @@ export class InputSystem extends System {
 
   private updateShipEntity(params: { world: World; entity: number; deltaTime: number }): void {
     const { world, entity, deltaTime } = params
-    const input = world.getComponent<InputComponent>(entity, "Input")!
+    const input = world.getComponent<InputComponent>(entity, "Input")
+    if (!input) return
 
     this.updateShipState(input, deltaTime)
     this.processShipActions({ world, entity, input, deltaTime })
@@ -81,12 +82,14 @@ export class InputSystem extends System {
     deltaTime: number
   }): void {
     const { world, entity, input, deltaTime } = params
-    const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!
-    const render = world.getComponent<RenderComponent>(entity, "Render")!
-    const pos = world.getComponent<PositionComponent>(entity, "Position")!
+    const vel = world.getComponent<VelocityComponent>(entity, "Velocity")
+    const render = world.getComponent<RenderComponent>(entity, "Render")
+    const pos = world.getComponent<PositionComponent>(entity, "Position")
 
-    this.applyShipMovement({ vel, render, input, deltaTime })
-    this.handleShipShooting({ world, pos, render, input })
+    if (vel && render && pos) {
+      this.applyShipMovement({ vel, render, input, deltaTime })
+      this.handleShipShooting({ world, pos, render, input })
+    }
   }
 
   private syncAllInputs(input: Partial<InputState>): void {
