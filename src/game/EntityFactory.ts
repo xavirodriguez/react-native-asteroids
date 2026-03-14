@@ -65,16 +65,30 @@ function addShipMovementComponents(params: {
 }
 
 function addShipCombatComponents(params: { world: World; ship: Entity }): void {
+  addShipMetaComponents(params)
+  addShipHealthComponent(params)
+  addShipInputComponent(params)
+}
+
+function addShipMetaComponents(params: { world: World; ship: Entity }): void {
   const { world, ship } = params
-  const initialLives = GAME_CONFIG.SHIP_INITIAL_LIVES
   world.addComponent(ship, { type: "Ship" })
   world.addComponent(ship, { type: "Collider", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS })
+}
+
+function addShipHealthComponent(params: { world: World; ship: Entity }): void {
+  const { world, ship } = params
+  const initialLives = GAME_CONFIG.SHIP_INITIAL_LIVES
   world.addComponent(ship, {
     type: "Health",
     current: initialLives,
     max: initialLives,
     invulnerableRemaining: 0,
   })
+}
+
+function addShipInputComponent(params: { world: World; ship: Entity }): void {
+  const { world, ship } = params
   world.addComponent(ship, {
     type: "Input",
     thrust: false,

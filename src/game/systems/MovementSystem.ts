@@ -16,12 +16,14 @@ export class MovementSystem extends System {
     const entities = world.query("Position", "Velocity");
 
     entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position")!;
-      const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!;
+      const pos = world.getComponent<PositionComponent>(entity, "Position")
+      const vel = world.getComponent<VelocityComponent>(entity, "Velocity")
 
-      this.updatePosition({ pos, vel, deltaTime });
-      this.wrapPosition(pos);
-    });
+      if (pos && vel) {
+        this.updatePosition({ pos, vel, deltaTime })
+        this.wrapPosition(pos)
+      }
+    })
   }
 
   private updatePosition(params: {

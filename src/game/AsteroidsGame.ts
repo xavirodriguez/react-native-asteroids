@@ -191,9 +191,16 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private setupSystems(): void {
+    this.createSystems();
+    this.registerSystems();
+  }
+
+  private createSystems(): void {
     this.inputSystem = new InputSystem();
     this.gameStateSystem = new GameStateSystem(this);
+  }
 
+  private registerSystems(): void {
     this.world.addSystem(this.inputSystem);
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new CollisionSystem());
@@ -226,16 +233,24 @@ export class AsteroidsGame implements IAsteroidsGame {
   private gameLoop = (): void => {
     if (!this.loopState.isRunning) return;
 
+    const deltaTime = this.calculateDeltaTime();
+    this.updateAndNotify(deltaTime);
+
+    this.loopState.gameLoopId = requestAnimationFrame(this.gameLoop);
+  }
+
+  private calculateDeltaTime(): number {
     const currentTime = performance.now();
     const rawDeltaTime = currentTime - this.loopState.lastTime;
     this.loopState.lastTime = currentTime;
 
     // Cap deltaTime at 100ms (0.1s) to prevent physics explosions after long pauses
-    const deltaTime = Math.min(rawDeltaTime, 100);
+    return Math.min(rawDeltaTime, 100);
+  }
 
+  private updateAndNotify(deltaTime: number): void {
     this.updateWorld(deltaTime);
     this.notifyListeners();
-    this.loopState.gameLoopId = requestAnimationFrame(this.gameLoop);
   }
 
   private updateWorld(deltaTime: number): void {

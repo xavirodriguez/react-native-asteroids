@@ -19,16 +19,18 @@ export class TTLSystem extends System {
 
   private updateTTL(world: World, entities: Entity[], deltaTime: number): void {
     entities.forEach((entity) => {
-      const ttl = world.getComponent<TTLComponent>(entity, "TTL")!;
-      ttl.remaining -= deltaTime;
-    });
+      const ttl = world.getComponent<TTLComponent>(entity, "TTL")
+      if (ttl) {
+        ttl.remaining -= deltaTime
+      }
+    })
   }
 
   private getExpiredEntities(world: World, entities: Entity[]): Entity[] {
     return entities.filter((entity) => {
-      const ttl = world.getComponent<TTLComponent>(entity, "TTL")!;
-      return ttl.remaining <= 0;
-    });
+      const ttl = world.getComponent<TTLComponent>(entity, "TTL")
+      return ttl ? ttl.remaining <= 0 : false
+    })
   }
 
   private removeEntities(world: World, entities: Entity[]): void {
