@@ -26,12 +26,12 @@ export class MovementSystem extends System {
     })
   }
 
-  private updatePosition(params: {
+  private updatePosition(context: {
     pos: PositionComponent
     vel: VelocityComponent
     deltaTime: number
   }): void {
-    const { pos, vel, deltaTime } = params;
+    const { pos, vel, deltaTime } = context;
     const dt = deltaTime / 1000;
     pos.x += vel.dx * dt;
     pos.y += vel.dy * dt;

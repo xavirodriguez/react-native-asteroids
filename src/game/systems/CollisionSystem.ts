@@ -4,7 +4,6 @@ import {
   type ColliderComponent,
   type AsteroidComponent,
   type HealthComponent,
-  type GameStateComponent,
   type Entity,
   GAME_CONFIG,
 } from "../../types/GameTypes"
@@ -28,8 +27,8 @@ export class CollisionSystem extends System {
     }
   }
 
-  private processCollisions(params: { world: World; colliders: Entity[] }): void {
-    const { world, colliders } = params;
+  private processCollisions(context: { world: World; colliders: Entity[] }): void {
+    const { world, colliders } = context;
     for (let i = 0; i < colliders.length; i++) {
       for (let j = i + 1; j < colliders.length; j++) {
         this.checkAndResolve({ world, entityA: colliders[i], entityB: colliders[j] });
@@ -37,16 +36,16 @@ export class CollisionSystem extends System {
     }
   }
 
-  private checkAndResolve(params: { world: World; entityA: Entity; entityB: Entity }): void {
-    const { world, entityA, entityB } = params;
+  private checkAndResolve(collisionPair: { world: World; entityA: Entity; entityB: Entity }): void {
+    const { world, entityA, entityB } = collisionPair;
     const isColliding = this.isColliding({ world, entityA, entityB });
     if (isColliding) {
       this.resolveCollision({ world, entityA, entityB });
     }
   }
 
-  private isColliding(params: { world: World; entityA: Entity; entityB: Entity }): boolean {
-    const { world, entityA, entityB } = params;
+  private isColliding(collisionPair: { world: World; entityA: Entity; entityB: Entity }): boolean {
+    const { world, entityA, entityB } = collisionPair;
     const posA = world.getComponent<PositionComponent>(entityA, "Position");
     const posB = world.getComponent<PositionComponent>(entityB, "Position");
     const colA = world.getComponent<ColliderComponent>(entityA, "Collider");
@@ -68,8 +67,8 @@ export class CollisionSystem extends System {
     return squaredX + squaredY;
   }
 
-  private resolveCollision(params: { world: World; entityA: Entity; entityB: Entity }): void {
-    const { world, entityA, entityB } = params
+  private resolveCollision(collisionPair: { world: World; entityA: Entity; entityB: Entity }): void {
+    const { world, entityA, entityB } = collisionPair
     const pair = { entityA, entityB }
 
     const isBulletAsteroid = this.matchPair(world, pair, "Bullet", "Asteroid")
@@ -100,15 +99,15 @@ export class CollisionSystem extends System {
     return undefined
   }
 
-  private handleBulletAsteroidCollision(params: { world: World; asteroid: Entity; bullet: Entity }): void {
-    const { world, asteroid, bullet } = params;
+  private handleBulletAsteroidCollision(collisionData: { world: World; asteroid: Entity; bullet: Entity }): void {
+    const { world, asteroid, bullet } = collisionData;
     this.splitAsteroid({ world, asteroidEntity: asteroid });
     world.removeEntity(bullet);
     this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
   }
 
-  private handleShipAsteroidCollision(params: { world: World; shipEntity: Entity }): void {
-    const { world, shipEntity } = params;
+  private handleShipAsteroidCollision(collisionData: { world: World; shipEntity: Entity }): void {
+    const { world, shipEntity } = collisionData;
     const health = world.getComponent<HealthComponent>(shipEntity, "Health");
     const canTakeDamage = health && health.invulnerableRemaining <= 0;
     if (canTakeDamage) {
@@ -117,8 +116,8 @@ export class CollisionSystem extends System {
     }
   }
 
-  private splitAsteroid(params: { world: World; asteroidEntity: Entity }): void {
-    const { world, asteroidEntity } = params;
+  private splitAsteroid(asteroidData: { world: World; asteroidEntity: Entity }): void {
+    const { world, asteroidEntity } = asteroidData;
     const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
     const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position");
 
@@ -128,8 +127,8 @@ export class CollisionSystem extends System {
     world.removeEntity(asteroidEntity);
   }
 
-  private executeSplitStrategy(params: { world: World; pos: PositionComponent; size: string }): void {
-    const { world, pos, size } = params;
+  private executeSplitStrategy(splitData: { world: World; pos: PositionComponent; size: string }): void {
+    const { world, pos, size } = splitData;
     const splitConfigs: Record<string, { nextSize: "medium" | "small"; offset: number }> = {
       large: { nextSize: "medium", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE },
       medium: { nextSize: "small", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM },
@@ -141,19 +140,19 @@ export class CollisionSystem extends System {
     }
   }
 
-  private spawnSplit(params: {
+  private spawnSplit(spawnData: {
     world: World
     pos: PositionComponent
     size: "medium" | "small"
     offset: number
   }): void {
-    const { world, pos, size, offset } = params
+    const { world, pos, size, offset } = spawnData
     createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size });
     createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size });
   }
 
-  private addScore(params: { world: World; points: number }): void {
-    const { world, points } = params;
+  private addScore(scoreData: { world: World; points: number }): void {
+    const { world, points } = scoreData;
     const gameState = getGameState(world);
     gameState.score += points;
   }

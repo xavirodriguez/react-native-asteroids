@@ -225,13 +225,23 @@ const ShipBody: React.FC<{ size: number; color: string }> = ({ size, color }) =>
 
 const ShipDetails: React.FC<{ size: number }> = ({ size }) => (
   <G opacity={0.8}>
-    <Rect
-      x={-size / 2}
-      y={-size / 4}
-      width={size / 8}
-      height={size / 2}
-      fill="#666666"
-    />
+    <ShipWindow size={size} />
+    <ShipLights size={size} />
+  </G>
+);
+
+const ShipWindow: React.FC<{ size: number }> = ({ size }) => (
+  <Rect
+    x={-size / 2}
+    y={-size / 4}
+    width={size / 8}
+    height={size / 2}
+    fill="#666666"
+  />
+);
+
+const ShipLights: React.FC<{ size: number }> = ({ size }) => (
+  <>
     <Rect
       x={-size / 2}
       y={size / 6}
@@ -246,7 +256,7 @@ const ShipDetails: React.FC<{ size: number }> = ({ size }) => (
       height={size / 8}
       fill="#FF0000"
     />
-  </G>
+  </>
 );
 
 /**

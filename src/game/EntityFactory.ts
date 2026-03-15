@@ -33,11 +33,11 @@ export interface CreateBulletParams {
 /**
  * Creates a new player ship entity in the world.
  *
- * @param params - The creation parameters.
+ * @param options - The creation parameters.
  * @returns The newly created {@link Entity}.
  */
-export function createShip(params: CreateShipParams): Entity {
-  const { world, x, y } = params
+export function createShip(options: CreateShipParams): Entity {
+  const { world, x, y } = options
   const ship = world.createEntity()
 
   addShipMovementComponents({ world, ship, x, y })
@@ -46,13 +46,13 @@ export function createShip(params: CreateShipParams): Entity {
   return ship
 }
 
-function addShipMovementComponents(params: {
+function addShipMovementComponents(config: {
   world: World
   ship: Entity
   x: number
   y: number
 }): void {
-  const { world, ship, x, y } = params
+  const { world, ship, x, y } = config
   world.addComponent(ship, { type: "Position", x, y })
   world.addComponent(ship, { type: "Velocity", dx: 0, dy: 0 })
   world.addComponent(ship, {
@@ -64,20 +64,20 @@ function addShipMovementComponents(params: {
   })
 }
 
-function addShipCombatComponents(params: { world: World; ship: Entity }): void {
-  addShipMetaComponents(params)
-  addShipHealthComponent(params)
-  addShipInputComponent(params)
+function addShipCombatComponents(config: { world: World; ship: Entity }): void {
+  addShipMetaComponents(config)
+  addShipHealthComponent(config)
+  addShipInputComponent(config)
 }
 
-function addShipMetaComponents(params: { world: World; ship: Entity }): void {
-  const { world, ship } = params
+function addShipMetaComponents(config: { world: World; ship: Entity }): void {
+  const { world, ship } = config
   world.addComponent(ship, { type: "Ship" })
   world.addComponent(ship, { type: "Collider", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS })
 }
 
-function addShipHealthComponent(params: { world: World; ship: Entity }): void {
-  const { world, ship } = params
+function addShipHealthComponent(config: { world: World; ship: Entity }): void {
+  const { world, ship } = config
   const initialLives = GAME_CONFIG.SHIP_INITIAL_LIVES
   world.addComponent(ship, {
     type: "Health",
@@ -87,8 +87,8 @@ function addShipHealthComponent(params: { world: World; ship: Entity }): void {
   })
 }
 
-function addShipInputComponent(params: { world: World; ship: Entity }): void {
-  const { world, ship } = params
+function addShipInputComponent(config: { world: World; ship: Entity }): void {
+  const { world, ship } = config
   world.addComponent(ship, {
     type: "Input",
     thrust: false,
@@ -102,11 +102,11 @@ function addShipInputComponent(params: { world: World; ship: Entity }): void {
 /**
  * Creates a new asteroid entity in the world.
  *
- * @param params - The creation parameters.
+ * @param options - The creation parameters.
  * @returns The newly created {@link Entity}.
  */
-export function createAsteroid(params: CreateAsteroidParams): Entity {
-  const { world, x, y, size } = params
+export function createAsteroid(options: CreateAsteroidParams): Entity {
+  const { world, x, y, size } = options
   const asteroid = world.createEntity()
 
   addAsteroidMovementComponents({ world, asteroid, x, y })
@@ -115,13 +115,13 @@ export function createAsteroid(params: CreateAsteroidParams): Entity {
   return asteroid
 }
 
-function addAsteroidMovementComponents(params: {
+function addAsteroidMovementComponents(config: {
   world: World
   asteroid: Entity
   x: number
   y: number
 }): void {
-  const { world, asteroid, x, y } = params
+  const { world, asteroid, x, y } = config
   world.addComponent(asteroid, { type: "Position", x, y })
   world.addComponent(asteroid, {
     type: "Velocity",
@@ -130,12 +130,12 @@ function addAsteroidMovementComponents(params: {
   })
 }
 
-function addAsteroidTypeComponents(params: {
+function addAsteroidTypeComponents(config: {
   world: World
   asteroid: Entity
   size: "large" | "medium" | "small"
 }): void {
-  const { world, asteroid, size } = params
+  const { world, asteroid, size } = config
   const radius = GAME_CONFIG.ASTEROID_RADII[size]
   world.addComponent(asteroid, {
     type: "Render",
@@ -151,11 +151,11 @@ function addAsteroidTypeComponents(params: {
 /**
  * Creates a new bullet entity in the world.
  *
- * @param params - The creation parameters.
+ * @param options - The creation parameters.
  * @returns The newly created {@link Entity}.
  */
-export function createBullet(params: CreateBulletParams): Entity {
-  const { world, x, y, angle } = params
+export function createBullet(options: CreateBulletParams): Entity {
+  const { world, x, y, angle } = options
   const bullet = world.createEntity()
 
   addBulletMovementComponents({ world, bullet, x, y, angle })
@@ -164,14 +164,14 @@ export function createBullet(params: CreateBulletParams): Entity {
   return bullet
 }
 
-function addBulletMovementComponents(params: {
+function addBulletMovementComponents(config: {
   world: World
   bullet: Entity
   x: number
   y: number
   angle: number
 }): void {
-  const { world, bullet, x, y, angle } = params
+  const { world, bullet, x, y, angle } = config
   const speed = GAME_CONFIG.BULLET_SPEED
   world.addComponent(bullet, { type: "Position", x, y })
   world.addComponent(bullet, {
@@ -181,8 +181,8 @@ function addBulletMovementComponents(params: {
   })
 }
 
-function addBulletLifeCycleComponents(params: { world: World; bullet: Entity }): void {
-  const { world, bullet } = params
+function addBulletLifeCycleComponents(config: { world: World; bullet: Entity }): void {
+  const { world, bullet } = config
   const ttl = GAME_CONFIG.BULLET_TTL
   const size = GAME_CONFIG.BULLET_SIZE
   world.addComponent(bullet, { type: "Render", shape: "circle", size, color: "#FFFF00", rotation: 0 })
@@ -194,11 +194,11 @@ function addBulletLifeCycleComponents(params: { world: World; bullet: Entity }):
 /**
  * Creates a global game state entity.
  *
- * @param params - The world instance.
+ * @param config - The world instance.
  * @returns The newly created {@link Entity}.
  */
-export function createGameState(params: { world: World }): Entity {
-  const { world } = params
+export function createGameState(config: { world: World }): Entity {
+  const { world } = config
   const gameState = world.createEntity()
   world.addComponent(gameState, {
     type: "GameState",
@@ -214,10 +214,10 @@ export function createGameState(params: { world: World }): Entity {
 /**
  * Spawns a wave of asteroids in a circular pattern around the screen center.
  *
- * @param params - The world and the number of asteroids to spawn.
+ * @param config - The world and the number of asteroids to spawn.
  */
-export function spawnAsteroidWave(params: { world: World; count: number }): void {
-  const { world, count } = params
+export function spawnAsteroidWave(config: { world: World; count: number }): void {
+  const { world, count } = config
   const centerX = GAME_CONFIG.SCREEN_CENTER_X
   const centerY = GAME_CONFIG.SCREEN_CENTER_Y
   const distance = GAME_CONFIG.WAVE_SPAWN_DISTANCE
