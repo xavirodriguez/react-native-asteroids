@@ -9,7 +9,18 @@
 /**
  * Unique identifier for a component type.
  */
-export type ComponentType = string
+export type ComponentType =
+  | "Position"
+  | "Velocity"
+  | "Render"
+  | "Collider"
+  | "Health"
+  | "Input"
+  | "TTL"
+  | "Bullet"
+  | "Ship"
+  | "Asteroid"
+  | "GameState"
 
 /**
  * Unique identifier for an entity in the world.

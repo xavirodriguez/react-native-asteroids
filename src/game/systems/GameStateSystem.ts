@@ -54,12 +54,12 @@ export class GameStateSystem extends System {
     gameState.level++;
   }
 
-  private updatePlayerStatus(params: {
+  private updatePlayerStatus(context: {
     world: World
     gameState: GameStateComponent
     deltaTime: number
   }): void {
-    const { world, gameState, deltaTime } = params
+    const { world, gameState, deltaTime } = context
     const ships = world.query("Ship", "Health", "Input");
     if (ships.length === 0) return
 
