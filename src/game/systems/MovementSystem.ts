@@ -40,11 +40,12 @@ export class MovementSystem extends System {
   private wrapPosition(pos: PositionComponent): void {
     const { SCREEN_WIDTH: width, SCREEN_HEIGHT: height } = GAME_CONFIG;
 
-    this.wrapCoordinate(pos, "x", width);
-    this.wrapCoordinate(pos, "y", height);
+    this.wrapCoordinate({ pos, axis: "x", max: width });
+    this.wrapCoordinate({ pos, axis: "y", max: height });
   }
 
-  private wrapCoordinate(pos: PositionComponent, axis: "x" | "y", max: number): void {
+  private wrapCoordinate(config: { pos: PositionComponent; axis: "x" | "y"; max: number }): void {
+    const { pos, axis, max } = config;
     if (pos[axis] < 0) {
       pos[axis] = max;
     } else if (pos[axis] > max) {

@@ -211,6 +211,10 @@ export class AsteroidsGame implements IAsteroidsGame {
   private initializeGame(): void {
     this.setupShip();
     this.setupGameState();
+    this.setupAsteroids();
+  }
+
+  private setupAsteroids(): void {
     spawnAsteroidWave({ world: this.world, count: GAME_CONFIG.INITIAL_ASTEROID_COUNT });
   }
 
@@ -244,8 +248,7 @@ export class AsteroidsGame implements IAsteroidsGame {
     const rawDeltaTime = currentTime - this.loopState.lastTime;
     this.loopState.lastTime = currentTime;
 
-    // Cap deltaTime at 100ms (0.1s) to prevent physics explosions after long pauses
-    return Math.min(rawDeltaTime, 100);
+    return Math.min(rawDeltaTime, GAME_CONFIG.MAX_DELTA_TIME);
   }
 
   private updateAndNotify(deltaTime: number): void {
