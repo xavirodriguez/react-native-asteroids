@@ -1,13 +1,13 @@
 import { World, System } from "../ecs-world"
-import type { Component } from "../../types/GameTypes"
+import type { Component, ComponentType } from "../../types/GameTypes"
 
 interface MockComponent extends Component {
-  type: "Mock"
+  type: ComponentType
   value: number
 }
 
 interface OtherComponent extends Component {
-  type: "Other"
+  type: ComponentType
   type_other: boolean
 }
 
@@ -34,38 +34,38 @@ describe("ECS World", () => {
     expect(world.getAllEntities()).toContain(e2)
   })
 
-  test("should add and retrieve components", () => {
+  test("should retrieve components", () => {
     const entity = world.createEntity()
-    const component: MockComponent = { type: "Mock", value: 42 }
+    const component = createMockComponent(42)
     world.addComponent(entity, component)
-    expect(world.getComponent<MockComponent>(entity, "Mock")).toBe(component)
+    expect(world.getComponent<MockComponent>(entity, "Mock" as ComponentType)).toBe(component)
   })
 
   test("should remove components", () => {
     const entity = world.createEntity()
-    world.addComponent(entity, { type: "Mock", value: 42 } as MockComponent)
-    world.removeComponent(entity, "Mock")
-    expect(world.getComponent(entity, "Mock")).toBeUndefined()
+    world.addComponent(entity, createMockComponent(42))
+    world.removeComponent(entity, "Mock" as ComponentType)
+    expect(world.getComponent(entity, "Mock" as ComponentType)).toBeUndefined()
   })
 
   test("should query entities by components", () => {
     const e1 = world.createEntity()
     const e2 = world.createEntity()
-    world.addComponent(e1, { type: "Mock", value: 1 } as MockComponent)
-    world.addComponent(e2, { type: "Other", type_other: true } as OtherComponent)
+    world.addComponent(e1, createMockComponent(1))
+    world.addComponent(e2, createOtherComponent(true))
 
-    const results = world.query("Mock")
+    const results = world.query("Mock" as ComponentType)
     expect(results).toContain(e1)
     expect(results).not.toContain(e2)
   })
 
   test("should remove entities and their components", () => {
     const entity = world.createEntity()
-    world.addComponent(entity, { type: "Mock", value: 1 } as MockComponent)
+    world.addComponent(entity, createMockComponent(1))
     world.removeEntity(entity)
     expect(world.getAllEntities()).not.toContain(entity)
-    expect(world.getComponent(entity, "Mock")).toBeUndefined()
-    expect(world.query("Mock")).not.toContain(entity)
+    expect(world.getComponent(entity, "Mock" as ComponentType)).toBeUndefined()
+    expect(world.query("Mock" as ComponentType)).not.toContain(entity)
   })
 
   test("should update systems", () => {
@@ -77,12 +77,20 @@ describe("ECS World", () => {
 
   test("should clear the world", () => {
     const e1 = world.createEntity()
-    world.addComponent(e1, { type: "Mock", value: 1 } as MockComponent)
+    world.addComponent(e1, createMockComponent(1))
 
     world.clear()
 
     expect(world.getAllEntities().length).toBe(0)
-    expect(world.query("Mock").length).toBe(0)
-    expect(world.getComponent(e1, "Mock")).toBeUndefined()
+    expect(world.query("Mock" as ComponentType).length).toBe(0)
+    expect(world.getComponent(e1, "Mock" as ComponentType)).toBeUndefined()
   })
 })
+
+function createMockComponent(value: number): MockComponent {
+  return { type: "Mock" as ComponentType, value }
+}
+
+function createOtherComponent(type_other: boolean): OtherComponent {
+  return { type: "Other" as ComponentType, type_other }
+}
