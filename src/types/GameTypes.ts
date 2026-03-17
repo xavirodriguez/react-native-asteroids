@@ -271,4 +271,6 @@ export const GAME_CONFIG = {
   ASTEROID_SPLIT_OFFSET_MEDIUM: 5,
   /** Points awarded for destroying an asteroid */
   ASTEROID_SCORE: 10,
+  /** Maximum delta time allowed per frame in milliseconds to prevent physics instability */
+  MAX_DELTA_TIME: 100,
 }

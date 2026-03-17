@@ -18,8 +18,8 @@ export class CollisionSystem extends System {
   /**
    * Updates the collision state for all relevant entities.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public update(world: World, deltaTime: number): void {
+    void deltaTime
     const colliders = world.query("Position", "Collider");
     const hasEnoughColliders = colliders.length >= 2;
     if (hasEnoughColliders) {
@@ -71,25 +71,31 @@ export class CollisionSystem extends System {
     const { world, entityA, entityB } = collisionPair
     const pair = { entityA, entityB }
 
-    const isBulletAsteroid = this.matchPair(world, pair, "Bullet", "Asteroid")
+    const isBulletAsteroid = this.matchPair({ world, pair, type1: "Bullet", type2: "Asteroid" })
     if (isBulletAsteroid) {
-      this.handleBulletAsteroidCollision({ world, asteroid: isBulletAsteroid.Asteroid, bullet: isBulletAsteroid.Bullet })
+      this.handleBulletAsteroidCollision({
+        world,
+        asteroid: isBulletAsteroid.Asteroid,
+        bullet: isBulletAsteroid.Bullet,
+      })
       return
     }
 
-    const isShipAsteroid = this.matchPair(world, pair, "Ship", "Asteroid")
+    const isShipAsteroid = this.matchPair({ world, pair, type1: "Ship", type2: "Asteroid" })
     if (isShipAsteroid) {
       this.handleShipAsteroidCollision({ world, shipEntity: isShipAsteroid.Ship })
     }
   }
 
-  private matchPair<T1 extends string, T2 extends string>(
-    world: World,
-    pair: { entityA: Entity; entityB: Entity },
-    type1: T1,
+  private matchPair<T1 extends string, T2 extends string>(config: {
+    world: World
+    pair: { entityA: Entity; entityB: Entity }
+    type1: T1
     type2: T2
-  ): Record<T1 | T2, Entity> | undefined {
+  }): Record<T1 | T2, Entity> | undefined {
+    const { world, pair, type1, type2 } = config
     const { entityA, entityB } = pair
+
     if (world.hasComponent(entityA, type1) && world.hasComponent(entityB, type2)) {
       return { [type1]: entityA, [type2]: entityB } as Record<T1 | T2, Entity>
     }
