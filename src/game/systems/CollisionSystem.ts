@@ -68,22 +68,40 @@ export class CollisionSystem extends System {
   }
 
   private resolveCollision(collisionPair: { world: World; entityA: Entity; entityB: Entity }): void {
-    const { world, entityA, entityB } = collisionPair
-    const pair = { entityA, entityB }
+    const { world, entityA, entityB } = collisionPair;
+    const pair = { entityA, entityB };
 
-    const isBulletAsteroid = this.matchPair({ world, pair, type1: "Bullet", type2: "Asteroid" })
-    if (isBulletAsteroid) {
+    if (this.handleBulletAsteroidPair({ world, pair })) return;
+    this.handleShipAsteroidPair({ world, pair });
+  }
+
+  private handleBulletAsteroidPair(context: {
+    world: World
+    pair: { entityA: Entity; entityB: Entity }
+  }): boolean {
+    const { world, pair } = context;
+    const match = this.matchPair({ world, pair, type1: "Bullet", type2: "Asteroid" });
+
+    if (match) {
       this.handleBulletAsteroidCollision({
         world,
-        asteroid: isBulletAsteroid.Asteroid,
-        bullet: isBulletAsteroid.Bullet,
-      })
-      return
+        asteroid: match.Asteroid,
+        bullet: match.Bullet,
+      });
+      return true;
     }
+    return false;
+  }
 
-    const isShipAsteroid = this.matchPair({ world, pair, type1: "Ship", type2: "Asteroid" })
-    if (isShipAsteroid) {
-      this.handleShipAsteroidCollision({ world, shipEntity: isShipAsteroid.Ship })
+  private handleShipAsteroidPair(context: {
+    world: World
+    pair: { entityA: Entity; entityB: Entity }
+  }): void {
+    const { world, pair } = context;
+    const match = this.matchPair({ world, pair, type1: "Ship", type2: "Asteroid" });
+
+    if (match) {
+      this.handleShipAsteroidCollision({ world, shipEntity: match.Ship });
     }
   }
 
@@ -133,11 +151,19 @@ export class CollisionSystem extends System {
     world.removeEntity(asteroidEntity);
   }
 
-  private executeSplitStrategy(splitData: { world: World; pos: PositionComponent; size: string }): void {
+  private executeSplitStrategy(splitData: {
+    world: World
+    pos: PositionComponent
+    size: AsteroidComponent["size"]
+  }): void {
     const { world, pos, size } = splitData;
-    const splitConfigs: Record<string, { nextSize: "medium" | "small"; offset: number }> = {
+    const splitConfigs: Record<
+      AsteroidComponent["size"],
+      { nextSize: "medium" | "small"; offset: number } | undefined
+    > = {
       large: { nextSize: "medium", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE },
       medium: { nextSize: "small", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM },
+      small: undefined,
     };
 
     const config = splitConfigs[size];

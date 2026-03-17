@@ -74,15 +74,18 @@ export class World {
   addComponent<T extends Component>(entity: Entity, component: T): void {
     const type = component.type
 
-    // Ensure storage for this component type exists
+    this.ensureComponentStorage(type)
+
+    this.components.get(type)?.set(entity, component)
+    this.componentIndex.get(type)?.add(entity)
+    this.version++
+  }
+
+  private ensureComponentStorage(type: ComponentType): void {
     if (!this.components.has(type)) {
       this.components.set(type, new Map())
       this.componentIndex.set(type, new Set())
     }
-
-    this.components.get(type)!.set(entity, component)
-    this.componentIndex.get(type)!.add(entity)
-    this.version++
   }
 
   /**
@@ -116,7 +119,7 @@ export class World {
   removeComponent(entity: Entity, type: ComponentType): void {
     const componentMap = this.components.get(type)
     if (componentMap && componentMap.delete(entity)) {
-      this.componentIndex.get(type)!.delete(entity)
+      this.componentIndex.get(type)?.delete(entity)
       this.version++
     }
   }
@@ -151,7 +154,7 @@ export class World {
   removeEntity(entity: Entity): void {
     this.components.forEach((componentMap, type) => {
       if (componentMap.delete(entity)) {
-        this.componentIndex.get(type)!.delete(entity)
+        this.componentIndex.get(type)?.delete(entity)
       }
     })
 
