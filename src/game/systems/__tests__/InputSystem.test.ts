@@ -33,8 +33,8 @@ describe("InputSystem", () => {
     // Update with 1 second (1000ms)
     world.update(1000);
 
-    const render = world.getComponent<RenderComponent>(ship, "Render")!;
-    expect(render.rotation).toBeCloseTo(-GAME_CONFIG.SHIP_ROTATION_SPEED);
+    const render = world.getComponent<RenderComponent>(ship, "Render");
+    expect(render?.rotation).toBeCloseTo(-GAME_CONFIG.SHIP_ROTATION_SPEED);
   });
 
   it("should update rotation when rotating right", () => {
@@ -43,20 +43,20 @@ describe("InputSystem", () => {
     // Update with 1 second (1000ms)
     world.update(1000);
 
-    const render = world.getComponent<RenderComponent>(ship, "Render")!;
-    expect(render.rotation).toBeCloseTo(GAME_CONFIG.SHIP_ROTATION_SPEED);
+    const render = world.getComponent<RenderComponent>(ship, "Render");
+    expect(render?.rotation).toBeCloseTo(GAME_CONFIG.SHIP_ROTATION_SPEED);
   });
 
   it("should apply thrust in the direction of rotation", () => {
-    const render = world.getComponent<RenderComponent>(ship, "Render")!;
-    render.rotation = Math.PI / 2; // Pointing down
+    const render = world.getComponent<RenderComponent>(ship, "Render");
+    if (render) render.rotation = Math.PI / 2; // Pointing down
 
     system.setInput({ thrust: true });
 
     // Update with 1 second (1000ms)
     world.update(1000);
 
-    const vel = world.getComponent<VelocityComponent>(ship, "Velocity")!;
+    const vel = world.getComponent<VelocityComponent>(ship, "Velocity");
     // dx should be close to 0, dy should be close to SHIP_THRUST
     // Note: friction (0.99) is applied in the InputSystem using a frame-rate independent formula
     // expected dy = (thrust * dt) * pow(friction, deltaTime / (1000/60))
@@ -95,9 +95,9 @@ describe("InputSystem", () => {
     system.setInput({ thrust: true, shoot: true });
     world.update(16);
 
-    const input = world.getComponent<InputComponent>(ship, "Input")!;
-    expect(input.thrust).toBe(true);
-    expect(input.shoot).toBe(true);
-    expect(input.rotateLeft).toBe(false);
+    const input = world.getComponent<InputComponent>(ship, "Input");
+    expect(input?.thrust).toBe(true);
+    expect(input?.shoot).toBe(true);
+    expect(input?.rotateLeft).toBe(false);
   });
 });
