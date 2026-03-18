@@ -5,6 +5,7 @@ import {
   type AsteroidComponent,
   type HealthComponent,
   type Entity,
+  type ComponentType,
   GAME_CONFIG,
 } from "../../types/GameTypes"
 
@@ -105,7 +106,7 @@ export class CollisionSystem extends System {
     }
   }
 
-  private matchPair<T1 extends string, T2 extends string>(config: {
+  private matchPair<T1 extends ComponentType, T2 extends ComponentType>(config: {
     world: World
     pair: { entityA: Entity; entityB: Entity }
     type1: T1
