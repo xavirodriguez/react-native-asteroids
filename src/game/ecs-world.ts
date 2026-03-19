@@ -81,13 +81,6 @@ export class World {
     this.version++
   }
 
-  private ensureComponentStorage(type: ComponentType): void {
-    if (!this.components.has(type)) {
-      this.components.set(type, new Map())
-      this.componentIndex.set(type, new Set())
-    }
-  }
-
   /**
    * Retrieves a component of a specific type from an entity.
    *
@@ -213,5 +206,12 @@ export class World {
       const countB = this.componentIndex.get(b)?.size ?? 0
       return countA - countB
     })
+  }
+
+  private ensureComponentStorage(type: ComponentType): void {
+    if (!this.components.has(type)) {
+      this.components.set(type, new Map())
+      this.componentIndex.set(type, new Set())
+    }
   }
 }

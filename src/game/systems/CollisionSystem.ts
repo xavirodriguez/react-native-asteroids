@@ -30,10 +30,20 @@ export class CollisionSystem extends System {
 
   private processCollisions(context: { world: World; colliders: Entity[] }): void {
     const { world, colliders } = context;
-    for (let i = 0; i < colliders.length; i++) {
-      for (let j = i + 1; j < colliders.length; j++) {
-        this.checkAndResolve({ world, entityA: colliders[i], entityB: colliders[j] });
-      }
+    colliders.forEach((entityA, index) => {
+      this.checkEntityCollisions({ world, entityA, colliders, startIndex: index + 1 });
+    });
+  }
+
+  private checkEntityCollisions(context: {
+    world: World
+    entityA: Entity
+    colliders: Entity[]
+    startIndex: number
+  }): void {
+    const { world, entityA, colliders, startIndex } = context;
+    for (let j = startIndex; j < colliders.length; j++) {
+      this.checkAndResolve({ world, entityA, entityB: colliders[j] });
     }
   }
 
@@ -124,15 +134,15 @@ export class CollisionSystem extends System {
     return undefined
   }
 
-  private handleBulletAsteroidCollision(collisionData: { world: World; asteroid: Entity; bullet: Entity }): void {
-    const { world, asteroid, bullet } = collisionData;
+  private handleBulletAsteroidCollision(context: { world: World; asteroid: Entity; bullet: Entity }): void {
+    const { world, asteroid, bullet } = context;
     this.splitAsteroid({ world, asteroidEntity: asteroid });
     world.removeEntity(bullet);
     this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
   }
 
-  private handleShipAsteroidCollision(collisionData: { world: World; shipEntity: Entity }): void {
-    const { world, shipEntity } = collisionData;
+  private handleShipAsteroidCollision(context: { world: World; shipEntity: Entity }): void {
+    const { world, shipEntity } = context;
     const health = world.getComponent<HealthComponent>(shipEntity, "Health");
     const canTakeDamage = health && health.invulnerableRemaining <= 0;
     if (canTakeDamage) {
@@ -141,8 +151,8 @@ export class CollisionSystem extends System {
     }
   }
 
-  private splitAsteroid(asteroidData: { world: World; asteroidEntity: Entity }): void {
-    const { world, asteroidEntity } = asteroidData;
+  private splitAsteroid(asteroidContext: { world: World; asteroidEntity: Entity }): void {
+    const { world, asteroidEntity } = asteroidContext;
     const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
     const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position");
 
@@ -152,12 +162,20 @@ export class CollisionSystem extends System {
     world.removeEntity(asteroidEntity);
   }
 
-  private executeSplitStrategy(splitData: {
+  private executeSplitStrategy(splitParams: {
     world: World
     pos: PositionComponent
     size: AsteroidComponent["size"]
   }): void {
-    const { world, pos, size } = splitData;
+    const { world, pos, size } = splitParams;
+    const config = this.getSplitConfig(size);
+
+    if (config) {
+      this.spawnSplit({ world, pos, size: config.nextSize, offset: config.offset });
+    }
+  }
+
+  private getSplitConfig(size: AsteroidComponent["size"]) {
     const splitConfigs: Record<
       AsteroidComponent["size"],
       { nextSize: "medium" | "small"; offset: number } | undefined
@@ -166,26 +184,22 @@ export class CollisionSystem extends System {
       medium: { nextSize: "small", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM },
       small: undefined,
     };
-
-    const config = splitConfigs[size];
-    if (config) {
-      this.spawnSplit({ world, pos, size: config.nextSize, offset: config.offset });
-    }
+    return splitConfigs[size];
   }
 
-  private spawnSplit(spawnData: {
+  private spawnSplit(spawnConfig: {
     world: World
     pos: PositionComponent
     size: "medium" | "small"
     offset: number
   }): void {
-    const { world, pos, size, offset } = spawnData
+    const { world, pos, size, offset } = spawnConfig
     createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size });
     createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size });
   }
 
-  private addScore(scoreData: { world: World; points: number }): void {
-    const { world, points } = scoreData;
+  private addScore(scoreContext: { world: World; points: number }): void {
+    const { world, points } = scoreContext;
     const gameState = getGameState(world);
     gameState.score += points;
   }

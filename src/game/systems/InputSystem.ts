@@ -18,7 +18,7 @@ import { createBullet } from "../EntityFactory"
  */
 export class InputSystem extends System {
   /** Set of currently pressed keys (for web/keyboard). */
-  private keys: Set<string> = new Set()
+  private activeKeyCodes: Set<string> = new Set()
   private keyDownListener = (e: KeyboardEvent) => this.activateKey(e.code)
   private keyUpListener = (e: KeyboardEvent) => this.deactivateKey(e.code)
 
@@ -118,11 +118,11 @@ export class InputSystem extends System {
   }
 
   private activateKey(keyCode: string): void {
-    this.keys.add(keyCode)
+    this.activeKeyCodes.add(keyCode)
   }
 
   private deactivateKey(keyCode: string): void {
-    this.keys.delete(keyCode)
+    this.activeKeyCodes.delete(keyCode)
   }
 
   private updateShootingCooldown(input: InputComponent, deltaTime: number): void {
@@ -132,10 +132,10 @@ export class InputSystem extends System {
   }
 
   private updateShipInputState(input: InputComponent): void {
-    input.thrust = this.keys.has(GAME_CONFIG.KEYS.THRUST)
-    input.rotateLeft = this.keys.has(GAME_CONFIG.KEYS.ROTATE_LEFT)
-    input.rotateRight = this.keys.has(GAME_CONFIG.KEYS.ROTATE_RIGHT)
-    input.shoot = this.keys.has(GAME_CONFIG.KEYS.SHOOT)
+    input.thrust = this.activeKeyCodes.has(GAME_CONFIG.KEYS.THRUST)
+    input.rotateLeft = this.activeKeyCodes.has(GAME_CONFIG.KEYS.ROTATE_LEFT)
+    input.rotateRight = this.activeKeyCodes.has(GAME_CONFIG.KEYS.ROTATE_RIGHT)
+    input.shoot = this.activeKeyCodes.has(GAME_CONFIG.KEYS.SHOOT)
   }
 
   private applyShipMovement(context: {
