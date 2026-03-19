@@ -193,14 +193,14 @@ export interface GameStateComponent extends Component {
 /**
  * Null Object for GameStateComponent to avoid returning null/undefined.
  */
-export const INITIAL_GAME_STATE: GameStateComponent = {
+export const INITIAL_GAME_STATE: GameStateComponent = Object.freeze({
   type: "GameState",
   lives: 0,
   score: 0,
   level: 0,
   asteroidsRemaining: 0,
   isGameOver: false,
-}
+})
 
 /**
  * Global game configuration constants for tuning gameplay.
