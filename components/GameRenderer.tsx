@@ -83,7 +83,10 @@ const renderByShape = (params: {
   render: RenderComponent;
 }) => {
   const { render } = params;
-  const rendererMap: Record<string, (p: typeof params) => React.ReactElement> = {
+  const rendererMap: Record<
+    RenderComponent["shape"],
+    (p: typeof params) => React.ReactElement
+  > = {
     triangle: renderShip,
     circle: renderCircleShape,
     line: renderLineShape,
@@ -136,7 +139,7 @@ const renderCircleShape = (params: {
   render: RenderComponent;
 }) => {
   const { entity, world, pos, render } = params;
-  const isAsteroid = world.getComponent(entity, "Asteroid") !== undefined;
+  const isAsteroid = world.hasComponent(entity, "Asteroid");
   return isAsteroid
     ? renderAsteroid({ pos, render })
     : renderBullet({ pos, render });
@@ -242,21 +245,29 @@ const ShipWindow: React.FC<{ size: number }> = ({ size }) => (
 
 const ShipLights: React.FC<{ size: number }> = ({ size }) => (
   <>
-    <Rect
-      x={-size / 2}
-      y={size / 6}
-      width={size / 6}
-      height={size / 8}
-      fill="#FF0000"
-    />
-    <Rect
-      x={-size / 2}
-      y={-size / 6 - size / 8}
-      width={size / 6}
-      height={size / 8}
-      fill="#FF0000"
-    />
+    <ShipPortLight size={size} />
+    <ShipStarboardLight size={size} />
   </>
+);
+
+const ShipPortLight: React.FC<{ size: number }> = ({ size }) => (
+  <Rect
+    x={-size / 2}
+    y={size / 6}
+    width={size / 6}
+    height={size / 8}
+    fill="#FF0000"
+  />
+);
+
+const ShipStarboardLight: React.FC<{ size: number }> = ({ size }) => (
+  <Rect
+    x={-size / 2}
+    y={-size / 6 - size / 8}
+    width={size / 6}
+    height={size / 8}
+    fill="#FF0000"
+  />
 );
 
 /**
