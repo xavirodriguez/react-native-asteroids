@@ -115,31 +115,12 @@ export class AsteroidsGame implements IAsteroidsGame {
     this.notifyStatusChange("RESTARTED");
   }
 
-  public subscribe(listener: UpdateListener): () => void {
-    this.listeners.add(listener);
-    const unsubscribe = () => {
-      this.listeners.delete(listener);
-    };
-    return unsubscribe;
-  }
-
   public isPausedState(): boolean {
     return this.loopState.isPaused
   }
 
   public isGameOver(): boolean {
     return this.gameStateSystem.isGameOver()
-  }
-
-  public getWorld(): World {
-    return this.world;
-  }
-
-  public destroy(): void {
-    this.stop();
-    this.inputSystem.cleanup();
-    this.unregisterGlobalKeyboardListeners();
-    this.listeners.clear();
   }
 
   public getGameState(): GameStateComponent {
@@ -151,6 +132,25 @@ export class AsteroidsGame implements IAsteroidsGame {
     if (canProcessInput) {
       this.inputSystem.setInput(input);
     }
+  }
+
+  public getWorld(): World {
+    return this.world;
+  }
+
+  public subscribe(listener: UpdateListener): () => void {
+    this.listeners.add(listener);
+    const unsubscribe = () => {
+      this.listeners.delete(listener);
+    };
+    return unsubscribe;
+  }
+
+  public destroy(): void {
+    this.stop();
+    this.inputSystem.cleanup();
+    this.unregisterGlobalKeyboardListeners();
+    this.listeners.clear();
   }
 
   // --- Private Methods ---

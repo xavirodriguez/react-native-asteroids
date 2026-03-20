@@ -13,6 +13,15 @@ import { createAsteroid, createParticle } from "../EntityFactory"
 import { getGameState } from "../GameUtils"
 import { hapticDamage, hapticDeath } from "../../utils/haptics"
 
+const ASTEROID_SPLIT_CONFIG: Record<
+  AsteroidComponent["size"],
+  { nextSize: "medium" | "small"; offset: number } | undefined
+> = {
+  large: { nextSize: "medium", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE },
+  medium: { nextSize: "small", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM },
+  small: undefined,
+};
+
 /**
  * System responsible for detecting and resolving collisions between entities.
  */
@@ -163,16 +172,24 @@ export class CollisionSystem extends System {
   private handleShipAsteroidCollision(context: { world: World; shipEntity: Entity }): void {
     const { world, shipEntity } = context;
     const health = world.getComponent<HealthComponent>(shipEntity, "Health");
-    const canTakeDamage = health && health.invulnerableRemaining <= 0;
-    if (canTakeDamage) {
-      health.current--;
-      health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
 
-      if (health.current <= 0) {
-        hapticDeath();
-      } else {
-        hapticDamage();
-      }
+    if (this.canShipTakeDamage(health)) {
+      this.applyDamageToShip(health);
+    }
+  }
+
+  private canShipTakeDamage(health: HealthComponent | undefined): health is HealthComponent {
+    return !!health && health.invulnerableRemaining <= 0;
+  }
+
+  private applyDamageToShip(health: HealthComponent): void {
+    health.current--;
+    health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+
+    if (health.current <= 0) {
+      hapticDeath();
+    } else {
+      hapticDamage();
     }
   }
 
@@ -193,23 +210,11 @@ export class CollisionSystem extends System {
     size: AsteroidComponent["size"]
   }): void {
     const { world, pos, size } = splitParams;
-    const config = this.getSplitConfig(size);
+    const config = ASTEROID_SPLIT_CONFIG[size];
 
     if (config) {
       this.spawnSplit({ world, pos, size: config.nextSize, offset: config.offset });
     }
-  }
-
-  private getSplitConfig(size: AsteroidComponent["size"]) {
-    const splitConfigs: Record<
-      AsteroidComponent["size"],
-      { nextSize: "medium" | "small"; offset: number } | undefined
-    > = {
-      large: { nextSize: "medium", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE },
-      medium: { nextSize: "small", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM },
-      small: undefined,
-    };
-    return splitConfigs[size];
   }
 
   private spawnSplit(spawnConfig: {
