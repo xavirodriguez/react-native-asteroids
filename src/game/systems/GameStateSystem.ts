@@ -1,8 +1,9 @@
 import { System, type World } from "../ecs-world"
 import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../../types/GameTypes"
 import { spawnAsteroidWave } from "../EntityFactory"
-import type { IAsteroidsGame } from "../AsteroidsGame"
+import type { IAsteroidsGame } from "../types/GameInterfaces"
 import { getGameState } from "../GameUtils"
+import { logger } from "../../utils/logger"
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.
@@ -33,7 +34,7 @@ export class GameStateSystem extends System {
   }
 
   public resetGameOverState(): void {
-    console.log("Resetting game over state flag");
+    logger.log("Resetting game over state flag");
     this.gameOverLogged = false;
   }
 
@@ -94,7 +95,7 @@ export class GameStateSystem extends System {
 
   private handleGameOverOnce(gameState: GameStateComponent): void {
     if (!this.gameOverLogged) {
-      console.log(`Game Over! Final Score: ${gameState.score}`);
+      logger.log(`Game Over! Final Score: ${gameState.score}`);
       this.gameOverLogged = true;
       this.gameInstance?.pause();
     }

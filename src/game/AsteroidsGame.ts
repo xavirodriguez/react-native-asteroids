@@ -12,27 +12,8 @@ import {
 } from "../types/GameTypes"
 import { getGameState } from "./GameUtils"
 import { INITIAL_GAME_STATE } from "../types/GameTypes"
-
-/**
- * Type definition for a callback function triggered on every game update.
- */
-export type UpdateListener = (game: IAsteroidsGame) => void;
-
-/**
- * Interface defining the public API for the Asteroids game controller.
- */
-export interface IAsteroidsGame {
-  pause(): void;
-  resume(): void;
-  restart(): void;
-  getWorld(): World;
-  isPausedState(): boolean;
-  isGameOver(): boolean;
-  getGameState(): GameStateComponent;
-  setInput(input: Partial<InputState>): void;
-  subscribe(listener: UpdateListener): () => void;
-  destroy(): void;
-}
+import { type IAsteroidsGame, type UpdateListener } from "./types/GameInterfaces"
+import { logger } from "../utils/logger"
 
 /**
  * Main controller for the Asteroids game.
@@ -186,7 +167,7 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private notifyStatusChange(status: string): void {
-    console.log(`Game state changed: ${status}`);
+    logger.log(`Game state changed: ${status}`);
     this.notifyListeners();
   }
 

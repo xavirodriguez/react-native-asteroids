@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+// Note: Component imports use the '@/' alias configured in tsconfig.json
 import { GameRenderer } from "@/components/GameRenderer";
 import { GameControls } from "@/components/GameControls";
 import { GameUI } from "@/components/GameUI";
