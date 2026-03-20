@@ -70,7 +70,7 @@ export interface VelocityComponent extends Component {
 export interface RenderComponent extends Component {
   type: "Render"
   /** The geometric shape to draw */
-  shape: "triangle" | "circle" | "line"
+  shape: "triangle" | "circle" | "line" | "particle"
   /** Base size of the shape in pixels */
   size: number
   /** CSS color string (e.g., "#FFFFFF", "red") */

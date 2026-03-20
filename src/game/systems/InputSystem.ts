@@ -8,6 +8,7 @@ import {
   GAME_CONFIG,
 } from "../../types/GameTypes"
 import { createBullet } from "../EntityFactory"
+import { hapticShoot } from "../../utils/haptics"
 
 /**
  * System responsible for processing user input and applying it to the ship's state.
@@ -188,6 +189,7 @@ export class InputSystem extends System {
     if (canShoot) {
       createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation })
       input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN
+      hapticShoot()
     }
   }
 }

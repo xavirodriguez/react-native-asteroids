@@ -31,6 +31,19 @@ export interface CreateBulletParams {
 }
 
 /**
+ * Parameters for creating a particle entity.
+ */
+export interface CreateParticleParams {
+  world: World
+  x: number
+  y: number
+  dx: number
+  dy: number
+  color: string
+  ttl?: number
+}
+
+/**
  * Creates a new player ship entity in the world.
  *
  * @param options - The creation parameters.
@@ -228,4 +241,28 @@ export function spawnAsteroidWave(config: { world: World; count: number }): void
     const y = centerY + Math.sin(angle) * distance
     createAsteroid({ world, x, y, size: "large" })
   }
+}
+
+/**
+ * Creates a new particle entity in the world.
+ *
+ * @param options - The creation parameters.
+ * @returns The newly created {@link Entity}.
+ */
+export function createParticle(options: CreateParticleParams): Entity {
+  const { world, x, y, dx, dy, color, ttl = 600 } = options
+  const particle = world.createEntity()
+
+  world.addComponent(particle, { type: "Position", x, y })
+  world.addComponent(particle, { type: "Velocity", dx, dy })
+  world.addComponent(particle, {
+    type: "Render",
+    shape: "particle",
+    size: 2,
+    color,
+    rotation: 0,
+  })
+  world.addComponent(particle, { type: "TTL", remaining: ttl })
+
+  return particle
 }

@@ -3,7 +3,7 @@
     "name": "asteroides",
     "slug": "asteroids",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "landscape",
     "icon": "./assets/images/icon.png",
     "scheme": "asteroides",
     "userInterfaceStyle": "automatic",

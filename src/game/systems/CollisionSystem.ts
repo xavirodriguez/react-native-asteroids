@@ -9,8 +9,9 @@ import {
   GAME_CONFIG,
 } from "../../types/GameTypes"
 
-import { createAsteroid } from "../EntityFactory"
+import { createAsteroid, createParticle } from "../EntityFactory"
 import { getGameState } from "../GameUtils"
+import { hapticDamage, hapticDeath } from "../../utils/haptics"
 
 /**
  * System responsible for detecting and resolving collisions between entities.
@@ -136,9 +137,27 @@ export class CollisionSystem extends System {
 
   private handleBulletAsteroidCollision(context: { world: World; asteroid: Entity; bullet: Entity }): void {
     const { world, asteroid, bullet } = context;
+    const pos = world.getComponent<PositionComponent>(asteroid, "Position");
+    if (pos) {
+      this.spawnExplosionParticles(world, pos, 8);
+    }
     this.splitAsteroid({ world, asteroidEntity: asteroid });
     world.removeEntity(bullet);
     this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
+  }
+
+  private spawnExplosionParticles(world: World, pos: PositionComponent, count: number): void {
+    for (let i = 0; i < count; i++) {
+      createParticle({
+        world,
+        x: pos.x,
+        y: pos.y,
+        dx: (Math.random() - 0.5) * 160, // [-80, 80]
+        dy: (Math.random() - 0.5) * 160, // [-80, 80]
+        color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
+        ttl: 500,
+      });
+    }
   }
 
   private handleShipAsteroidCollision(context: { world: World; shipEntity: Entity }): void {
@@ -148,6 +167,12 @@ export class CollisionSystem extends System {
     if (canTakeDamage) {
       health.current--;
       health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+
+      if (health.current <= 0) {
+        hapticDeath();
+      } else {
+        hapticDamage();
+      }
     }
   }
 
