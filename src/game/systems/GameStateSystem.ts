@@ -22,9 +22,9 @@ export class GameStateSystem extends System {
   public update(world: World, deltaTime: number): void {
     const gameState = getGameState(world);
 
+    this.updatePlayerStatus({ world, gameState, deltaTime });
     this.updateAsteroidsCount(world, gameState);
     this.manageWaveProgression(world, gameState);
-    this.updatePlayerStatus({ world, gameState, deltaTime });
     this.updateGameOverStatus(world, gameState);
   }
 
@@ -78,7 +78,7 @@ export class GameStateSystem extends System {
   }
 
   private updateGameOverStatus(world: World, gameState: GameStateComponent): void {
-    const isGameOver = this.evaluateGameOverCondition(world);
+    const isGameOver = this.evaluateGameOverCondition(gameState);
     gameState.isGameOver = isGameOver;
 
     if (isGameOver) {
@@ -88,12 +88,8 @@ export class GameStateSystem extends System {
     }
   }
 
-  private evaluateGameOverCondition(world: World): boolean {
-    const ships = world.query("Ship", "Health", "Input");
-    return ships.length > 0 && ships.every((ship) => {
-      const health = world.getComponent<HealthComponent>(ship, "Health");
-      return !health || health.current <= 0;
-    });
+  private evaluateGameOverCondition(gameState: GameStateComponent): boolean {
+    return gameState.lives <= 0;
   }
 
   private handleGameOverOnce(gameState: GameStateComponent): void {
