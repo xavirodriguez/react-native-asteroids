@@ -1,5 +1,4 @@
-import type React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { GameStateComponent } from "../src/types/GameTypes";
@@ -36,13 +35,13 @@ interface GameUIProps {
  * <GameUI gameState={currentGameState} onRestart={() => game.restart()} />
  * ```
  */
-export const GameUI: React.FC<GameUIProps> = ({
+export const GameUI = React.memo(function GameUI({
   gameState,
   onRestart,
   onPause,
   isPaused,
   highScore,
-}) => {
+}: GameUIProps) {
   const insets = useSafeAreaInsets();
   const [levelUpText, setLevelUpText] = useState<string | null>(null);
   const showPauseButton = Platform.OS !== "web" && !gameState.isGameOver;
@@ -81,7 +80,7 @@ export const GameUI: React.FC<GameUIProps> = ({
       )}
     </View>
   );
-};
+});
 
 const HUD: React.FC<{
   lives: number;

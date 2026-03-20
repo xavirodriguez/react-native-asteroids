@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
-import { AsteroidsGame, NullAsteroidsGame, type IAsteroidsGame } from "../game/AsteroidsGame";
+import { AsteroidsGame, NullAsteroidsGame } from "../game/AsteroidsGame";
+import { type IAsteroidsGame } from "../game/types/GameInterfaces";
 import { type GameStateComponent, INITIAL_GAME_STATE, type InputState } from "../types/GameTypes";
 import { useHighScore } from "./useHighScore";
 

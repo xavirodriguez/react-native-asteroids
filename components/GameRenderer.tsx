@@ -25,7 +25,7 @@ interface GameRendererProps {
  * @param props - Component properties.
  * @returns A React functional component.
  */
-export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
+export const GameRenderer = React.memo(function GameRenderer({ world }: GameRendererProps) {
   const renderables = useMemo(
     () => world.query("Position", "Render"),
     [world.version]
@@ -36,7 +36,7 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world }) => {
       <WorldView world={world} renderables={renderables} />
     </View>
   );
-};
+});
 
 interface WorldViewProps {
   world: World;

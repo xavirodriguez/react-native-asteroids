@@ -1,26 +1,14 @@
 npm warn exec The following package was not found and will be installed: serve@14.2.6
- INFO  Accepting connections at http://localhost:3000
- HTTP  3/20/2026 10:17:30 AM ::1 GET /
- HTTP  3/20/2026 10:17:30 AM ::1 Returned 200 in 63 ms
- HTTP  3/20/2026 10:17:30 AM ::1 GET /_expo/static/css/globals-139115a7cd71ad03cc1c27f8e8feaa64.css
- HTTP  3/20/2026 10:17:30 AM ::1 GET /_expo/static/js/web/entry-a9014ff71316e2a4bd9e06d6448fc18e.js
- HTTP  3/20/2026 10:17:30 AM ::1 Returned 200 in 5 ms
- HTTP  3/20/2026 10:17:30 AM ::1 Returned 200 in 12 ms
- HTTP  3/20/2026 10:18:17 AM ::1 GET /
- HTTP  3/20/2026 10:18:17 AM ::1 Returned 200 in 2 ms
- HTTP  3/20/2026 10:18:17 AM ::1 GET /_expo/static/css/globals-139115a7cd71ad03cc1c27f8e8feaa64.css
- HTTP  3/20/2026 10:18:17 AM ::1 Returned 200 in 3 ms
- HTTP  3/20/2026 10:18:17 AM ::1 GET /_expo/static/js/web/entry-a9014ff71316e2a4bd9e06d6448fc18e.js
- HTTP  3/20/2026 10:18:17 AM ::1 Returned 200 in 1 ms
- HTTP  3/20/2026 10:18:39 AM ::1 GET /
- HTTP  3/20/2026 10:18:39 AM ::1 Returned 200 in 2 ms
- HTTP  3/20/2026 10:18:39 AM ::1 GET /_expo/static/css/globals-139115a7cd71ad03cc1c27f8e8feaa64.css
- HTTP  3/20/2026 10:18:39 AM ::1 GET /_expo/static/js/web/entry-a9014ff71316e2a4bd9e06d6448fc18e.js
- HTTP  3/20/2026 10:18:39 AM ::1 Returned 200 in 4 ms
- HTTP  3/20/2026 10:18:39 AM ::1 Returned 200 in 3 ms
- HTTP  3/20/2026 10:18:57 AM ::1 GET /
- HTTP  3/20/2026 10:18:57 AM ::1 Returned 200 in 2 ms
- HTTP  3/20/2026 10:18:57 AM ::1 GET /_expo/static/css/globals-139115a7cd71ad03cc1c27f8e8feaa64.css
- HTTP  3/20/2026 10:18:57 AM ::1 Returned 200 in 1 ms
- HTTP  3/20/2026 10:18:57 AM ::1 GET /_expo/static/js/web/entry-a9014ff71316e2a4bd9e06d6448fc18e.js
- HTTP  3/20/2026 10:18:57 AM ::1 Returned 200 in 0 ms
+ INFO  Accepting connections at http://localhost:8081
+ HTTP  3/20/2026 12:57:42 PM ::1 GET /
+ HTTP  3/20/2026 12:57:42 PM ::1 Returned 200 in 59 ms
+ HTTP  3/20/2026 12:57:42 PM ::1 GET /_expo/static/css/globals-2646728d3609d30d08e1d55469f49488.css
+ HTTP  3/20/2026 12:57:42 PM ::1 GET /_expo/static/js/web/entry-5ccce9e8a7a1b4a9b3dbecfa768c1efa.js
+ HTTP  3/20/2026 12:57:42 PM ::1 Returned 200 in 4 ms
+ HTTP  3/20/2026 12:57:42 PM ::1 Returned 200 in 10 ms
+ HTTP  3/20/2026 12:58:50 PM ::1 GET /
+ HTTP  3/20/2026 12:58:50 PM ::1 Returned 200 in 2 ms
+ HTTP  3/20/2026 12:58:50 PM ::1 GET /_expo/static/css/globals-2646728d3609d30d08e1d55469f49488.css
+ HTTP  3/20/2026 12:58:50 PM ::1 Returned 200 in 2 ms
+ HTTP  3/20/2026 12:58:50 PM ::1 GET /_expo/static/js/web/entry-5ccce9e8a7a1b4a9b3dbecfa768c1efa.js
+ HTTP  3/20/2026 12:58:50 PM ::1 Returned 200 in 1 ms

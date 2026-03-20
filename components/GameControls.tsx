@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 import { View, TouchableOpacity, Text, StyleSheet, Platform } from "react-native"
 
 /**
@@ -35,7 +35,12 @@ interface GameControlsProps {
  * />
  * ```
  */
-export const GameControls: React.FC<GameControlsProps> = ({ onThrust, onRotateLeft, onRotateRight, onShoot }) => {
+export const GameControls = React.memo(function GameControls({
+  onThrust,
+  onRotateLeft,
+  onRotateRight,
+  onShoot,
+}: GameControlsProps) {
   // Only show touch controls on native platforms
   if (Platform.OS === "web") {
     return (
@@ -84,7 +89,7 @@ export const GameControls: React.FC<GameControlsProps> = ({ onThrust, onRotateLe
       </View>
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {
