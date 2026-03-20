@@ -6,6 +6,8 @@ import {
   type PositionComponent,
   type RenderComponent,
   type InputComponent,
+  type HealthComponent,
+  type TTLComponent,
   GAME_CONFIG,
 } from "../src/types/GameTypes";
 
@@ -90,6 +92,7 @@ const renderByShape = (params: {
     triangle: renderShip,
     circle: renderCircleShape,
     line: renderLineShape,
+    particle: renderParticleShape,
   };
 
   const renderer = rendererMap[render.shape];
@@ -120,6 +123,8 @@ const renderShip = (params: {
 }) => {
   const { entity, world, pos, render } = params;
   const input = world.getComponent<InputComponent>(entity, "Input");
+  const health = world.getComponent<HealthComponent>(entity, "Health");
+  const isInvulnerable = health ? health.invulnerableRemaining > 0 : false;
   return (
     <ShipRenderer
       x={pos.x}
@@ -128,6 +133,7 @@ const renderShip = (params: {
       rotation={render.rotation}
       color={render.color}
       hasThrust={input?.thrust ?? false}
+      isInvulnerable={isInvulnerable}
     />
   );
 };
@@ -157,6 +163,25 @@ const renderAsteroid = (params: {
   />
 );
 
+const renderParticleShape = (params: {
+  entity: number;
+  world: World;
+  pos: PositionComponent;
+  render: RenderComponent;
+}) => {
+  const { entity, world, pos, render } = params;
+  const ttl = world.getComponent<TTLComponent>(entity, "TTL");
+  return (
+    <ParticleRenderer
+      x={pos.x}
+      y={pos.y}
+      size={render.size}
+      color={render.color}
+      opacity={ttl ? Math.min(ttl.remaining / 500, 0.8) : 0.8}
+    />
+  );
+};
+
 const renderBullet = (params: {
   pos: PositionComponent;
   render: RenderComponent;
@@ -179,12 +204,18 @@ const ShipRenderer: React.FC<{
   rotation: number;
   color: string;
   hasThrust: boolean;
-}> = ({ x, y, size, rotation, color, hasThrust }) => {
+  isInvulnerable: boolean;
+}> = ({ x, y, size, rotation, color, hasThrust, isInvulnerable }) => {
   const rotationDegrees = (rotation * 180) / Math.PI;
   const transform = `translate(${x}, ${y}) rotate(${rotationDegrees})`;
+  const blinkOpacity = isInvulnerable
+    ? Math.floor(Date.now() / 150) % 2 === 0
+      ? 0.3
+      : 1.0
+    : 1.0;
 
   return (
-    <G transform={transform}>
+    <G transform={transform} opacity={blinkOpacity}>
       {hasThrust && <ShipThrusters size={size} />}
       <ShipCore size={size} />
       <ShipBody size={size} color={color} />
@@ -309,6 +340,20 @@ const BulletRenderer: React.FC<{
   />
 ));
 BulletRenderer.displayName = "BulletRenderer";
+
+/**
+ * Specialized renderer for particles.
+ */
+const ParticleRenderer: React.FC<{
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  opacity: number;
+}> = memo(({ x, y, size, color, opacity }) => (
+  <Circle cx={x} cy={y} r={size} fill={color} opacity={opacity} />
+));
+ParticleRenderer.displayName = "ParticleRenderer";
 
 /**
  * Specialized renderer for line shapes.
