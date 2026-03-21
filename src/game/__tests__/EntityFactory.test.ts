@@ -7,7 +7,7 @@ import {
   spawnAsteroidWave,
   createParticle,
 } from "../EntityFactory";
-import { GAME_CONFIG, type HealthComponent, type TTLComponent, type AsteroidComponent, type PositionComponent, type VelocityComponent, type GameStateComponent, type RenderComponent } from "../../types/GameTypes";
+import { GAME_CONFIG, type HealthComponent, type TTLComponent, type AsteroidComponent, type PositionComponent, type VelocityComponent, type GameStateComponent, type RenderComponent, type ColliderComponent } from "../../types/GameTypes";
 
 describe("EntityFactory", () => {
   let world: World;
@@ -45,7 +45,7 @@ describe("EntityFactory", () => {
   describe("createAsteroid", () => {
     it("creates a large asteroid with correct radius", () => {
       const asteroid = createAsteroid({ world, x: 10, y: 10, size: "large" });
-      const collider = world.getComponent<{ radius: number }>(asteroid, "Collider")!;
+      const collider = world.getComponent<ColliderComponent>(asteroid, "Collider")!;
       expect(collider.radius).toBe(GAME_CONFIG.ASTEROID_RADII.large);
       const data = world.getComponent<AsteroidComponent>(asteroid, "Asteroid")!;
       expect(data.size).toBe("large");
@@ -53,13 +53,13 @@ describe("EntityFactory", () => {
 
     it("creates a medium asteroid with correct radius", () => {
       const asteroid = createAsteroid({ world, x: 10, y: 10, size: "medium" });
-      const collider = world.getComponent<{ radius: number }>(asteroid, "Collider")!;
+      const collider = world.getComponent<ColliderComponent>(asteroid, "Collider")!;
       expect(collider.radius).toBe(GAME_CONFIG.ASTEROID_RADII.medium);
     });
 
     it("creates a small asteroid with correct radius", () => {
       const asteroid = createAsteroid({ world, x: 10, y: 10, size: "small" });
-      const collider = world.getComponent<{ radius: number }>(asteroid, "Collider")!;
+      const collider = world.getComponent<ColliderComponent>(asteroid, "Collider")!;
       expect(collider.radius).toBe(GAME_CONFIG.ASTEROID_RADII.small);
     });
   });

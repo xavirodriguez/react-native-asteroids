@@ -148,7 +148,7 @@ export class CollisionSystem extends System {
     const { world, asteroid, bullet } = context;
     const pos = world.getComponent<PositionComponent>(asteroid, "Position");
     if (pos) {
-      this.spawnExplosionParticles(world, pos, 8);
+      this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT);
     }
     this.splitAsteroid({ world, asteroidEntity: asteroid });
     world.removeEntity(bullet);
@@ -164,7 +164,7 @@ export class CollisionSystem extends System {
         dx: (Math.random() - 0.5) * 160, // [-80, 80]
         dy: (Math.random() - 0.5) * 160, // [-80, 80]
         color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
-        ttl: 500,
+        ttl: GAME_CONFIG.PARTICLE_TTL_BASE,
       });
     }
   }
@@ -174,7 +174,7 @@ export class CollisionSystem extends System {
     const health = world.getComponent<HealthComponent>(shipEntity, "Health");
 
     if (this.canShipTakeDamage(health)) {
-      this.applyDamageToShip(health);
+      this.applyDamageToShip(world, health);
     }
   }
 
@@ -182,9 +182,16 @@ export class CollisionSystem extends System {
     return !!health && health.invulnerableRemaining <= 0;
   }
 
-  private applyDamageToShip(health: HealthComponent): void {
+  private applyDamageToShip(world: World, health: HealthComponent): void {
     health.current--;
     health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+
+    // Improvement 4: Screen shake upon collision
+    const gameState = getGameState(world);
+    gameState.screenShake = {
+        intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,
+        duration: GAME_CONFIG.SHAKE_DURATION_IMPACT,
+    };
 
     if (health.current <= 0) {
       hapticDeath();

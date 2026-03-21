@@ -70,13 +70,17 @@ export interface VelocityComponent extends Component {
 export interface RenderComponent extends Component {
   type: "Render"
   /** The geometric shape to draw */
-  shape: "triangle" | "circle" | "line" | "particle"
+  shape: "triangle" | "circle" | "line" | "particle" | "polygon"
   /** Base size of the shape in pixels */
   size: number
   /** CSS color string (e.g., "#FFFFFF", "red") */
   color: string
   /** Rotation in radians */
   rotation: number
+  /** Trailing positions for ship trail effect */
+  trailPositions?: { x: number; y: number }[]
+  /** Vertices for polygonal shapes (asteroids) */
+  vertices?: { x: number; y: number }[]
 }
 
 /**
@@ -145,6 +149,8 @@ export interface TTLComponent extends Component {
   type: "TTL"
   /** Remaining time to live in milliseconds */
   remaining: number
+  /** Total initial time to live in milliseconds */
+  total: number
 }
 
 /**
@@ -170,6 +176,18 @@ export interface AsteroidComponent extends Component {
   size: "large" | "medium" | "small"
 }
 
+export interface Star {
+  x: number
+  y: number
+  size: number
+  brightness: number
+}
+
+export interface ScreenShake {
+  intensity: number
+  duration: number
+}
+
 /**
  * Component to track global game progress and state.
  *
@@ -188,6 +206,10 @@ export interface GameStateComponent extends Component {
   asteroidsRemaining: number
   /** Whether the game is currently in a Game Over state */
   isGameOver: boolean
+  /** Starfield for background */
+  stars?: Star[]
+  /** Current screen shake state */
+  screenShake?: ScreenShake | null
 }
 
 /**
@@ -273,4 +295,19 @@ export const GAME_CONFIG = {
   ASTEROID_SCORE: 10,
   /** Maximum delta time allowed per frame in milliseconds to prevent physics instability */
   MAX_DELTA_TIME: 100,
+
+  /** Particle settings */
+  PARTICLE_COUNT: 10,
+  PARTICLE_TTL_BASE: 600,
+  PARTICLE_SPEED_BASE: 50,
+
+  /** Star background settings */
+  STAR_COUNT: 150,
+
+  /** Screen shake settings */
+  SHAKE_INTENSITY_IMPACT: 8,
+  SHAKE_DURATION_IMPACT: 15,
+
+  /** Ship trail settings */
+  TRAIL_MAX_LENGTH: 10,
 }
