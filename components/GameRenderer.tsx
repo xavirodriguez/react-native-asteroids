@@ -147,11 +147,12 @@ const renderCircleShape = (params: {
   const { entity, world, pos, render } = params;
   const isAsteroid = world.hasComponent(entity, "Asteroid");
   return isAsteroid
-    ? renderAsteroid({ pos, render })
+    ? renderAsteroid({ entity, pos, render })
     : renderBullet({ pos, render });
 };
 
 const renderAsteroid = (params: {
+  entity: number;
   pos: PositionComponent;
   render: RenderComponent;
 }) => (
@@ -160,6 +161,7 @@ const renderAsteroid = (params: {
     y={params.pos.y}
     size={params.render.size}
     color={params.render.color}
+    seed={params.entity}
   />
 );
 
@@ -303,22 +305,39 @@ const ShipStarboardLight: React.FC<{ size: number }> = ({ size }) => (
 
 /**
  * Specialized renderer for asteroids.
+ * Uses a polygon to create a jagged, rock-like appearance.
  */
 const AsteroidRenderer: React.FC<{
   x: number;
   y: number;
   size: number;
   color: string;
-}> = memo(({ x, y, size, color }) => (
-  <Circle
-    cx={x}
-    cy={y}
-    r={size}
-    fill="#999"
-    stroke={color}
-    strokeWidth="2"
-  />
-));
+  seed: number;
+}> = memo(({ x, y, size, color, seed }) => {
+  const points = useMemo(() => {
+    const numPoints = 8 + (seed % 5);
+    const vertices: string[] = [];
+    for (let i = 0; i < numPoints; i++) {
+      const angle = (i / numPoints) * Math.PI * 2;
+      const variance = 0.8 + ((seed * (i + 1)) % 3) * 0.1;
+      const px = Math.cos(angle) * size * variance;
+      const py = Math.sin(angle) * size * variance;
+      vertices.push(`${px},${py}`);
+    }
+    return vertices.join(" ");
+  }, [size, seed]);
+
+  return (
+    <G transform={`translate(${x}, ${y})`}>
+      <Polygon
+        points={points}
+        fill="#444"
+        stroke={color}
+        strokeWidth="2"
+      />
+    </G>
+  );
+});
 AsteroidRenderer.displayName = "AsteroidRenderer";
 
 /**
