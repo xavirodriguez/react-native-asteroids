@@ -7,7 +7,7 @@ import {
   spawnAsteroidWave,
   createParticle,
 } from "../EntityFactory";
-import { GAME_CONFIG, type HealthComponent, type TTLComponent, type AsteroidComponent, type PositionComponent, type VelocityComponent } from "../../types/GameTypes";
+import { GAME_CONFIG, type HealthComponent, type TTLComponent, type AsteroidComponent, type PositionComponent, type VelocityComponent, type ColliderComponent, type GameStateComponent, type RenderComponent } from "../../types/GameTypes";
 
 describe("EntityFactory", () => {
   let world: World;
@@ -45,7 +45,7 @@ describe("EntityFactory", () => {
   describe("createAsteroid", () => {
     it("creates a large asteroid with correct radius", () => {
       const asteroid = createAsteroid({ world, x: 10, y: 10, size: "large" });
-      const collider = world.getComponent<{ radius: number }>(asteroid, "Collider")!;
+      const collider = world.getComponent<ColliderComponent>(asteroid, "Collider")!;
       expect(collider.radius).toBe(GAME_CONFIG.ASTEROID_RADII.large);
       const data = world.getComponent<AsteroidComponent>(asteroid, "Asteroid")!;
       expect(data.size).toBe("large");
@@ -53,13 +53,13 @@ describe("EntityFactory", () => {
 
     it("creates a medium asteroid with correct radius", () => {
       const asteroid = createAsteroid({ world, x: 10, y: 10, size: "medium" });
-      const collider = world.getComponent<{ radius: number }>(asteroid, "Collider")!;
+      const collider = world.getComponent<ColliderComponent>(asteroid, "Collider")!;
       expect(collider.radius).toBe(GAME_CONFIG.ASTEROID_RADII.medium);
     });
 
     it("creates a small asteroid with correct radius", () => {
       const asteroid = createAsteroid({ world, x: 10, y: 10, size: "small" });
-      const collider = world.getComponent<{ radius: number }>(asteroid, "Collider")!;
+      const collider = world.getComponent<ColliderComponent>(asteroid, "Collider")!;
       expect(collider.radius).toBe(GAME_CONFIG.ASTEROID_RADII.small);
     });
   });
@@ -83,7 +83,7 @@ describe("EntityFactory", () => {
   describe("createGameState", () => {
     it("initializes game state component correctly", () => {
       const entity = createGameState({ world });
-      const state = world.getComponent<any>(entity, "GameState")!;
+      const state = world.getComponent<GameStateComponent>(entity, "GameState")!;
       expect(state.lives).toBe(3);
       expect(state.score).toBe(0);
       expect(state.level).toBe(1);
@@ -106,7 +106,7 @@ describe("EntityFactory", () => {
       expect(world.hasComponent(particle, "Render")).toBe(true);
       expect(world.hasComponent(particle, "TTL")).toBe(true);
 
-      const render = world.getComponent<any>(particle, "Render")!;
+      const render = world.getComponent<RenderComponent>(particle, "Render")!;
       expect(render.shape).toBe("particle");
     });
   });
