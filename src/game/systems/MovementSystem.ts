@@ -2,6 +2,7 @@ import { System, type World } from "../ecs-world"
 import {
   type PositionComponent,
   type VelocityComponent,
+  type RenderComponent,
   GAME_CONFIG,
 } from "../../types/GameTypes"
 
@@ -18,8 +19,17 @@ export class MovementSystem extends System {
     entities.forEach((entity) => {
       const pos = world.getComponent<PositionComponent>(entity, "Position")
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity")
+      const render = world.getComponent<RenderComponent>(entity, "Render")
 
       if (pos && vel) {
+        // Improvement 2: Ship trail update
+        if (render && render.trailPositions) {
+            render.trailPositions.push({ x: pos.x, y: pos.y });
+            if (render.trailPositions.length > GAME_CONFIG.TRAIL_MAX_LENGTH) {
+                render.trailPositions.shift();
+            }
+        }
+
         this.updatePosition({ pos, vel, deltaTime })
         this.wrapPosition(pos)
       }

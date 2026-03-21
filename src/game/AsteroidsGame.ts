@@ -3,6 +3,7 @@ import { MovementSystem } from "./systems/MovementSystem"
 import { InputSystem } from "./systems/InputSystem"
 import { CollisionSystem } from "./systems/CollisionSystem"
 import { TTLSystem } from "./systems/TTLSystem"
+import { RenderSystem } from "./systems/RenderSystem"
 import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory"
 import {
   type GameStateComponent,
@@ -24,6 +25,7 @@ import { GameStateSystem } from "./systems/GameStateSystem"
  */
 export class NullAsteroidsGame implements IAsteroidsGame {
   private world = new World()
+  private renderSystem = new RenderSystem()
 
   public pause(): void {}
   public resume(): void {}
@@ -48,12 +50,16 @@ export class NullAsteroidsGame implements IAsteroidsGame {
     return () => {}
   }
   public destroy(): void {}
+  public getRenderSystem(): RenderSystem {
+    return this.renderSystem
+  }
 }
 
 export class AsteroidsGame implements IAsteroidsGame {
   private world: World;
   private inputSystem!: InputSystem;
   private gameStateSystem!: IGameStateSystem;
+  private renderSystem!: RenderSystem;
   private loopState = {
     isRunning: false,
     isPaused: false,
@@ -137,6 +143,10 @@ export class AsteroidsGame implements IAsteroidsGame {
     return this.world;
   }
 
+  public getRenderSystem(): RenderSystem {
+    return this.renderSystem;
+  }
+
   public subscribe(listener: UpdateListener): () => void {
     this.listeners.add(listener);
     const unsubscribe = () => {
@@ -178,6 +188,7 @@ export class AsteroidsGame implements IAsteroidsGame {
   private createSystems(): void {
     this.inputSystem = new InputSystem();
     this.gameStateSystem = new GameStateSystem(this);
+    this.renderSystem = new RenderSystem();
   }
 
   private registerSystems(): void {
@@ -186,6 +197,7 @@ export class AsteroidsGame implements IAsteroidsGame {
     this.world.addSystem(new CollisionSystem());
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
+    this.world.addSystem(this.renderSystem);
   }
 
   private initializeGame(): void {

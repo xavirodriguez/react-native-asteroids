@@ -1,5 +1,5 @@
 import type { World } from "./ecs-world"
-import { type Entity, GAME_CONFIG } from "../types/GameTypes"
+import { type Entity, GAME_CONFIG, type Star } from "../types/GameTypes"
 
 /**
  * Parameters for creating a player ship entity.
@@ -41,6 +41,7 @@ export interface CreateParticleParams {
   dy: number
   color: string
   ttl?: number
+  size?: number
 }
 
 /**
@@ -74,6 +75,7 @@ function addShipMovementComponents(config: {
     size: GAME_CONFIG.SHIP_RENDER_SIZE,
     color: "#CCCCCC",
     rotation: 0,
+    trailPositions: [], // Improvement 2: Ship trail positions
   })
 }
 
@@ -150,12 +152,22 @@ function addAsteroidTypeComponents(config: {
 }): void {
   const { world, asteroid, size } = config
   const radius = GAME_CONFIG.ASTEROID_RADII[size]
+
+  // Improvement 5: Polygonal asteroids
+  const vertexCount = 10
+  const vertices = Array.from({ length: vertexCount }, (_, i) => {
+    const angle = (i / vertexCount) * Math.PI * 2
+    const r = radius * (0.75 + Math.random() * 0.5)
+    return { x: Math.cos(angle) * r, y: Math.sin(angle) * r }
+  })
+
   world.addComponent(asteroid, {
     type: "Render",
-    shape: "circle",
+    shape: "polygon", // Updated to polygon
     size: radius,
     color: "#888888",
     rotation: 0,
+    vertices,
   })
   world.addComponent(asteroid, { type: "Collider", radius })
   world.addComponent(asteroid, { type: "Asteroid", size })
@@ -200,7 +212,7 @@ function addBulletLifeCycleComponents(config: { world: World; bullet: Entity }):
   const size = GAME_CONFIG.BULLET_SIZE
   world.addComponent(bullet, { type: "Render", shape: "circle", size, color: "#FFFF00", rotation: 0 })
   world.addComponent(bullet, { type: "Collider", radius: size })
-  world.addComponent(bullet, { type: "TTL", remaining: ttl })
+  world.addComponent(bullet, { type: "TTL", remaining: ttl, total: ttl }) // Improvement 1: Total TTL for alpha
   world.addComponent(bullet, { type: "Bullet" })
 }
 
@@ -213,6 +225,15 @@ function addBulletLifeCycleComponents(config: { world: World; bullet: Entity }):
 export function createGameState(config: { world: World }): Entity {
   const { world } = config
   const gameState = world.createEntity()
+
+  // Improvement 3: Star background
+  const stars: Star[] = Array.from({ length: GAME_CONFIG.STAR_COUNT }, () => ({
+    x: Math.random() * GAME_CONFIG.SCREEN_WIDTH,
+    y: Math.random() * GAME_CONFIG.SCREEN_HEIGHT,
+    size: Math.random() * 1.5 + 0.5,
+    brightness: Math.random() * 0.7 + 0.3,
+  }))
+
   world.addComponent(gameState, {
     type: "GameState",
     lives: GAME_CONFIG.SHIP_INITIAL_LIVES,
@@ -220,6 +241,8 @@ export function createGameState(config: { world: World }): Entity {
     level: 1,
     asteroidsRemaining: 0,
     isGameOver: false,
+    stars,
+    screenShake: null, // Improvement 4: Screen shake
   })
   return gameState
 }
@@ -250,7 +273,7 @@ export function spawnAsteroidWave(config: { world: World; count: number }): void
  * @returns The newly created {@link Entity}.
  */
 export function createParticle(options: CreateParticleParams): Entity {
-  const { world, x, y, dx, dy, color, ttl = 600 } = options
+  const { world, x, y, dx, dy, color, ttl = 600, size = 2 } = options
   const particle = world.createEntity()
 
   world.addComponent(particle, { type: "Position", x, y })
@@ -258,11 +281,11 @@ export function createParticle(options: CreateParticleParams): Entity {
   world.addComponent(particle, {
     type: "Render",
     shape: "particle",
-    size: 2,
+    size,
     color,
     rotation: 0,
   })
-  world.addComponent(particle, { type: "TTL", remaining: ttl })
+  world.addComponent(particle, { type: "TTL", remaining: ttl, total: ttl })
 
   return particle
 }

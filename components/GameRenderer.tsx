@@ -1,4 +1,4 @@
-import React, { useMemo, memo } from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import Svg, { Polygon, Circle, Line, Rect, G } from "react-native-svg";
 import type { World } from "../src/game/ecs-world";
@@ -8,6 +8,7 @@ import {
   type InputComponent,
   type HealthComponent,
   type TTLComponent,
+  type GameStateComponent,
   GAME_CONFIG,
 } from "../src/types/GameTypes";
 
@@ -31,9 +32,14 @@ export const GameRenderer = React.memo(function GameRenderer({ world }: GameRend
     [world.version]
   );
 
+  const gameStateEntity = world.query("GameState")[0];
+  const gameState = gameStateEntity
+    ? (world.getComponent<GameStateComponent>(gameStateEntity, "GameState") ?? null)
+    : null;
+
   return (
     <View style={styles.container}>
-      <WorldView world={world} renderables={renderables} />
+      <WorldView world={world} renderables={renderables} gameState={gameState} />
     </View>
   );
 });
@@ -41,20 +47,53 @@ export const GameRenderer = React.memo(function GameRenderer({ world }: GameRend
 interface WorldViewProps {
   world: World;
   renderables: number[];
+  gameState: GameStateComponent | null;
 }
 
-const WorldView: React.FC<WorldViewProps> = ({ world, renderables }) => (
-  <Svg
-    width={GAME_CONFIG.SCREEN_WIDTH}
-    height={GAME_CONFIG.SCREEN_HEIGHT}
-    viewBox={`0 0 ${GAME_CONFIG.SCREEN_WIDTH} ${GAME_CONFIG.SCREEN_HEIGHT}`}
-    style={styles.svg}
-  >
-    {renderables.map((entity) => (
-      <EntityRenderer key={entity} entity={entity} world={world} />
+const WorldView: React.FC<WorldViewProps> = ({ world, renderables, gameState }) => {
+  // Improvement 4: Screen shake
+  let transform = "";
+  if (gameState?.screenShake && gameState.screenShake.duration > 0) {
+    const { intensity } = gameState.screenShake;
+    const dx = (Math.random() - 0.5) * intensity;
+    const dy = (Math.random() - 0.5) * intensity;
+    transform = `translate(${dx}, ${dy})`;
+  }
+
+  return (
+    <Svg
+      width={GAME_CONFIG.SCREEN_WIDTH}
+      height={GAME_CONFIG.SCREEN_HEIGHT}
+      viewBox={`0 0 ${GAME_CONFIG.SCREEN_WIDTH} ${GAME_CONFIG.SCREEN_HEIGHT}`}
+      style={styles.svg}
+    >
+      <G transform={transform}>
+        {/* Improvement 3: Starry Background */}
+        {gameState?.stars && <StarBackground stars={gameState.stars} />}
+
+        {renderables.map((entity) => (
+          <EntityRenderer key={entity} entity={entity} world={world} />
+        ))}
+      </G>
+    </Svg>
+  );
+};
+
+const StarBackground: React.FC<{ stars: any[] }> = React.memo(({ stars }) => (
+  <>
+    {stars.map((star, i) => (
+      <Rect
+        key={i}
+        x={star.x}
+        y={star.y}
+        width={star.size}
+        height={star.size}
+        fill="white"
+        opacity={star.brightness}
+      />
     ))}
-  </Svg>
-);
+  </>
+));
 
 /**
  * Properties for the {@link EntityRenderer} component.
@@ -66,8 +105,6 @@ interface EntityRendererProps {
 
 /**
  * Component for rendering a single entity.
- * Note: Not memoized because it needs to pick up in-place mutations of components
- * on every frame.
  */
 const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world }) => {
   const pos = world.getComponent<PositionComponent>(entity, "Position");
@@ -91,6 +128,7 @@ const renderByShape = (params: {
   > = {
     triangle: renderShip,
     circle: renderCircleShape,
+    polygon: renderPolygonShape,
     line: renderLineShape,
     particle: renderParticleShape,
   };
@@ -134,32 +172,30 @@ const renderShip = (params: {
       color={render.color}
       hasThrust={input?.thrust ?? false}
       isInvulnerable={isInvulnerable}
+      trail={render.trailPositions}
     />
   );
 };
 
 const renderCircleShape = (params: {
-  entity: number;
-  world: World;
   pos: PositionComponent;
   render: RenderComponent;
 }) => {
-  const { entity, world, pos, render } = params;
-  const isAsteroid = world.hasComponent(entity, "Asteroid");
-  return isAsteroid
-    ? renderAsteroid({ pos, render })
-    : renderBullet({ pos, render });
+  const { pos, render } = params;
+  // Circles are now only for bullets since asteroids are polygons
+  return <BulletRenderer x={pos.x} y={pos.y} size={render.size} color={render.color} />;
 };
 
-const renderAsteroid = (params: {
+const renderPolygonShape = (params: {
   pos: PositionComponent;
   render: RenderComponent;
 }) => (
-  <AsteroidRenderer
+  <PolygonRenderer
     x={params.pos.x}
     y={params.pos.y}
-    size={params.render.size}
+    vertices={params.render.vertices || []}
     color={params.render.color}
+    rotation={params.render.rotation}
   />
 );
 
@@ -176,23 +212,11 @@ const renderParticleShape = (params: {
       x={pos.x}
       y={pos.y}
       size={render.size}
-      color={render.color}
-      opacity={ttl ? Math.min(ttl.remaining / 500, 0.8) : 0.8}
+      remaining={ttl?.remaining || 0}
+      total={ttl?.total || 1}
     />
   );
 };
-
-const renderBullet = (params: {
-  pos: PositionComponent;
-  render: RenderComponent;
-}) => (
-  <BulletRenderer
-    x={params.pos.x}
-    y={params.pos.y}
-    size={params.render.size}
-    color={params.render.color}
-  />
-);
 
 /**
  * Specialized renderer for the player ship.
@@ -205,7 +229,8 @@ const ShipRenderer: React.FC<{
   color: string;
   hasThrust: boolean;
   isInvulnerable: boolean;
-}> = ({ x, y, size, rotation, color, hasThrust, isInvulnerable }) => {
+  trail?: { x: number; y: number }[];
+}> = ({ x, y, size, rotation, color, hasThrust, isInvulnerable, trail }) => {
   const rotationDegrees = (rotation * 180) / Math.PI;
   const transform = `translate(${x}, ${y}) rotate(${rotationDegrees})`;
   const blinkOpacity = isInvulnerable
@@ -215,14 +240,34 @@ const ShipRenderer: React.FC<{
     : 1.0;
 
   return (
-    <G transform={transform} opacity={blinkOpacity}>
-      {hasThrust && <ShipThrusters size={size} />}
-      <ShipCore size={size} />
-      <ShipBody size={size} color={color} />
-      <ShipDetails size={size} />
-    </G>
+    <>
+      {/* Improvement 2: Ship Trail (drawn in world space) */}
+      {trail && <ShipTrail trail={trail} />}
+
+      <G transform={transform} opacity={blinkOpacity}>
+        {hasThrust && <ShipThrusters size={size} />}
+        <ShipCore size={size} />
+        <ShipBody size={size} color={color} />
+        <ShipDetails size={size} />
+      </G>
+    </>
   );
 };
+
+const ShipTrail: React.FC<{ trail: { x: number; y: number }[] }> = React.memo(({ trail }) => (
+  <>
+    {trail.map((p, i) => (
+      <Circle
+        key={i}
+        cx={p.x}
+        cy={p.y}
+        r={2}
+        fill="#00ffff"
+        opacity={(i / trail.length) * 0.4}
+      />
+    ))}
+  </>
+));
 
 const ShipThrusters: React.FC<{ size: number }> = ({ size }) => (
   <Polygon
@@ -302,24 +347,29 @@ const ShipStarboardLight: React.FC<{ size: number }> = ({ size }) => (
 );
 
 /**
- * Specialized renderer for asteroids.
+ * Specialized renderer for polygonal shapes (Asteroids).
  */
-const AsteroidRenderer: React.FC<{
+const PolygonRenderer: React.FC<{
   x: number;
   y: number;
-  size: number;
+  vertices: { x: number; y: number }[];
   color: string;
-}> = memo(({ x, y, size, color }) => (
-  <Circle
-    cx={x}
-    cy={y}
-    r={size}
-    fill="#999"
-    stroke={color}
-    strokeWidth="2"
-  />
-));
-AsteroidRenderer.displayName = "AsteroidRenderer";
+  rotation: number;
+}> = React.memo(({ x, y, vertices, color, rotation }) => {
+  const rotationDegrees = (rotation * 180) / Math.PI;
+  const transform = `translate(${x}, ${y}) rotate(${rotationDegrees})`;
+  const points = vertices.map(v => `${v.x},${v.y}`).join(" ");
+
+  return (
+    <Polygon
+      points={points}
+      fill="#333"
+      stroke={color}
+      strokeWidth="2"
+      transform={transform}
+    />
+  );
+});
 
 /**
  * Specialized renderer for bullets.
@@ -329,7 +379,7 @@ const BulletRenderer: React.FC<{
   y: number;
   size: number;
   color: string;
-}> = memo(({ x, y, size, color }) => (
+}> = React.memo(({ x, y, size, color }) => (
   <Circle
     cx={x}
     cy={y}
@@ -339,7 +389,6 @@ const BulletRenderer: React.FC<{
     strokeWidth="1"
   />
 ));
-BulletRenderer.displayName = "BulletRenderer";
 
 /**
  * Specialized renderer for particles.
@@ -348,12 +397,15 @@ const ParticleRenderer: React.FC<{
   x: number;
   y: number;
   size: number;
-  color: string;
-  opacity: number;
-}> = memo(({ x, y, size, color, opacity }) => (
-  <Circle cx={x} cy={y} r={size} fill={color} opacity={opacity} />
-));
-ParticleRenderer.displayName = "ParticleRenderer";
+  remaining: number;
+  total: number;
+}> = React.memo(({ x, y, size, remaining, total }) => {
+  const alpha = remaining / total;
+  // Improvement 1: HSL color and alpha
+  const fill = `hsl(${30 + Math.random() * 20}, 100%, ${50 + alpha * 30}%)`;
+
+  return <Circle cx={x} cy={y} r={size} fill={fill} opacity={alpha} />;
+});
 
 /**
  * Specialized renderer for line shapes.
@@ -364,7 +416,7 @@ const LineRenderer: React.FC<{
   size: number;
   rotation: number;
   color: string;
-}> = memo(({ x, y, size, rotation, color }) => {
+}> = React.memo(({ x, y, size, rotation, color }) => {
   const rotationDegrees = (rotation * 180) / Math.PI;
   const transform = `translate(${x}, ${y}) rotate(${rotationDegrees})`;
   return (
@@ -379,7 +431,6 @@ const LineRenderer: React.FC<{
     />
   );
 });
-LineRenderer.displayName = "LineRenderer";
 
 const styles = StyleSheet.create({
   container: {
