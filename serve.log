@@ -1,14 +1,1 @@
-npm warn exec The following package was not found and will be installed: serve@14.2.6
- INFO  Accepting connections at http://localhost:8081
- HTTP  3/20/2026 12:57:42 PM ::1 GET /
- HTTP  3/20/2026 12:57:42 PM ::1 Returned 200 in 59 ms
- HTTP  3/20/2026 12:57:42 PM ::1 GET /_expo/static/css/globals-2646728d3609d30d08e1d55469f49488.css
- HTTP  3/20/2026 12:57:42 PM ::1 GET /_expo/static/js/web/entry-5ccce9e8a7a1b4a9b3dbecfa768c1efa.js
- HTTP  3/20/2026 12:57:42 PM ::1 Returned 200 in 4 ms
- HTTP  3/20/2026 12:57:42 PM ::1 Returned 200 in 10 ms
- HTTP  3/20/2026 12:58:50 PM ::1 GET /
- HTTP  3/20/2026 12:58:50 PM ::1 Returned 200 in 2 ms
- HTTP  3/20/2026 12:58:50 PM ::1 GET /_expo/static/css/globals-2646728d3609d30d08e1d55469f49488.css
- HTTP  3/20/2026 12:58:50 PM ::1 Returned 200 in 2 ms
- HTTP  3/20/2026 12:58:50 PM ::1 GET /_expo/static/js/web/entry-5ccce9e8a7a1b4a9b3dbecfa768c1efa.js
- HTTP  3/20/2026 12:58:50 PM ::1 Returned 200 in 1 ms
+ INFO  Accepting connections at http://localhost:33735

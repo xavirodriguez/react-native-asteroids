@@ -148,7 +148,8 @@ export class CollisionSystem extends System {
     const { world, asteroid, bullet } = context;
     const pos = world.getComponent<PositionComponent>(asteroid, "Position");
     if (pos) {
-      this.spawnExplosionParticles(world, pos, 8);
+      const particleCount = 20 + Math.floor(Math.random() * 21);
+      this.spawnExplosionParticles(world, pos, particleCount);
     }
     this.splitAsteroid({ world, asteroidEntity: asteroid });
     world.removeEntity(bullet);
@@ -156,15 +157,17 @@ export class CollisionSystem extends System {
   }
 
   private spawnExplosionParticles(world: World, pos: PositionComponent, count: number): void {
+    const colors = ["#FF4400", "#FF8800", "#FFCC00", "#FFFFFF"];
     for (let i = 0; i < count; i++) {
+      const color = colors[Math.floor(Math.random() * colors.length)];
       createParticle({
         world,
         x: pos.x,
         y: pos.y,
-        dx: (Math.random() - 0.5) * 160, // [-80, 80]
-        dy: (Math.random() - 0.5) * 160, // [-80, 80]
-        color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
-        ttl: 500,
+        dx: (Math.random() - 0.5) * 200,
+        dy: (Math.random() - 0.5) * 200,
+        color,
+        ttl: 400 + Math.random() * 400,
       });
     }
   }
