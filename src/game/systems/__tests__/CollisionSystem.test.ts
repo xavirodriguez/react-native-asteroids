@@ -1,6 +1,6 @@
 import { World } from "../../ecs-world";
 import { CollisionSystem } from "../CollisionSystem";
-import { GAME_CONFIG, type HealthComponent } from "../../../types/GameTypes";
+import { GAME_CONFIG, type HealthComponent, type GameStateComponent } from "../../../types/GameTypes";
 
 describe("CollisionSystem", () => {
   let world: World;
@@ -82,7 +82,7 @@ describe("CollisionSystem", () => {
     const asteroids = world.query("Asteroid");
     expect(asteroids.length).toBe(2);
 
-    const gameState = world.getComponent<any>(gs, "GameState");
+    const gameState = world.getComponent<GameStateComponent>(gs, "GameState")!;
     expect(gameState.score).toBe(GAME_CONFIG.ASTEROID_SCORE);
   });
 
