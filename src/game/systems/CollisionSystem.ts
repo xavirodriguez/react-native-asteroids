@@ -177,7 +177,7 @@ export class CollisionSystem extends System {
     const health = world.getComponent<HealthComponent>(shipEntity, "Health");
 
     if (this.canShipTakeDamage(health)) {
-      this.applyDamageToShip(health);
+      this.applyDamageToShip(world, health);
     }
   }
 
@@ -185,9 +185,16 @@ export class CollisionSystem extends System {
     return !!health && health.invulnerableRemaining <= 0;
   }
 
-  private applyDamageToShip(health: HealthComponent): void {
+  private applyDamageToShip(world: World, health: HealthComponent): void {
     health.current--;
     health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+
+    // Improvement 4: Screen shake upon collision
+    const gameState = getGameState(world);
+    gameState.screenShake = {
+        intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,
+        duration: GAME_CONFIG.SHAKE_DURATION_IMPACT,
+    };
 
     if (health.current <= 0) {
       hapticDeath();

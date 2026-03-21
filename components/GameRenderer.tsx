@@ -8,6 +8,7 @@ import {
   type InputComponent,
   type HealthComponent,
   type VelocityComponent,
+  type GameStateComponent,
   GAME_CONFIG,
 } from "../src/types/GameTypes";
 import { ParticleSystem } from "./ParticleSystem";
@@ -31,18 +32,47 @@ export const GameRenderer = React.memo(function GameRenderer({ world }: GameRend
     [world.version]
   );
 
+  const gameStateEntity = world.query("GameState")[0];
+  const gameState = gameStateEntity
+    ? (world.getComponent<GameStateComponent>(gameStateEntity, "GameState") ?? null)
+    : null;
+
   return (
     <View style={styles.container}>
-      <Canvas style={styles.canvas}>
+      <WorldView world={world} renderables={renderables} gameState={gameState} />
+    </View>
+  );
+});
+
+interface WorldViewProps {
+  world: World;
+  renderables: number[];
+  gameState: GameStateComponent | null;
+}
+
+const WorldView: React.FC<WorldViewProps> = ({ world, renderables, gameState }) => {
+  const shakeTransform = useMemo(() => {
+    if (gameState?.screenShake && gameState.screenShake.duration > 0) {
+      const { intensity } = gameState.screenShake;
+      const dx = (Math.random() - 0.5) * intensity;
+      const dy = (Math.random() - 0.5) * intensity;
+      return [{ translateX: dx }, { translateY: dy }];
+    }
+    return [];
+  }, [gameState?.screenShake]);
+
+  return (
+    <Canvas style={styles.canvas}>
+      <Group transform={shakeTransform}>
         <Starfield world={world} />
         {renderables.map((entity) => (
           <EntityRenderer key={entity} entity={entity} world={world} />
         ))}
         <ParticleSystem world={world} />
-      </Canvas>
-    </View>
+      </Group>
+    </Canvas>
   );
-});
+};
 
 interface EntityRendererProps {
   entity: number;
@@ -62,6 +92,7 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world }) => {
     case "triangle":
       return <ShipRenderer entity={entity} world={world} pos={pos} render={render} />;
     case "circle":
+    case "polygon":
       return <CircleRenderer entity={entity} world={world} pos={pos} render={render} />;
     case "line":
       return <LineRenderer pos={pos} render={render} />;
@@ -186,7 +217,6 @@ const BulletRenderer: React.FC<{
 }> = ({ entity, world, pos, render }) => {
   const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
   const trailSegments = 3;
-  const trailLength = 10;
 
   return (
     <Group>
