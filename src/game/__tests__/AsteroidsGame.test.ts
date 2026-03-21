@@ -17,6 +17,17 @@ describe("NullAsteroidsGame", () => {
     expect(typeof unsubscribe).toBe("function");
     expect(() => unsubscribe()).not.toThrow();
   });
+
+  it("can call other methods without side effects", () => {
+    const game = new NullAsteroidsGame();
+    expect(() => {
+      game.pause();
+      game.resume();
+      game.restart();
+      game.setInput({ thrust: true });
+      game.destroy();
+    }).not.toThrow();
+  });
 });
 
 describe("AsteroidsGame", () => {
@@ -84,5 +95,44 @@ describe("AsteroidsGame", () => {
 
   it("destroy() does not throw errors", () => {
     expect(() => game.destroy()).not.toThrow();
+  });
+
+  it("stop() stops the game loop and updates isRunning", () => {
+    const cancelSpy = jest.spyOn(global, 'cancelAnimationFrame');
+    // Mock gameLoopId so stop() has something to cancel
+    (game as unknown as { loopState: { gameLoopId: number } }).loopState.gameLoopId = 123;
+    game.stop();
+    expect(cancelSpy).toHaveBeenCalledWith(123);
+  });
+
+  it("setInput() guards against input when paused", () => {
+    game.start();
+    game.pause();
+    const world = game.getWorld();
+    const ship = world.query("Ship", "Input")[0];
+    const input = world.getComponent<import("../../types/GameTypes").InputComponent>(ship, "Input")!;
+
+    game.setInput({ thrust: true });
+    // Update world to propagate input state to components
+    world.update(16);
+    expect(input.thrust).toBe(false);
+
+    game.resume();
+    game.setInput({ thrust: true });
+    world.update(16);
+    expect(input.thrust).toBe(true);
+  });
+
+  it("handles keyboard events", () => {
+    const pauseSpy = jest.spyOn(game, 'pause');
+    const restartSpy = jest.spyOn(game, 'restart');
+
+    const pauseEvent = { code: 'KeyP' } as KeyboardEvent;
+    (game as unknown as { handleGlobalKeyDown: (e: KeyboardEvent) => void }).handleGlobalKeyDown(pauseEvent);
+    expect(pauseSpy).toHaveBeenCalled();
+
+    const restartEvent = { code: 'KeyR' } as KeyboardEvent;
+    (game as unknown as { handleGlobalKeyDown: (e: KeyboardEvent) => void }).handleGlobalKeyDown(restartEvent);
+    expect(restartSpy).toHaveBeenCalled();
   });
 });

@@ -3,7 +3,6 @@ import { MovementSystem } from "./systems/MovementSystem"
 import { InputSystem } from "./systems/InputSystem"
 import { CollisionSystem } from "./systems/CollisionSystem"
 import { TTLSystem } from "./systems/TTLSystem"
-import { GameStateSystem } from "./systems/GameStateSystem"
 import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory"
 import {
   type GameStateComponent,
@@ -12,8 +11,8 @@ import {
 } from "../types/GameTypes"
 import { getGameState } from "./GameUtils"
 import { INITIAL_GAME_STATE } from "../types/GameTypes"
-import { type IAsteroidsGame, type UpdateListener } from "./types/GameInterfaces"
-import { logger } from "../utils/logger"
+import { type IAsteroidsGame, type UpdateListener, type IGameStateSystem } from "./types/GameInterfaces"
+import { GameStateSystem } from "./systems/GameStateSystem"
 
 /**
  * Main controller for the Asteroids game.
@@ -54,7 +53,7 @@ export class NullAsteroidsGame implements IAsteroidsGame {
 export class AsteroidsGame implements IAsteroidsGame {
   private world: World;
   private inputSystem!: InputSystem;
-  private gameStateSystem!: GameStateSystem;
+  private gameStateSystem!: IGameStateSystem;
   private loopState = {
     isRunning: false,
     isPaused: false,
@@ -167,7 +166,7 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private notifyStatusChange(status: string): void {
-    logger.log(`Game state changed: ${status}`);
+    void status;
     this.notifyListeners();
   }
 

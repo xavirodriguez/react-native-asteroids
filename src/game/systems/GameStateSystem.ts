@@ -3,12 +3,12 @@ import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../.
 import { spawnAsteroidWave } from "../EntityFactory"
 import type { IAsteroidsGame } from "../types/GameInterfaces"
 import { getGameState } from "../GameUtils"
-import { logger } from "../../utils/logger"
+import { type IGameStateSystem } from "../types/GameInterfaces"
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.
  */
-export class GameStateSystem extends System {
+export class GameStateSystem extends System implements IGameStateSystem {
   private gameOverLogged = false;
   private gameInstance: IAsteroidsGame | undefined;
 
@@ -34,7 +34,6 @@ export class GameStateSystem extends System {
   }
 
   public resetGameOverState(): void {
-    logger.log("Resetting game over state flag");
     this.gameOverLogged = false;
   }
 
@@ -94,8 +93,8 @@ export class GameStateSystem extends System {
   }
 
   private handleGameOverOnce(gameState: GameStateComponent): void {
+    void gameState;
     if (!this.gameOverLogged) {
-      logger.log(`Game Over! Final Score: ${gameState.score}`);
       this.gameOverLogged = true;
       this.gameInstance?.pause();
     }

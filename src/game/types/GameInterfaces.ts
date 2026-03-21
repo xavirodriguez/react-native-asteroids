@@ -21,3 +21,11 @@ export interface IAsteroidsGame {
   subscribe(listener: UpdateListener): () => void;
   destroy(): void;
 }
+
+/**
+ * Interface defining the public API for the Game State System.
+ */
+export interface IGameStateSystem {
+  isGameOver(): boolean;
+  resetGameOverState(): void;
+}
