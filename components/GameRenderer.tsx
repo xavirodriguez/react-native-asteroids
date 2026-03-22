@@ -9,6 +9,7 @@ import {
   type HealthComponent,
   type VelocityComponent,
   type GameStateComponent,
+  type Star,
   GAME_CONFIG,
 } from "../src/types/GameTypes";
 import { ParticleSystem } from "./ParticleSystem";
@@ -43,6 +44,7 @@ export const GameRenderer = React.memo(function GameRenderer({ world }: GameRend
     </View>
   );
 });
+GameRenderer.displayName = "GameRenderer";
 
 interface WorldViewProps {
   world: World;
@@ -73,6 +75,7 @@ const WorldView: React.FC<WorldViewProps> = ({ world, renderables, gameState }) 
     </Canvas>
   );
 };
+WorldView.displayName = "WorldView";
 
 interface EntityRendererProps {
   entity: number;
@@ -100,6 +103,7 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world }) => {
       return null;
   }
 };
+EntityRenderer.displayName = "EntityRenderer";
 
 const ShipRenderer: React.FC<{
   entity: number;
@@ -163,6 +167,7 @@ const ShipRenderer: React.FC<{
     </Group>
   );
 };
+ShipRenderer.displayName = "ShipRenderer";
 
 const CircleRenderer: React.FC<{
   entity: number;
@@ -176,6 +181,7 @@ const CircleRenderer: React.FC<{
   }
   return <BulletRenderer entity={entity} world={world} pos={pos} render={render} />;
 };
+CircleRenderer.displayName = "CircleRenderer";
 
 const AsteroidRenderer: React.FC<{
   entity: number;
@@ -208,6 +214,7 @@ const AsteroidRenderer: React.FC<{
     </Group>
   );
 };
+AsteroidRenderer.displayName = "AsteroidRenderer";
 
 const BulletRenderer: React.FC<{
   entity: number;
@@ -241,6 +248,7 @@ const BulletRenderer: React.FC<{
     </Group>
   );
 };
+BulletRenderer.displayName = "BulletRenderer";
 
 const LineRenderer: React.FC<{
   pos: PositionComponent;
@@ -266,6 +274,7 @@ const LineRenderer: React.FC<{
     </Group>
   );
 };
+LineRenderer.displayName = "LineRenderer";
 
 const styles = StyleSheet.create({
   container: {

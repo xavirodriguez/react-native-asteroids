@@ -309,5 +309,5 @@ export const GAME_CONFIG = {
   SHAKE_DURATION_IMPACT: 15,
 
   /** Ship trail settings */
-  TRAIL_MAX_LENGTH: 10,
+  TRAIL_MAX_LENGTH: 12,
 }
