@@ -1,4 +1,5 @@
-import { System, World } from "../../../engine/core/World"
+import { System } from "../../../engine/core/System";
+import { World } from "../../../engine/core/World";
 import {
   type PositionComponent,
   type ColliderComponent,
@@ -7,11 +8,11 @@ import {
   type Entity,
   type ComponentType,
   GAME_CONFIG,
-} from "../../types/GameTypes"
+} from "../../../types/GameTypes";
 
-import { createAsteroid, createParticle, createExplosion } from "../../asteroids/EntityFactory"
-import { getGameState } from "../../../game/GameUtils"
-import { hapticDamage, hapticDeath } from "../../../utils/haptics"
+import { createAsteroid, createParticle } from "../EntityFactory";
+import { getGameState } from "../../../game/GameUtils";
+import { hapticDamage, hapticDeath } from "../../../utils/haptics";
 
 const ASTEROID_SPLIT_CONFIG: Record<
   AsteroidComponent["size"],
@@ -25,12 +26,12 @@ const ASTEROID_SPLIT_CONFIG: Record<
 /**
  * System responsible for detecting and resolving collisions between entities.
  */
-export class CollisionSystem extends System {
+export class AsteroidCollisionSystem extends System {
   /**
    * Updates the collision state for all relevant entities.
    */
   public update(world: World, deltaTime: number): void {
-    void deltaTime
+    void deltaTime;
     const colliders = world.query("Position", "Collider");
     const hasEnoughColliders = colliders.length >= 2;
     if (hasEnoughColliders) {
@@ -46,10 +47,10 @@ export class CollisionSystem extends System {
   }
 
   private checkEntityCollisions(context: {
-    world: World
-    entityA: Entity
-    colliders: Entity[]
-    startIndex: number
+    world: World;
+    entityA: Entity;
+    colliders: Entity[];
+    startIndex: number;
   }): void {
     const { world, entityA, colliders, startIndex } = context;
     for (let j = startIndex; j < colliders.length; j++) {
@@ -97,8 +98,8 @@ export class CollisionSystem extends System {
   }
 
   private handleBulletAsteroidPair(context: {
-    world: World
-    pair: { entityA: Entity; entityB: Entity }
+    world: World;
+    pair: { entityA: Entity; entityB: Entity };
   }): boolean {
     const { world, pair } = context;
     const match = this.matchPair({ world, pair, type1: "Bullet", type2: "Asteroid" });
@@ -115,8 +116,8 @@ export class CollisionSystem extends System {
   }
 
   private handleShipAsteroidPair(context: {
-    world: World
-    pair: { entityA: Entity; entityB: Entity }
+    world: World;
+    pair: { entityA: Entity; entityB: Entity };
   }): void {
     const { world, pair } = context;
     const match = this.matchPair({ world, pair, type1: "Ship", type2: "Asteroid" });
@@ -127,24 +128,28 @@ export class CollisionSystem extends System {
   }
 
   private matchPair<T1 extends ComponentType, T2 extends ComponentType>(config: {
-    world: World
-    pair: { entityA: Entity; entityB: Entity }
-    type1: T1
-    type2: T2
+    world: World;
+    pair: { entityA: Entity; entityB: Entity };
+    type1: T1;
+    type2: T2;
   }): Record<T1 | T2, Entity> | undefined {
-    const { world, pair, type1, type2 } = config
-    const { entityA, entityB } = pair
+    const { world, pair, type1, type2 } = config;
+    const { entityA, entityB } = pair;
 
     if (world.hasComponent(entityA, type1) && world.hasComponent(entityB, type2)) {
-      return { [type1]: entityA, [type2]: entityB } as Record<T1 | T2, Entity>
+      return { [type1]: entityA, [type2]: entityB } as Record<T1 | T2, Entity>;
     }
     if (world.hasComponent(entityB, type1) && world.hasComponent(entityA, type2)) {
-      return { [type1]: entityB, [type2]: entityA } as Record<T1 | T2, Entity>
+      return { [type1]: entityB, [type2]: entityA } as Record<T1 | T2, Entity>;
     }
-    return undefined
+    return undefined;
   }
 
-  private handleBulletAsteroidCollision(context: { world: World; asteroid: Entity; bullet: Entity }): void {
+  private handleBulletAsteroidCollision(context: {
+    world: World;
+    asteroid: Entity;
+    bullet: Entity;
+  }): void {
     const { world, asteroid, bullet } = context;
     const pos = world.getComponent<PositionComponent>(asteroid, "Position");
     if (pos) {
@@ -189,8 +194,8 @@ export class CollisionSystem extends System {
     // Improvement 4: Screen shake upon collision
     const gameState = getGameState(world);
     gameState.screenShake = {
-        intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,
-        duration: GAME_CONFIG.SHAKE_DURATION_IMPACT,
+      intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,
+      duration: GAME_CONFIG.SHAKE_DURATION_IMPACT,
     };
 
     if (health.current <= 0) {
@@ -212,9 +217,9 @@ export class CollisionSystem extends System {
   }
 
   private executeSplitStrategy(splitParams: {
-    world: World
-    pos: PositionComponent
-    size: AsteroidComponent["size"]
+    world: World;
+    pos: PositionComponent;
+    size: AsteroidComponent["size"];
   }): void {
     const { world, pos, size } = splitParams;
     const config = ASTEROID_SPLIT_CONFIG[size];
@@ -225,12 +230,12 @@ export class CollisionSystem extends System {
   }
 
   private spawnSplit(spawnConfig: {
-    world: World
-    pos: PositionComponent
-    size: "medium" | "small"
-    offset: number
+    world: World;
+    pos: PositionComponent;
+    size: "medium" | "small";
+    offset: number;
   }): void {
-    const { world, pos, size, offset } = spawnConfig
+    const { world, pos, size, offset } = spawnConfig;
     createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size });
     createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size });
   }
