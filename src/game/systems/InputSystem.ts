@@ -7,7 +7,7 @@ import {
   type InputState,
   GAME_CONFIG,
 } from "../../types/GameTypes"
-import { createBullet } from "../EntityFactory"
+import { createBullet, createParticle } from "../EntityFactory"
 import { hapticShoot } from "../../utils/haptics"
 
 /**
@@ -88,7 +88,7 @@ export class InputSystem extends System {
     const pos = world.getComponent<PositionComponent>(entity, "Position")
 
     if (vel && render && pos) {
-      this.applyShipMovement({ vel, render, input, deltaTime })
+      this.applyShipMovement({ world, pos, vel, render, input, deltaTime })
       this.handleShipShooting({ world, pos, render, input })
     }
   }
@@ -140,16 +140,18 @@ export class InputSystem extends System {
   }
 
   private applyShipMovement(context: {
+    world: World
+    pos: PositionComponent
     vel: VelocityComponent
     render: RenderComponent
     input: InputComponent
     deltaTime: number
   }): void {
-    const { vel, render, input, deltaTime } = context
+    const { world, pos, vel, render, input, deltaTime } = context
     const dt = deltaTime / 1000
 
     this.applyRotation({ render, input, dt })
-    this.applyThrust({ vel, render, input, dt })
+    this.applyThrust({ world, pos, vel, render, input, dt })
     this.applyFriction(vel, deltaTime)
   }
 
@@ -160,16 +162,38 @@ export class InputSystem extends System {
   }
 
   private applyThrust(context: {
+    world: World
+    pos: PositionComponent
     vel: VelocityComponent
     render: RenderComponent
     input: InputComponent
     dt: number
   }): void {
-    const { vel, render, input, dt } = context
+    const { world, pos, vel, render, input, dt } = context
     if (input.thrust) {
       vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt
       vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt
+      this.emitThrustParticles({ world, pos, render })
     }
+  }
+
+  private emitThrustParticles(context: {
+    world: World
+    pos: PositionComponent
+    render: RenderComponent
+  }): void {
+    const { world, pos, render } = context
+    const angle = render.rotation + Math.PI + (Math.random() - 0.5) * 0.5
+    const speed = 50 + Math.random() * 50
+    createParticle({
+      world,
+      x: pos.x - Math.cos(render.rotation) * render.size,
+      y: pos.y - Math.sin(render.rotation) * render.size,
+      dx: Math.cos(angle) * speed,
+      dy: Math.sin(angle) * speed,
+      color: Math.random() > 0.5 ? "#FF6600" : "#FFCC00",
+      ttl: 200 + Math.random() * 300,
+    })
   }
 
   private applyFriction(vel: VelocityComponent, deltaTime: number): void {
