@@ -14,6 +14,8 @@ import { getGameState } from "./GameUtils"
 import { INITIAL_GAME_STATE } from "../types/GameTypes"
 import { type IAsteroidsGame, type UpdateListener, type IGameStateSystem } from "./types/GameInterfaces"
 import { GameStateSystem } from "./systems/GameStateSystem"
+import { InputManager } from "../engine/input/InputManager"
+import { KeyboardController, TouchController } from "../engine/input/InputController"
 
 /**
  * Main controller for the Asteroids game.
@@ -58,6 +60,7 @@ export class NullAsteroidsGame implements IAsteroidsGame {
 export class AsteroidsGame implements IAsteroidsGame {
   private world: World;
   private inputSystem!: InputSystem;
+  private inputManager!: InputManager;
   private gameStateSystem!: IGameStateSystem;
   private renderSystem!: RenderSystem;
   private loopState = {
@@ -157,7 +160,7 @@ export class AsteroidsGame implements IAsteroidsGame {
 
   public destroy(): void {
     this.stop();
-    this.inputSystem.cleanup();
+    this.inputManager.cleanup();
     this.unregisterGlobalKeyboardListeners();
     this.listeners.clear();
   }
@@ -186,7 +189,11 @@ export class AsteroidsGame implements IAsteroidsGame {
   }
 
   private createSystems(): void {
-    this.inputSystem = new InputSystem();
+    this.inputManager = new InputManager();
+    this.inputManager.addController(new KeyboardController());
+    this.inputManager.addController(new TouchController());
+
+    this.inputSystem = new InputSystem(this.inputManager);
     this.gameStateSystem = new GameStateSystem(this);
     this.renderSystem = new RenderSystem();
   }

@@ -10,43 +10,33 @@ import {
 } from "../../../types/GameTypes";
 import { createBullet } from "../EntityFactory";
 import { hapticShoot } from "../../../utils/haptics";
+import { InputManager } from "../../../engine/input/InputManager";
 
 /**
  * System responsible for processing user input and applying it to the ship's state.
+ *
+ * @remarks
+ * This system decouples input collection (via {@link InputManager}) from the
+ * application of that input to game entities.
  */
 export class AsteroidInputSystem extends System {
-  /** Set of currently pressed keys (for web/keyboard). */
-  private activeKeyCodes: Set<string> = new Set();
-  private keyDownListener = (e: KeyboardEvent) => this.activateKey(e.code);
-  private keyUpListener = (e: KeyboardEvent) => this.deactivateKey(e.code);
-
   /**
-   * Creates a new InputSystem and sets up keyboard listeners if in a browser environment.
+   * Creates a new AsteroidInputSystem.
+   *
+   * @param inputManager - The centralized input manager to poll for state.
    */
-  constructor() {
+  constructor(private inputManager: InputManager) {
     super();
-    this.registerKeyboardListeners();
-  }
-
-  /**
-   * Cleans up event listeners when the system is no longer needed.
-   */
-  public cleanup(): void {
-    const isBrowser =
-      typeof window !== "undefined" && typeof window.removeEventListener === "function";
-    if (isBrowser) {
-      window.removeEventListener("keydown", this.keyDownListener);
-      window.removeEventListener("keyup", this.keyUpListener);
-    }
   }
 
   /**
    * Manually sets the input state. Useful for mobile touch controls.
+   * Proxies to the underlying {@link InputManager}.
    *
    * @param input - The new input state.
    */
   public setInput(input: Partial<InputState>): void {
-    this.syncAllInputs(input);
+    this.inputManager.setInputs(input);
   }
 
   /**
@@ -91,40 +81,6 @@ export class AsteroidInputSystem extends System {
     }
   }
 
-  private syncAllInputs(input: Partial<InputState>): void {
-    this.syncAction(GAME_CONFIG.KEYS.THRUST, input.thrust);
-    this.syncAction(GAME_CONFIG.KEYS.ROTATE_LEFT, input.rotateLeft);
-    this.syncAction(GAME_CONFIG.KEYS.ROTATE_RIGHT, input.rotateRight);
-    this.syncAction(GAME_CONFIG.KEYS.SHOOT, input.shoot);
-  }
-
-  private syncAction(keyCode: string, isActive: boolean | undefined): void {
-    if (isActive === undefined) return;
-
-    if (isActive) {
-      this.activateKey(keyCode);
-    } else {
-      this.deactivateKey(keyCode);
-    }
-  }
-
-  private registerKeyboardListeners(): void {
-    const isBrowser =
-      typeof window !== "undefined" && typeof window.addEventListener === "function";
-    if (isBrowser) {
-      window.addEventListener("keydown", this.keyDownListener);
-      window.addEventListener("keyup", this.keyUpListener);
-    }
-  }
-
-  private activateKey(keyCode: string): void {
-    this.activeKeyCodes.add(keyCode);
-  }
-
-  private deactivateKey(keyCode: string): void {
-    this.activeKeyCodes.delete(keyCode);
-  }
-
   private updateShootingCooldown(input: InputComponent, deltaTime: number): void {
     if (input.shootCooldownRemaining > 0) {
       input.shootCooldownRemaining -= deltaTime;
@@ -132,10 +88,11 @@ export class AsteroidInputSystem extends System {
   }
 
   private updateShipInputState(input: InputComponent): void {
-    input.thrust = this.activeKeyCodes.has(GAME_CONFIG.KEYS.THRUST);
-    input.rotateLeft = this.activeKeyCodes.has(GAME_CONFIG.KEYS.ROTATE_LEFT);
-    input.rotateRight = this.activeKeyCodes.has(GAME_CONFIG.KEYS.ROTATE_RIGHT);
-    input.shoot = this.activeKeyCodes.has(GAME_CONFIG.KEYS.SHOOT);
+    const currentInputs = this.inputManager.getCombinedInputs();
+    input.thrust = currentInputs.thrust;
+    input.rotateLeft = currentInputs.rotateLeft;
+    input.rotateRight = currentInputs.rotateRight;
+    input.shoot = currentInputs.shoot;
   }
 
   private applyShipMovement(context: {

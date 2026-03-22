@@ -1,4 +1,4 @@
-import { GAME_CONFIG, type InputState } from "../types/GameTypes";
+import { GAME_CONFIG, type InputState } from "../../types/GameTypes";
 
 /**
  * Abstract base class for handling user inputs.
@@ -34,6 +34,15 @@ export abstract class InputController {
   getCurrentInputs(): Readonly<InputState> {
     return { ...this.inputs };
   }
+
+  /**
+   * Manually updates the input state.
+   *
+   * @param inputs - Partial set of {@link InputState} to update.
+   */
+  setInputs(inputs: Partial<InputState>): void {
+    this.inputs = { ...this.inputs, ...inputs };
+  }
 }
 
 /**
@@ -47,7 +56,7 @@ export class KeyboardController extends InputController {
    * Attaches keydown and keyup listeners to the global window object.
    */
   setup(): void {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || typeof window.addEventListener !== "function") return;
     
     window.addEventListener("keydown", this.handleKeyDown);
     window.addEventListener("keyup", this.handleKeyUp);
@@ -57,7 +66,7 @@ export class KeyboardController extends InputController {
    * Removes keyboard event listeners from the global window object.
    */
   cleanup(): void {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || typeof window.removeEventListener !== "function") return;
     
     window.removeEventListener("keydown", this.handleKeyDown);
     window.removeEventListener("keyup", this.handleKeyUp);
@@ -115,14 +124,5 @@ export class TouchController extends InputController {
    */
   cleanup(): void {
     // No cleanup needed
-  }
-
-  /**
-   * Manually updates the input state.
-   *
-   * @param inputs - Partial set of {@link InputState} to update.
-   */
-  setInputs(inputs: Partial<InputState>): void {
-    this.inputs = { ...this.inputs, ...inputs };
   }
 }
