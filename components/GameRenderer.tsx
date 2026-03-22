@@ -9,6 +9,7 @@ import {
   type HealthComponent,
   type TTLComponent,
   type GameStateComponent,
+  type Star,
   GAME_CONFIG,
 } from "../src/types/GameTypes";
 
@@ -43,6 +44,7 @@ export const GameRenderer = React.memo(function GameRenderer({ world }: GameRend
     </View>
   );
 });
+GameRenderer.displayName = "GameRenderer";
 
 interface WorldViewProps {
   world: World;
@@ -78,8 +80,9 @@ const WorldView: React.FC<WorldViewProps> = ({ world, renderables, gameState }) 
     </Svg>
   );
 };
+WorldView.displayName = "WorldView";
 
-const StarBackground: React.FC<{ stars: any[] }> = React.memo(({ stars }) => (
+const StarBackground: React.FC<{ stars: Star[] }> = React.memo(({ stars }) => (
   <>
     {stars.map((star, i) => (
       <Rect
@@ -94,6 +97,7 @@ const StarBackground: React.FC<{ stars: any[] }> = React.memo(({ stars }) => (
     ))}
   </>
 ));
+StarBackground.displayName = "StarBackground";
 
 /**
  * Properties for the {@link EntityRenderer} component.
@@ -114,6 +118,7 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world }) => {
 
   return renderByShape({ entity, world, pos, render });
 };
+EntityRenderer.displayName = "EntityRenderer";
 
 const renderByShape = (params: {
   entity: number;
@@ -253,6 +258,7 @@ const ShipRenderer: React.FC<{
     </>
   );
 };
+ShipRenderer.displayName = "ShipRenderer";
 
 const ShipTrail: React.FC<{ trail: { x: number; y: number }[] }> = React.memo(({ trail }) => (
   <>
@@ -268,6 +274,7 @@ const ShipTrail: React.FC<{ trail: { x: number; y: number }[] }> = React.memo(({
     ))}
   </>
 ));
+ShipTrail.displayName = "ShipTrail";
 
 const ShipThrusters: React.FC<{ size: number }> = ({ size }) => (
   <Polygon
@@ -278,6 +285,7 @@ const ShipThrusters: React.FC<{ size: number }> = ({ size }) => (
     opacity="0.8"
   />
 );
+ShipThrusters.displayName = "ShipThrusters";
 
 const ShipCore: React.FC<{ size: number }> = ({ size }) => {
   const time = Date.now() * 0.005;
@@ -292,6 +300,7 @@ const ShipCore: React.FC<{ size: number }> = ({ size }) => {
     />
   );
 };
+ShipCore.displayName = "ShipCore";
 
 const ShipBody: React.FC<{ size: number; color: string }> = ({ size, color }) => (
   <Polygon
@@ -301,6 +310,7 @@ const ShipBody: React.FC<{ size: number; color: string }> = ({ size, color }) =>
     strokeWidth="1"
   />
 );
+ShipBody.displayName = "ShipBody";
 
 const ShipDetails: React.FC<{ size: number }> = ({ size }) => (
   <G opacity={0.8}>
@@ -308,6 +318,7 @@ const ShipDetails: React.FC<{ size: number }> = ({ size }) => (
     <ShipLights size={size} />
   </G>
 );
+ShipDetails.displayName = "ShipDetails";
 
 const ShipWindow: React.FC<{ size: number }> = ({ size }) => (
   <Rect
@@ -318,6 +329,7 @@ const ShipWindow: React.FC<{ size: number }> = ({ size }) => (
     fill="#666666"
   />
 );
+ShipWindow.displayName = "ShipWindow";
 
 const ShipLights: React.FC<{ size: number }> = ({ size }) => (
   <>
@@ -325,6 +337,7 @@ const ShipLights: React.FC<{ size: number }> = ({ size }) => (
     <ShipStarboardLight size={size} />
   </>
 );
+ShipLights.displayName = "ShipLights";
 
 const ShipPortLight: React.FC<{ size: number }> = ({ size }) => (
   <Rect
@@ -335,6 +348,7 @@ const ShipPortLight: React.FC<{ size: number }> = ({ size }) => (
     fill="#FF0000"
   />
 );
+ShipPortLight.displayName = "ShipPortLight";
 
 const ShipStarboardLight: React.FC<{ size: number }> = ({ size }) => (
   <Rect
@@ -345,6 +359,7 @@ const ShipStarboardLight: React.FC<{ size: number }> = ({ size }) => (
     fill="#FF0000"
   />
 );
+ShipStarboardLight.displayName = "ShipStarboardLight";
 
 /**
  * Specialized renderer for polygonal shapes (Asteroids).
@@ -370,6 +385,7 @@ const PolygonRenderer: React.FC<{
     />
   );
 });
+PolygonRenderer.displayName = "PolygonRenderer";
 
 /**
  * Specialized renderer for bullets.
@@ -389,6 +405,7 @@ const BulletRenderer: React.FC<{
     strokeWidth="1"
   />
 ));
+BulletRenderer.displayName = "BulletRenderer";
 
 /**
  * Specialized renderer for particles.
@@ -406,6 +423,7 @@ const ParticleRenderer: React.FC<{
 
   return <Circle cx={x} cy={y} r={size} fill={fill} opacity={alpha} />;
 });
+ParticleRenderer.displayName = "ParticleRenderer";
 
 /**
  * Specialized renderer for line shapes.
@@ -431,6 +449,7 @@ const LineRenderer: React.FC<{
     />
   );
 });
+LineRenderer.displayName = "LineRenderer";
 
 const styles = StyleSheet.create({
   container: {
