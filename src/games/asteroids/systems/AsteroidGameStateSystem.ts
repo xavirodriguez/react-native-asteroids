@@ -1,14 +1,14 @@
-import { System, World } from "../../../engine/core/World"
-import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../../../types/GameTypes"
-import { spawnAsteroidWave, createUfo } from "../../asteroids/EntityFactory"
-import type { IAsteroidsGame } from "../types/GameInterfaces"
-import { getGameState } from "../GameUtils"
-import { type IGameStateSystem } from "../types/GameInterfaces"
+import { System } from "../../../engine/core/System";
+import { World } from "../../../engine/core/World";
+import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../../../types/GameTypes";
+import { spawnAsteroidWave, createUfo } from "../EntityFactory";
+import { getGameState } from "../../../game/GameUtils";
+import { type IGameStateSystem, type IAsteroidsGame } from "../../../game/types/GameInterfaces";
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.
  */
-export class GameStateSystem extends System implements IGameStateSystem {
+export class AsteroidGameStateSystem extends System implements IGameStateSystem {
   private gameOverLogged = false;
   private gameInstance: IAsteroidsGame | undefined;
 
@@ -68,20 +68,20 @@ export class GameStateSystem extends System implements IGameStateSystem {
   }
 
   private updatePlayerStatus(context: {
-    world: World
-    gameState: GameStateComponent
-    deltaTime: number
+    world: World;
+    gameState: GameStateComponent;
+    deltaTime: number;
   }): void {
-    const { world, gameState, deltaTime } = context
+    const { world, gameState, deltaTime } = context;
     const ships = world.query("Ship", "Health", "Input");
-    if (ships.length === 0) return
+    if (ships.length === 0) return;
 
-    const shipEntity = ships[0]
-    const health = world.getComponent<HealthComponent>(shipEntity, "Health")
-    if (!health) return
+    const shipEntity = ships[0];
+    const health = world.getComponent<HealthComponent>(shipEntity, "Health");
+    if (!health) return;
 
-    this.updateInvulnerability(health, deltaTime)
-    gameState.lives = health.current
+    this.updateInvulnerability(health, deltaTime);
+    gameState.lives = health.current;
   }
 
   private updateInvulnerability(health: HealthComponent, deltaTime: number): void {
@@ -114,8 +114,8 @@ export class GameStateSystem extends System implements IGameStateSystem {
   }
 
   private calculateWaveCount(level: number): number {
-    const initialCount = GAME_CONFIG.INITIAL_ASTEROID_COUNT
-    const maxCount = GAME_CONFIG.MAX_WAVE_ASTEROIDS
-    return Math.min(initialCount + level, maxCount)
+    const initialCount = GAME_CONFIG.INITIAL_ASTEROID_COUNT;
+    const maxCount = GAME_CONFIG.MAX_WAVE_ASTEROIDS;
+    return Math.min(initialCount + level, maxCount);
   }
 }
