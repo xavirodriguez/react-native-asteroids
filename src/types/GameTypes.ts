@@ -189,6 +189,14 @@ export interface ScreenShake {
 }
 
 /**
+ * Null Object for ScreenShake to avoid returning null.
+ */
+export const NULL_SCREEN_SHAKE: ScreenShake = Object.freeze({
+  intensity: 0,
+  duration: 0,
+})
+
+/**
  * Component to track global game progress and state.
  *
  * @remarks
@@ -209,7 +217,7 @@ export interface GameStateComponent extends Component {
   /** Starfield for background */
   stars?: Star[]
   /** Current screen shake state */
-  screenShake?: ScreenShake | null
+  screenShake: ScreenShake
 }
 
 /**
@@ -222,6 +230,7 @@ export const INITIAL_GAME_STATE: GameStateComponent = Object.freeze({
   level: 0,
   asteroidsRemaining: 0,
   isGameOver: false,
+  screenShake: NULL_SCREEN_SHAKE,
 })
 
 /**

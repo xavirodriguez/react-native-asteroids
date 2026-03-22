@@ -14,26 +14,30 @@ export class MovementSystem extends System {
    * Updates positions and handles screen wrapping.
    */
   public update(world: World, deltaTime: number): void {
-    const entities = world.query("Position", "Velocity");
+    const entities = world.query("Position", "Velocity")
+    entities.forEach((entity) => this.updateEntity({ world, entity, deltaTime }))
+  }
 
-    entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position")
-      const vel = world.getComponent<VelocityComponent>(entity, "Velocity")
-      const render = world.getComponent<RenderComponent>(entity, "Render")
+  private updateEntity(context: { world: World; entity: number; deltaTime: number }): void {
+    const { world, entity, deltaTime } = context
+    const pos = world.getComponent<PositionComponent>(entity, "Position")
+    const vel = world.getComponent<VelocityComponent>(entity, "Velocity")
+    const render = world.getComponent<RenderComponent>(entity, "Render")
 
-      if (pos && vel) {
-        // Improvement 2: Ship trail update
-        if (render && render.trailPositions) {
-            render.trailPositions.push({ x: pos.x, y: pos.y });
-            if (render.trailPositions.length > GAME_CONFIG.TRAIL_MAX_LENGTH) {
-                render.trailPositions.shift();
-            }
-        }
+    if (pos && vel) {
+      this.updateShipTrail(pos, render)
+      this.updatePosition({ pos, vel, deltaTime })
+      this.wrapPosition(pos)
+    }
+  }
 
-        this.updatePosition({ pos, vel, deltaTime })
-        this.wrapPosition(pos)
-      }
-    })
+  private updateShipTrail(pos: PositionComponent, render?: RenderComponent): void {
+    if (!render?.trailPositions) return
+
+    render.trailPositions.push({ x: pos.x, y: pos.y })
+    if (render.trailPositions.length > GAME_CONFIG.TRAIL_MAX_LENGTH) {
+      render.trailPositions.shift()
+    }
   }
 
   private updatePosition(context: {

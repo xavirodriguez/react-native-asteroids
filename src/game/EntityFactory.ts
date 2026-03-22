@@ -1,5 +1,5 @@
 import type { World } from "./ecs-world"
-import { type Entity, GAME_CONFIG, type Star } from "../types/GameTypes"
+import { type Entity, GAME_CONFIG, type Star, NULL_SCREEN_SHAKE } from "../types/GameTypes"
 
 /**
  * Parameters for creating a player ship entity.
@@ -152,18 +152,11 @@ function addAsteroidTypeComponents(config: {
 }): void {
   const { world, asteroid, size } = config
   const radius = GAME_CONFIG.ASTEROID_RADII[size]
-
-  // Improvement 5: Polygonal asteroids
-  const vertexCount = 10
-  const vertices = Array.from({ length: vertexCount }, (_, i) => {
-    const angle = (i / vertexCount) * Math.PI * 2
-    const r = radius * (0.75 + Math.random() * 0.5)
-    return { x: Math.cos(angle) * r, y: Math.sin(angle) * r }
-  })
+  const vertices = generateAsteroidVertices(radius)
 
   world.addComponent(asteroid, {
     type: "Render",
-    shape: "polygon", // Updated to polygon
+    shape: "polygon",
     size: radius,
     color: "#888888",
     rotation: 0,
@@ -171,6 +164,15 @@ function addAsteroidTypeComponents(config: {
   })
   world.addComponent(asteroid, { type: "Collider", radius })
   world.addComponent(asteroid, { type: "Asteroid", size })
+}
+
+function generateAsteroidVertices(radius: number): { x: number; y: number }[] {
+  const vertexCount = 10
+  return Array.from({ length: vertexCount }, (_, i) => {
+    const angle = (i / vertexCount) * Math.PI * 2
+    const r = radius * (0.75 + Math.random() * 0.5)
+    return { x: Math.cos(angle) * r, y: Math.sin(angle) * r }
+  })
 }
 
 /**
@@ -225,14 +227,7 @@ function addBulletLifeCycleComponents(config: { world: World; bullet: Entity }):
 export function createGameState(config: { world: World }): Entity {
   const { world } = config
   const gameState = world.createEntity()
-
-  // Improvement 3: Star background
-  const stars: Star[] = Array.from({ length: GAME_CONFIG.STAR_COUNT }, () => ({
-    x: Math.random() * GAME_CONFIG.SCREEN_WIDTH,
-    y: Math.random() * GAME_CONFIG.SCREEN_HEIGHT,
-    size: Math.random() * 1.5 + 0.5,
-    brightness: Math.random() * 0.7 + 0.3,
-  }))
+  const stars = generateStarfield()
 
   world.addComponent(gameState, {
     type: "GameState",
@@ -242,9 +237,18 @@ export function createGameState(config: { world: World }): Entity {
     asteroidsRemaining: 0,
     isGameOver: false,
     stars,
-    screenShake: null, // Improvement 4: Screen shake
+    screenShake: NULL_SCREEN_SHAKE,
   })
   return gameState
+}
+
+function generateStarfield(): Star[] {
+  return Array.from({ length: GAME_CONFIG.STAR_COUNT }, () => ({
+    x: Math.random() * GAME_CONFIG.SCREEN_WIDTH,
+    y: Math.random() * GAME_CONFIG.SCREEN_HEIGHT,
+    size: Math.random() * 1.5 + 0.5,
+    brightness: Math.random() * 0.7 + 0.3,
+  }))
 }
 
 /**

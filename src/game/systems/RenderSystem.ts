@@ -1,5 +1,5 @@
 import { System, type World } from "../ecs-world"
-import { type GameStateComponent } from "../../types/GameTypes"
+import { type GameStateComponent, NULL_SCREEN_SHAKE } from "../../types/GameTypes"
 
 /**
  * System responsible for handling rendering logic updates (e.g., screen shake duration).
@@ -15,11 +15,19 @@ export class RenderSystem extends System {
     if (!gameStateEntity) return
 
     const gameState = world.getComponent<GameStateComponent>(gameStateEntity, "GameState")
-    if (gameState?.screenShake && gameState.screenShake.duration > 0) {
+    this.updateScreenShake(gameState)
+  }
+
+  private updateScreenShake(gameState: GameStateComponent | undefined): void {
+    if (gameState && gameState.screenShake.duration > 0) {
       gameState.screenShake.duration--
-      if (gameState.screenShake.duration <= 0) {
-        gameState.screenShake = null
-      }
+      this.handleScreenShakeEnd(gameState)
+    }
+  }
+
+  private handleScreenShakeEnd(gameState: GameStateComponent): void {
+    if (gameState.screenShake.duration <= 0) {
+      gameState.screenShake = NULL_SCREEN_SHAKE
     }
   }
 }

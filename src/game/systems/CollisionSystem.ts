@@ -183,20 +183,26 @@ export class CollisionSystem extends System {
   }
 
   private applyDamageToShip(world: World, health: HealthComponent): void {
-    health.current--;
-    health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+    health.current--
+    health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION
 
-    // Improvement 4: Screen shake upon collision
-    const gameState = getGameState(world);
+    this.triggerImpactScreenShake(world)
+    this.triggerCollisionHaptics(health.current)
+  }
+
+  private triggerImpactScreenShake(world: World): void {
+    const gameState = getGameState(world)
     gameState.screenShake = {
-        intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,
-        duration: GAME_CONFIG.SHAKE_DURATION_IMPACT,
-    };
+      intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,
+      duration: GAME_CONFIG.SHAKE_DURATION_IMPACT,
+    }
+  }
 
-    if (health.current <= 0) {
-      hapticDeath();
+  private triggerCollisionHaptics(currentHealth: number): void {
+    if (currentHealth <= 0) {
+      hapticDeath()
     } else {
-      hapticDamage();
+      hapticDamage()
     }
   }
 
