@@ -421,7 +421,7 @@ const ParticleRenderer: React.FC<{
   // Improvement 1: HSL color and alpha
   const fill = `hsl(${30 + Math.random() * 20}, 100%, ${50 + alpha * 30}%)`;
 
-  return <Circle cx={x} cy={y} r={size} fill={fill} opacity={alpha} />;
+  return <Circle cx={x} cy={y} r={size * alpha} fill={fill} opacity={alpha} />;
 });
 ParticleRenderer.displayName = "ParticleRenderer";
 
