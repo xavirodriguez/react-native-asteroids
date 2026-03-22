@@ -7,13 +7,25 @@ import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory";
 import { GAME_CONFIG } from "../../types/GameTypes";
+import { InputManager } from "../../engine/input/InputManager";
+import { KeyboardController, TouchController } from "../../engine/input/InputController";
 
 /**
  * Initializes the Asteroids game on the engine.
+ *
+ * @param world - The ECS world instance.
+ * @returns The initialized game state and controllers for external access.
  */
 export function initAsteroids(world: World) {
+  // Setup Input
+  const inputManager = new InputManager();
+  const touchController = new TouchController();
+
+  inputManager.addController(new KeyboardController());
+  inputManager.addController(touchController);
+
   // Add Systems
-  world.addSystem(new AsteroidInputSystem());
+  world.addSystem(new AsteroidInputSystem(inputManager));
   world.addSystem(new MovementSystem(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT));
   world.addSystem(new AsteroidCollisionSystem());
   world.addSystem(new TTLSystem());
@@ -26,6 +38,10 @@ export function initAsteroids(world: World) {
   spawnAsteroidWave({ world, count: GAME_CONFIG.INITIAL_ASTEROID_COUNT });
 
   return {
-    // Return any game-specific API
+    inputManager,
+    touchController,
+    cleanup: () => {
+      inputManager.cleanup();
+    }
   };
 }

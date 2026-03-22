@@ -1,15 +1,22 @@
 import { World } from "../../ecs-world";
 import { InputSystem } from "../InputSystem";
+import { InputManager } from "../../../engine/input/InputManager";
+import { KeyboardController, TouchController } from "../../../engine/input/InputController";
 import { GAME_CONFIG, type Entity, type VelocityComponent, type RenderComponent, type InputComponent } from "../../../types/GameTypes";
 
 describe("InputSystem", () => {
   let world: World;
   let system: InputSystem;
   let ship: Entity;
+  let inputManager: InputManager;
 
   beforeEach(() => {
     world = new World();
-    system = new InputSystem();
+    inputManager = new InputManager();
+    inputManager.addController(new KeyboardController());
+    inputManager.addController(new TouchController());
+
+    system = new InputSystem(inputManager);
     world.addSystem(system);
 
     ship = world.createEntity();
