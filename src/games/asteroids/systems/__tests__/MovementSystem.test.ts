@@ -1,6 +1,6 @@
-import { World } from "../../ecs-world";
-import { MovementSystem } from "../MovementSystem";
-import { GAME_CONFIG, type PositionComponent } from "../../../types/GameTypes";
+import { World } from "../../../../engine/core/World";
+import { MovementSystem } from "../../../../engine/systems/MovementSystem";
+import { GAME_CONFIG, type PositionComponent } from "../../../../types/GameTypes";
 
 describe("MovementSystem", () => {
   let world: World;
@@ -8,7 +8,10 @@ describe("MovementSystem", () => {
 
   beforeEach(() => {
     world = new World();
-    system = new MovementSystem();
+    system = new MovementSystem({
+      wrap: true,
+      bounds: { width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT }
+    });
     world.addSystem(system);
   });
 

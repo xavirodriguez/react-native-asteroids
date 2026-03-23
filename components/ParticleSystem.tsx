@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
-import { Circle, Group, Points } from "@shopify/react-native-skia";
-import type { World } from "../src/game/ecs-world";
+import { Circle, Group } from "@shopify/react-native-skia";
+import type { World } from "../src/engine/core/World";
 import {
   type PositionComponent,
   type RenderComponent,
@@ -16,7 +16,7 @@ interface ParticleSystemProps {
  */
 export const ParticleSystem: React.FC<ParticleSystemProps> = ({ world }) => {
   const particles = useMemo(() => {
-    return world.query("Position", "Render", "TTL").filter(entity => {
+    return world.query("Position", "Render", "TTL").filter((entity: number) => {
       const render = world.getComponent<RenderComponent>(entity, "Render");
       return render?.shape === "particle";
     });
@@ -24,7 +24,7 @@ export const ParticleSystem: React.FC<ParticleSystemProps> = ({ world }) => {
 
   return (
     <Group>
-      {particles.map((entity) => (
+      {particles.map((entity: number) => (
         <ParticleItem key={entity} entity={entity} world={world} />
       ))}
     </Group>

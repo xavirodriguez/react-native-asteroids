@@ -1,5 +1,6 @@
-import { World, System } from "../ecs-world"
-import type { Component, ComponentType } from "../../types/GameTypes"
+import { World } from "../../../engine/core/World"
+import { System } from "../../../engine/core/System"
+import type { Component, ComponentType } from "../../../types/GameTypes"
 
 interface MockComponent extends Component {
   type: ComponentType

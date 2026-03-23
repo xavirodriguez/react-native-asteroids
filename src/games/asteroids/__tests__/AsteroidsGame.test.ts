@@ -1,6 +1,6 @@
 import { AsteroidsGame, NullAsteroidsGame } from "../AsteroidsGame";
-import { World } from "../ecs-world";
-import { INITIAL_GAME_STATE } from "../../types/GameTypes";
+import { World } from "../../../engine/core/World";
+import { INITIAL_GAME_STATE } from "../../../types/GameTypes";
 
 describe("NullAsteroidsGame", () => {
   it("returns default values correctly", () => {
@@ -34,8 +34,12 @@ describe("AsteroidsGame", () => {
   let game: AsteroidsGame;
 
   beforeEach(() => {
-    jest.spyOn(global, 'requestAnimationFrame').mockImplementation(() => 0);
-    jest.spyOn(global, 'cancelAnimationFrame').mockImplementation(() => {});
+    jest.spyOn(global, 'requestAnimationFrame').mockImplementation((cb) => {
+        return setTimeout(() => (cb as any)(performance.now()), 16) as any;
+    });
+    jest.spyOn(global, 'cancelAnimationFrame').mockImplementation((id) => {
+        clearTimeout(id as any);
+    });
     game = new AsteroidsGame();
   });
 
@@ -97,12 +101,17 @@ describe("AsteroidsGame", () => {
     expect(() => game.destroy()).not.toThrow();
   });
 
-  it("stop() stops the game loop and updates isRunning", () => {
+  it("stop() stops the game loop", () => {
     const cancelSpy = jest.spyOn(global, 'cancelAnimationFrame');
     // Mock gameLoopId so stop() has something to cancel
-    (game as unknown as { loopState: { gameLoopId: number } }).loopState.gameLoopId = 123;
+    const gameInternal = (game as any);
+    const gameLoopInternal = gameInternal.gameLoop;
+    gameLoopInternal.gameLoopId = 123;
+    gameLoopInternal.isRunning = true;
+
     game.stop();
     expect(cancelSpy).toHaveBeenCalledWith(123);
+    expect(gameLoopInternal.isRunning).toBe(false);
   });
 
   it("setInput() guards against input when paused", () => {
@@ -110,7 +119,7 @@ describe("AsteroidsGame", () => {
     game.pause();
     const world = game.getWorld();
     const ship = world.query("Ship", "Input")[0];
-    const input = world.getComponent<import("../../types/GameTypes").InputComponent>(ship, "Input")!;
+    const input = world.getComponent<import("../../../types/GameTypes").InputComponent>(ship, "Input")!;
 
     game.setInput({ thrust: true });
     // Update world to propagate input state to components

@@ -1,15 +1,17 @@
-import { System, type World } from "../ecs-world"
+import { System } from "../../../engine/core/System"
+import { World } from "../../../engine/core/World"
 import {
   type InputComponent,
   type VelocityComponent,
   type RenderComponent,
   type PositionComponent,
   type InputState,
+  type ShipComponent,
   GAME_CONFIG,
-} from "../../types/GameTypes"
-import { createBullet, createParticle } from "../EntityFactory"
-import { hapticShoot } from "../../utils/haptics"
-import { InputManager } from "../../engine/input/InputManager"
+} from "../../../types/GameTypes"
+import { createBullet, createParticle, createExplosion } from "../EntityFactory"
+import { hapticShoot } from "../../../utils/haptics"
+import { InputManager } from "../../../engine/input/InputManager"
 
 /**
  * System responsible for processing user input and applying it to the ship's state.
@@ -109,7 +111,6 @@ export class InputSystem extends System {
     this.applyRotation({ render, input, dt })
     this.applyThrust({ world, pos, vel, render, input, dt })
     this.handleHyperspace({ world, pos, vel, render, input })
-    this.applyFriction(vel, deltaTime)
   }
 
   private applyRotation(context: { render: RenderComponent; input: InputComponent; dt: number }): void {
@@ -153,11 +154,6 @@ export class InputSystem extends System {
     })
   }
 
-  private applyFriction(vel: VelocityComponent, deltaTime: number): void {
-    const frictionFactor = Math.pow(GAME_CONFIG.SHIP_FRICTION, deltaTime / (1000 / 60))
-    vel.dx *= frictionFactor
-    vel.dy *= frictionFactor
-  }
 
   private handleShipShooting(context: {
     world: World

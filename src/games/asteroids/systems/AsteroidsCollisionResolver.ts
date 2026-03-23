@@ -1,17 +1,19 @@
-import { System, type World } from "../ecs-world"
+import { System } from "../../../engine/core/System";
+import { World } from "../../../engine/core/World";
+import { EventBus } from "../../../engine/utils/EventBus";
+import { CollisionEvent } from "../../../engine/systems/CollisionSystem";
 import {
-  type PositionComponent,
-  type ColliderComponent,
-  type AsteroidComponent,
-  type HealthComponent,
-  type Entity,
-  type ComponentType,
+  PositionComponent,
+  ColliderComponent,
+  AsteroidComponent,
+  HealthComponent,
+  Entity,
+  ComponentType,
   GAME_CONFIG,
-} from "../../types/GameTypes"
-
-import { createAsteroid, createParticle, createExplosion } from "../EntityFactory"
-import { getGameState } from "../GameUtils"
-import { hapticDamage, hapticDeath } from "../../utils/haptics"
+} from "../../../types/GameTypes";
+import { createAsteroid, createExplosion } from "../EntityFactory";
+import { getGameState } from "../GameUtils";
+import { hapticDamage, hapticDeath } from "../../../utils/haptics";
 
 const ASTEROID_SPLIT_CONFIG: Record<
   AsteroidComponent["size"],
@@ -23,80 +25,35 @@ const ASTEROID_SPLIT_CONFIG: Record<
 };
 
 /**
- * System responsible for detecting and resolving collisions between entities.
+ * System that resolves collisions for the Asteroids game.
+ * It listens to generic 'collision' events from the CollisionSystem.
  */
-export class CollisionSystem extends System {
-  /**
-   * Updates the collision state for all relevant entities.
-   */
+export class AsteroidsCollisionResolver extends System {
+  private unsubscribe?: () => void;
+
+  constructor(private eventBus: EventBus) {
+    super();
+    this.unsubscribe = this.eventBus.on<CollisionEvent>("collision", this.handleCollision);
+  }
+
   public update(world: World, deltaTime: number): void {
-    void deltaTime
-    const colliders = world.query("Position", "Collider");
-    const hasEnoughColliders = colliders.length >= 2;
-    if (hasEnoughColliders) {
-      this.processCollisions({ world, colliders });
-    }
+    void world;
+    void deltaTime;
   }
 
-  private processCollisions(context: { world: World; colliders: Entity[] }): void {
-    const { world, colliders } = context;
-    colliders.forEach((entityA, index) => {
-      this.checkEntityCollisions({ world, entityA, colliders, startIndex: index + 1 });
-    });
+  public destroy(): void {
+    if (this.unsubscribe) this.unsubscribe();
   }
 
-  private checkEntityCollisions(context: {
-    world: World
-    entityA: Entity
-    colliders: Entity[]
-    startIndex: number
-  }): void {
-    const { world, entityA, colliders, startIndex } = context;
-    for (let j = startIndex; j < colliders.length; j++) {
-      this.checkAndResolve({ world, entityA, entityB: colliders[j] });
-    }
-  }
-
-  private checkAndResolve(collisionPair: { world: World; entityA: Entity; entityB: Entity }): void {
-    const { world, entityA, entityB } = collisionPair;
-    const isColliding = this.isColliding({ world, entityA, entityB });
-    if (isColliding) {
-      this.resolveCollision({ world, entityA, entityB });
-    }
-  }
-
-  private isColliding(collisionPair: { world: World; entityA: Entity; entityB: Entity }): boolean {
-    const { world, entityA, entityB } = collisionPair;
-    const posA = world.getComponent<PositionComponent>(entityA, "Position");
-    const posB = world.getComponent<PositionComponent>(entityB, "Position");
-    const colA = world.getComponent<ColliderComponent>(entityA, "Collider");
-    const colB = world.getComponent<ColliderComponent>(entityB, "Collider");
-
-    if (!posA || !posB || !colA || !colB) return false;
-
-    const squaredDistance = this.calculateSquaredDistance(posA, posB);
-    const radiusSum = colA.radius + colB.radius;
-
-    return squaredDistance < radiusSum * radiusSum;
-  }
-
-  private calculateSquaredDistance(posA: PositionComponent, posB: PositionComponent): number {
-    const dx = posA.x - posB.x;
-    const dy = posA.y - posB.y;
-    const squaredX = dx * dx;
-    const squaredY = dy * dy;
-    return squaredX + squaredY;
-  }
-
-  private resolveCollision(collisionPair: { world: World; entityA: Entity; entityB: Entity }): void {
-    const { world, entityA, entityB } = collisionPair;
+  private handleCollision = (event: CollisionEvent) => {
+    const { entityA, entityB, world } = event;
     const pair = { entityA, entityB };
 
     if (this.handleBulletAsteroidPair({ world, pair })) return;
     if (this.handleBulletUfoPair({ world, pair })) return;
     this.handleShipAsteroidPair({ world, pair });
     this.handleShipUfoPair({ world, pair });
-  }
+  };
 
   private handleBulletAsteroidPair(context: {
     world: World
@@ -210,7 +167,6 @@ export class CollisionSystem extends System {
     health.current--;
     health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
 
-    // Improvement 4: Screen shake upon collision
     const gameState = getGameState(world);
     gameState.screenShake = {
         intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,

@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Circle, Group } from "@shopify/react-native-skia";
-import type { World } from "../src/game/ecs-world";
+import type { World } from "../src/engine/core/World";
 import {
   type PositionComponent,
   type GameStateComponent,

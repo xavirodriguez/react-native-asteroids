@@ -1,23 +1,24 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { World } from "../engine/core/World";
 import { GameLoop } from "../engine/core/GameLoop";
-import { SvgRenderer } from "../engine/rendering/SvgRenderer";
+import { SkiaRenderer } from "../engine/rendering/SkiaRenderer";
+import { RenderBridge } from "../engine/rendering/RenderBridge";
 
 interface GameEngineProps {
   world: World;
   gameLoop: GameLoop;
 }
 
+const renderBridge = new RenderBridge();
+
 /**
  * React wrapper for the AsterEngine.
  */
 export const GameEngine: React.FC<GameEngineProps> = ({ world, gameLoop }) => {
-  const [version, setVersion] = useState(0);
+  const [, setVersion] = useState(0);
 
   useEffect(() => {
     const unsubscribe = gameLoop.subscribeRender(() => {
-      // Trigger a light React update if needed for components that depend on world state directly.
-      // However, SvgRenderer should handle most of it through world.version.
       setVersion(v => v + 1);
     });
 
@@ -29,5 +30,7 @@ export const GameEngine: React.FC<GameEngineProps> = ({ world, gameLoop }) => {
     };
   }, [gameLoop]);
 
-  return <SvgRenderer world={world} />;
+  const frame = useMemo(() => renderBridge.extractFrame(world), [world.version]);
+
+  return <SkiaRenderer frame={frame} />;
 };

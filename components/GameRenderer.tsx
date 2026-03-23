@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { Canvas, Group, Circle, Path, Skia, Line, Rect, RadialGradient, vec, BlurMask, LinearGradient, Ellipse } from "@shopify/react-native-skia";
-import type { World } from "../src/game/ecs-world";
+import { Canvas, Group, Circle, Path, Skia, Line, Rect, BlurMask, Oval } from "@shopify/react-native-skia";
+import type { World } from "../src/engine/core/World";
 import {
   type PositionComponent,
   type RenderComponent,
@@ -9,7 +9,8 @@ import {
   type HealthComponent,
   type VelocityComponent,
   type GameStateComponent,
-  type Star,
+  type ShipComponent,
+  type TTLComponent,
   GAME_CONFIG,
 } from "../src/types/GameTypes";
 import { ParticleSystem } from "./ParticleSystem";
@@ -385,27 +386,27 @@ const UfoRenderer: React.FC<{
       <Circle cx={0} cy={0} r={size} color={color} opacity={0.3}>
         <BlurMask blur={10} style="normal" />
       </Circle>
-      <Ellipse
-        cx={0}
-        cy={0}
-        rx={size}
-        ry={size / 2}
+      <Oval
+        x={-size}
+        y={-size / 2}
+        width={size * 2}
+        height={size}
         color="#999"
       />
-      <Ellipse
-        cx={0}
-        cy={0}
-        rx={size}
-        ry={size / 2.5}
+      <Oval
+        x={-size}
+        y={-size / 2.5}
+        width={size * 2}
+        height={size / 1.25}
         color={color}
         style="stroke"
         strokeWidth={1}
       />
-      <Ellipse
-        cx={0}
-        cy={-size / 4}
-        rx={size / 2}
-        ry={size / 3}
+      <Oval
+        x={-size / 2}
+        y={-size / 4 - size / 3}
+        width={size}
+        height={size / 1.5}
         color="#00ffff"
         opacity={0.6}
       />
