@@ -107,13 +107,28 @@ export class World {
    * @param entity - The entity to remove.
    */
   removeEntity(entity: Entity): void {
+    this.removeEntityComponents(entity);
+
+    if (this.entities.delete(entity)) {
+      this.version++;
+    }
+  }
+
+  /**
+   * Removes all components from a specific entity without deleting the entity itself.
+   *
+   * @param entity - The entity to strip of components.
+   */
+  removeEntityComponents(entity: Entity): void {
+    let changed = false;
     this.components.forEach((componentMap, type) => {
       if (componentMap.delete(entity)) {
         this.componentIndex.get(type)?.delete(entity);
+        changed = true;
       }
     });
 
-    if (this.entities.delete(entity)) {
+    if (changed) {
       this.version++;
     }
   }

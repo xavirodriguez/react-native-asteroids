@@ -5,7 +5,7 @@ import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
 import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
-import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory";
+import { createShip, spawnAsteroidWave, createGameState, clearEntityPools } from "./EntityFactory";
 import { GAME_CONFIG } from "../../types/GameTypes";
 import { InputManager } from "../../engine/input/InputManager";
 import { KeyboardController, TouchController } from "../../engine/input/InputController";
@@ -24,11 +24,13 @@ export function initAsteroids(world: World) {
   inputManager.addController(new KeyboardController());
   inputManager.addController(touchController);
 
+  const collisionSystem = new AsteroidCollisionSystem();
+
   // Add Systems
   world.addSystem(new AsteroidInputSystem(inputManager));
   world.addSystem(new MovementSystem(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT));
-  world.addSystem(new AsteroidCollisionSystem());
-  world.addSystem(new TTLSystem());
+  world.addSystem(collisionSystem);
+  world.addSystem(new TTLSystem(collisionSystem)); // Connect TTL to pool via collision system
   world.addSystem(new AsteroidGameStateSystem());
   world.addSystem(new AsteroidRenderSystem());
 
@@ -42,6 +44,7 @@ export function initAsteroids(world: World) {
     touchController,
     cleanup: () => {
       inputManager.cleanup();
+      clearEntityPools(world);
     }
   };
 }

@@ -1,5 +1,24 @@
 import { World } from "../../engine/core/World"
+import { EntityPool } from "../../engine/core/EntityPool"
 import { type Entity, GAME_CONFIG, type Star } from "../types/GameTypes"
+
+// Use WeakMap to store pools per world, allowing World instances to be GC'd.
+const bulletPools = new WeakMap<World, EntityPool>();
+const particlePools = new WeakMap<World, EntityPool>();
+
+function getBulletPool(world: World): EntityPool {
+  if (!bulletPools.has(world)) {
+    bulletPools.set(world, new EntityPool(world));
+  }
+  return bulletPools.get(world)!;
+}
+
+function getParticlePool(world: World): EntityPool {
+  if (!particlePools.has(world)) {
+    particlePools.set(world, new EntityPool(world));
+  }
+  return particlePools.get(world)!;
+}
 
 /**
  * Parameters for creating a player ship entity.
@@ -174,19 +193,26 @@ function addAsteroidTypeComponents(config: {
 }
 
 /**
- * Creates a new bullet entity in the world.
+ * Creates a new bullet entity in the world. Reuses an entity from the pool if available.
  *
  * @param options - The creation parameters.
- * @returns The newly created {@link Entity}.
+ * @returns The bullet {@link Entity}.
  */
 export function createBullet(options: CreateBulletParams): Entity {
   const { world, x, y, angle } = options
-  const bullet = world.createEntity()
+  const bullet = getBulletPool(world).acquire()
 
   addBulletMovementComponents({ world, bullet, x, y, angle })
   addBulletLifeCycleComponents({ world, bullet })
 
   return bullet
+}
+
+/**
+ * Releases a bullet entity back to the pool.
+ */
+export function releaseBullet(world: World, bullet: Entity): void {
+  getBulletPool(world).release(bullet);
 }
 
 function addBulletMovementComponents(config: {
@@ -210,7 +236,7 @@ function addBulletLifeCycleComponents(config: { world: World; bullet: Entity }):
   const { world, bullet } = config
   const ttl = GAME_CONFIG.BULLET_TTL
   const size = GAME_CONFIG.BULLET_SIZE
-  world.addComponent(bullet, { type: "Render", shape: "circle", size, color: "#FFFF00", rotation: 0 })
+  world.addComponent(bullet, { type: "Render", shape: "circle", size, color: "#FFFF00", rotation: 0, trailPositions: [] })
   world.addComponent(bullet, { type: "Collider", radius: size })
   world.addComponent(bullet, { type: "TTL", remaining: ttl, total: ttl }) // Improvement 1: Total TTL for alpha
   world.addComponent(bullet, { type: "Bullet" })
@@ -267,14 +293,14 @@ export function spawnAsteroidWave(config: { world: World; count: number }): void
 }
 
 /**
- * Creates a new particle entity in the world.
+ * Creates a new particle entity in the world. Reuses an entity from the pool if available.
  *
  * @param options - The creation parameters.
- * @returns The newly created {@link Entity}.
+ * @returns The particle {@link Entity}.
  */
 export function createParticle(options: CreateParticleParams): Entity {
   const { world, x, y, dx, dy, color, ttl = 600, size = 2 } = options
-  const particle = world.createEntity()
+  const particle = getParticlePool(world).acquire()
 
   world.addComponent(particle, { type: "Position", x, y })
   world.addComponent(particle, { type: "Velocity", dx, dy })
@@ -288,4 +314,19 @@ export function createParticle(options: CreateParticleParams): Entity {
   world.addComponent(particle, { type: "TTL", remaining: ttl, total: ttl })
 
   return particle
+}
+
+/**
+ * Releases a particle entity back to the pool.
+ */
+export function releaseParticle(world: World, particle: Entity): void {
+  getParticlePool(world).release(particle);
+}
+
+/**
+ * Clears all entity pools for the specified world.
+ */
+export function clearEntityPools(world: World): void {
+  bulletPools.get(world)?.clear();
+  particlePools.get(world)?.clear();
 }

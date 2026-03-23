@@ -10,9 +10,10 @@ import {
   GAME_CONFIG,
 } from "../../../types/GameTypes";
 
-import { createAsteroid, createParticle } from "../EntityFactory";
+import { createAsteroid, createParticle, releaseBullet, releaseParticle } from "../EntityFactory";
 import { getGameState } from "../../../game/GameUtils";
 import { hapticDamage, hapticDeath } from "../../../utils/haptics";
+import { type PooledSystem } from "../../../engine/systems/TTLSystem";
 
 const ASTEROID_SPLIT_CONFIG: Record<
   AsteroidComponent["size"],
@@ -26,7 +27,7 @@ const ASTEROID_SPLIT_CONFIG: Record<
 /**
  * System responsible for detecting and resolving collisions between entities.
  */
-export class AsteroidCollisionSystem extends System {
+export class AsteroidCollisionSystem extends System implements PooledSystem {
   /**
    * Updates the collision state for all relevant entities.
    */
@@ -36,6 +37,17 @@ export class AsteroidCollisionSystem extends System {
     const hasEnoughColliders = colliders.length >= 2;
     if (hasEnoughColliders) {
       this.processCollisions({ world, colliders });
+    }
+  }
+
+  /**
+   * Implements PooledSystem interface to handle TTL expiration.
+   */
+  public onEntityExpired(world: World, entity: number): void {
+    if (world.hasComponent(entity, "Bullet")) {
+      releaseBullet(world, entity);
+    } else {
+      releaseParticle(world, entity);
     }
   }
 
@@ -156,7 +168,10 @@ export class AsteroidCollisionSystem extends System {
       this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT);
     }
     this.splitAsteroid({ world, asteroidEntity: asteroid });
-    world.removeEntity(bullet);
+
+    // Release bullet back to pool instead of removing it
+    releaseBullet(world, bullet);
+
     this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
   }
 
