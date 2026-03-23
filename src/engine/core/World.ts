@@ -1,15 +1,14 @@
 import { Component } from "./Component";
 import { Entity } from "./Entity";
 import { System } from "./System";
-import { ComponentType } from "../../types/GameTypes";
 
 /**
  * ECS World class that manages the lifecycle of entities, components, and systems.
  */
 export class World {
   private entities = new Set<Entity>();
-  private components = new Map<ComponentType, Map<Entity, Component>>();
-  private componentIndex = new Map<ComponentType, Set<Entity>>();
+  private components = new Map<string, Map<Entity, Component>>();
+  private componentIndex = new Map<string, Set<Entity>>();
   private systems: System[] = [];
   private nextEntityId = 1;
   private freeEntities: Entity[] = [];
@@ -56,7 +55,7 @@ export class World {
    * @param type - The type of the component to retrieve.
    * @returns The component instance if found, otherwise `undefined`.
    */
-  getComponent<T extends Component>(entity: Entity, type: ComponentType): T | undefined {
+  getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
     return this.components.get(type)?.get(entity) as T;
   }
 
@@ -67,7 +66,7 @@ export class World {
    * @param type - The component type to look for.
    * @returns `true` if the entity has the component, otherwise `false`.
    */
-  hasComponent(entity: Entity, type: ComponentType): boolean {
+  hasComponent(entity: Entity, type: string): boolean {
     return this.componentIndex.get(type)?.has(entity) ?? false;
   }
 
@@ -77,7 +76,7 @@ export class World {
    * @param entity - The entity to remove the component from.
    * @param type - The type of the component to remove.
    */
-  removeComponent(entity: Entity, type: ComponentType): void {
+  removeComponent(entity: Entity, type: string): void {
     const componentMap = this.components.get(type);
     if (componentMap && componentMap.delete(entity)) {
       this.componentIndex.get(type)?.delete(entity)
@@ -91,7 +90,7 @@ export class World {
    * @param componentTypes - One or more component types to filter by.
    * @returns An array of {@link Entity} IDs that have all the required components.
    */
-  query(...componentTypes: ComponentType[]): Entity[] {
+  query(...componentTypes: string[]): Entity[] {
     if (componentTypes.length === 0) return [];
 
     const sortedTypes = this.getSortedTypes(componentTypes);
@@ -161,13 +160,13 @@ export class World {
     return Array.from(this.entities);
   }
 
-  private filterByComponents(entities: Set<Entity>, types: ComponentType[]): Entity[] {
+  private filterByComponents(entities: Set<Entity>, types: string[]): Entity[] {
     return Array.from(entities).filter((entity) =>
       types.every((type) => this.componentIndex.get(type)?.has(entity)),
     );
   }
 
-  private getSortedTypes(types: ComponentType[]): ComponentType[] {
+  private getSortedTypes(types: string[]): string[] {
     return [...types].sort((a, b) => {
       const countA = this.componentIndex.get(a)?.size ?? 0;
       const countB = this.componentIndex.get(b)?.size ?? 0;
@@ -175,7 +174,7 @@ export class World {
     });
   }
 
-  private ensureComponentStorage(type: ComponentType): void {
+  private ensureComponentStorage(type: string): void {
     if (!this.components.has(type)) {
       this.components.set(type, new Map());
       this.componentIndex.set(type, new Set());

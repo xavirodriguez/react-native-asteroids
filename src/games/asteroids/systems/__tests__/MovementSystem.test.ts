@@ -1,5 +1,5 @@
 import { World } from "../../../../engine/core/World";
-import { MovementSystem } from "../../../../engine/systems/MovementSystem";
+import { MovementSystem } from "../../../../engine/systems/generic/MovementSystem";
 import { GAME_CONFIG, type PositionComponent } from "../../../../types/GameTypes";
 
 describe("MovementSystem", () => {

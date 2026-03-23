@@ -2,10 +2,9 @@ import { World } from "../core/World";
 import {
   PositionComponent,
   RenderComponent,
-  GameStateComponent,
   ScreenShake,
   Entity,
-} from "../../types/GameTypes";
+} from "../types";
 
 export interface RenderableEntity {
   id: Entity;
@@ -31,7 +30,7 @@ export class RenderBridge {
 
     const gameStateEntity = world.query("GameState")[0];
     const gameState = gameStateEntity
-      ? world.getComponent<GameStateComponent>(gameStateEntity, "GameState")
+      ? world.getComponent<any>(gameStateEntity, "GameState")
       : null;
 
     const entities: RenderableEntity[] = renderableIds.map(id => {

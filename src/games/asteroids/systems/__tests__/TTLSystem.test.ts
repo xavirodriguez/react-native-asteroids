@@ -1,5 +1,5 @@
 import { World } from "../../../../engine/core/World";
-import { TTLSystem } from "../../../../engine/systems/TTLSystem";
+import { TTLSystem } from "../../../../engine/systems/generic/TTLSystem";
 
 describe("TTLSystem", () => {
   let world: World;

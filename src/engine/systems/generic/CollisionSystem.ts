@@ -1,7 +1,7 @@
-import { System } from "../core/System";
-import { World } from "../core/World";
-import { Entity, PositionComponent, ColliderComponent } from "../../types/GameTypes";
-import { EventBus } from "../utils/EventBus";
+import { System } from "../../core/System";
+import { World } from "../../core/World";
+import { Entity, PositionComponent, ColliderComponent } from "../../types";
+import { EventBus } from "../../utils/EventBus";
 
 export interface CollisionEvent {
   entityA: Entity;

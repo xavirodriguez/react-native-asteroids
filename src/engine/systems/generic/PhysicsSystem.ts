@@ -1,6 +1,6 @@
-import { System } from "../core/System";
-import { World } from "../core/World";
-import { VelocityComponent } from "../../types/GameTypes";
+import { System } from "../../core/System";
+import { World } from "../../core/World";
+import { VelocityComponent } from "../../types";
 
 export interface PhysicsConfig {
   gravity?: number;

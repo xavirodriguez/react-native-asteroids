@@ -1,7 +1,7 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { EventBus } from "../../../engine/utils/EventBus";
-import { CollisionEvent } from "../../../engine/systems/CollisionSystem";
+import { CollisionEvent } from "../../../engine/systems/generic/CollisionSystem";
 import {
   PositionComponent,
   ColliderComponent,

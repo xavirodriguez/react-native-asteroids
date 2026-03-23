@@ -1,6 +1,6 @@
-import { System } from "../core/System";
-import { World } from "../core/World";
-import { TTLComponent } from "../../types/GameTypes";
+import { System } from "../../core/System";
+import { World } from "../../core/World";
+import { TTLComponent } from "../../types";
 
 /**
  * System responsible for managing the lifetime of entities with a TTLComponent.

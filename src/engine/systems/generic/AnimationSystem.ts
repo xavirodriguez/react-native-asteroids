@@ -1,6 +1,6 @@
-import { System } from "../core/System";
-import { World } from "../core/World";
-import { AnimationComponent } from "../../types/GameTypes";
+import { System } from "../../core/System";
+import { World } from "../../core/World";
+import { AnimationComponent } from "../../types";
 
 /**
  * System that processes visual animations by updating Animation components.

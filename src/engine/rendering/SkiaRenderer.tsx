@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { Canvas, Group, Circle, Path, Skia, Line, Rect, BlurMask, Oval } from "@shopify/react-native-skia";
 import { RenderFrame, RenderableEntity } from "./RenderBridge";
-import { GAME_CONFIG, RenderComponent } from "../../types/GameTypes";
+import { RenderComponent } from "../types";
 
 interface SkiaRendererProps {
   frame: RenderFrame;
@@ -181,5 +181,5 @@ const FlashShape: React.FC<{ render: RenderComponent }> = ({ render }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "black" },
-  canvas: { width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT, backgroundColor: "black" },
+  canvas: { width: 800, height: 600, backgroundColor: "black" }, // Default sizes, should be parameterized
 });

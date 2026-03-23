@@ -1,10 +1,10 @@
-import { System } from "../core/System";
-import { World } from "../core/World";
+import { System } from "../../core/System";
+import { World } from "../../core/World";
 import {
   PositionComponent,
   VelocityComponent,
   RenderComponent,
-} from "../../types/GameTypes";
+} from "../../types";
 
 export interface MovementConfig {
   wrap?: boolean;

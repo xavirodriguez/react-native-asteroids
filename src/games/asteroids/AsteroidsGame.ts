@@ -1,9 +1,9 @@
 import { BaseGame } from "../../engine/BaseGame";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { PhysicsSystem } from "../../engine/systems/PhysicsSystem";
-import { AnimationSystem } from "../../engine/systems/AnimationSystem";
-import { CollisionSystem } from "../../engine/systems/CollisionSystem";
-import { TTLSystem } from "../../engine/systems/TTLSystem";
+import { MovementSystem } from "../../engine/systems/generic/MovementSystem";
+import { PhysicsSystem } from "../../engine/systems/generic/PhysicsSystem";
+import { AnimationSystem } from "../../engine/systems/generic/AnimationSystem";
+import { CollisionSystem } from "../../engine/systems/generic/CollisionSystem";
+import { TTLSystem } from "../../engine/systems/generic/TTLSystem";
 import { AsteroidsCollisionResolver } from "./systems/AsteroidsCollisionResolver";
 import { InputSystem } from "./systems/InputSystem";
 import { GameStateSystem } from "./systems/GameStateSystem";

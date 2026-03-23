@@ -2,7 +2,7 @@ import { World } from "./core/World";
 import { GameLoop } from "./core/GameLoop";
 import { InputManager } from "./input/InputManager";
 import { EventBus } from "./utils/EventBus";
-import { InputState } from "../types/GameTypes";
+import { InputState } from "./types";
 
 export type GameUpdateListener<T extends BaseGame> = (game: T) => void;
 export type Unsubscribe = () => void;

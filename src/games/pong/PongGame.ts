@@ -1,7 +1,7 @@
 import { BaseGame } from "../../engine/BaseGame";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { PhysicsSystem } from "../../engine/systems/PhysicsSystem";
-import { CollisionSystem } from "../../engine/systems/CollisionSystem";
+import { MovementSystem } from "../../engine/systems/generic/MovementSystem";
+import { PhysicsSystem } from "../../engine/systems/generic/PhysicsSystem";
+import { CollisionSystem } from "../../engine/systems/generic/CollisionSystem";
 import { World } from "../../engine/core/World";
 import { GAME_CONFIG } from "../../types/GameTypes";
 

@@ -1,5 +1,5 @@
 import { World } from "../../../../engine/core/World";
-import { CollisionSystem } from "../../../../engine/systems/CollisionSystem";
+import { CollisionSystem } from "../../../../engine/systems/generic/CollisionSystem";
 import { EventBus } from "../../../../engine/utils/EventBus";
 import { AsteroidsCollisionResolver } from "../AsteroidsCollisionResolver";
 import { GAME_CONFIG, type HealthComponent, type GameStateComponent } from "../../../../types/GameTypes";

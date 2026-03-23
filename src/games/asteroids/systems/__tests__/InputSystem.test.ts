@@ -2,7 +2,7 @@ import { World } from "../../../../engine/core/World";
 import { InputSystem } from "../InputSystem";
 import { InputManager } from "../../../../engine/input/InputManager";
 import { KeyboardController, TouchController } from "../../../../engine/input/InputController";
-import { PhysicsSystem } from "../../../../engine/systems/PhysicsSystem";
+import { PhysicsSystem } from "../../../../engine/systems/generic/PhysicsSystem";
 import { GAME_CONFIG, type Entity, type VelocityComponent, type RenderComponent, type InputComponent } from "../../../../types/GameTypes";
 
 describe("InputSystem", () => {
