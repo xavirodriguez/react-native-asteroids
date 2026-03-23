@@ -57,6 +57,7 @@ export class InputManager {
           rotateLeft: acc.rotateLeft || inputs.rotateLeft,
           rotateRight: acc.rotateRight || inputs.rotateRight,
           shoot: acc.shoot || inputs.shoot,
+          hyperspace: acc.hyperspace || inputs.hyperspace,
         };
       },
       {
@@ -64,6 +65,7 @@ export class InputManager {
         rotateLeft: false,
         rotateRight: false,
         shoot: false,
+        hyperspace: false,
       } as InputState
     );
   }

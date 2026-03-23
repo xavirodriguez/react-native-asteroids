@@ -14,6 +14,7 @@ export abstract class InputController {
     rotateLeft: false,
     rotateRight: false,
     shoot: false,
+    hyperspace: false,
   };
 
   /**
@@ -104,6 +105,7 @@ export class KeyboardController extends InputController {
       rotateLeft: this.keys.has(GAME_CONFIG.KEYS.ROTATE_LEFT),
       rotateRight: this.keys.has(GAME_CONFIG.KEYS.ROTATE_RIGHT),
       shoot: this.keys.has(GAME_CONFIG.KEYS.SHOOT),
+      hyperspace: this.keys.has(GAME_CONFIG.KEYS.HYPERSPACE),
     };
   }
 }

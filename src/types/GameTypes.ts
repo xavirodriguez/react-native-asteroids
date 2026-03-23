@@ -20,6 +20,7 @@ export type ComponentType =
   | "Bullet"
   | "Ship"
   | "Asteroid"
+  | "Ufo"
   | "GameState"
 
 /**
@@ -70,7 +71,7 @@ export interface VelocityComponent extends Component {
 export interface RenderComponent extends Component {
   type: "Render"
   /** The geometric shape to draw */
-  shape: "triangle" | "circle" | "line" | "particle" | "polygon"
+  shape: "triangle" | "circle" | "line" | "particle" | "polygon" | "ufo" | "flash"
   /** Base size of the shape in pixels */
   size: number
   /** CSS color string (e.g., "#FFFFFF", "red") */
@@ -81,6 +82,8 @@ export interface RenderComponent extends Component {
   trailPositions?: { x: number; y: number }[]
   /** Vertices for polygonal shapes (asteroids) */
   vertices?: { x: number; y: number }[]
+  /** Internal lines for asteroid cracks/craters */
+  internalLines?: { x1: number; y1: number; x2: number; y2: number }[]
 }
 
 /**
@@ -125,6 +128,8 @@ export interface InputState {
   rotateRight: boolean
   /** Whether the shoot action is active */
   shoot: boolean
+  /** Whether the hyperspace action is active */
+  hyperspace: boolean
 }
 
 /**
@@ -165,6 +170,21 @@ export interface BulletComponent extends Component {
  */
 export interface ShipComponent extends Component {
   type: "Ship"
+  /** Remaining time for hyperspace effect animation */
+  hyperspaceTimer: number
+  /** Cooldown until hyperspace can be used again */
+  hyperspaceCooldownRemaining: number
+}
+
+/**
+ * Marker component for UFO entities.
+ */
+export interface UfoComponent extends Component {
+  type: "Ufo"
+  /** Vertical offset for sinusoidal movement */
+  baseY: number
+  /** Time accumulator for sine wave */
+  time: number
 }
 
 /**
@@ -181,6 +201,12 @@ export interface Star {
   y: number
   size: number
   brightness: number
+  /** Phase for twinkling animation */
+  twinklePhase: number
+  /** Speed of twinkling animation */
+  twinkleSpeed: number
+  /** Parallax layer (0=far, 1=mid, 2=close) */
+  layer: number
 }
 
 export interface ScreenShake {
@@ -243,6 +269,7 @@ export const GAME_CONFIG = {
     ROTATE_LEFT: "ArrowLeft",
     ROTATE_RIGHT: "ArrowRight",
     SHOOT: "Space",
+    HYPERSPACE: "ShiftLeft",
     PAUSE: "KeyP",
     RESTART: "KeyR",
   },
@@ -271,6 +298,15 @@ export const GAME_CONFIG = {
 
   /** Duration of invulnerability after being hit, in milliseconds */
   INVULNERABILITY_DURATION: 2000,
+
+  /** Hyperspace settings */
+  HYPERSPACE_DURATION: 500,
+  HYPERSPACE_COOLDOWN: 3000,
+
+  /** UFO settings */
+  UFO_SPEED: 100,
+  UFO_SPAWN_CHANCE: 0.005, // Chance per update
+  UFO_SIZE: 15,
 
   /** Initial number of asteroids in the first wave */
   INITIAL_ASTEROID_COUNT: 4,
