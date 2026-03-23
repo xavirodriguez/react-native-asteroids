@@ -1,6 +1,6 @@
 import { World } from "../../engine/core/World";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { TTLSystem } from "../../engine/systems/TTLSystem";
+import { MovementSystem } from "../../engine/systems/generic/MovementSystem";
+import { TTLSystem } from "../../engine/systems/generic/TTLSystem";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
 import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
