@@ -1,5 +1,5 @@
-import { World } from "./ecs-world"
-import { type GameStateComponent, INITIAL_GAME_STATE } from "../types/GameTypes"
+import { World } from "../../engine/core/World";
+import { type GameStateComponent, INITIAL_GAME_STATE } from "../../types/GameTypes";
 
 /**
  * Utility functions for the Asteroids game.
@@ -12,9 +12,9 @@ import { type GameStateComponent, INITIAL_GAME_STATE } from "../types/GameTypes"
  * @returns The current {@link GameStateComponent} or {@link INITIAL_GAME_STATE} if not found.
  */
 export function getGameState(world: World): GameStateComponent {
-  const [gameStateEntity] = world.query("GameState")
+  const [gameStateEntity] = world.query("GameState");
   if (gameStateEntity === undefined) {
-    return INITIAL_GAME_STATE
+    return INITIAL_GAME_STATE;
   }
-  return world.getComponent<GameStateComponent>(gameStateEntity, "GameState") ?? INITIAL_GAME_STATE
+  return world.getComponent<GameStateComponent>(gameStateEntity, "GameState") ?? INITIAL_GAME_STATE;
 }

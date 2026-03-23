@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { Canvas, Group, Circle, Path, Skia, Line, Rect, RadialGradient, vec, BlurMask, LinearGradient, Ellipse } from "@shopify/react-native-skia";
-import type { World } from "../src/game/ecs-world";
+import { Canvas, Group, Circle, Path, Skia, Line, Rect, BlurMask } from "@shopify/react-native-skia";
+import type { World } from "../src/engine/core/World";
 import {
   type PositionComponent,
   type RenderComponent,
@@ -9,7 +9,6 @@ import {
   type HealthComponent,
   type VelocityComponent,
   type GameStateComponent,
-  type Star,
   GAME_CONFIG,
 } from "../src/types/GameTypes";
 import { ParticleSystem } from "./ParticleSystem";

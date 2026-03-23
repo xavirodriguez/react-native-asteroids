@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
-import { AsteroidsGame, NullAsteroidsGame } from "../game/AsteroidsGame";
-import { type IAsteroidsGame } from "../game/types/GameInterfaces";
+import { AsteroidsGame, NullAsteroidsGame } from "../games/asteroids/AsteroidsGame";
+import { type IAsteroidsGame } from "../games/asteroids/types/GameInterfaces";
 import { type GameStateComponent, INITIAL_GAME_STATE, type InputState } from "../types/GameTypes";
 import { useHighScore } from "./useHighScore";
 
@@ -23,7 +23,7 @@ export function useAsteroidsGame() {
     setGame(newGame);
     newGame.start();
 
-    const unsubscribe = newGame.subscribe((updatedGame) => {
+    const unsubscribe = newGame.subscribe((updatedGame: IAsteroidsGame) => {
       const state = updatedGame.getGameState();
       setGameState(state);
       setIsPaused(updatedGame.isPausedState());
@@ -38,7 +38,7 @@ export function useAsteroidsGame() {
       newGame.destroy();
       deactivateKeepAwake();
     };
-  }, []);
+  }, [updateHighScore]);
 
   const handleInput = useCallback(
     (input: Partial<InputState>) => {

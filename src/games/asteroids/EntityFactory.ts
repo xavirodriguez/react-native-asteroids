@@ -1,5 +1,5 @@
 import { World } from "../../engine/core/World"
-import { type Entity, GAME_CONFIG, type Star } from "../types/GameTypes"
+import { type Entity, GAME_CONFIG, type Star } from "../../types/GameTypes"
 
 /**
  * Parameters for creating a player ship entity.
@@ -165,7 +165,7 @@ function addAsteroidTypeComponents(config: {
     type: "Render",
     shape: "polygon", // Updated to polygon
     size: radius,
-    color: "#888888",
+    color: "#AAAAAA",
     rotation: 0,
     vertices,
   })
@@ -288,4 +288,23 @@ export function createParticle(options: CreateParticleParams): Entity {
   world.addComponent(particle, { type: "TTL", remaining: ttl, total: ttl })
 
   return particle
+}
+
+/**
+ * Creates a new UFO entity.
+ */
+export function createUfo(world: World, x: number, y: number): Entity {
+  const ufo = world.createEntity();
+  world.addComponent(ufo, { type: "Position", x, y });
+  world.addComponent(ufo, { type: "Velocity", dx: 80, dy: 0 });
+  world.addComponent(ufo, {
+    type: "Render",
+    shape: "ufo",
+    size: 15,
+    color: "#FF0000",
+    rotation: 0,
+  });
+  world.addComponent(ufo, { type: "Collider", radius: 15 });
+  world.addComponent(ufo, { type: "Ufo" } as any);
+  return ufo;
 }
