@@ -43,17 +43,25 @@ const ParticleItem: React.FC<ParticleItemProps> = ({ entity, world }) => {
 
   if (!pos || !render || !ttl) return null;
 
-  // Linear fade and scale based on remaining TTL
-  const opacity = Math.min(ttl.remaining / 400, 1.0);
-  const scale = Math.min(ttl.remaining / 200, 1.0);
+  // Improvement 1: Alpha calculation based on TTL
+  const alpha = ttl.remaining / ttl.total;
+
+  // Use HSL for orange-red-white gradient
+  // hsl(30 + random*20, 100%, 50 + alpha*30%)
+  const hue = 30 + (entity % 20);
+  const lightness = 50 + alpha * 30;
+  const color = `hsl(${hue}, 100%, ${lightness}%)`;
+
+  // Size reduces with time
+  const size = render.size * alpha;
 
   return (
     <Circle
       cx={pos.x}
       cy={pos.y}
-      r={render.size * scale}
-      color={render.color}
-      opacity={opacity}
+      r={size}
+      color={color}
+      opacity={alpha}
     />
   );
 };

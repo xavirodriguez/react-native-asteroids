@@ -154,7 +154,7 @@ function addAsteroidTypeComponents(config: {
   const radius = GAME_CONFIG.ASTEROID_RADII[size]
 
   // Improvement 5: Polygonal asteroids
-  const vertexCount = 10
+  const vertexCount = 8 + Math.floor(Math.random() * 5) // 8 to 12 vertices
   const vertices = Array.from({ length: vertexCount }, (_, i) => {
     const angle = (i / vertexCount) * Math.PI * 2
     const r = radius * (0.75 + Math.random() * 0.5)
@@ -232,6 +232,9 @@ export function createGameState(config: { world: World }): Entity {
     y: Math.random() * GAME_CONFIG.SCREEN_HEIGHT,
     size: Math.random() * 1.5 + 0.5,
     brightness: Math.random() * 0.7 + 0.3,
+    twinklePhase: Math.random() * Math.PI * 2,
+    twinkleSpeed: 1 + Math.random() * 2,
+    layer: Math.floor(Math.random() * 3),
   }))
 
   world.addComponent(gameState, {

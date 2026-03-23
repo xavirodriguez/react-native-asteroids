@@ -94,7 +94,51 @@ export class AsteroidCollisionSystem extends System {
     const pair = { entityA, entityB };
 
     if (this.handleBulletAsteroidPair({ world, pair })) return;
-    this.handleShipAsteroidPair({ world, pair });
+    if (this.handleShipAsteroidPair({ world, pair })) return;
+    if (this.handleBulletUfoPair({ world, pair })) return;
+    this.handleShipUfoPair({ world, pair });
+  }
+
+  private handleBulletUfoPair(context: {
+    world: World;
+    pair: { entityA: Entity; entityB: Entity };
+  }): boolean {
+    const { world, pair } = context;
+    const match = this.matchPair({ world, pair, type1: "Bullet", type2: "Ufo" });
+
+    if (match) {
+      const pos = world.getComponent<PositionComponent>(match.Ufo, "Position");
+      if (pos) {
+        this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
+      }
+      world.removeEntity(match.Ufo);
+      world.removeEntity(match.Bullet);
+      this.addScore({ world, points: 100 });
+      return true;
+    }
+    return false;
+  }
+
+  private handleShipUfoPair(context: {
+    world: World;
+    pair: { entityA: Entity; entityB: Entity };
+  }): boolean {
+    const { world, pair } = context;
+    const match = this.matchPair({ world, pair, type1: "Ship", type2: "Ufo" });
+
+    if (match) {
+      const health = world.getComponent<HealthComponent>(match.Ship, "Health");
+      if (this.canShipTakeDamage(health)) {
+        this.applyDamageToShip(world, health);
+        const pos = world.getComponent<PositionComponent>(match.Ufo, "Position");
+        if (pos) {
+          this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
+        }
+        world.removeEntity(match.Ufo);
+      }
+      return true;
+    }
+    return false;
   }
 
   private handleBulletAsteroidPair(context: {
@@ -118,13 +162,15 @@ export class AsteroidCollisionSystem extends System {
   private handleShipAsteroidPair(context: {
     world: World;
     pair: { entityA: Entity; entityB: Entity };
-  }): void {
+  }): boolean {
     const { world, pair } = context;
     const match = this.matchPair({ world, pair, type1: "Ship", type2: "Asteroid" });
 
     if (match) {
       this.handleShipAsteroidCollision({ world, shipEntity: match.Ship });
+      return true;
     }
+    return false;
   }
 
   private matchPair<T1 extends ComponentType, T2 extends ComponentType>(config: {
