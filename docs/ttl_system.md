@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `TTLSystem` (`src/game/systems/TTLSystem.ts`) implements a time-to-live management system for temporary entities, such as bullets and other projectiles.
+The `TTLSystem` (`src/games/asteroids/systems/TTLSystem.ts`) implements a time-to-live management system for temporary entities, such as bullets and other projectiles.
 
 ## Component Contract
 

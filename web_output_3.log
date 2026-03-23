@@ -1,0 +1,37 @@
+
+> asteroides@1.0.0 web
+> expo start --web
+
+Starting project at /app
+Using src/app as the root directory for Expo Router.
+Starting Metro Bundler
+
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundling failed 2328ms node_modules/expo-router/entry.js (824 modules)
+
+Metro error: Unable to resolve module ../src/engine/rendering/SvgRenderer from /app/src/app/index.tsx:
+
+None of these files exist:
+  * src/src/engine/rendering/SvgRenderer(.web.ts|.ts|.web.tsx|.tsx|.web.mjs|.mjs|.web.js|.js|.web.jsx|.jsx|.web.json|.json|.web.cjs|.cjs|.web.scss|.scss|.web.sass|.sass|.web.css|.css|.web.skia|.skia)
+  * src/src/engine/rendering/SvgRenderer
+[0m [90m 3 |[39m [36mimport[39m { [33mSafeAreaProvider[39m } [36mfrom[39m [32m"react-native-safe-area-context"[39m[33m;[39m
+ [90m 4 |[39m [90m// Note: Component imports use the '@/' alias configured in tsconfig.json[39m
+[31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m { [33mSvgRenderer[39m [36mas[39m [33mGameRenderer[39m } [36mfrom[39m [32m"../src/engine/rendering/SvgRenderer"[39m[33m;[39m
+ [90m   |[39m                                              [31m[1m^[22m[39m
+ [90m 6 |[39m [36mimport[39m { [33mGameControls[39m } [36mfrom[39m [32m"@/components/GameControls"[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m { [33mGameUI[39m } [36mfrom[39m [32m"@/components/GameUI"[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m { useAsteroidsGame } [36mfrom[39m [32m"../src/hooks/useAsteroidsGame"[39m[33m;[39m[0m
+
+Import stack:
+
+ src/app/index.tsx
+ | import "../src/engine/rendering/SvgRenderer"
+
+ src/app (require.context)
+
+
+
+λ Bundling failed 2364ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (807 modules)
+Web Bundled 277ms node_modules/expo-router/_error.js (133 modules)

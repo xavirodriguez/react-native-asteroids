@@ -11,7 +11,7 @@ import {
 } from "../../../types/GameTypes";
 
 import { createAsteroid, createParticle } from "../EntityFactory";
-import { getGameState } from "../../../game/GameUtils";
+import { getGameState } from "../GameUtils";
 import { hapticDamage, hapticDeath } from "../../../utils/haptics";
 
 const ASTEROID_SPLIT_CONFIG: Record<
@@ -191,7 +191,6 @@ export class AsteroidCollisionSystem extends System {
     health.current--;
     health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
 
-    // Improvement 4: Screen shake upon collision
     const gameState = getGameState(world);
     gameState.screenShake = {
       intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,

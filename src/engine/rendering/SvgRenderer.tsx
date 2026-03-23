@@ -79,7 +79,7 @@ const StarBackground: React.FC<{ stars: any[]; world: World }> = ({ stars, world
   const time = Date.now() / 1000;
 
   const shipEntity = world.query("Ship", "Position")[0];
-  const shipPos = shipEntity ? world.getComponent<PositionComponent>(shipEntity, "Position") : { x: 0, y: 0 };
+  const shipPos = (shipEntity ? world.getComponent<PositionComponent>(shipEntity, "Position") : null) ?? { x: 0, y: 0 };
 
   return (
     <>
@@ -152,7 +152,7 @@ const calculateMotionBlur = (world: World, entity: number, pos: PositionComponen
   return render.trailPositions
     .slice(-4, -1)
     .reverse()
-    .map((p) => ({ ...pos, x: p.x, y: p.y }));
+    .map((p) => ({ ...pos, x: p.x, y: p.y } as PositionComponent));
 };
 
 const calculateGhosts = (pos: PositionComponent, size: number) => {
@@ -258,7 +258,7 @@ const renderShip = (params: {
   const { entity, world, pos, render } = params;
   const input = world.getComponent<InputComponent>(entity, "Input");
   const health = world.getComponent<HealthComponent>(entity, "Health");
-  const ship = world.getComponent<ShipComponent>(entity, "Ship");
+  const ship = world.getComponent<ShipComponent & { hyperspaceTimer?: number }>(entity, "Ship");
   const isInvulnerable = health ? health.invulnerableRemaining > 0 : false;
   return (
     <ShipRenderer
@@ -301,7 +301,7 @@ const renderPolygonShape = (params: {
     vertices={params.render.vertices || []}
     color={params.render.color}
     rotation={params.render.rotation}
-    internalLines={params.render.internalLines}
+    internalLines={(params.render as any).internalLines}
   />
 );
 
@@ -348,7 +348,7 @@ const ShipRenderer: React.FC<{
     <>
       {trail && <ShipTrail trail={trail} />}
       {hyperspaceTimer > 400 && (
-        <Circle cx={x} cy={y} r={size * 2} fill="white" opacity="0.8" />
+        <Circle cx={x} cy={y} r={size * 2} fill="white" opacity={0.8} />
       )}
       <G transform={transform} opacity={blinkOpacity * hyperspaceOpacity}>
         {hasThrust && <ShipThrusters size={size} />}
@@ -381,7 +381,7 @@ const ShipThrusters: React.FC<{ size: number }> = ({ size }) => (
     fill="#FF6600"
     stroke="#FF9900"
     strokeWidth="1"
-    opacity="0.8"
+    opacity={0.8}
   />
 );
 
@@ -394,7 +394,7 @@ const ShipCore: React.FC<{ size: number }> = ({ size }) => {
       cy="0"
       r={(size / 3) * pulse}
       fill="#FFFF00"
-      opacity="0.6"
+      opacity={0.6}
     />
   );
 };
@@ -496,7 +496,7 @@ const BulletRenderer: React.FC<{
         fill="none"
         stroke="#FF8800"
         strokeWidth={size}
-        opacity="0.6"
+        opacity={0.6}
       />
     )}
     <Circle cx={x} cy={y} r={size} fill={color} stroke={color} strokeWidth="1" />
@@ -524,9 +524,9 @@ const UfoRenderer: React.FC<{
   const transform = `translate(${x}, ${y})`;
   return (
     <G transform={transform}>
-      <Ellipse cx="0" cy="0" rx={size} ry={size / 2} fill={color} opacity="0.3" />
+      <Ellipse cx="0" cy="0" rx={size} ry={size / 2} fill={color} opacity={0.3} />
       <Ellipse cx="0" cy="0" rx={size} ry={size / 2.5} fill="#999" stroke={color} strokeWidth="1" />
-      <Ellipse cx="0" cy={-size / 4} rx={size / 2} ry={size / 3} fill="#00ffff" opacity="0.6" />
+      <Ellipse cx="0" cy={-size / 4} rx={size / 2} ry={size / 3} fill="#00ffff" opacity={0.6} />
       <Circle cx={-size / 2} cy={0} r={1.5} fill="yellow" />
       <Circle cx={0} cy={size / 6} r={1.5} fill="yellow" />
       <Circle cx={size / 2} cy={0} r={1.5} fill="yellow" />

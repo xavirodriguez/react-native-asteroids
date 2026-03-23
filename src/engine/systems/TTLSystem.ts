@@ -1,5 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
+import { Component } from "../core/Component";
 
 /**
  * System responsible for managing the lifetime of entities with a TTLComponent.
@@ -9,7 +10,7 @@ export class TTLSystem extends System {
     const ttlEntities = world.query("TTL");
 
     ttlEntities.forEach((entity) => {
-      const ttl = world.getComponent<{ remaining: number }>(entity, "TTL");
+      const ttl = world.getComponent<Component & { remaining: number }>(entity, "TTL");
       if (ttl) {
         ttl.remaining -= deltaTime;
         if (ttl.remaining <= 0) {
