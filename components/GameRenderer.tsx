@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { Canvas, Group, Circle, Path, Skia, Line, Rect, BlurMask } from "@shopify/react-native-skia";
+import { Canvas, Group, Circle, Path, Skia, Line, Rect, BlurMask, Ellipse } from "@shopify/react-native-skia";
 import type { World } from "../src/engine/core/World";
 import {
   type PositionComponent,
@@ -9,6 +9,8 @@ import {
   type HealthComponent,
   type VelocityComponent,
   type GameStateComponent,
+  type ShipComponent,
+  type TTLComponent,
   GAME_CONFIG,
 } from "../src/types/GameTypes";
 import { ParticleSystem } from "./ParticleSystem";
@@ -39,7 +41,7 @@ export const GameRenderer = React.memo(function GameRenderer({ world }: GameRend
 
   return (
     <View style={styles.container}>
-      <WorldView world={world} renderables={renderables} gameState={gameState} />
+      <WorldView world={world} renderables={renderables} gameState={gameState} worldVersion={world.version} />
     </View>
   );
 });
@@ -49,9 +51,10 @@ interface WorldViewProps {
   world: World;
   renderables: number[];
   gameState: GameStateComponent | null;
+  worldVersion: number;
 }
 
-const WorldView: React.FC<WorldViewProps> = ({ world, renderables, gameState }) => {
+const WorldView: React.FC<WorldViewProps> = ({ world, renderables, gameState, worldVersion }) => {
   const shakeTransform = useMemo(() => {
     if (gameState?.screenShake && gameState.screenShake.duration > 0) {
       const { intensity } = gameState.screenShake;
@@ -60,7 +63,7 @@ const WorldView: React.FC<WorldViewProps> = ({ world, renderables, gameState }) 
       return [{ translateX: dx }, { translateY: dy }];
     }
     return [];
-  }, [gameState?.screenShake]);
+  }, [gameState?.screenShake, worldVersion]);
 
   return (
     <Canvas style={styles.canvas}>
@@ -170,17 +173,19 @@ const ShapeSwitch: React.FC<{
 };
 EntityRenderer.displayName = "EntityRenderer";
 
-const ShipRenderer: React.FC<{
+interface ShipRendererProps {
   entity: number;
   world: World;
   pos: PositionComponent;
   render: RenderComponent;
-}> = ({ entity, world, pos, render }) => {
+}
+
+const ShipRenderer: React.FC<ShipRendererProps> = ({ entity, world, pos, render }) => {
   const input = world.getComponent<InputComponent>(entity, "Input");
   const health = world.getComponent<HealthComponent>(entity, "Health");
   const ship = world.getComponent<ShipComponent>(entity, "Ship");
   const isInvulnerable = health ? health.invulnerableRemaining > 0 : false;
-  const { size, rotation, color } = render;
+  const { size, rotation, color, trailPositions } = render;
 
   const blinkOpacity = isInvulnerable
     ? Math.floor(Date.now() / 150) % 2 === 0
@@ -193,14 +198,26 @@ const ShipRenderer: React.FC<{
     : 1.0;
 
   return (
-    <Group
-      transform={[
-        { translateX: pos.x },
-        { translateY: pos.y },
-        { rotate: (rotation * 180) / Math.PI }
-      ]}
-      opacity={blinkOpacity * hyperspaceOpacity}
-    >
+    <>
+      {/* Improvement 2: Ship trail */}
+      {trailPositions && trailPositions.map((p, i) => (
+        <Circle
+          key={`trail-${i}`}
+          cx={p.x}
+          cy={p.y}
+          r={1.5}
+          color="cyan"
+          opacity={(i / trailPositions.length) * 0.4}
+        />
+      ))}
+      <Group
+        transform={[
+          { translateX: pos.x },
+          { translateY: pos.y },
+          { rotate: (rotation * 180) / Math.PI }
+        ]}
+        opacity={blinkOpacity * hyperspaceOpacity}
+      >
       {input?.thrust && (
         <Group>
           <Path path={ASSET_PATHS.THRUSTER} color="#FF4400">
@@ -235,16 +252,19 @@ const ShipRenderer: React.FC<{
         opacity={0.8}
       />
     </Group>
+    </>
   );
 };
 ShipRenderer.displayName = "ShipRenderer";
 
-const CircleRenderer: React.FC<{
+interface CircleRendererProps {
   entity: number;
   world: World;
   pos: PositionComponent;
   render: RenderComponent;
-}> = ({ entity, world, pos, render }) => {
+}
+
+const CircleRenderer: React.FC<CircleRendererProps> = ({ entity, world, pos, render }) => {
   const isAsteroid = world.hasComponent(entity, "Asteroid");
   if (isAsteroid) {
     return <AsteroidRenderer entity={entity} pos={pos} render={render} />;
@@ -253,11 +273,13 @@ const CircleRenderer: React.FC<{
 };
 CircleRenderer.displayName = "CircleRenderer";
 
-const AsteroidRenderer: React.FC<{
+interface AsteroidRendererProps {
   entity: number;
   pos: PositionComponent;
   render: RenderComponent;
-}> = ({ pos, render }) => {
+}
+
+const AsteroidRenderer: React.FC<AsteroidRendererProps> = ({ pos, render }) => {
   const asteroidPath = useMemo(() => {
     if (render.vertices && render.vertices.length > 0) {
       const path = Skia.Path.Make();
@@ -300,12 +322,14 @@ const AsteroidRenderer: React.FC<{
 };
 AsteroidRenderer.displayName = "AsteroidRenderer";
 
-const BulletRenderer: React.FC<{
+interface BulletRendererProps {
   entity: number;
   world: World;
   pos: PositionComponent;
   render: RenderComponent;
-}> = ({ pos, render }) => {
+}
+
+const BulletRenderer: React.FC<BulletRendererProps> = ({ pos, render }) => {
   const { trailPositions, color, size } = render;
 
   return (
@@ -345,10 +369,12 @@ const BulletRenderer: React.FC<{
 };
 BulletRenderer.displayName = "BulletRenderer";
 
-const LineRenderer: React.FC<{
+interface LineRendererProps {
   pos: PositionComponent;
   render: RenderComponent;
-}> = ({ pos, render }) => {
+}
+
+const LineRenderer: React.FC<LineRendererProps> = ({ pos, render }) => {
   const { size, rotation, color } = render;
   const halfSize = size / 2;
 
@@ -371,10 +397,12 @@ const LineRenderer: React.FC<{
 };
 LineRenderer.displayName = "LineRenderer";
 
-const UfoRenderer: React.FC<{
+interface UfoRendererProps {
   pos: PositionComponent;
   render: RenderComponent;
-}> = ({ pos, render }) => {
+}
+
+const UfoRenderer: React.FC<UfoRendererProps> = ({ pos, render }) => {
   const { size, color } = render;
   const time = Date.now() / 1000;
   const yOffset = Math.sin(time * 2) * 10;
@@ -415,12 +443,14 @@ const UfoRenderer: React.FC<{
   );
 };
 
-const FlashRenderer: React.FC<{
+interface FlashRendererProps {
   entity: number;
   world: World;
   pos: PositionComponent;
   render: RenderComponent;
-}> = ({ entity, world, pos, render }) => {
+}
+
+const FlashRenderer: React.FC<FlashRendererProps> = ({ entity, world, pos, render }) => {
   const ttl = world.getComponent<TTLComponent>(entity, "TTL");
   const alpha = ttl ? ttl.remaining / ttl.total : 1;
 
