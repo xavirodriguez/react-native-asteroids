@@ -3,6 +3,8 @@ import { Circle, Group } from "@shopify/react-native-skia";
 import type { World } from "../src/game/ecs-world";
 import {
   type PositionComponent,
+  type GameStateComponent,
+  type Star,
   GAME_CONFIG,
 } from "../src/types/GameTypes";
 
@@ -15,27 +17,26 @@ interface StarfieldProps {
  * Star positions are fixed, but their displacement is calculated based on ship position.
  */
 export const Starfield: React.FC<StarfieldProps> = ({ world }) => {
-  // Static star generation
-  const layers = useMemo(() => {
-    const starLayers = [];
-    const layerCounts = [100, 60, 30];
-    const layerSpeeds = [0.05, 0.1, 0.2];
-    const layerSizes = [0.5, 1.0, 1.5];
+  const gameStateEntity = world.query("GameState")[0];
+  const gameState = gameStateEntity
+    ? (world.getComponent<GameStateComponent>(gameStateEntity, "GameState") ?? null)
+    : null;
 
-    for (let i = 0; i < 3; i++) {
-      const stars = [];
-      for (let j = 0; j < layerCounts[i]; j++) {
-        stars.push({
-          x: Math.random() * GAME_CONFIG.SCREEN_WIDTH,
-          y: Math.random() * GAME_CONFIG.SCREEN_HEIGHT,
-          size: Math.random() * layerSizes[i] + 0.2,
-          opacity: Math.random() * 0.5 + 0.3,
-        });
-      }
-      starLayers.push({ stars, speed: layerSpeeds[i] });
-    }
+  const layers = useMemo(() => {
+    if (!gameState?.stars) return [];
+
+    const starLayers = [
+      { stars: [] as Star[], speed: 0.05 },
+      { stars: [] as Star[], speed: 0.1 },
+      { stars: [] as Star[], speed: 0.2 },
+    ];
+
+    gameState.stars.forEach((star) => {
+      starLayers[star.layer || 0].stars.push(star);
+    });
+
     return starLayers;
-  }, []);
+  }, [gameState?.stars]);
 
   // Find the ship's position to drive parallax
   const shipPos = useMemo(() => {
@@ -45,6 +46,8 @@ export const Starfield: React.FC<StarfieldProps> = ({ world }) => {
     }
     return { x: GAME_CONFIG.SCREEN_CENTER_X, y: GAME_CONFIG.SCREEN_CENTER_Y };
   }, [world.version]);
+
+  const time = Date.now() / 1000;
 
   return (
     <Group>
@@ -57,11 +60,11 @@ export const Starfield: React.FC<StarfieldProps> = ({ world }) => {
           ]}
         >
           {/* Tile the starfield to ensure coverage during movement */}
-          <StarLayer stars={layer.stars} offsetX={0} offsetY={0} />
-          <StarLayer stars={layer.stars} offsetX={GAME_CONFIG.SCREEN_WIDTH} offsetY={0} />
-          <StarLayer stars={layer.stars} offsetX={-GAME_CONFIG.SCREEN_WIDTH} offsetY={0} />
-          <StarLayer stars={layer.stars} offsetX={0} offsetY={GAME_CONFIG.SCREEN_HEIGHT} />
-          <StarLayer stars={layer.stars} offsetX={0} offsetY={-GAME_CONFIG.SCREEN_HEIGHT} />
+          <StarLayer stars={layer.stars} offsetX={0} offsetY={0} time={time} />
+          <StarLayer stars={layer.stars} offsetX={GAME_CONFIG.SCREEN_WIDTH} offsetY={0} time={time} />
+          <StarLayer stars={layer.stars} offsetX={-GAME_CONFIG.SCREEN_WIDTH} offsetY={0} time={time} />
+          <StarLayer stars={layer.stars} offsetX={0} offsetY={GAME_CONFIG.SCREEN_HEIGHT} time={time} />
+          <StarLayer stars={layer.stars} offsetX={0} offsetY={-GAME_CONFIG.SCREEN_HEIGHT} time={time} />
         </Group>
       ))}
     </Group>
@@ -69,22 +72,26 @@ export const Starfield: React.FC<StarfieldProps> = ({ world }) => {
 };
 
 interface StarLayerProps {
-  stars: { x: number; y: number; size: number; opacity: number }[];
+  stars: Star[];
   offsetX: number;
   offsetY: number;
+  time: number;
 }
 
-const StarLayer: React.FC<StarLayerProps> = ({ stars, offsetX, offsetY }) => (
+const StarLayer: React.FC<StarLayerProps> = ({ stars, offsetX, offsetY, time }) => (
   <Group transform={[{ translateX: offsetX }, { translateY: offsetY }]}>
-    {stars.map((star, index) => (
-      <Circle
-        key={index}
-        cx={star.x}
-        cy={star.y}
-        r={star.size}
-        color="white"
-        opacity={star.opacity}
-      />
-    ))}
+    {stars.map((star, index) => {
+      const twinkle = 0.7 + 0.3 * Math.sin(time * star.twinkleSpeed + star.twinklePhase);
+      return (
+        <Circle
+          key={index}
+          cx={star.x}
+          cy={star.y}
+          r={star.size}
+          color="white"
+          opacity={star.brightness * twinkle}
+        />
+      );
+    })}
   </Group>
 );

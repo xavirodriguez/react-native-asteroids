@@ -22,12 +22,15 @@ export class MovementSystem extends System {
       const render = world.getComponent<RenderComponent>(entity, "Render")
 
       if (pos && vel) {
-        // Improvement 2: Ship trail update
+        // Improvement 2 & 6: Trail update for ship and bullets
         if (render && render.trailPositions) {
-            render.trailPositions.push({ x: pos.x, y: pos.y });
-            if (render.trailPositions.length > GAME_CONFIG.TRAIL_MAX_LENGTH) {
-                render.trailPositions.shift();
-            }
+          const isBullet = world.hasComponent(entity, "Bullet")
+          const maxLength = isBullet ? 6 : GAME_CONFIG.TRAIL_MAX_LENGTH
+
+          render.trailPositions.push({ x: pos.x, y: pos.y })
+          if (render.trailPositions.length > maxLength) {
+            render.trailPositions.shift()
+          }
         }
 
         this.updatePosition({ pos, vel, deltaTime })
