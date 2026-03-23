@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `GameStateSystem` (`src/game/systems/GameStateSystem.ts`) is responsible for managing global game progress, wave spawning, and game-over conditions.
+The `GameStateSystem` (`src/games/asteroids/systems/GameStateSystem.ts`) is responsible for managing global game progress, wave spawning, and game-over conditions.
 
 ## Global Game State Management
 

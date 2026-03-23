@@ -11,9 +11,8 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSequence,
-  withDelay,
 } from "react-native-reanimated";
-import { Canvas, BackdropBlur, Fill, Group, Rect } from "@shopify/react-native-skia";
+import { Canvas, BackdropBlur, Fill } from "@shopify/react-native-skia";
 import type { GameStateComponent } from "../src/types/GameTypes";
 
 /**

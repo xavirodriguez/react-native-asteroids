@@ -1,23 +1,24 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { World } from "../engine/core/World";
 import { GameLoop } from "../engine/core/GameLoop";
-import { SvgRenderer } from "../engine/rendering/SvgRenderer";
 
 interface GameEngineProps {
   world: World;
   gameLoop: GameLoop;
+  renderComponent: React.ComponentType<{ world: World }>;
 }
 
 /**
  * React wrapper for the AsterEngine.
+ * Orchestrates the GameLoop and provides the world to the specified Renderer component.
  */
-export const GameEngine: React.FC<GameEngineProps> = ({ world, gameLoop }) => {
-  const [version, setVersion] = useState(0);
+export const GameEngine: React.FC<GameEngineProps> = ({ world, gameLoop, renderComponent: Renderer }) => {
+  const [, setVersion] = useState(0);
 
   useEffect(() => {
     const unsubscribe = gameLoop.subscribeRender(() => {
-      // Trigger a light React update if needed for components that depend on world state directly.
-      // However, SvgRenderer should handle most of it through world.version.
+      // Trigger a React update for every frame if necessary.
+      // Renderer components often depend on world.version which is updated in systems.
       setVersion(v => v + 1);
     });
 
@@ -29,5 +30,5 @@ export const GameEngine: React.FC<GameEngineProps> = ({ world, gameLoop }) => {
     };
   }, [gameLoop]);
 
-  return <SvgRenderer world={world} />;
+  return <Renderer world={world} />;
 };

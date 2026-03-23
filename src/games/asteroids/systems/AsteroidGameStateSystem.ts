@@ -2,8 +2,8 @@ import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../../../types/GameTypes";
 import { spawnAsteroidWave, createUfo } from "../EntityFactory";
-import { getGameState } from "../../../game/GameUtils";
-import { type IGameStateSystem, type IAsteroidsGame } from "../../../game/types/GameInterfaces";
+import { getGameState } from "../GameUtils";
+import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.

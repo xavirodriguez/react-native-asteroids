@@ -33,7 +33,7 @@ The codebase follows a clear separation of concerns:
 
 The core game logic is organized into three main directories:
 
-#### `src/game/` - Game Engine
+#### `src/games/asteroids/` - Game Engine
 - **`ecs-world.ts`** - Core ECS implementation managing entities, components, and systems. Includes structural versioning and optimized queries.
 - **`AsteroidsGame.ts`** - Main game orchestrator. It manages the game loop and provides a subscription API for UI synchronization.
 - **`EntityFactory.ts`** - Factory functions for creating pre-configured entities (Ship, Asteroid, Bullet).

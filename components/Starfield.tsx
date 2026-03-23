@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Circle, Group } from "@shopify/react-native-skia";
-import type { World } from "../src/game/ecs-world";
+import type { World } from "../src/engine/core/World";
 import {
   type PositionComponent,
   GAME_CONFIG,
@@ -43,7 +43,7 @@ export const Starfield: React.FC<StarfieldProps> = ({ world }) => {
     if (shipEntities.length > 0) {
       return world.getComponent<PositionComponent>(shipEntities[0], "Position");
     }
-    return { x: GAME_CONFIG.SCREEN_CENTER_X, y: GAME_CONFIG.SCREEN_CENTER_Y };
+    return { x: GAME_CONFIG.SCREEN_CENTER_X, y: GAME_CONFIG.SCREEN_CENTER_Y } as PositionComponent;
   }, [world.version]);
 
   return (

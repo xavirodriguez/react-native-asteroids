@@ -1,6 +1,6 @@
-import type { World, System } from "../ecs-world";
-import type { GameStateComponent, InputState } from "../../types/GameTypes";
-import type { RenderSystem } from "../systems/RenderSystem";
+import type { World } from "../../../engine/core/World";
+import type { GameStateComponent, InputState } from "../../../types/GameTypes";
+import type { AsteroidRenderSystem } from "../systems/AsteroidRenderSystem";
 
 /**
  * Type definition for a callback function triggered on every game update.
@@ -21,13 +21,13 @@ export interface IAsteroidsGame {
   setInput(input: Partial<InputState>): void;
   subscribe(listener: UpdateListener): () => void;
   destroy(): void;
-  getRenderSystem(): RenderSystem;
+  getRenderSystem(): AsteroidRenderSystem;
 }
 
 /**
  * Interface defining the public API for the Game State System.
  */
-export interface IGameStateSystem extends System {
+export interface IGameStateSystem {
   isGameOver(): boolean;
   resetGameOverState(): void;
 }

@@ -1,8 +1,9 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
+import { Component } from "../core/Component";
 
 /**
- * System responsible for updating entity positions based on their velocity.
+ * Generic system responsible for updating entity positions based on their velocity.
  */
 export class MovementSystem extends System {
   constructor(private screenWidth: number, private screenHeight: number) {
@@ -13,21 +14,10 @@ export class MovementSystem extends System {
     const entities = world.query("Position", "Velocity");
 
     entities.forEach((entity) => {
-      const pos = world.getComponent<{ x: number; y: number }>(entity, "Position");
-      const vel = world.getComponent<{ dx: number; dy: number }>(entity, "Velocity");
-      const render = world.getComponent<{ trailPositions?: { x: number; y: number }[] }>(
-        entity,
-        "Render",
-      );
+      const pos = world.getComponent<Component & { x: number; y: number }>(entity, "Position");
+      const vel = world.getComponent<Component & { dx: number; dy: number }>(entity, "Velocity");
 
       if (pos && vel) {
-        if (render && render.trailPositions) {
-          render.trailPositions.push({ x: pos.x, y: pos.y });
-          if (render.trailPositions.length > 10) {
-            render.trailPositions.shift();
-          }
-        }
-
         const dt = deltaTime / 1000;
         pos.x += vel.dx * dt;
         pos.y += vel.dy * dt;
