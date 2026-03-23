@@ -1,5 +1,4 @@
-import { Component } from "./Component";
-import { Entity } from "./Entity";
+import { Component, Entity } from "../types/EngineTypes";
 import { System } from "./System";
 
 /**
