@@ -1,6 +1,6 @@
 import { System, type World } from "../ecs-world"
-import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../../types/GameTypes"
-import { spawnAsteroidWave } from "../EntityFactory"
+import { type GameStateComponent, type HealthComponent, type UfoComponent, type PositionComponent, GAME_CONFIG } from "../../types/GameTypes"
+import { spawnAsteroidWave, createUfo } from "../EntityFactory"
 import type { IAsteroidsGame } from "../types/GameInterfaces"
 import { getGameState } from "../GameUtils"
 import { type IGameStateSystem } from "../types/GameInterfaces"
@@ -26,6 +26,8 @@ export class GameStateSystem extends System implements IGameStateSystem {
     this.updatePlayerStatus({ world, gameState, deltaTime });
     this.updateAsteroidsCount(world, gameState);
     this.manageWaveProgression(world, gameState);
+    this.manageUfoSpawning(world, deltaTime);
+    this.updateUfos(world, deltaTime);
     this.updateGameOverStatus(world, gameState);
   }
 
@@ -98,6 +100,29 @@ export class GameStateSystem extends System implements IGameStateSystem {
       this.gameOverLogged = true;
       this.gameInstance?.pause();
     }
+  }
+
+  private manageUfoSpawning(world: World, deltaTime: number): void {
+    if (Math.random() < GAME_CONFIG.UFO_SPAWN_CHANCE * (deltaTime / 16)) {
+      const ufos = world.query("Ufo")
+      if (ufos.length === 0) {
+        const x = Math.random() > 0.5 ? 0 : GAME_CONFIG.SCREEN_WIDTH
+        const y = 100 + Math.random() * (GAME_CONFIG.SCREEN_HEIGHT - 200)
+        createUfo(world, x, y)
+      }
+    }
+  }
+
+  private updateUfos(world: World, deltaTime: number): void {
+    const ufos = world.query("Ufo", "Position", "Velocity")
+    ufos.forEach((entity) => {
+      const ufo = world.getComponent<UfoComponent>(entity, "Ufo")
+      const pos = world.getComponent<PositionComponent>(entity, "Position")
+      if (ufo && pos) {
+        ufo.time += deltaTime / 1000
+        pos.y = ufo.baseY + Math.sin(ufo.time * 2) * 30
+      }
+    })
   }
 
   private calculateWaveCount(level: number): number {

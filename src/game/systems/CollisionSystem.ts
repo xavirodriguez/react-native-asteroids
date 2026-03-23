@@ -9,7 +9,7 @@ import {
   GAME_CONFIG,
 } from "../../types/GameTypes"
 
-import { createAsteroid, createParticle } from "../EntityFactory"
+import { createAsteroid, createParticle, createExplosion } from "../EntityFactory"
 import { getGameState } from "../GameUtils"
 import { hapticDamage, hapticDeath } from "../../utils/haptics"
 
@@ -93,7 +93,9 @@ export class CollisionSystem extends System {
     const pair = { entityA, entityB };
 
     if (this.handleBulletAsteroidPair({ world, pair })) return;
+    if (this.handleBulletUfoPair({ world, pair })) return;
     this.handleShipAsteroidPair({ world, pair });
+    this.handleShipUfoPair({ world, pair });
   }
 
   private handleBulletAsteroidPair(context: {
@@ -126,6 +128,40 @@ export class CollisionSystem extends System {
     }
   }
 
+  private handleBulletUfoPair(context: {
+    world: World
+    pair: { entityA: Entity; entityB: Entity }
+  }): boolean {
+    const { world, pair } = context
+    const match = this.matchPair({ world, pair, type1: "Bullet", type2: "Ufo" })
+    if (match) {
+      const pos = world.getComponent<PositionComponent>(match.Ufo, "Position")
+      if (pos) createExplosion(world, pos.x, pos.y, GAME_CONFIG.UFO_SIZE)
+      world.removeEntity(match.Ufo)
+      world.removeEntity(match.Bullet)
+      this.addScore({ world, points: 50 })
+      return true
+    }
+    return false
+  }
+
+  private handleShipUfoPair(context: {
+    world: World
+    pair: { entityA: Entity; entityB: Entity }
+  }): void {
+    const { world, pair } = context
+    const match = this.matchPair({ world, pair, type1: "Ship", type2: "Ufo" })
+    if (match) {
+      const health = world.getComponent<HealthComponent>(match.Ship, "Health")
+      if (this.canShipTakeDamage(health)) {
+        this.applyDamageToShip(world, health)
+        const pos = world.getComponent<PositionComponent>(match.Ufo, "Position")
+        if (pos) createExplosion(world, pos.x, pos.y, GAME_CONFIG.UFO_SIZE)
+        world.removeEntity(match.Ufo)
+      }
+    }
+  }
+
   private matchPair<T1 extends ComponentType, T2 extends ComponentType>(config: {
     world: World
     pair: { entityA: Entity; entityB: Entity }
@@ -147,29 +183,14 @@ export class CollisionSystem extends System {
   private handleBulletAsteroidCollision(context: { world: World; asteroid: Entity; bullet: Entity }): void {
     const { world, asteroid, bullet } = context;
     const pos = world.getComponent<PositionComponent>(asteroid, "Position");
-    if (pos) {
-      const particleCount = 20 + Math.floor(Math.random() * 21);
-      this.spawnExplosionParticles(world, pos, particleCount);
+    const col = world.getComponent<ColliderComponent>(asteroid, "Collider");
+
+    if (pos && col) {
+      createExplosion(world, pos.x, pos.y, col.radius);
     }
     this.splitAsteroid({ world, asteroidEntity: asteroid });
     world.removeEntity(bullet);
     this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
-  }
-
-  private spawnExplosionParticles(world: World, pos: PositionComponent, count: number): void {
-    const colors = ["#FF4400", "#FF8800", "#FFCC00", "#FFFFFF"];
-    for (let i = 0; i < count; i++) {
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      createParticle({
-        world,
-        x: pos.x,
-        y: pos.y,
-        dx: (Math.random() - 0.5) * 200,
-        dy: (Math.random() - 0.5) * 200,
-        color,
-        ttl: 400 + Math.random() * 400,
-      });
-    }
   }
 
   private handleShipAsteroidCollision(context: { world: World; shipEntity: Entity }): void {

@@ -42,6 +42,7 @@ export default function App() {
           onRotateLeft={(pressed) => handleInput({ rotateLeft: pressed })}
           onRotateRight={(pressed) => handleInput({ rotateRight: pressed })}
           onShoot={(pressed) => handleInput({ shoot: pressed })}
+          onHyperspace={(pressed) => handleInput({ hyperspace: pressed })}
         />
       </View>
     </SafeAreaProvider>
@@ -54,8 +55,8 @@ const StartScreen: React.FC<{ highScore: number; onStart: () => void }> = ({
 }) => {
   const instructions =
     Platform.OS === "web"
-      ? "↑ Empujar  ←→ Rotar  Espacio Disparar"
-      : "Joystick izquierdo · Botón FIRE";
+      ? "↑ Empujar  ←→ Rotar  Espacio Disparar  Shift Hiperspacio"
+      : "Controles táctiles en pantalla";
 
   return (
     <View style={styles.startScreen}>

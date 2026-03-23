@@ -92,6 +92,7 @@ export class InputSystem extends System {
     input.rotateLeft = currentInputs.rotateLeft
     input.rotateRight = currentInputs.rotateRight
     input.shoot = currentInputs.shoot
+    input.hyperspace = currentInputs.hyperspace
   }
 
   private applyShipMovement(context: {
@@ -107,6 +108,7 @@ export class InputSystem extends System {
 
     this.applyRotation({ render, input, dt })
     this.applyThrust({ world, pos, vel, render, input, dt })
+    this.handleHyperspace({ world, pos, vel, render, input })
     this.applyFriction(vel, deltaTime)
   }
 
@@ -170,5 +172,31 @@ export class InputSystem extends System {
       input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN
       hapticShoot()
     }
+  }
+
+  private handleHyperspace(context: {
+    world: World
+    pos: PositionComponent
+    vel: VelocityComponent
+    render: RenderComponent
+    input: InputComponent
+  }): void {
+    const { world, pos, vel, render, input } = context
+    const ship = world.getComponent<ShipComponent>(world.query("Ship")[0], "Ship")
+    if (!ship || !input.hyperspace || ship.hyperspaceCooldownRemaining > 0) return
+
+    // Visual effect at old position
+    createExplosion(world, pos.x, pos.y, render.size)
+
+    // Teleport
+    pos.x = Math.random() * GAME_CONFIG.SCREEN_WIDTH
+    pos.y = Math.random() * GAME_CONFIG.SCREEN_HEIGHT
+    vel.dx = 0
+    vel.dy = 0
+    if (render.trailPositions) render.trailPositions = []
+
+    // Cooldown and animation
+    ship.hyperspaceTimer = GAME_CONFIG.HYPERSPACE_DURATION
+    ship.hyperspaceCooldownRemaining = GAME_CONFIG.HYPERSPACE_COOLDOWN
   }
 }
