@@ -1,5 +1,6 @@
 import { World } from "../../engine/core/World"
 import { type Entity, GAME_CONFIG, type Star } from "../../types/GameTypes"
+import { generateStarField } from "../../game/StarField"
 
 /**
  * Parameters for creating a player ship entity.
@@ -163,11 +164,13 @@ function addAsteroidTypeComponents(config: {
 
   world.addComponent(asteroid, {
     type: "Render",
-    shape: "polygon", // Updated to polygon
+    shape: "polygon",
     size: radius,
     color: "#AAAAAA",
-    rotation: 0,
+    rotation: Math.random() * Math.PI * 2, // Improvement 5: Randomized initial rotation
+    angularVelocity: (Math.random() - 0.5) * 0.04, // Improvement 7: Random slow rotation
     vertices,
+    hitFlashFrames: 0, // Improvement 9: Hit flash tracker
   })
   world.addComponent(asteroid, { type: "Collider", radius })
   world.addComponent(asteroid, { type: "Asteroid", size })
@@ -246,6 +249,7 @@ export function createGameState(config: { world: World }): Entity {
     isGameOver: false,
     stars,
     screenShake: null, // Improvement 4: Screen shake
+    debugCRT: true, // Improvement 10: Enable CRT effects by default
   })
   return gameState
 }

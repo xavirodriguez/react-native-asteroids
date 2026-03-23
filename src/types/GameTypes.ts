@@ -84,6 +84,10 @@ export interface RenderComponent extends Component {
   vertices?: { x: number; y: number }[]
   /** Internal lines for asteroid cracks/craters */
   internalLines?: { x1: number; y1: number; x2: number; y2: number }[]
+  /** Individual angular velocity for rotation (radians/sec) */
+  angularVelocity?: number
+  /** Number of frames remaining for the hit flash effect */
+  hitFlashFrames?: number
 }
 
 /**
@@ -236,6 +240,8 @@ export interface GameStateComponent extends Component {
   stars?: Star[]
   /** Current screen shake state */
   screenShake?: ScreenShake | null
+  /** Whether to apply CRT scanlines and vignette effect */
+  debugCRT?: boolean
 }
 
 /**
