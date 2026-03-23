@@ -1,5 +1,5 @@
 import { AsteroidsGame } from "../AsteroidsGame";
-import { type VelocityComponent, type PositionComponent } from "../../types/GameTypes";
+import { type VelocityComponent, type PositionComponent, type AsteroidComponent } from "../../../types/GameTypes";
 
 describe("Functional Game Verification", () => {
   let game: AsteroidsGame;
@@ -60,7 +60,7 @@ describe("Functional Game Verification", () => {
 
     // Clear asteroids to have a clean state
     const asteroids = world.query("Asteroid");
-    asteroids.forEach(a => world.removeEntity(a));
+    asteroids.forEach((a: number) => world.removeEntity(a));
 
     // Create an asteroid at (100, 100)
     const asteroid = world.createEntity();

@@ -1,6 +1,6 @@
-import { World } from "../../ecs-world";
+import { World } from "../../../../engine/core/World";
 import { GameStateSystem } from "../GameStateSystem";
-import { HealthComponent, GameStateComponent } from "../../../types/GameTypes";
+import { HealthComponent, GameStateComponent } from "../../../../types/GameTypes";
 import { getGameState } from "../../GameUtils";
 
 describe("GameStateSystem", () => {

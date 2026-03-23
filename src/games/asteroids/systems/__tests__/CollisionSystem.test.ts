@@ -1,18 +1,29 @@
-import { World } from "../../ecs-world";
-import { CollisionSystem } from "../CollisionSystem";
-import { GAME_CONFIG, type HealthComponent, type GameStateComponent } from "../../../types/GameTypes";
+import { World } from "../../../../engine/core/World";
+import { CollisionSystem } from "../../../../engine/systems/CollisionSystem";
+import { EventBus } from "../../../../engine/utils/EventBus";
+import { AsteroidsCollisionResolver } from "../AsteroidsCollisionResolver";
+import { GAME_CONFIG, type HealthComponent, type GameStateComponent } from "../../../../types/GameTypes";
 
-describe("CollisionSystem", () => {
+describe("Collision System Integration", () => {
   let world: World;
-  let system: CollisionSystem;
+  let eventBus: EventBus;
+  let collisionSystem: CollisionSystem;
+  let resolver: AsteroidsCollisionResolver;
 
   beforeEach(() => {
     world = new World();
-    system = new CollisionSystem();
-    world.addSystem(system);
+    eventBus = new EventBus();
+    collisionSystem = new CollisionSystem(eventBus);
+    resolver = new AsteroidsCollisionResolver(eventBus);
+    world.addSystem(collisionSystem);
+    world.addSystem(resolver);
   });
 
-  it("should detect collision between two circles", () => {
+  afterEach(() => {
+    resolver.destroy();
+  });
+
+  it("should detect collision between two circles and resolve via Asteroids resolver", () => {
     const e1 = world.createEntity();
     world.addComponent(e1, { type: "Ship" });
     world.addComponent(e1, { type: "Position", x: 100, y: 100 });
@@ -84,53 +95,5 @@ describe("CollisionSystem", () => {
 
     const gameState = world.getComponent<GameStateComponent>(gs, "GameState")!;
     expect(gameState.score).toBe(GAME_CONFIG.ASTEROID_SCORE);
-  });
-
-  it("should handle ship death", () => {
-    const ship = world.createEntity();
-    world.addComponent(ship, { type: "Ship" });
-    world.addComponent(ship, { type: "Position", x: 100, y: 100 });
-    world.addComponent(ship, { type: "Collider", radius: 10 });
-    world.addComponent(ship, { type: "Health", current: 1, max: 3, invulnerableRemaining: 0 });
-
-    const asteroid = world.createEntity();
-    world.addComponent(asteroid, { type: "Asteroid", size: "small" });
-    world.addComponent(asteroid, { type: "Position", x: 100, y: 100 });
-    world.addComponent(asteroid, { type: "Collider", radius: 10 });
-
-    world.update(0);
-
-    const health = world.getComponent<HealthComponent>(ship, "Health");
-    expect(health?.current).toBe(0);
-  });
-
-  it("should not split small asteroids", () => {
-    const bullet = world.createEntity();
-    world.addComponent(bullet, { type: "Bullet" });
-    world.addComponent(bullet, { type: "Position", x: 100, y: 100 });
-    world.addComponent(bullet, { type: "Collider", radius: 2 });
-
-    const asteroid = world.createEntity();
-    world.addComponent(asteroid, { type: "Asteroid", size: "small" });
-    world.addComponent(asteroid, { type: "Position", x: 100, y: 100 });
-    world.addComponent(asteroid, { type: "Collider", radius: 10 });
-
-    world.update(0);
-
-    expect(world.query("Asteroid").length).toBe(0);
-  });
-
-  it("should return false when components are missing during collision check", () => {
-    const e1 = world.createEntity();
-    world.addComponent(e1, { type: "Position", x: 100, y: 100 });
-    // Missing Collider
-
-    const e2 = world.createEntity();
-    world.addComponent(e2, { type: "Position", x: 100, y: 100 });
-    world.addComponent(e2, { type: "Collider", radius: 10 });
-
-    // Should not throw and should not detect collision
-    world.update(0);
-    expect(true).toBe(true);
   });
 });

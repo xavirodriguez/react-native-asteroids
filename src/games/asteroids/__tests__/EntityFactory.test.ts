@@ -1,4 +1,4 @@
-import { World } from "../ecs-world";
+import { World } from "../../../engine/core/World";
 import {
   createShip,
   createAsteroid,
@@ -7,7 +7,7 @@ import {
   spawnAsteroidWave,
   createParticle,
 } from "../EntityFactory";
-import { GAME_CONFIG, type HealthComponent, type TTLComponent, type AsteroidComponent, type PositionComponent, type VelocityComponent, type GameStateComponent, type RenderComponent, type ColliderComponent } from "../../types/GameTypes";
+import { GAME_CONFIG, type HealthComponent, type TTLComponent, type AsteroidComponent, type PositionComponent, type VelocityComponent, type GameStateComponent, type RenderComponent, type ColliderComponent } from "../../../types/GameTypes";
 
 describe("EntityFactory", () => {
   let world: World;

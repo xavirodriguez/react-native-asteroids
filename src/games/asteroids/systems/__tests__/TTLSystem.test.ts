@@ -1,5 +1,5 @@
-import { World } from "../../ecs-world";
-import { TTLSystem } from "../TTLSystem";
+import { World } from "../../../../engine/core/World";
+import { TTLSystem } from "../../../../engine/systems/TTLSystem";
 
 describe("TTLSystem", () => {
   let world: World;

@@ -1,5 +1,6 @@
-import { System, type World } from "../ecs-world"
-import { type GameStateComponent, type ShipComponent } from "../../types/GameTypes"
+import { System } from "../../../engine/core/System"
+import { World } from "../../../engine/core/World"
+import { type GameStateComponent, type ShipComponent } from "../../../types/GameTypes"
 
 /**
  * System responsible for handling rendering logic updates (e.g., screen shake duration).

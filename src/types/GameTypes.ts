@@ -22,6 +22,7 @@ export type ComponentType =
   | "Asteroid"
   | "Ufo"
   | "GameState"
+  | "Animation"
 
 /**
  * Unique identifier for an entity in the world.
@@ -78,8 +79,14 @@ export interface RenderComponent extends Component {
   color: string
   /** Rotation in radians */
   rotation: number
+  /** Opacity of the entity */
+  opacity?: number
+  /** Scaling factor */
+  scale?: number
   /** Trailing positions for ship trail effect */
   trailPositions?: { x: number; y: number }[]
+  /** Maximum length of the trail */
+  trailMaxLength?: number
   /** Vertices for polygonal shapes (asteroids) */
   vertices?: { x: number; y: number }[]
   /** Internal lines for asteroid cracks/craters */
@@ -194,6 +201,15 @@ export interface AsteroidComponent extends Component {
   type: "Asteroid"
   /** Size category of the asteroid, affecting its collider radius and split behavior */
   size: "large" | "medium" | "small"
+}
+
+export interface AnimationComponent extends Component {
+  type: "Animation";
+  property: string;       // "opacity" | "scale" | "rotation"
+  waveType: "sine" | "linear" | "blink";
+  frequency: number;
+  amplitude: number;
+  currentValue: number;   // Calculated value for the renderer to use
 }
 
 export interface Star {

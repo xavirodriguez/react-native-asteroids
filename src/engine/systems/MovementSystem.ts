@@ -1,11 +1,25 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
+import {
+  PositionComponent,
+  VelocityComponent,
+  RenderComponent,
+} from "../../types/GameTypes";
+
+export interface MovementConfig {
+  wrap?: boolean;
+  bounds?: {
+    width: number;
+    height: number;
+  };
+}
 
 /**
  * System responsible for updating entity positions based on their velocity.
+ * Completely agnostic to game entities.
  */
 export class MovementSystem extends System {
-  constructor(private screenWidth: number, private screenHeight: number) {
+  constructor(private config: MovementConfig) {
     super();
   }
 
@@ -13,17 +27,17 @@ export class MovementSystem extends System {
     const entities = world.query("Position", "Velocity");
 
     entities.forEach((entity) => {
-      const pos = world.getComponent<{ x: number; y: number }>(entity, "Position");
-      const vel = world.getComponent<{ dx: number; dy: number }>(entity, "Velocity");
-      const render = world.getComponent<{ trailPositions?: { x: number; y: number }[] }>(
-        entity,
-        "Render",
-      );
+      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
+      const render = world.getComponent<RenderComponent>(entity, "Render");
 
       if (pos && vel) {
+        // Trail update
         if (render && render.trailPositions) {
+          const maxLength = render.trailMaxLength || 12;
+
           render.trailPositions.push({ x: pos.x, y: pos.y });
-          if (render.trailPositions.length > 10) {
+          if (render.trailPositions.length > maxLength) {
             render.trailPositions.shift();
           }
         }
@@ -32,16 +46,18 @@ export class MovementSystem extends System {
         pos.x += vel.dx * dt;
         pos.y += vel.dy * dt;
 
-        this.wrapPosition(pos);
+        if (this.config.wrap && this.config.bounds) {
+          this.wrapPosition(pos, this.config.bounds.width, this.config.bounds.height);
+        }
       }
     });
   }
 
-  private wrapPosition(pos: { x: number; y: number }): void {
-    if (pos.x < 0) pos.x = this.screenWidth;
-    else if (pos.x > this.screenWidth) pos.x = 0;
+  private wrapPosition(pos: PositionComponent, width: number, height: number): void {
+    if (pos.x < 0) pos.x = width;
+    else if (pos.x > width) pos.x = 0;
 
-    if (pos.y < 0) pos.y = this.screenHeight;
-    else if (pos.y > this.screenHeight) pos.y = 0;
+    if (pos.y < 0) pos.y = height;
+    else if (pos.y > height) pos.y = 0;
   }
 }

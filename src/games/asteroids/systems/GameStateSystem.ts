@@ -1,9 +1,10 @@
-import { System, type World } from "../ecs-world"
-import { type GameStateComponent, type HealthComponent, type UfoComponent, type PositionComponent, GAME_CONFIG } from "../../types/GameTypes"
+import { System } from "../../../engine/core/System"
+import { World } from "../../../engine/core/World"
+import { type GameStateComponent, type HealthComponent, type UfoComponent, type PositionComponent, GAME_CONFIG } from "../../../types/GameTypes"
 import { spawnAsteroidWave, createUfo } from "../EntityFactory"
-import type { IAsteroidsGame } from "../types/GameInterfaces"
+import type { IAsteroidsGame } from "../GameInterfaces"
 import { getGameState } from "../GameUtils"
-import { type IGameStateSystem } from "../types/GameInterfaces"
+import { type IGameStateSystem } from "../GameInterfaces"
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.

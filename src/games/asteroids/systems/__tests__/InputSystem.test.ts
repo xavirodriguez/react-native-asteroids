@@ -1,12 +1,14 @@
-import { World } from "../../ecs-world";
+import { World } from "../../../../engine/core/World";
 import { InputSystem } from "../InputSystem";
-import { InputManager } from "../../../engine/input/InputManager";
-import { KeyboardController, TouchController } from "../../../engine/input/InputController";
-import { GAME_CONFIG, type Entity, type VelocityComponent, type RenderComponent, type InputComponent } from "../../../types/GameTypes";
+import { InputManager } from "../../../../engine/input/InputManager";
+import { KeyboardController, TouchController } from "../../../../engine/input/InputController";
+import { PhysicsSystem } from "../../../../engine/systems/PhysicsSystem";
+import { GAME_CONFIG, type Entity, type VelocityComponent, type RenderComponent, type InputComponent } from "../../../../types/GameTypes";
 
 describe("InputSystem", () => {
   let world: World;
   let system: InputSystem;
+  let physicsSystem: PhysicsSystem;
   let ship: Entity;
   let inputManager: InputManager;
 
@@ -17,7 +19,9 @@ describe("InputSystem", () => {
     inputManager.addController(new TouchController());
 
     system = new InputSystem(inputManager);
+    physicsSystem = new PhysicsSystem({ friction: GAME_CONFIG.SHIP_FRICTION });
     world.addSystem(system);
+    world.addSystem(physicsSystem);
 
     ship = world.createEntity();
     world.addComponent(ship, { type: "Ship" });
@@ -67,7 +71,7 @@ describe("InputSystem", () => {
     expect(vel).toBeDefined();
 
     // dx should be close to 0, dy should be close to SHIP_THRUST
-    // Note: friction (0.99) is applied in the InputSystem using a frame-rate independent formula
+    // Note: friction (0.99) is applied in the PhysicsSystem
     // expected dy = (thrust * dt) * pow(friction, deltaTime / (1000/60))
     // expected dy = (200 * 1) * pow(0.99, 1000 / 16.666) = 200 * pow(0.99, 60) ≈ 109.43
     const frictionFactor = Math.pow(GAME_CONFIG.SHIP_FRICTION, 1000 / (1000 / 60));

@@ -1,5 +1,5 @@
-import { World } from "./ecs-world"
-import { type GameStateComponent, INITIAL_GAME_STATE } from "../types/GameTypes"
+import { World } from "../../engine/core/World"
+import { type GameStateComponent, INITIAL_GAME_STATE } from "../../types/GameTypes"
 
 /**
  * Utility functions for the Asteroids game.

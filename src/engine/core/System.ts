@@ -1,3 +1,5 @@
+import { Component } from "./Component";
+import { Entity } from "./Entity";
 import { World } from "./World";
 
 /**

@@ -1,6 +1,6 @@
-import { World } from "../ecs-world"
+import { World } from "../../../engine/core/World"
 import { getGameState } from "../GameUtils"
-import { INITIAL_GAME_STATE } from "../../types/GameTypes"
+import { INITIAL_GAME_STATE } from "../../../types/GameTypes"
 
 describe("GameUtils", () => {
   describe("getGameState", () => {

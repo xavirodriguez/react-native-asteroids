@@ -1,16 +1,18 @@
 import { Component } from "./Component";
 import { Entity } from "./Entity";
 import { System } from "./System";
+import { ComponentType } from "../../types/GameTypes";
 
 /**
  * ECS World class that manages the lifecycle of entities, components, and systems.
  */
 export class World {
   private entities = new Set<Entity>();
-  private components = new Map<string, Map<Entity, Component>>();
-  private componentIndex = new Map<string, Set<Entity>>();
+  private components = new Map<ComponentType, Map<Entity, Component>>();
+  private componentIndex = new Map<ComponentType, Set<Entity>>();
   private systems: System[] = [];
   private nextEntityId = 1;
+  private freeEntities: Entity[] = [];
   /**
    * Current version of the world structure.
    * Incremented whenever an entity or component is added or removed.
@@ -19,11 +21,12 @@ export class World {
 
   /**
    * Creates a new unique entity in the world.
+   * Reuses IDs from a free list if available.
    *
    * @returns The newly created {@link Entity} ID.
    */
   createEntity(): Entity {
-    const id = this.nextEntityId++;
+    const id = this.freeEntities.pop() || this.nextEntityId++;
     this.entities.add(id);
     this.version++;
     return id;
@@ -53,7 +56,7 @@ export class World {
    * @param type - The type of the component to retrieve.
    * @returns The component instance if found, otherwise `undefined`.
    */
-  getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
+  getComponent<T extends Component>(entity: Entity, type: ComponentType): T | undefined {
     return this.components.get(type)?.get(entity) as T;
   }
 
@@ -64,7 +67,7 @@ export class World {
    * @param type - The component type to look for.
    * @returns `true` if the entity has the component, otherwise `false`.
    */
-  hasComponent(entity: Entity, type: string): boolean {
+  hasComponent(entity: Entity, type: ComponentType): boolean {
     return this.componentIndex.get(type)?.has(entity) ?? false;
   }
 
@@ -74,7 +77,7 @@ export class World {
    * @param entity - The entity to remove the component from.
    * @param type - The type of the component to remove.
    */
-  removeComponent(entity: Entity, type: string): void {
+  removeComponent(entity: Entity, type: ComponentType): void {
     const componentMap = this.components.get(type);
     if (componentMap && componentMap.delete(entity)) {
       this.componentIndex.get(type)?.delete(entity)
@@ -88,7 +91,7 @@ export class World {
    * @param componentTypes - One or more component types to filter by.
    * @returns An array of {@link Entity} IDs that have all the required components.
    */
-  query(...componentTypes: string[]): Entity[] {
+  query(...componentTypes: ComponentType[]): Entity[] {
     if (componentTypes.length === 0) return [];
 
     const sortedTypes = this.getSortedTypes(componentTypes);
@@ -103,6 +106,7 @@ export class World {
 
   /**
    * Removes an entity and all of its attached components from the world.
+   * Adds the ID to a free list for reuse.
    *
    * @param entity - The entity to remove.
    */
@@ -114,6 +118,7 @@ export class World {
     });
 
     if (this.entities.delete(entity)) {
+      this.freeEntities.push(entity);
       this.version++;
     }
   }
@@ -156,13 +161,13 @@ export class World {
     return Array.from(this.entities);
   }
 
-  private filterByComponents(entities: Set<Entity>, types: string[]): Entity[] {
+  private filterByComponents(entities: Set<Entity>, types: ComponentType[]): Entity[] {
     return Array.from(entities).filter((entity) =>
       types.every((type) => this.componentIndex.get(type)?.has(entity)),
     );
   }
 
-  private getSortedTypes(types: string[]): string[] {
+  private getSortedTypes(types: ComponentType[]): ComponentType[] {
     return [...types].sort((a, b) => {
       const countA = this.componentIndex.get(a)?.size ?? 0;
       const countB = this.componentIndex.get(b)?.size ?? 0;
@@ -170,7 +175,7 @@ export class World {
     });
   }
 
-  private ensureComponentStorage(type: string): void {
+  private ensureComponentStorage(type: ComponentType): void {
     if (!this.components.has(type)) {
       this.components.set(type, new Map());
       this.componentIndex.set(type, new Set());

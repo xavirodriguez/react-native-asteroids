@@ -1,6 +1,7 @@
-import type { World, System } from "../ecs-world";
+import { World } from "../../engine/core/World";
+import { System } from "../../engine/core/System";
 import type { GameStateComponent, InputState } from "../../types/GameTypes";
-import type { RenderSystem } from "../systems/RenderSystem";
+import type { RenderSystem } from "./systems/RenderSystem";
 
 /**
  * Type definition for a callback function triggered on every game update.
