@@ -152,8 +152,13 @@ export class AsteroidCollisionSystem extends System {
   }): void {
     const { world, asteroid, bullet } = context;
     const pos = world.getComponent<PositionComponent>(asteroid, "Position");
+    const render = world.getComponent<RenderComponent>(asteroid, "Render");
     if (pos) {
       this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT);
+    }
+    // Improvement 9: Hit flash effect
+    if (render) {
+      render.hitFlashFrames = 8;
     }
     this.splitAsteroid({ world, asteroidEntity: asteroid });
     world.removeEntity(bullet);

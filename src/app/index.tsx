@@ -2,7 +2,7 @@ import { useState } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 // Note: Component imports use the '@/' alias configured in tsconfig.json
-import { GameRenderer } from "../../components/GameRenderer";
+import { CanvasRenderer } from "../../components/CanvasRenderer";
 import { GameControls } from "../../components/GameControls";
 import { GameUI } from "../../components/GameUI";
 import { useAsteroidsGame } from "../hooks/useAsteroidsGame";
@@ -36,7 +36,7 @@ export default function App() {
           isPaused={isPaused}
           highScore={highScore}
         />
-        <GameRenderer world={game.getWorld()} />
+        <CanvasRenderer world={game.getWorld()} />
         <GameControls
           onThrust={(pressed) => handleInput({ thrust: pressed })}
           onRotateLeft={(pressed) => handleInput({ rotateLeft: pressed })}
