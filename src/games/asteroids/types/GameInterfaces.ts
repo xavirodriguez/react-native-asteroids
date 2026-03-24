@@ -1,32 +1,17 @@
-import type { World } from "../../../engine/core/World";
+import type { IGame, UpdateListener } from "../../../engine/core/IGame";
 import type { GameStateComponent, InputState } from "../../../types/GameTypes";
-import type { AsteroidRenderSystem } from "../systems/AsteroidRenderSystem";
 
-/**
- * Type definition for a callback function triggered on every game update.
- */
-export type UpdateListener = (game: IAsteroidsGame) => void;
+// Re-export with strong typing for Asteroids
+export type { UpdateListener };
 
-/**
- * Interface defining the public API for the Asteroids game controller.
- */
-export interface IAsteroidsGame {
-  pause(): void;
-  resume(): void;
-  restart(): void;
-  getWorld(): World;
-  isPausedState(): boolean;
-  isGameOver(): boolean;
+export interface IAsteroidsGame extends IGame<IAsteroidsGame> {
+  // Override with specific types
   getGameState(): GameStateComponent;
   setInput(input: Partial<InputState>): void;
-  subscribe(listener: UpdateListener): () => void;
-  destroy(): void;
-  getRenderSystem(): AsteroidRenderSystem;
+  isPausedState(): boolean;
+  isGameOver(): boolean;
 }
 
-/**
- * Interface defining the public API for the Game State System.
- */
 export interface IGameStateSystem {
   isGameOver(): boolean;
   resetGameOverState(): void;

@@ -1,59 +1,22 @@
-import { useEffect, useState, useCallback } from "react";
-import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
-import { AsteroidsGame, NullAsteroidsGame } from "../games/asteroids/AsteroidsGame";
-import { type IAsteroidsGame } from "../games/asteroids/types/GameInterfaces";
-import { type GameStateComponent, INITIAL_GAME_STATE, type InputState } from "../types/GameTypes";
+import { useGame } from "./useGame";
 import { useHighScore } from "./useHighScore";
+import { AsteroidsGame } from "../games/asteroids/AsteroidsGame";
+import { INITIAL_GAME_STATE } from "../types/GameTypes";
+import type { GameStateComponent, InputState } from "../types/GameTypes";
 
 /**
  * Custom hook to manage the lifecycle of the Asteroids game engine.
- *
- * @returns An object containing the game instance, current state, and input handler.
  */
 export function useAsteroidsGame() {
-  const [game, setGame] = useState<IAsteroidsGame>(new NullAsteroidsGame());
-  const [gameState, setGameState] = useState<GameStateComponent>(INITIAL_GAME_STATE);
-  const [isPaused, setIsPaused] = useState(false);
+  const { game, gameState, isPaused, handleInput, togglePause } =
+    useGame<AsteroidsGame, GameStateComponent, InputState>(AsteroidsGame, INITIAL_GAME_STATE);
+
   const { highScore, updateHighScore } = useHighScore();
-  const [, forceUpdate] = useState({});
 
-  useEffect(() => {
-    activateKeepAwakeAsync();
-    const newGame = new AsteroidsGame();
-    setGame(newGame);
-    newGame.start();
+  // Update high score when game is over
+  if (gameState?.isGameOver) {
+    updateHighScore(gameState.score);
+  }
 
-    const unsubscribe = newGame.subscribe((updatedGame: IAsteroidsGame) => {
-      const state = updatedGame.getGameState();
-      setGameState(state);
-      setIsPaused(updatedGame.isPausedState());
-      if (state.isGameOver) {
-        updateHighScore(state.score);
-      }
-      forceUpdate({});
-    });
-
-    return () => {
-      unsubscribe();
-      newGame.destroy();
-      deactivateKeepAwake();
-    };
-  }, [updateHighScore]);
-
-  const handleInput = useCallback(
-    (input: Partial<InputState>) => {
-      game.setInput(input);
-    },
-    [game]
-  );
-
-  const togglePause = useCallback(() => {
-    if (game.isPausedState()) {
-      game.resume();
-    } else {
-      game.pause();
-    }
-  }, [game]);
-
-  return { game, gameState, handleInput, isPaused, togglePause, highScore };
+  return { game, gameState: gameState ?? INITIAL_GAME_STATE, handleInput, isPaused, togglePause, highScore };
 }
