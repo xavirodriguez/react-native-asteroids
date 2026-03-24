@@ -59,3 +59,11 @@ export interface RenderComponent extends Component {
   angularVelocity?: number;
   hitFlashFrames?: number;
 }
+
+/**
+ * Reclaimable component for entities that should be returned to a pool.
+ */
+export interface ReclaimableComponent extends Component {
+  type: "Reclaimable";
+  onReclaim: (world: any, entity: any) => void;
+}

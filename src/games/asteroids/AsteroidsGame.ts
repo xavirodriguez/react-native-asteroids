@@ -13,6 +13,7 @@ import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
 import { getGameState } from "./GameUtils";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
+import { BulletPool, ParticlePool } from "./EntityPool";
 
 export class AsteroidsGame
   extends BaseGame<GameStateComponent, InputState>
@@ -20,10 +21,14 @@ export class AsteroidsGame
 
   private gameStateSystem: AsteroidGameStateSystem;
   private assetLoader: AssetLoader;
+  private bulletPool: BulletPool;
+  private particlePool: ParticlePool;
 
   constructor() {
     super({ pauseKey: GAME_CONFIG.KEYS.PAUSE, restartKey: GAME_CONFIG.KEYS.RESTART });
     this.assetLoader = new AssetLoader();
+    this.bulletPool = new BulletPool();
+    this.particlePool = new ParticlePool();
   }
 
   protected registerSystems(): void {
@@ -43,12 +48,12 @@ export class AsteroidsGame
     this.inputManager.addController(new KeyboardController<InputState>(ASTEROID_KEYMAP, DEFAULT_INPUT));
     this.inputManager.addController(new TouchController<InputState>());
 
-    const inputSys = new AsteroidInputSystem(this.inputManager);
+    const inputSys = new AsteroidInputSystem(this.inputManager, this.bulletPool);
     this.gameStateSystem = new AsteroidGameStateSystem(this);
 
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT));
-    this.world.addSystem(new AsteroidCollisionSystem());
+    this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new AsteroidRenderSystem());

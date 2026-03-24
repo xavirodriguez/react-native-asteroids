@@ -9,7 +9,8 @@ import {
   TTLComponent,
   ColliderComponent,
   HealthComponent,
-  RenderComponent
+  RenderComponent,
+  ReclaimableComponent
 } from "../engine/types/EngineTypes";
 
 // Re-export engine types
@@ -21,7 +22,8 @@ export type {
   TTLComponent,
   ColliderComponent,
   HealthComponent,
-  RenderComponent
+  RenderComponent,
+  ReclaimableComponent
 };
 
 /**
@@ -39,7 +41,8 @@ export type ComponentType =
   | "Ship"
   | "Asteroid"
   | "Ufo"
-  | "GameState";
+  | "GameState"
+  | "Reclaimable";
 
 /**
  * Represents the current state of user inputs.
