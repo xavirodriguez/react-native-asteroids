@@ -26,9 +26,9 @@ export class AsteroidRenderSystem extends RenderUpdateSystem {
     if (!gameStateEntity) return;
 
     const gameState = world.getComponent<GameStateComponent>(gameStateEntity, "GameState");
-    if (gameState?.screenShake && gameState.screenShake.duration > 0) {
-      gameState.screenShake.duration--;
-      if (gameState.screenShake.duration <= 0) {
+    if (gameState?.screenShake && gameState.screenShake.framesLeft > 0) {
+      gameState.screenShake.framesLeft--;
+      if (gameState.screenShake.framesLeft <= 0) {
         gameState.screenShake = null;
       }
     }

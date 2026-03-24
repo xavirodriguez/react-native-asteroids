@@ -204,7 +204,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     const gameState = getGameState(world);
     gameState.screenShake = {
       intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,
-      duration: GAME_CONFIG.SHAKE_DURATION_IMPACT,
+      framesLeft: GAME_CONFIG.SHAKE_DURATION_IMPACT,
     };
 
     if (health.current <= 0) {

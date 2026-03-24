@@ -1,6 +1,7 @@
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity, PositionComponent, RenderComponent, TTLComponent, HealthComponent } from "../types/EngineTypes";
+import { drawStarField } from "../../game/StarField";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -46,7 +47,7 @@ export class CanvasRenderer implements Renderer {
     // Improvement 4: Screen Shake
     let shakeX = 0;
     let shakeY = 0;
-    if (gameState?.screenShake && gameState.screenShake.duration > 0) {
+    if (gameState?.screenShake && gameState.screenShake.framesLeft > 0) {
       shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
       shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
     }
@@ -124,8 +125,9 @@ export class CanvasRenderer implements Renderer {
     ctx.restore();
 
     // Improvement 2: Ship Trail
-    if (world.hasComponent(entity, "Ship") && render.trailPositions) {
-      this.drawShipTrail(ctx, render.trailPositions, render.size);
+    const ship = world.getComponent<any>(entity, "Ship");
+    if (ship && ship.trail) {
+      this.drawShipTrail(ctx, ship.trail, render.size);
     }
   }
 
@@ -148,12 +150,33 @@ export class CanvasRenderer implements Renderer {
         ctx.translate(pos.x, pos.y);
         ctx.globalAlpha = lifeRatio;
 
-        const hueVariation = (entity % 10) - 5;
-        const hue = 20 + hueVariation;
-        const lightness = 50 + (1 - lifeRatio) * 50;
-        ctx.fillStyle = `hsl(${hue}, 100%, ${lightness}%)`;
+        // Improvement 1: Dynamic color (Orange-Red-White)
+        // Fresh = White, Middle = Orange, Old = Red
+        let hue = 20; // Default orange/red hue
+        let saturation = 100;
+        let lightness = 50;
 
-        const size = render.size * lifeRatio;
+        if (lifeRatio > 0.8) {
+            lightness = 100; // White-ish
+        } else if (lifeRatio > 0.4) {
+            hue = 30; // Orange
+            lightness = 50 + (0.8 - lifeRatio) * 50;
+        } else {
+            hue = 0; // Red
+            lightness = 25 + lifeRatio * 60;
+        }
+
+        // Add small random hue variation
+        const hueVariation = (entity % 10) - 5;
+        ctx.fillStyle = `hsl(${hue + hueVariation}, ${saturation}%, ${lightness}%)`;
+
+        // Improvement 6: Glow for fresh particles
+        if (lifeRatio > 0.8) {
+            ctx.shadowColor = "#ffffaa";
+            ctx.shadowBlur = 10;
+        }
+
+        const size = render.size * lifeRatio; // Improvement 1: size shrink
         ctx.beginPath();
         ctx.arc(0, 0, size, 0, Math.PI * 2);
         ctx.fill();
@@ -172,18 +195,21 @@ export class CanvasRenderer implements Renderer {
 
     // Improvement 8: Thrust Propulsion Flame
     if (input?.thrust) {
-      const gradient = ctx.createLinearGradient(-size / 2, 0, -size * 1.5, 0);
+      ctx.save();
+      const flameLen = size * (1.2 + Math.random() * 0.4);
+      const gradient = ctx.createLinearGradient(-size / 2, 0, -flameLen, 0);
       gradient.addColorStop(0, "orange");
       gradient.addColorStop(0.5, "yellow");
-      gradient.addColorStop(1, "transparent");
+      gradient.addColorStop(1, "rgba(255, 255, 0, 0)");
 
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.moveTo(-size / 2, size / 3);
-      const flameLen = size * (1.2 + Math.random() * 0.3);
       ctx.lineTo(-flameLen, 0);
       ctx.lineTo(-size / 2, -size / 3);
+      ctx.closePath();
       ctx.fill();
+      ctx.restore();
     }
 
     ctx.strokeStyle = render.color;
@@ -203,7 +229,10 @@ export class CanvasRenderer implements Renderer {
   }
 
   private drawPolygon(ctx: CanvasRenderingContext2D, render: RenderComponent): void {
-    if (!render.vertices || render.vertices.length === 0) return;
+    if (!render.vertices || render.vertices.length === 0) {
+      this.drawCircle(ctx, render.size, render.color);
+      return;
+    }
 
     ctx.strokeStyle = render.color;
     ctx.lineWidth = 2;
@@ -284,12 +313,13 @@ export class CanvasRenderer implements Renderer {
   }
 
   private drawShipTrail(ctx: CanvasRenderingContext2D, trail: { x: number; y: number }[], shipSize: number): void {
+    // Improvement 2: Trail cyan with alpha/size fade
     trail.forEach((p, i) => {
       const ratio = i / trail.length;
-      ctx.globalAlpha = ratio * 0.4;
+      ctx.globalAlpha = ratio * 0.5;
       ctx.fillStyle = "#00ffff";
       ctx.beginPath();
-      ctx.arc(p.x, p.y, (shipSize / 3) * ratio, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, (shipSize / 2) * ratio, 0, Math.PI * 2);
       ctx.fill();
     });
     ctx.globalAlpha = 1.0;
@@ -303,31 +333,24 @@ export class CanvasRenderer implements Renderer {
 
     if (!shipPos) return;
 
-    stars.forEach(star => {
-      const parallaxX = (star.x - shipPos.x * (0.05 * (star.layer + 1)) + this.width) % this.width;
-      const parallaxY = (star.y - shipPos.y * (0.05 * (star.layer + 1)) + this.height) % this.height;
-
-      const twinkle = 0.8 + Math.sin(star.twinklePhase + Date.now() * 0.005 * star.twinkleSpeed) * 0.2;
-      ctx.globalAlpha = star.brightness * twinkle;
-      ctx.fillStyle = "white";
-      ctx.fillRect(parallaxX, parallaxY, star.size, star.size);
-    });
-    ctx.globalAlpha = 1.0;
+    drawStarField(ctx, stars, this.width, this.height, shipPos);
   }
 
   private drawCRTEffect(ctx: CanvasRenderingContext2D): void {
     ctx.save();
-    ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
-    for (let y = 0; y < this.height; y += 4) {
+    // Improvement 10: Scanlines every 3-4 pixels
+    ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+    for (let y = 0; y < this.height; y += 3) {
       ctx.fillRect(0, y, this.width, 1);
     }
 
+    // Improvement 10: Radial gradient vignette
     const gradient = ctx.createRadialGradient(
-      this.width / 2, this.height / 2, this.width / 4,
-      this.width / 2, this.height / 2, this.width / 1.2
+      this.width / 2, this.height / 2, this.width / 3,
+      this.width / 2, this.height / 2, this.width * 0.8
     );
     gradient.addColorStop(0, "transparent");
-    gradient.addColorStop(1, "rgba(0, 0, 0, 0.4)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0.5)");
 
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, this.width, this.height);

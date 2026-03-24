@@ -1,6 +1,7 @@
 import { World } from "../../engine/core/World"
-import { type Entity, GAME_CONFIG, type Star } from "../../types/GameTypes"
+import { type Entity, GAME_CONFIG } from "../../types/GameTypes"
 import { BulletPool, ParticlePool } from "./EntityPool"
+import { generateStarField } from "../../game/StarField"
 
 /**
  * Parameters for creating a player ship entity.
@@ -213,15 +214,11 @@ export function createGameState(config: { world: World }): Entity {
   const gameState = world.createEntity()
 
   // Improvement 3: Star background
-  const stars: Star[] = Array.from({ length: GAME_CONFIG.STAR_COUNT }, () => ({
-    x: Math.random() * GAME_CONFIG.SCREEN_WIDTH,
-    y: Math.random() * GAME_CONFIG.SCREEN_HEIGHT,
-    size: Math.random() * 1.5 + 0.5,
-    brightness: Math.random() * 0.7 + 0.3,
-    twinklePhase: Math.random() * Math.PI * 2,
-    twinkleSpeed: 1 + Math.random() * 2,
-    layer: Math.floor(Math.random() * 3),
-  }))
+  const stars = generateStarField(
+    GAME_CONFIG.STAR_COUNT,
+    GAME_CONFIG.SCREEN_WIDTH,
+    GAME_CONFIG.SCREEN_HEIGHT
+  )
 
   world.addComponent(gameState, {
     type: "GameState",
