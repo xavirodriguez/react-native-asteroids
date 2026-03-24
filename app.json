@@ -28,6 +28,7 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+    "platforms": ["ios", "android", "web"],
     "plugins": [
       "expo-router"
     ],

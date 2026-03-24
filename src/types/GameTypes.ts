@@ -77,6 +77,10 @@ export interface RenderComponent extends Component {
   color: string
   /** Rotation in radians */
   rotation: number
+  /** Angular velocity in radians per second (Improvement 7) */
+  angularVelocity?: number
+  /** Frames remaining for hit flash effect (Improvement 9) */
+  hitFlashFrames?: number
   /** Trailing positions for ship trail effect */
   trailPositions?: { x: number; y: number }[]
   /** Vertices for polygonal shapes (asteroids) */
@@ -210,6 +214,8 @@ export interface GameStateComponent extends Component {
   stars?: Star[]
   /** Current screen shake state */
   screenShake?: ScreenShake | null
+  /** Whether to enable CRT effect overlay (Improvement 10) */
+  debugCRT?: boolean
 }
 
 /**

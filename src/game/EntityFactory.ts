@@ -1,5 +1,6 @@
 import type { World } from "./ecs-world"
 import { type Entity, GAME_CONFIG, type Star } from "../types/GameTypes"
+import { generateStarField } from "./StarField"
 
 /**
  * Parameters for creating a player ship entity.
@@ -166,7 +167,8 @@ function addAsteroidTypeComponents(config: {
     shape: "polygon", // Updated to polygon
     size: radius,
     color: "#888888",
-    rotation: 0,
+    rotation: Math.random() * Math.PI * 2, // Improvement 5: Random initial rotation
+    angularVelocity: (Math.random() - 0.5) * 2, // Improvement 7: Slow random rotation
     vertices,
   })
   world.addComponent(asteroid, { type: "Collider", radius })
@@ -226,13 +228,8 @@ export function createGameState(config: { world: World }): Entity {
   const { world } = config
   const gameState = world.createEntity()
 
-  // Improvement 3: Star background
-  const stars: Star[] = Array.from({ length: GAME_CONFIG.STAR_COUNT }, () => ({
-    x: Math.random() * GAME_CONFIG.SCREEN_WIDTH,
-    y: Math.random() * GAME_CONFIG.SCREEN_HEIGHT,
-    size: Math.random() * 1.5 + 0.5,
-    brightness: Math.random() * 0.7 + 0.3,
-  }))
+  // Improvement 3: Star background refactored
+  const stars = generateStarField()
 
   world.addComponent(gameState, {
     type: "GameState",

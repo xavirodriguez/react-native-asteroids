@@ -2,6 +2,7 @@ import { System, type World } from "../ecs-world"
 import {
   type PositionComponent,
   type ColliderComponent,
+  type RenderComponent,
   type AsteroidComponent,
   type HealthComponent,
   type Entity,
@@ -147,6 +148,12 @@ export class CollisionSystem extends System {
   private handleBulletAsteroidCollision(context: { world: World; asteroid: Entity; bullet: Entity }): void {
     const { world, asteroid, bullet } = context;
     const pos = world.getComponent<PositionComponent>(asteroid, "Position");
+    const render = world.getComponent<RenderComponent>(asteroid, "Render");
+
+    if (render) {
+      render.hitFlashFrames = 10; // Improvement 9: Set hit flash frames
+    }
+
     if (pos) {
       this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT);
     }
@@ -231,8 +238,15 @@ export class CollisionSystem extends System {
     offset: number
   }): void {
     const { world, pos, size, offset } = spawnConfig
-    createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size });
-    createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size });
+    const a1 = createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size });
+    const a2 = createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size });
+
+    [a1, a2].forEach(a => {
+      const render = world.getComponent<RenderComponent>(a, "Render");
+      if (render) {
+        render.hitFlashFrames = 10;
+      }
+    });
   }
 
   private addScore(scoreContext: { world: World; points: number }): void {
