@@ -10,6 +10,7 @@ export class World {
   private componentIndex = new Map<string, Set<Entity>>();
   private systems: System[] = [];
   private nextEntityId = 1;
+  private freeEntities: Entity[] = [];
   /**
    * Current version of the world structure.
    * Incremented whenever an entity or component is added or removed.
@@ -22,7 +23,7 @@ export class World {
    * @returns The newly created {@link Entity} ID.
    */
   createEntity(): Entity {
-    const id = this.nextEntityId++;
+    const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
     this.entities.add(id);
     this.version++;
     return id;
@@ -113,6 +114,7 @@ export class World {
     });
 
     if (this.entities.delete(entity)) {
+      this.freeEntities.push(entity);
       this.version++;
     }
   }

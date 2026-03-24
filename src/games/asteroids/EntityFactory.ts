@@ -1,5 +1,6 @@
 import { World } from "../../engine/core/World"
 import { type Entity, GAME_CONFIG, type Star } from "../../types/GameTypes"
+import { BulletPool, ParticlePool } from "./EntityPool"
 
 /**
  * Parameters for creating a player ship entity.
@@ -28,6 +29,7 @@ export interface CreateBulletParams {
   x: number
   y: number
   angle: number
+  pool: BulletPool
 }
 
 /**
@@ -42,6 +44,7 @@ export interface CreateParticleParams {
   color: string
   ttl?: number
   size?: number
+  pool: ParticlePool
 }
 
 /**
@@ -182,40 +185,21 @@ function addAsteroidTypeComponents(config: {
  * @returns The newly created {@link Entity}.
  */
 export function createBullet(options: CreateBulletParams): Entity {
-  const { world, x, y, angle } = options
-  const bullet = world.createEntity()
-
-  addBulletMovementComponents({ world, bullet, x, y, angle })
-  addBulletLifeCycleComponents({ world, bullet })
-
-  return bullet
-}
-
-function addBulletMovementComponents(config: {
-  world: World
-  bullet: Entity
-  x: number
-  y: number
-  angle: number
-}): void {
-  const { world, bullet, x, y, angle } = config
+  const { world, x, y, angle, pool } = options
   const speed = GAME_CONFIG.BULLET_SPEED
-  world.addComponent(bullet, { type: "Position", x, y })
-  world.addComponent(bullet, {
-    type: "Velocity",
-    dx: Math.cos(angle) * speed,
-    dy: Math.sin(angle) * speed,
-  })
-}
-
-function addBulletLifeCycleComponents(config: { world: World; bullet: Entity }): void {
-  const { world, bullet } = config
   const ttl = GAME_CONFIG.BULLET_TTL
   const size = GAME_CONFIG.BULLET_SIZE
-  world.addComponent(bullet, { type: "Render", shape: "circle", size, color: "#FFFF00", rotation: 0 })
-  world.addComponent(bullet, { type: "Collider", radius: size })
-  world.addComponent(bullet, { type: "TTL", remaining: ttl, total: ttl }) // Improvement 1: Total TTL for alpha
-  world.addComponent(bullet, { type: "Bullet" })
+
+  return pool.acquire(
+    world,
+    x,
+    y,
+    Math.cos(angle) * speed,
+    Math.sin(angle) * speed,
+    size,
+    "#FFFF00",
+    ttl
+  )
 }
 
 /**
@@ -279,21 +263,8 @@ export function spawnAsteroidWave(config: { world: World; count: number }): void
  * @returns The newly created {@link Entity}.
  */
 export function createParticle(options: CreateParticleParams): Entity {
-  const { world, x, y, dx, dy, color, ttl = 600, size = 2 } = options
-  const particle = world.createEntity()
-
-  world.addComponent(particle, { type: "Position", x, y })
-  world.addComponent(particle, { type: "Velocity", dx, dy })
-  world.addComponent(particle, {
-    type: "Render",
-    shape: "particle",
-    size,
-    color,
-    rotation: 0,
-  })
-  world.addComponent(particle, { type: "TTL", remaining: ttl, total: ttl })
-
-  return particle
+  const { world, x, y, dx, dy, color, ttl = 600, size = 2, pool } = options
+  return pool.acquire(world, x, y, dx, dy, size, color, ttl)
 }
 
 /**

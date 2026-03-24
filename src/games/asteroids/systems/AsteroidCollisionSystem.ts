@@ -8,11 +8,13 @@ import {
   type ComponentType,
   GAME_CONFIG,
   RenderComponent,
+  ReclaimableComponent,
 } from "../../../types/GameTypes";
 
 import { createAsteroid, createParticle } from "../EntityFactory";
 import { getGameState } from "../GameUtils";
 import { hapticDamage, hapticDeath } from "../../../utils/haptics";
+import { ParticlePool } from "../EntityPool";
 
 const ASTEROID_SPLIT_CONFIG: Record<
   AsteroidComponent["size"],
@@ -27,6 +29,10 @@ const ASTEROID_SPLIT_CONFIG: Record<
  * System responsible for detecting and resolving collisions between entities.
  */
 export class AsteroidCollisionSystem extends CollisionSystem {
+  constructor(private particlePool: ParticlePool) {
+    super();
+  }
+
   /**
    * Called when a collision is detected.
    */
@@ -58,8 +64,8 @@ export class AsteroidCollisionSystem extends CollisionSystem {
       if (pos) {
         this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
       }
-      world.removeEntity(matchUfo);
-      world.removeEntity(matchBullet);
+      this.destroyEntity(world, matchUfo);
+      this.destroyEntity(world, matchBullet);
       this.addScore({ world, points: 100 });
       return true;
     }
@@ -83,7 +89,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
         if (pos) {
           this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
         }
-        world.removeEntity(matchUfo);
+        this.destroyEntity(world, matchUfo);
       }
       return true;
     }
@@ -159,7 +165,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
       render.hitFlashFrames = 8;
     }
     this.splitAsteroid({ world, asteroidEntity: asteroid });
-    world.removeEntity(bullet);
+    this.destroyEntity(world, bullet);
     this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
   }
 
@@ -173,6 +179,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
         dy: (Math.random() - 0.5) * 160, // [-80, 80]
         color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
         ttl: GAME_CONFIG.PARTICLE_TTL_BASE,
+        pool: this.particlePool,
       });
     }
   }
@@ -215,7 +222,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     if (asteroid && pos) {
       this.executeSplitStrategy({ world, pos, size: asteroid.size });
     }
-    world.removeEntity(asteroidEntity);
+    this.destroyEntity(world, asteroidEntity);
   }
 
   private executeSplitStrategy(splitParams: {
@@ -246,5 +253,16 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     const { world, points } = scoreContext;
     const gameState = getGameState(world);
     gameState.score += points;
+  }
+
+  /**
+   * Destroys an entity, notifying its pool if it's reclaimable.
+   */
+  private destroyEntity(world: World, entity: Entity): void {
+    const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
+    if (reclaimable) {
+      reclaimable.onReclaim(world, entity);
+    }
+    world.removeEntity(entity);
   }
 }

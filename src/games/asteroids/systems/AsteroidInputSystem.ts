@@ -11,6 +11,7 @@ import {
 import { createBullet } from "../EntityFactory";
 import { hapticShoot } from "../../../utils/haptics";
 import { InputManager } from "../../../engine/input/InputManager";
+import { BulletPool } from "../EntityPool";
 
 /**
  * System responsible for processing user input and applying it to the ship's state.
@@ -24,8 +25,9 @@ export class AsteroidInputSystem extends System {
    * Creates a new AsteroidInputSystem.
    *
    * @param inputManager - The centralized input manager to poll for state.
+   * @param bulletPool - The pool for creating bullets.
    */
-  constructor(private inputManager: InputManager) {
+  constructor(private inputManager: InputManager, private bulletPool: BulletPool) {
     super();
   }
 
@@ -147,7 +149,7 @@ export class AsteroidInputSystem extends System {
     const { world, pos, render, input } = context;
     const canShoot = input.shoot && input.shootCooldownRemaining <= 0;
     if (canShoot) {
-      createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
+      createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation, pool: this.bulletPool });
       input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN;
       hapticShoot();
     }
