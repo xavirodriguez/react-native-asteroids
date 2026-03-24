@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import Svg, { Polygon, Circle, Line, Rect, G, Ellipse, Polyline } from "react-native-svg";
+import Svg, { Polygon, Circle, Line, Rect, G, Ellipse, Polyline, Defs, Filter, FeGaussianBlur, FeMerge, FeMergeNode, LinearGradient, Stop, RadialGradient, Pattern } from "react-native-svg";
 import { World } from "../core/World";
 import {
   type PositionComponent,
@@ -64,6 +64,27 @@ const WorldView: React.FC<WorldViewProps> = ({ world, renderables, gameState }) 
       viewBox={`0 0 ${GAME_CONFIG.SCREEN_WIDTH} ${GAME_CONFIG.SCREEN_HEIGHT}`}
       style={styles.svg}
     >
+      <Defs>
+        <Filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <FeGaussianBlur stdDeviation="3" result="blur" />
+          <FeMerge>
+            <FeMergeNode in="blur" />
+            <FeMergeNode in="SourceGraphic" />
+          </FeMerge>
+        </Filter>
+        <LinearGradient id="thrustGradient" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0%" stopColor="#FF6600" stopOpacity="0.8" />
+          <Stop offset="100%" stopColor="#FFCC00" stopOpacity="0" />
+        </LinearGradient>
+        <RadialGradient id="vignette" cx="50%" cy="50%" rx="50%" ry="50%">
+          <Stop offset="0%" stopColor="black" stopOpacity="0" />
+          <Stop offset="90%" stopColor="black" stopOpacity="0.1" />
+          <Stop offset="100%" stopColor="black" stopOpacity="0.4" />
+        </RadialGradient>
+        <Pattern id="scanlines" x="0" y="0" width="1" height="4" patternUnits="userSpaceOnUse">
+          <Line x1="0" y1="0" x2={GAME_CONFIG.SCREEN_WIDTH} y2="0" stroke="black" strokeWidth="2" opacity="0.2" />
+        </Pattern>
+      </Defs>
       <G transform={transform}>
         {gameState?.stars && <StarBackground stars={gameState.stars} world={world} />}
 
@@ -71,6 +92,26 @@ const WorldView: React.FC<WorldViewProps> = ({ world, renderables, gameState }) 
           <EntityRenderer key={entity} entity={entity} world={world} />
         ))}
       </G>
+
+      {/* Improvement 10: CRT Effect (Scanlines + Vignette) */}
+      {gameState?.debugCRT !== false && (
+        <>
+          <Rect
+            x="0" y="0"
+            width={GAME_CONFIG.SCREEN_WIDTH}
+            height={GAME_CONFIG.SCREEN_HEIGHT}
+            fill="url(#scanlines)"
+            pointerEvents="none"
+          />
+          <Rect
+            x="0" y="0"
+            width={GAME_CONFIG.SCREEN_WIDTH}
+            height={GAME_CONFIG.SCREEN_HEIGHT}
+            fill="url(#vignette)"
+            pointerEvents="none"
+          />
+        </>
+      )}
     </Svg>
   );
 };
@@ -270,7 +311,7 @@ const renderShip = (params: {
       hasThrust={input?.thrust ?? false}
       isInvulnerable={isInvulnerable}
       hyperspaceTimer={ship?.hyperspaceTimer}
-      trail={render.trailPositions}
+      trail={ship?.trail}
     />
   );
 };
@@ -302,6 +343,7 @@ const renderPolygonShape = (params: {
     color={params.render.color}
     rotation={params.render.rotation}
     internalLines={(params.render as any).internalLines}
+    hitFlashFrames={params.render.hitFlashFrames}
   />
 );
 
@@ -315,6 +357,7 @@ const renderParticleShape = (params: {
   const ttl = world.getComponent<TTLComponent>(entity, "TTL");
   return (
     <ParticleRenderer
+      seed={entity}
       x={pos.x}
       y={pos.y}
       size={render.size}
@@ -362,28 +405,33 @@ const ShipRenderer: React.FC<{
 
 const ShipTrail: React.FC<{ trail: { x: number; y: number }[] }> = React.memo(({ trail }) => (
   <>
-    {trail.map((p, i) => (
-      <Circle
-        key={i}
-        cx={p.x}
-        cy={p.y}
-        r={2}
-        fill="#00ffff"
-        opacity={(i / trail.length) * 0.4}
-      />
-    ))}
+    {trail.map((p, i) => {
+      const alpha = (i / trail.length) * 0.4;
+      const size = 1 + (i / trail.length) * 2;
+      return (
+        <Circle
+          key={i}
+          cx={p.x}
+          cy={p.y}
+          r={size}
+          fill="#00ffff"
+          opacity={alpha}
+        />
+      );
+    })}
   </>
 ));
 
-const ShipThrusters: React.FC<{ size: number }> = ({ size }) => (
-  <Polygon
-    points={`${-size / 2},${size / 3} ${-size * 1.5},0 ${-size / 2},${-size / 3}`}
-    fill="#FF6600"
-    stroke="#FF9900"
-    strokeWidth="1"
-    opacity={0.8}
-  />
-);
+const ShipThrusters: React.FC<{ size: number }> = ({ size }) => {
+  const dynamicLength = size * (1.2 + Math.random() * 0.8);
+  return (
+    <Polygon
+      points={`${-size / 2},${size / 3} ${-dynamicLength},0 ${-size / 2},${-size / 3}`}
+      fill="url(#thrustGradient)"
+      opacity="0.9"
+    />
+  );
+};
 
 const ShipCore: React.FC<{ size: number }> = ({ size }) => {
   const time = Date.now() * 0.005;
@@ -459,14 +507,19 @@ const PolygonRenderer: React.FC<{
   color: string;
   rotation: number;
   internalLines?: { x1: number; y1: number; x2: number; y2: number }[];
-}> = React.memo(({ x, y, vertices, color, rotation, internalLines }) => {
+  hitFlashFrames?: number;
+}> = React.memo(({ x, y, vertices, color, rotation, internalLines, hitFlashFrames }) => {
   const rotationDegrees = (rotation * 180) / Math.PI;
   const transform = `translate(${x}, ${y}) rotate(${rotationDegrees})`;
   const points = vertices.map((v) => `${v.x},${v.y}`).join(" ");
 
+  const isFlashing = hitFlashFrames && hitFlashFrames > 0;
+  const fillColor = isFlashing ? "rgba(255, 255, 255, 0.5)" : "#333";
+  const strokeColor = isFlashing ? "white" : color;
+
   return (
     <G transform={transform}>
-      <Polygon points={points} fill="#333" stroke={color} strokeWidth="2" />
+      <Polygon points={points} fill={fillColor} stroke={strokeColor} strokeWidth="2" />
       {internalLines?.map((line, i) => (
         <Line
           key={i}
@@ -499,20 +552,38 @@ const BulletRenderer: React.FC<{
         opacity={0.6}
       />
     )}
-    <Circle cx={x} cy={y} r={size} fill={color} stroke={color} strokeWidth="1" />
+    <Circle cx={x} cy={y} r={size} fill={color} stroke={color} strokeWidth="1" filter="url(#glow)" />
   </>
 ));
 
 const ParticleRenderer: React.FC<{
+  seed: number;
   x: number;
   y: number;
   size: number;
   remaining: number;
   total: number;
-}> = React.memo(({ x, y, size, remaining, total }) => {
-  const alpha = remaining / total;
-  const fill = `hsl(${30 + Math.random() * 20}, 100%, ${50 + alpha * 30}%)`;
-  return <Circle cx={x} cy={y} r={size} fill={fill} opacity={alpha} />;
+}> = React.memo(({ seed, x, y, size, remaining, total }) => {
+  const alpha = Math.max(0, Math.min(1, remaining / total));
+
+  // Improvement 1: Dynamic color transition (White -> Orange -> Red)
+  const variation = (seed * 13) % 20 - 10;
+  let hue = 20 + variation;
+  let lightness = 50 + (1 - alpha) * 50;
+
+  const fill = `hsl(${hue}, 100%, ${lightness}%)`;
+  const currentSize = size * (0.2 + 0.8 * alpha);
+
+  return (
+    <Circle
+        cx={x}
+        cy={y}
+        r={currentSize}
+        fill={fill}
+        opacity={alpha}
+        filter={alpha > 0.8 ? "url(#glow)" : undefined}
+    />
+  );
 });
 
 const UfoRenderer: React.FC<{

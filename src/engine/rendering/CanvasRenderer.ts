@@ -75,7 +75,7 @@ export class CanvasRenderer implements Renderer {
     ctx.restore();
 
     // Improvement 10: CRT Effect (Scanlines and Vignette)
-    if (gameState?.debugCRT) {
+    if (gameState?.debugCRT !== false) {
       this.drawCRTEffect(ctx);
     }
   }
@@ -316,10 +316,13 @@ export class CanvasRenderer implements Renderer {
     // Improvement 2: Trail cyan with alpha/size fade
     trail.forEach((p, i) => {
       const ratio = i / trail.length;
-      ctx.globalAlpha = ratio * 0.5;
+      const alpha = ratio * 0.4;
+      const currentSize = 1 + ratio * (shipSize / 3); // Improvement 2: size fade
+
+      ctx.globalAlpha = alpha;
       ctx.fillStyle = "#00ffff";
       ctx.beginPath();
-      ctx.arc(p.x, p.y, (shipSize / 2) * ratio, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
       ctx.fill();
     });
     ctx.globalAlpha = 1.0;

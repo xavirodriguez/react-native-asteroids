@@ -245,8 +245,14 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     offset: number;
   }): void {
     const { world, pos, size, offset } = spawnConfig;
-    createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size });
-    createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size });
+    const a1 = createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size });
+    const a2 = createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size });
+
+    // Improvement 9: Apply hit flash to split children
+    [a1, a2].forEach(entity => {
+      const render = world.getComponent<RenderComponent>(entity, "Render");
+      if (render) render.hitFlashFrames = 10;
+    });
   }
 
   private addScore(scoreContext: { world: World; points: number }): void {
