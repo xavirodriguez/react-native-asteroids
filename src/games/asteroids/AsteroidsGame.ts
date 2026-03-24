@@ -2,6 +2,7 @@ import { World } from "../../engine/core/World";
 import { BaseGame } from "../../engine/core/BaseGame";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
+import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
 import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
@@ -18,9 +19,11 @@ export class AsteroidsGame
   implements IAsteroidsGame {
 
   private gameStateSystem: AsteroidGameStateSystem;
+  private assetLoader: AssetLoader;
 
   constructor() {
     super({ pauseKey: GAME_CONFIG.KEYS.PAUSE, restartKey: GAME_CONFIG.KEYS.RESTART });
+    this.assetLoader = new AssetLoader();
   }
 
   protected registerSystems(): void {

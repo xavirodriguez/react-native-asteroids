@@ -5,7 +5,8 @@ import { PongState } from "../types";
 export class PongGameStateSystem extends System {
   private state: PongState = { scoreP1: 0, scoreP2: 0, isGameOver: false };
 
-  update(world: World, _deltaTime: number): void {
+  update(world: World, deltaTime: number): void {
+    void deltaTime;
     const states = world.query("PongState");
     if (states.length > 0) {
       const stateComp = world.getComponent<any>(states[0], "PongState")!;

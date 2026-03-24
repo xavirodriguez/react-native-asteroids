@@ -8,6 +8,7 @@ import {
   VelocityComponent,
   TTLComponent,
   ColliderComponent,
+  HealthComponent,
   RenderComponent
 } from "../engine/types/EngineTypes";
 
@@ -19,6 +20,7 @@ export type {
   VelocityComponent,
   TTLComponent,
   ColliderComponent,
+  HealthComponent,
   RenderComponent
 };
 
@@ -38,16 +40,6 @@ export type ComponentType =
   | "Asteroid"
   | "Ufo"
   | "GameState";
-
-/**
- * Tracks the health or durability of an entity.
- */
-export interface HealthComponent extends Component {
-  type: "Health";
-  current: number;
-  max: number;
-  invulnerableRemaining: number;
-}
 
 /**
  * Represents the current state of user inputs.

@@ -41,7 +41,7 @@ export function useGame<
     const unsubscribe = game.subscribe((updatedGame) => {
       setGameState(updatedGame.getGameState() as TState);
       setIsPaused(updatedGame.isPausedState());
-      forceUpdate(v => v + 1);
+      forceUpdate((v) => v + 1);
     });
 
     return () => {
@@ -50,7 +50,6 @@ export function useGame<
       deactivateKeepAwake();
     };
   // GameClass is stable (it's a class, not an object), doesn't need to be in deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
@@ -59,8 +58,14 @@ export function useGame<
 
   const togglePause = useCallback(() => {
     const game = gameRef.current;
-    if (!game) return;
-    game.isPausedState() ? game.resume() : game.pause();
+    if (!game) {
+      return;
+    }
+    if (game.isPausedState()) {
+      game.resume();
+    } else {
+      game.pause();
+    }
   }, []);
 
   return {

@@ -1,5 +1,6 @@
 import { BaseGame } from "../../engine/core/BaseGame";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
+import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
 import { PongCollisionSystem } from "./systems/PongCollisionSystem";
@@ -18,9 +19,11 @@ const DEFAULT_PONG_INPUT: PongInput = {
 
 export class PongGame extends BaseGame<PongState, PongInput> {
   private stateSystem!: PongGameStateSystem;
+  private assetLoader: AssetLoader;
 
   constructor() {
     super({ pauseKey: "Escape" });
+    this.assetLoader = new AssetLoader();
   }
 
   protected registerSystems(): void {

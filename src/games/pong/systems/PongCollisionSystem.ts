@@ -4,7 +4,8 @@ import { PositionComponent, VelocityComponent } from "../../../engine/types/Engi
 import { PONG_CONFIG } from "../types";
 
 export class PongCollisionSystem extends System {
-  update(world: World, _deltaTime: number): void {
+  update(world: World, deltaTime: number): void {
+    void deltaTime;
     const balls = world.query("Position", "Velocity", "Collider", "Render").filter(e => {
         const render = world.getComponent<any>(e, "Render");
         return render.shape === "circle";
