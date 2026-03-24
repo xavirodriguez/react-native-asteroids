@@ -3,7 +3,6 @@ import { Circle, Group } from "@shopify/react-native-skia";
 import type { World } from "../src/engine/core/World";
 import {
   type GameStateComponent,
-  type Star,
 } from "../src/types/GameTypes";
 
 interface StarfieldProps {

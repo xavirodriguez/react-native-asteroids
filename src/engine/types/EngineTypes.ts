@@ -35,6 +35,16 @@ export interface ColliderComponent extends Component {
 }
 
 /**
+ * Tracks the health or durability of an entity.
+ */
+export interface HealthComponent extends Component {
+  type: "Health";
+  current: number;
+  max: number;
+  invulnerableRemaining: number;
+}
+
+/**
  * RenderComponent remains here because SvgRenderer uses it directly.
  */
 export interface RenderComponent extends Component {

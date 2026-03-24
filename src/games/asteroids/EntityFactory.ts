@@ -1,6 +1,5 @@
 import { World } from "../../engine/core/World"
 import { type Entity, GAME_CONFIG, type Star } from "../../types/GameTypes"
-import { generateStarField } from "../../game/StarField"
 
 /**
  * Parameters for creating a player ship entity.
@@ -312,6 +311,6 @@ export function createUfo(world: World, x: number, y: number): Entity {
     rotation: 0,
   });
   world.addComponent(ufo, { type: "Collider", radius: 15 });
-  world.addComponent(ufo, { type: "Ufo" } as any);
+  world.addComponent(ufo, { type: "Ufo", baseY: y, time: 0 });
   return ufo;
 }

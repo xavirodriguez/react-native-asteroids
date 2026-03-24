@@ -30,13 +30,17 @@ export class BulletPool {
     );
   }
 
-  acquire(_x: number, _y: number, _angle: number): Entity {
+  acquire(x: number, y: number, angle: number): Entity {
+    void x;
+    void y;
+    void angle;
     // Basic implementation that just creates an entity for now
     // In a full implementation, it would reuse entities from the pool
     return this.world.createEntity();
   }
 
-  release(_entity: Entity): void {
+  release(entity: Entity): void {
+    void entity;
     // Basic implementation: let the ECS handle destruction for now
   }
 }

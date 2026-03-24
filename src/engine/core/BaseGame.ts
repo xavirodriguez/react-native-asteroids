@@ -37,7 +37,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
 
     // Notify React on each logical update frame
     this.gameLoop.subscribeUpdate(() => {
-      if (!this._isPaused) this._notifyListeners();
+      if (!this._isPaused) {
+        this._notifyListeners();
+      }
     });
 
     this._registerKeyboardListeners();
@@ -123,7 +125,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   // ─── Engine-internal methods ─────────────────────────────────────────────
 
   private _notifyListeners(): void {
-    this._listeners.forEach(l => l(this));
+    for (const listener of this._listeners) {
+      listener(this);
+    }
   }
 
   private _registerKeyboardListeners(): void {
@@ -138,7 +142,11 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
 
   private _handleGlobalKey(e: KeyboardEvent): void {
     if (e.code === this._config.pauseKey) {
-      this._isPaused ? this.resume() : this.pause();
+      if (this._isPaused) {
+        this.resume();
+      } else {
+        this.pause();
+      }
     }
     if (e.code === this._config.restartKey) {
       this.restart();
