@@ -28,9 +28,9 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "platforms": ["ios", "android", "web"],
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "@shopify/react-native-skia"
     ],
     "experiments": {
       "typedRoutes": true

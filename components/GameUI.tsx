@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  SlideInDown,
+  ZoomIn,
+  BounceIn,
+  withSpring,
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+} from "react-native-reanimated";
+import { Canvas, BackdropBlur, Fill } from "@shopify/react-native-skia";
 import type { GameStateComponent } from "../src/types/GameTypes";
 
 /**
@@ -21,19 +33,6 @@ interface GameUIProps {
 
 /**
  * Component responsible for rendering the Head-Up Display (HUD) overlay.
- *
- * @param props - Component properties.
- * @returns A React functional component.
- *
- * @remarks
- * Displays essential game information such as remaining lives, current score,
- * and current level at the top of the screen.
- * It also displays a "GAME OVER" message and a "RESTART" button when the game is over.
- *
- * @example
- * ```tsx
- * <GameUI gameState={currentGameState} onRestart={() => game.restart()} />
- * ```
  */
 export const GameUI = React.memo(function GameUI({
   gameState,
@@ -49,7 +48,7 @@ export const GameUI = React.memo(function GameUI({
   useEffect(() => {
     if (gameState.level > 1 && !gameState.isGameOver) {
       setLevelUpText(`NIVEL ${gameState.level}`);
-      const timer = setTimeout(() => setLevelUpText(null), 1500);
+      const timer = setTimeout(() => setLevelUpText(null), 2000);
       return () => clearTimeout(timer);
     }
   }, [gameState.level, gameState.isGameOver]);
@@ -89,13 +88,44 @@ const HUD: React.FC<{
   highScore: number;
   paddingTop: number;
 }> = ({ lives, score, level, highScore, paddingTop }) => (
-  <View style={[styles.topBar, { paddingTop }]}>
-    <Text style={styles.text}>Lives: {lives}</Text>
-    <Text style={styles.text}>Score: {score}</Text>
-    <Text style={styles.text}>HS: {highScore}</Text>
-    <Text style={styles.text}>Level: {level}</Text>
-  </View>
+  <Animated.View
+    entering={FadeIn.duration(1000)}
+    style={[styles.topBar, { paddingTop }]}
+  >
+    <Canvas style={StyleSheet.absoluteFill}>
+       <BackdropBlur blur={10} clip={{ x: 0, y: 0, width: 2000, height: 100 }}>
+          <Fill color="rgba(0, 0, 0, 0.4)" />
+       </BackdropBlur>
+    </Canvas>
+    <View style={styles.hudContent}>
+      <Text style={styles.text}>Lives: {lives}</Text>
+      <Score score={score} />
+      <Text style={styles.text}>HS: {highScore}</Text>
+      <Text style={styles.text}>Level: {level}</Text>
+    </View>
+  </Animated.View>
 );
+
+const Score: React.FC<{ score: number }> = ({ score }) => {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    scale.value = withSequence(
+      withSpring(1.2, { damping: 2, stiffness: 80 }),
+      withSpring(1)
+    );
+  }, [score]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }]
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Text style={[styles.text, { color: "#00FFDD" }]}>Score: {score}</Text>
+    </Animated.View>
+  );
+};
 
 const PauseButton: React.FC<{
   onPress?: () => void;
@@ -111,9 +141,14 @@ const PauseButton: React.FC<{
 );
 
 const LevelUpOverlay: React.FC<{ text: string }> = ({ text }) => (
-  <View style={styles.levelUpOverlay} pointerEvents="none">
+  <Animated.View
+    entering={BounceIn.duration(1000)}
+    exiting={FadeOut.duration(500)}
+    style={styles.levelUpOverlay}
+    pointerEvents="none"
+  >
     <Text style={styles.levelUpText}>{text}</Text>
-  </View>
+  </Animated.View>
 );
 
 const GameOverOverlay: React.FC<{
@@ -121,16 +156,34 @@ const GameOverOverlay: React.FC<{
   highScore: number;
   onRestart?: () => void;
 }> = ({ score, highScore, onRestart }) => (
-  <View style={styles.gameOverOverlay}>
-    <Text style={styles.gameOverText}>GAME OVER</Text>
-    <Text style={styles.finalScoreText}>Final Score: {score}</Text>
-    <Text style={styles.highScoreText}>
-      {score >= highScore ? "¡Nuevo récord!" : `Récord: ${highScore}`}
-    </Text>
-    <TouchableOpacity style={styles.restartButton} onPress={onRestart}>
-      <Text style={styles.restartButtonText}>RESTART</Text>
-    </TouchableOpacity>
-  </View>
+  <Animated.View
+    entering={FadeIn.duration(500)}
+    style={styles.gameOverOverlay}
+  >
+    <Canvas style={StyleSheet.absoluteFill}>
+       <BackdropBlur blur={20}>
+          <Fill color="rgba(0, 0, 0, 0.6)" />
+       </BackdropBlur>
+    </Canvas>
+
+    <Animated.Text
+      entering={ZoomIn.delay(300).duration(800)}
+      style={styles.gameOverText}
+    >
+      GAME OVER
+    </Animated.Text>
+
+    <Animated.View entering={SlideInDown.delay(600).duration(800)} style={{ alignItems: "center" }}>
+      <Text style={styles.finalScoreText}>Final Score: {score}</Text>
+      <Text style={styles.highScoreText}>
+        {score >= highScore ? "¡NUEVO RÉCORD!" : `Récord actual: ${highScore}`}
+      </Text>
+
+      <TouchableOpacity style={styles.restartButton} onPress={onRestart}>
+        <Text style={styles.restartButtonText}>RESTART</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  </Animated.View>
 );
 
 const styles = StyleSheet.create({
@@ -141,56 +194,70 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 1000,
-    pointerEvents: "box-none", // Allow interactions with elements behind if not blocked
+    pointerEvents: "box-none",
   },
   topBar: {
     flexDirection: "row",
-    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingBottom: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    overflow: "hidden",
+  },
+  hudContent: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   text: {
     color: "#FFFFFF",
     fontSize: 18,
     fontFamily: "monospace",
     fontWeight: "bold",
+    textShadowColor: "rgba(0, 255, 255, 0.8)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
   gameOverOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
-    pointerEvents: "auto", // Block interactions with elements behind
+    pointerEvents: "auto",
   },
   gameOverText: {
-    color: "#FF0000",
-    fontSize: 48,
+    color: "#FF0044",
+    fontSize: 64,
     fontWeight: "bold",
     fontFamily: "monospace",
-    marginBottom: 10,
+    marginBottom: 20,
+    textShadowColor: "rgba(255, 0, 0, 0.8)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
   },
   finalScoreText: {
     color: "#FFFFFF",
-    fontSize: 24,
+    fontSize: 28,
     fontFamily: "monospace",
     marginBottom: 10,
   },
   highScoreText: {
     color: "#FFD700",
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: "monospace",
-    marginBottom: 30,
+    marginBottom: 40,
   },
   restartButton: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 5,
+    backgroundColor: "#00FFDD",
+    paddingHorizontal: 40,
+    paddingVertical: 18,
+    borderRadius: 30,
+    shadowColor: "#00FFDD",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 15,
   },
   restartButtonText: {
     color: "#000000",
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
     fontFamily: "monospace",
   },
@@ -217,9 +284,12 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   levelUpText: {
-    fontSize: 40,
+    fontSize: 60,
     color: "#00FF88",
     fontFamily: "monospace",
     fontWeight: "bold",
+    textShadowColor: "rgba(0, 255, 136, 0.8)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
   },
 });

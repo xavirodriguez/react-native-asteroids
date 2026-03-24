@@ -2,7 +2,7 @@
 
 ## Overview
 
-The module `src/game/EntityFactory.ts` provides a set of factory functions to create pre-configured entities in the Asteroids game world. This ensures consistency and centralization of entity initialization.
+The module `src/games/asteroids/EntityFactory.ts` provides a set of factory functions to create pre-configured entities in the Asteroids game world. This ensures consistency and centralization of entity initialization.
 
 ## Entity Creation Patterns
 

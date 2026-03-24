@@ -2,7 +2,7 @@
 
 ## Overview
 
-The module `src/game/ecs-world.ts` implements the core of the **Entity-Component-System (ECS)** pattern used by the Asteroids game. It provides the fundamental abstractions to manage entities, components, and systems in a decoupled and performant manner.
+The module `src/engine/core/World.ts` implements the core of the **Entity-Component-System (ECS)** pattern used by the Asteroids game. It provides the fundamental abstractions to manage entities, components, and systems in a decoupled and performant manner.
 
 ## ECS Architecture
 

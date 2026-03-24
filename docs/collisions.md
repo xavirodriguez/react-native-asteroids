@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `CollisionSystem` (`src/game/systems/CollisionSystem.ts`) is responsible for detecting and resolving physical interactions between entities in the game world.
+The `CollisionSystem` (`src/games/asteroids/systems/CollisionSystem.ts`) is responsible for detecting and resolving physical interactions between entities in the game world.
 
 ## Architecture
 

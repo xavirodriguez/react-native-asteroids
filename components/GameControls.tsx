@@ -13,6 +13,8 @@ interface GameControlsProps {
   onRotateRight: (pressed: boolean) => void
   /** Callback triggered when the shoot control state changes. */
   onShoot: (pressed: boolean) => void
+  /** Callback triggered when the hyperspace control state changes. */
+  onHyperspace: (pressed: boolean) => void
 }
 
 /**
@@ -40,12 +42,13 @@ export const GameControls = React.memo(function GameControls({
   onRotateLeft,
   onRotateRight,
   onShoot,
+  onHyperspace,
 }: GameControlsProps) {
   // Only show touch controls on native platforms
   if (Platform.OS === "web") {
     return (
       <View style={styles.webInstructions}>
-        <Text style={styles.instructionText}>Use Arrow Keys to move, Space to shoot</Text>
+        <Text style={styles.instructionText}>Use Arrow Keys to move, Space to shoot, Shift to Hyperspace</Text>
       </View>
     )
   }
@@ -79,6 +82,14 @@ export const GameControls = React.memo(function GameControls({
       </View>
 
       <View style={styles.rightControls}>
+        <TouchableOpacity
+          style={[styles.controlButton, styles.hyperspaceButton]}
+          onPressIn={() => onHyperspace(true)}
+          onPressOut={() => onHyperspace(false)}
+        >
+          <Text style={styles.buttonText}>H</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.controlButton, styles.shootButton]}
           onPressIn={() => onShoot(true)}
@@ -136,6 +147,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "rgba(255, 0, 0, 0.3)",
     borderColor: "#FF0000",
+  },
+  hyperspaceButton: {
+    width: 60,
+    height: 60,
+    backgroundColor: "rgba(0, 255, 255, 0.3)",
+    borderColor: "#00FFFF",
+    marginRight: 10,
   },
   buttonText: {
     color: "#FFFFFF",

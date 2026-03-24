@@ -1,13 +1,33 @@
 /**
  * Base types and interfaces for the Entity-Component-System (ECS) architecture of the Asteroids game.
- *
- * @remarks
- * This module defines the core building blocks: {@link Entity}, {@link Component},
- * and various concrete component interfaces used throughout the game.
  */
+import {
+  Component,
+  Entity,
+  PositionComponent,
+  VelocityComponent,
+  TTLComponent,
+  ColliderComponent,
+  HealthComponent,
+  RenderComponent,
+  ReclaimableComponent
+} from "../engine/types/EngineTypes";
+
+// Re-export engine types
+export type {
+  Component,
+  Entity,
+  PositionComponent,
+  VelocityComponent,
+  TTLComponent,
+  ColliderComponent,
+  HealthComponent,
+  RenderComponent,
+  ReclaimableComponent
+};
 
 /**
- * Unique identifier for a component type.
+ * Unique identifier for a component type in Asteroids.
  */
 export type ComponentType =
   | "Position"
@@ -20,202 +40,91 @@ export type ComponentType =
   | "Bullet"
   | "Ship"
   | "Asteroid"
+  | "Ufo"
   | "GameState"
-
-/**
- * Unique identifier for an entity in the world.
- */
-export type Entity = number
-
-/**
- * Base interface for all components.
- * Every component must have a type discriminator.
- */
-export interface Component {
-  /** Discriminator for the component type */
-  type: ComponentType
-}
-
-/**
- * Represents a position in 2D space.
- *
- * @remarks
- * Attached to entities that exist at a specific location in the game world.
- */
-export interface PositionComponent extends Component {
-  type: "Position"
-  /** X-coordinate on the screen in pixels */
-  x: number
-  /** Y-coordinate on the screen in pixels */
-  y: number
-}
-
-/**
- * Represents velocity in 2D space.
- *
- * @remarks
- * Attached to entities that move over time.
- */
-export interface VelocityComponent extends Component {
-  type: "Velocity"
-  /** Change in X position per second (pixels/sec) */
-  dx: number
-  /** Change in Y position per second (pixels/sec) */
-  dy: number
-}
-
-/**
- * Defines how an entity should be rendered by the {@link GameRenderer}.
- */
-export interface RenderComponent extends Component {
-  type: "Render"
-  /** The geometric shape to draw */
-  shape: "triangle" | "circle" | "line" | "particle" | "polygon"
-  /** Base size of the shape in pixels */
-  size: number
-  /** CSS color string (e.g., "#FFFFFF", "red") */
-  color: string
-  /** Rotation in radians */
-  rotation: number
-  /** Angular velocity in radians per second (Improvement 7) */
-  angularVelocity?: number
-  /** Frames remaining for hit flash effect (Improvement 9) */
-  hitFlashFrames?: number
-  /** Trailing positions for ship trail effect */
-  trailPositions?: { x: number; y: number }[]
-  /** Vertices for polygonal shapes (asteroids) */
-  vertices?: { x: number; y: number }[]
-}
-
-/**
- * Defines the circular collision boundary for an entity.
- *
- * @remarks
- * Colliders are used for physical collision detection. They are often simplified
- * circular approximations (e.g., a circle for a complex ship) to improve performance.
- * The collider is invisible and doesn't necessarily match the render shape exactly.
- */
-export interface ColliderComponent extends Component {
-  type: "Collider"
-  /** Radius of the circular collider in pixels */
-  radius: number
-}
-
-/**
- * Tracks the health or durability of an entity.
- *
- * @remarks
- * Typically used for the player ship to track remaining lives or hits it can take.
- */
-export interface HealthComponent extends Component {
-  type: "Health"
-  /** Current health points or lives */
-  current: number
-  /** Maximum health points or lives */
-  max: number
-  /** Remaining time in milliseconds for which the entity is invulnerable to damage */
-  invulnerableRemaining: number
-}
+  | "Reclaimable";
 
 /**
  * Represents the current state of user inputs.
  */
 export interface InputState {
-  /** Whether the thrust (acceleration) action is active */
-  thrust: boolean
-  /** Whether the rotate left action is active */
-  rotateLeft: boolean
-  /** Whether the rotate right action is active */
-  rotateRight: boolean
-  /** Whether the shoot action is active */
-  shoot: boolean
+  thrust: boolean;
+  rotateLeft: boolean;
+  rotateRight: boolean;
+  shoot: boolean;
+  hyperspace: boolean;
 }
 
 /**
  * Stores the current input state for controllable entities.
- *
- * @remarks
- * Usually attached to the player ship entity.
  */
 export interface InputComponent extends Component, InputState {
-  type: "Input"
-  /** Remaining cooldown time between shots in milliseconds */
-  shootCooldownRemaining: number
-}
-
-/**
- * Component for entities that should be removed after a period of time.
- *
- * @remarks
- * Commonly used for projectiles (bullets) to prevent them from flying forever.
- */
-export interface TTLComponent extends Component {
-  type: "TTL"
-  /** Remaining time to live in milliseconds */
-  remaining: number
-  /** Total initial time to live in milliseconds */
-  total: number
+  type: "Input";
+  shootCooldownRemaining: number;
 }
 
 /**
  * Marker component for bullet entities.
  */
 export interface BulletComponent extends Component {
-  type: "Bullet"
+  type: "Bullet";
 }
 
 /**
  * Marker component for the player ship.
  */
 export interface ShipComponent extends Component {
-  type: "Ship"
+  type: "Ship";
+  hyperspaceTimer: number;
+  hyperspaceCooldownRemaining: number;
+  trail?: { x: number; y: number }[];
+}
+
+/**
+ * Marker component for UFO entities.
+ */
+export interface UfoComponent extends Component {
+  type: "Ufo";
+  baseY: number;
+  time: number;
 }
 
 /**
  * Marker component for asteroid entities.
  */
 export interface AsteroidComponent extends Component {
-  type: "Asteroid"
-  /** Size category of the asteroid, affecting its collider radius and split behavior */
-  size: "large" | "medium" | "small"
+  type: "Asteroid";
+  size: "large" | "medium" | "small";
 }
 
 export interface Star {
-  x: number
-  y: number
-  size: number
-  brightness: number
+  x: number;
+  y: number;
+  size: number;
+  brightness: number;
+  twinklePhase: number;
+  twinkleSpeed: number;
+  layer: number;
 }
 
 export interface ScreenShake {
-  intensity: number
-  duration: number
+  intensity: number;
+  framesLeft: number;
 }
 
 /**
  * Component to track global game progress and state.
- *
- * @remarks
- * Only one entity should possess this component in the world.
  */
 export interface GameStateComponent extends Component {
-  type: "GameState"
-  /** Number of lives remaining for the player */
-  lives: number
-  /** Current player score */
-  score: number
-  /** Current game level (affects asteroid wave size) */
-  level: number
-  /** Count of asteroids currently in the world */
-  asteroidsRemaining: number
-  /** Whether the game is currently in a Game Over state */
-  isGameOver: boolean
-  /** Starfield for background */
-  stars?: Star[]
-  /** Current screen shake state */
-  screenShake?: ScreenShake | null
-  /** Whether to enable CRT effect overlay (Improvement 10) */
-  debugCRT?: boolean
+  type: "GameState";
+  lives: number;
+  score: number;
+  level: number;
+  asteroidsRemaining: number;
+  isGameOver: boolean;
+  stars?: Star[];
+  screenShake?: ScreenShake | null;
+  debugCRT?: boolean;
 }
 
 /**
@@ -228,92 +137,71 @@ export const INITIAL_GAME_STATE: GameStateComponent = Object.freeze({
   level: 0,
   asteroidsRemaining: 0,
   isGameOver: false,
-})
+});
 
 /**
  * Global game configuration constants for tuning gameplay.
  */
 export const GAME_CONFIG = {
-  /** Width of the game arena in pixels */
   SCREEN_WIDTH: 800,
-  /** Height of the game arena in pixels */
   SCREEN_HEIGHT: 600,
-  /** Center X position of the screen */
   SCREEN_CENTER_X: 400,
-  /** Center Y position of the screen */
   SCREEN_CENTER_Y: 300,
 
-  /** Input keys mapping */
   KEYS: {
     THRUST: "ArrowUp",
     ROTATE_LEFT: "ArrowLeft",
     ROTATE_RIGHT: "ArrowRight",
     SHOOT: "Space",
+    HYPERSPACE: "ShiftLeft",
     PAUSE: "KeyP",
     RESTART: "KeyR",
   },
 
-  /** Acceleration force applied to the ship (pixels/sec²) */
   SHIP_THRUST: 200,
-  /** Speed of rotation in radians per second */
   SHIP_ROTATION_SPEED: 3,
-  /** Initial number of lives for the player */
   SHIP_INITIAL_LIVES: 3,
-  /** Base size of the ship for rendering */
   SHIP_RENDER_SIZE: 10,
-  /** Radius of the ship's collider */
   SHIP_COLLIDER_RADIUS: 8,
-  /** Friction applied to ship velocity (0-1) */
   SHIP_FRICTION: 0.99,
 
-  /** Velocity of bullets in pixels per second */
   BULLET_SPEED: 300,
-  /** Lifespan of bullets in milliseconds */
   BULLET_TTL: 2000,
-  /** Cooldown between bullets in milliseconds */
   BULLET_SHOOT_COOLDOWN: 200,
-  /** Radius of the bullet's collider and render size */
   BULLET_SIZE: 2,
 
-  /** Duration of invulnerability after being hit, in milliseconds */
   INVULNERABILITY_DURATION: 2000,
 
-  /** Initial number of asteroids in the first wave */
+  HYPERSPACE_DURATION: 500,
+  HYPERSPACE_COOLDOWN: 3000,
+
+  UFO_SPEED: 100,
+  UFO_SPAWN_CHANCE: 0.005,
+  UFO_SIZE: 15,
+
   INITIAL_ASTEROID_COUNT: 4,
-  /** Maximum number of asteroids allowed in a single wave */
   MAX_WAVE_ASTEROIDS: 12,
-  /** Distance from the center where new asteroid waves spawn */
   WAVE_SPAWN_DISTANCE: 200,
-  /** Radius for spawning initial asteroids around the center */
   INITIAL_ASTEROID_SPAWN_RADIUS: 150,
 
-  /** Mapping of asteroid sizes to their radii */
   ASTEROID_RADII: {
     large: 30,
     medium: 20,
     small: 10,
   },
-  /** Position offset when a large asteroid splits into medium ones */
   ASTEROID_SPLIT_OFFSET_LARGE: 10,
-  /** Position offset when a medium asteroid splits into small ones */
   ASTEROID_SPLIT_OFFSET_MEDIUM: 5,
-  /** Points awarded for destroying an asteroid */
   ASTEROID_SCORE: 10,
-  /** Maximum delta time allowed per frame in milliseconds to prevent physics instability */
   MAX_DELTA_TIME: 100,
 
-  /** Particle settings */
   PARTICLE_COUNT: 10,
   PARTICLE_TTL_BASE: 600,
   PARTICLE_SPEED_BASE: 50,
 
-  /** Star background settings */
   STAR_COUNT: 150,
 
-  /** Screen shake settings */
   SHAKE_INTENSITY_IMPACT: 8,
   SHAKE_DURATION_IMPACT: 15,
 
-  /** Ship trail settings */
-  TRAIL_MAX_LENGTH: 10,
-}
+  TRAIL_MAX_LENGTH: 12,
+};
