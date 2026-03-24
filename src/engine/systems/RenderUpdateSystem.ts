@@ -32,6 +32,18 @@ export class RenderUpdateSystem extends System {
           render.trailPositions.shift();
         }
       }
+
+      // Improvement 2: Ship trail
+      if (world.hasComponent(entity, "Ship")) {
+        const shipComp = world.getComponent<any>(entity, "Ship");
+        if (pos && shipComp) {
+          if (!shipComp.trail) shipComp.trail = [];
+          shipComp.trail.push({ x: pos.x, y: pos.y });
+          if (shipComp.trail.length > this.trailMaxLength) {
+            shipComp.trail.shift();
+          }
+        }
+      }
     });
   }
 

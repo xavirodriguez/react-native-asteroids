@@ -48,7 +48,7 @@ export class SkiaRenderer implements Renderer {
     // Improvement 4: Screen Shake
     let shakeX = 0;
     let shakeY = 0;
-    if (gameState?.screenShake && gameState.screenShake.duration > 0) {
+    if (gameState?.screenShake && gameState.screenShake.framesLeft > 0) {
       shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
       shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
     }

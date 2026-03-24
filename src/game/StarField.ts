@@ -1,46 +1,45 @@
-import { GAME_CONFIG, type Star } from "../types/GameTypes";
+import { Star } from "../types/GameTypes";
 
 /**
- * Improvement 3: Static starfield generation.
- * Generates 150-200 stars with random positions, sizes, and twinkling properties.
+ * Generates a random starfield.
+ * @param count Number of stars to generate.
+ * @param width Screen width.
+ * @param height Screen height.
+ * @returns Array of Star objects.
  */
-export function generateStarField(): Star[] {
-  const count = 150 + Math.floor(Math.random() * 50);
+export function generateStarField(count: number, width: number, height: number): Star[] {
   return Array.from({ length: count }, () => ({
-    x: Math.random() * GAME_CONFIG.SCREEN_WIDTH,
-    y: Math.random() * GAME_CONFIG.SCREEN_HEIGHT,
+    x: Math.random() * width,
+    y: Math.random() * height,
     size: Math.random() * 1.5 + 0.5,
     brightness: Math.random() * 0.7 + 0.3,
     twinklePhase: Math.random() * Math.PI * 2,
-    twinkleSpeed: 0.5 + Math.random() * 1.5,
-    layer: Math.floor(Math.random() * 3), // Parallax layers
+    twinkleSpeed: 1 + Math.random() * 2,
+    layer: Math.floor(Math.random() * 3),
   }));
 }
 
 /**
- * Improvement 3: Starfield drawing logic for Canvas 2D.
- * Includes parallax displacement based on a reference point (e.g., ship position).
+ * Draws the starfield with parallax effect based on ship position.
  */
 export function drawStarField(
   ctx: CanvasRenderingContext2D,
   stars: Star[],
-  shipPos: { x: number; y: number }
+  width: number,
+  height: number,
+  shipPos: { x: number; y: number } = { x: width / 2, y: height / 2 }
 ): void {
-  const time = Date.now() / 1000;
-
   stars.forEach((star) => {
-    const layerSpeed = (star.layer + 1) * 0.05;
+    // Parallax effect: deeper layers move slower
+    const parallaxFactor = 0.05 * (star.layer + 1);
+    const parallaxX = (star.x - shipPos.x * parallaxFactor + width) % width;
+    const parallaxY = (star.y - shipPos.y * parallaxFactor + height) % height;
 
-    // Parallax displacement
-    let x = (star.x - shipPos.x * layerSpeed) % GAME_CONFIG.SCREEN_WIDTH;
-    let y = (star.y - shipPos.y * layerSpeed) % GAME_CONFIG.SCREEN_HEIGHT;
+    const twinkle = 0.8 + Math.sin(star.twinklePhase + Date.now() * 0.005 * star.twinkleSpeed) * 0.2;
 
-    if (x < 0) x += GAME_CONFIG.SCREEN_WIDTH;
-    if (y < 0) y += GAME_CONFIG.SCREEN_HEIGHT;
-
-    const twinkle = 0.7 + 0.3 * Math.sin(time * star.twinkleSpeed + star.twinklePhase);
-
-    ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness * twinkle})`;
-    ctx.fillRect(x, y, star.size, star.size);
+    ctx.globalAlpha = star.brightness * twinkle;
+    ctx.fillStyle = "white";
+    ctx.fillRect(parallaxX, parallaxY, star.size, star.size);
   });
+  ctx.globalAlpha = 1.0;
 }

@@ -50,7 +50,7 @@ interface WorldViewProps {
 
 const WorldView: React.FC<WorldViewProps> = ({ world, renderables, gameState }) => {
   let transform = "";
-  if (gameState?.screenShake && gameState.screenShake.duration > 0) {
+  if (gameState?.screenShake && gameState.screenShake.framesLeft > 0) {
     const { intensity } = gameState.screenShake;
     const dx = (Math.random() - 0.5) * intensity;
     const dy = (Math.random() - 0.5) * intensity;

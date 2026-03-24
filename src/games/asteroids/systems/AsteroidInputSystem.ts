@@ -8,10 +8,10 @@ import {
   type InputState,
   GAME_CONFIG,
 } from "../../../types/GameTypes";
-import { createBullet } from "../EntityFactory";
+import { createBullet, createParticle } from "../EntityFactory";
 import { hapticShoot } from "../../../utils/haptics";
 import { InputManager } from "../../../engine/input/InputManager";
-import { BulletPool } from "../EntityPool";
+import { BulletPool, ParticlePool } from "../EntityPool";
 
 /**
  * System responsible for processing user input and applying it to the ship's state.
@@ -26,8 +26,13 @@ export class AsteroidInputSystem extends System {
    *
    * @param inputManager - The centralized input manager to poll for state.
    * @param bulletPool - The pool for creating bullets.
+   * @param particlePool - The pool for creating particles.
    */
-  constructor(private inputManager: InputManager, private bulletPool: BulletPool) {
+  constructor(
+    private inputManager: InputManager,
+    private bulletPool: BulletPool,
+    private particlePool: ParticlePool
+  ) {
     super();
   }
 
@@ -78,7 +83,7 @@ export class AsteroidInputSystem extends System {
     const pos = world.getComponent<PositionComponent>(entity, "Position");
 
     if (vel && render && pos) {
-      this.applyShipMovement({ vel, render, input, deltaTime });
+      this.applyShipMovement({ world, pos, vel, render, input, deltaTime });
       this.handleShipShooting({ world, pos, render, input });
     }
   }
@@ -98,16 +103,18 @@ export class AsteroidInputSystem extends System {
   }
 
   private applyShipMovement(context: {
+    world: World;
+    pos: PositionComponent;
     vel: VelocityComponent;
     render: RenderComponent;
     input: InputComponent;
     deltaTime: number;
   }): void {
-    const { vel, render, input, deltaTime } = context;
+    const { world, pos, vel, render, input, deltaTime } = context;
     const dt = deltaTime / 1000;
 
     this.applyRotation({ render, input, dt });
-    this.applyThrust({ vel, render, input, dt });
+    this.applyThrust({ world, pos, vel, render, input, dt });
     this.applyFriction(vel, deltaTime);
   }
 
@@ -122,15 +129,35 @@ export class AsteroidInputSystem extends System {
   }
 
   private applyThrust(context: {
+    world: World;
+    pos: PositionComponent;
     vel: VelocityComponent;
     render: RenderComponent;
     input: InputComponent;
     dt: number;
   }): void {
-    const { vel, render, input, dt } = context;
+    const { world, pos, vel, render, input, dt } = context;
     if (input.thrust) {
       vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
       vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
+
+      // Improvement 8: Spawn 3-5 small thrust particles
+      const particleCount = 3 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < particleCount; i++) {
+        const angle = render.rotation + Math.PI + (Math.random() - 0.5) * 0.5;
+        const speed = 50 + Math.random() * 50;
+        createParticle({
+          world,
+          x: pos.x - Math.cos(render.rotation) * 10,
+          y: pos.y - Math.sin(render.rotation) * 10,
+          dx: Math.cos(angle) * speed + vel.dx * 0.5,
+          dy: Math.sin(angle) * speed + vel.dy * 0.5,
+          color: i % 2 === 0 ? "#FF8800" : "#FFFF00",
+          ttl: 400,
+          size: 1 + Math.random() * 2,
+          pool: this.particlePool,
+        });
+      }
     }
   }
 

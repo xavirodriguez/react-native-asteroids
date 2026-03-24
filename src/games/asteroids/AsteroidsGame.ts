@@ -48,7 +48,7 @@ export class AsteroidsGame
     this.inputManager.addController(new KeyboardController<InputState>(ASTEROID_KEYMAP, DEFAULT_INPUT));
     this.inputManager.addController(new TouchController<InputState>());
 
-    const inputSys = new AsteroidInputSystem(this.inputManager, this.bulletPool);
+    const inputSys = new AsteroidInputSystem(this.inputManager, this.bulletPool, this.particlePool);
     this.gameStateSystem = new AsteroidGameStateSystem(this);
 
     this.world.addSystem(inputSys);
