@@ -2,6 +2,7 @@ import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity, PositionComponent, RenderComponent, TTLComponent, HealthComponent } from "../types/EngineTypes";
 import { drawStarField } from "../../game/StarField";
+import { GameStateComponent, ShipComponent, InputComponent } from "../../types/GameTypes";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -41,8 +42,13 @@ export class CanvasRenderer implements Renderer {
 
     const gameStateEntity = world.query("GameState")[0];
     const gameState = gameStateEntity
-      ? (world.getComponent<any>(gameStateEntity, "GameState"))
+      ? (world.getComponent<GameStateComponent>(gameStateEntity, "GameState"))
       : null;
+
+    // Improvement 3: Starfield (Drawn first, static/parallax)
+    if (gameState?.stars) {
+      this.drawStarField(ctx, gameState.stars, world);
+    }
 
     // Improvement 4: Screen Shake
     let shakeX = 0;
@@ -95,12 +101,7 @@ export class CanvasRenderer implements Renderer {
     ctx.translate(pos.x, pos.y);
     ctx.rotate(render.rotation);
 
-    // Improvement 9: Hit Flash
-    if (render.hitFlashFrames && render.hitFlashFrames > 0) {
-      ctx.globalCompositeOperation = "lighter";
-    }
-
-    // Glow for bullets
+    // Improvement 6: Glow for bullets
     const isBullet = world.hasComponent(entity, "Bullet");
     if (isBullet) {
       ctx.shadowColor = "#ffffaa";
@@ -165,7 +166,7 @@ export class CanvasRenderer implements Renderer {
 
   private drawShip(ctx: CanvasRenderingContext2D, world: World, entity: Entity, render: RenderComponent): void {
     const size = render.size;
-    const input = world.getComponent<any>(entity, "Input");
+    const input = world.getComponent<InputComponent>(entity, "Input");
     const health = world.getComponent<HealthComponent>(entity, "Health");
 
     if (health && health.invulnerableRemaining > 0) {
@@ -286,8 +287,8 @@ export class CanvasRenderer implements Renderer {
       ctx.beginPath();
       ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
     });
-    ctx.globalAlpha = 1.0;
   }
 
   private drawStarField(ctx: CanvasRenderingContext2D, stars: any[]): void {

@@ -1,6 +1,7 @@
 import { World } from "../../engine/core/World";
 import { BaseGame } from "../../engine/core/BaseGame";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
+import { WrapSystem } from "../../engine/systems/WrapSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
 import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
@@ -52,7 +53,8 @@ export class AsteroidsGame
     this.gameStateSystem = new AsteroidGameStateSystem(this);
 
     this.world.addSystem(inputSys);
-    this.world.addSystem(new MovementSystem(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT));
+    this.world.addSystem(new MovementSystem());
+    this.world.addSystem(new WrapSystem(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT));
     this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
