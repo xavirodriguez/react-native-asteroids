@@ -29,8 +29,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router",
-      "@shopify/react-native-skia"
+      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true

@@ -38,10 +38,10 @@ export class RenderUpdateSystem extends System {
       if (world.hasComponent(entity, "Ship")) {
         const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
         if (pos && shipComp) {
-          if (!shipComp.trail) shipComp.trail = [];
-          shipComp.trail.push({ x: pos.x, y: pos.y });
-          if (shipComp.trail.length > this.trailMaxLength) {
-            shipComp.trail.shift();
+          if (!shipComp.trailPositions) shipComp.trailPositions = [];
+          shipComp.trailPositions.push({ x: pos.x, y: pos.y });
+          if (shipComp.trailPositions.length > 12) {
+            shipComp.trailPositions.shift();
           }
         }
       }

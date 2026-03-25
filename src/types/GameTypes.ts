@@ -77,7 +77,7 @@ export interface ShipComponent extends Component {
   type: "Ship";
   hyperspaceTimer: number;
   hyperspaceCooldownRemaining: number;
-  trail?: { x: number; y: number }[];
+  trailPositions?: { x: number; y: number }[];
 }
 
 /**
@@ -109,7 +109,7 @@ export interface Star {
 
 export interface ScreenShake {
   intensity: number;
-  framesLeft: number;
+  duration: number;
 }
 
 /**

@@ -53,13 +53,19 @@ export class CanvasRenderer implements Renderer {
     // Improvement 4: Screen Shake
     let shakeX = 0;
     let shakeY = 0;
-    if (gameState?.screenShake && gameState.screenShake.framesLeft > 0) {
+    if (gameState?.screenShake && gameState.screenShake.duration > 0) {
       shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
       shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
+      gameState.screenShake.duration--;
     }
 
     ctx.save();
     ctx.translate(shakeX, shakeY);
+
+    // Improvement 3: Starfield
+    if (gameState?.stars) {
+      this.drawStarField(ctx, gameState.stars);
+    }
 
     // Render Entities
     const entities = world.query("Position", "Render");
@@ -85,10 +91,10 @@ export class CanvasRenderer implements Renderer {
     if (!this.ctx) return;
     const ctx = this.ctx;
 
-    // Improvement 2: Ship Trail (Draw BEFORE ship in world space)
-    const ship = world.getComponent<ShipComponent>(entity, "Ship");
-    if (ship && ship.trail) {
-      this.drawShipTrail(ctx, ship.trail, render.size);
+    // Improvement 2: Ship Trail (Draw before the ship)
+    const ship = world.getComponent<any>(entity, "Ship");
+    if (ship && ship.trailPositions) {
+      this.drawShipTrail(ctx, ship.trailPositions);
     }
 
     ctx.save();
@@ -100,8 +106,6 @@ export class CanvasRenderer implements Renderer {
     if (isBullet) {
       ctx.shadowColor = "#ffffaa";
       ctx.shadowBlur = 12;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
     }
 
     // Render shapes
@@ -126,64 +130,33 @@ export class CanvasRenderer implements Renderer {
         break;
     }
 
-    // Improvement 9: Hit Flash (Overlay on top of shape)
-    if (render.hitFlashFrames && render.hitFlashFrames > 0) {
-      ctx.globalCompositeOperation = "lighter";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-      // Approximate bounds with a square based on size
-      const flashSize = render.size * 2.2;
-      ctx.fillRect(-flashSize / 2, -flashSize / 2, flashSize, flashSize);
-    }
-
     ctx.restore();
   }
 
   public drawParticles(world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
-    const entities = world.query("Position", "Render").filter(e => {
+    const entities = world.query("Position", "Render").filter((e) => {
       const r = world.getComponent<RenderComponent>(e, "Render");
       return r?.shape === "particle";
     });
 
-    entities.forEach(entity => {
+    entities.forEach((entity) => {
       const pos = world.getComponent<PositionComponent>(entity, "Position")!;
       const render = world.getComponent<RenderComponent>(entity, "Render")!;
       const ttl = world.getComponent<TTLComponent>(entity, "TTL");
       if (!ttl) return;
 
-      const lifeRatio = ttl.remaining / ttl.total;
+      const alpha = ttl.remaining / ttl.total;
       ctx.save();
       ctx.translate(pos.x, pos.y);
-      ctx.globalAlpha = lifeRatio;
 
-      // Improvement 1: Dynamic color (White -> Orange -> Red)
-      let hue = 0;
-      let lightness = 50;
+      // Improvement 1: Improved particles
+      const randomVar = entity % 20;
+      ctx.fillStyle = `hsl(${30 + randomVar}, 100%, ${50 + alpha * 30}%)`;
+      ctx.globalAlpha = alpha;
 
-      if (lifeRatio > 0.8) {
-        lightness = 100; // White
-      } else if (lifeRatio > 0.4) {
-        hue = 30; // Orange
-        lightness = 50 + (lifeRatio - 0.4) * 125;
-      } else {
-        hue = 0; // Red
-        lightness = 25 + (lifeRatio / 0.4) * 25;
-      }
-
-      // Random hue variation per particle (Improvement 1)
-      const hueVariation = (entity * 1337) % 20 - 10;
-      ctx.fillStyle = `hsl(${hue + hueVariation}, 100%, ${Math.min(100, lightness)}%)`;
-
-      // Improvement 6: Glow for fresh particles
-      if (lifeRatio > 0.8) {
-        ctx.shadowColor = "#ffffaa";
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
-      }
-
-      const size = render.size * lifeRatio; // Improvement 1: size shrink
+      const size = render.size * alpha;
       ctx.beginPath();
       ctx.arc(0, 0, size, 0, Math.PI * 2);
       ctx.fill();
@@ -241,13 +214,11 @@ export class CanvasRenderer implements Renderer {
       return;
     }
 
-    ctx.strokeStyle = render.color;
+    ctx.strokeStyle = "#aaa";
     ctx.lineWidth = 2;
-    ctx.fillStyle = "#333";
 
     if (render.hitFlashFrames && render.hitFlashFrames > 0) {
       ctx.strokeStyle = "white";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
     }
 
     ctx.beginPath();
@@ -256,19 +227,7 @@ export class CanvasRenderer implements Renderer {
       ctx.lineTo(render.vertices[i].x, render.vertices[i].y);
     }
     ctx.closePath();
-    ctx.fill();
     ctx.stroke();
-
-    if (render.internalLines) {
-      ctx.strokeStyle = "#222";
-      ctx.lineWidth = 1;
-      render.internalLines.forEach(line => {
-        ctx.beginPath();
-        ctx.moveTo(line.x1, line.y1);
-        ctx.lineTo(line.x2, line.y2);
-        ctx.stroke();
-      });
-    }
   }
 
   private drawCircle(ctx: CanvasRenderingContext2D, size: number, color: string): void {
@@ -319,32 +278,26 @@ export class CanvasRenderer implements Renderer {
     ctx.stroke();
   }
 
-  private drawShipTrail(ctx: CanvasRenderingContext2D, trail: { x: number; y: number }[], shipSize: number): void {
-    // Improvement 2: Trail cyan with alpha/size fade (8-12 positions)
+  private drawShipTrail(ctx: CanvasRenderingContext2D, trail: { x: number; y: number }[]): void {
+    // Improvement 2: Trail cyan with alpha fade
     trail.forEach((p, i) => {
-      const ratio = i / trail.length;
-      const alpha = ratio * 0.4;
-      const currentSize = (1 + ratio * (shipSize / 3)) * 0.8; // Improvement 2: size fade
-
-      ctx.save();
+      const alpha = (i / trail.length) * 0.4;
       ctx.globalAlpha = alpha;
       ctx.fillStyle = "#00ffff";
       ctx.beginPath();
-      ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     });
   }
 
-  private drawStarField(ctx: CanvasRenderingContext2D, stars: any[], world: World): void {
-    const shipEntity = world.query("Ship", "Position")[0];
-    const shipPos = shipEntity
-      ? world.getComponent<PositionComponent>(shipEntity, "Position")
-      : { x: this.width / 2, y: this.height / 2 };
-
-    if (!shipPos) return;
-
-    drawStarField(ctx, stars, this.width, this.height, shipPos);
+  private drawStarField(ctx: CanvasRenderingContext2D, stars: any[]): void {
+    stars.forEach((star) => {
+      ctx.globalAlpha = star.brightness;
+      ctx.fillStyle = "white";
+      ctx.fillRect(star.x, star.y, star.size, star.size);
+    });
+    ctx.globalAlpha = 1.0;
   }
 
   private drawCRTEffect(ctx: CanvasRenderingContext2D): void {

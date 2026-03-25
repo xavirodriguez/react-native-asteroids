@@ -158,12 +158,12 @@ function addAsteroidTypeComponents(config: {
   const radius = GAME_CONFIG.ASTEROID_RADII[size]
 
   // Improvement 5: Polygonal asteroids
-  const vertexCount = 8 + Math.floor(Math.random() * 5) // 8 to 12 vertices
+  const vertexCount = 8 + Math.floor(Math.random() * 5); // 8 to 12 vertices
   const vertices = Array.from({ length: vertexCount }, (_, i) => {
-    const angle = (i / vertexCount) * Math.PI * 2
-    const r = radius * (0.75 + Math.random() * 0.5)
-    return { x: Math.cos(angle) * r, y: Math.sin(angle) * r }
-  })
+    const angle = (i / vertexCount) * Math.PI * 2;
+    const r = radius * (0.75 + Math.random() * 0.5);
+    return { x: Math.cos(angle) * r, y: Math.sin(angle) * r };
+  });
 
   world.addComponent(asteroid, {
     type: "Render",
