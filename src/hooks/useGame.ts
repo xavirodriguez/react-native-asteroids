@@ -33,7 +33,7 @@ export function useGame<
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
-    activateKeepAwakeAsync();
+    activateKeepAwakeAsync().catch(() => {});
     const game = new GameClass();
     gameRef.current = game;
     game.start();
