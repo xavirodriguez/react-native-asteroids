@@ -2,6 +2,7 @@ import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity, PositionComponent, RenderComponent, TTLComponent, HealthComponent } from "../types/EngineTypes";
 import { drawStarField } from "../../game/StarField";
+import { GameStateComponent, ShipComponent, InputComponent } from "../../types/GameTypes";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -41,8 +42,13 @@ export class CanvasRenderer implements Renderer {
 
     const gameStateEntity = world.query("GameState")[0];
     const gameState = gameStateEntity
-      ? (world.getComponent<any>(gameStateEntity, "GameState"))
+      ? (world.getComponent<GameStateComponent>(gameStateEntity, "GameState"))
       : null;
+
+    // Improvement 3: Starfield (Drawn first, static/parallax)
+    if (gameState?.stars) {
+      this.drawStarField(ctx, gameState.stars, world);
+    }
 
     // Improvement 4: Screen Shake
     let shakeX = 0;
@@ -54,11 +60,6 @@ export class CanvasRenderer implements Renderer {
 
     ctx.save();
     ctx.translate(shakeX, shakeY);
-
-    // Improvement 3: Starfield (Specialized call for now)
-    if (gameState?.stars) {
-        this.drawStarField(ctx, gameState.stars, world);
-    }
 
     // Render Entities
     const entities = world.query("Position", "Render");
@@ -84,20 +85,23 @@ export class CanvasRenderer implements Renderer {
     if (!this.ctx) return;
     const ctx = this.ctx;
 
+    // Improvement 2: Ship Trail (Draw BEFORE ship in world space)
+    const ship = world.getComponent<ShipComponent>(entity, "Ship");
+    if (ship && ship.trail) {
+      this.drawShipTrail(ctx, ship.trail, render.size);
+    }
+
     ctx.save();
     ctx.translate(pos.x, pos.y);
     ctx.rotate(render.rotation);
 
-    // Improvement 9: Hit Flash
-    if (render.hitFlashFrames && render.hitFlashFrames > 0) {
-      ctx.globalCompositeOperation = "lighter";
-    }
-
-    // Glow for bullets
+    // Improvement 6: Glow for bullets
     const isBullet = world.hasComponent(entity, "Bullet");
     if (isBullet) {
-        ctx.shadowColor = "#ffffaa";
-        ctx.shadowBlur = 12;
+      ctx.shadowColor = "#ffffaa";
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
     }
 
     // Render shapes
@@ -122,71 +126,74 @@ export class CanvasRenderer implements Renderer {
         break;
     }
 
-    ctx.restore();
-
-    // Improvement 2: Ship Trail
-    const ship = world.getComponent<any>(entity, "Ship");
-    if (ship && ship.trail) {
-      this.drawShipTrail(ctx, ship.trail, render.size);
+    // Improvement 9: Hit Flash (Overlay on top of shape)
+    if (render.hitFlashFrames && render.hitFlashFrames > 0) {
+      ctx.globalCompositeOperation = "lighter";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+      // Approximate bounds with a square based on size
+      const flashSize = render.size * 2.2;
+      ctx.fillRect(-flashSize / 2, -flashSize / 2, flashSize, flashSize);
     }
+
+    ctx.restore();
   }
 
   public drawParticles(world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const entities = world.query("Position", "Render").filter(e => {
-        const r = world.getComponent<RenderComponent>(e, "Render");
-        return r?.shape === "particle";
+      const r = world.getComponent<RenderComponent>(e, "Render");
+      return r?.shape === "particle";
     });
 
     entities.forEach(entity => {
-        const pos = world.getComponent<PositionComponent>(entity, "Position")!;
-        const render = world.getComponent<RenderComponent>(entity, "Render")!;
-        const ttl = world.getComponent<TTLComponent>(entity, "TTL");
-        if (!ttl) return;
+      const pos = world.getComponent<PositionComponent>(entity, "Position")!;
+      const render = world.getComponent<RenderComponent>(entity, "Render")!;
+      const ttl = world.getComponent<TTLComponent>(entity, "TTL");
+      if (!ttl) return;
 
-        const lifeRatio = ttl.remaining / ttl.total;
-        ctx.save();
-        ctx.translate(pos.x, pos.y);
-        ctx.globalAlpha = lifeRatio;
+      const lifeRatio = ttl.remaining / ttl.total;
+      ctx.save();
+      ctx.translate(pos.x, pos.y);
+      ctx.globalAlpha = lifeRatio;
 
-        // Improvement 1: Dynamic color (Orange-Red-White)
-        // Fresh = White, Middle = Orange, Old = Red
-        let hue = 20; // Default orange/red hue
-        let saturation = 100;
-        let lightness = 50;
+      // Improvement 1: Dynamic color (White -> Orange -> Red)
+      let hue = 0;
+      let lightness = 50;
 
-        if (lifeRatio > 0.8) {
-            lightness = 100; // White-ish
-        } else if (lifeRatio > 0.4) {
-            hue = 30; // Orange
-            lightness = 50 + (0.8 - lifeRatio) * 50;
-        } else {
-            hue = 0; // Red
-            lightness = 25 + lifeRatio * 60;
-        }
+      if (lifeRatio > 0.8) {
+        lightness = 100; // White
+      } else if (lifeRatio > 0.4) {
+        hue = 30; // Orange
+        lightness = 50 + (lifeRatio - 0.4) * 125;
+      } else {
+        hue = 0; // Red
+        lightness = 25 + (lifeRatio / 0.4) * 25;
+      }
 
-        // Add small random hue variation
-        const hueVariation = (entity % 10) - 5;
-        ctx.fillStyle = `hsl(${hue + hueVariation}, ${saturation}%, ${lightness}%)`;
+      // Random hue variation per particle (Improvement 1)
+      const hueVariation = (entity * 1337) % 20 - 10;
+      ctx.fillStyle = `hsl(${hue + hueVariation}, 100%, ${Math.min(100, lightness)}%)`;
 
-        // Improvement 6: Glow for fresh particles
-        if (lifeRatio > 0.8) {
-            ctx.shadowColor = "#ffffaa";
-            ctx.shadowBlur = 10;
-        }
+      // Improvement 6: Glow for fresh particles
+      if (lifeRatio > 0.8) {
+        ctx.shadowColor = "#ffffaa";
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
 
-        const size = render.size * lifeRatio; // Improvement 1: size shrink
-        ctx.beginPath();
-        ctx.arc(0, 0, size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+      const size = render.size * lifeRatio; // Improvement 1: size shrink
+      ctx.beginPath();
+      ctx.arc(0, 0, size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     });
   }
 
   private drawShip(ctx: CanvasRenderingContext2D, world: World, entity: Entity, render: RenderComponent): void {
     const size = render.size;
-    const input = world.getComponent<any>(entity, "Input");
+    const input = world.getComponent<InputComponent>(entity, "Input");
     const health = world.getComponent<HealthComponent>(entity, "Health");
 
     if (health && health.invulnerableRemaining > 0) {
@@ -313,19 +320,20 @@ export class CanvasRenderer implements Renderer {
   }
 
   private drawShipTrail(ctx: CanvasRenderingContext2D, trail: { x: number; y: number }[], shipSize: number): void {
-    // Improvement 2: Trail cyan with alpha/size fade
+    // Improvement 2: Trail cyan with alpha/size fade (8-12 positions)
     trail.forEach((p, i) => {
       const ratio = i / trail.length;
       const alpha = ratio * 0.4;
-      const currentSize = 1 + ratio * (shipSize / 3); // Improvement 2: size fade
+      const currentSize = (1 + ratio * (shipSize / 3)) * 0.8; // Improvement 2: size fade
 
+      ctx.save();
       ctx.globalAlpha = alpha;
       ctx.fillStyle = "#00ffff";
       ctx.beginPath();
       ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
     });
-    ctx.globalAlpha = 1.0;
   }
 
   private drawStarField(ctx: CanvasRenderingContext2D, stars: any[], world: World): void {
