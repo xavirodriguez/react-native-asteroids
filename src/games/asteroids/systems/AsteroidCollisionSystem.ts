@@ -58,8 +58,8 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     const match = this.matchPair({ world, pair, type1: "Bullet", type2: "Ufo" });
 
     if (match) {
-      const matchUfo = (match as any).Ufo as Entity;
-      const matchBullet = (match as any).Bullet as Entity;
+      const matchUfo = (match as Record<"Ufo" | "Bullet", Entity>).Ufo;
+      const matchBullet = (match as Record<"Ufo" | "Bullet", Entity>).Bullet;
       const pos = world.getComponent<PositionComponent>(matchUfo, "Position");
       if (pos) {
         this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
@@ -80,8 +80,8 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     const match = this.matchPair({ world, pair, type1: "Ship", type2: "Ufo" });
 
     if (match) {
-      const matchShip = (match as any).Ship as Entity;
-      const matchUfo = (match as any).Ufo as Entity;
+      const matchShip = (match as Record<"Ship" | "Ufo", Entity>).Ship;
+      const matchUfo = (match as Record<"Ship" | "Ufo", Entity>).Ufo;
       const health = world.getComponent<HealthComponent>(matchShip, "Health");
       if (this.canShipTakeDamage(health)) {
         this.applyDamageToShip(world, health);
@@ -104,8 +104,8 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     const match = this.matchPair({ world, pair, type1: "Bullet", type2: "Asteroid" });
 
     if (match) {
-      const matchAsteroid = (match as any).Asteroid as Entity;
-      const matchBullet = (match as any).Bullet as Entity;
+      const matchAsteroid = (match as Record<"Asteroid" | "Bullet", Entity>).Asteroid;
+      const matchBullet = (match as Record<"Asteroid" | "Bullet", Entity>).Bullet;
       this.handleBulletAsteroidCollision({
         world,
         asteroid: matchAsteroid,
@@ -124,7 +124,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     const match = this.matchPair({ world, pair, type1: "Ship", type2: "Asteroid" });
 
     if (match) {
-      const matchShip = (match as any).Ship as Entity;
+      const matchShip = (match as Record<"Ship" | "Asteroid", Entity>).Ship;
       this.handleShipAsteroidCollision({ world, shipEntity: matchShip });
       return true;
     }
