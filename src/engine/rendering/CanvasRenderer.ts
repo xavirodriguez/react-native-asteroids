@@ -45,9 +45,9 @@ export class CanvasRenderer implements Renderer {
       ? (world.getComponent<GameStateComponent>(gameStateEntity, "GameState"))
       : null;
 
-    // Improvement 3: Starfield (Drawn first, static/parallax)
+    // Improvement 3: Starfield (Drawn first, static background)
     if (gameState?.stars) {
-      this.drawStarField(ctx, gameState.stars, world);
+      this.drawStarField(ctx, gameState.stars);
     }
 
     // Improvement 4: Screen Shake
@@ -61,11 +61,6 @@ export class CanvasRenderer implements Renderer {
 
     ctx.save();
     ctx.translate(shakeX, shakeY);
-
-    // Improvement 3: Starfield
-    if (gameState?.stars) {
-      this.drawStarField(ctx, gameState.stars);
-    }
 
     // Render Entities
     const entities = world.query("Position", "Render");
@@ -152,8 +147,9 @@ export class CanvasRenderer implements Renderer {
       ctx.translate(pos.x, pos.y);
 
       // Improvement 1: Improved particles
-      const randomVar = entity % 20;
-      ctx.fillStyle = `hsl(${30 + randomVar}, 100%, ${50 + alpha * 30}%)`;
+      const hue = 30 + (entity % 20); // Stable random hue per particle
+      const lightness = 50 + alpha * 30;
+      ctx.fillStyle = `hsl(${hue}, 100%, ${lightness}%)`;
       ctx.globalAlpha = alpha;
 
       const size = render.size * alpha;
@@ -214,6 +210,7 @@ export class CanvasRenderer implements Renderer {
       return;
     }
 
+    // Improvement 5: Irregular polygonal asteroids
     ctx.strokeStyle = "#aaa";
     ctx.lineWidth = 2;
 
@@ -282,6 +279,7 @@ export class CanvasRenderer implements Renderer {
     // Improvement 2: Trail cyan with alpha fade
     trail.forEach((p, i) => {
       const alpha = (i / trail.length) * 0.4;
+      ctx.save();
       ctx.globalAlpha = alpha;
       ctx.fillStyle = "#00ffff";
       ctx.beginPath();

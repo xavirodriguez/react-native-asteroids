@@ -39,7 +39,10 @@ export class RenderUpdateSystem extends System {
         const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
         if (pos && shipComp) {
           if (!shipComp.trailPositions) shipComp.trailPositions = [];
+
+          // Only add to trail if moving
           shipComp.trailPositions.push({ x: pos.x, y: pos.y });
+
           if (shipComp.trailPositions.length > 12) {
             shipComp.trailPositions.shift();
           }
