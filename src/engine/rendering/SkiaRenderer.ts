@@ -118,10 +118,16 @@ export class SkiaRenderer implements Renderer {
 
     const entities = world.query("Position", "Render");
     entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
-      const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (pos && render && render.shape !== "particle") {
-        this.drawEntity(entity, pos, render, world);
+      const components: Record<string, any> = {
+        Position: world.getComponent(entity, "Position"),
+        Render: world.getComponent(entity, "Render"),
+        Health: world.getComponent(entity, "Health"),
+        Input: world.getComponent(entity, "Input"),
+        Ship: world.getComponent(entity, "Ship"),
+      };
+      const render = components.Render;
+      if (render && render.shape !== "particle") {
+        this.drawEntity(entity, components, world);
       }
     });
 
@@ -132,9 +138,13 @@ export class SkiaRenderer implements Renderer {
     this.foregroundEffects.forEach(effect => effect(canvas, this.paint, world, this.width, this.height));
   }
 
-  public drawEntity(entity: Entity, pos: PositionComponent, render: RenderComponent, world: World): void {
+  public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
     if (!this.canvas) return;
     const canvas = this.canvas;
+    const pos = components["Position"] as PositionComponent;
+    const render = components["Render"] as RenderComponent;
+
+    if (!pos || !render) return;
 
     canvas.save();
     canvas.translate(pos.x, pos.y);

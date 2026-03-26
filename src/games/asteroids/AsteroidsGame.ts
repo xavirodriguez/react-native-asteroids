@@ -12,7 +12,6 @@ import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory"
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE, type ShipComponent, type InputComponent, type HealthComponent, type TTLComponent } from "./types/AsteroidTypes";
 import { CanvasRenderer } from "../../engine/rendering/CanvasRenderer";
 import { SkiaRenderer } from "../../engine/rendering/SkiaRenderer";
-import { SvgRenderer } from "../../engine/rendering/SvgRenderer.tsx";
 import { BlurStyle, Skia } from "@shopify/react-native-skia";
 import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
@@ -87,6 +86,24 @@ export class AsteroidsGame
       canvas.drawRect(Skia.XYWHRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8), paint);
     });
 
+    // Overwrite default circle for bullets to add glow
+    renderer.registerShape("circle", (canvas, paint, render, world, entity) => {
+      const isBullet = world.hasComponent(entity, "Bullet");
+      if (isBullet) {
+        paint.setColor(Skia.Color("#FFFF00"));
+        paint.setAlphaf(0.3);
+        paint.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 4, true));
+        canvas.drawCircle(0, 0, render.size * 3, paint);
+        paint.setMaskFilter(null);
+        paint.setAlphaf(1.0);
+        paint.setColor(Skia.Color("#FFFFFF"));
+      } else {
+        paint.setColor(Skia.Color(render.color));
+      }
+      paint.setStyle(Skia.PaintStyle.Fill);
+      canvas.drawCircle(0, 0, render.size, paint);
+    });
+
     renderer.registerShape("ufo", (canvas, paint, render) => {
       const size = render.size;
       const color = render.color;
@@ -153,6 +170,28 @@ export class AsteroidsGame
           canvas.drawRect(Skia.XYWHRect(parallaxX, parallaxY, star.size, star.size), paint);
         });
       }
+
+      // Ship Trails (dots)
+      const shipEntities = world.query("Ship", "Position");
+      shipEntities.forEach(shipEntity => {
+        const ship = world.getComponent<ShipComponent>(shipEntity, "Ship");
+        if (ship?.trailPositions) {
+          paint.setColor(Skia.Color("cyan"));
+          paint.setStyle(Skia.PaintStyle.Fill);
+          ship.trailPositions.forEach((p, i) => {
+            paint.setAlphaf((i / ship.trailPositions!.length) * 0.4);
+            canvas.drawCircle(p.x, p.y, 1.5, paint);
+          });
+        }
+      });
+      paint.setAlphaf(1.0);
+
+      // Screen Shake
+      if (gameState?.screenShake && gameState.screenShake.duration > 0) {
+        const shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
+        const shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
+        canvas.translate(shakeX, shakeY);
+      }
     });
   }
 
@@ -200,6 +239,23 @@ export class AsteroidsGame
       ctx.fillStyle = "red";
       ctx.fillRect(-size / 2, size / 6, size / 6, size / 8);
       ctx.fillRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8);
+
+    });
+
+    // Overwrite default circle for bullets to add glow
+    renderer.registerShape("circle", (ctx, render, world, entity) => {
+      const isBullet = world.hasComponent(entity, "Bullet");
+      if (isBullet) {
+        ctx.shadowColor = "#ffffaa";
+        ctx.shadowBlur = 12;
+      }
+      ctx.fillStyle = render.color;
+      ctx.beginPath();
+      ctx.arc(0, 0, render.size, 0, Math.PI * 2);
+      ctx.fill();
+      if (isBullet) {
+        ctx.shadowBlur = 0;
+      }
     });
 
     renderer.registerShape("ufo", (ctx, render) => {
@@ -250,6 +306,30 @@ export class AsteroidsGame
           ctx.fillRect(star.x, star.y, star.size, star.size);
         });
         ctx.globalAlpha = 1.0;
+      }
+
+      // Ship Trails
+      const shipEntities = world.query("Ship", "Position");
+      shipEntities.forEach(shipEntity => {
+        const ship = world.getComponent<ShipComponent>(shipEntity, "Ship");
+        if (ship?.trailPositions) {
+          ship.trailPositions.forEach((p, i) => {
+            const alpha = (i / ship.trailPositions!.length) * 0.4;
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = "#00ffff";
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+      });
+      ctx.globalAlpha = 1.0;
+
+      // Screen Shake
+      if (gameState?.screenShake && gameState.screenShake.duration > 0) {
+        const shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
+        const shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
+        ctx.translate(shakeX, shakeY);
       }
     });
 

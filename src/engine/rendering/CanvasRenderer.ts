@@ -119,11 +119,15 @@ export class CanvasRenderer implements Renderer {
     // Render Entities
     const entities = world.query("Position", "Render");
     entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
-      const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (pos && render) {
-        this.drawEntity(entity, pos, render, world);
-      }
+      const components: Record<string, any> = {
+        Position: world.getComponent(entity, "Position"),
+        Render: world.getComponent(entity, "Render"),
+        // Allow drawEntity to access other components if needed (e.g. Health, Input)
+        Health: world.getComponent(entity, "Health"),
+        Input: world.getComponent(entity, "Input"),
+        Ship: world.getComponent(entity, "Ship"),
+      };
+      this.drawEntity(entity, components, world);
     });
 
     this.drawParticles(world);
@@ -134,9 +138,13 @@ export class CanvasRenderer implements Renderer {
     this.foregroundEffects.forEach((effect) => effect(ctx, world, this.width, this.height));
   }
 
-  public drawEntity(entity: Entity, pos: PositionComponent, render: RenderComponent, world: World): void {
+  public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
+    const pos = components["Position"] as PositionComponent;
+    const render = components["Render"] as RenderComponent;
+
+    if (!pos || !render) return;
 
     ctx.save();
     ctx.translate(pos.x, pos.y);

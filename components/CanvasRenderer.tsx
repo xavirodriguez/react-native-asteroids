@@ -47,7 +47,7 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, onInitial
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [world]);
+  }, [world, onInitialize]);
 
   return (
     <View style={styles.container}>
