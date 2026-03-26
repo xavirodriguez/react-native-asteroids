@@ -15,6 +15,9 @@ import { TouchController } from "../../engine/input/TouchController";
 import { getGameState } from "./GameUtils";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
+import { Renderer } from "../../engine/rendering/Renderer";
+import { drawAsteroidsShip, drawAsteroidsUfo, asteroidsStarfieldEffect, asteroidsCRTEffect, asteroidsScreenShakeEffect, drawAsteroidsBullet } from "./rendering/AsteroidsCanvasVisuals";
+import { drawSkiaShip, drawSkiaUfo, skiaStarfieldEffect, skiaScreenShakeEffect, drawSkiaBullet } from "./rendering/AsteroidsSkiaVisuals";
 
 export class AsteroidsGame
   extends BaseGame<GameStateComponent, InputState>
@@ -67,6 +70,27 @@ export class AsteroidsGame
     spawnAsteroidWave({ world: this.world, count: GAME_CONFIG.INITIAL_ASTEROID_COUNT });
   }
 
+  /**
+   * Registers game-specific rendering logic to the provided renderer.
+   */
+  public initializeRenderer(renderer: Renderer): void {
+    // Canvas-specific registration
+    if (renderer.constructor.name === "CanvasRenderer") {
+      renderer.registerShape("triangle", drawAsteroidsShip);
+      renderer.registerShape("ufo", drawAsteroidsUfo);
+      renderer.registerShape("bullet_shape", drawAsteroidsBullet);
+      renderer.registerBackgroundEffect("starfield", asteroidsStarfieldEffect);
+      renderer.registerBackgroundEffect("screenshake", asteroidsScreenShakeEffect);
+      renderer.registerForegroundEffect("crt", asteroidsCRTEffect);
+    } else if (renderer.constructor.name === "SkiaRenderer") {
+      renderer.registerShape("triangle", drawSkiaShip);
+      renderer.registerShape("ufo", drawSkiaUfo);
+      renderer.registerShape("bullet_shape", drawSkiaBullet);
+      renderer.registerBackgroundEffect("starfield", skiaStarfieldEffect);
+      renderer.registerBackgroundEffect("screenshake", skiaScreenShakeEffect);
+    }
+  }
+
   protected _onBeforeRestart(): void {
     this.gameStateSystem.resetGameOverState();
   }
@@ -90,4 +114,5 @@ export class NullAsteroidsGame implements IAsteroidsGame {
   public getGameState() { return INITIAL_GAME_STATE; }
   public setInput() {}
   public subscribe() { return () => {}; }
+  public initializeRenderer() {}
 }

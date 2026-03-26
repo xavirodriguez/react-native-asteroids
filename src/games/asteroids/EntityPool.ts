@@ -33,7 +33,7 @@ export class BulletPool {
       () => ({
         position: { type: "Position", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
-        render: { type: "Render", shape: "circle", size: 0, color: "", rotation: 0 },
+        render: { type: "Render", shape: "bullet_shape", size: 0, color: "", rotation: 0 },
         collider: { type: "Collider", radius: 0 },
         ttl: { type: "TTL", remaining: 0, total: 0 },
         reclaimable: {
