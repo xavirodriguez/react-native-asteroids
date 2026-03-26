@@ -74,9 +74,6 @@ export class CanvasRenderer implements Renderer {
       const render = world.getComponent<RenderComponent>(entity, "Render");
       if (pos && render) {
         this.drawEntity(entity, pos, render, world);
-
-        // Improvement 14: Visual Wrap-around (fade at edges)
-        this.drawWrapAround(entity, pos, render, world);
       }
     });
 
@@ -90,14 +87,24 @@ export class CanvasRenderer implements Renderer {
     }
   }
 
-  public drawEntity(entity: Entity, pos: PositionComponent, render: RenderComponent, world: World): void {
+  public drawEntity(
+    entity: Entity,
+    pos: PositionComponent,
+    render: RenderComponent,
+    world: World,
+    options: { skipBlur?: boolean; skipWrap?: boolean } = {}
+  ): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
+    const { skipBlur = false, skipWrap = false } = options;
+
+    // We need the ACTUAL entity position for trails to follow ghost copies
+    const actualPos = world.getComponent<PositionComponent>(entity, "Position") || pos;
 
     // Improvement 2: Ship Trail (Draw before the ship)
     const ship = world.getComponent<ShipComponent>(entity, "Ship");
     if (ship && ship.trailPositions) {
-      this.drawShipTrail(ctx, ship.trailPositions, pos);
+      this.drawShipTrail(ctx, ship.trailPositions, pos, actualPos);
     }
 
     ctx.save();
@@ -106,13 +113,20 @@ export class CanvasRenderer implements Renderer {
       ctx.globalAlpha *= (1 - (ship.hyperspaceTimer / 500));
     }
 
-    // Improvement 20: Motion Blur for fast entities
-    const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
-    if (vel && render.trailPositions && render.trailPositions.length > 2) {
-      const speed = Math.sqrt(vel.dx * vel.dx + vel.dy * vel.dy);
-      if (speed > 200) {
-        this.drawMotionBlur(entity, render, world);
+    // Improvement 20: Motion Blur for fast entities (skipBlur prevents recursion)
+    if (!skipBlur) {
+      const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
+      if (vel && render.trailPositions && render.trailPositions.length > 2) {
+        const speed = Math.sqrt(vel.dx * vel.dx + vel.dy * vel.dy);
+        if (speed > 200) {
+          this.drawMotionBlur(entity, render, world);
+        }
       }
+    }
+
+    // Improvement 14: Visual Wrap-around (skipWrap prevents recursion)
+    if (!skipWrap) {
+      this.drawWrapAround(entity, pos, render, world);
     }
 
     ctx.translate(pos.x, pos.y);
@@ -126,7 +140,7 @@ export class CanvasRenderer implements Renderer {
 
       // Improvement 16: Bullet streak trail (lines)
       if (render.trailPositions && render.trailPositions.length > 1) {
-        this.drawBulletStreak(ctx, render.trailPositions, pos);
+        this.drawBulletStreak(ctx, render.trailPositions, pos, actualPos);
       }
     }
 
@@ -164,7 +178,9 @@ export class CanvasRenderer implements Renderer {
         const ghostPos = trail[idx];
         ctx.save();
         ctx.globalAlpha *= (0.15 + i * 0.15);
-        this.drawEntity(entity, { type: "Position", x: ghostPos.x, y: ghostPos.y }, render, world);
+        this.drawEntity(entity, { type: "Position", x: ghostPos.x, y: ghostPos.y }, render, world, {
+          skipBlur: true,
+        });
         ctx.restore();
       }
     });
@@ -180,27 +196,41 @@ export class CanvasRenderer implements Renderer {
     let wrapY = y;
     let shouldDraw = false;
 
-    if (x < size) { wrapX = x + width; shouldDraw = true; }
-    else if (x > width - size) { wrapX = x - width; shouldDraw = true; }
+    if (x < size) {
+      wrapX = x + width;
+      shouldDraw = true;
+    } else if (x > width - size) {
+      wrapX = x - width;
+      shouldDraw = true;
+    }
 
-    if (y < size) { wrapY = y + height; shouldDraw = true; }
-    else if (y > height - size) { wrapY = y - height; shouldDraw = true; }
+    if (y < size) {
+      wrapY = y + height;
+      shouldDraw = true;
+    } else if (y > height - size) {
+      wrapY = y - height;
+      shouldDraw = true;
+    }
 
     if (shouldDraw) {
       this.ctx!.save();
       this.ctx!.globalAlpha *= 0.5;
-      this.drawEntity(entity, { ...pos, x: wrapX, y: wrapY }, render, world);
+      this.drawEntity(entity, { type: "Position", x: wrapX, y: wrapY }, render, world, {
+        skipWrap: true,
+      });
       this.ctx!.restore();
     }
 
     // Corner cases
-    if ( (x < size || x > width - size) && (y < size || y > height - size) ) {
-        const cornerX = x < size ? x + width : x - width;
-        const cornerY = y < size ? y + height : y - height;
-        this.ctx!.save();
-        this.ctx!.globalAlpha *= 0.5;
-        this.drawEntity(entity, { ...pos, x: cornerX, y: cornerY }, render, world);
-        this.ctx!.restore();
+    if ((x < size || x > width - size) && (y < size || y > height - size)) {
+      const cornerX = x < size ? x + width : x - width;
+      const cornerY = y < size ? y + height : y - height;
+      this.ctx!.save();
+      this.ctx!.globalAlpha *= 0.5;
+      this.drawEntity(entity, { type: "Position", x: cornerX, y: cornerY }, render, world, {
+        skipWrap: true,
+      });
+      this.ctx!.restore();
     }
   }
 
@@ -378,8 +408,13 @@ export class CanvasRenderer implements Renderer {
     ctx.stroke();
   }
 
-  private drawBulletStreak(ctx: CanvasRenderingContext2D, trail: { x: number; y: number }[], currentPos: PositionComponent): void {
-    // Improvement 16: Bullet streak (Relative to current draw position for wrap-around)
+  private drawBulletStreak(
+    ctx: CanvasRenderingContext2D,
+    trail: { x: number; y: number }[],
+    currentDrawPos: PositionComponent,
+    actualEntityPos: PositionComponent
+  ): void {
+    // Improvement 16: Bullet streak (Relative to draw position to support wrap-around ghosts)
     ctx.save();
     ctx.lineWidth = 2;
     for (let i = 0; i < trail.length - 1; i++) {
@@ -391,22 +426,28 @@ export class CanvasRenderer implements Renderer {
       const alpha = (i / trail.length) * 0.6;
       ctx.strokeStyle = `rgba(255, 200, 0, ${alpha})`;
       ctx.beginPath();
-      ctx.moveTo(p1.x - currentPos.x, p1.y - currentPos.y);
-      ctx.lineTo(p2.x - currentPos.x, p2.y - currentPos.y);
+      // Calculate position relative to ACTUAL entity, then drawing context handles currentDrawPos
+      ctx.moveTo(p1.x - actualEntityPos.x, p1.y - actualEntityPos.y);
+      ctx.lineTo(p2.x - actualEntityPos.x, p2.y - actualEntityPos.y);
       ctx.stroke();
     }
     ctx.restore();
   }
 
-  private drawShipTrail(ctx: CanvasRenderingContext2D, trail: { x: number; y: number }[], currentPos: PositionComponent): void {
-    // Improvement 2: Trail cyan with alpha fade (Relative to current draw position for wrap-around)
+  private drawShipTrail(
+    ctx: CanvasRenderingContext2D,
+    trail: { x: number; y: number }[],
+    currentDrawPos: PositionComponent,
+    actualEntityPos: PositionComponent
+  ): void {
+    // Improvement 2: Trail cyan with alpha fade (Relative to draw position to support wrap-around ghosts)
     ctx.save();
     trail.forEach((p, i) => {
       const alpha = (i / trail.length) * 0.4;
       ctx.globalAlpha = alpha;
       ctx.fillStyle = "#00ffff";
       ctx.beginPath();
-      ctx.arc(p.x - currentPos.x, p.y - currentPos.y, 1, 0, Math.PI * 2);
+      ctx.arc(p.x - actualEntityPos.x, p.y - actualEntityPos.y, 1, 0, Math.PI * 2);
       ctx.fill();
     });
     ctx.restore();
