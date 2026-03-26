@@ -1,6 +1,6 @@
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
-import { Entity, PositionComponent, RenderComponent, TTLComponent, HealthComponent } from "../types/EngineTypes";
+import { Entity, PositionComponent, RenderComponent, TTLComponent, HealthComponent, VelocityComponent } from "../types/EngineTypes";
 import { drawStarField } from "../../game/StarField";
 import { GameStateComponent, ShipComponent, InputComponent } from "../../types/GameTypes";
 
@@ -74,6 +74,9 @@ export class CanvasRenderer implements Renderer {
       const render = world.getComponent<RenderComponent>(entity, "Render");
       if (pos && render) {
         this.drawEntity(entity, pos, render, world);
+
+        // Improvement 14: Visual Wrap-around (fade at edges)
+        this.drawWrapAround(entity, pos, render, world);
       }
     });
 
@@ -92,12 +95,26 @@ export class CanvasRenderer implements Renderer {
     const ctx = this.ctx;
 
     // Improvement 2: Ship Trail (Draw before the ship)
-    const ship = world.getComponent<any>(entity, "Ship");
+    const ship = world.getComponent<ShipComponent>(entity, "Ship");
     if (ship && ship.trailPositions) {
-      this.drawShipTrail(ctx, ship.trailPositions);
+      this.drawShipTrail(ctx, ship.trailPositions, pos);
     }
 
     ctx.save();
+    // Improvement 17: Hyperspace fade
+    if (ship && ship.hyperspaceTimer > 0) {
+      ctx.globalAlpha *= (1 - (ship.hyperspaceTimer / 500));
+    }
+
+    // Improvement 20: Motion Blur for fast entities
+    const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
+    if (vel && render.trailPositions && render.trailPositions.length > 2) {
+      const speed = Math.sqrt(vel.dx * vel.dx + vel.dy * vel.dy);
+      if (speed > 200) {
+        this.drawMotionBlur(entity, render, world);
+      }
+    }
+
     ctx.translate(pos.x, pos.y);
     ctx.rotate(render.rotation);
 
@@ -106,6 +123,11 @@ export class CanvasRenderer implements Renderer {
     if (isBullet) {
       ctx.shadowColor = "#ffffaa";
       ctx.shadowBlur = 12;
+
+      // Improvement 16: Bullet streak trail (lines)
+      if (render.trailPositions && render.trailPositions.length > 1) {
+        this.drawBulletStreak(ctx, render.trailPositions, pos);
+      }
     }
 
     // Render shapes
@@ -131,6 +153,55 @@ export class CanvasRenderer implements Renderer {
     }
 
     ctx.restore();
+  }
+
+  private drawMotionBlur(entity: Entity, render: RenderComponent, world: World): void {
+    const trail = render.trailPositions!;
+    const ghostIndices = [trail.length - 2, trail.length - 3];
+    const ctx = this.ctx!;
+    ghostIndices.forEach((idx, i) => {
+      if (idx >= 0) {
+        const ghostPos = trail[idx];
+        ctx.save();
+        ctx.globalAlpha *= (0.15 + i * 0.15);
+        this.drawEntity(entity, { type: "Position", x: ghostPos.x, y: ghostPos.y }, render, world);
+        ctx.restore();
+      }
+    });
+  }
+
+  private drawWrapAround(entity: Entity, pos: PositionComponent, render: RenderComponent, world: World): void {
+    const { x, y } = pos;
+    const size = render.size;
+    const width = this.width;
+    const height = this.height;
+
+    let wrapX = x;
+    let wrapY = y;
+    let shouldDraw = false;
+
+    if (x < size) { wrapX = x + width; shouldDraw = true; }
+    else if (x > width - size) { wrapX = x - width; shouldDraw = true; }
+
+    if (y < size) { wrapY = y + height; shouldDraw = true; }
+    else if (y > height - size) { wrapY = y - height; shouldDraw = true; }
+
+    if (shouldDraw) {
+      this.ctx!.save();
+      this.ctx!.globalAlpha *= 0.5;
+      this.drawEntity(entity, { ...pos, x: wrapX, y: wrapY }, render, world);
+      this.ctx!.restore();
+    }
+
+    // Corner cases
+    if ( (x < size || x > width - size) && (y < size || y > height - size) ) {
+        const cornerX = x < size ? x + width : x - width;
+        const cornerY = y < size ? y + height : y - height;
+        this.ctx!.save();
+        this.ctx!.globalAlpha *= 0.5;
+        this.drawEntity(entity, { ...pos, x: cornerX, y: cornerY }, render, world);
+        this.ctx!.restore();
+    }
   }
 
   public drawParticles(world: World): void {
@@ -228,6 +299,20 @@ export class CanvasRenderer implements Renderer {
     }
     ctx.closePath();
     ctx.stroke();
+
+    // Improvement 19: Internal lines (cracks/craters)
+    if (render.internalLines) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+      ctx.lineWidth = 1;
+      render.internalLines.forEach((line) => {
+        ctx.beginPath();
+        ctx.moveTo(line.x1, line.y1);
+        ctx.lineTo(line.x2, line.y2);
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
   }
 
   private drawCircle(ctx: CanvasRenderingContext2D, size: number, color: string): void {
@@ -238,6 +323,11 @@ export class CanvasRenderer implements Renderer {
   }
 
   private drawUfo(ctx: CanvasRenderingContext2D, size: number, color: string): void {
+    // Improvement 13: Red glow for UFO (Refined with save/restore)
+    ctx.save();
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = "red";
+
     ctx.strokeStyle = color;
     ctx.lineWidth = 1;
     ctx.fillStyle = "rgba(150, 150, 150, 0.5)";
@@ -245,6 +335,7 @@ export class CanvasRenderer implements Renderer {
     ctx.ellipse(0, 0, size, size / 2, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
+    ctx.restore();
 
     ctx.fillStyle = "rgba(0, 255, 255, 0.6)";
     ctx.beginPath();
@@ -260,13 +351,22 @@ export class CanvasRenderer implements Renderer {
   private drawFlash(ctx: CanvasRenderingContext2D, world: World, entity: Entity, size: number): void {
     const ttl = world.getComponent<TTLComponent>(entity, "TTL");
     if (!ttl) return;
-    ctx.globalAlpha = (ttl.remaining / ttl.total) * 0.5;
-    ctx.fillStyle = "white";
+    const alpha = (ttl.remaining / ttl.total) * 0.7;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+    gradient.addColorStop(0, "white");
+    gradient.addColorStop(0.3, "rgba(255, 255, 200, 0.8)");
+    gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+    ctx.fillStyle = gradient;
     ctx.shadowColor = "white";
-    ctx.shadowBlur = 20;
+    ctx.shadowBlur = 30 * (ttl.remaining / ttl.total);
     ctx.beginPath();
     ctx.arc(0, 0, size, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
   }
 
   private drawLine(ctx: CanvasRenderingContext2D, size: number, color: string): void {
@@ -278,17 +378,38 @@ export class CanvasRenderer implements Renderer {
     ctx.stroke();
   }
 
-  private drawShipTrail(ctx: CanvasRenderingContext2D, trail: { x: number; y: number }[]): void {
-    // Improvement 2: Trail cyan with alpha fade
+  private drawBulletStreak(ctx: CanvasRenderingContext2D, trail: { x: number; y: number }[], currentPos: PositionComponent): void {
+    // Improvement 16: Bullet streak (Relative to current draw position for wrap-around)
+    ctx.save();
+    ctx.lineWidth = 2;
+    for (let i = 0; i < trail.length - 1; i++) {
+      const p1 = trail[i];
+      const p2 = trail[i + 1];
+      // Skip segments that jump across the screen due to wrap-around
+      if (Math.abs(p1.x - p2.x) > 100 || Math.abs(p1.y - p2.y) > 100) continue;
+
+      const alpha = (i / trail.length) * 0.6;
+      ctx.strokeStyle = `rgba(255, 200, 0, ${alpha})`;
+      ctx.beginPath();
+      ctx.moveTo(p1.x - currentPos.x, p1.y - currentPos.y);
+      ctx.lineTo(p2.x - currentPos.x, p2.y - currentPos.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  private drawShipTrail(ctx: CanvasRenderingContext2D, trail: { x: number; y: number }[], currentPos: PositionComponent): void {
+    // Improvement 2: Trail cyan with alpha fade (Relative to current draw position for wrap-around)
+    ctx.save();
     trail.forEach((p, i) => {
       const alpha = (i / trail.length) * 0.4;
       ctx.globalAlpha = alpha;
       ctx.fillStyle = "#00ffff";
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+      ctx.arc(p.x - currentPos.x, p.y - currentPos.y, 1, 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
     });
+    ctx.restore();
   }
 
   private drawStarField(ctx: CanvasRenderingContext2D, stars: any[]): void {

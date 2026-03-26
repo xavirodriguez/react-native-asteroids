@@ -66,6 +66,7 @@ export class BulletPool {
     data.render.size = size;
     data.render.color = color;
     data.render.rotation = 0;
+    data.render.trailPositions = []; // Improvement 16: Bullet streak trail
     data.collider.radius = size;
     data.ttl.remaining = ttl;
     data.ttl.total = ttl;

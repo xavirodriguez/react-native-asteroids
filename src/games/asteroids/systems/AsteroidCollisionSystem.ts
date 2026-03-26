@@ -12,7 +12,7 @@ import {
 } from "../../../types/GameTypes";
 
 import { createAsteroid, createParticle } from "../EntityFactory";
-import { getGameState } from "../GameUtils";
+import { getGameState, createExplosion } from "../GameUtils";
 import { hapticDamage, hapticDeath } from "../../../utils/haptics";
 import { ParticlePool } from "../EntityPool";
 
@@ -62,7 +62,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
       const matchBullet = (match as Record<"Ufo" | "Bullet", Entity>).Bullet;
       const pos = world.getComponent<PositionComponent>(matchUfo, "Position");
       if (pos) {
-        this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
+        createExplosion(world, pos.x, pos.y, GAME_CONFIG.UFO_SIZE, this.particlePool);
       }
       this.destroyEntity(world, matchUfo);
       this.destroyEntity(world, matchBullet);
@@ -87,7 +87,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
         this.applyDamageToShip(world, health);
         const pos = world.getComponent<PositionComponent>(matchUfo, "Position");
         if (pos) {
-          this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
+          createExplosion(world, pos.x, pos.y, GAME_CONFIG.UFO_SIZE, this.particlePool);
         }
         this.destroyEntity(world, matchUfo);
       }
@@ -157,8 +157,10 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     const { world, asteroid, bullet } = context;
     const pos = world.getComponent<PositionComponent>(asteroid, "Position");
     const render = world.getComponent<RenderComponent>(asteroid, "Render");
+    const asteroidComp = world.getComponent<AsteroidComponent>(asteroid, "Asteroid");
     if (pos) {
-      this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT);
+      const radius = asteroidComp ? GAME_CONFIG.ASTEROID_RADII[asteroidComp.size] : 20;
+      createExplosion(world, pos.x, pos.y, radius, this.particlePool);
     }
     // Improvement 9: Hit flash effect
     if (render) {

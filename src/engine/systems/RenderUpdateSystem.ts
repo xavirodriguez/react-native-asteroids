@@ -28,8 +28,12 @@ export class RenderUpdateSystem extends System {
       const render = world.getComponent<RenderComponent>(entity, "Render");
 
       if (pos && render && render.trailPositions) {
+        // Improvement 16: Ensure bullets have shorter trails than ships/others if needed
+        const isBullet = world.hasComponent(entity, "Bullet");
+        const maxLen = isBullet ? 6 : this.trailMaxLength;
+
         render.trailPositions.push({ x: pos.x, y: pos.y });
-        if (render.trailPositions.length > this.trailMaxLength) {
+        if (render.trailPositions.length > maxLen) {
           render.trailPositions.shift();
         }
       }

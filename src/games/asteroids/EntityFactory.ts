@@ -91,7 +91,11 @@ function addShipCombatComponents(config: { world: World; ship: Entity }): void {
 
 function addShipMetaComponents(config: { world: World; ship: Entity }): void {
   const { world, ship } = config
-  world.addComponent(ship, { type: "Ship" })
+  world.addComponent(ship, {
+    type: "Ship",
+    hyperspaceTimer: 0,
+    hyperspaceCooldownRemaining: 0,
+  })
   world.addComponent(ship, { type: "Collider", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS })
 }
 
@@ -157,11 +161,30 @@ function addAsteroidTypeComponents(config: {
   const { world, asteroid, size } = config
   const radius = GAME_CONFIG.ASTEROID_RADII[size]
 
+  // Improvement 11: Color and roughness variation by size
+  let color = "#AAAAAA"
+  let roughnessMin = 0.75
+  let roughnessRange = 0.5
+
+  if (size === "large") {
+    color = "#555555"
+    roughnessMin = 0.6
+    roughnessRange = 0.8
+  } else if (size === "medium") {
+    color = "#887766"
+    roughnessMin = 0.75
+    roughnessRange = 0.5
+  } else {
+    color = "#DDDDDD"
+    roughnessMin = 0.9
+    roughnessRange = 0.2
+  }
+
   // Improvement 5: Polygonal asteroids
   const vertexCount = 8 + Math.floor(Math.random() * 5); // 8 to 12 vertices
   const vertices = Array.from({ length: vertexCount }, (_, i) => {
     const angle = (i / vertexCount) * Math.PI * 2;
-    const r = radius * (0.75 + Math.random() * 0.5);
+    const r = radius * (roughnessMin + Math.random() * roughnessRange);
     return { x: Math.cos(angle) * r, y: Math.sin(angle) * r };
   });
 
@@ -169,11 +192,22 @@ function addAsteroidTypeComponents(config: {
     type: "Render",
     shape: "polygon",
     size: radius,
-    color: "#AAAAAA",
+    color: color,
     rotation: Math.random() * Math.PI * 2, // Improvement 5: Randomized initial rotation
     angularVelocity: (Math.random() - 0.5) * 0.04, // Improvement 7: Random slow rotation
     vertices,
     hitFlashFrames: 0, // Improvement 9: Hit flash tracker
+    // Improvement 19: Internal lines (cracks/craters)
+    internalLines: Array.from({ length: 2 + Math.floor(Math.random() * 3) }, () => {
+      const angle1 = Math.random() * Math.PI * 2;
+      const angle2 = angle1 + (Math.random() - 0.5) * Math.PI;
+      const r1 = radius * (0.2 + Math.random() * 0.5);
+      const r2 = radius * (0.4 + Math.random() * 0.4);
+      return {
+        x1: Math.cos(angle1) * r1, y1: Math.sin(angle1) * r1,
+        x2: Math.cos(angle2) * r2, y2: Math.sin(angle2) * r2
+      };
+    }),
   })
   world.addComponent(asteroid, { type: "Collider", radius })
   world.addComponent(asteroid, { type: "Asteroid", size })

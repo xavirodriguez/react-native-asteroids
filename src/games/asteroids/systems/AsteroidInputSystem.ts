@@ -6,12 +6,14 @@ import {
   type RenderComponent,
   type PositionComponent,
   type InputState,
+  type ShipComponent,
   GAME_CONFIG,
 } from "../../../types/GameTypes";
 import { createBullet, createParticle } from "../EntityFactory";
 import { hapticShoot } from "../../../utils/haptics";
 import { InputManager } from "../../../engine/input/InputManager";
 import { BulletPool, ParticlePool } from "../EntityPool";
+import { createExplosion } from "../GameUtils";
 
 /**
  * System responsible for processing user input and applying it to the ship's state.
@@ -60,14 +62,15 @@ export class AsteroidInputSystem extends System {
   private updateShipEntity(context: { world: World; entity: number; deltaTime: number }): void {
     const { world, entity, deltaTime } = context;
     const input = world.getComponent<InputComponent>(entity, "Input");
+    const ship = world.getComponent<ShipComponent>(entity, "Ship");
     if (!input) return;
 
-    this.updateShipState(input, deltaTime);
-    this.processShipActions({ world, entity, input, deltaTime });
+    this.updateShipState(input, ship, deltaTime);
+    this.processShipActions({ world, entity, input, ship, deltaTime });
   }
 
-  private updateShipState(input: InputComponent, deltaTime: number): void {
-    this.updateShootingCooldown(input, deltaTime);
+  private updateShipState(input: InputComponent, ship: ShipComponent | undefined, deltaTime: number): void {
+    this.updateShootingCooldown(input, ship, deltaTime);
     this.updateShipInputState(input);
   }
 
@@ -75,9 +78,10 @@ export class AsteroidInputSystem extends System {
     world: World;
     entity: number;
     input: InputComponent;
+    ship: ShipComponent | undefined;
     deltaTime: number;
   }): void {
-    const { world, entity, input, deltaTime } = context;
+    const { world, entity, input, ship, deltaTime } = context;
     const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
     const render = world.getComponent<RenderComponent>(entity, "Render");
     const pos = world.getComponent<PositionComponent>(entity, "Position");
@@ -85,12 +89,19 @@ export class AsteroidInputSystem extends System {
     if (vel && render && pos) {
       this.applyShipMovement({ world, pos, vel, render, input, deltaTime });
       this.handleShipShooting({ world, pos, render, input });
+      this.handleShipHyperspace({ world, pos, vel, input, ship });
     }
   }
 
-  private updateShootingCooldown(input: InputComponent, deltaTime: number): void {
+  private updateShootingCooldown(input: InputComponent, ship: ShipComponent | undefined, deltaTime: number): void {
     if (input.shootCooldownRemaining > 0) {
       input.shootCooldownRemaining -= deltaTime;
+    }
+    if (ship && ship.hyperspaceCooldownRemaining > 0) {
+      ship.hyperspaceCooldownRemaining -= deltaTime;
+    }
+    if (ship && ship.hyperspaceTimer > 0) {
+      ship.hyperspaceTimer -= deltaTime;
     }
   }
 
@@ -100,6 +111,7 @@ export class AsteroidInputSystem extends System {
     input.rotateLeft = currentInputs.rotateLeft;
     input.rotateRight = currentInputs.rotateRight;
     input.shoot = currentInputs.shoot;
+    input.hyperspace = currentInputs.hyperspace;
   }
 
   private applyShipMovement(context: {
@@ -179,6 +191,33 @@ export class AsteroidInputSystem extends System {
       createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation, pool: this.bulletPool });
       input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN;
       hapticShoot();
+    }
+  }
+
+  private handleShipHyperspace(context: {
+    world: World;
+    pos: PositionComponent;
+    vel: VelocityComponent;
+    input: InputComponent;
+    ship: ShipComponent | undefined;
+  }): void {
+    const { world, pos, vel, input, ship } = context;
+    if (input.hyperspace && ship && ship.hyperspaceCooldownRemaining <= 0) {
+      // 1. Old position explosion
+      createExplosion(world, pos.x, pos.y, 20, this.particlePool);
+
+      // 2. Random Teleport
+      pos.x = Math.random() * GAME_CONFIG.SCREEN_WIDTH;
+      pos.y = Math.random() * GAME_CONFIG.SCREEN_HEIGHT;
+      vel.dx = 0;
+      vel.dy = 0;
+
+      // 3. New position explosion
+      createExplosion(world, pos.x, pos.y, 20, this.particlePool);
+
+      // 4. State update
+      ship.hyperspaceTimer = 500;
+      ship.hyperspaceCooldownRemaining = 3000;
     }
   }
 }

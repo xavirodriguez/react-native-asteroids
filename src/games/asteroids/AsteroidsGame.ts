@@ -8,6 +8,7 @@ import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
 import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
+import { UfoSystem } from "./systems/UfoSystem";
 import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory";
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "../../types/GameTypes";
 import { KeyboardController } from "../../engine/input/KeyboardController";
@@ -54,6 +55,7 @@ export class AsteroidsGame
 
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());
+    this.world.addSystem(new UfoSystem());
     this.world.addSystem(new WrapSystem(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT));
     this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
     this.world.addSystem(new TTLSystem());
