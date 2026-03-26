@@ -6,6 +6,7 @@ import { CanvasRenderer } from "../../components/CanvasRenderer";
 import { GameControls } from "../../components/GameControls";
 import { GameUI } from "../../components/GameUI";
 import { useAsteroidsGame } from "../hooks/useAsteroidsGame";
+import { AsteroidsGame } from "../games/asteroids/AsteroidsGame";
 
 /**
  * Main application component that integrates the game engine with the React UI.
@@ -36,7 +37,10 @@ export default function App() {
           isPaused={isPaused}
           highScore={highScore}
         />
-        <CanvasRenderer world={game.getWorld()} />
+        <CanvasRenderer
+          world={game.getWorld()}
+          onInitialize={(renderer) => AsteroidsGame.registerAsteroidsRenderer(renderer)}
+        />
         <GameControls
           onThrust={(pressed) => handleInput({ thrust: pressed })}
           onRotateLeft={(pressed) => handleInput({ rotateLeft: pressed })}

@@ -1,13 +1,12 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { PositionComponent, RenderComponent } from "../types/EngineTypes";
-import { ShipComponent } from "../../types/GameTypes";
 
 /**
  * Generic rendering-related updates (rotation, trails, flashes).
  */
 export class RenderUpdateSystem extends System {
-  private trailMaxLength: number;
+  protected trailMaxLength: number;
 
   constructor(trailMaxLength: number = 10) {
     super();
@@ -21,7 +20,7 @@ export class RenderUpdateSystem extends System {
     world.version++;
   }
 
-  private updateTrails(world: World): void {
+  protected updateTrails(world: World): void {
     const entities = world.query("Position", "Render");
     entities.forEach((entity) => {
       const pos = world.getComponent<PositionComponent>(entity, "Position");
@@ -31,18 +30,6 @@ export class RenderUpdateSystem extends System {
         render.trailPositions.push({ x: pos.x, y: pos.y });
         if (render.trailPositions.length > this.trailMaxLength) {
           render.trailPositions.shift();
-        }
-      }
-
-      // Improvement 2: Ship trail
-      if (world.hasComponent(entity, "Ship")) {
-        const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
-        if (pos && shipComp) {
-          if (!shipComp.trailPositions) shipComp.trailPositions = [];
-          shipComp.trailPositions.push({ x: pos.x, y: pos.y });
-          if (shipComp.trailPositions.length > 12) {
-            shipComp.trailPositions.shift();
-          }
         }
       }
     });
