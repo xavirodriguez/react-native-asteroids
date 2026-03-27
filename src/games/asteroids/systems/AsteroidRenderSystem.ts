@@ -1,12 +1,14 @@
 import { World } from "../../../engine/core/World";
 import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
+import { PositionComponent } from "../../../engine/types/EngineTypes";
 import {
   type GameStateComponent,
+  type ShipComponent,
   GAME_CONFIG,
 } from "../../../types/GameTypes";
 
 /**
- * System responsible for Asteroids-specific rendering logic (e.g., screen shake).
+ * System responsible for Asteroids-specific rendering logic (e.g., screen shake, ship trails).
  */
 export class AsteroidRenderSystem extends RenderUpdateSystem {
   constructor() {
@@ -19,6 +21,7 @@ export class AsteroidRenderSystem extends RenderUpdateSystem {
   public override update(world: World, deltaTime: number): void {
     super.update(world, deltaTime);
     this.updateScreenShake(world);
+    this.updateShipTrails(world);
   }
 
   private updateScreenShake(world: World): void {
@@ -32,5 +35,23 @@ export class AsteroidRenderSystem extends RenderUpdateSystem {
         gameState.screenShake = null;
       }
     }
+  }
+
+  private updateShipTrails(world: World): void {
+    const entities = world.query("Position", "Ship");
+    entities.forEach((entity) => {
+      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
+
+      if (pos && shipComp) {
+        if (!shipComp.trailPositions) shipComp.trailPositions = [];
+
+        shipComp.trailPositions.push({ x: pos.x, y: pos.y });
+
+        if (shipComp.trailPositions.length > 12) {
+          shipComp.trailPositions.shift();
+        }
+      }
+    });
   }
 }

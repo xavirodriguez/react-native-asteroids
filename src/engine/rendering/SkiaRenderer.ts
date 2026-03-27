@@ -8,6 +8,7 @@ import { Entity, PositionComponent, RenderComponent, TTLComponent } from "../typ
  * Generic and extensible via Shape and Effect registries.
  */
 export class SkiaRenderer implements Renderer {
+  public readonly type = "skia";
   private canvas: SkCanvas | null = null;
   private width: number = 0;
   private height: number = 0;

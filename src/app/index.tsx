@@ -36,7 +36,10 @@ export default function App() {
           isPaused={isPaused}
           highScore={highScore}
         />
-        <CanvasRenderer world={game.getWorld()} />
+        <CanvasRenderer
+          world={game.getWorld()}
+          onInitialize={(renderer) => game.initializeRenderer(renderer)}
+        />
         <GameControls
           onThrust={(pressed) => handleInput({ thrust: pressed })}
           onRotateLeft={(pressed) => handleInput({ rotateLeft: pressed })}
