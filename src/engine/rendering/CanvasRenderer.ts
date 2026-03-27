@@ -12,10 +12,6 @@ export class CanvasRenderer implements Renderer {
   private ctx: CanvasRenderingContext2D | null = null;
   private width: number = 0;
   private height: number = 0;
-  private shapeRegistry: Map<string, ShapeDrawer> = new Map();
-  private backgroundEffects: RenderEffect[] = [];
-  private foregroundEffects: RenderEffect[] = [];
-
   private shapeRegistry = new Map<string, ShapeDrawer<CanvasRenderingContext2D>>();
   private backgroundEffects = new Map<string, EffectDrawer<CanvasRenderingContext2D>>();
   private foregroundEffects = new Map<string, EffectDrawer<CanvasRenderingContext2D>>();
@@ -29,57 +25,20 @@ export class CanvasRenderer implements Renderer {
 
   private registerDefaultShapes(): void {
     this.registerShape("circle", (ctx, render) => {
-      ctx.fillStyle = render.color;
-      ctx.beginPath();
-      ctx.arc(0, 0, render.size, 0, Math.PI * 2);
-      ctx.fill();
+      this.drawCircle(ctx, render.size, render.color);
     });
 
     this.registerShape("polygon", (ctx, render) => {
       if (!render.vertices || render.vertices.length === 0) {
-        ctx.fillStyle = render.color;
-        ctx.beginPath();
-        ctx.arc(0, 0, render.size, 0, Math.PI * 2);
-        ctx.fill();
+        this.drawCircle(ctx, render.size, render.color);
         return;
       }
-
-      ctx.strokeStyle = render.color || "#aaa";
-      ctx.lineWidth = 2;
-
-      if (render.hitFlashFrames && render.hitFlashFrames > 0) {
-        ctx.strokeStyle = "white";
-      }
-
-      ctx.beginPath();
-      ctx.moveTo(render.vertices[0].x, render.vertices[0].y);
-      for (let i = 1; i < render.vertices.length; i++) {
-        ctx.lineTo(render.vertices[i].x, render.vertices[i].y);
-      }
-      ctx.closePath();
-      ctx.stroke();
+      this.drawPolygon(ctx, render.vertices, render.color, render.hitFlashFrames);
     });
 
     this.registerShape("line", (ctx, render) => {
-      ctx.strokeStyle = render.color;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-render.size / 2, 0);
-      ctx.lineTo(render.size / 2, 0);
-      ctx.stroke();
+      this.drawLine(ctx, render.size, render.color);
     });
-  }
-
-  public registerShape(name: string, drawer: ShapeDrawer): void {
-    this.shapeRegistry.set(name, drawer);
-  }
-
-  public registerBackgroundEffect(effect: RenderEffect): void {
-    this.backgroundEffects.push(effect);
-  }
-
-  public registerForegroundEffect(effect: RenderEffect): void {
-    this.foregroundEffects.push(effect);
   }
 
   public setContext(ctx: CanvasRenderingContext2D): void {
@@ -125,28 +84,8 @@ export class CanvasRenderer implements Renderer {
     entities.forEach((entity) => {
       const pos = world.getComponent<PositionComponent>(entity, "Position");
       const render = world.getComponent<RenderComponent>(entity, "Render");
-      const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
-
-      if (pos && render) {
-        // Improvement 20: Subtle motion blur for fast entities
-        if (vel && render.trailPositions && render.trailPositions.length > 2) {
-          const speed = Math.sqrt(vel.dx * vel.dx + vel.dy * vel.dy);
-          if (speed > 200) {
-            ctx.save();
-            // Draw 2 previous copies
-            for (let i = 1; i <= 2; i++) {
-              const prevIdx = render.trailPositions.length - 1 - i;
-              if (prevIdx >= 0) {
-                const prevPos = render.trailPositions[prevIdx];
-                ctx.globalAlpha = 0.2 / i;
-                this.drawEntity(entity, { ...pos, ...prevPos }, render, world);
-              }
-            }
-            ctx.restore();
-          }
-        }
-
-        this.drawEntity(entity, pos, render, world);
+      if (pos && render && render.shape !== "particle") {
+        this.drawEntity(entity, { Position: pos, Render: render }, world);
       }
     });
 
@@ -167,6 +106,8 @@ export class CanvasRenderer implements Renderer {
     if (ship && ship.trailPositions) {
       this.drawShipTrail(ctx, ship.trailPositions);
     }
+
+    if (!pos || !render) return;
 
     ctx.save();
     ctx.translate(pos.x, pos.y);
@@ -223,12 +164,22 @@ export class CanvasRenderer implements Renderer {
       ctx.save();
       ctx.translate(pos.x, pos.y);
 
-      const hue = 30 + (entity % 20);
-      const lightness = 50 + alpha * 30;
-      ctx.fillStyle = `hsl(${hue}, 100%, ${lightness}%)`;
+      // Improvement 1: Dynamic particles (White -> Orange -> Red)
+      const hue = alpha * 40; // 40 (orange) down to 0 (red)
+      const lightness = 50 + (alpha * 50); // 100% (white) down to 50%
+      const hueVariation = (entity % 10) - 5; // small variation per particle
+
+      ctx.fillStyle = `hsl(${hue + hueVariation}, 100%, ${lightness}%)`;
       ctx.globalAlpha = alpha;
 
       const size = render.size * alpha;
+
+      // Improvement 6: shadowBlur on large/fresh particles
+      if (render.size > 2 && alpha > 0.5) {
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 10 * alpha;
+      }
+
       ctx.beginPath();
       ctx.arc(0, 0, size, 0, Math.PI * 2);
       ctx.fill();
@@ -240,10 +191,6 @@ export class CanvasRenderer implements Renderer {
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
 
-    if (hitFlashFrames && hitFlashFrames > 0) {
-      ctx.strokeStyle = "white";
-    }
-
     ctx.beginPath();
     ctx.moveTo(vertices[0].x, vertices[0].y);
     for (let i = 1; i < vertices.length; i++) {
@@ -252,17 +199,13 @@ export class CanvasRenderer implements Renderer {
     ctx.closePath();
     ctx.stroke();
 
-    // Improvement 19: Internal cracks/lines
-    if (render.internalLines) {
+    // Improvement 9: Hit flash effect
+    if (hitFlashFrames && hitFlashFrames > 0) {
       ctx.save();
-      ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      render.internalLines.forEach(line => {
-        ctx.moveTo(line.x1, line.y1);
-        ctx.lineTo(line.x2, line.y2);
-      });
-      ctx.stroke();
+      ctx.globalCompositeOperation = 'lighter';
+      // Decay flash opacity over hitFlashFrames
+      ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(0.8, hitFlashFrames / 10)})`;
+      ctx.fill();
       ctx.restore();
     }
   }

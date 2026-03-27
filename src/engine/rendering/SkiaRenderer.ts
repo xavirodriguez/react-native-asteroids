@@ -29,19 +29,22 @@ export class SkiaRenderer implements Renderer {
   private width: number = 0;
   private height: number = 0;
   private paint: SkPaint;
-  private shapeRegistry: Map<string, SkiaShapeDrawer> = new Map();
-  private backgroundEffects: SkiaRenderEffect[] = [];
-  private foregroundEffects: SkiaRenderEffect[] = [];
+  private shapeRegistry: Map<string, any> = new Map();
+  private backgroundEffects: any[] = [];
+  private foregroundEffects: any[] = [];
 
   constructor(canvas?: SkCanvas) {
-    if (canvas) {
+    if (canvas && typeof Skia !== "undefined") {
       this.canvas = canvas;
     }
-    this.paint = Skia.Paint();
-    this.registerDefaultShapes();
+    this.paint = typeof Skia !== "undefined" ? Skia.Paint() : (null as any);
+    if (typeof Skia !== "undefined") {
+      this.registerDefaultShapes();
+    }
   }
 
   private registerDefaultShapes(): void {
+    if (typeof Skia === "undefined") return;
     this.registerShape("circle", (canvas, paint, render) => {
       paint.setColor(Skia.Color(render.color));
       paint.setStyle(Skia.PaintStyle.Fill);
@@ -125,7 +128,11 @@ export class SkiaRenderer implements Renderer {
 
     this.clear();
 
-    this.backgroundEffects.forEach(effect => effect(canvas, this.paint, world, this.width, this.height));
+    this.backgroundEffects.forEach(effect => {
+        if (typeof effect === 'function') {
+            effect(canvas, this.paint, world, this.width, this.height);
+        }
+    });
 
     canvas.save();
 
@@ -148,10 +155,12 @@ export class SkiaRenderer implements Renderer {
 
     // Foreground Effects
     canvas.save();
-    this.foregroundEffects.forEach((drawer) => drawer(canvas, world, this.width, this.height));
+    this.foregroundEffects.forEach((drawer) => {
+        if (typeof drawer === 'function') {
+            drawer(canvas, this.paint, world, this.width, this.height);
+        }
+    });
     canvas.restore();
-
-    this.foregroundEffects.forEach(effect => effect(canvas, this.paint, world, this.width, this.height));
   }
 
   public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {

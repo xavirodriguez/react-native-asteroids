@@ -3,17 +3,6 @@
  * Note: Game-specific types are increasingly located in their respective game folders.
  */
 
-export type {
-  Component,
-  Entity,
-  PositionComponent,
-  VelocityComponent,
-  TTLComponent,
-  ColliderComponent,
-  HealthComponent,
-  RenderComponent,
-  ReclaimableComponent
-};
-
+export * from "../engine/types/EngineTypes";
 // Re-export Asteroids types for backward compatibility
 export * from "../games/asteroids/types/AsteroidTypes";
