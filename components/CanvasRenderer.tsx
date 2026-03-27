@@ -8,9 +8,10 @@ import type { World } from "../src/engine/core/World";
 
 interface CanvasRendererProps {
   world: World;
+  onInitialize?: (renderer: EngineCanvasRenderer) => void;
 }
 
-export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world }) => {
+export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, onInitialize }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<EngineCanvasRenderer | null>(null);
 
@@ -24,7 +25,9 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world }) => {
     if (!ctx) return;
 
     if (!rendererRef.current) {
-      rendererRef.current = new EngineCanvasRenderer(ctx);
+      const renderer = new EngineCanvasRenderer(ctx);
+      if (onInitialize) onInitialize(renderer);
+      rendererRef.current = renderer;
     } else {
       rendererRef.current.setContext(ctx);
     }
@@ -44,7 +47,7 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world }) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [world]);
+  }, [world, onInitialize]);
 
   return (
     <View style={styles.container}>

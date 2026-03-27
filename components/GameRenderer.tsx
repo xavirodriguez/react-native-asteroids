@@ -11,17 +11,20 @@ import { GAME_CONFIG } from "../src/types/GameTypes";
 interface GameRendererProps {
   /** The ECS world containing the entities to be rendered. */
   world: World;
+  onInitialize?: (renderer: EngineSkiaRenderer) => void;
 }
 
 /**
  * Component responsible for rendering the game world using @shopify/react-native-skia.
  */
-export const GameRenderer = React.memo(function GameRenderer({ world }: GameRendererProps) {
+export const GameRenderer = React.memo(function GameRenderer({ world, onInitialize }: GameRendererProps) {
   const rendererRef = useRef<EngineSkiaRenderer | null>(null);
 
   const onDraw = useMemo(() => (canvas: any) => {
     if (!rendererRef.current) {
-      rendererRef.current = new EngineSkiaRenderer(canvas);
+      const renderer = new EngineSkiaRenderer(canvas);
+      if (onInitialize) onInitialize(renderer);
+      rendererRef.current = renderer;
     } else {
       rendererRef.current.setCanvas(canvas);
     }
