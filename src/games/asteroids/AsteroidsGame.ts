@@ -8,6 +8,7 @@ import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
 import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
+import { UfoSystem } from "./systems/UfoSystem";
 import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory";
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE, type ShipComponent, type InputComponent, type HealthComponent, type TTLComponent } from "./types/AsteroidTypes";
 import { CanvasRenderer } from "../../engine/rendering/CanvasRenderer";
@@ -389,6 +390,7 @@ export class AsteroidsGame
     this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
+    this.world.addSystem(new UfoSystem());
     this.world.addSystem(new AsteroidRenderSystem());
   }
 

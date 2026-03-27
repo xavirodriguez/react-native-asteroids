@@ -1,6 +1,7 @@
 import { World } from "../core/World";
-import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
-import { Entity, PositionComponent, RenderComponent, TTLComponent } from "../types/EngineTypes";
+import { Renderer } from "./Renderer";
+import { Entity, PositionComponent, RenderComponent, TTLComponent, HealthComponent, VelocityComponent } from "../types/EngineTypes";
+import { GameStateComponent, ShipComponent, InputComponent } from "../../types/GameTypes";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -99,8 +100,12 @@ export class CanvasRenderer implements Renderer {
   public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
-    const pos = components["Position"] as PositionComponent;
-    const render = components["Render"] as RenderComponent;
+
+    // Improvement 2: Ship Trail (Draw before the ship)
+    const ship = world.getComponent<ShipComponent>(entity, "Ship");
+    if (ship && ship.trailPositions) {
+      this.drawShipTrail(ctx, ship.trailPositions);
+    }
 
     if (!pos || !render) return;
 
