@@ -11,6 +11,9 @@ export class CanvasRenderer implements Renderer {
   private ctx: CanvasRenderingContext2D | null = null;
   private width: number = 0;
   private height: number = 0;
+  private shapeRegistry: Map<string, ShapeDrawer> = new Map();
+  private backgroundEffects: RenderEffect[] = [];
+  private foregroundEffects: RenderEffect[] = [];
 
   private shapeRegistry = new Map<string, ShapeDrawer<CanvasRenderingContext2D>>();
   private backgroundEffects = new Map<string, EffectDrawer<CanvasRenderingContext2D>>();
@@ -20,6 +23,62 @@ export class CanvasRenderer implements Renderer {
     if (ctx) {
       this.ctx = ctx;
     }
+    this.registerDefaultShapes();
+  }
+
+  private registerDefaultShapes(): void {
+    this.registerShape("circle", (ctx, render) => {
+      ctx.fillStyle = render.color;
+      ctx.beginPath();
+      ctx.arc(0, 0, render.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    this.registerShape("polygon", (ctx, render) => {
+      if (!render.vertices || render.vertices.length === 0) {
+        ctx.fillStyle = render.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, render.size, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+      }
+
+      ctx.strokeStyle = render.color || "#aaa";
+      ctx.lineWidth = 2;
+
+      if (render.hitFlashFrames && render.hitFlashFrames > 0) {
+        ctx.strokeStyle = "white";
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(render.vertices[0].x, render.vertices[0].y);
+      for (let i = 1; i < render.vertices.length; i++) {
+        ctx.lineTo(render.vertices[i].x, render.vertices[i].y);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    });
+
+    this.registerShape("line", (ctx, render) => {
+      ctx.strokeStyle = render.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-render.size / 2, 0);
+      ctx.lineTo(render.size / 2, 0);
+      ctx.stroke();
+    });
+  }
+
+  public registerShape(name: string, drawer: ShapeDrawer): void {
+    this.shapeRegistry.set(name, drawer);
+  }
+
+  public registerBackgroundEffect(effect: RenderEffect): void {
+    this.backgroundEffects.push(effect);
+  }
+
+  public registerForegroundEffect(effect: RenderEffect): void {
+    this.foregroundEffects.push(effect);
   }
 
   public setContext(ctx: CanvasRenderingContext2D): void {
@@ -78,9 +137,11 @@ export class CanvasRenderer implements Renderer {
     ctx.restore();
   }
 
-  public drawEntity(entity: Entity, pos: PositionComponent, render: RenderComponent, world: World): void {
+  public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
+    const pos = components["Position"] as PositionComponent;
+    const render = components["Render"] as RenderComponent;
 
     ctx.save();
     ctx.translate(pos.x, pos.y);

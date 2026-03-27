@@ -20,8 +20,24 @@ export class AsteroidRenderSystem extends RenderUpdateSystem {
    */
   public override update(world: World, deltaTime: number): void {
     super.update(world, deltaTime);
+    this.updateShipTrails(world);
     this.updateScreenShake(world);
     this.updateShipTrails(world);
+  }
+
+  private updateShipTrails(world: World): void {
+    const shipEntities = world.query("Ship", "Position");
+    shipEntities.forEach((entity) => {
+      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
+      if (pos && shipComp) {
+        if (!shipComp.trailPositions) shipComp.trailPositions = [];
+        shipComp.trailPositions.push({ x: pos.x, y: pos.y });
+        if (shipComp.trailPositions.length > 12) {
+          shipComp.trailPositions.shift();
+        }
+      }
+    });
   }
 
   private updateScreenShake(world: World): void {

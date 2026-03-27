@@ -6,6 +6,7 @@ import { CanvasRenderer } from "../../components/CanvasRenderer";
 import { GameControls } from "../../components/GameControls";
 import { GameUI } from "../../components/GameUI";
 import { useAsteroidsGame } from "../hooks/useAsteroidsGame";
+import { AsteroidsGame } from "../games/asteroids/AsteroidsGame";
 
 /**
  * Main application component that integrates the game engine with the React UI.

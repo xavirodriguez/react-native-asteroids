@@ -1,5 +1,5 @@
 import { World } from "../core/World";
-import { Entity, PositionComponent, RenderComponent } from "../types/EngineTypes";
+import { Entity, Component } from "../types/EngineTypes";
 
 /**
  * Interface for custom shape drawing logic.
@@ -44,12 +44,16 @@ export interface Renderer {
   render(world: World): void;
 
   /**
-   * Draws a single entity.
+   * Draws a single entity using its components.
+   *
+   * @param entity - The entity ID.
+   * @param components - A map of component types to component instances.
+   * @param world - The ECS world for context.
    */
-  drawEntity(entity: Entity, pos: PositionComponent, render: RenderComponent, world: World): void;
+  drawEntity(entity: Entity, components: Record<string, Component>, world: World): void;
 
   /**
-   * Draws particles separately for efficiency if needed.
+   * Draws particles separately for efficiency.
    */
   drawParticles(world: World): void;
 

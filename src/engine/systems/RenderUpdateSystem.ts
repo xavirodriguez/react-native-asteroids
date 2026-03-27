@@ -6,7 +6,7 @@ import { PositionComponent, RenderComponent } from "../types/EngineTypes";
  * Generic rendering-related updates (rotation, trails, flashes).
  */
 export class RenderUpdateSystem extends System {
-  private trailMaxLength: number;
+  protected trailMaxLength: number;
 
   constructor(trailMaxLength: number = 10) {
     super();
@@ -20,7 +20,7 @@ export class RenderUpdateSystem extends System {
     world.version++;
   }
 
-  private updateTrails(world: World): void {
+  protected updateTrails(world: World): void {
     const entities = world.query("Position", "Render");
     entities.forEach((entity) => {
       const pos = world.getComponent<PositionComponent>(entity, "Position");

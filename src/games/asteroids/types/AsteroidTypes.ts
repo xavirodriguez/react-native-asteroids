@@ -37,7 +37,7 @@ export interface ShipComponent extends Component {
 }
 
 /**
- * Marker component for UFO entities in Asteroids.
+ * Marker component for UFO entities.
  */
 export interface UfoComponent extends Component {
   type: "Ufo";
@@ -69,7 +69,7 @@ export interface ScreenShake {
 }
 
 /**
- * Component to track global game progress and state in Asteroids.
+ * Component to track global game progress and state.
  */
 export interface GameStateComponent extends Component {
   type: "GameState";
@@ -96,7 +96,7 @@ export const INITIAL_GAME_STATE: GameStateComponent = Object.freeze({
 });
 
 /**
- * Global game configuration constants for tuning Asteroids gameplay.
+ * Global game configuration constants for tuning gameplay.
  */
 export const GAME_CONFIG = {
   SCREEN_WIDTH: 800,
