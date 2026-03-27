@@ -38,7 +38,7 @@ export default function App() {
         />
         <CanvasRenderer
           world={game.getWorld()}
-          onInitialize={useCallback((renderer) => game.initializeRenderer(renderer), [game])}
+          onInitialize={(renderer) => game.initializeRenderer(renderer)}
         />
         <GameControls
           onThrust={(pressed) => handleInput({ thrust: pressed })}
