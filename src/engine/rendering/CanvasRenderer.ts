@@ -1,6 +1,7 @@
 import { World } from "../core/World";
-import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
-import { Entity, PositionComponent, RenderComponent, TTLComponent } from "../types/EngineTypes";
+import { Renderer } from "./Renderer";
+import { Entity, PositionComponent, RenderComponent, TTLComponent, HealthComponent, VelocityComponent } from "../types/EngineTypes";
+import { GameStateComponent, ShipComponent, InputComponent } from "../../types/GameTypes";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -124,7 +125,27 @@ export class CanvasRenderer implements Renderer {
     entities.forEach((entity) => {
       const pos = world.getComponent<PositionComponent>(entity, "Position");
       const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (pos && render && render.shape !== "particle") {
+      const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
+
+      if (pos && render) {
+        // Improvement 20: Subtle motion blur for fast entities
+        if (vel && render.trailPositions && render.trailPositions.length > 2) {
+          const speed = Math.sqrt(vel.dx * vel.dx + vel.dy * vel.dy);
+          if (speed > 200) {
+            ctx.save();
+            // Draw 2 previous copies
+            for (let i = 1; i <= 2; i++) {
+              const prevIdx = render.trailPositions.length - 1 - i;
+              if (prevIdx >= 0) {
+                const prevPos = render.trailPositions[prevIdx];
+                ctx.globalAlpha = 0.2 / i;
+                this.drawEntity(entity, { ...pos, ...prevPos }, render, world);
+              }
+            }
+            ctx.restore();
+          }
+        }
+
         this.drawEntity(entity, pos, render, world);
       }
     });
@@ -140,8 +161,12 @@ export class CanvasRenderer implements Renderer {
   public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
-    const pos = components["Position"] as PositionComponent;
-    const render = components["Render"] as RenderComponent;
+
+    // Improvement 2: Ship Trail (Draw before the ship)
+    const ship = world.getComponent<ShipComponent>(entity, "Ship");
+    if (ship && ship.trailPositions) {
+      this.drawShipTrail(ctx, ship.trailPositions);
+    }
 
     ctx.save();
     ctx.translate(pos.x, pos.y);
@@ -226,6 +251,20 @@ export class CanvasRenderer implements Renderer {
     }
     ctx.closePath();
     ctx.stroke();
+
+    // Improvement 19: Internal cracks/lines
+    if (render.internalLines) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      render.internalLines.forEach(line => {
+        ctx.moveTo(line.x1, line.y1);
+        ctx.lineTo(line.x2, line.y2);
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   private drawCircle(ctx: CanvasRenderingContext2D, size: number, color: string): void {

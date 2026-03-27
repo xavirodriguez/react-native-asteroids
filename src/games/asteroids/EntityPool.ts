@@ -71,6 +71,17 @@ export class BulletPool {
     data.ttl.remaining = ttl;
     data.ttl.total = ttl;
 
+    world.addComponent(entity, data.position);
+    world.addComponent(entity, data.velocity);
+    world.addComponent(entity, data.render);
+    world.addComponent(entity, data.collider);
+    world.addComponent(entity, data.ttl);
+    world.addComponent(entity, data.reclaimable);
+    world.addComponent(entity, { type: "Bullet" });
+
+    // Improvement 16: Ensure bullet has trail array
+    data.render.trailPositions = [];
+
     return entity;
   }
 
