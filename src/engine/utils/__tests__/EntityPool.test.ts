@@ -54,26 +54,27 @@ describe("EntityPool", () => {
     );
 
     // Initial factory call during EntityPool constructor to map keys to types
+    // Since we call release(template) in constructor, it's now pooled.
     expect(factoryCount).toBe(1);
 
     const { entity: e1, components: c1 } = pool.acquire(world);
-    // e1 should trigger a 2nd factory call because the 1st one wasn't pooled
-    expect(factoryCount).toBe(2);
+    // e1 should reuse the pooled component from constructor
+    expect(factoryCount).toBe(1);
 
+    // Release e1 (caller must NOT remove it from world before release)
     pool.release(world, e1);
+    // Caller is responsible for removing it from world
+    world.removeEntity(e1);
 
     const { entity: e2, components: c2 } = pool.acquire(world);
 
-    // Should NOT trigger 3rd factory call
-    expect(factoryCount).toBe(2);
+    // Should NOT trigger 2nd factory call
+    expect(factoryCount).toBe(1);
 
     // Check if components are functionally the same (they should be since they are reused)
     expect(c1.position).toBe(c2.position);
     expect(c1.ttl).toBe(c2.ttl);
     expect(c1.reclaimable).toBe(c2.reclaimable);
-
-    // In this simple test case, the same entity ID (1) might be reused if world.removeEntity(e1) was called
-    // because World uses a freeEntities pool.
   });
 
   it("should automatically wire up Reclaimable component", () => {
@@ -91,7 +92,7 @@ describe("EntityPool", () => {
 
     expect(reclaimable?.onReclaim).toBeDefined();
 
-    // Trigger reclaim
+    // Trigger reclaim (onReclaim handles pooling, caller handles removal)
     const initialSize = pool.size;
     reclaimable?.onReclaim!(world, entity);
     expect(pool.size).toBe(initialSize + 1);

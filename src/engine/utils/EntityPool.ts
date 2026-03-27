@@ -30,6 +30,8 @@ export class EntityPool<T extends Record<string, Component>> {
     for (const key in template) {
       this.keyToType[key] = template[key].type;
     }
+    // Optimization: Feed the template used for mapping back into the pool
+    this.pool.release(template);
   }
 
   /**
@@ -59,6 +61,8 @@ export class EntityPool<T extends Record<string, Component>> {
 
   /**
    * Releases an entity's components back to the pool.
+   * NOTE: This does NOT remove the entity from the world. The caller is responsible
+   * for calling world.removeEntity(entity) after notifying the pool.
    *
    * @param world - The ECS world.
    * @param entity - The entity to reclaim.
@@ -79,9 +83,6 @@ export class EntityPool<T extends Record<string, Component>> {
     }
 
     if (allFound) {
-      // IMPORTANT: Remove components from entity index to break connection before pooling
-      // Actually world.removeEntity(entity) should be enough if it clears component maps.
-      world.removeEntity(entity);
       this.pool.release(components);
     }
   }
