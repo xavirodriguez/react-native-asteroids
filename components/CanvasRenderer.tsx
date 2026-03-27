@@ -5,12 +5,14 @@ import {
 } from "../src/types/GameTypes";
 import { CanvasRenderer as EngineCanvasRenderer } from "../src/engine/rendering/CanvasRenderer";
 import type { World } from "../src/engine/core/World";
+import type { Renderer } from "../src/engine/rendering/Renderer";
 
 interface CanvasRendererProps {
   world: World;
+  onInitialize?: (renderer: Renderer) => void;
 }
 
-export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world }) => {
+export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, onInitialize }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<EngineCanvasRenderer | null>(null);
 
@@ -25,6 +27,9 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world }) => {
 
     if (!rendererRef.current) {
       rendererRef.current = new EngineCanvasRenderer(ctx);
+      if (onInitialize) {
+        onInitialize(rendererRef.current);
+      }
     } else {
       rendererRef.current.setContext(ctx);
     }
@@ -44,7 +49,7 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world }) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [world]);
+  }, [world, onInitialize]);
 
   return (
     <View style={styles.container}>
