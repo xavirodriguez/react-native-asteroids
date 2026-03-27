@@ -64,7 +64,9 @@ const StartScreen: React.FC<{ highScore: number; onStart: () => void }> = ({
 
   return (
     <View style={styles.startScreen}>
-      <Text style={styles.title}>ASTEROIDES</Text>
+      <Text className="bg-red-500 px-4 py-2" style={styles.title}>
+        ASTEROIDES
+      </Text>
       <Text style={styles.instructions}>{instructions}</Text>
       <Text style={styles.highScoreText}>Récord: {highScore}</Text>
       <TouchableOpacity style={styles.startButton} onPress={onStart}>

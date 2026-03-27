@@ -79,7 +79,6 @@ function addShipMovementComponents(config: {
     size: GAME_CONFIG.SHIP_RENDER_SIZE,
     color: "#CCCCCC",
     rotation: 0,
-    trailPositions: [], // Improvement 2: Ship trail positions
   })
 }
 
@@ -91,7 +90,12 @@ function addShipCombatComponents(config: { world: World; ship: Entity }): void {
 
 function addShipMetaComponents(config: { world: World; ship: Entity }): void {
   const { world, ship } = config
-  world.addComponent(ship, { type: "Ship" })
+  world.addComponent(ship, {
+    type: "Ship",
+    hyperspaceTimer: 0,
+    hyperspaceCooldownRemaining: 0,
+    trailPositions: [], // Improvement 2: Ship trail positions
+  })
   world.addComponent(ship, { type: "Collider", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS })
 }
 

@@ -1,6 +1,7 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity, PositionComponent, RenderComponent, TTLComponent } from "../types/EngineTypes";
+import { GameStateComponent } from "../../games/asteroids/types/AsteroidTypes";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -11,10 +12,6 @@ export class CanvasRenderer implements Renderer {
   private ctx: CanvasRenderingContext2D | null = null;
   private width: number = 0;
   private height: number = 0;
-  private shapeRegistry: Map<string, ShapeDrawer> = new Map();
-  private backgroundEffects: RenderEffect[] = [];
-  private foregroundEffects: RenderEffect[] = [];
-
   private shapeRegistry = new Map<string, ShapeDrawer<CanvasRenderingContext2D>>();
   private backgroundEffects = new Map<string, EffectDrawer<CanvasRenderingContext2D>>();
   private foregroundEffects = new Map<string, EffectDrawer<CanvasRenderingContext2D>>();
@@ -27,14 +24,14 @@ export class CanvasRenderer implements Renderer {
   }
 
   private registerDefaultShapes(): void {
-    this.registerShape("circle", (ctx, render) => {
+    this.registerShape("circle", (ctx, _entity, _pos, render) => {
       ctx.fillStyle = render.color;
       ctx.beginPath();
       ctx.arc(0, 0, render.size, 0, Math.PI * 2);
       ctx.fill();
     });
 
-    this.registerShape("polygon", (ctx, render) => {
+    this.registerShape("polygon", (ctx, _entity, _pos, render) => {
       if (!render.vertices || render.vertices.length === 0) {
         ctx.fillStyle = render.color;
         ctx.beginPath();
@@ -50,6 +47,7 @@ export class CanvasRenderer implements Renderer {
         ctx.strokeStyle = "white";
       }
 
+      // Requirement 5: Polygonal asteroids
       ctx.beginPath();
       ctx.moveTo(render.vertices[0].x, render.vertices[0].y);
       for (let i = 1; i < render.vertices.length; i++) {
@@ -59,7 +57,7 @@ export class CanvasRenderer implements Renderer {
       ctx.stroke();
     });
 
-    this.registerShape("line", (ctx, render) => {
+    this.registerShape("line", (ctx, _entity, _pos, render) => {
       ctx.strokeStyle = render.color;
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -67,27 +65,6 @@ export class CanvasRenderer implements Renderer {
       ctx.lineTo(render.size / 2, 0);
       ctx.stroke();
     });
-  }
-
-  public registerShape(name: string, drawer: ShapeDrawer): void {
-    this.shapeRegistry.set(name, drawer);
-  }
-
-  public registerBackgroundEffect(effect: RenderEffect): void {
-    this.backgroundEffects.push(effect);
-  }
-
-  public registerForegroundEffect(effect: RenderEffect): void {
-    this.foregroundEffects.push(effect);
-  }
-
-  public setContext(ctx: CanvasRenderingContext2D): void {
-    this.ctx = ctx;
-  }
-
-  public setSize(width: number, height: number): void {
-    this.width = width;
-    this.height = height;
   }
 
   public registerShape(name: string, drawer: ShapeDrawer<CanvasRenderingContext2D>): void {
@@ -102,6 +79,15 @@ export class CanvasRenderer implements Renderer {
     this.foregroundEffects.set(name, drawer);
   }
 
+  public setContext(ctx: CanvasRenderingContext2D): void {
+    this.ctx = ctx;
+  }
+
+  public setSize(width: number, height: number): void {
+    this.width = width;
+    this.height = height;
+  }
+
   public clear(): void {
     if (!this.ctx) return;
     this.ctx.fillStyle = "black";
@@ -114,6 +100,19 @@ export class CanvasRenderer implements Renderer {
 
     this.clear();
 
+    ctx.save(); // Requirement 4: Global save for screen shake
+
+    // Handle screen shake
+    const [gameStateEntity] = world.query("GameState");
+    if (gameStateEntity !== undefined) {
+        const gameState = world.getComponent<GameStateComponent>(gameStateEntity, "GameState");
+        if (gameState?.screenShake && gameState.screenShake.duration > 0) {
+            const shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
+            const shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
+            ctx.translate(shakeX, shakeY);
+        }
+    }
+
     // Background Effects
     ctx.save();
     this.backgroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
@@ -125,7 +124,7 @@ export class CanvasRenderer implements Renderer {
       const pos = world.getComponent<PositionComponent>(entity, "Position");
       const render = world.getComponent<RenderComponent>(entity, "Render");
       if (pos && render && render.shape !== "particle") {
-        this.drawEntity(entity, pos, render, world);
+        this.drawEntity(entity, { Position: pos, Render: render }, world);
       }
     });
 
@@ -135,6 +134,8 @@ export class CanvasRenderer implements Renderer {
     ctx.save();
     this.foregroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
     ctx.restore();
+
+    ctx.restore(); // Restore global shake
   }
 
   public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
@@ -150,34 +151,9 @@ export class CanvasRenderer implements Renderer {
     const customDrawer = this.shapeRegistry.get(render.shape);
     if (customDrawer) {
       customDrawer(ctx, entity, pos, render, world);
-    } else {
-      this.drawPrimitive(ctx, entity, pos, render, world);
     }
 
     ctx.restore();
-  }
-
-  private drawPrimitive(
-    ctx: CanvasRenderingContext2D,
-    _entity: Entity,
-    _pos: PositionComponent,
-    render: RenderComponent,
-    _world: World
-  ): void {
-    switch (render.shape) {
-      case "polygon":
-        if (render.vertices) this.drawPolygon(ctx, render.vertices, render.color, render.hitFlashFrames);
-        break;
-      case "circle":
-        this.drawCircle(ctx, render.size, render.color);
-        break;
-      case "flash":
-        this.drawFlash(ctx, _world, _entity, render.size);
-        break;
-      case "line":
-        this.drawLine(ctx, render.size, render.color);
-        break;
-    }
   }
 
   public drawParticles(world: World): void {
@@ -198,61 +174,18 @@ export class CanvasRenderer implements Renderer {
       ctx.save();
       ctx.translate(pos.x, pos.y);
 
-      const hue = 30 + (entity % 20);
-      const lightness = 50 + alpha * 30;
+      // Requirement 1: Orange-red-white shift
+      const hue = 30 + (entity % 20); // 30 (Orange) to 50 (Yellow-ish)
+      const lightness = 50 + alpha * 30; // 50 (Orange/Red) to 80 (White-ish)
       ctx.fillStyle = `hsl(${hue}, 100%, ${lightness}%)`;
       ctx.globalAlpha = alpha;
 
+      // Requirement 1: Size variation that reduces with time
       const size = render.size * alpha;
       ctx.beginPath();
       ctx.arc(0, 0, size, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     });
-  }
-
-  private drawPolygon(ctx: CanvasRenderingContext2D, vertices: { x: number; y: number }[], color: string, hitFlashFrames?: number): void {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-
-    if (hitFlashFrames && hitFlashFrames > 0) {
-      ctx.strokeStyle = "white";
-    }
-
-    ctx.beginPath();
-    ctx.moveTo(vertices[0].x, vertices[0].y);
-    for (let i = 1; i < vertices.length; i++) {
-      ctx.lineTo(vertices[i].x, vertices[i].y);
-    }
-    ctx.closePath();
-    ctx.stroke();
-  }
-
-  private drawCircle(ctx: CanvasRenderingContext2D, size: number, color: string): void {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(0, 0, size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  private drawFlash(ctx: CanvasRenderingContext2D, world: World, entity: Entity, size: number): void {
-    const ttl = world.getComponent<TTLComponent>(entity, "TTL");
-    if (!ttl) return;
-    ctx.globalAlpha = (ttl.remaining / ttl.total) * 0.5;
-    ctx.fillStyle = "white";
-    ctx.shadowColor = "white";
-    ctx.shadowBlur = 20;
-    ctx.beginPath();
-    ctx.arc(0, 0, size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  private drawLine(ctx: CanvasRenderingContext2D, size: number, color: string): void {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-size / 2, 0);
-    ctx.lineTo(size / 2, 0);
-    ctx.stroke();
   }
 }

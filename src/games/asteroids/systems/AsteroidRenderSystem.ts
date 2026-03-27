@@ -22,17 +22,21 @@ export class AsteroidRenderSystem extends RenderUpdateSystem {
     super.update(world, deltaTime);
     this.updateShipTrails(world);
     this.updateScreenShake(world);
-    this.updateShipTrails(world);
   }
 
   private updateShipTrails(world: World): void {
-    const shipEntities = world.query("Ship", "Position");
-    shipEntities.forEach((entity) => {
+    const entities = world.query("Position", "Ship");
+    entities.forEach((entity) => {
       const pos = world.getComponent<PositionComponent>(entity, "Position");
       const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
+
       if (pos && shipComp) {
-        if (!shipComp.trailPositions) shipComp.trailPositions = [];
+        if (!shipComp.trailPositions) {
+            shipComp.trailPositions = [];
+        }
+
         shipComp.trailPositions.push({ x: pos.x, y: pos.y });
+
         if (shipComp.trailPositions.length > 12) {
           shipComp.trailPositions.shift();
         }
@@ -51,23 +55,5 @@ export class AsteroidRenderSystem extends RenderUpdateSystem {
         gameState.screenShake = null;
       }
     }
-  }
-
-  private updateShipTrails(world: World): void {
-    const entities = world.query("Position", "Ship");
-    entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
-      const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
-
-      if (pos && shipComp) {
-        if (!shipComp.trailPositions) shipComp.trailPositions = [];
-
-        shipComp.trailPositions.push({ x: pos.x, y: pos.y });
-
-        if (shipComp.trailPositions.length > 12) {
-          shipComp.trailPositions.shift();
-        }
-      }
-    });
   }
 }

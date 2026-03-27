@@ -12,8 +12,20 @@ import Animated, {
   useAnimatedStyle,
   withSequence,
 } from "react-native-reanimated";
-import { Canvas, BackdropBlur, Fill } from "@shopify/react-native-skia";
 import type { GameStateComponent } from "../src/types/GameTypes";
+
+// Conditionally import Skia components
+let Canvas: any, BackdropBlur: any, Fill: any;
+if (Platform.OS !== "web") {
+  try {
+    const SkiaModule = require("@shopify/react-native-skia");
+    Canvas = SkiaModule.Canvas;
+    BackdropBlur = SkiaModule.BackdropBlur;
+    Fill = SkiaModule.Fill;
+  } catch (e) {
+    // Skia not available
+  }
+}
 
 /**
  * Properties for the {@link GameUI} component.
@@ -92,11 +104,13 @@ const HUD: React.FC<{
     entering={FadeIn.duration(1000)}
     style={[styles.topBar, { paddingTop }]}
   >
-    <Canvas style={StyleSheet.absoluteFill}>
-       <BackdropBlur blur={10} clip={{ x: 0, y: 0, width: 2000, height: 100 }}>
-          <Fill color="rgba(0, 0, 0, 0.4)" />
-       </BackdropBlur>
-    </Canvas>
+    {Platform.OS !== "web" && Canvas && BackdropBlur && Fill && (
+      <Canvas style={StyleSheet.absoluteFill}>
+        <BackdropBlur blur={10} clip={{ x: 0, y: 0, width: 2000, height: 100 }}>
+            <Fill color="rgba(0, 0, 0, 0.4)" />
+        </BackdropBlur>
+      </Canvas>
+    )}
     <View style={styles.hudContent}>
       <Text style={styles.text}>Lives: {lives}</Text>
       <Score score={score} />
@@ -160,11 +174,13 @@ const GameOverOverlay: React.FC<{
     entering={FadeIn.duration(500)}
     style={styles.gameOverOverlay}
   >
-    <Canvas style={StyleSheet.absoluteFill}>
-       <BackdropBlur blur={20}>
-          <Fill color="rgba(0, 0, 0, 0.6)" />
-       </BackdropBlur>
-    </Canvas>
+    {Platform.OS !== "web" && Canvas && BackdropBlur && Fill && (
+      <Canvas style={StyleSheet.absoluteFill}>
+        <BackdropBlur blur={20}>
+            <Fill color="rgba(0, 0, 0, 0.6)" />
+        </BackdropBlur>
+      </Canvas>
+    )}
 
     <Animated.Text
       entering={ZoomIn.delay(300).duration(800)}
