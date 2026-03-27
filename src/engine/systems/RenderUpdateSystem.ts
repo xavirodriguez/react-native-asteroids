@@ -48,6 +48,34 @@ export class RenderUpdateSystem extends System {
           }
         }
       }
+
+      // Improvement 16: Bullet streaks
+      if (world.hasComponent(entity, "Bullet")) {
+        if (pos && render) {
+          if (!render.trailPositions) render.trailPositions = [];
+          render.trailPositions.push({ x: pos.x, y: pos.y });
+          if (render.trailPositions.length > 6) {
+            render.trailPositions.shift();
+          }
+        }
+      }
+
+      // Improvement 20: Motion blur tracking (fast entities)
+      if (render && pos && !world.hasComponent(entity, "Bullet") && !world.hasComponent(entity, "Ship")) {
+        const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
+        if (vel) {
+          const speed = Math.sqrt(vel.dx * vel.dx + vel.dy * vel.dy);
+          if (speed > 200) {
+            if (!render.trailPositions) render.trailPositions = [];
+            render.trailPositions.push({ x: pos.x, y: pos.y });
+            if (render.trailPositions.length > 4) {
+              render.trailPositions.shift();
+            }
+          } else if (render.trailPositions && render.trailPositions.length > 0) {
+            render.trailPositions.shift(); // Fade out when slow
+          }
+        }
+      }
     });
   }
 

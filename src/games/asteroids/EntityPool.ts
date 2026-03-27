@@ -78,6 +78,9 @@ export class BulletPool {
     world.addComponent(entity, data.reclaimable);
     world.addComponent(entity, { type: "Bullet" });
 
+    // Improvement 16: Ensure bullet has trail array
+    data.render.trailPositions = [];
+
     return entity;
   }
 
