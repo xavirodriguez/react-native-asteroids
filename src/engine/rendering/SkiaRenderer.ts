@@ -24,6 +24,7 @@ export type SkiaRenderEffect = (
  * Refactored to use a shape registry and effect hooks for extensibility.
  */
 export class SkiaRenderer implements Renderer {
+  public readonly type = "skia";
   private canvas: SkCanvas | null = null;
   private width: number = 0;
   private height: number = 0;

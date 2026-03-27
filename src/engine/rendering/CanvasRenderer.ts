@@ -1,32 +1,23 @@
 import { World } from "../core/World";
-import { Renderer } from "./Renderer";
+import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity, PositionComponent, RenderComponent, TTLComponent } from "../types/EngineTypes";
-
-export type ShapeDrawer = (
-  ctx: CanvasRenderingContext2D,
-  render: RenderComponent,
-  world: World,
-  entity: Entity
-) => void;
-
-export type RenderEffect = (
-  ctx: CanvasRenderingContext2D,
-  world: World,
-  width: number,
-  height: number
-) => void;
 
 /**
  * Procedural Canvas 2D Renderer implementation.
- * Refactored to use a shape registry and effect hooks for extensibility.
+ * Generic and extensible via Shape and Effect registries.
  */
 export class CanvasRenderer implements Renderer {
+  public readonly type = "canvas";
   private ctx: CanvasRenderingContext2D | null = null;
   private width: number = 0;
   private height: number = 0;
   private shapeRegistry: Map<string, ShapeDrawer> = new Map();
   private backgroundEffects: RenderEffect[] = [];
   private foregroundEffects: RenderEffect[] = [];
+
+  private shapeRegistry = new Map<string, ShapeDrawer<CanvasRenderingContext2D>>();
+  private backgroundEffects = new Map<string, EffectDrawer<CanvasRenderingContext2D>>();
+  private foregroundEffects = new Map<string, EffectDrawer<CanvasRenderingContext2D>>();
 
   constructor(ctx?: CanvasRenderingContext2D) {
     if (ctx) {
@@ -99,6 +90,18 @@ export class CanvasRenderer implements Renderer {
     this.height = height;
   }
 
+  public registerShape(name: string, drawer: ShapeDrawer<CanvasRenderingContext2D>): void {
+    this.shapeRegistry.set(name, drawer);
+  }
+
+  public registerBackgroundEffect(name: string, drawer: EffectDrawer<CanvasRenderingContext2D>): void {
+    this.backgroundEffects.set(name, drawer);
+  }
+
+  public registerForegroundEffect(name: string, drawer: EffectDrawer<CanvasRenderingContext2D>): void {
+    this.foregroundEffects.set(name, drawer);
+  }
+
   public clear(): void {
     if (!this.ctx) return;
     this.ctx.fillStyle = "black";
@@ -111,31 +114,27 @@ export class CanvasRenderer implements Renderer {
 
     this.clear();
 
-    // Draw background effects
-    this.backgroundEffects.forEach((effect) => effect(ctx, world, this.width, this.height));
-
+    // Background Effects
     ctx.save();
+    this.backgroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
+    ctx.restore();
 
     // Render Entities
     const entities = world.query("Position", "Render");
     entities.forEach((entity) => {
-      const components: Record<string, any> = {
-        Position: world.getComponent(entity, "Position"),
-        Render: world.getComponent(entity, "Render"),
-        // Allow drawEntity to access other components if needed (e.g. Health, Input)
-        Health: world.getComponent(entity, "Health"),
-        Input: world.getComponent(entity, "Input"),
-        Ship: world.getComponent(entity, "Ship"),
-      };
-      this.drawEntity(entity, components, world);
+      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const render = world.getComponent<RenderComponent>(entity, "Render");
+      if (pos && render && render.shape !== "particle") {
+        this.drawEntity(entity, pos, render, world);
+      }
     });
 
     this.drawParticles(world);
 
+    // Foreground Effects
+    ctx.save();
+    this.foregroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
     ctx.restore();
-
-    // Draw foreground effects
-    this.foregroundEffects.forEach((effect) => effect(ctx, world, this.width, this.height));
   }
 
   public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
@@ -144,18 +143,41 @@ export class CanvasRenderer implements Renderer {
     const pos = components["Position"] as PositionComponent;
     const render = components["Render"] as RenderComponent;
 
-    if (!pos || !render) return;
-
     ctx.save();
     ctx.translate(pos.x, pos.y);
     ctx.rotate(render.rotation);
 
-    const drawer = this.shapeRegistry.get(render.shape);
-    if (drawer) {
-      drawer(ctx, render, world, entity);
+    const customDrawer = this.shapeRegistry.get(render.shape);
+    if (customDrawer) {
+      customDrawer(ctx, entity, pos, render, world);
+    } else {
+      this.drawPrimitive(ctx, entity, pos, render, world);
     }
 
     ctx.restore();
+  }
+
+  private drawPrimitive(
+    ctx: CanvasRenderingContext2D,
+    _entity: Entity,
+    _pos: PositionComponent,
+    render: RenderComponent,
+    _world: World
+  ): void {
+    switch (render.shape) {
+      case "polygon":
+        if (render.vertices) this.drawPolygon(ctx, render.vertices, render.color, render.hitFlashFrames);
+        break;
+      case "circle":
+        this.drawCircle(ctx, render.size, render.color);
+        break;
+      case "flash":
+        this.drawFlash(ctx, _world, _entity, render.size);
+        break;
+      case "line":
+        this.drawLine(ctx, render.size, render.color);
+        break;
+    }
   }
 
   public drawParticles(world: World): void {
@@ -176,8 +198,7 @@ export class CanvasRenderer implements Renderer {
       ctx.save();
       ctx.translate(pos.x, pos.y);
 
-      // Improvement 1: Improved particles
-      const hue = 30 + (entity % 20); // Stable random hue per particle
+      const hue = 30 + (entity % 20);
       const lightness = 50 + alpha * 30;
       ctx.fillStyle = `hsl(${hue}, 100%, ${lightness}%)`;
       ctx.globalAlpha = alpha;
@@ -188,5 +209,50 @@ export class CanvasRenderer implements Renderer {
       ctx.fill();
       ctx.restore();
     });
+  }
+
+  private drawPolygon(ctx: CanvasRenderingContext2D, vertices: { x: number; y: number }[], color: string, hitFlashFrames?: number): void {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+
+    if (hitFlashFrames && hitFlashFrames > 0) {
+      ctx.strokeStyle = "white";
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(vertices[0].x, vertices[0].y);
+    for (let i = 1; i < vertices.length; i++) {
+      ctx.lineTo(vertices[i].x, vertices[i].y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  private drawCircle(ctx: CanvasRenderingContext2D, size: number, color: string): void {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(0, 0, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  private drawFlash(ctx: CanvasRenderingContext2D, world: World, entity: Entity, size: number): void {
+    const ttl = world.getComponent<TTLComponent>(entity, "TTL");
+    if (!ttl) return;
+    ctx.globalAlpha = (ttl.remaining / ttl.total) * 0.5;
+    ctx.fillStyle = "white";
+    ctx.shadowColor = "white";
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(0, 0, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  private drawLine(ctx: CanvasRenderingContext2D, size: number, color: string): void {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-size / 2, 0);
+    ctx.lineTo(size / 2, 0);
+    ctx.stroke();
   }
 }

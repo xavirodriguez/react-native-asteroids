@@ -1,8 +1,19 @@
 /**
- * Re-export all game types for backward compatibility or as a central type hub.
- * Generic engine types are in src/engine/types/EngineTypes.ts.
- * Asteroids specific types are in src/games/asteroids/types/AsteroidTypes.ts.
+ * Hub for re-exporting types for backward compatibility and centralized access.
+ * Note: Game-specific types are increasingly located in their respective game folders.
  */
 
-export * from "../engine/types/EngineTypes";
+export type {
+  Component,
+  Entity,
+  PositionComponent,
+  VelocityComponent,
+  TTLComponent,
+  ColliderComponent,
+  HealthComponent,
+  RenderComponent,
+  ReclaimableComponent
+};
+
+// Re-export Asteroids types for backward compatibility
 export * from "../games/asteroids/types/AsteroidTypes";

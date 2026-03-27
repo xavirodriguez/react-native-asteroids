@@ -5,10 +5,11 @@ import {
 } from "../src/types/GameTypes";
 import { CanvasRenderer as EngineCanvasRenderer } from "../src/engine/rendering/CanvasRenderer";
 import type { World } from "../src/engine/core/World";
+import type { Renderer } from "../src/engine/rendering/Renderer";
 
 interface CanvasRendererProps {
   world: World;
-  onInitialize?: (renderer: EngineCanvasRenderer) => void;
+  onInitialize?: (renderer: Renderer) => void;
 }
 
 export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, onInitialize }) => {
@@ -25,9 +26,10 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, onInitial
     if (!ctx) return;
 
     if (!rendererRef.current) {
-      const renderer = new EngineCanvasRenderer(ctx);
-      if (onInitialize) onInitialize(renderer);
-      rendererRef.current = renderer;
+      rendererRef.current = new EngineCanvasRenderer(ctx);
+      if (onInitialize) {
+        onInitialize(rendererRef.current);
+      }
     } else {
       rendererRef.current.setContext(ctx);
     }

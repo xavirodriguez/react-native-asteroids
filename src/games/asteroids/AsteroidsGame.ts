@@ -402,15 +402,14 @@ export class AsteroidsGame
    * Registers game-specific rendering logic to the provided renderer.
    */
   public initializeRenderer(renderer: Renderer): void {
-    // Canvas-specific registration
-    if (renderer.constructor.name === "CanvasRenderer") {
+    if (renderer.type === "canvas") {
       renderer.registerShape("triangle", drawAsteroidsShip);
       renderer.registerShape("ufo", drawAsteroidsUfo);
       renderer.registerShape("bullet_shape", drawAsteroidsBullet);
       renderer.registerBackgroundEffect("starfield", asteroidsStarfieldEffect);
       renderer.registerBackgroundEffect("screenshake", asteroidsScreenShakeEffect);
       renderer.registerForegroundEffect("crt", asteroidsCRTEffect);
-    } else if (renderer.constructor.name === "SkiaRenderer") {
+    } else if (renderer.type === "skia") {
       renderer.registerShape("triangle", drawSkiaShip);
       renderer.registerShape("ufo", drawSkiaUfo);
       renderer.registerShape("bullet_shape", drawSkiaBullet);

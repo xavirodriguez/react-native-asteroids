@@ -1,18 +1,7 @@
-/**
- * Asteroids-specific components and types.
- */
-import {
-  Component,
-  PositionComponent,
-  VelocityComponent,
-  TTLComponent,
-  ColliderComponent,
-  HealthComponent,
-  RenderComponent,
-} from "../../../engine/types/EngineTypes";
+import { Component } from "../../../engine/types/EngineTypes";
 
 /**
- * Represents the current state of user inputs.
+ * Represents the current state of user inputs for Asteroids.
  */
 export interface InputState {
   thrust: boolean;
@@ -23,7 +12,7 @@ export interface InputState {
 }
 
 /**
- * Stores the current input state for controllable entities.
+ * Stores the current input state for controllable entities in Asteroids.
  */
 export interface InputComponent extends Component, InputState {
   type: "Input";
@@ -31,14 +20,14 @@ export interface InputComponent extends Component, InputState {
 }
 
 /**
- * Marker component for bullet entities.
+ * Marker component for bullet entities in Asteroids.
  */
 export interface BulletComponent extends Component {
   type: "Bullet";
 }
 
 /**
- * Marker component for the player ship.
+ * Marker component for the player ship in Asteroids.
  */
 export interface ShipComponent extends Component {
   type: "Ship";

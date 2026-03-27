@@ -39,7 +39,7 @@ export default function App() {
         />
         <CanvasRenderer
           world={game.getWorld()}
-          onInitialize={(renderer) => AsteroidsGame.registerAsteroidsRenderer(renderer)}
+          onInitialize={(renderer) => game.initializeRenderer(renderer)}
         />
         <GameControls
           onThrust={(pressed) => handleInput({ thrust: pressed })}

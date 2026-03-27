@@ -2,9 +2,35 @@ import { World } from "../core/World";
 import { Entity, Component } from "../types/EngineTypes";
 
 /**
- * Abstract interface for game renderers in TinyAsterEngine.
+ * Interface for custom shape drawing logic.
+ */
+export type ShapeDrawer<TContext> = (
+  ctx: TContext,
+  entity: Entity,
+  pos: PositionComponent,
+  render: RenderComponent,
+  world: World
+) => void;
+
+/**
+ * Interface for custom background/foreground effects.
+ */
+export type EffectDrawer<TContext> = (
+  ctx: TContext,
+  world: World,
+  width: number,
+  height: number
+) => void;
+
+/**
+ * Abstract interface for game renderers.
  */
 export interface Renderer {
+  /**
+   * The type identifier for the renderer (e.g., 'canvas', 'skia').
+   */
+  readonly type: string;
+
   /**
    * Clears the drawing surface.
    */
@@ -35,4 +61,19 @@ export interface Renderer {
    * Sets the viewport size.
    */
   setSize(width: number, height: number): void;
+
+  /**
+   * Registers a custom shape drawer.
+   */
+  registerShape(name: string, drawer: ShapeDrawer<any>): void;
+
+  /**
+   * Registers a background effect.
+   */
+  registerBackgroundEffect(name: string, drawer: EffectDrawer<any>): void;
+
+  /**
+   * Registers a foreground effect.
+   */
+  registerForegroundEffect(name: string, drawer: EffectDrawer<any>): void;
 }
