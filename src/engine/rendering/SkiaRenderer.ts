@@ -101,13 +101,25 @@ export class SkiaRenderer implements Renderer {
     this.height = height;
   }
 
+  public registerShape(name: string, drawer: ShapeDrawer<SkCanvas>): void {
+    this.shapeRegistry.set(name, drawer);
+  }
+
+  public registerBackgroundEffect(name: string, drawer: EffectDrawer<SkCanvas>): void {
+    this.backgroundEffects.set(name, drawer);
+  }
+
+  public registerForegroundEffect(name: string, drawer: EffectDrawer<SkCanvas>): void {
+    this.foregroundEffects.set(name, drawer);
+  }
+
   public clear(): void {
-    if (!this.canvas) return;
+    if (!this.canvas || typeof Skia === "undefined") return;
     this.canvas.clear(Skia.Color("black"));
   }
 
   public render(world: World): void {
-    if (!this.canvas) return;
+    if (!this.canvas || typeof Skia === "undefined") return;
     const canvas = this.canvas;
 
     this.clear();
@@ -133,6 +145,9 @@ export class SkiaRenderer implements Renderer {
 
     this.drawParticles(world);
 
+    // Foreground Effects
+    canvas.save();
+    this.foregroundEffects.forEach((drawer) => drawer(canvas, world, this.width, this.height));
     canvas.restore();
 
     this.foregroundEffects.forEach(effect => effect(canvas, this.paint, world, this.width, this.height));
@@ -159,7 +174,7 @@ export class SkiaRenderer implements Renderer {
   }
 
   public drawParticles(world: World): void {
-    if (!this.canvas) return;
+    if (!this.canvas || typeof Skia === "undefined") return;
     const canvas = this.canvas;
     const entities = world.query("Position", "Render").filter(e => {
         const r = world.getComponent<RenderComponent>(e, "Render");

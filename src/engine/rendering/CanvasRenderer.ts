@@ -177,8 +177,9 @@ export class CanvasRenderer implements Renderer {
       ctx.translate(pos.x, pos.y);
 
       // Improvement 1: Improved particles
-      const randomVar = entity % 20;
-      ctx.fillStyle = `hsl(${30 + randomVar}, 100%, ${50 + alpha * 30}%)`;
+      const hue = 30 + (entity % 20); // Stable random hue per particle
+      const lightness = 50 + alpha * 30;
+      ctx.fillStyle = `hsl(${hue}, 100%, ${lightness}%)`;
       ctx.globalAlpha = alpha;
 
       const size = render.size * alpha;

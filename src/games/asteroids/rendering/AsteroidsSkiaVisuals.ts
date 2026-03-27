@@ -1,0 +1,156 @@
+import { Skia, BlurStyle } from "@shopify/react-native-skia";
+import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
+import { PositionComponent, HealthComponent } from "../../../engine/types/EngineTypes";
+
+// Lazy initialize paint to avoid issues in environments where Skia is not fully ready at module load time
+let paint: any = null;
+const getPaint = () => {
+    if (!paint) {
+        if (typeof Skia !== "undefined") {
+            paint = Skia.Paint();
+        }
+    }
+    return paint;
+};
+
+export const drawSkiaShip: ShapeDrawer<any> = (canvas, entity, _pos, render, world) => {
+    const p = getPaint();
+    if (!p) return;
+    const size = render.size;
+    const input = world.getComponent<any>(entity, "Input");
+    const health = world.getComponent<HealthComponent>(entity, "Health");
+
+    const isInvulnerable = health && health.invulnerableRemaining > 0;
+    const blinkOpacity = isInvulnerable
+        ? Math.floor(Date.now() / 150) % 2 === 0 ? 0.3 : 1.0
+        : 1.0;
+
+    p.setAlphaf(blinkOpacity);
+
+    if (input?.thrust) {
+        const thrusterPath = Skia.Path.Make();
+        thrusterPath.moveTo(-5, 3);
+        thrusterPath.lineTo(-15, 0);
+        thrusterPath.lineTo(-5, -3);
+        thrusterPath.close();
+
+        p.setColor(Skia.Color("#FF4400"));
+        p.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 5, true));
+        canvas.drawPath(thrusterPath, p);
+        p.setMaskFilter(null);
+        p.setColor(Skia.Color("#FFCC00"));
+        canvas.drawPath(thrusterPath, p);
+    }
+
+    const shipPath = Skia.Path.Make();
+    shipPath.moveTo(10, 0);
+    shipPath.lineTo(-5, 5);
+    shipPath.lineTo(-3, 2);
+    shipPath.lineTo(-3, -2);
+    shipPath.lineTo(-5, -5);
+    shipPath.close();
+
+    p.setColor(Skia.Color("#DDDDDD"));
+    p.setStyle(Skia.PaintStyle.Fill);
+    canvas.drawPath(shipPath, p);
+
+    p.setColor(Skia.Color(render.color));
+    p.setStyle(Skia.PaintStyle.Stroke);
+    p.setStrokeWidth(1);
+    canvas.drawPath(shipPath, p);
+
+    // Details
+    p.setColor(Skia.Color("#FF0000"));
+    p.setStyle(Skia.PaintStyle.Fill);
+    canvas.drawRect(Skia.XYWHRect(-size / 2, size / 6, size / 6, size / 8), p);
+    canvas.drawRect(Skia.XYWHRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8), p);
+};
+
+export const drawSkiaUfo: ShapeDrawer<any> = (canvas, _entity, _pos, render) => {
+    const p = getPaint();
+    if (!p) return;
+    const size = render.size;
+    const color = render.color;
+    p.setColor(Skia.Color(color));
+    p.setAlphaf(0.3);
+    p.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 10, true));
+    canvas.drawCircle(0, 0, size, p);
+    p.setMaskFilter(null);
+
+    p.setAlphaf(1.0);
+    p.setColor(Skia.Color("#999"));
+    p.setStyle(Skia.PaintStyle.Fill);
+    canvas.drawOval(Skia.XYWHRect(-size, -size / 2, size * 2, size), p);
+
+    p.setColor(Skia.Color(color));
+    p.setStyle(Skia.PaintStyle.Stroke);
+    canvas.drawOval(Skia.XYWHRect(-size, -size / 2, size * 2, size), p);
+
+    p.setColor(Skia.Color("#00ffff"));
+    p.setAlphaf(0.6);
+    p.setStyle(Skia.PaintStyle.Fill);
+    canvas.drawOval(Skia.XYWHRect(-size / 2, -size / 2, size, size / 1.5), p);
+
+    p.setColor(Skia.Color("yellow"));
+    p.setAlphaf(1.0);
+    canvas.drawCircle(-size / 2, 0, 1.5, p);
+    canvas.drawCircle(0, size / 6, 1.5, p);
+    canvas.drawCircle(size / 2, 0, 1.5, p);
+};
+
+export const skiaStarfieldEffect: EffectDrawer<any> = (canvas, world, width, height) => {
+    const p = getPaint();
+    if (!p) return;
+    const gameStateEntity = world.query("GameState")[0];
+    const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
+
+    if (gameState?.stars) {
+        const shipEntity = world.query("Ship", "Position")[0];
+        const shipPos = shipEntity
+          ? world.getComponent<PositionComponent>(shipEntity, "Position")
+          : { x: width / 2, y: height / 2 };
+
+        if (!shipPos) return;
+
+        p.setColor(Skia.Color("white"));
+        p.setStyle(Skia.PaintStyle.Fill);
+
+        gameState.stars.forEach((star: any) => {
+          const parallaxX = (star.x - shipPos.x * (0.05 * (star.layer + 1)) + width) % width;
+          const parallaxY = (star.y - shipPos.y * (0.05 * (star.layer + 1)) + height) % height;
+
+          const twinkle = 0.8 + Math.sin(star.twinklePhase + Date.now() * 0.005 * star.twinkleSpeed) * 0.2;
+          p.setAlphaf(star.brightness * twinkle);
+          canvas.drawRect(Skia.XYWHRect(parallaxX, parallaxY, star.size, star.size), p);
+        });
+    }
+};
+
+export const skiaScreenShakeEffect: EffectDrawer<any> = (canvas, world) => {
+    const gameStateEntity = world.query("GameState")[0];
+    const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
+
+    if (gameState?.screenShake && gameState.screenShake.framesLeft > 0) {
+      const shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
+      const shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
+      canvas.translate(shakeX, shakeY);
+    }
+};
+
+export const drawSkiaBullet: ShapeDrawer<any> = (canvas, _entity, _pos, render) => {
+  const p = getPaint();
+  if (!p) return;
+  const size = render.size;
+
+  canvas.save();
+  p.setColor(Skia.Color("#FFFF00"));
+  p.setAlphaf(0.3);
+  p.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 4, true));
+  canvas.drawCircle(0, 0, size * 3, p);
+  p.setMaskFilter(null);
+  p.setAlphaf(1.0);
+  p.setColor(Skia.Color("#FFFFFF"));
+  p.setStyle(Skia.PaintStyle.Fill);
+  canvas.drawCircle(0, 0, size, p);
+  canvas.restore();
+};
