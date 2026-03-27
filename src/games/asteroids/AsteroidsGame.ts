@@ -68,7 +68,8 @@ export class AsteroidsGame
     this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
-    this.world.addSystem(new AsteroidRenderSystem()); // Handle rotation/hit flash/trails/shake duration
+    this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
+    this.world.addSystem(new AsteroidRenderSystem()); // Handle trails/shake duration
   }
 
   protected initializeEntities(): void {
