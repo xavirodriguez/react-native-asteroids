@@ -138,6 +138,7 @@ export const drawAsteroidsBullet: ShapeDrawer<CanvasRenderingContext2D> = (ctx, 
   const color = render.color;
 
   ctx.save();
+  // Improvement 6: Shadow blur for bullets
   ctx.shadowColor = "#ffffaa";
   ctx.shadowBlur = 12;
   ctx.fillStyle = color;
