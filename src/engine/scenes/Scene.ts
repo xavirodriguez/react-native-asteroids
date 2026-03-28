@@ -27,6 +27,16 @@ export abstract class Scene {
   public onExit(): void {}
 
   /**
+   * Called when the game is paused while this scene is active.
+   */
+  public onPause(): void {}
+
+  /**
+   * Called when the game is resumed while this scene is active.
+   */
+  public onResume(): void {}
+
+  /**
    * Updates the scene logic.
    * Defaults to updating the scene's ECS world.
    *

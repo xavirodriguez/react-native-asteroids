@@ -1,10 +1,6 @@
 import { World } from "../../engine/core/World";
 import { BaseGame } from "../../engine/core/BaseGame";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { WrapSystem } from "../../engine/systems/WrapSystem";
-import { TTLSystem } from "../../engine/systems/TTLSystem";
 import { AssetLoader } from "../../engine/assets/AssetLoader";
-import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
 import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
@@ -72,11 +68,7 @@ export class AsteroidsGame
     this.world.addSystem(new AsteroidRenderSystem()); // Handle trails/shake duration
   }
 
-  protected initializeEntities(): void {
-    createShip({ world: this.world, x: GAME_CONFIG.SCREEN_CENTER_X, y: GAME_CONFIG.SCREEN_CENTER_Y });
-    createGameState({ world: this.world });
-    spawnAsteroidWave({ world: this.world, count: GAME_CONFIG.INITIAL_ASTEROID_COUNT });
-  }
+  protected initializeEntities(): void {}
 
   /**
    * Registers game-specific rendering logic to the provided renderer.
@@ -108,7 +100,7 @@ export class AsteroidsGame
   }
 
   public getGameState(): GameStateComponent {
-    return getGameState(this.world);
+    return getGameState(this.getWorld());
   }
 
   public isGameOver(): boolean {

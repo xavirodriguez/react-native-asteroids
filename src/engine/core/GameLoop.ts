@@ -1,5 +1,3 @@
-import { World } from "./World";
-
 /**
  * Manages the game heartbeat and system updates using a fixed timestep.
  *
@@ -8,7 +6,6 @@ import { World } from "./World";
  * regardless of the rendering framerate.
  */
 export class GameLoop {
-  private world: World;
   private isRunning: boolean = false;
   private lastTime: number = 0;
   private gameLoopId?: number;
@@ -22,9 +19,7 @@ export class GameLoop {
   private updateListeners: Set<(deltaTime: number) => void> = new Set();
   private renderListeners: Set<(deltaTime: number) => void> = new Set();
 
-  constructor(world: World) {
-    this.world = world;
-  }
+  constructor() {}
 
   /**
    * Starts the game loop.
@@ -96,7 +91,6 @@ export class GameLoop {
 
     // Fixed timestep updates
     while (this.accumulator >= this.fixedDeltaTime) {
-      this.world.update(this.fixedDeltaTime);
       this.updateListeners.forEach((listener) => listener(this.fixedDeltaTime));
       this.accumulator -= this.fixedDeltaTime;
     }

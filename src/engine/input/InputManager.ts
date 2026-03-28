@@ -29,6 +29,14 @@ export class InputManager<TInputState extends Record<string, boolean>> {
   }
 
   /**
+   * Clears all registered controllers without calling cleanup on them.
+   * Useful when the controllers themselves are managed elsewhere.
+   */
+  public clearControllers(): void {
+    this.controllers = [];
+  }
+
+  /**
    * Distributes manual input updates to all registered controllers.
    * Useful for touch or network-driven inputs.
    *

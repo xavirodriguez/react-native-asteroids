@@ -24,6 +24,37 @@ export class SceneManager {
   }
 
   /**
+   * Restarts the current scene.
+   */
+  public restartCurrentScene(): void {
+    if (this.currentScene) {
+      this.currentScene.onExit();
+      const world = this.currentScene.getWorld();
+      world.clear();
+      world.clearSystems();
+      this.currentScene.onEnter();
+    }
+  }
+
+  /**
+   * Pauses the active scene.
+   */
+  public pause(): void {
+    if (this.currentScene) {
+      this.currentScene.onPause();
+    }
+  }
+
+  /**
+   * Resumes the active scene.
+   */
+  public resume(): void {
+    if (this.currentScene) {
+      this.currentScene.onResume();
+    }
+  }
+
+  /**
    * Updates the current scene.
    *
    * @param deltaTime - Time elapsed since the last update in milliseconds.
