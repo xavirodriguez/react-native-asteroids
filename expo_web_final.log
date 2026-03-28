@@ -1,143 +1,519 @@
-
-> asteroides@1.0.0 web
-> expo start --web
-
+(node:4548) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
 Starting project at /app
 Using src/app as the root directory for Expo Router.
 Starting Metro Bundler
-
 Waiting on http://localhost:8081
 Logs for your project will appear below.
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 94.3% (1366/1407)
-λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 93.4% (1320/1366)
-λ Bundled 3962ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1476 modules)
-Web Bundled 4184ms node_modules/expo-router/entry.js (1493 modules)
-λ  WARN  Route "./GameEngine.tsx" is missing the required default export. Ensure a React component is exported as default.
-"textShadow*" style props are deprecated. Use "textShadow".
-"shadow*" style props are deprecated. Use "boxShadow".
-Web node_modules/expo-router/entry.js ▓▓░░░░░░░░░░░░░░ 16.0% ( 8/20)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 48.3% (374/538)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 63.1% (685/862)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 72.3% (1083/1274)
-Web Bundled 14282ms node_modules/expo-router/entry.js (1494 modules)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1494/1494)
+Web Bundling failed 23312ms node_modules/expo-router/entry.js (1144 modules)
+
+Metro error: SyntaxError in src/app/globals.css: Unknown at rule: @apply
+
+[0m [90m 115 |[39m [33m@[39mlayer base {
+ [90m 116 |[39m   [33m*[39m {
+[31m[1m>[22m[39m[90m 117 |[39m     [33m@[39mapply border[33m-[39mborder outline[33m-[39mring[33m/[39m[35m50[39m[33m;[39m
+ [90m     |[39m            [31m[1m^[22m[39m
+ [90m 118 |[39m   }
+ [90m 119 |[39m   body {
+ [90m 120 |[39m     [33m@[39mapply bg[33m-[39mbackground text[33m-[39mforeground[33m;[39m[0m
+
+Call Stack
+  <unknown> (src/app/globals.css:117:12)
+λ Bundling failed 27049ms node_modules/expo-router/node/render.js (1163 modules)
+Web Bundled 4263ms node_modules/expo-router/_error.js (334 modules)
+Web Bundled 2253ms node_modules/expo-router/entry.js (1140 modules)
+λ Bundled 2321ms node_modules/expo-router/node/render.js (1166 modules)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ Bundled 40ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 377ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 10220ms node_modules/expo-router/entry.js (1147 modules)
+λ Bundled 29ms node_modules/expo-router/node/render.js (1 module)
  LOG  [web] Logs will appear in the browser console
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundled 49ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1 module)
-λ  WARN  Route "./GameEngine.tsx" is missing the required default export. Ensure a React component is exported as default.
-"textShadow*" style props are deprecated. Use "textShadow".
-"shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 475ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 108ms node_modules/expo-router/entry.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 366ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 45ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 441ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 70ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 38ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 388ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 33ms node_modules/expo-router/node/render.js (1 module)
  LOG  [web] Logs will appear in the browser console
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundled 318ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1 module)
-λ  WARN  Route "./GameEngine.tsx" is missing the required default export. Ensure a React component is exported as default.
-"textShadow*" style props are deprecated. Use "textShadow".
-"shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 1209ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 227ms node_modules/expo-router/entry.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 364ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 127ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 804ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 43ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 377ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 470ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 25ms node_modules/expo-router/node/render.js (1 module)
  LOG  [web] Logs will appear in the browser console
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundled 420ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1 module)
-λ  WARN  Route "./GameEngine.tsx" is missing the required default export. Ensure a React component is exported as default.
-"textShadow*" style props are deprecated. Use "textShadow".
-"shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 1600ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 184ms node_modules/expo-router/entry.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 354ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 43ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 424ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 69ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 30ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 387ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 33ms node_modules/expo-router/node/render.js (1 module)
  LOG  [web] Logs will appear in the browser console
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundled 341ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1 module)
-λ  WARN  Route "./GameEngine.tsx" is missing the required default export. Ensure a React component is exported as default.
-"textShadow*" style props are deprecated. Use "textShadow".
-"shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 1174ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 335ms node_modules/expo-router/entry.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 373ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 30ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 426ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 52ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 23ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 366ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 24ms node_modules/expo-router/node/render.js (1 module)
  LOG  [web] Logs will appear in the browser console
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundled 80ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1 module)
-λ  WARN  Route "./GameEngine.tsx" is missing the required default export. Ensure a React component is exported as default.
-"textShadow*" style props are deprecated. Use "textShadow".
-"shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 552ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 92ms node_modules/expo-router/entry.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 382ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 269ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 954ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 40ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 381ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 473ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 26ms node_modules/expo-router/node/render.js (1 module)
  LOG  [web] Logs will appear in the browser console
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundled 260ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1 module)
-λ  WARN  Route "./GameEngine.tsx" is missing the required default export. Ensure a React component is exported as default.
-"textShadow*" style props are deprecated. Use "textShadow".
-"shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 1013ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 296ms node_modules/expo-router/entry.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 353ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 148ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 245ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ Bundled 25ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 375ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 331ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 21ms node_modules/expo-router/node/render.js (1 module)
  LOG  [web] Logs will appear in the browser console
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundling failed 275ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1 module)
-
-Metro error: Unable to resolve module @shopify/react-native-skia/lib/module/Skia.web from /app/src/games/asteroids/AsteroidsGame.ts: @shopify/react-native-skia/lib/module/Skia.web could not be found within the project or in these directories:
-  node_modules
-[0m [90m 14 |[39m [36mimport[39m { [33mSkiaRenderer[39m } [36mfrom[39m [32m"../../engine/rendering/SkiaRenderer"[39m[33m;[39m
- [90m 15 |[39m [90m// @ts-ignore[39m
-[31m[1m>[22m[39m[90m 16 |[39m [36mimport[39m { [33mBlurStyle[39m[33m,[39m [33mSkia[39m } [36mfrom[39m [32m"@shopify/react-native-skia/lib/module/Skia.web"[39m[33m;[39m
- [90m    |[39m                                  [31m[1m^[22m[39m
- [90m 17 |[39m [36mimport[39m { [33mKeyboardController[39m } [36mfrom[39m [32m"../../engine/input/KeyboardController"[39m[33m;[39m
- [90m 18 |[39m [36mimport[39m { [33mTouchController[39m } [36mfrom[39m [32m"../../engine/input/TouchController"[39m[33m;[39m
- [90m 19 |[39m [36mimport[39m { getGameState } [36mfrom[39m [32m"./GameUtils"[39m[33m;[39m[0m
-
-Import stack:
-
- src/games/asteroids/AsteroidsGame.ts
- | import "@shopify/react-native-skia/lib/module/Skia.web"
-
- src/hooks/useAsteroidsGame.ts
- | import "../games/asteroids/AsteroidsGame"
-
- src/app/index.tsx
- | import "../hooks/useAsteroidsGame"
-
- src/app (require.context)
-
-
-
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Web Bundling failed 388ms node_modules/expo-router/entry.js (1 module)
-Web Bundled 270ms node_modules/expo-router/_error.js (86 modules)
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Web Bundling failed 119ms node_modules/expo-router/entry.js (1 module)
-
-Metro error: Unable to resolve module @shopify/react-native-skia/lib/module/Skia.web from /app/src/games/asteroids/AsteroidsGame.ts: @shopify/react-native-skia/lib/module/Skia.web could not be found within the project or in these directories:
-  node_modules
-[0m [90m 14 |[39m [36mimport[39m { [33mSkiaRenderer[39m } [36mfrom[39m [32m"../../engine/rendering/SkiaRenderer"[39m[33m;[39m
- [90m 15 |[39m [90m// @ts-ignore[39m
-[31m[1m>[22m[39m[90m 16 |[39m [36mimport[39m { [33mBlurStyle[39m[33m,[39m [33mSkia[39m } [36mfrom[39m [32m"@shopify/react-native-skia/lib/module/Skia.web"[39m[33m;[39m
- [90m    |[39m                                  [31m[1m^[22m[39m
- [90m 17 |[39m [36mimport[39m { [33mKeyboardController[39m } [36mfrom[39m [32m"../../engine/input/KeyboardController"[39m[33m;[39m
- [90m 18 |[39m [36mimport[39m { [33mTouchController[39m } [36mfrom[39m [32m"../../engine/input/TouchController"[39m[33m;[39m
- [90m 19 |[39m [36mimport[39m { getGameState } [36mfrom[39m [32m"./GameUtils"[39m[33m;[39m[0m
-
-Import stack:
-
- src/games/asteroids/AsteroidsGame.ts
- | import "@shopify/react-native-skia/lib/module/Skia.web"
-
- src/hooks/useAsteroidsGame.ts
- | import "../games/asteroids/AsteroidsGame"
-
- src/app/index.tsx
- | import "../hooks/useAsteroidsGame"
-
- src/app (require.context)
-
-
-
-Web Bundled 10ms node_modules/expo-router/_error.js (1 module)
-λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-λ Bundling failed 195ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1 module)
-Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Web Bundled 288ms node_modules/expo-router/entry.js (1 module)
-λ Bundled 366ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1 module)
-λ  WARN  Route "./GameEngine.tsx" is missing the required default export. Ensure a React component is exported as default.
-"textShadow*" style props are deprecated. Use "textShadow".
-"shadow*" style props are deprecated. Use "boxShadow".
-Web Bundled 185ms node_modules/expo-router/entry.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 343ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 109ms node_modules/expo-router/node/render.js (1 module)
+Web Bundled 309ms node_modules/expo-router/entry.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ Bundled 40ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 383ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 299ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 22ms node_modules/expo-router/node/render.js (1 module)
  LOG  [web] Logs will appear in the browser console
+λ  WARN  "textShadow*" style props are deprecated. Use "textShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7635:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+  warnOnce (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7721:15)
+  preprocess (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:7624:30)
+  compileAndInsertAtomic (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4944:68)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4987:28)
+  Function.create (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:4975:25)
+  <unknown> (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:64720:38)
+  loadModuleImplementation (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:256:7)
+  guardedLoadModule (node_modules/expo-router/node/render.js.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=src%2Fapp&resolver.environment=node&transform.environment=node:163:14)
+Web Bundled 351ms node_modules/expo-router/entry.js (1 module)
