@@ -33,7 +33,10 @@ export class CanvasRenderer implements Renderer {
 
     this.registerShape("polygon", (ctx, _entity, _pos, render) => {
       if (!render.vertices || render.vertices.length === 0) {
-        this.drawCircle(ctx, render.size, render.color);
+        ctx.fillStyle = render.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, render.size, 0, Math.PI * 2);
+        ctx.fill();
         return;
       }
 
@@ -138,14 +141,8 @@ export class CanvasRenderer implements Renderer {
   public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
-
-    // Improvement 2: Ship Trail (Draw before the ship)
-    const ship = world.getComponent<ShipComponent>(entity, "Ship");
-    if (ship && ship.trailPositions) {
-      this.drawShipTrail(ctx, ship.trailPositions);
-    }
-
-    if (!pos || !render) return;
+    const pos = components["Position"] as PositionComponent;
+    const render = components["Render"] as RenderComponent;
 
     ctx.save();
     ctx.translate(pos.x, pos.y);
@@ -185,13 +182,6 @@ export class CanvasRenderer implements Renderer {
 
       // Requirement 1: Size variation that reduces with time
       const size = render.size * alpha;
-
-      // Improvement 6: shadowBlur on large/fresh particles
-      if (render.size > 2 && alpha > 0.5) {
-        ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = 10 * alpha;
-      }
-
       ctx.beginPath();
       ctx.arc(0, 0, size, 0, Math.PI * 2);
       ctx.fill();

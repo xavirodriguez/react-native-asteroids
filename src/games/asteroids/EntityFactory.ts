@@ -170,13 +170,6 @@ function addAsteroidTypeComponents(config: {
     return { x: Math.cos(angle) * r, y: Math.sin(angle) * r };
   });
 
-  // Improvement 19: Cracks / internal lines
-  const internalLines = Array.from({ length: 2 + Math.floor(Math.random() * 3) }, () => {
-    const v1 = vertices[Math.floor(Math.random() * vertices.length)];
-    const v2 = vertices[Math.floor(Math.random() * vertices.length)];
-    return { x1: v1.x * 0.5, y1: v1.y * 0.5, x2: v2.x * 0.8, y2: v2.y * 0.8 };
-  });
-
   world.addComponent(asteroid, {
     type: "Render",
     shape: "polygon",
@@ -185,7 +178,6 @@ function addAsteroidTypeComponents(config: {
     rotation: Math.random() * Math.PI * 2, // Improvement 5: Randomized initial rotation
     angularVelocity: (Math.random() - 0.5) * 0.04, // Improvement 7: Random slow rotation
     vertices,
-    internalLines,
     hitFlashFrames: 0, // Improvement 9: Hit flash tracker
   })
   world.addComponent(asteroid, { type: "Collider", radius })
