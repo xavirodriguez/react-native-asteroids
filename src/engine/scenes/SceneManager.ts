@@ -24,6 +24,17 @@ export class SceneManager {
   }
 
   /**
+   * Restarts the current scene.
+   */
+  public restartCurrentScene(): void {
+    if (this.currentScene) {
+      this.currentScene.onExit();
+      this.currentScene.getWorld().clear();
+      this.currentScene.onEnter();
+    }
+  }
+
+  /**
    * Pauses the active scene.
    */
   public pause(): void {

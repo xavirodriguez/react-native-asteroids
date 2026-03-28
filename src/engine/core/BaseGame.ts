@@ -93,9 +93,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   }
 
   public restart(): void {
-    this.world.clear();
+    if (this.sceneManager.getCurrentScene()) {
+      this.sceneManager.restartCurrentScene();
+    } else {
+      this.world.clear();
+      this.initializeEntities();
+    }
+
     this._onBeforeRestart();
-    this.initializeEntities();
     if (this._isPaused) this.resume();
     this._notifyListeners();
   }

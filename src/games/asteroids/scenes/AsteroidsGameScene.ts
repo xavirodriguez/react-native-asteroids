@@ -40,6 +40,9 @@ export class AsteroidsGameScene extends Scene {
   }
 
   public onEnter(): void {
+    // Ensure clean input state
+    this.inputManager.clearControllers();
+
     const DEFAULT_INPUT: InputState = {
       thrust: false, rotateLeft: false, rotateRight: false,
       shoot: false, hyperspace: false
