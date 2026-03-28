@@ -8,8 +8,8 @@ import {
   type InputState,
   GAME_CONFIG,
 } from "../../../types/GameTypes";
-import { createBullet, createParticle } from "../EntityFactory";
-import { hapticShoot } from "../../../utils/haptics";
+import { createBullet, createParticle, createExplosion } from "../EntityFactory";
+import { hapticShoot, hapticDamage } from "../../../utils/haptics";
 import { InputManager } from "../../../engine/input/InputManager";
 import { BulletPool, ParticlePool } from "../EntityPool";
 
@@ -81,10 +81,14 @@ export class AsteroidInputSystem extends System {
     const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
     const render = world.getComponent<RenderComponent>(entity, "Render");
     const pos = world.getComponent<PositionComponent>(entity, "Position");
+    const ship = world.getComponent<ShipComponent>(entity, "Ship");
 
     if (vel && render && pos) {
       this.applyShipMovement({ world, pos, vel, render, input, deltaTime });
       this.handleShipShooting({ world, pos, render, input });
+      if (ship) {
+        this.handleHyperspace({ world, pos, vel, input, ship, deltaTime });
+      }
     }
   }
 
@@ -100,6 +104,7 @@ export class AsteroidInputSystem extends System {
     input.rotateLeft = currentInputs.rotateLeft;
     input.rotateRight = currentInputs.rotateRight;
     input.shoot = currentInputs.shoot;
+    input.hyperspace = currentInputs.hyperspace;
   }
 
   private applyShipMovement(context: {
@@ -179,6 +184,41 @@ export class AsteroidInputSystem extends System {
       createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation, pool: this.bulletPool });
       input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN;
       hapticShoot();
+    }
+  }
+
+  private handleHyperspace(context: {
+    world: World;
+    pos: PositionComponent;
+    vel: VelocityComponent;
+    input: InputComponent;
+    ship: ShipComponent;
+    deltaTime: number;
+  }): void {
+    const { world, pos, vel, input, ship, deltaTime } = context;
+
+    if (ship.hyperspaceCooldownRemaining > 0) {
+      ship.hyperspaceCooldownRemaining -= deltaTime;
+    }
+
+    if (input.hyperspace && ship.hyperspaceCooldownRemaining <= 0 && ship.hyperspaceTimer <= 0) {
+      // Start hyperspace jump
+      createExplosion(world, pos.x, pos.y, 20, this.particlePool);
+      ship.hyperspaceTimer = GAME_CONFIG.HYPERSPACE_DURATION;
+      ship.hyperspaceCooldownRemaining = GAME_CONFIG.HYPERSPACE_COOLDOWN;
+      hapticDamage(); // Use haptic for feedback
+    }
+
+    if (ship.hyperspaceTimer > 0) {
+      ship.hyperspaceTimer -= deltaTime;
+      if (ship.hyperspaceTimer <= 0) {
+        // Complete jump
+        pos.x = Math.random() * GAME_CONFIG.SCREEN_WIDTH;
+        pos.y = Math.random() * GAME_CONFIG.SCREEN_HEIGHT;
+        vel.dx = 0;
+        vel.dy = 0;
+        createExplosion(world, pos.x, pos.y, 20, this.particlePool);
+      }
     }
   }
 }

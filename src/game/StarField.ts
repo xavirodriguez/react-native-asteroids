@@ -13,9 +13,9 @@ export function generateStarField(count: number, width: number, height: number):
     y: Math.random() * height,
     size: Math.random() * 1.5 + 0.5,
     brightness: Math.random() * 0.7 + 0.3,
-    twinklePhase: 0,
-    twinkleSpeed: 0,
-    layer: 0,
+    twinklePhase: Math.random() * Math.PI * 2,
+    twinkleSpeed: 0.5 + Math.random() * 1.5,
+    layer: Math.floor(Math.random() * 3),
   }));
 }
 
