@@ -1,13 +1,17 @@
-import { Skia, BlurStyle } from "@shopify/react-native-skia";
-import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
+import type { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
 import { PositionComponent, HealthComponent } from "../../../engine/types/EngineTypes";
 
 // Lazy initialize paint to avoid issues in environments where Skia is not fully ready at module load time
 let paint: any = null;
 const getPaint = () => {
     if (!paint) {
-        if (typeof Skia !== "undefined") {
-            paint = Skia.Paint();
+        try {
+            const { Skia } = require("@shopify/react-native-skia");
+            if (Skia) {
+                paint = Skia.Paint();
+            }
+        } catch (e) {
+            // Skia not available
         }
     }
     return paint;
