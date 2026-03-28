@@ -1,0 +1,17 @@
+  --non-interactive is not supported, use $CI=1 instead
+Starting project at /app
+Using src/app as the root directory for Expo Router.
+Starting Metro Bundler
+
+Waiting on http://localhost:8083
+Logs for your project will appear below.
+Web node_modules/expo-router/entry.js ▓▓▓░░░░░░░░░░░░░ 21.9% (160/342)
+λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 3643ms node_modules/expo-router/entry.js (1490 modules)
+λ Bundled 3717ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1469 modules)
+λ  WARN  Route "./GameEngine.tsx" is missing the required default export. Ensure a React component is exported as default.
+"textShadow*" style props are deprecated. Use "textShadow".
+"shadow*" style props are deprecated. Use "boxShadow".
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 65.3% ( 987/1224)
+Web Bundled 1596ms node_modules/expo-router/entry.js (1497 modules)
+ LOG  [web] Logs will appear in the browser console

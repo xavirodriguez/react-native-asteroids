@@ -1,9 +1,23 @@
 import React from "react";
-import { Canvas, Group, Circle, Rect, Atlas, Text, Path } from "@shopify/react-native-skia";
+import { Platform, View } from "react-native";
 import { SharedValue, useDerivedValue } from "react-native-reanimated";
 import { SharedCamera } from "../../core/types/SystemTypes";
 import { RenderableComponent, TransformComponent } from "../../core/types/CoreTypes";
 import { Entity } from "../../types/EngineTypes";
+
+// Conditionally import Skia components for non-web platforms
+let Canvas: any, Group: any, Circle: any, Rect: any;
+if (Platform.OS !== 'web') {
+  try {
+    const SkiaModule = require("@shopify/react-native-skia");
+    Canvas = SkiaModule.Canvas;
+    Group = SkiaModule.Group;
+    Circle = SkiaModule.Circle;
+    Rect = SkiaModule.Rect;
+  } catch (e) {
+    console.warn("Skia not available");
+  }
+}
 
 interface RenderSnapshot {
   entities: {
@@ -42,6 +56,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ];
   });
 
+  if (Platform.OS === 'web' || !Canvas) {
+    return <View style={{ width, height, backgroundColor: 'black' }} />;
+  }
+
   return (
     <Canvas style={{ width, height }}>
       {/* Background Layer (Static) */}
@@ -72,7 +90,7 @@ const EntityRenderer: React.FC<{
   transform: TransformComponent;
   renderable: RenderableComponent;
 }> = ({ transform, renderable }) => {
-  if (!renderable.visible) return null;
+  if (!renderable.visible || !Group) return null;
 
   return (
     <Group
@@ -86,10 +104,10 @@ const EntityRenderer: React.FC<{
       ]}
       opacity={renderable.opacity}
     >
-      {renderable.renderType === "circle" && (
+      {renderable.renderType === "circle" && Circle && (
         <Circle cx={0} cy={0} r={renderable.size.radius ?? 10} color={renderable.color} />
       )}
-      {renderable.renderType === "rect" && (
+      {renderable.renderType === "rect" && Rect && (
         <Rect
           x={-renderable.size.width / 2}
           y={-renderable.size.height / 2}

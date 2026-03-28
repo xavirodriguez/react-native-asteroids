@@ -4,5 +4,6 @@
  */
 
 export * from "../engine/types/EngineTypes";
+
 // Re-export Asteroids types for backward compatibility
 export * from "../games/asteroids/types/AsteroidTypes";

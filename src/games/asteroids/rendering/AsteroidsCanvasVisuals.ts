@@ -1,29 +1,26 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
 import { PositionComponent, HealthComponent } from "../../../engine/types/EngineTypes";
-import { InputComponent, GameStateComponent, ShipComponent, GAME_CONFIG } from "../../../types/GameTypes";
+import { InputComponent, GameStateComponent, ShipComponent } from "../../../types/GameTypes";
 
 export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
   const size = render.size;
   const input = world.getComponent<InputComponent>(entity, "Input");
   const health = world.getComponent<HealthComponent>(entity, "Health");
-  const ship = world.getComponent<ShipComponent>(entity, "Ship");
 
-  // Improvement 17: Hyperspace fade visuals
-  if (ship && ship.hyperspaceTimer > 0) {
-    const ratio = ship.hyperspaceTimer / GAME_CONFIG.HYPERSPACE_DURATION;
-    ctx.globalAlpha = Math.abs(Math.sin(ratio * Math.PI * 4)) * 0.5;
-  } else if (health && health.invulnerableRemaining > 0) {
+  if (health && health.invulnerableRemaining > 0) {
     if (Math.floor(Date.now() / 150) % 2 === 0) ctx.globalAlpha = 0.3;
   }
 
-  // Ship Trail
-  if (ship && ship.trailPositions) {
+  // Ship Trail (Requirement 2)
+  const ship = world.getComponent<ShipComponent>(entity, "Ship");
+  if (ship && ship.trailPositions && ship.trailPositions.length > 0) {
     ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset for global coordinates
-    ship.trailPositions.forEach((p: {x: number, y: number}, i: number) => {
-        const alpha = (i / ship.trailPositions.length) * 0.4;
+    // We need to draw in global coordinates. Since drawEntity already translated/rotated, we reset.
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ship.trailPositions.forEach((p, i) => {
+        const alpha = (i / ship.trailPositions!.length) * 0.4;
         ctx.globalAlpha = alpha;
-        ctx.fillStyle = "#00ffff";
+        ctx.fillStyle = "#00ffff"; // Cyan
         ctx.beginPath();
         ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
         ctx.fill();
@@ -88,52 +85,38 @@ export const drawAsteroidsUfo: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _en
   ctx.beginPath(); ctx.arc(size / 2, 0, 1.5, 0, Math.PI * 2); ctx.fill();
 };
 
-export const asteroidsStarfieldEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world, width, height) => {
+export const asteroidsStarfieldEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world) => {
   const gameStateEntity = world.query("GameState")[0];
   const gameState = gameStateEntity ? world.getComponent<GameStateComponent>(gameStateEntity, "GameState") : null;
 
-  const shipEntity = world.query("Ship")[0];
-  const shipPos = shipEntity ? world.getComponent<PositionComponent>(shipEntity, "Position") : { x: width / 2, y: height / 2 };
-
   if (gameState?.stars) {
+    // Requirement 3: Draw all stars static with globalAlpha = brightness
     gameState.stars.forEach((star) => {
-      // Improvement 18: Real Parallax based on layer
-      const parallaxFactor = 0.02 * (star.layer + 1);
-      const x = (star.x - shipPos.x * parallaxFactor + width) % width;
-      const y = (star.y - shipPos.y * parallaxFactor + height) % height;
-
-      // Improvement 15: Twinkling effect
-      const twinkle = 0.7 + 0.3 * Math.sin(star.twinklePhase + Date.now() * 0.002 * star.twinkleSpeed);
-      ctx.globalAlpha = star.brightness * twinkle;
+      ctx.globalAlpha = star.brightness;
       ctx.fillStyle = "white";
-      ctx.fillRect(x, y, star.size, star.size);
+      ctx.fillRect(star.x, star.y, star.size, star.size);
     });
     ctx.globalAlpha = 1.0;
   }
 };
 
-export const asteroidsCRTEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world, width, height) => {
-  const gameStateEntity = world.query("GameState")[0];
-  const gameState = gameStateEntity ? world.getComponent<GameStateComponent>(gameStateEntity, "GameState") : null;
-
-  if (gameState?.debugCRT !== false) {
-    ctx.save();
-    ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
-    for (let y = 0; y < height; y += 3) {
-      ctx.fillRect(0, y, width, 1);
-    }
-
-    const gradient = ctx.createRadialGradient(
-      width / 2, height / 2, width / 3,
-      width / 2, height / 2, width * 0.8
-    );
-    gradient.addColorStop(0, "transparent");
-    gradient.addColorStop(1, "rgba(0, 0, 0, 0.5)");
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-    ctx.restore();
+export const asteroidsCRTEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, _world, width, height) => {
+  ctx.save();
+  ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+  for (let y = 0; y < height; y += 3) {
+    ctx.fillRect(0, y, width, 1);
   }
+
+  const gradient = ctx.createRadialGradient(
+    width / 2, height / 2, width / 3,
+    width / 2, height / 2, width * 0.8
+  );
+  gradient.addColorStop(0, "transparent");
+  gradient.addColorStop(1, "rgba(0, 0, 0, 0.5)");
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
 };
 
 export const asteroidsScreenShakeEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world) => {
@@ -151,24 +134,7 @@ export const drawAsteroidsBullet: ShapeDrawer<CanvasRenderingContext2D> = (ctx, 
   const size = render.size;
   const color = render.color;
 
-  // Improvement 16: Bullet streak/trail (fading line)
-  if (render.trailPositions && render.trailPositions.length > 1) {
-    ctx.save();
-    // We are already translated to current bullet pos, but trail is in world coords
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.beginPath();
-    ctx.strokeStyle = "rgba(255, 255, 0, 0.6)";
-    ctx.lineWidth = size;
-    ctx.moveTo(render.trailPositions[0].x, render.trailPositions[0].y);
-    for (let i = 1; i < render.trailPositions.length; i++) {
-      ctx.lineTo(render.trailPositions[i].x, render.trailPositions[i].y);
-    }
-    ctx.stroke();
-    ctx.restore();
-  }
-
   ctx.save();
-  // Improvement 6: Shadow blur for bullets
   ctx.shadowColor = "#ffffaa";
   ctx.shadowBlur = 12;
   ctx.fillStyle = color;
