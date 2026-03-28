@@ -13,7 +13,7 @@ import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory"
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE, type ShipComponent, type InputComponent, type HealthComponent, type TTLComponent } from "./types/AsteroidTypes";
 import { CanvasRenderer } from "../../engine/rendering/CanvasRenderer";
 import { SkiaRenderer } from "../../engine/rendering/SkiaRenderer";
-import { BlurStyle, Skia } from "@shopify/react-native-skia";
+import { Platform } from "react-native";
 import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
 import { getGameState } from "./GameUtils";
@@ -40,6 +40,11 @@ export class AsteroidsGame
   }
 
   public static registerAsteroidsSkiaRenderer(renderer: SkiaRenderer): void {
+    if (Platform.OS === 'web') return;
+
+    // Dynamically require Skia to avoid bundling issues on web if not used
+    const { Skia, BlurStyle } = require("@shopify/react-native-skia");
+
     renderer.registerShape("triangle", (canvas, paint, render, world, entity) => {
       const size = render.size;
       const input = world.getComponent<InputComponent>(entity, "Input");
