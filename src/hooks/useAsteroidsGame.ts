@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useGame } from "./useGame";
 import { useHighScore } from "./useHighScore";
 import { AsteroidsGame } from "../games/asteroids/AsteroidsGame";
@@ -14,9 +15,11 @@ export function useAsteroidsGame() {
   const { highScore, updateHighScore } = useHighScore();
 
   // Update high score when game is over
-  if (gameState?.isGameOver) {
-    updateHighScore(gameState.score);
-  }
+  useEffect(() => {
+    if (gameState?.isGameOver) {
+      updateHighScore(gameState.score);
+    }
+  }, [gameState?.isGameOver, gameState?.score, updateHighScore]);
 
   return { game, gameState: gameState ?? INITIAL_GAME_STATE, handleInput, isPaused, togglePause, highScore };
 }

@@ -1,6 +1,6 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { PositionComponent, HealthComponent } from "../../../engine/types/EngineTypes";
-import { InputComponent, GameStateComponent, ShipComponent } from "../../../types/GameTypes";
+import { PositionComponent, HealthComponent, TTLComponent } from "../../../engine/types/EngineTypes";
+import { InputComponent, GameStateComponent, ShipComponent, RenderComponent } from "../../../types/GameTypes";
 
 export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
   const size = render.size;
@@ -142,4 +142,23 @@ export const drawAsteroidsBullet: ShapeDrawer<CanvasRenderingContext2D> = (ctx, 
   ctx.arc(0, 0, size, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
+};
+
+export const drawAsteroidsParticle: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, pos, render, world) => {
+  const ttl = world.getComponent<TTLComponent>(entity, "TTL");
+  if (!ttl) return;
+
+  const alpha = ttl.remaining / ttl.total;
+
+  // Requirement 1: Orange-red-white shift
+  const hue = 30 + (entity % 20); // 30 (Orange) to 50 (Yellow-ish)
+  const lightness = 50 + alpha * 30; // 50 (Orange/Red) to 80 (White-ish)
+  ctx.fillStyle = `hsl(${hue}, 100%, ${lightness}%)`;
+  ctx.globalAlpha = alpha;
+
+  // Requirement 1: Size variation that reduces with time
+  const size = render.size * alpha;
+  ctx.beginPath();
+  ctx.arc(0, 0, size, 0, Math.PI * 2);
+  ctx.fill();
 };
