@@ -1,15 +1,7 @@
 import { World } from "../../engine/core/World";
 import { BaseGame } from "../../engine/core/BaseGame";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { WrapSystem } from "../../engine/systems/WrapSystem";
-import { TTLSystem } from "../../engine/systems/TTLSystem";
 import { AssetLoader } from "../../engine/assets/AssetLoader";
-import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
-import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
-import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
-import { UfoSystem } from "./systems/UfoSystem";
-import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory";
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE, type ShipComponent, type InputComponent, type HealthComponent, type TTLComponent } from "./types/AsteroidTypes";
 import { CanvasRenderer } from "../../engine/rendering/CanvasRenderer";
 import { SkiaRenderer } from "../../engine/rendering/SkiaRenderer";
@@ -22,6 +14,7 @@ import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "../../engine/rendering/Renderer";
 import { drawAsteroidsShip, drawAsteroidsUfo, asteroidsStarfieldEffect, asteroidsCRTEffect, asteroidsScreenShakeEffect, drawAsteroidsBullet } from "./rendering/AsteroidsCanvasVisuals";
 import { drawSkiaShip, drawSkiaUfo, skiaStarfieldEffect, skiaScreenShakeEffect, drawSkiaBullet } from "./rendering/AsteroidsSkiaVisuals";
+import { AsteroidsGameScene } from "./scenes/AsteroidsGameScene";
 
 export class AsteroidsGame
   extends BaseGame<GameStateComponent, InputState>
@@ -37,6 +30,16 @@ export class AsteroidsGame
     this.assetLoader = new AssetLoader();
     this.bulletPool = new BulletPool();
     this.particlePool = new ParticlePool();
+
+    const gameScene = new AsteroidsGameScene(
+      new World(),
+      this,
+      this.inputManager,
+      this.bulletPool,
+      this.particlePool,
+      this.gameStateSystem
+    );
+    this.sceneManager.transitionTo(gameScene);
   }
 
   public static registerAsteroidsSkiaRenderer(renderer: SkiaRenderer): void {
@@ -365,40 +368,10 @@ export class AsteroidsGame
   }
 
   protected registerSystems(): void {
-    const DEFAULT_INPUT: InputState = {
-      thrust: false, rotateLeft: false, rotateRight: false,
-      shoot: false, hyperspace: false
-    };
-
-    const ASTEROID_KEYMAP = {
-      [GAME_CONFIG.KEYS.THRUST]: "thrust" as const,
-      [GAME_CONFIG.KEYS.ROTATE_LEFT]: "rotateLeft" as const,
-      [GAME_CONFIG.KEYS.ROTATE_RIGHT]: "rotateRight" as const,
-      [GAME_CONFIG.KEYS.SHOOT]: "shoot" as const,
-      [GAME_CONFIG.KEYS.HYPERSPACE]: "hyperspace" as const,
-    };
-
-    this.inputManager.addController(new KeyboardController<InputState>(ASTEROID_KEYMAP, DEFAULT_INPUT));
-    this.inputManager.addController(new TouchController<InputState>());
-
-    const inputSys = new AsteroidInputSystem(this.inputManager, this.bulletPool, this.particlePool);
     this.gameStateSystem = new AsteroidGameStateSystem(this);
-
-    this.world.addSystem(inputSys);
-    this.world.addSystem(new MovementSystem());
-    this.world.addSystem(new WrapSystem(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT));
-    this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
-    this.world.addSystem(new TTLSystem());
-    this.world.addSystem(this.gameStateSystem);
-    this.world.addSystem(new UfoSystem());
-    this.world.addSystem(new AsteroidRenderSystem());
   }
 
-  protected initializeEntities(): void {
-    createShip({ world: this.world, x: GAME_CONFIG.SCREEN_CENTER_X, y: GAME_CONFIG.SCREEN_CENTER_Y });
-    createGameState({ world: this.world });
-    spawnAsteroidWave({ world: this.world, count: GAME_CONFIG.INITIAL_ASTEROID_COUNT });
-  }
+  protected initializeEntities(): void {}
 
   /**
    * Registers game-specific rendering logic to the provided renderer.
@@ -425,7 +398,7 @@ export class AsteroidsGame
   }
 
   public getGameState(): GameStateComponent {
-    return getGameState(this.world);
+    return getGameState(this.getWorld());
   }
 
   public isGameOver(): boolean {

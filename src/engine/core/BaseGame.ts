@@ -1,6 +1,7 @@
 import { World } from "./World";
 import { GameLoop } from "./GameLoop";
 import { InputManager } from "../input/InputManager";
+import { SceneManager } from "../scenes/SceneManager";
 import type { IGame, UpdateListener } from "./IGame";
 
 export interface BaseGameConfig {
@@ -18,6 +19,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   protected world: World;
   protected gameLoop: GameLoop;
   protected inputManager: InputManager<TInput>;
+  protected sceneManager: SceneManager;
 
   private _isPaused = false;
   private _listeners = new Set<UpdateListener<BaseGame<TState, TInput>>>();
@@ -26,8 +28,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
 
   constructor(config: BaseGameConfig = {}) {
     this.world = new World();
-    this.gameLoop = new GameLoop(this.world);
+    this.gameLoop = new GameLoop();
     this.inputManager = new InputManager<TInput>();
+    this.sceneManager = new SceneManager();
 
     this._config = config;
 
@@ -36,8 +39,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
     this.initializeEntities();
 
     // Notify React on each logical update frame
-    this.gameLoop.subscribeUpdate(() => {
+    this.gameLoop.subscribeUpdate((deltaTime) => {
       if (!this._isPaused) {
+        // Simple games update this.world, advanced games update via sceneManager
+        if (this.sceneManager.getCurrentScene()) {
+          this.sceneManager.update(deltaTime);
+        } else {
+          this.world.update(deltaTime);
+        }
         this._notifyListeners();
       }
     });
@@ -72,12 +81,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   public pause(): void {
     if (this._isPaused) return;
     this._isPaused = true;
+    this.sceneManager.pause();
     this._notifyListeners();
   }
 
   public resume(): void {
     if (!this._isPaused) return;
     this._isPaused = false;
+    this.sceneManager.resume();
     this._notifyListeners();
   }
 
@@ -97,7 +108,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   }
 
   public getWorld(): World {
-    return this.world;
+    const activeScene = this.sceneManager.getCurrentScene();
+    return activeScene ? activeScene.getWorld() : this.world;
   }
 
   public isPausedState(): boolean {

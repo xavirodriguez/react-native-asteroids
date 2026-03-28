@@ -24,6 +24,24 @@ export class SceneManager {
   }
 
   /**
+   * Pauses the active scene.
+   */
+  public pause(): void {
+    if (this.currentScene) {
+      this.currentScene.onPause();
+    }
+  }
+
+  /**
+   * Resumes the active scene.
+   */
+  public resume(): void {
+    if (this.currentScene) {
+      this.currentScene.onResume();
+    }
+  }
+
+  /**
    * Updates the current scene.
    *
    * @param deltaTime - Time elapsed since the last update in milliseconds.
