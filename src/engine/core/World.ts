@@ -30,6 +30,14 @@ export class World {
   }
 
   /**
+   * Removes all registered systems from the world.
+   */
+  clearSystems(): void {
+    this.systems = [];
+    this.version++;
+  }
+
+  /**
    * Attaches a component to an entity.
    * If the entity already has a component of this type, it will be overwritten.
    *

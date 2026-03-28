@@ -33,7 +33,6 @@ export class InputManager<TInputState extends Record<string, boolean>> {
    * Useful when the controllers themselves are managed elsewhere.
    */
   public clearControllers(): void {
-    this.controllers.forEach((c) => c.cleanup());
     this.controllers = [];
   }
 

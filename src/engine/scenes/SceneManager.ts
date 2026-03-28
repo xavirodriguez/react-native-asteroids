@@ -29,7 +29,9 @@ export class SceneManager {
   public restartCurrentScene(): void {
     if (this.currentScene) {
       this.currentScene.onExit();
-      this.currentScene.getWorld().clear();
+      const world = this.currentScene.getWorld();
+      world.clear();
+      world.clearSystems();
       this.currentScene.onEnter();
     }
   }
