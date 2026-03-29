@@ -4,6 +4,7 @@ import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../.
 import { spawnAsteroidWave, createUfo } from "../EntityFactory";
 import { getGameState } from "../GameUtils";
 import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.
@@ -32,11 +33,11 @@ export class AsteroidGameStateSystem extends System implements IGameStateSystem 
 
   private manageUfoSpawning(world: World, deltaTime: number): void {
     // 0.1% chance per second
-    if (Math.random() < 0.001 * (deltaTime / 1000)) {
+    if (RandomService.chance(0.001 * (deltaTime / 1000))) {
       const ufos = world.query("Ufo");
       if (ufos.length === 0) {
-        const x = Math.random() > 0.5 ? 0 : GAME_CONFIG.SCREEN_WIDTH;
-        const y = 50 + Math.random() * (GAME_CONFIG.SCREEN_HEIGHT - 100);
+        const x = RandomService.chance(0.5) ? 0 : GAME_CONFIG.SCREEN_WIDTH;
+        const y = RandomService.nextRange(50, GAME_CONFIG.SCREEN_HEIGHT - 50);
         createUfo(world, x, y);
       }
     }

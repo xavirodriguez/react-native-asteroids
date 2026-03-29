@@ -28,6 +28,7 @@ export function useGame<
 
   // useRef so the instance is not recreated on every render
   const gameRef = useRef<TGame | null>(null);
+  const gameStateRef = useRef<TState | null>(initialState);
   const [gameState, setGameState] = useState<TState | null>(initialState);
   const [isPaused, setIsPaused] = useState(false);
   const [, forceUpdate] = useState(0);
@@ -38,10 +39,20 @@ export function useGame<
     gameRef.current = game;
     game.start();
 
+    let lastUpdateTime = 0;
+    const UI_UPDATE_INTERVAL = 1000 / 15; // Throttled to 15 FPS for UI components
+
     const unsubscribe = game.subscribe((updatedGame) => {
-      setGameState(updatedGame.getGameState() as TState);
-      setIsPaused(updatedGame.isPausedState());
-      forceUpdate((v) => v + 1);
+      const state = updatedGame.getGameState() as TState;
+      gameStateRef.current = state;
+
+      const now = performance.now();
+      if (now - lastUpdateTime >= UI_UPDATE_INTERVAL) {
+        setGameState(state);
+        setIsPaused(updatedGame.isPausedState());
+        forceUpdate((v) => v + 1);
+        lastUpdateTime = now;
+      }
     });
 
     return () => {

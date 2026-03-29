@@ -12,6 +12,7 @@ import { createBullet, createParticle } from "../EntityFactory";
 import { hapticShoot } from "../../../utils/haptics";
 import { InputManager } from "../../../engine/input/InputManager";
 import { BulletPool, ParticlePool } from "../EntityPool";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 /**
  * System responsible for processing user input and applying it to the ship's state.
@@ -142,10 +143,10 @@ export class AsteroidInputSystem extends System {
       vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
 
       // Improvement 8: Spawn 3-5 small thrust particles
-      const particleCount = 3 + Math.floor(Math.random() * 3);
+      const particleCount = RandomService.nextInt(3, 6);
       for (let i = 0; i < particleCount; i++) {
-        const angle = render.rotation + Math.PI + (Math.random() - 0.5) * 0.5;
-        const speed = 50 + Math.random() * 50;
+        const angle = render.rotation + Math.PI + (RandomService.next() - 0.5) * 0.5;
+        const speed = RandomService.nextRange(50, 100);
         createParticle({
           world,
           x: pos.x - Math.cos(render.rotation) * 10,
@@ -154,7 +155,7 @@ export class AsteroidInputSystem extends System {
           dy: Math.sin(angle) * speed + vel.dy * 0.5,
           color: i % 2 === 0 ? "#FF8800" : "#FFFF00",
           ttl: 400,
-          size: 1 + Math.random() * 2,
+          size: RandomService.nextRange(1, 3),
           pool: this.particlePool,
         });
       }
