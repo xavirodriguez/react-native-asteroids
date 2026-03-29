@@ -13,7 +13,7 @@ import { getGameState } from "./GameUtils";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "../../engine/rendering/Renderer";
-import { drawAsteroidsShip, drawAsteroidsUfo, asteroidsStarfieldEffect, asteroidsCRTEffect, asteroidsScreenShakeEffect, drawAsteroidsBullet } from "./rendering/AsteroidsCanvasVisuals";
+import { drawAsteroidsShip, drawAsteroidsUfo, asteroidsStarfieldEffect, asteroidsCRTEffect, asteroidsScreenShakeEffect, drawAsteroidsBullet, drawAsteroidsParticle } from "./rendering/AsteroidsCanvasVisuals";
 import { Platform } from "react-native";
 
 /**
@@ -78,15 +78,17 @@ export class AsteroidsGame
       renderer.registerShape("triangle", drawAsteroidsShip);
       renderer.registerShape("ufo", drawAsteroidsUfo);
       renderer.registerShape("bullet_shape", drawAsteroidsBullet);
+      renderer.registerShape("particle", drawAsteroidsParticle);
       renderer.registerBackgroundEffect("starfield", asteroidsStarfieldEffect);
       renderer.registerBackgroundEffect("screenshake", asteroidsScreenShakeEffect);
       renderer.registerForegroundEffect("crt", asteroidsCRTEffect);
     } else if (renderer.type === "skia" && Platform.OS !== "web") {
       try {
-        const { drawSkiaShip, drawSkiaUfo, skiaStarfieldEffect, skiaScreenShakeEffect, drawSkiaBullet } = require("./rendering/AsteroidsSkiaVisuals");
+        const { drawSkiaShip, drawSkiaUfo, skiaStarfieldEffect, skiaScreenShakeEffect, drawSkiaBullet, drawSkiaParticle } = require("./rendering/AsteroidsSkiaVisuals");
         renderer.registerShape("triangle", drawSkiaShip);
         renderer.registerShape("ufo", drawSkiaUfo);
         renderer.registerShape("bullet_shape", drawSkiaBullet);
+        renderer.registerShape("particle", drawSkiaParticle);
         renderer.registerBackgroundEffect("starfield", skiaStarfieldEffect);
         renderer.registerBackgroundEffect("screenshake", skiaScreenShakeEffect);
       } catch (e) {

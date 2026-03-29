@@ -1,7 +1,6 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
-import { Entity, PositionComponent, RenderComponent, TTLComponent } from "../types/EngineTypes";
-import { GameStateComponent } from "../../games/asteroids/types/AsteroidTypes";
+import { Entity, PositionComponent, RenderComponent } from "../types/EngineTypes";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -100,42 +99,27 @@ export class CanvasRenderer implements Renderer {
 
     this.clear();
 
-    ctx.save(); // Requirement 4: Global save for screen shake
+    ctx.save(); // Global save for potential transform effects
 
-    // Handle screen shake
-    const [gameStateEntity] = world.query("GameState");
-    if (gameStateEntity !== undefined) {
-        const gameState = world.getComponent<GameStateComponent>(gameStateEntity, "GameState");
-        if (gameState?.screenShake && gameState.screenShake.duration > 0) {
-            const shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
-            const shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
-            ctx.translate(shakeX, shakeY);
-        }
-    }
-
-    // Background Effects
-    ctx.save();
+    // Background Effects (e.g., Starfield, Screen Shake)
     this.backgroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
-    ctx.restore();
 
     // Render Entities
     const entities = world.query("Position", "Render");
     entities.forEach((entity) => {
       const pos = world.getComponent<PositionComponent>(entity, "Position");
       const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (pos && render && render.shape !== "particle") {
+      if (pos && render) {
         this.drawEntity(entity, { Position: pos, Render: render }, world);
       }
     });
 
-    this.drawParticles(world);
-
-    // Foreground Effects
+    // Foreground Effects (e.g., CRT)
     ctx.save();
     this.foregroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
     ctx.restore();
 
-    ctx.restore(); // Restore global shake
+    ctx.restore(); // Restore global transform
   }
 
   public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
@@ -156,36 +140,4 @@ export class CanvasRenderer implements Renderer {
     ctx.restore();
   }
 
-  public drawParticles(world: World): void {
-    if (!this.ctx) return;
-    const ctx = this.ctx;
-    const entities = world.query("Position", "Render").filter((e) => {
-      const r = world.getComponent<RenderComponent>(e, "Render");
-      return r?.shape === "particle";
-    });
-
-    entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position")!;
-      const render = world.getComponent<RenderComponent>(entity, "Render")!;
-      const ttl = world.getComponent<TTLComponent>(entity, "TTL");
-      if (!ttl) return;
-
-      const alpha = ttl.remaining / ttl.total;
-      ctx.save();
-      ctx.translate(pos.x, pos.y);
-
-      // Requirement 1: Orange-red-white shift
-      const hue = 30 + (entity % 20); // 30 (Orange) to 50 (Yellow-ish)
-      const lightness = 50 + alpha * 30; // 50 (Orange/Red) to 80 (White-ish)
-      ctx.fillStyle = `hsl(${hue}, 100%, ${lightness}%)`;
-      ctx.globalAlpha = alpha;
-
-      // Requirement 1: Size variation that reduces with time
-      const size = render.size * alpha;
-      ctx.beginPath();
-      ctx.arc(0, 0, size, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    });
-  }
 }

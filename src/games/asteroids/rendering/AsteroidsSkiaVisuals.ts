@@ -1,5 +1,5 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { PositionComponent, HealthComponent } from "../../../engine/types/EngineTypes";
+import { PositionComponent, HealthComponent, TTLComponent } from "../../../engine/types/EngineTypes";
 import { Platform } from "react-native";
 
 // Lazy initialize paint to avoid issues in environments where Skia is not fully ready at module load time
@@ -162,6 +162,31 @@ export const skiaScreenShakeEffect: EffectDrawer<any> = (canvas, world) => {
           const shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
           canvas.translate(shakeX, shakeY);
         }
+    } catch (e) {}
+};
+
+export const drawSkiaParticle: ShapeDrawer<any> = (canvas, entity, _pos, render, world) => {
+    if (Platform.OS === "web") return;
+    try {
+        const { Skia } = require("@shopify/react-native-skia");
+        if (typeof Skia === "undefined" || !Skia.Paint) return;
+        const p = getPaint();
+        if (!p) return;
+
+        const ttl = world.getComponent<TTLComponent>(entity, "TTL");
+        if (!ttl) return;
+
+        const lifeRatio = ttl.remaining / ttl.total;
+        const hueVariation = (entity % 10) - 5;
+        const hue = 20 + hueVariation;
+        const lightness = 50 + (1 - lifeRatio) * 50;
+
+        p.setColor(Skia.Color(`hsl(${hue}, 100%, ${lightness}%)`));
+        p.setAlphaf(lifeRatio);
+        p.setStyle(Skia.PaintStyle.Fill);
+
+        const size = render.size * lifeRatio;
+        canvas.drawCircle(0, 0, size, p);
     } catch (e) {}
 };
 

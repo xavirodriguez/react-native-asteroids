@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
-import { Entity, PositionComponent, RenderComponent, TTLComponent } from "../types/EngineTypes";
+import { Entity, PositionComponent, RenderComponent } from "../types/EngineTypes";
 
 /**
  * Procedural Skia Renderer implementation.
@@ -129,12 +129,10 @@ export class SkiaRenderer implements Renderer {
         entities.forEach((entity) => {
           const pos = world.getComponent<PositionComponent>(entity, "Position")!;
           const render = world.getComponent<RenderComponent>(entity, "Render")!;
-          if (render && render.shape !== "particle") {
+          if (render) {
             this.drawEntity(entity, { Position: pos, Render: render }, world);
           }
         });
-
-        this.drawParticles(world);
 
         canvas.restore();
 
@@ -160,38 +158,6 @@ export class SkiaRenderer implements Renderer {
     }
 
     canvas.restore();
-  }
-
-  public drawParticles(world: World): void {
-    if (Platform.OS === "web") return;
-    try {
-        const { Skia } = require("@shopify/react-native-skia");
-        if (!this.canvas || typeof Skia === "undefined" || !this.paint || !Skia.Color || !Skia.PaintStyle) return;
-        const canvas = this.canvas;
-        const entities = world.query("Position", "Render").filter(e => {
-            const r = world.getComponent<RenderComponent>(e, "Render");
-            return r?.shape === "particle";
-        });
-
-        entities.forEach(entity => {
-            const pos = world.getComponent<PositionComponent>(entity, "Position")!;
-            const render = world.getComponent<RenderComponent>(entity, "Render")!;
-            const ttl = world.getComponent<TTLComponent>(entity, "TTL");
-            if (!ttl) return;
-
-            const lifeRatio = ttl.remaining / ttl.total;
-            const hueVariation = (entity % 10) - 5;
-            const hue = 20 + hueVariation;
-            const lightness = 50 + (1 - lifeRatio) * 50;
-
-            this.paint.setColor(Skia.Color(`hsl(${hue}, 100%, ${lightness}%)`));
-            this.paint.setAlphaf(lifeRatio);
-            this.paint.setStyle(Skia.PaintStyle.Fill);
-
-            const size = render.size * lifeRatio;
-            canvas.drawCircle(pos.x, pos.y, size, this.paint);
-        });
-    } catch (e) {}
   }
 
 }
