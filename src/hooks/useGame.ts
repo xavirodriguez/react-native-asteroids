@@ -47,9 +47,10 @@ export function useGame<
       gameStateRef.current = state;
 
       const now = performance.now();
-      if (now - lastUpdateTime >= UI_UPDATE_INTERVAL) {
+      const isPausedNow = updatedGame.isPausedState();
+      if (isPausedNow !== isPaused || now - lastUpdateTime >= UI_UPDATE_INTERVAL) {
         setGameState(state);
-        setIsPaused(updatedGame.isPausedState());
+        setIsPaused(isPausedNow);
         forceUpdate((v) => v + 1);
         lastUpdateTime = now;
       }
