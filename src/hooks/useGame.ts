@@ -32,24 +32,58 @@ export function useGame<
   const [isPaused, setIsPaused] = useState(false);
   const [, forceUpdate] = useState(0);
 
+  // Optimization: Throttle React state updates to 15 FPS to prevent bridge saturation
+  const lastUpdateTimeRef = useRef<number>(0);
+  const lastPausedRef = useRef<boolean>(false);
+  const THROTTLE_MS = 1000 / 15;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     activateKeepAwakeAsync().catch(() => {});
     const game = new GameClass();
     gameRef.current = game;
     game.start();
 
-    const unsubscribe = game.subscribe((updatedGame) => {
+    const flush = (updatedGame: TGame) => {
+      const paused = updatedGame.isPausedState();
       setGameState(updatedGame.getGameState() as TState);
-      setIsPaused(updatedGame.isPausedState());
+      setIsPaused(paused);
+      lastPausedRef.current = paused;
       forceUpdate((v) => v + 1);
+      lastUpdateTimeRef.current = performance.now();
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+
+    const unsubscribe = game.subscribe((updatedGame) => {
+      const now = performance.now();
+      const currentState = updatedGame.getGameState() as any;
+      const isGameOver = currentState?.isGameOver === true;
+      const paused = updatedGame.isPausedState();
+
+      // Critical state changes (Pause, Game Over) bypass the throttle
+      // Use ref to avoid stale closure of React state 'isPaused'
+      const isCriticalChange = paused !== lastPausedRef.current || isGameOver;
+
+      if (isCriticalChange || now - lastUpdateTimeRef.current >= THROTTLE_MS) {
+        flush(updatedGame as TGame);
+      } else {
+        // Schedule a deferred update to ensure the final state is eventually delivered
+        if (!timeoutRef.current) {
+          timeoutRef.current = setTimeout(() => flush(updatedGame as TGame), THROTTLE_MS);
+        }
+      }
     });
 
     return () => {
       unsubscribe();
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       game.destroy();
       deactivateKeepAwake();
     };
-  // GameClass is stable (it's a class, not an object), doesn't need to be in deps
+  // GameClass is stable, and we use refs for mutable state in the subscription.
   }, []);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
