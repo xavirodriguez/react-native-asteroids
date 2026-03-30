@@ -15,7 +15,7 @@ import { createAsteroid, createParticle } from "../EntityFactory";
 import { getGameState } from "../GameUtils";
 import { hapticDamage, hapticDeath } from "../../../utils/haptics";
 import { ParticlePool } from "../EntityPool";
-import { randomService } from "../../../engine/utils/RandomService";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 const ASTEROID_SPLIT_CONFIG: Record<
   AsteroidComponent["size"],
@@ -176,8 +176,8 @@ export class AsteroidCollisionSystem extends CollisionSystem {
         world,
         x: pos.x,
         y: pos.y,
-        dx: (randomService.nextFloat() - 0.5) * 160, // [-80, 80]
-        dy: (randomService.nextFloat() - 0.5) * 160, // [-80, 80]
+        dx: (RandomService.next() - 0.5) * 160, // [-80, 80]
+        dy: (RandomService.next() - 0.5) * 160, // [-80, 80]
         color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
         ttl: GAME_CONFIG.PARTICLE_TTL_BASE,
         pool: this.particlePool,

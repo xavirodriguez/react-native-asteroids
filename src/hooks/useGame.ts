@@ -28,6 +28,7 @@ export function useGame<
 
   // useRef so the instance is not recreated on every render
   const gameRef = useRef<TGame | null>(null);
+  const gameStateRef = useRef<TState | null>(initialState);
   const [gameState, setGameState] = useState<TState | null>(initialState);
   const [isPaused, setIsPaused] = useState(false);
   const [, forceUpdate] = useState(0);
@@ -44,36 +45,20 @@ export function useGame<
     gameRef.current = game;
     game.start();
 
-    const flush = (updatedGame: TGame) => {
-      const paused = updatedGame.isPausedState();
-      setGameState(updatedGame.getGameState() as TState);
-      setIsPaused(paused);
-      lastPausedRef.current = paused;
-      forceUpdate((v) => v + 1);
-      lastUpdateTimeRef.current = performance.now();
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
+    let lastUpdateTime = 0;
+    const UI_UPDATE_INTERVAL = 1000 / 15; // Throttled to 15 FPS for UI components
 
     const unsubscribe = game.subscribe((updatedGame) => {
+      const state = updatedGame.getGameState() as TState;
+      gameStateRef.current = state;
+
       const now = performance.now();
-      const currentState = updatedGame.getGameState() as any;
-      const isGameOver = currentState?.isGameOver === true;
-      const paused = updatedGame.isPausedState();
-
-      // Critical state changes (Pause, Game Over) bypass the throttle
-      // Use ref to avoid stale closure of React state 'isPaused'
-      const isCriticalChange = paused !== lastPausedRef.current || isGameOver;
-
-      if (isCriticalChange || now - lastUpdateTimeRef.current >= THROTTLE_MS) {
-        flush(updatedGame as TGame);
-      } else {
-        // Schedule a deferred update to ensure the final state is eventually delivered
-        if (!timeoutRef.current) {
-          timeoutRef.current = setTimeout(() => flush(updatedGame as TGame), THROTTLE_MS);
-        }
+      const isPausedNow = updatedGame.isPausedState();
+      if (isPausedNow !== isPaused || now - lastUpdateTime >= UI_UPDATE_INTERVAL) {
+        setGameState(state);
+        setIsPaused(isPausedNow);
+        forceUpdate((v) => v + 1);
+        lastUpdateTime = now;
       }
     });
 

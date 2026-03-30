@@ -2,7 +2,7 @@ import { World } from "../../engine/core/World"
 import { type Entity, GAME_CONFIG } from "../../types/GameTypes"
 import { BulletPool, ParticlePool } from "./EntityPool"
 import { generateStarField } from "../../game/StarField"
-import { randomService } from "../../engine/utils/RandomService"
+import { RandomService } from "../../engine/utils/RandomService"
 
 /**
  * Parameters for creating a player ship entity.
@@ -149,8 +149,8 @@ function addAsteroidMovementComponents(config: {
   world.addComponent(asteroid, { type: "Position", x, y })
   world.addComponent(asteroid, {
     type: "Velocity",
-    dx: (randomService.nextFloat() - 0.5) * 100,
-    dy: (randomService.nextFloat() - 0.5) * 100,
+    dx: (RandomService.next() - 0.5) * 100,
+    dy: (RandomService.next() - 0.5) * 100,
   })
 }
 
@@ -163,11 +163,11 @@ function addAsteroidTypeComponents(config: {
   const radius = GAME_CONFIG.ASTEROID_RADII[size]
 
   // Improvement 5: Polygonal asteroids
-  const vertexCount = 8 + randomService.nextInt(0, 5); // 8 to 12 vertices
+  const vertexCount = RandomService.nextInt(8, 13); // 8 to 12 vertices
   const vertices = Array.from({ length: vertexCount }, (_, i) => {
     const angle = (i / vertexCount) * Math.PI * 2;
     // Each vertex has an irregular radius: radius * (0.75 + random*0.5)
-    const r = radius * (0.75 + randomService.nextFloat() * 0.5);
+    const r = radius * (0.75 + RandomService.next() * 0.5);
     return { x: Math.cos(angle) * r, y: Math.sin(angle) * r };
   });
 
@@ -176,8 +176,8 @@ function addAsteroidTypeComponents(config: {
     shape: "polygon",
     size: radius,
     color: "#AAAAAA",
-    rotation: randomService.nextFloat() * Math.PI * 2, // Improvement 5: Randomized initial rotation
-    angularVelocity: (randomService.nextFloat() - 0.5) * 0.04, // Improvement 7: Random slow rotation
+    rotation: RandomService.nextRange(0, Math.PI * 2), // Improvement 5: Randomized initial rotation
+    angularVelocity: (RandomService.next() - 0.5) * 0.04, // Improvement 7: Random slow rotation
     vertices,
     hitFlashFrames: 0, // Improvement 9: Hit flash tracker
   })

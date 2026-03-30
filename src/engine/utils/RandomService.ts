@@ -1,52 +1,53 @@
 /**
- * Deterministic random number generator using the Mulberry32 algorithm.
+ * Seedable pseudo-random number generator.
+ * Provides deterministic randomness for game logic.
  */
 export class RandomService {
-  private state: number;
+  private static seed: number = 12345;
 
-  constructor(seed: number = Date.now()) {
-    this.state = seed;
+  /**
+   * Sets the global seed for the random number generator.
+   */
+  public static setSeed(newSeed: number): void {
+    this.seed = newSeed;
   }
 
   /**
    * Generates a random float between 0 and 1.
+   * Mulberry32 algorithm.
    */
-  public nextFloat(): number {
-    this.state |= 0;
-    this.state = (this.state + 0x6d2b79f5) | 0;
-    let t = Math.imul(this.state ^ (this.state >>> 15), 1 | this.state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) | 0;
+  public static next(): number {
+    let t = (this.seed = (this.seed + 0x6d2b79f5) | 0);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+
+  /**
+   * Generates a random float between min and max.
+   */
+  public static nextRange(min: number, max: number): number {
+    return min + this.next() * (max - min);
   }
 
   /**
    * Generates a random integer between min (inclusive) and max (exclusive).
    */
-  public nextInt(min: number, max: number): number {
-    return Math.floor(this.nextFloat() * (max - min)) + min;
+  public static nextInt(min: number, max: number): number {
+    return Math.floor(this.nextRange(min, max));
   }
 
   /**
-   * Generates a random boolean.
+   * Returns true or false based on a probability (0 to 1).
    */
-  public nextBoolean(probability: number = 0.5): boolean {
-    return this.nextFloat() < probability;
+  public static chance(probability: number): boolean {
+    return this.next() < probability;
   }
 
   /**
-   * Returns a random element from an array.
+   * Returns -1 or 1 randomly.
    */
-  public nextElement<T>(array: T[]): T {
-    return array[this.nextInt(0, array.length)];
-  }
-
-  /**
-   * Sets the seed for the generator.
-   */
-  public setSeed(seed: number): void {
-    this.state = seed;
+  public static nextSign(): number {
+    return this.next() < 0.5 ? -1 : 1;
   }
 }
-
-// Export a singleton for global use if needed, but better to instantiate in systems
-export const randomService = new RandomService();
