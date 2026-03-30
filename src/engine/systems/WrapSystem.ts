@@ -16,6 +16,11 @@ export class WrapSystem extends System {
     const entities = world.query("Position");
 
     entities.forEach((entity) => {
+      // UFOs handle their own off-screen removal, so they should not wrap
+      if (world.hasComponent(entity, "Ufo")) {
+        return;
+      }
+
       const pos = world.getComponent<PositionComponent>(entity, "Position");
       if (pos) {
         this.wrapPosition(pos);

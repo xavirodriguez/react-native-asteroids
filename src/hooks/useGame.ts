@@ -35,6 +35,7 @@ export function useGame<
   // Optimization: Throttle React state updates to 15 FPS to prevent bridge saturation
   const lastUpdateTimeRef = useRef<number>(0);
   const THROTTLE_MS = 1000 / 15;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     activateKeepAwakeAsync().catch(() => {});
@@ -42,22 +43,45 @@ export function useGame<
     gameRef.current = game;
     game.start();
 
+    const flush = (updatedGame: TGame) => {
+      setGameState(updatedGame.getGameState() as TState);
+      setIsPaused(updatedGame.isPausedState());
+      forceUpdate((v) => v + 1);
+      lastUpdateTimeRef.current = performance.now();
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+
     const unsubscribe = game.subscribe((updatedGame) => {
       const now = performance.now();
-      if (now - lastUpdateTimeRef.current >= THROTTLE_MS) {
-        setGameState(updatedGame.getGameState() as TState);
-        setIsPaused(updatedGame.isPausedState());
-        forceUpdate((v) => v + 1);
-        lastUpdateTimeRef.current = now;
+      const currentState = updatedGame.getGameState() as any;
+      const isGameOver = currentState?.isGameOver === true;
+      const paused = updatedGame.isPausedState();
+
+      // Critical state changes (Pause, Game Over) bypass the throttle
+      const isCriticalChange = paused !== isPaused || isGameOver;
+
+      if (isCriticalChange || now - lastUpdateTimeRef.current >= THROTTLE_MS) {
+        flush(updatedGame as TGame);
+      } else {
+        // Schedule a deferred update to ensure the final state is eventually delivered
+        if (!timeoutRef.current) {
+          timeoutRef.current = setTimeout(() => flush(updatedGame as TGame), THROTTLE_MS);
+        }
       }
     });
 
     return () => {
       unsubscribe();
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       game.destroy();
       deactivateKeepAwake();
     };
-  // GameClass is stable (it's a class, not an object), doesn't need to be in deps
+  // GameClass is stable, but isPaused is used in the closure.
+  // However, we use the latest isPaused from the game instance in the subscribe.
+  // Adding isPaused to deps might cause effect re-runs, which we want to avoid.
   }, []);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
