@@ -33,6 +33,12 @@ export function useGame<
   const [isPaused, setIsPaused] = useState(false);
   const [, forceUpdate] = useState(0);
 
+  // Optimization: Throttle React state updates to 15 FPS to prevent bridge saturation
+  const lastUpdateTimeRef = useRef<number>(0);
+  const lastPausedRef = useRef<boolean>(false);
+  const THROTTLE_MS = 1000 / 15;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     activateKeepAwakeAsync().catch(() => {});
     const game = new GameClass();
@@ -58,10 +64,11 @@ export function useGame<
 
     return () => {
       unsubscribe();
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       game.destroy();
       deactivateKeepAwake();
     };
-  // GameClass is stable (it's a class, not an object), doesn't need to be in deps
+  // GameClass is stable, and we use refs for mutable state in the subscription.
   }, []);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
