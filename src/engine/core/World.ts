@@ -11,6 +11,12 @@ export class World {
   private systems: System[] = [];
   private nextEntityId = 1;
   private freeEntities: Entity[] = [];
+
+  /**
+   * Cache for query results to avoid redundant computations and GC pressure.
+   */
+  private queryCache = new Map<string, { version: number; entities: Entity[] }>();
+
   /**
    * Current version of the world structure.
    * Incremented whenever an entity or component is added or removed.
@@ -92,6 +98,7 @@ export class World {
 
   /**
    * Queries entities that possess all of the specified component types.
+   * Uses a version-based cache to avoid redundant work.
    *
    * @param componentTypes - One or more component types to filter by.
    * @returns An array of {@link Entity} IDs that have all the required components.
@@ -99,14 +106,24 @@ export class World {
   query(...componentTypes: string[]): Entity[] {
     if (componentTypes.length === 0) return [];
 
+    const cacheKey = componentTypes.sort().join(",");
+    const cached = this.queryCache.get(cacheKey);
+
+    if (cached && cached.version === this.version) {
+      return cached.entities;
+    }
+
     const sortedTypes = this.getSortedTypes(componentTypes);
     const candidates = this.componentIndex.get(sortedTypes[0]);
 
     if (!candidates || candidates.size === 0) {
+      this.queryCache.set(cacheKey, { version: this.version, entities: [] });
       return [];
     }
 
-    return this.filterByComponents(candidates, sortedTypes.slice(1));
+    const result = this.filterByComponents(candidates, sortedTypes.slice(1));
+    this.queryCache.set(cacheKey, { version: this.version, entities: result });
+    return result;
   }
 
   /**
@@ -135,6 +152,7 @@ export class World {
     this.entities.clear();
     this.components.clear();
     this.componentIndex.clear();
+    this.queryCache.clear();
     this.version++;
   }
 

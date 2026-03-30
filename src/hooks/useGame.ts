@@ -32,6 +32,10 @@ export function useGame<
   const [isPaused, setIsPaused] = useState(false);
   const [, forceUpdate] = useState(0);
 
+  // Optimization: Throttle React state updates to 15 FPS to prevent bridge saturation
+  const lastUpdateTimeRef = useRef<number>(0);
+  const THROTTLE_MS = 1000 / 15;
+
   useEffect(() => {
     activateKeepAwakeAsync().catch(() => {});
     const game = new GameClass();
@@ -39,9 +43,13 @@ export function useGame<
     game.start();
 
     const unsubscribe = game.subscribe((updatedGame) => {
-      setGameState(updatedGame.getGameState() as TState);
-      setIsPaused(updatedGame.isPausedState());
-      forceUpdate((v) => v + 1);
+      const now = performance.now();
+      if (now - lastUpdateTimeRef.current >= THROTTLE_MS) {
+        setGameState(updatedGame.getGameState() as TState);
+        setIsPaused(updatedGame.isPausedState());
+        forceUpdate((v) => v + 1);
+        lastUpdateTimeRef.current = now;
+      }
     });
 
     return () => {
