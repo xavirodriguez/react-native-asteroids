@@ -8,7 +8,7 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
   const health = world.getComponent<HealthComponent>(entity, "Health");
 
   if (health && health.invulnerableRemaining > 0) {
-    if (Math.floor(Date.now() / 150) % 2 === 0) ctx.globalAlpha = 0.3;
+    if (Math.floor(health.invulnerableRemaining / 150) % 2 === 0) ctx.globalAlpha = 0.3;
   }
 
   // Ship Trail (Requirement 2)
