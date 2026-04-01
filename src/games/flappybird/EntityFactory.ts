@@ -104,8 +104,7 @@ export function createPipe(options: CreatePipeParams): void {
  */
 export function createGround(world: World): Entity {
   const ground = world.createEntity();
-  // Alining ground X with bird X because CollisionSystem is circle-to-circle
-  world.addComponent(ground, { type: "Position", x: FLAPPY_CONFIG.BIRD_X, y: FLAPPY_CONFIG.GROUND_Y });
+  world.addComponent(ground, { type: "Position", x: FLAPPY_CONFIG.SCREEN_WIDTH / 2, y: FLAPPY_CONFIG.GROUND_Y });
   world.addComponent(ground, { type: "Collider", radius: 20 });
   world.addComponent(ground, { type: "Ground" });
   world.addComponent(ground, {
