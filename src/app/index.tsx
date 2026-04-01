@@ -6,10 +6,13 @@ import { GameControls } from "../../components/GameControls";
 import { GameUI } from "../../components/GameUI";
 import { SpaceInvadersUI } from "../../components/SpaceInvadersUI";
 import { SpaceInvadersControls } from "../../components/SpaceInvadersControls";
+import { FlappyBirdUI } from "../../components/FlappyBirdUI";
+import { FlappyBirdControls } from "../../components/FlappyBirdControls";
 import { useAsteroidsGame } from "../hooks/useAsteroidsGame";
 import { useSpaceInvadersGame } from "../hooks/useSpaceInvadersGame";
+import { useFlappyBirdGame } from "../hooks/useFlappyBirdGame";
 
-type GameType = "asteroids" | "space-invaders";
+type GameType = "asteroids" | "space-invaders" | "flappybird";
 
 export default function App() {
   const [selectedGame, setSelectedGame] = useState<GameType | null>(null);
@@ -31,6 +34,12 @@ export default function App() {
           >
             <Text style={styles.menuButtonText}>SPACE INVADERS</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.menuButton, { marginTop: 20 }]}
+            onPress={() => setSelectedGame("flappybird")}
+          >
+            <Text style={styles.menuButtonText}>FLAPPY BIRD</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaProvider>
     );
@@ -48,8 +57,10 @@ export default function App() {
 
         {selectedGame === "asteroids" ? (
           <AsteroidsGameView />
-        ) : (
+        ) : selectedGame === "space-invaders" ? (
           <SpaceInvadersGameView />
+        ) : (
+          <FlappyBirdGameView />
         )}
       </View>
     </SafeAreaProvider>
@@ -119,6 +130,37 @@ function SpaceInvadersGameView() {
         onMoveLeft={(pressed) => handleInput({ moveLeft: pressed })}
         onMoveRight={(pressed) => handleInput({ moveRight: pressed })}
         onShoot={(pressed) => handleInput({ shoot: pressed })}
+      />
+    </>
+  );
+}
+
+function FlappyBirdGameView() {
+  const { game, gameState, handleInput, isPaused, togglePause, highScore } = useFlappyBirdGame();
+  const [started, setStarted] = useState(false);
+
+  if (!game) return null;
+
+  if (!started) {
+    return <StartScreen title="FLAPPY BIRD" highScore={highScore} onStart={() => setStarted(true)}
+      instructions={Platform.OS === "web" ? "Espacio saltar" : "Tocar pantalla para saltar"} />;
+  }
+
+  return (
+    <>
+      <FlappyBirdUI
+        gameState={gameState}
+        onRestart={() => game.restart()}
+        onPause={() => togglePause()}
+        isPaused={isPaused}
+        highScore={highScore}
+      />
+      <CanvasRenderer
+        world={game.getWorld()}
+        onInitialize={(renderer) => game.initializeRenderer(renderer)}
+      />
+      <FlappyBirdControls
+        onFlap={(pressed) => handleInput({ flap: pressed })}
       />
     </>
   );
