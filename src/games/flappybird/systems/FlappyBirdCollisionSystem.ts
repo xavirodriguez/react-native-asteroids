@@ -1,8 +1,9 @@
 import { World } from "../../../engine/core/World";
 import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
-import { Entity } from "../../../engine/types/EngineTypes";
+import { Entity, PositionComponent, ColliderComponent } from "../../../engine/types/EngineTypes";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
 import { getGameState } from "../GameUtils";
+import { FLAPPY_CONFIG } from "../types/FlappyBirdTypes";
 
 /**
  * System that handles collisions between the bird and pipes or ground.
@@ -15,11 +16,37 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
     this.game = game;
   }
 
+  public override update(world: World, deltaTime: number): void {
+    // Run generic circle-to-circle collision (e.g. for pipes)
+    super.update(world, deltaTime);
+
+    // Dedicated ground collision check (Y-axis only)
+    this.checkGroundCollision(world);
+  }
+
+  private checkGroundCollision(world: World): void {
+    const birds = world.query("Bird", "Position", "Collider");
+    const grounds = world.query("Ground", "Position", "Collider");
+
+    if (birds.length === 0 || grounds.length === 0) return;
+
+    const birdPos = world.getComponent<PositionComponent>(birds[0], "Position")!;
+    const birdCol = world.getComponent<ColliderComponent>(birds[0], "Collider")!;
+    const groundPos = world.getComponent<PositionComponent>(grounds[0], "Position")!;
+    const groundCol = world.getComponent<ColliderComponent>(grounds[0], "Collider")!;
+
+    // If bird center Y + radius exceeds ground top edge Y
+    const groundTop = groundPos.y - groundCol.radius;
+    if (birdPos.y + birdCol.radius >= groundTop) {
+      this.triggerGameOver(world);
+    }
+  }
+
   protected onCollision(world: World, entityA: Entity, entityB: Entity): void {
     const pair = { entityA, entityB };
 
-    if (this.handleBirdPipeCollision({ world, pair })) return;
-    this.handleBirdGroundCollision({ world, pair });
+    this.handleBirdPipeCollision({ world, pair });
+    // handleBirdGroundCollision is now handled in checkGroundCollision
   }
 
   private handleBirdPipeCollision(context: {
@@ -28,20 +55,6 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
   }): boolean {
     const { world, pair } = context;
     const match = this.matchPair(world, pair.entityA, pair.entityB, "Bird", "Pipe");
-
-    if (match) {
-      this.triggerGameOver(world);
-      return true;
-    }
-    return false;
-  }
-
-  private handleBirdGroundCollision(context: {
-    world: World;
-    pair: { entityA: Entity; entityB: Entity };
-  }): boolean {
-    const { world, pair } = context;
-    const match = this.matchPair(world, pair.entityA, pair.entityB, "Bird", "Ground");
 
     if (match) {
       this.triggerGameOver(world);
