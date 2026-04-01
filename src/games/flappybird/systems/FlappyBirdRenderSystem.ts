@@ -8,7 +8,7 @@ import { BirdComponent } from "../types/FlappyBirdTypes";
  */
 export class FlappyBirdRenderSystem extends RenderUpdateSystem {
   constructor() {
-    super(8); // Set short trail length for the bird
+    super(8); // Short trail length
   }
 
   public update(world: World, deltaTime: number): void {

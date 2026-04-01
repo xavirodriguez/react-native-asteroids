@@ -35,7 +35,6 @@ export function createBird(options: CreateBirdParams): Entity {
     size: FLAPPY_CONFIG.BIRD_RADIUS,
     color: "#FFD700",
     rotation: 0,
-    trailPositions: [],
   });
   world.addComponent(bird, { type: "Collider", radius: FLAPPY_CONFIG.BIRD_RADIUS - 2 });
   world.addComponent(bird, {
@@ -47,6 +46,13 @@ export function createBird(options: CreateBirdParams): Entity {
     type: "FlappyInput",
     flap: false,
     flapCooldownRemaining: 0,
+  });
+  // Adding HealthComponent as suggested for rendering check
+  world.addComponent(bird, {
+    type: "Health",
+    current: 1,
+    max: 1,
+    invulnerableRemaining: 0,
   });
 
   return bird;
@@ -64,8 +70,6 @@ export function createPipe(options: CreatePipeParams): void {
   // Top Pipe
   const topPipe = world.createEntity();
   const topY = gapY - halfGap;
-  const topHeight = topY;
-
   world.addComponent(topPipe, { type: "Position", x, y: topY / 2 });
   world.addComponent(topPipe, { type: "Velocity", dx: -pipeSpeed, dy: 0 });
   world.addComponent(topPipe, {
@@ -74,10 +78,7 @@ export function createPipe(options: CreatePipeParams): void {
     size: pipeWidth,
     color: "#2ecc71",
     rotation: 0,
-    internalLines: [{ x1: 0, y1: 0, x2: pipeWidth, y2: topHeight }] // Just a placeholder for height
   });
-  // Rectangular collision is usually better, but engine uses circles.
-  // We'll approximate or use multiple circles if needed, but for now single circle.
   world.addComponent(topPipe, { type: "Collider", radius: pipeWidth / 2 });
   world.addComponent(topPipe, { type: "Pipe", gapY, gapSize: FLAPPY_CONFIG.GAP_SIZE, scored: false });
 
@@ -85,7 +86,6 @@ export function createPipe(options: CreatePipeParams): void {
   const bottomPipe = world.createEntity();
   const bottomY = gapY + halfGap;
   const bottomHeight = FLAPPY_CONFIG.SCREEN_HEIGHT - bottomY;
-
   world.addComponent(bottomPipe, { type: "Position", x, y: bottomY + bottomHeight / 2 });
   world.addComponent(bottomPipe, { type: "Velocity", dx: -pipeSpeed, dy: 0 });
   world.addComponent(bottomPipe, {
@@ -96,7 +96,7 @@ export function createPipe(options: CreatePipeParams): void {
     rotation: 0,
   });
   world.addComponent(bottomPipe, { type: "Collider", radius: pipeWidth / 2 });
-  world.addComponent(bottomPipe, { type: "Pipe", gapY, gapSize: FLAPPY_CONFIG.GAP_SIZE, scored: true }); // Mark second part as already scored or just one
+  world.addComponent(bottomPipe, { type: "Pipe", gapY, gapSize: FLAPPY_CONFIG.GAP_SIZE, scored: true });
 }
 
 /**
@@ -105,7 +105,7 @@ export function createPipe(options: CreatePipeParams): void {
 export function createGround(world: World): Entity {
   const ground = world.createEntity();
   world.addComponent(ground, { type: "Position", x: FLAPPY_CONFIG.SCREEN_WIDTH / 2, y: FLAPPY_CONFIG.GROUND_Y });
-  world.addComponent(ground, { type: "Collider", radius: 20 }); // Simplified
+  world.addComponent(ground, { type: "Collider", radius: 20 });
   world.addComponent(ground, { type: "Ground" });
   world.addComponent(ground, {
     type: "Render",

@@ -5,7 +5,7 @@ import { GameStateComponent } from "../types/SpaceInvadersTypes";
 /**
  * Visuals for the player ship.
  */
-export const drawSpaceInvadersPlayer: ShapeDrawer<CanvasRenderingContext2D> = (ctx, render) => {
+export const drawSpaceInvadersPlayer: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
   const { size, color } = render;
   ctx.fillStyle = color;
 
@@ -17,7 +17,7 @@ export const drawSpaceInvadersPlayer: ShapeDrawer<CanvasRenderingContext2D> = (c
 /**
  * Visuals for an invader.
  */
-export const drawSpaceInvadersInvader: ShapeDrawer<CanvasRenderingContext2D> = (ctx, render) => {
+export const drawSpaceInvadersInvader: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
   const { size, color } = render;
   ctx.fillStyle = color;
 
@@ -39,7 +39,7 @@ export const drawSpaceInvadersInvader: ShapeDrawer<CanvasRenderingContext2D> = (
 /**
  * Visuals for bullets.
  */
-export const drawSpaceInvadersBullet: ShapeDrawer<CanvasRenderingContext2D> = (ctx, render) => {
+export const drawSpaceInvadersBullet: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
   const { size, color } = render;
   ctx.fillStyle = color;
   ctx.fillRect(-size / 2, -size, size, size * 2);
@@ -48,7 +48,7 @@ export const drawSpaceInvadersBullet: ShapeDrawer<CanvasRenderingContext2D> = (c
 /**
  * Visuals for shield blocks.
  */
-export const drawSpaceInvadersShield: ShapeDrawer<CanvasRenderingContext2D> = (ctx, render) => {
+export const drawSpaceInvadersShield: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
   const { size, color } = render;
   ctx.fillStyle = color;
   ctx.fillRect(-size / 2, -size / 2, size, size);
@@ -57,7 +57,7 @@ export const drawSpaceInvadersShield: ShapeDrawer<CanvasRenderingContext2D> = (c
 /**
  * Visuals for particles.
  */
-export const drawSpaceInvadersParticle: ShapeDrawer<CanvasRenderingContext2D> = (ctx, render) => {
+export const drawSpaceInvadersParticle: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
   const { size, color } = render;
   ctx.fillStyle = color;
   ctx.beginPath();

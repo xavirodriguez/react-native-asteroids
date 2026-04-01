@@ -1,13 +1,18 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { RenderComponent, PositionComponent } from "../../../engine/types/EngineTypes";
-import { FlappyBirdState, FLAPPY_CONFIG } from "../types/FlappyBirdTypes";
+import { HealthComponent } from "../../../engine/types/EngineTypes";
+import { FLAPPY_CONFIG } from "../types/FlappyBirdTypes";
 import { getGameState } from "../GameUtils";
 
 /**
  * Visuals for the bird.
  */
-export const drawFlappyBird: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, pos, render, world) => {
+export const drawFlappyBird: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
   const { size, color } = render;
+
+  const health = world.getComponent<HealthComponent>(entity, "Health");
+  if (health && health.invulnerableRemaining > 0) {
+    ctx.globalAlpha = (Math.floor(health.invulnerableRemaining / 100) % 2 === 0) ? 0.3 : 1.0;
+  }
 
   // Body
   ctx.fillStyle = color;
@@ -41,19 +46,21 @@ export const drawFlappyBird: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entit
   ctx.beginPath();
   ctx.ellipse(-size * 0.2, size * 0.1, size * 0.5, size * 0.3, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  ctx.globalAlpha = 1.0;
 };
 
 /**
  * Visuals for a pipe segment.
  */
-export const drawFlappyPipe: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, pos, render, world) => {
+export const drawFlappyPipe: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, pos, render, _world) => {
   const { size, color } = render;
   const width = size;
   const halfWidth = width / 2;
 
   // Base pipe
   ctx.fillStyle = color;
-  ctx.fillRect(-halfWidth, -400, width, 800); // Draw long enough
+  ctx.fillRect(-halfWidth, -400, width, 800);
 
   // Border
   ctx.strokeStyle = "#1a5e3b";
@@ -65,7 +72,6 @@ export const drawFlappyPipe: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entit
   const capExtraWidth = 10;
   ctx.fillStyle = color;
 
-  // We need to know if it's top or bottom pipe based on Y position
   if (pos.y < FLAPPY_CONFIG.SCREEN_HEIGHT / 2) {
     // Top pipe - cap at bottom
     ctx.fillRect(-halfWidth - capExtraWidth / 2, 400 - capHeight, width + capExtraWidth, capHeight);
@@ -80,7 +86,7 @@ export const drawFlappyPipe: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entit
 /**
  * Visuals for the ground.
  */
-export const drawFlappyGround: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, pos, render, world) => {
+export const drawFlappyGround: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
   const { size, color } = render;
   const width = size;
   const height = 40;
@@ -96,7 +102,7 @@ export const drawFlappyGround: ShapeDrawer<CanvasRenderingContext2D> = (ctx, ent
 /**
  * Scrolling sky background effect.
  */
-export let bgOffset = 0;
+let bgOffset = 0;
 export const scrollingBackgroundEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world, width, height) => {
   const gameState = getGameState(world);
 

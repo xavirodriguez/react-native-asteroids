@@ -1,12 +1,11 @@
 import { World } from "../../../engine/core/World";
 import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
-import { Entity, ComponentType } from "../../../engine/types/EngineTypes";
-import { FlappyBirdState } from "../types/FlappyBirdTypes";
+import { Entity } from "../../../engine/types/EngineTypes";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
 import { getGameState } from "../GameUtils";
 
 /**
- * System that handles collisions between the bird and pipes or ground in Flappy Bird.
+ * System that handles collisions between the bird and pipes or ground.
  */
 export class FlappyBirdCollisionSystem extends CollisionSystem {
   private game: IFlappyBirdGame;

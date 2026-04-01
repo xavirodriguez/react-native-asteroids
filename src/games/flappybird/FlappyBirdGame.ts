@@ -1,11 +1,21 @@
 import { World } from "../../engine/core/World";
 import { BaseGame } from "../../engine/core/BaseGame";
+import { KeyboardController } from "../../engine/input/KeyboardController";
+import { TouchController } from "../../engine/input/TouchController";
 import { FlappyBirdState, FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE } from "./types/FlappyBirdTypes";
 import { IFlappyBirdGame } from "./types/GameInterfaces";
-import { FlappyBirdGameScene } from "./scenes/FlappyBirdGameScene";
+import { FlappyBirdInputSystem } from "./systems/FlappyBirdInputSystem";
+import { FlappyBirdCollisionSystem } from "./systems/FlappyBirdCollisionSystem";
 import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
+import { FlappyBirdRenderSystem } from "./systems/FlappyBirdRenderSystem";
+import { MovementSystem } from "../../engine/systems/MovementSystem";
 import { Renderer } from "../../engine/rendering/Renderer";
 import { getGameState } from "./GameUtils";
+import {
+  createBird,
+  createGameState,
+  createGround
+} from "./EntityFactory";
 import {
   drawFlappyBird,
   drawFlappyPipe,
@@ -30,29 +40,28 @@ export class FlappyBirdGame
   }
 
   protected registerSystems(): void {
-    // Input setup
     const DEFAULT_INPUT: FlappyBirdInput = { flap: false };
     const FLAPPY_KEYMAP = {
       [FLAPPY_CONFIG.KEYS.FLAP]: "flap" as const,
     };
+
+    this.inputManager.cleanup();
     this.inputManager.addController(new KeyboardController<FlappyBirdInput>(FLAPPY_KEYMAP, DEFAULT_INPUT));
     this.inputManager.addController(new TouchController<FlappyBirdInput>());
 
-    // Shared state system to allow for isGameOver check
     this.gameStateSystem = new FlappyBirdGameStateSystem(this);
 
-    // Initial scene setup
-    const gameScene = new FlappyBirdGameScene(
-      this,
-      this.inputManager,
-      this.gameStateSystem
-    );
-
-    this.sceneManager.transitionTo(gameScene);
+    this.world.addSystem(new FlappyBirdInputSystem(this.inputManager));
+    this.world.addSystem(new MovementSystem());
+    this.world.addSystem(new FlappyBirdCollisionSystem(this));
+    this.world.addSystem(this.gameStateSystem);
+    this.world.addSystem(new FlappyBirdRenderSystem());
   }
 
   protected initializeEntities(): void {
-    // Entities are initialized in gameScene.onEnter()
+    createGameState(this.world);
+    createBird({ world: this.world, x: FLAPPY_CONFIG.BIRD_X, y: FLAPPY_CONFIG.BIRD_START_Y });
+    createGround(this.world);
   }
 
   public initializeRenderer(renderer: Renderer): void {
@@ -74,7 +83,6 @@ export class FlappyBirdGame
 
   protected _onBeforeRestart(): void {
     this.gameStateSystem.resetGameOverState();
-    this.registerSystems();
   }
 }
 

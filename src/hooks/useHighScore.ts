@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { z } from "zod";
 
-const HIGH_SCORE_KEY = "asteroids_high_score";
+const DEFAULT_KEY = "asteroids_high_score";
 
 // Validation schema for high score
 const HighScoreSchema = z.preprocess(
@@ -13,15 +13,16 @@ const HighScoreSchema = z.preprocess(
 /**
  * Hook to manage the persistent high score.
  *
+ * @param key - The storage key to use for the high score.
  * @returns An object containing the current high score and a function to update it.
  */
-export function useHighScore() {
+export function useHighScore(key: string = DEFAULT_KEY) {
   const [highScore, setHighScore] = useState(0);
 
   useEffect(() => {
     const loadHighScore = async () => {
       try {
-        const value = await AsyncStorage.getItem(HIGH_SCORE_KEY);
+        const value = await AsyncStorage.getItem(key);
         const validatedScore = HighScoreSchema.parse(value);
         setHighScore(validatedScore);
       } catch (error) {
@@ -33,13 +34,13 @@ export function useHighScore() {
       }
     };
     loadHighScore();
-  }, []);
+  }, [key]);
 
   const updateHighScore = useCallback(
     async (score: number) => {
       if (score > highScore) {
         try {
-          await AsyncStorage.setItem(HIGH_SCORE_KEY, score.toString());
+          await AsyncStorage.setItem(key, score.toString());
           setHighScore(score);
         } catch (error) {
           if (__DEV__) {
@@ -48,7 +49,7 @@ export function useHighScore() {
         }
       }
     },
-    [highScore]
+    [highScore, key]
   );
 
   return { highScore, updateHighScore };

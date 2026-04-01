@@ -1,14 +1,9 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
+import { PositionComponent } from "../../../engine/types/EngineTypes";
 import {
-  PositionComponent,
-  VelocityComponent
-} from "../../../engine/types/EngineTypes";
-import {
-  FlappyBirdState,
   PipeComponent,
-  FLAPPY_CONFIG,
-  INITIAL_FLAPPY_STATE
+  FLAPPY_CONFIG
 } from "../types/FlappyBirdTypes";
 import { IFlappyBirdGame, IFlappyStateSystem } from "../types/GameInterfaces";
 import { getGameState } from "../GameUtils";
@@ -16,7 +11,7 @@ import { createPipe } from "../EntityFactory";
 import { RandomService } from "../../../engine/utils/RandomService";
 
 /**
- * System that manages game logic for Flappy Bird: scores, spawner, and game over.
+ * System that manages game logic: scores, spawner, and game over condition.
  */
 export class FlappyBirdGameStateSystem extends System implements IFlappyStateSystem {
   private gameOverLogged: boolean = false;
@@ -52,7 +47,7 @@ export class FlappyBirdGameStateSystem extends System implements IFlappyStateSys
       this.pipeSpawnTimer = 0;
     }
 
-    // Remove pipes that are off-screen
+    // Remove pipes that are off-screen and update score
     const pipes = world.query("Pipe", "Position");
     pipes.forEach((entity) => {
       const pos = world.getComponent<PositionComponent>(entity, "Position");
@@ -60,10 +55,7 @@ export class FlappyBirdGameStateSystem extends System implements IFlappyStateSys
       if (pos && pipe) {
         if (pos.x < -FLAPPY_CONFIG.PIPE_WIDTH) {
           world.removeEntity(entity);
-        }
-
-        // Update Score
-        if (!pipe.scored && pos.x < FLAPPY_CONFIG.BIRD_X) {
+        } else if (!pipe.scored && pos.x < FLAPPY_CONFIG.BIRD_X) {
           pipe.scored = true;
           gameState.score++;
           if (gameState.score > gameState.highScore) {
