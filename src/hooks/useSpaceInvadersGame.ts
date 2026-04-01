@@ -12,7 +12,7 @@ export function useSpaceInvadersGame() {
   const { game, gameState, isPaused, handleInput, togglePause } =
     useGame<SpaceInvadersGame, GameStateComponent, InputState>(SpaceInvadersGame, INITIAL_GAME_STATE);
 
-  const { highScore, updateHighScore } = useHighScore();
+  const { highScore, updateHighScore } = useHighScore("space-invaders-high-score");
 
   // Update high score when game is over
   useEffect(() => {
