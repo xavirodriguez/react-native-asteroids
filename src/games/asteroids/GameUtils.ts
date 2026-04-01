@@ -16,5 +16,14 @@ export function getGameState(world: World): GameStateComponent {
   if (gameStateEntity === undefined) {
     return INITIAL_GAME_STATE;
   }
-  return world.getComponent<GameStateComponent>(gameStateEntity, "GameState") ?? INITIAL_GAME_STATE;
+  const gs = world.getComponent<GameStateComponent>(gameStateEntity, "GameState");
+  if (!gs) return INITIAL_GAME_STATE;
+
+  // If the object is frozen (e.g. from a selector), replace it in the world with a mutable copy
+  if (Object.isFrozen(gs)) {
+    const mutableCopy = { ...gs };
+    world.addComponent(gameStateEntity, mutableCopy);
+    return mutableCopy;
+  }
+  return gs;
 }
