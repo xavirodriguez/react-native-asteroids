@@ -140,4 +140,7 @@ export class CanvasRenderer implements Renderer {
     ctx.restore();
   }
 
+  public drawParticles(world: World): void {
+    // Optimized particle batching could go here in the future
+  }
 }

@@ -1,5 +1,5 @@
 import { World } from "../core/World";
-import { Entity, Component } from "../types/EngineTypes";
+import { Entity, Component, PositionComponent, RenderComponent } from "../types/EngineTypes";
 
 /**
  * Interface for custom shape drawing logic.
