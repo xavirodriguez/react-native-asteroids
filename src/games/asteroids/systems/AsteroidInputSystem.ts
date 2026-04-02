@@ -116,7 +116,6 @@ export class AsteroidInputSystem extends System {
 
     this.applyRotation({ render, input, dt });
     this.applyThrust({ world, pos, vel, render, input, dt });
-    this.applyFriction(vel, deltaTime);
   }
 
   private applyRotation(context: {
@@ -162,11 +161,6 @@ export class AsteroidInputSystem extends System {
     }
   }
 
-  private applyFriction(vel: VelocityComponent, deltaTime: number): void {
-    const frictionFactor = Math.pow(GAME_CONFIG.SHIP_FRICTION, deltaTime / (1000 / 60));
-    vel.dx *= frictionFactor;
-    vel.dy *= frictionFactor;
-  }
 
   private handleShipShooting(context: {
     world: World;

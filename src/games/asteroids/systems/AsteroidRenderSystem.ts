@@ -21,7 +21,6 @@ export class AsteroidRenderSystem extends RenderUpdateSystem {
   public override update(world: World, deltaTime: number): void {
     super.update(world, deltaTime);
     this.updateShipTrails(world);
-    this.updateScreenShake(world);
   }
 
   private updateShipTrails(world: World): void {
@@ -44,16 +43,4 @@ export class AsteroidRenderSystem extends RenderUpdateSystem {
     });
   }
 
-  private updateScreenShake(world: World): void {
-    const gameStateEntity = world.query("GameState")[0];
-    if (!gameStateEntity) return;
-
-    const gameState = world.getComponent<GameStateComponent>(gameStateEntity, "GameState");
-    if (gameState?.screenShake && gameState.screenShake.duration > 0) {
-      gameState.screenShake.duration--;
-      if (gameState.screenShake.duration <= 0) {
-        gameState.screenShake = null;
-      }
-    }
-  }
 }

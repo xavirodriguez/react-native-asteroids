@@ -1,5 +1,6 @@
 import { BaseGame } from "../../engine/core/BaseGame";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
+import { BoundarySystem } from "../../engine/systems/BoundarySystem";
 import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
@@ -34,7 +35,8 @@ export class PongGame extends BaseGame<PongState, PongInput> {
 
     this.stateSystem = new PongGameStateSystem();
     this.world.addSystem(new PongCollisionSystem());
-    this.world.addSystem(new MovementSystem(PONG_CONFIG.WIDTH, PONG_CONFIG.HEIGHT));
+    this.world.addSystem(new MovementSystem());
+    this.world.addSystem(new BoundarySystem());
     this.world.addSystem(this.stateSystem);
   }
 

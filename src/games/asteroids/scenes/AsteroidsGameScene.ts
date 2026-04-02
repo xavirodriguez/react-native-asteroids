@@ -1,7 +1,9 @@
 import { Scene } from "../../../engine/scenes/Scene";
 import { World } from "../../../engine/core/World";
 import { MovementSystem } from "../../../engine/systems/MovementSystem";
-import { WrapSystem } from "../../../engine/systems/WrapSystem";
+import { BoundarySystem } from "../../../engine/systems/BoundarySystem";
+import { FrictionSystem } from "../../../engine/systems/FrictionSystem";
+import { ScreenShakeSystem } from "../../../engine/systems/ScreenShakeSystem";
 import { TTLSystem } from "../../../engine/systems/TTLSystem";
 import { AsteroidCollisionSystem } from "../systems/AsteroidCollisionSystem";
 import { AsteroidInputSystem } from "../systems/AsteroidInputSystem";
@@ -63,11 +65,13 @@ export class AsteroidsGameScene extends Scene {
 
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());
-    this.world.addSystem(new WrapSystem(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT));
+    this.world.addSystem(new BoundarySystem());
+    this.world.addSystem(new FrictionSystem());
     this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new UfoSystem());
+    this.world.addSystem(new ScreenShakeSystem());
     this.world.addSystem(new AsteroidRenderSystem());
 
     this.initializeEntities();

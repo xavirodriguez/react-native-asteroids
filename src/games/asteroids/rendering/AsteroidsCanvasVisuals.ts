@@ -1,6 +1,7 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { PositionComponent, HealthComponent, TTLComponent } from "../../../engine/types/EngineTypes";
-import { InputComponent, GameStateComponent, ShipComponent, RenderComponent } from "../../../types/GameTypes";
+import { PositionComponent, RenderComponent, TTLComponent, ScreenShakeComponent, HealthComponent } from "../../../engine/types/EngineTypes";
+import { InputComponent, GameStateComponent, ShipComponent, UfoComponent, AsteroidComponent } from "../types/AsteroidTypes";
+import { World } from "../../../engine/core/World";
 
 export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
   const size = render.size;
@@ -12,13 +13,12 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
   }
 
   // Ship Trail (Requirement 2)
-  const ship = world.getComponent<ShipComponent>(entity, "Ship");
-  if (ship && ship.trailPositions && ship.trailPositions.length > 0) {
+  if (render && render.trailPositions && render.trailPositions.length > 0) {
     ctx.save();
     // We need to draw in global coordinates. Since drawEntity already translated/rotated, we reset.
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ship.trailPositions.forEach((p, i) => {
-        const alpha = (i / ship.trailPositions!.length) * 0.4;
+    render.trailPositions.forEach((p, i) => {
+        const alpha = (i / render.trailPositions!.length) * 0.4;
         ctx.globalAlpha = alpha;
         ctx.fillStyle = "#00ffff"; // Cyan
         ctx.beginPath();
@@ -86,8 +86,7 @@ export const drawAsteroidsUfo: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _en
 };
 
 export const asteroidsStarfieldEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world) => {
-  const gameStateEntity = world.query("GameState")[0];
-  const gameState = gameStateEntity ? world.getComponent<GameStateComponent>(gameStateEntity, "GameState") : null;
+  const gameState = world.getSingleton<GameStateComponent>("GameState");
 
   if (gameState?.stars) {
     // Requirement 3: Draw all stars static with globalAlpha = brightness
@@ -120,12 +119,11 @@ export const asteroidsCRTEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, 
 };
 
 export const asteroidsScreenShakeEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world) => {
-    const gameStateEntity = world.query("GameState")[0];
-    const gameState = gameStateEntity ? world.getComponent<GameStateComponent>(gameStateEntity, "GameState") : null;
+    const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
 
-    if (gameState?.screenShake && gameState.screenShake.duration > 0) {
-      const shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
-      const shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
+    if (shake?.config && shake.config.duration > 0) {
+      const shakeX = (Math.random() - 0.5) * shake.config.intensity;
+      const shakeY = (Math.random() - 0.5) * shake.config.intensity;
       ctx.translate(shakeX, shakeY);
     }
 };
@@ -161,4 +159,32 @@ export const drawAsteroidsParticle: ShapeDrawer<CanvasRenderingContext2D> = (ctx
   ctx.beginPath();
   ctx.arc(0, 0, size, 0, Math.PI * 2);
   ctx.fill();
+};
+
+export const drawAsteroidsAsteroid: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render) => {
+  const { color, vertices, hitFlashFrames } = render;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+
+  // Improvement 9: Hit flash effect
+  if (hitFlashFrames && hitFlashFrames > 0) {
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 3;
+  }
+
+  if (vertices && vertices.length > 0) {
+    ctx.beginPath();
+    ctx.moveTo(vertices[0].x, vertices[0].y);
+    for (let i = 1; i < vertices.length; i++) {
+      ctx.lineTo(vertices[i].x, vertices[i].y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  } else {
+    // Fallback if no vertices (shouldn't happen with factory)
+    ctx.beginPath();
+    ctx.arc(0, 0, render.size, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 };

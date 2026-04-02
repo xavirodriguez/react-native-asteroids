@@ -67,3 +67,27 @@ export interface ReclaimableComponent extends Component {
   type: "Reclaimable";
   onReclaim: (world: any, entity: any) => void;
 }
+
+export type BoundaryMode = "wrap" | "bounce" | "destroy";
+
+export interface BoundaryComponent extends Component {
+  type: "Boundary";
+  width: number;
+  height: number;
+  mode: BoundaryMode;
+}
+
+export interface FrictionComponent extends Component {
+  type: "Friction";
+  value: number; // 0 to 1, where 1 is no friction and 0 is instant stop
+}
+
+export interface ScreenShake {
+  intensity: number;
+  duration: number;
+}
+
+export interface ScreenShakeComponent extends Component {
+  type: "ScreenShake";
+  config: ScreenShake | null;
+}

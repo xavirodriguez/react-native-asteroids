@@ -12,18 +12,5 @@ import { type GameStateComponent, INITIAL_GAME_STATE } from "../../types/GameTyp
  * @returns The current {@link GameStateComponent} or {@link INITIAL_GAME_STATE} if not found.
  */
 export function getGameState(world: World): GameStateComponent {
-  const [gameStateEntity] = world.query("GameState");
-  if (gameStateEntity === undefined) {
-    return INITIAL_GAME_STATE;
-  }
-  const gs = world.getComponent<GameStateComponent>(gameStateEntity, "GameState");
-  if (!gs) return INITIAL_GAME_STATE;
-
-  // If the object is frozen (e.g. from a selector), replace it in the world with a mutable copy
-  if (Object.isFrozen(gs)) {
-    const mutableCopy = { ...gs };
-    world.addComponent(gameStateEntity, mutableCopy);
-    return mutableCopy;
-  }
-  return gs;
+  return world.getSingleton<GameStateComponent>("GameState") ?? INITIAL_GAME_STATE;
 }
