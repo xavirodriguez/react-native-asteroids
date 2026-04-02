@@ -16,9 +16,15 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
     this.game = game;
   }
 
-  public override update(world: World, deltaTime: number): void {
-    // Run generic circle-to-circle collision (e.g. for pipes)
-    super.update(world, deltaTime);
+  public override update(world: World, _deltaTime: number): void {
+    const birds = world.query("Bird", "Position", "Collider");
+    const pipes = world.query("Pipe", "Position");
+
+    for (const bird of birds) {
+      for (const pipe of pipes) {
+        this.handleBirdPipeCollision({ world, pair: { entityA: bird, entityB: pipe } });
+      }
+    }
 
     // Dedicated ground collision check (Y-axis only)
     this.checkGroundCollision(world);
@@ -57,8 +63,48 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
     const match = this.matchPair(world, pair.entityA, pair.entityB, "Bird", "Pipe");
 
     if (match) {
-      this.triggerGameOver(world);
-      return true;
+      const bird = match.Bird;
+      const pipe = match.Pipe;
+
+      const birdPos = world.getComponent<PositionComponent>(bird, "Position")!;
+      const birdCol = world.getComponent<ColliderComponent>(bird, "Collider")!;
+      const pipePos = world.getComponent<PositionComponent>(pipe, "Position")!;
+      const pipeComp = world.getComponent(pipe, "Pipe") as any;
+
+      const halfGap = pipeComp.gapSize / 2;
+      const pipeWidth = FLAPPY_CONFIG.PIPE_WIDTH;
+      const isTopPipe = pipePos.y < pipeComp.gapY;
+
+      // Bird AABB (approximate)
+      const birdLeft = birdPos.x - birdCol.radius;
+      const birdRight = birdPos.x + birdCol.radius;
+      const birdTop = birdPos.y - birdCol.radius;
+      const birdBottom = birdPos.y + birdCol.radius;
+
+      // Pipe AABB
+      const pipeLeft = pipePos.x - pipeWidth / 2;
+      const pipeRight = pipePos.x + pipeWidth / 2;
+      let pipeTop: number;
+      let pipeBottom: number;
+
+      if (isTopPipe) {
+        pipeTop = 0;
+        pipeBottom = pipeComp.gapY - halfGap;
+      } else {
+        pipeTop = pipeComp.gapY + halfGap;
+        pipeBottom = FLAPPY_CONFIG.SCREEN_HEIGHT;
+      }
+
+      // AABB Collision check
+      if (
+        birdRight > pipeLeft &&
+        birdLeft < pipeRight &&
+        birdBottom > pipeTop &&
+        birdTop < pipeBottom
+      ) {
+        this.triggerGameOver(world);
+        return true;
+      }
     }
     return false;
   }
