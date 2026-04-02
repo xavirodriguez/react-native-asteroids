@@ -16,6 +16,7 @@ import {
 import { getGameState } from "../GameUtils";
 import { ParticlePool } from "../EntityPool";
 import { createParticle } from "../EntityFactory";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 /**
  * System that handles all game collisions.
@@ -99,7 +100,7 @@ export class SpaceInvadersCollisionSystem extends System {
         if (render) render.hitFlashFrames = 10;
 
         gameState.lives = health.current;
-        gameState.screenShake = { intensity: 10, duration: 20 };
+        gameState.screenShake = { intensity: 10, duration: 300 };
 
         if (health.current <= 0) {
           gameState.isGameOver = true;
@@ -166,8 +167,8 @@ export class SpaceInvadersCollisionSystem extends System {
 
   private createExplosion(world: World, x: number, y: number, color: string): void {
     for (let i = 0; i < GAME_CONFIG.PARTICLE_COUNT; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 100 + 50;
+      const angle = RandomService.next() * Math.PI * 2;
+      const speed = RandomService.next() * 100 + 50;
       createParticle(
         world,
         x,

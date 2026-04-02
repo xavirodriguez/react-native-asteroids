@@ -16,7 +16,7 @@ export class SpaceInvadersGameStateSystem extends System {
     this.game = game;
   }
 
-  public update(world: World, _deltaTime: number): void {
+  public update(world: World, deltaTime: number): void {
     const gameState = getGameState(world);
 
     if (gameState.isGameOver) {
@@ -35,7 +35,7 @@ export class SpaceInvadersGameStateSystem extends System {
 
     // 3. Update screen shake duration
     if (gameState.screenShake) {
-      gameState.screenShake.duration -= 1;
+      gameState.screenShake.duration -= deltaTime;
       if (gameState.screenShake.duration <= 0) {
         gameState.screenShake = null;
       }
