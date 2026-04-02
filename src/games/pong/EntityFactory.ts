@@ -9,12 +9,6 @@ export const PongEntityFactory = {
     world.addComponent(ball, { type: "Velocity", dx: PONG_CONFIG.BALL_SPEED, dy: PONG_CONFIG.BALL_SPEED } as VelocityComponent);
     world.addComponent(ball, { type: "Render", shape: "circle", size: PONG_CONFIG.BALL_SIZE, color: "white", rotation: 0 } as RenderComponent);
     world.addComponent(ball, { type: "Collider", radius: PONG_CONFIG.BALL_SIZE / 2 } as ColliderComponent);
-    world.addComponent(ball, {
-      type: "Boundary",
-      width: PONG_CONFIG.WIDTH,
-      height: PONG_CONFIG.HEIGHT,
-      mode: "bounce",
-    });
     return ball;
   },
 
