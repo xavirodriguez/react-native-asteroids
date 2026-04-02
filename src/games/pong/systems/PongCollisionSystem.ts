@@ -1,11 +1,22 @@
 import { World } from "../../../engine/core/World";
-import { System } from "../../../engine/core/System";
-import { PositionComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
+import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
+import { Entity, PositionComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
 import { PONG_CONFIG } from "../types";
 
-export class PongCollisionSystem extends System {
+export class PongCollisionSystem extends CollisionSystem {
+  protected onCollision(world: World, entityA: Entity, entityB: Entity): void {
+    const paddleBall = this.matchPair(world, entityA, entityB, "Paddle", "Ball");
+    if (paddleBall) {
+        // Logic for bouncing on paddles should go here (omitted for brevity)
+    }
+  }
+
   update(world: World, deltaTime: number): void {
-    void deltaTime;
+    super.update(world, deltaTime);
+    this.handleWallBounce(world);
+  }
+
+  private handleWallBounce(world: World): void {
     const balls = world.query("Position", "Velocity", "Collider", "Render").filter(e => {
         const render = world.getComponent<any>(e, "Render");
         return render.shape === "circle";
@@ -19,8 +30,6 @@ export class PongCollisionSystem extends System {
       if (pos.y < 0 || pos.y > PONG_CONFIG.HEIGHT) {
         vel.dy *= -1;
       }
-
-      // Logic for bouncing on paddles should go here (omitted for brevity)
     });
   }
 }

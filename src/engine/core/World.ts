@@ -183,6 +183,29 @@ export class World {
     return Array.from(this.entities);
   }
 
+  /**
+   * Retrieves a singleton component from the world.
+   * If the component is frozen, it replaces it with a mutable copy.
+   *
+   * @param type - The component type to retrieve.
+   * @returns The component if found, otherwise `undefined`.
+   */
+  getSingleton<T extends Component>(type: string): T | undefined {
+    const [entity] = this.query(type);
+    if (entity === undefined) return undefined;
+
+    const component = this.getComponent<T>(entity, type);
+    if (!component) return undefined;
+
+    if (Object.isFrozen(component)) {
+      const mutableCopy = { ...component };
+      this.addComponent(entity, mutableCopy);
+      return mutableCopy;
+    }
+
+    return component;
+  }
+
   private filterByComponents(entities: Set<Entity>, types: string[]): Entity[] {
     return Array.from(entities).filter((entity) =>
       types.every((type) => this.componentIndex.get(type)?.has(entity)),

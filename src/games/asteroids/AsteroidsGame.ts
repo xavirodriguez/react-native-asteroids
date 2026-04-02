@@ -7,7 +7,9 @@ import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { UfoSystem } from "./systems/UfoSystem";
 import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { WrapSystem } from "../../engine/systems/WrapSystem";
+import { BoundarySystem } from "../../engine/systems/BoundarySystem";
+import { FrictionSystem } from "../../engine/systems/FrictionSystem";
+import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
 import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory";
@@ -18,7 +20,7 @@ import { getGameState } from "./GameUtils";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "../../engine/rendering/Renderer";
-import { drawAsteroidsShip, drawAsteroidsUfo, asteroidsStarfieldEffect, asteroidsCRTEffect, asteroidsScreenShakeEffect, drawAsteroidsBullet, drawAsteroidsParticle } from "./rendering/AsteroidsCanvasVisuals";
+import { drawAsteroidsShip, drawAsteroidsUfo, asteroidsStarfieldEffect, asteroidsCRTEffect, asteroidsScreenShakeEffect, drawAsteroidsBullet, drawAsteroidsParticle, drawAsteroidsAsteroid } from "./rendering/AsteroidsCanvasVisuals";
 import { Platform } from "react-native";
 
 /**
@@ -65,13 +67,15 @@ export class AsteroidsGame
 
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());
-    this.world.addSystem(new WrapSystem(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT));
+    this.world.addSystem(new BoundarySystem());
+    this.world.addSystem(new FrictionSystem());
     this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new UfoSystem());
+    this.world.addSystem(new ScreenShakeSystem());
     this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
-    this.world.addSystem(new AsteroidRenderSystem()); // Handle trails/shake duration
+    this.world.addSystem(new AsteroidRenderSystem()); // Handle trails
   }
 
   protected initializeEntities(): void {}
@@ -85,6 +89,7 @@ export class AsteroidsGame
       renderer.registerShape("ufo", drawAsteroidsUfo);
       renderer.registerShape("bullet_shape", drawAsteroidsBullet);
       renderer.registerShape("particle", drawAsteroidsParticle);
+      renderer.registerShape("polygon", drawAsteroidsAsteroid);
       renderer.registerBackgroundEffect("starfield", asteroidsStarfieldEffect);
       renderer.registerBackgroundEffect("screenshake", asteroidsScreenShakeEffect);
       renderer.registerForegroundEffect("crt", asteroidsCRTEffect);

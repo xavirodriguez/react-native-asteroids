@@ -1,9 +1,9 @@
 import { World } from "../../core/World";
 import { MovementSystem } from "../MovementSystem";
-import { WrapSystem } from "../WrapSystem";
-import { PositionComponent, VelocityComponent } from "../../types/EngineTypes";
+import { BoundarySystem } from "../BoundarySystem";
+import { PositionComponent, VelocityComponent, BoundaryComponent } from "../../types/EngineTypes";
 
-describe("Movement & Wrap Systems", () => {
+describe("Movement & Boundary Systems", () => {
   let world: World;
 
   beforeEach(() => {
@@ -26,33 +26,35 @@ describe("Movement & Wrap Systems", () => {
     expect(pos.y).toBe(150);
   });
 
-  it("should wrap entity position when it goes out of bounds", () => {
+  it("should wrap entity position when it goes out of bounds in wrap mode", () => {
     const screenWidth = 800;
     const screenHeight = 600;
-    const wrapSystem = new WrapSystem(screenWidth, screenHeight);
+    const boundarySystem = new BoundarySystem();
     const entity = world.createEntity();
 
     // Out of bounds to the right
     const pos: PositionComponent = { type: "Position", x: 810, y: 100 };
+    const boundary: BoundaryComponent = { type: "Boundary", width: screenWidth, height: screenHeight, mode: "wrap" };
 
     world.addComponent(entity, pos);
+    world.addComponent(entity, boundary);
 
-    wrapSystem.update(world, 16);
+    boundarySystem.update(world, 16);
     expect(pos.x).toBe(0);
 
     // Out of bounds to the left
     pos.x = -10;
-    wrapSystem.update(world, 16);
+    boundarySystem.update(world, 16);
     expect(pos.x).toBe(screenWidth);
 
     // Out of bounds to the bottom
     pos.y = 610;
-    wrapSystem.update(world, 16);
+    boundarySystem.update(world, 16);
     expect(pos.y).toBe(0);
 
     // Out of bounds to the top
     pos.y = -10;
-    wrapSystem.update(world, 16);
+    boundarySystem.update(world, 16);
     expect(pos.y).toBe(screenHeight);
   });
 });

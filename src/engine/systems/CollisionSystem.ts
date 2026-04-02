@@ -1,6 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { PositionComponent, ColliderComponent, Entity } from "../types/EngineTypes";
+import { PositionComponent, ColliderComponent, Entity, ReclaimableComponent } from "../types/EngineTypes";
 
 class BoundData {
   id: Entity = 0;
@@ -109,4 +109,36 @@ export abstract class CollisionSystem extends System {
    * Concrete games implement this to handle specific logic.
    */
   protected abstract onCollision(world: World, entityA: Entity, entityB: Entity): void;
+
+  /**
+   * Identifies if a pair of entities matches two specified component types.
+   * Returns an object mapping the types to their respective entities if they match,
+   * otherwise returns undefined.
+   */
+  protected matchPair<T1 extends string, T2 extends string>(
+    world: World,
+    entityA: Entity,
+    entityB: Entity,
+    type1: T1,
+    type2: T2
+  ): Record<T1 | T2, Entity> | undefined {
+    if (world.hasComponent(entityA, type1) && world.hasComponent(entityB, type2)) {
+      return { [type1]: entityA, [type2]: entityB } as Record<T1 | T2, Entity>;
+    }
+    if (world.hasComponent(entityB, type1) && world.hasComponent(entityA, type2)) {
+      return { [type1]: entityB, [type2]: entityA } as Record<T1 | T2, Entity>;
+    }
+    return undefined;
+  }
+
+  /**
+   * Destroys an entity, notifying its pool if it possesses a ReclaimableComponent.
+   */
+  protected destroyEntity(world: World, entity: Entity): void {
+    const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
+    if (reclaimable) {
+      reclaimable.onReclaim(world, entity);
+    }
+    world.removeEntity(entity);
+  }
 }
