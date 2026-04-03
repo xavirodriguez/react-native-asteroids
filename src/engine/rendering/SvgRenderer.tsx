@@ -342,8 +342,8 @@ const ParticleRenderer: React.FC<{
 
   // Dynamic color transition (White -> Orange -> Red)
   const variation = (seed * 13) % 20 - 10;
-  let hue = 20 + variation;
-  let lightness = 50 + (1 - alpha) * 50;
+  const hue = 20 + variation;
+  const lightness = 50 + (1 - alpha) * 50;
 
   const fill = `hsl(${hue}, 100%, ${lightness}%)`;
   const currentSize = size * (0.2 + 0.8 * alpha);
