@@ -1,6 +1,6 @@
 import { World } from "../../engine/core/World";
 import { PONG_CONFIG } from "./types";
-import { PositionComponent, VelocityComponent, RenderComponent, ColliderComponent } from "../../engine/types/EngineTypes";
+import { PositionComponent, VelocityComponent, RenderComponent, ColliderComponent, BoundaryComponent } from "../../engine/types/EngineTypes";
 
 export const PongEntityFactory = {
   createBall(world: World) {
@@ -9,6 +9,7 @@ export const PongEntityFactory = {
     world.addComponent(ball, { type: "Velocity", dx: PONG_CONFIG.BALL_SPEED, dy: PONG_CONFIG.BALL_SPEED } as VelocityComponent);
     world.addComponent(ball, { type: "Render", shape: "circle", size: PONG_CONFIG.BALL_SIZE, color: "white", rotation: 0 } as RenderComponent);
     world.addComponent(ball, { type: "Collider", radius: PONG_CONFIG.BALL_SIZE / 2 } as ColliderComponent);
+    world.addComponent(ball, { type: "Boundary", width: PONG_CONFIG.WIDTH, height: PONG_CONFIG.HEIGHT, mode: "bounce", bounceX: false, bounceY: true } as BoundaryComponent);
     return ball;
   },
 

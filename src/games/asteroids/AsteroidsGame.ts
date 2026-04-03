@@ -16,11 +16,10 @@ import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory"
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
-import { getGameState } from "./GameUtils";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "../../engine/rendering/Renderer";
-import { drawAsteroidsShip, drawAsteroidsUfo, asteroidsStarfieldEffect, asteroidsCRTEffect, asteroidsScreenShakeEffect, drawAsteroidsBullet, drawAsteroidsParticle, drawAsteroidsAsteroid } from "./rendering/AsteroidsCanvasVisuals";
+import { drawAsteroidsShip, drawAsteroidsUfo, asteroidsStarfieldEffect, asteroidsCRTEffect, drawAsteroidsBullet, drawAsteroidsParticle, drawAsteroidsAsteroid } from "./rendering/AsteroidsCanvasVisuals";
 import { Platform } from "react-native";
 
 /**
@@ -91,7 +90,6 @@ export class AsteroidsGame
       renderer.registerShape("particle", drawAsteroidsParticle);
       renderer.registerShape("polygon", drawAsteroidsAsteroid);
       renderer.registerBackgroundEffect("starfield", asteroidsStarfieldEffect);
-      renderer.registerBackgroundEffect("screenshake", asteroidsScreenShakeEffect);
       renderer.registerForegroundEffect("crt", asteroidsCRTEffect);
     } else if (renderer.type === "skia" && Platform.OS !== "web") {
       try {
@@ -113,7 +111,7 @@ export class AsteroidsGame
   }
 
   public getGameState(): GameStateComponent {
-    return getGameState(this.getWorld());
+    return this.getWorld().getSingleton<GameStateComponent>("GameState") ?? INITIAL_GAME_STATE;
   }
 
   public isGameOver(): boolean {

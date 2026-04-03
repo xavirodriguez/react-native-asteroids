@@ -1,6 +1,6 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
-import { Entity, PositionComponent, RenderComponent } from "../types/EngineTypes";
+import { Entity, PositionComponent, RenderComponent, ScreenShakeComponent } from "../types/EngineTypes";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -101,7 +101,16 @@ export class CanvasRenderer implements Renderer {
 
     ctx.save(); // Global save for potential transform effects
 
-    // Background Effects (e.g., Starfield, Screen Shake)
+    // Apply Screen Shake if present (promoted from Asteroids to Engine)
+    const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
+    if (shake?.config && shake.config.duration > 0) {
+      const { intensity } = shake.config;
+      const shakeX = (Math.random() - 0.5) * intensity;
+      const shakeY = (Math.random() - 0.5) * intensity;
+      ctx.translate(shakeX, shakeY);
+    }
+
+    // Background Effects (e.g., Starfield)
     this.backgroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
 
     // Render Entities
