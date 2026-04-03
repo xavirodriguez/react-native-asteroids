@@ -8,7 +8,7 @@ import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
  */
 export function createPlayer(world: World, x: number, y: number): Entity {
   const player = world.createEntity();
-  world.addComponent(player, { type: "Position", x, y });
+  world.addComponent(player, { type: "Transform", x, y });
   world.addComponent(player, { type: "Velocity", dx: 0, dy: 0 });
   world.addComponent(player, {
     type: "Render",
@@ -40,7 +40,7 @@ export function createPlayer(world: World, x: number, y: number): Entity {
  */
 export function createInvader(world: World, x: number, y: number, row: number, col: number): Entity {
   const invader = world.createEntity();
-  world.addComponent(invader, { type: "Position", x, y });
+  world.addComponent(invader, { type: "Transform", x, y });
   world.addComponent(invader, { type: "Velocity", dx: 0, dy: 0 });
 
   // Points based on row (classic: top rows more points)
@@ -95,7 +95,7 @@ export function createEnemyBullet(world: World, x: number, y: number, pool: Enem
  */
 export function createShieldSegment(world: World, x: number, y: number, row: number, col: number): Entity {
   const segment = world.createEntity();
-  world.addComponent(segment, { type: "Position", x, y });
+  world.addComponent(segment, { type: "Transform", x, y });
   world.addComponent(segment, {
     type: "Render",
     shape: "shield_block",

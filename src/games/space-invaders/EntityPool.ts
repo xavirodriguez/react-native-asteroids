@@ -2,7 +2,7 @@ import { EntityPool } from "../../engine/utils/EntityPool";
 import { World } from "../../engine/core/World";
 import {
   Entity,
-  PositionComponent,
+  TransformComponent,
   VelocityComponent,
   RenderComponent,
   ColliderComponent,
@@ -12,7 +12,7 @@ import {
 } from "../../engine/types/EngineTypes";
 
 interface BulletComponents {
-  position: PositionComponent;
+  position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
   collider: ColliderComponent;
@@ -30,7 +30,7 @@ export class PlayerBulletPool {
   constructor() {
     this.pool = new EntityPool<BulletComponents>(
       () => ({
-        position: { type: "Position", x: 0, y: 0 },
+        position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "player_bullet", size: 0, color: "", rotation: 0 },
         collider: { type: "Collider", radius: 0 },
@@ -73,7 +73,7 @@ export class EnemyBulletPool {
   constructor() {
     this.pool = new EntityPool<BulletComponents>(
       () => ({
-        position: { type: "Position", x: 0, y: 0 },
+        position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "enemy_bullet", size: 0, color: "", rotation: 0 },
         collider: { type: "Collider", radius: 0 },
@@ -108,7 +108,7 @@ export class EnemyBulletPool {
 }
 
 interface ParticleComponents {
-  position: PositionComponent;
+  position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
   ttl: TTLComponent;
@@ -124,7 +124,7 @@ export class ParticlePool {
   constructor() {
     this.pool = new EntityPool<ParticleComponents>(
       () => ({
-        position: { type: "Position", x: 0, y: 0 },
+        position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0 },
         ttl: { type: "TTL", remaining: 0, total: 0 },

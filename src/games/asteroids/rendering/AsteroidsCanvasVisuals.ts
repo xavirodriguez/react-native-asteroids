@@ -1,5 +1,5 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { PositionComponent, RenderComponent, TTLComponent, ScreenShakeComponent, HealthComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent, RenderComponent, TTLComponent, ScreenShakeComponent, HealthComponent } from "../../../engine/types/EngineTypes";
 import { InputComponent, GameStateComponent, ShipComponent, UfoComponent, AsteroidComponent } from "../types/AsteroidTypes";
 import { World } from "../../../engine/core/World";
 

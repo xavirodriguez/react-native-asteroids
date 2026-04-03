@@ -1,6 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { PositionComponent, VelocityComponent } from "../types/EngineTypes";
+import { TransformComponent, VelocityComponent } from "../types/EngineTypes";
 
 /**
  * Generic system responsible for updating entity positions based on their velocity.
@@ -8,10 +8,10 @@ import { PositionComponent, VelocityComponent } from "../types/EngineTypes";
  */
 export class MovementSystem extends System {
   public update(world: World, deltaTime: number): void {
-    const entities = world.query("Position", "Velocity");
+    const entities = world.query("Transform", "Velocity");
 
     entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
 
       if (pos && vel) {

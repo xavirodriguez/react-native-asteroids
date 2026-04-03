@@ -1,5 +1,5 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { PositionComponent, HealthComponent, TTLComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent, HealthComponent, TTLComponent } from "../../../engine/types/EngineTypes";
 import { Platform } from "react-native";
 
 // Lazy initialize paint to avoid issues in environments where Skia is not fully ready at module load time
@@ -127,9 +127,9 @@ export const skiaStarfieldEffect: EffectDrawer<any> = (canvas, world, width, hei
         const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
 
         if (gameState?.stars) {
-            const shipEntity = world.query("Ship", "Position")[0];
+            const shipEntity = world.query("Ship", "Transform")[0];
             const shipPos = shipEntity
-              ? world.getComponent<PositionComponent>(shipEntity, "Position")
+              ? world.getComponent<TransformComponent>(shipEntity, "Transform")
               : { x: width / 2, y: height / 2 };
 
             if (!shipPos) return;

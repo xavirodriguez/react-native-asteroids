@@ -27,7 +27,7 @@ export function createBird(options: CreateBirdParams): Entity {
   const { world, x, y } = options;
   const bird = world.createEntity();
 
-  world.addComponent(bird, { type: "Position", x, y });
+  world.addComponent(bird, { type: "Transform", x, y });
   world.addComponent(bird, { type: "Velocity", dx: 0, dy: 0 });
   world.addComponent(bird, {
     type: "Render",
@@ -70,7 +70,7 @@ export function createPipe(options: CreatePipeParams): void {
   // Top Pipe
   const topPipe = world.createEntity();
   const topY = gapY - halfGap;
-  world.addComponent(topPipe, { type: "Position", x, y: topY / 2 });
+  world.addComponent(topPipe, { type: "Transform", x, y: topY / 2 });
   world.addComponent(topPipe, { type: "Velocity", dx: -pipeSpeed, dy: 0 });
   world.addComponent(topPipe, {
     type: "Render",
@@ -86,7 +86,7 @@ export function createPipe(options: CreatePipeParams): void {
   const bottomPipe = world.createEntity();
   const bottomY = gapY + halfGap;
   const bottomHeight = FLAPPY_CONFIG.SCREEN_HEIGHT - bottomY;
-  world.addComponent(bottomPipe, { type: "Position", x, y: bottomY + bottomHeight / 2 });
+  world.addComponent(bottomPipe, { type: "Transform", x, y: bottomY + bottomHeight / 2 });
   world.addComponent(bottomPipe, { type: "Velocity", dx: -pipeSpeed, dy: 0 });
   world.addComponent(bottomPipe, {
     type: "Render",
@@ -104,7 +104,7 @@ export function createPipe(options: CreatePipeParams): void {
  */
 export function createGround(world: World): Entity {
   const ground = world.createEntity();
-  world.addComponent(ground, { type: "Position", x: FLAPPY_CONFIG.SCREEN_WIDTH / 2, y: FLAPPY_CONFIG.GROUND_Y });
+  world.addComponent(ground, { type: "Transform", x: FLAPPY_CONFIG.SCREEN_WIDTH / 2, y: FLAPPY_CONFIG.GROUND_Y });
   world.addComponent(ground, { type: "Collider", radius: 20 });
   world.addComponent(ground, { type: "Ground" });
   world.addComponent(ground, {

@@ -28,14 +28,14 @@ describe("FlappyBirdGameStateSystem", () => {
     // BIRD_X is 100.
     const state = createGameState(world);
     const pipe = world.createEntity();
-    world.addComponent(pipe, { type: "Position", x: 150, y: 300 });
+    world.addComponent(pipe, { type: "Transform", x: 150, y: 300 });
     world.addComponent(pipe, { type: "Pipe", gapY: 300, gapSize: 140, scored: false });
 
     system.update(world, 16.67);
     expect(getGameState(world).score).toBe(0);
 
     // Move pipe past bird
-    const pos = world.getComponent<{x: number}>(pipe, "Position")!;
+    const pos = world.getComponent<{x: number}>(pipe, "Transform")!;
     pos.x = 50;
 
     system.update(world, 16.67);

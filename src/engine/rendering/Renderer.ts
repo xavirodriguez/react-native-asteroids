@@ -1,5 +1,5 @@
 import { World } from "../core/World";
-import { Entity, Component, PositionComponent, RenderComponent } from "../types/EngineTypes";
+import { Entity, Component, TransformComponent, RenderComponent } from "../types/EngineTypes";
 
 /**
  * Interface for custom shape drawing logic.
@@ -7,7 +7,7 @@ import { Entity, Component, PositionComponent, RenderComponent } from "../types/
 export type ShapeDrawer<TContext> = (
   ctx: TContext,
   entity: Entity,
-  pos: PositionComponent,
+  pos: TransformComponent,
   render: RenderComponent,
   world: World
 ) => void;

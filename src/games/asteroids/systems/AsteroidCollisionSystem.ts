@@ -1,7 +1,7 @@
 import { World } from "../../../engine/core/World";
 import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
 import {
-  type PositionComponent,
+  type TransformComponent,
   type AsteroidComponent,
   type HealthComponent,
   type Entity,
@@ -61,7 +61,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
     if (match) {
       const { Ufo, Bullet } = match;
-      const pos = world.getComponent<PositionComponent>(Ufo, "Position");
+      const pos = world.getComponent<TransformComponent>(Ufo, "Transform");
       if (pos) {
         this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
       }
@@ -86,7 +86,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
       const health = world.getComponent<HealthComponent>(Ship, "Health");
       if (this.canShipTakeDamage(health)) {
         this.applyDamageToShip(world, health);
-        const pos = world.getComponent<PositionComponent>(Ufo, "Position");
+        const pos = world.getComponent<TransformComponent>(Ufo, "Transform");
         if (pos) {
           this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
         }
@@ -137,7 +137,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     bullet: Entity;
   }): void {
     const { world, asteroid, bullet } = context;
-    const pos = world.getComponent<PositionComponent>(asteroid, "Position");
+    const pos = world.getComponent<TransformComponent>(asteroid, "Transform");
     const render = world.getComponent<RenderComponent>(asteroid, "Render");
     if (pos) {
       this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT);
@@ -151,7 +151,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
   }
 
-  private spawnExplosionParticles(world: World, pos: PositionComponent, count: number): void {
+  private spawnExplosionParticles(world: World, pos: TransformComponent, count: number): void {
     for (let i = 0; i < count; i++) {
       createParticle({
         world,
@@ -201,7 +201,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
   private splitAsteroid(asteroidContext: { world: World; asteroidEntity: Entity }): void {
     const { world, asteroidEntity } = asteroidContext;
     const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
-    const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position");
+    const pos = world.getComponent<TransformComponent>(asteroidEntity, "Transform");
 
     if (asteroid && pos) {
       this.executeSplitStrategy({ world, pos, size: asteroid.size });
@@ -211,7 +211,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
   private executeSplitStrategy(splitParams: {
     world: World;
-    pos: PositionComponent;
+    pos: TransformComponent;
     size: AsteroidComponent["size"];
   }): void {
     const { world, pos, size } = splitParams;
@@ -224,7 +224,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
   private spawnSplit(spawnConfig: {
     world: World;
-    pos: PositionComponent;
+    pos: TransformComponent;
     size: "medium" | "small";
     offset: number;
   }): void {

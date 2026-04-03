@@ -48,9 +48,9 @@ describe("Asteroids Gameplay Integration", () => {
     const initialScore = gameState.score;
 
     // 1. Find an asteroid and spawn a bullet on top of it
-    const asteroids = world.query("Asteroid", "Position");
+    const asteroids = world.query("Asteroid", "Transform");
     const targetAsteroid = asteroids[0];
-    const pos = world.getComponent<any>(targetAsteroid, "Position");
+    const pos = world.getComponent<any>(targetAsteroid, "Transform");
 
     createBullet({
       world,
@@ -102,7 +102,7 @@ describe("Asteroids Gameplay Integration", () => {
     // 1. Create a large asteroid
     const largeAsteroid = world.createEntity();
     const largeRadius = 100;
-    world.addComponent(largeAsteroid, { type: "Position", x: 200, y: 200 });
+    world.addComponent(largeAsteroid, { type: "Transform", x: 200, y: 200 });
     world.addComponent(largeAsteroid, { type: "Collider", radius: largeRadius });
     world.addComponent(largeAsteroid, { type: "Asteroid", size: "large" });
 
@@ -112,7 +112,7 @@ describe("Asteroids Gameplay Integration", () => {
     // Large asteroid maxX = 200 + 100 = 300.
     // Bullet is inside the X-range [100, 300].
     const bullet = world.createEntity();
-    world.addComponent(bullet, { type: "Position", x: 110, y: 200 });
+    world.addComponent(bullet, { type: "Transform", x: 110, y: 200 });
     world.addComponent(bullet, { type: "Collider", radius: 2 });
     world.addComponent(bullet, { type: "Bullet" });
 
@@ -126,7 +126,7 @@ describe("Asteroids Gameplay Integration", () => {
     // B's minX (108) < 300.
     // If our logic is correct, it should not break at C and should reach B.
     const filler = world.createEntity();
-    world.addComponent(filler, { type: "Position", x: 105, y: 500 }); // Far away in Y
+    world.addComponent(filler, { type: "Transform", x: 105, y: 500 }); // Far away in Y
     world.addComponent(filler, { type: "Collider", radius: 1 });
 
     const initialScore = world.getSingleton<GameStateComponent>("GameState")!.score;
