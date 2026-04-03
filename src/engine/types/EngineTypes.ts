@@ -75,6 +75,8 @@ export interface BoundaryComponent extends Component {
   width: number;
   height: number;
   mode: BoundaryMode;
+  bounceX?: boolean;
+  bounceY?: boolean;
 }
 
 export interface FrictionComponent extends Component {

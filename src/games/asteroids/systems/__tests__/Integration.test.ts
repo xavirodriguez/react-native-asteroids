@@ -4,8 +4,7 @@ import { AsteroidGameStateSystem } from "../AsteroidGameStateSystem";
 import { MovementSystem } from "../../../../engine/systems/MovementSystem";
 import { ParticlePool, BulletPool } from "../../EntityPool";
 import { createBullet, createGameState } from "../../EntityFactory";
-import { getGameState } from "../../GameUtils";
-import { GAME_CONFIG } from "../../types/AsteroidTypes";
+import { GAME_CONFIG, type GameStateComponent } from "../../types/AsteroidTypes";
 
 describe("Asteroids Gameplay Integration", () => {
   let world: World;
@@ -39,11 +38,11 @@ describe("Asteroids Gameplay Integration", () => {
   it("should verify that asteroids were spawned", () => {
     const asteroids = world.query("Asteroid");
     expect(asteroids.length).toBeGreaterThan(0);
-    expect(getGameState(world).asteroidsRemaining).toBeGreaterThan(0);
+    expect(world.getSingleton<GameStateComponent>("GameState")!.asteroidsRemaining).toBeGreaterThan(0);
   });
 
   it("should complete a full destruction cycle: spawn -> collision -> split -> score", () => {
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<GameStateComponent>("GameState")!;
     expect(gameState.asteroidsRemaining).toBeGreaterThan(0);
     const initialAsteroidCount = gameState.asteroidsRemaining;
     const initialScore = gameState.score;
@@ -71,16 +70,16 @@ describe("Asteroids Gameplay Integration", () => {
     gameStateSystem.update(world, 16.66);
 
     // 5. Check score increase
-    expect(getGameState(world).score).toBe(initialScore + GAME_CONFIG.ASTEROID_SCORE);
+    expect(world.getSingleton<GameStateComponent>("GameState")!.score).toBe(initialScore + GAME_CONFIG.ASTEROID_SCORE);
 
     // 6. Check if it split (if it was large or medium)
-    const newAsteroidCount = getGameState(world).asteroidsRemaining;
+    const newAsteroidCount = world.getSingleton<GameStateComponent>("GameState")!.asteroidsRemaining;
     // A split adds 2 and removes 1, so count should increase if it was large/medium
     expect(newAsteroidCount).toBeGreaterThan(initialAsteroidCount - 1);
   });
 
   it("should advance level when all asteroids are destroyed", () => {
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<GameStateComponent>("GameState")!;
     const initialLevel = gameState.level;
 
     // 1. Destroy all asteroids
@@ -92,11 +91,11 @@ describe("Asteroids Gameplay Integration", () => {
     gameStateSystem.update(world, 16.66); // Advance and spawn
 
     // 3. Verify level advanced
-    expect(getGameState(world).level).toBe(initialLevel + 1);
+    expect(world.getSingleton<GameStateComponent>("GameState")!.level).toBe(initialLevel + 1);
 
     gameStateSystem.update(world, 16.66); // Recount new ones
     // 4. Verify new asteroids spawned
-    expect(getGameState(world).asteroidsRemaining).toBeGreaterThan(0);
+    expect(world.getSingleton<GameStateComponent>("GameState")!.asteroidsRemaining).toBeGreaterThan(0);
   });
 
   it("should detect collisions between objects with very different radii (Sweep and Prune edge case)", () => {
@@ -130,13 +129,13 @@ describe("Asteroids Gameplay Integration", () => {
     world.addComponent(filler, { type: "Position", x: 105, y: 500 }); // Far away in Y
     world.addComponent(filler, { type: "Collider", radius: 1 });
 
-    const initialScore = getGameState(world).score;
+    const initialScore = world.getSingleton<GameStateComponent>("GameState")!.score;
 
     collisionSystem.update(world, 16.66);
 
     // If collision was detected, bullet and asteroid should be handled (destroyed/split)
     // and score should increase.
     expect(world.getAllEntities()).not.toContain(bullet);
-    expect(getGameState(world).score).toBeGreaterThan(initialScore);
+    expect(world.getSingleton<GameStateComponent>("GameState")!.score).toBeGreaterThan(initialScore);
   });
 });

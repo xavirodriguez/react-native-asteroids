@@ -1,4 +1,4 @@
-import { EntityPool } from "../../engine/utils/EntityPool";
+import { PrefabPool } from "../../engine/utils/PrefabPool";
 import { World } from "../../engine/core/World";
 import {
   type Entity,
@@ -12,7 +12,7 @@ import {
 } from "../../engine/types/EngineTypes";
 
 /**
- * Interface for pooled component data to minimize garbage collection.
+ * Interface for pooled component data.
  */
 interface BulletComponents {
   position: PositionComponent;
@@ -24,61 +24,42 @@ interface BulletComponents {
   bullet: Component & { type: "Bullet" };
 }
 
-/**
- * Functional BulletPool that reuses component objects.
- */
-export class BulletPool {
-  private pool: EntityPool<BulletComponents>;
+interface BulletParams {
+  x: number; y: number; dx: number; dy: number; size: number; color: string; ttl: number;
+}
 
+/**
+ * BulletPool utilizing the engine's PrefabPool.
+ */
+export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
   constructor(initialSize: number = 20) {
-    this.pool = new EntityPool<BulletComponents>(
-      () => ({
+    super({
+      factory: () => ({
         position: { type: "Position", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "bullet_shape", size: 0, color: "", rotation: 0 },
         collider: { type: "Collider", radius: 0 },
         ttl: { type: "TTL", remaining: 0, total: 0 },
-        reclaimable: {
-          type: "Reclaimable",
-          onReclaim: () => {} // Overwritten by EntityPool
-        },
+        reclaimable: { type: "Reclaimable", onReclaim: () => {} },
         bullet: { type: "Bullet" }
       }),
-      (data) => {
-        data.position.x = 0;
-        data.position.y = 0;
-        data.velocity.dx = 0;
-        data.velocity.dy = 0;
+      reset: (data) => {
+        data.position.x = 0; data.position.y = 0;
+        data.velocity.dx = 0; data.velocity.dy = 0;
+      },
+      initializer: (data, p) => {
+        data.position.x = p.x; data.position.y = p.y;
+        data.velocity.dx = p.dx; data.velocity.dy = p.dy;
+        data.render.size = p.size; data.render.color = p.color;
+        data.collider.radius = p.size;
+        data.ttl.remaining = p.ttl; data.ttl.total = p.ttl;
       },
       initialSize
-    );
+    });
   }
 
-  /**
-   * Acquires a bullet from the pool, initializing it in the world.
-   */
   acquire(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
-    const { entity, components: data } = this.pool.acquire(world);
-
-    data.position.x = x;
-    data.position.y = y;
-    data.velocity.dx = dx;
-    data.velocity.dy = dy;
-    data.render.size = size;
-    data.render.color = color;
-    data.render.rotation = 0;
-    data.collider.radius = size;
-    data.ttl.remaining = ttl;
-    data.ttl.total = ttl;
-
-    return entity;
-  }
-
-  /**
-   * Releases an entity's components back to the pool.
-   */
-  release(world: World, entity: Entity): void {
-    this.pool.release(world, entity);
+    return super.acquire(world, { x, y, dx, dy, size, color, ttl });
   }
 }
 
@@ -93,48 +74,37 @@ interface ParticleComponents {
   reclaimable: ReclaimableComponent;
 }
 
-/**
- * Functional ParticlePool that reuses component objects.
- */
-export class ParticlePool {
-  private pool: EntityPool<ParticleComponents>;
+interface ParticleParams {
+  x: number; y: number; dx: number; dy: number; size: number; color: string; ttl: number;
+}
 
+/**
+ * ParticlePool utilizing the engine's PrefabPool.
+ */
+export class ParticlePool extends PrefabPool<ParticleComponents, ParticleParams> {
   constructor(initialSize: number = 100) {
-    this.pool = new EntityPool<ParticleComponents>(
-      () => ({
+    super({
+      factory: () => ({
         position: { type: "Position", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0 },
         ttl: { type: "TTL", remaining: 0, total: 0 },
-        reclaimable: {
-          type: "Reclaimable",
-          onReclaim: () => {} // Overwritten by EntityPool
-        }
+        reclaimable: { type: "Reclaimable", onReclaim: () => {} }
       }),
-      (data) => {
-        data.position.x = 0;
-        data.position.y = 0;
+      reset: (data) => {
+        data.position.x = 0; data.position.y = 0;
+      },
+      initializer: (data, p) => {
+        data.position.x = p.x; data.position.y = p.y;
+        data.velocity.dx = p.dx; data.velocity.dy = p.dy;
+        data.render.size = p.size; data.render.color = p.color;
+        data.ttl.remaining = p.ttl; data.ttl.total = p.ttl;
       },
       initialSize
-    );
+    });
   }
 
   acquire(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
-    const { entity, components: data } = this.pool.acquire(world);
-
-    data.position.x = x;
-    data.position.y = y;
-    data.velocity.dx = dx;
-    data.velocity.dy = dy;
-    data.render.size = size;
-    data.render.color = color;
-    data.ttl.remaining = ttl;
-    data.ttl.total = ttl;
-
-    return entity;
-  }
-
-  release(world: World, entity: Entity): void {
-    this.pool.release(world, entity);
+    return super.acquire(world, { x, y, dx, dy, size, color, ttl });
   }
 }

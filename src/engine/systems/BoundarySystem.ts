@@ -44,7 +44,7 @@ export class BoundarySystem extends System {
         this.wrap(pos, width, height);
         break;
       case "bounce":
-        if (vel) this.bounce(pos, vel, width, height);
+        if (vel) this.bounce(pos, vel, width, height, boundary.bounceX, boundary.bounceY);
         break;
       case "destroy":
         this.destroy(world, entity);
@@ -59,21 +59,25 @@ export class BoundarySystem extends System {
     else if (pos.y > height) pos.y = 0;
   }
 
-  private bounce(pos: PositionComponent, vel: VelocityComponent, width: number, height: number): void {
-    if (pos.x < 0) {
-      pos.x = 0;
-      vel.dx *= -1;
-    } else if (pos.x > width) {
-      pos.x = width;
-      vel.dx *= -1;
+  private bounce(pos: PositionComponent, vel: VelocityComponent, width: number, height: number, bounceX: boolean = true, bounceY: boolean = true): void {
+    if (bounceX) {
+      if (pos.x < 0) {
+        pos.x = 0;
+        vel.dx *= -1;
+      } else if (pos.x > width) {
+        pos.x = width;
+        vel.dx *= -1;
+      }
     }
 
-    if (pos.y < 0) {
-      pos.y = 0;
-      vel.dy *= -1;
-    } else if (pos.y > height) {
-      pos.y = height;
-      vel.dy *= -1;
+    if (bounceY) {
+      if (pos.y < 0) {
+        pos.y = 0;
+        vel.dy *= -1;
+      } else if (pos.y > height) {
+        pos.y = height;
+        vel.dy *= -1;
+      }
     }
   }
 

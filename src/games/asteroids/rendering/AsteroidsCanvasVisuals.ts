@@ -118,16 +118,6 @@ export const asteroidsCRTEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, 
   ctx.restore();
 };
 
-export const asteroidsScreenShakeEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world) => {
-    const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
-
-    if (shake?.config && shake.config.duration > 0) {
-      const shakeX = (Math.random() - 0.5) * shake.config.intensity;
-      const shakeY = (Math.random() - 0.5) * shake.config.intensity;
-      ctx.translate(shakeX, shakeY);
-    }
-};
-
 export const drawAsteroidsBullet: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render) => {
   const size = render.size;
   const color = render.color;
