@@ -39,10 +39,11 @@ export class SceneGraph {
       const parent = this.nodes.get(parentId);
       if (parent) {
         parent.childIds.push(entityId);
-      } else {
-        this.roots.add(entityId);
       }
-    } else {
+    }
+
+    // Always attempt to add to roots if parent is null or missing
+    if (parentId === null || !this.nodes.has(parentId)) {
       this.roots.add(entityId);
     }
 
@@ -93,9 +94,9 @@ export class SceneGraph {
       if (oldParent) {
         oldParent.childIds = oldParent.childIds.filter(id => id !== childId);
       }
-    } else {
-      this.roots.delete(childId);
     }
+
+    this.roots.delete(childId);
 
     child.parentId = parentId;
     child.dirty = true;
@@ -146,6 +147,7 @@ export class SceneGraph {
     const isDirty = node.dirty || parentDirty;
 
     if (isDirty) {
+      this.updateMatrix(node.localTransform);
       if (parentTransform) {
         this.combineTransforms(node.worldTransform, parentTransform, node.localTransform);
       } else {
@@ -159,21 +161,53 @@ export class SceneGraph {
     }
   }
 
+  private updateMatrix(t: Transform): void {
+    const cos = Math.cos(t.rotation);
+    const sin = Math.sin(t.rotation);
+
+    if (!t.matrix) t.matrix = [1, 0, 0, 1, 0, 0];
+
+    // [ a, b, c, d, tx, ty ]
+    // [ sX*cos, sX*sin, -sY*sin, sY*cos, x, y ]
+    t.matrix[0] = t.scaleX * cos;
+    t.matrix[1] = t.scaleX * sin;
+    t.matrix[2] = -t.scaleY * sin;
+    t.matrix[3] = t.scaleY * cos;
+    t.matrix[4] = t.x;
+    t.matrix[5] = t.y;
+  }
+
   private combineTransforms(out: Transform, parent: Transform, local: Transform): void {
-    const cos = Math.cos(parent.rotation);
-    const sin = Math.sin(parent.rotation);
+    const m1 = parent.matrix!;
+    const m2 = local.matrix!;
 
-    const rotatedX = (local.x * parent.scaleX * cos) - (local.y * parent.scaleY * sin);
-    const rotatedY = (local.x * parent.scaleX * sin) + (local.y * parent.scaleY * cos);
+    if (!out.matrix) out.matrix = [1, 0, 0, 1, 0, 0];
+    const mo = out.matrix;
 
-    out.x = parent.x + rotatedX;
-    out.y = parent.y + rotatedY;
+    // Standard 2x3 matrix multiplication (mo = m1 * m2)
+    // | a1 c1 tx1 |   | a2 c2 tx2 |
+    // | b1 d1 ty1 | * | b2 d2 ty2 |
+    // | 0  0  1   |   | 0  0  1   |
+
+    const a1 = m1[0], b1 = m1[1], c1 = m1[2], d1 = m1[3], tx1 = m1[4], ty1 = m1[5];
+    const a2 = m2[0], b2 = m2[1], c2 = m2[2], d2 = m2[3], tx2 = m2[4], ty2 = m2[5];
+
+    mo[0] = a1 * a2 + c1 * b2;
+    mo[1] = b1 * a2 + d1 * b2;
+    mo[2] = a1 * c2 + c1 * d2;
+    mo[3] = b1 * c2 + d1 * d2;
+    mo[4] = a1 * tx2 + c1 * ty2 + tx1;
+    mo[5] = b1 * tx2 + d1 * ty2 + ty1;
+
+    // Update decomposed properties for backward compatibility
+    out.x = mo[4];
+    out.y = mo[5];
     out.rotation = parent.rotation + local.rotation;
     out.scaleX = parent.scaleX * local.scaleX;
     out.scaleY = parent.scaleY * local.scaleY;
   }
 
   private createDefaultTransform(): Transform {
-    return { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 };
+    return { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, matrix: [1, 0, 0, 1, 0, 0] };
   }
 }

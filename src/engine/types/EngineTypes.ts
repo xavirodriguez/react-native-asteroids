@@ -14,6 +14,8 @@ export interface Transform {
   rotation: number; // radianes
   scaleX: number;
   scaleY: number;
+  /** Matrix representation: [a, b, c, d, tx, ty] */
+  matrix?: [number, number, number, number, number, number];
 }
 
 export interface Velocity {
