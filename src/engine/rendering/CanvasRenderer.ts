@@ -1,6 +1,6 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
-import { Entity, PositionComponent, RenderComponent, ScreenShakeComponent } from "../types/EngineTypes";
+import { Entity, TransformComponent, RenderComponent, ScreenShakeComponent } from "../types/EngineTypes";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -114,9 +114,9 @@ export class CanvasRenderer implements Renderer {
     this.backgroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
 
     // Render Entities
-    const entities = world.query("Position", "Render");
+    const entities = world.query("Transform", "Render");
     entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const render = world.getComponent<RenderComponent>(entity, "Render");
       if (pos && render) {
         this.drawEntity(entity, { Position: pos, Render: render }, world);
@@ -134,7 +134,7 @@ export class CanvasRenderer implements Renderer {
   public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
-    const pos = components["Position"] as PositionComponent;
+    const pos = components["Transform"] as TransformComponent;
     const render = components["Render"] as RenderComponent;
 
     ctx.save();

@@ -1,6 +1,6 @@
 import { World } from "../../../engine/core/World";
 import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
-import { Entity, PositionComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
+import { Entity, TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
 import { PONG_CONFIG } from "../types";
 
 export class PongCollisionSystem extends CollisionSystem {

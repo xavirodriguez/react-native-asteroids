@@ -1,7 +1,7 @@
 import { World } from "../../core/World";
 import { MovementSystem } from "../MovementSystem";
 import { BoundarySystem } from "../BoundarySystem";
-import { PositionComponent, VelocityComponent, BoundaryComponent } from "../../types/EngineTypes";
+import { TransformComponent, VelocityComponent, BoundaryComponent } from "../../types/EngineTypes";
 
 describe("Movement & Boundary Systems", () => {
   let world: World;
@@ -13,7 +13,7 @@ describe("Movement & Boundary Systems", () => {
   it("should update entity position based on velocity", () => {
     const movementSystem = new MovementSystem();
     const entity = world.createEntity();
-    const pos: PositionComponent = { type: "Position", x: 100, y: 100 };
+    const pos: TransformComponent = { type: "Transform", x: 100, y: 100 };
     const vel: VelocityComponent = { type: "Velocity", dx: 100, dy: 50 };
 
     world.addComponent(entity, pos);
@@ -33,7 +33,7 @@ describe("Movement & Boundary Systems", () => {
     const entity = world.createEntity();
 
     // Out of bounds to the right
-    const pos: PositionComponent = { type: "Position", x: 810, y: 100 };
+    const pos: TransformComponent = { type: "Transform", x: 810, y: 100 };
     const boundary: BoundaryComponent = { type: "Boundary", width: screenWidth, height: screenHeight, mode: "wrap" };
 
     world.addComponent(entity, pos);

@@ -72,7 +72,7 @@ function addShipMovementComponents(config: {
   y: number
 }): void {
   const { world, ship, x, y } = config
-  world.addComponent(ship, { type: "Position", x, y })
+  world.addComponent(ship, { type: "Transform", x, y })
   world.addComponent(ship, { type: "Velocity", dx: 0, dy: 0 })
   world.addComponent(ship, {
     type: "Friction",
@@ -156,7 +156,7 @@ function addAsteroidMovementComponents(config: {
   y: number
 }): void {
   const { world, asteroid, x, y } = config
-  world.addComponent(asteroid, { type: "Position", x, y })
+  world.addComponent(asteroid, { type: "Transform", x, y })
   world.addComponent(asteroid, {
     type: "Velocity",
     dx: (RandomService.next() - 0.5) * 100,
@@ -296,7 +296,7 @@ export function createParticle(options: CreateParticleParams): Entity {
  */
 export function createUfo(world: World, x: number, y: number): Entity {
   const ufo = world.createEntity();
-  world.addComponent(ufo, { type: "Position", x, y });
+  world.addComponent(ufo, { type: "Transform", x, y });
   world.addComponent(ufo, { type: "Velocity", dx: 80, dy: 0 });
   world.addComponent(ufo, {
     type: "Boundary",

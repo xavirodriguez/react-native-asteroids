@@ -1,6 +1,6 @@
 import { System } from "../../core/System";
 import { World } from "../../core/World";
-import { TransformComponent, RigidBodyComponent } from "../../core/types/CoreTypes";
+import { TransformComponent, RigidBodyComponent } from "../../types/EngineTypes";
 import { IPhysicsAdapter } from "../../core/types/SystemTypes";
 
 /**

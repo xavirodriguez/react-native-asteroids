@@ -1,6 +1,6 @@
 import { World } from "../../../engine/core/World";
 import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
-import { PositionComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent } from "../../../engine/types/EngineTypes";
 import {
   type GameStateComponent,
   type ShipComponent,
@@ -24,9 +24,9 @@ export class AsteroidRenderSystem extends RenderUpdateSystem {
   }
 
   private updateShipTrails(world: World): void {
-    const entities = world.query("Position", "Ship");
+    const entities = world.query("Transform", "Ship");
     entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
 
       if (pos && shipComp) {

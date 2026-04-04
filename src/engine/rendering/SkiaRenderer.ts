@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
-import { Entity, PositionComponent, RenderComponent } from "../types/EngineTypes";
+import { Entity, TransformComponent, RenderComponent } from "../types/EngineTypes";
 
 /**
  * Procedural Skia Renderer implementation.
@@ -125,9 +125,9 @@ export class SkiaRenderer implements Renderer {
 
         canvas.save();
 
-        const entities = world.query("Position", "Render");
+        const entities = world.query("Transform", "Render");
         entities.forEach((entity) => {
-          const pos = world.getComponent<PositionComponent>(entity, "Position")!;
+          const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
           const render = world.getComponent<RenderComponent>(entity, "Render")!;
           if (render) {
             this.drawEntity(entity, { Position: pos, Render: render }, world);
@@ -143,7 +143,7 @@ export class SkiaRenderer implements Renderer {
   public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
     if (!this.canvas) return;
     const canvas = this.canvas;
-    const pos = components["Position"] as PositionComponent;
+    const pos = components["Transform"] as TransformComponent;
     const render = components["Render"] as RenderComponent;
 
     if (!pos || !render) return;

@@ -3,7 +3,7 @@ import { World } from "../../engine/core/World";
 import {
   type Entity,
   type Component,
-  type PositionComponent,
+  type TransformComponent,
   type VelocityComponent,
   type RenderComponent,
   type ColliderComponent,
@@ -15,7 +15,7 @@ import {
  * Interface for pooled component data.
  */
 interface BulletComponents {
-  position: PositionComponent;
+  position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
   collider: ColliderComponent;
@@ -35,7 +35,7 @@ export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
   constructor(initialSize: number = 20) {
     super({
       factory: () => ({
-        position: { type: "Position", x: 0, y: 0 },
+        position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "bullet_shape", size: 0, color: "", rotation: 0 },
         collider: { type: "Collider", radius: 0 },
@@ -67,7 +67,7 @@ export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
  * Interface for pooled particle data.
  */
 interface ParticleComponents {
-  position: PositionComponent;
+  position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
   ttl: TTLComponent;
@@ -85,7 +85,7 @@ export class ParticlePool extends PrefabPool<ParticleComponents, ParticleParams>
   constructor(initialSize: number = 100) {
     super({
       factory: () => ({
-        position: { type: "Position", x: 0, y: 0 },
+        position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0 },
         ttl: { type: "TTL", remaining: 0, total: 0 },

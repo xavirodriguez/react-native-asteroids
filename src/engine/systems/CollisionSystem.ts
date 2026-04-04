@@ -1,10 +1,10 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { PositionComponent, ColliderComponent, Entity, ReclaimableComponent } from "../types/EngineTypes";
+import { TransformComponent, ColliderComponent, Entity, ReclaimableComponent } from "../types/EngineTypes";
 
 class BoundData {
   id: Entity = 0;
-  pos: PositionComponent = { type: "Position", x: 0, y: 0 };
+  pos: TransformComponent = { type: "Transform", x: 0, y: 0 };
   col: ColliderComponent = { type: "Collider", radius: 0 };
   minX: number = 0;
   maxX: number = 0;
@@ -26,7 +26,7 @@ export abstract class CollisionSystem extends System {
    */
   public update(world: World, deltaTime: number): void {
     void deltaTime;
-    const colliders = world.query("Position", "Collider");
+    const colliders = world.query("Transform", "Collider");
     const n = colliders.length;
     if (n < 2) return;
 
@@ -39,7 +39,7 @@ export abstract class CollisionSystem extends System {
     this.activeBounds.length = n;
     for (let i = 0; i < n; i++) {
       const id = colliders[i];
-      const pos = world.getComponent<PositionComponent>(id, "Position")!;
+      const pos = world.getComponent<TransformComponent>(id, "Transform")!;
       const col = world.getComponent<ColliderComponent>(id, "Collider")!;
       const b = this.boundsCache[i];
       b.id = id;
@@ -72,12 +72,21 @@ export abstract class CollisionSystem extends System {
         }
       }
     }
+
+    // Clear references in the cache that are no longer part of activeBounds
+    // to prevent memory leaks and allow GC to reclaim old components.
+    for (let i = n; i < this.boundsCache.length; i++) {
+      const b = this.boundsCache[i];
+      b.id = 0;
+      b.pos = null as any;
+      b.col = null as any;
+    }
   }
 
   /**
    * Internal collision check using pre-retrieved components.
    */
-  private isCollidingWithComponents(posA: PositionComponent, colA: ColliderComponent, posB: PositionComponent, colB: ColliderComponent): boolean {
+  private isCollidingWithComponents(posA: TransformComponent, colA: ColliderComponent, posB: TransformComponent, colB: ColliderComponent): boolean {
     const dx = posA.x - posB.x;
     const dy = posA.y - posB.y;
     const distanceSq = dx * dx + dy * dy;
@@ -89,8 +98,8 @@ export abstract class CollisionSystem extends System {
    * Circle-to-circle collision check.
    */
   protected isColliding(world: World, entityA: Entity, entityB: Entity): boolean {
-    const posA = world.getComponent<PositionComponent>(entityA, "Position");
-    const posB = world.getComponent<PositionComponent>(entityB, "Position");
+    const posA = world.getComponent<TransformComponent>(entityA, "Transform");
+    const posB = world.getComponent<TransformComponent>(entityB, "Transform");
     const colA = world.getComponent<ColliderComponent>(entityA, "Collider");
     const colB = world.getComponent<ColliderComponent>(entityB, "Collider");
 

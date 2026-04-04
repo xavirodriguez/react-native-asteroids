@@ -1,7 +1,7 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import {
-  PositionComponent,
+  TransformComponent,
   ColliderComponent,
   HealthComponent,
   RenderComponent,
@@ -30,7 +30,7 @@ export class SpaceInvadersCollisionSystem extends System {
   }
 
   public update(world: World, _deltaTime: number): void {
-    const collidables = world.query("Position", "Collider");
+    const collidables = world.query("Transform", "Collider");
     const gameState = getGameState(world);
 
     if (gameState.isGameOver) return;
@@ -52,9 +52,9 @@ export class SpaceInvadersCollisionSystem extends System {
   }
 
   private checkCollision(world: World, e1: number, e2: number): boolean {
-    const p1 = world.getComponent<PositionComponent>(e1, "Position");
+    const p1 = world.getComponent<TransformComponent>(e1, "Transform");
     const c1 = world.getComponent<ColliderComponent>(e1, "Collider");
-    const p2 = world.getComponent<PositionComponent>(e2, "Position");
+    const p2 = world.getComponent<TransformComponent>(e2, "Transform");
     const c2 = world.getComponent<ColliderComponent>(e2, "Collider");
 
     if (!p1 || !c1 || !p2 || !c2) return false;
@@ -73,7 +73,7 @@ export class SpaceInvadersCollisionSystem extends System {
       if (!invaderComp) return;
       gameState.score += invaderComp.points;
 
-      const pos = world.getComponent<PositionComponent>(invader, "Position");
+      const pos = world.getComponent<TransformComponent>(invader, "Transform");
       if (pos) this.createExplosion(world, pos.x, pos.y, "#FFFFFF");
 
       this.destroyEntity(world, invader);
@@ -182,11 +182,11 @@ export class SpaceInvadersCollisionSystem extends System {
   }
 
   private checkInvadersBottom(world: World, gameState: GameStateComponent): void {
-    const invaders = world.query("Invader", "Position");
+    const invaders = world.query("Invader", "Transform");
     const limit = GAME_CONFIG.SCREEN_HEIGHT - 100;
 
     for (const invader of invaders) {
-      const pos = world.getComponent<PositionComponent>(invader, "Position");
+      const pos = world.getComponent<TransformComponent>(invader, "Transform");
       if (pos && pos.y > limit) {
         gameState.isGameOver = true;
         break;

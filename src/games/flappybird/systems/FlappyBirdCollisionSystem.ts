@@ -1,6 +1,6 @@
 import { World } from "../../../engine/core/World";
 import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
-import { Entity, PositionComponent, ColliderComponent } from "../../../engine/types/EngineTypes";
+import { Entity, TransformComponent, ColliderComponent } from "../../../engine/types/EngineTypes";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
 import { getGameState } from "../GameUtils";
 import { FLAPPY_CONFIG } from "../types/FlappyBirdTypes";
@@ -17,8 +17,8 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
   }
 
   public override update(world: World, _deltaTime: number): void {
-    const birds = world.query("Bird", "Position", "Collider");
-    const pipes = world.query("Pipe", "Position");
+    const birds = world.query("Bird", "Transform", "Collider");
+    const pipes = world.query("Pipe", "Transform");
 
     for (const bird of birds) {
       for (const pipe of pipes) {
@@ -31,14 +31,14 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
   }
 
   private checkGroundCollision(world: World): void {
-    const birds = world.query("Bird", "Position", "Collider");
-    const grounds = world.query("Ground", "Position", "Collider");
+    const birds = world.query("Bird", "Transform", "Collider");
+    const grounds = world.query("Ground", "Transform", "Collider");
 
     if (birds.length === 0 || grounds.length === 0) return;
 
-    const birdPos = world.getComponent<PositionComponent>(birds[0], "Position")!;
+    const birdPos = world.getComponent<TransformComponent>(birds[0], "Transform")!;
     const birdCol = world.getComponent<ColliderComponent>(birds[0], "Collider")!;
-    const groundPos = world.getComponent<PositionComponent>(grounds[0], "Position")!;
+    const groundPos = world.getComponent<TransformComponent>(grounds[0], "Transform")!;
     const groundCol = world.getComponent<ColliderComponent>(grounds[0], "Collider")!;
 
     // If bird center Y + radius exceeds ground top edge Y
@@ -66,9 +66,9 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
       const bird = match.Bird;
       const pipe = match.Pipe;
 
-      const birdPos = world.getComponent<PositionComponent>(bird, "Position")!;
+      const birdPos = world.getComponent<TransformComponent>(bird, "Transform")!;
       const birdCol = world.getComponent<ColliderComponent>(bird, "Collider")!;
-      const pipePos = world.getComponent<PositionComponent>(pipe, "Position")!;
+      const pipePos = world.getComponent<TransformComponent>(pipe, "Transform")!;
       const pipeComp = world.getComponent(pipe, "Pipe") as any;
 
       const halfGap = pipeComp.gapSize / 2;
