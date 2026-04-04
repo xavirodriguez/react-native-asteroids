@@ -75,7 +75,7 @@ export abstract class CollisionSystem extends System {
         if (!(maskA & layerB)) continue;
 
         // Optimized pair key for zero-allocation tracking
-        const pairKey = idA < idB ? (idA << 16) | idB : (idB << 16) | idA;
+        const pairKey = idA < idB ? (idA << 16) | (idB & 0xFFFF) : (idB << 16) | (idA & 0xFFFF);
         if (this.processedPairs.has(pairKey)) continue;
         this.processedPairs.add(pairKey);
 
