@@ -50,7 +50,10 @@ export class SpaceInvadersGameScene extends Scene {
 
   public onEnter(): void {
     // 1. Systems registration
-    this.world.addSystem(new SpaceInvadersInputSystem(this.inputManager, this.playerBulletPool));
+    const inputSys = new SpaceInvadersInputSystem(this.inputManager, this.playerBulletPool);
+    if ((this.game as any).isMultiplayer) inputSys.setMultiplayerMode(true);
+
+    this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new BoundarySystem());
     this.world.addSystem(new SpaceInvadersFormationSystem(this.enemyBulletPool));
@@ -61,6 +64,7 @@ export class SpaceInvadersGameScene extends Scene {
     this.world.addSystem(new SpaceInvadersRenderSystem());
 
     // 2. Initial entities
+    if ((this.game as any).isMultiplayer) return; // Wait for server state
     createGameState(this.world);
     createPlayer(this.world, GAME_CONFIG.SCREEN_CENTER_X, GAME_CONFIG.SCREEN_HEIGHT - 50);
     createFormationController(this.world);

@@ -1,15 +1,32 @@
-import { useState } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, Platform } from "react-native";
+import { useState, useEffect } from "react";
+import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
 import { FlappyBirdUI } from "@/components/FlappyBirdUI";
 import { FlappyBirdControls } from "@/components/FlappyBirdControls";
 import { useFlappyBirdGame } from "@/hooks/useFlappyBirdGame";
+import { useMultiplayer } from "@/multiplayer/useMultiplayer";
 
 export default function FlappyBirdScreen() {
   const { game, gameState, handleInput, isPaused, togglePause, highScore } = useFlappyBirdGame();
   const [started, setStarted] = useState(false);
+  const [isMulti, setIsMulti] = useState(false);
+  const [playerName, setPlayerName] = useState("Jugador");
+
+  const { room, connected, serverState } = useMultiplayer("flappybird", playerName, isMulti && started);
+
+  useEffect(() => {
+    if (isMulti && connected && game) {
+      (game as any).setMultiplayerMode(true);
+    }
+  }, [isMulti, connected, game]);
+
+  useEffect(() => {
+    if (isMulti && serverState && game) {
+        (game as any).updateFromServer(serverState);
+    }
+  }, [isMulti, serverState, game]);
 
   if (!game) return null;
 
@@ -18,11 +35,22 @@ export default function FlappyBirdScreen() {
       <StartScreen
         title="FLAPPY BIRD"
         highScore={highScore}
-        onStart={() => setStarted(true)}
+        onStart={() => { setIsMulti(false); setStarted(true); }}
+        onStartMulti={() => { setIsMulti(true); setStarted(true); }}
+        playerName={playerName}
+        onPlayerNameChange={setPlayerName}
         instructions={Platform.OS === "web" ? "Espacio saltar" : "Tocar pantalla para saltar"}
       />
     );
   }
+
+  const handleMultiplayerInput = (input: any) => {
+    if (isMulti && room) {
+        if (input.flap) room.send("flap");
+    } else {
+        handleInput(input);
+    }
+  };
 
   return (
     <SafeAreaProvider>
@@ -34,9 +62,15 @@ export default function FlappyBirdScreen() {
           <Text style={styles.backButtonText}>← MENÚ</Text>
         </TouchableOpacity>
 
+        {isMulti && !connected && (
+            <View style={styles.overlay}>
+                <Text style={styles.overlayText}>Conectando...</Text>
+            </View>
+        )}
+
         <FlappyBirdUI
           gameState={gameState}
-          onRestart={() => game.restart()}
+          onRestart={() => isMulti ? room?.send("start_game") : game.restart()}
           onPause={() => togglePause()}
           isPaused={isPaused}
           highScore={highScore}
@@ -46,7 +80,7 @@ export default function FlappyBirdScreen() {
           onInitialize={(renderer) => game.initializeRenderer(renderer)}
         />
         <FlappyBirdControls
-          onFlap={(pressed) => handleInput({ flap: pressed })}
+          onFlap={(pressed) => handleMultiplayerInput({ flap: pressed })}
         />
       </View>
     </SafeAreaProvider>
@@ -57,11 +91,17 @@ const StartScreen: React.FC<{
   title: string;
   highScore: number;
   onStart: () => void;
+  onStartMulti: () => void;
+  playerName: string;
+  onPlayerNameChange: (name: string) => void;
   instructions: string;
 }> = ({
   title,
   highScore,
   onStart,
+  onStartMulti,
+  playerName,
+  onPlayerNameChange,
   instructions,
 }) => {
   return (
@@ -74,11 +114,27 @@ const StartScreen: React.FC<{
           <Text style={styles.backButtonText}>← MENÚ</Text>
         </TouchableOpacity>
         <Text style={styles.title}>{title}</Text>
+
+        <TextInput
+            style={styles.input}
+            value={playerName}
+            onChangeText={onPlayerNameChange}
+            placeholder="Tu nombre"
+            placeholderTextColor="#666"
+        />
+
         <Text style={styles.instructions}>{instructions}</Text>
         <Text style={styles.highScoreText}>Récord: {highScore}</Text>
-        <TouchableOpacity style={styles.startButton} onPress={onStart}>
-          <Text style={styles.startButtonText}>JUGAR</Text>
-        </TouchableOpacity>
+
+        <View style={styles.buttonRow}>
+            <TouchableOpacity style={styles.startButton} onPress={onStart}>
+                <Text style={styles.startButtonText}>SOLO</Text>
+            </TouchableOpacity>
+            <View style={{ width: 20 }} />
+            <TouchableOpacity style={[styles.startButton, { backgroundColor: '#444' }]} onPress={onStartMulti}>
+                <Text style={[styles.startButtonText, { color: 'white' }]}>MULTI</Text>
+            </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaProvider>
   );
@@ -123,9 +179,37 @@ const styles = StyleSheet.create({
   },
   startButton: {
     backgroundColor: "white",
-    paddingHorizontal: 40,
+    paddingHorizontal: 30,
     paddingVertical: 16,
     borderRadius: 8,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+  },
+  input: {
+    backgroundColor: '#222',
+    color: 'white',
+    padding: 15,
+    borderRadius: 8,
+    width: 250,
+    marginBottom: 20,
+    fontFamily: 'monospace',
+    textAlign: 'center',
+    fontSize: 18,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  overlayText: {
+    color: 'white',
+    fontSize: 24,
+    fontFamily: 'monospace',
   },
   startButtonText: {
     color: "black",

@@ -53,7 +53,14 @@ export class AsteroidInputSystem extends System {
    * @param world - The ECS world.
    * @param deltaTime - Time since last frame in milliseconds.
    */
+  private isMultiplayer = false;
+
+  public setMultiplayerMode(active: boolean) {
+    this.isMultiplayer = active;
+  }
+
   public update(world: World, deltaTime: number): void {
+    if (this.isMultiplayer) return; // Inputs handled by React hook in multiplayer
     const ships = world.query("Ship", "Input", "Transform", "Velocity", "Render");
     ships.forEach((entity) => this.updateShipEntity({ world, entity, deltaTime }));
   }

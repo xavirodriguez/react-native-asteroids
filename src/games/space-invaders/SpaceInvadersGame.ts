@@ -27,6 +27,7 @@ export class SpaceInvadersGame
   private playerBulletPool: PlayerBulletPool;
   private enemyBulletPool: EnemyBulletPool;
   private particlePool: ParticlePool;
+  private isMultiplayer = false;
 
   constructor() {
     super({
@@ -93,6 +94,35 @@ export class SpaceInvadersGame
   public getWorld(): World {
     // Override to ensure we get the world from the scene
     return this.sceneManager.getCurrentScene()?.getWorld() || this.world;
+  }
+
+  public setMultiplayerMode(active: boolean) {
+    this.isMultiplayer = active;
+  }
+
+  public updateFromServer(state: any) {
+    if (!this.isMultiplayer || !state) return;
+    const world = this.getWorld();
+    world.clear();
+
+    if (state.players) {
+      state.players.forEach((player: any) => {
+        const p = world.createEntity();
+        world.addComponent(p, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 });
+        world.addComponent(p, { type: "Render", shape: "player_ship", size: 20, color: player.alive ? "green" : "red", rotation: 0 });
+        world.addComponent(p, { type: "Player" });
+      });
+    }
+
+    if (state.invaders) {
+      state.invaders.forEach((invader: any) => {
+        if (!invader.alive) return;
+        const i = world.createEntity();
+        world.addComponent(i, { type: "Transform", x: invader.x, y: invader.y, rotation: 0, scaleX: 1, scaleY: 1 });
+        world.addComponent(i, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 });
+        world.addComponent(i, { type: "Invader", row: 0, col: 0, points: 10 });
+      });
+    }
   }
 
   public isGameOver(): boolean {
