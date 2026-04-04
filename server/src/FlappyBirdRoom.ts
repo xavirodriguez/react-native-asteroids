@@ -71,11 +71,10 @@ export class FlappyBirdRoom extends Room<FlappyBirdState> {
         pipe.x -= 150 * dt;
 
         // Scoring
-        this.state.players.forEach(bird => {
-            if (bird.alive && bird.x > pipe.x + 60 && !pipe.id.includes("scored_" + bird.name)) {
+        this.state.players.forEach((bird, sessionId) => {
+            if (bird.alive && bird.x > pipe.x + 60 && !pipe.scoredBy.has(sessionId)) {
                 bird.score += 1;
-                // Simple way to mark as scored for this bird
-                // Note: This is a bit hacky for a MapSchema
+                pipe.scoredBy.set(sessionId, true);
             }
         });
 

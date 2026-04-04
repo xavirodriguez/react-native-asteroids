@@ -27,12 +27,12 @@ export class SpaceInvadersGame
   private playerBulletPool: PlayerBulletPool;
   private enemyBulletPool: EnemyBulletPool;
   private particlePool: ParticlePool;
-  private isMultiplayer = false;
 
-  constructor() {
+  constructor(config: { isMultiplayer?: boolean } = {}) {
     super({
       pauseKey: GAME_CONFIG.KEYS.PAUSE,
-      restartKey: GAME_CONFIG.KEYS.RESTART
+      restartKey: GAME_CONFIG.KEYS.RESTART,
+      isMultiplayer: config.isMultiplayer
     });
   }
 

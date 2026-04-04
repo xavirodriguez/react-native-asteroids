@@ -9,9 +9,9 @@ import { useFlappyBirdGame } from "@/hooks/useFlappyBirdGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
 
 export default function FlappyBirdScreen() {
-  const { game, gameState, handleInput, isPaused, togglePause, highScore } = useFlappyBirdGame();
   const [started, setStarted] = useState(false);
   const [isMulti, setIsMulti] = useState(false);
+  const { game, gameState, handleInput, isPaused, togglePause, highScore } = useFlappyBirdGame(isMulti && started);
   const [playerName, setPlayerName] = useState("Jugador");
 
   const { room, connected, serverState } = useMultiplayer("flappybird", playerName, isMulti && started);

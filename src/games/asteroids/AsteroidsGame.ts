@@ -34,10 +34,13 @@ export class AsteroidsGame
   private assetLoader: AssetLoader;
   private bulletPool: BulletPool;
   private particlePool: ParticlePool;
-  private isMultiplayer = false;
 
-  constructor() {
-    super({ pauseKey: GAME_CONFIG.KEYS.PAUSE, restartKey: GAME_CONFIG.KEYS.RESTART });
+  constructor(config: { isMultiplayer?: boolean } = {}) {
+    super({
+      pauseKey: GAME_CONFIG.KEYS.PAUSE,
+      restartKey: GAME_CONFIG.KEYS.RESTART,
+      isMultiplayer: config.isMultiplayer
+    });
   }
 
   public setMultiplayerMode(active: boolean) {

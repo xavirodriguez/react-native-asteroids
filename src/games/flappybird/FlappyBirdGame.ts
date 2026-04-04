@@ -31,12 +31,12 @@ export class FlappyBirdGame
   implements IFlappyBirdGame {
 
   private gameStateSystem: FlappyBirdGameStateSystem;
-  private isMultiplayer = false;
 
-  constructor() {
+  constructor(config: { isMultiplayer?: boolean } = {}) {
     super({
       pauseKey: FLAPPY_CONFIG.KEYS.PAUSE,
-      restartKey: FLAPPY_CONFIG.KEYS.RESTART
+      restartKey: FLAPPY_CONFIG.KEYS.RESTART,
+      isMultiplayer: config.isMultiplayer
     });
   }
 

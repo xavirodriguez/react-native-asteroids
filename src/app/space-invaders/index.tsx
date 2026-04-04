@@ -9,9 +9,9 @@ import { useSpaceInvadersGame } from "@/hooks/useSpaceInvadersGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
 
 export default function SpaceInvadersScreen() {
-  const { game, gameState, handleInput, isPaused, togglePause, highScore } = useSpaceInvadersGame();
   const [started, setStarted] = useState(false);
   const [isMulti, setIsMulti] = useState(false);
+  const { game, gameState, handleInput, isPaused, togglePause, highScore } = useSpaceInvadersGame(isMulti && started);
   const [playerName, setPlayerName] = useState("Jugador");
 
   const { room, connected, serverState } = useMultiplayer("spaceinvaders", playerName, isMulti && started);

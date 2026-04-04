@@ -45,9 +45,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
 
     return () => {
       cancelledRef.current = true;
-      if (currentRoom) {
-        currentRoom.leave();
-      }
+      disconnect();
       setConnected(false);
       setRoom(null);
     };

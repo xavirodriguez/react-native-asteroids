@@ -9,9 +9,9 @@ import { useAsteroidsGame } from "@/hooks/useAsteroidsGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
 
 export default function AsteroidsScreen() {
-  const { game, gameState, handleInput, isPaused, togglePause, highScore } = useAsteroidsGame();
   const [started, setStarted] = useState(false);
   const [isMulti, setIsMulti] = useState(false);
+  const { game, gameState, handleInput, isPaused, togglePause, highScore } = useAsteroidsGame(isMulti && started);
   const [playerName, setPlayerName] = useState("Jugador");
 
   const { room, connected, serverState } = useMultiplayer("asteroids", playerName, isMulti && started);

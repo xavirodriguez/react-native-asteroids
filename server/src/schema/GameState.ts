@@ -69,6 +69,7 @@ export class Pipe extends Schema {
   @type("string") id: string = "";
   @type("number") x: number = 0;
   @type("number") gapY: number = 0;
+  @type({ map: "boolean" }) scoredBy = new MapSchema<boolean>();
 }
 
 export class FlappyBirdState extends Schema {

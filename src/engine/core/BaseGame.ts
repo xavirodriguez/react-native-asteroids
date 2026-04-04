@@ -7,6 +7,7 @@ import type { IGame, UpdateListener } from "./IGame";
 export interface BaseGameConfig {
   pauseKey?: string;    // Key code for pausing, e.g., "KeyP"
   restartKey?: string;  // Key code for restarting, e.g., "KeyR"
+  isMultiplayer?: boolean;
 }
 
 /**
@@ -20,6 +21,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   protected gameLoop: GameLoop;
   protected inputManager: InputManager<TInput>;
   protected sceneManager: SceneManager;
+  protected isMultiplayer: boolean;
 
   private _isPaused = false;
   private _listeners = new Set<UpdateListener<BaseGame<TState, TInput>>>();
@@ -27,6 +29,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   private _config: BaseGameConfig;
 
   constructor(config: BaseGameConfig = {}) {
+    this.isMultiplayer = config.isMultiplayer || false;
     this.world = new World();
     this.gameLoop = new GameLoop();
     this.inputManager = new InputManager<TInput>();

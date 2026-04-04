@@ -101,25 +101,32 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         }
     });
 
-    // Collision detection
+    // Collision detection - Bullet vs Asteroid
+    const bulletsToRemove = new Set<string>();
+    const asteroidsToRemove = new Set<string>();
+
     this.state.bullets.forEach((bullet, bulletId) => {
         this.state.asteroids.forEach((asteroid, asteroidId) => {
+            if (asteroidsToRemove.has(asteroidId)) return;
             const dx = bullet.x - asteroid.x;
             const dy = bullet.y - asteroid.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
             if (dist < 30) {
-                this.state.bullets.delete(bulletId);
-                this.state.asteroids.delete(asteroidId);
+                bulletsToRemove.add(bulletId);
+                asteroidsToRemove.add(asteroidId);
                 const owner = this.state.players.get(bullet.ownerId);
                 if (owner) owner.score += 100;
-
-                // Respawn asteroid if none left
-                if (this.state.asteroids.size === 0) {
-                    this.spawnAsteroids(6);
-                }
             }
         });
     });
+
+    bulletsToRemove.forEach(id => this.state.bullets.delete(id));
+    asteroidsToRemove.forEach(id => this.state.asteroids.delete(id));
+
+    // Respawn asteroid if none left (after all deletions)
+    if (this.state.asteroids.size === 0 && this.state.gameStarted) {
+        this.spawnAsteroids(6);
+    }
 
     // Ship vs Asteroid collision
     this.state.players.forEach((player, sessionId) => {
