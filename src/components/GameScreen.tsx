@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, Platform } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { CanvasRenderer } from "@/src/components/CanvasRenderer";
@@ -38,7 +38,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 }) => {
   const [started, setStarted] = useState(false);
 
-  if (!game) return null;
+  // For multiplayer, we don't necessarily have a local game instance
+  const world = game ? game.getWorld() : null;
 
   if (!started) {
     return (
@@ -63,15 +64,17 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
         <UI
           gameState={gameState}
-          onRestart={() => game.restart()}
+          onRestart={() => game?.restart()}
           onPause={() => togglePause()}
           isPaused={isPaused}
           highScore={highScore}
         />
-        <CanvasRenderer
-          world={game.getWorld()}
-          onInitialize={(renderer) => game.initializeRenderer(renderer)}
-        />
+        {world && (
+          <CanvasRenderer
+            world={world}
+            onInitialize={(renderer) => game?.initializeRenderer(renderer)}
+          />
+        )}
         <Controls {...controlHandlers} />
       </View>
     </SafeAreaProvider>
