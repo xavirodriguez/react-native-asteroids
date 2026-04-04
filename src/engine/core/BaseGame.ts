@@ -21,7 +21,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   protected gameLoop: GameLoop;
   protected inputManager: InputManager<TInput>;
   protected sceneManager: SceneManager;
-  protected isMultiplayer: boolean;
+  public isMultiplayer: boolean;
 
   private _isPaused = false;
   private _listeners = new Set<UpdateListener<BaseGame<TState, TInput>>>();

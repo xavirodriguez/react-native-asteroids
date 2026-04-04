@@ -6,6 +6,7 @@ import { Renderer } from "../../../engine/rendering/Renderer";
  * Public interface for the Flappy Bird game controller.
  */
 export interface IFlappyBirdGame extends IGame<IFlappyBirdGame> {
+  isMultiplayer: boolean;
   getGameState(): FlappyBirdState;
   setInput(input: Partial<FlappyBirdInput>): void;
   isPausedState(): boolean;

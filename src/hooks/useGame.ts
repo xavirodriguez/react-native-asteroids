@@ -70,8 +70,8 @@ export function useGame<
       game.destroy();
       deactivateKeepAwake();
     };
-  // GameClass is stable, and we use refs for mutable state in the subscription.
-  }, []);
+  // Re-initialize if multiplayer mode or game class changes
+  }, [GameClass, isMultiplayer]);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
     gameRef.current?.setInput(input);
