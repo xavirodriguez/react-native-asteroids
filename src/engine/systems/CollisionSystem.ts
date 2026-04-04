@@ -1,6 +1,7 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { PositionComponent, ColliderComponent, Entity, ReclaimableComponent } from "../types/EngineTypes";
+import { PositionComponent, ColliderComponent, Entity, ReclaimableComponent, AABB } from "../types/EngineTypes";
+import { SpatialHash } from "../collision/SpatialHash";
 
 class BoundData {
   id: Entity = 0;
@@ -18,6 +19,9 @@ export abstract class CollisionSystem extends System {
   // Pre-allocate array to store bounds data and minimize GC pressure
   private boundsCache: BoundData[] = [];
   private activeBounds: BoundData[] = [];
+  private spatialHash = new SpatialHash(100);
+  private queryResult = new Set<Entity>();
+  private aabb: AABB = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 
   /**
    * Updates the collision state.
@@ -35,40 +39,64 @@ export abstract class CollisionSystem extends System {
       this.boundsCache.push(new BoundData());
     }
 
-    // Fill cache with current frame data and prepare active subset
-    this.activeBounds.length = n;
+    // Broadphase with Spatial Hash
+    this.spatialHash.clear();
     for (let i = 0; i < n; i++) {
       const id = colliders[i];
       const pos = world.getComponent<PositionComponent>(id, "Position")!;
       const col = world.getComponent<ColliderComponent>(id, "Collider")!;
-      const b = this.boundsCache[i];
-      b.id = id;
-      b.pos = pos;
-      b.col = col;
-      b.minX = pos.x - col.radius;
-      b.maxX = pos.x + col.radius;
-      this.activeBounds[i] = b;
+
+      const layer = (col as any).layer !== undefined ? (col as any).layer : 1;
+      const mask = (col as any).mask !== undefined ? (col as any).mask : 1;
+      if (layer === 0 && mask === 0) continue;
+
+      const halfWidth = (col as any).width ? (col as any).width / 2 : col.radius;
+      const halfHeight = (col as any).height ? (col as any).height / 2 : col.radius;
+
+      this.aabb.minX = pos.x - halfWidth;
+      this.aabb.maxX = pos.x + halfWidth;
+      this.aabb.minY = pos.y - halfHeight;
+      this.aabb.maxY = pos.y + halfHeight;
+      this.spatialHash.insert(id, this.aabb);
     }
 
-    // Sort by minX
-    this.activeBounds.sort((a, b) => a.minX - b.minX);
+    const processedPairs = new Set<string>();
 
-    // Sweep and Prune
     for (let i = 0; i < n; i++) {
-      const a = this.activeBounds[i];
-      const a_maxX = a.maxX;
+      const idA = colliders[i];
+      const posA = world.getComponent<PositionComponent>(idA, "Position")!;
+      const colA = world.getComponent<ColliderComponent>(idA, "Collider");
 
-      for (let j = i + 1; j < n; j++) {
-        const b = this.activeBounds[j];
+      if (!colA) continue;
+      const maskA = (colA as any).mask !== undefined ? (colA as any).mask : 1;
+      if (maskA === 0) continue;
 
-        // Since activeBounds is sorted by minX, if b's minX is already past a's maxX,
-        // no further objects in the list can overlap with a on the X-axis.
-        if (b.minX > a_maxX) {
-          break;
-        }
+      const halfWidth = (colA as any).width ? (colA as any).width / 2 : colA.radius;
+      const halfHeight = (colA as any).height ? (colA as any).height / 2 : colA.radius;
 
-        if (this.isCollidingWithComponents(a.pos, a.col, b.pos, b.col)) {
-          this.onCollision(world, a.id, b.id);
+      this.aabb.minX = posA.x - halfWidth;
+      this.aabb.maxX = posA.x + halfWidth;
+      this.aabb.minY = posA.y - halfHeight;
+      this.aabb.maxY = posA.y + halfHeight;
+
+      this.queryResult.clear();
+      this.spatialHash.query(this.aabb, this.queryResult);
+
+      for (const idB of this.queryResult) {
+        if (idA === idB) continue;
+
+        const colB = world.getComponent<ColliderComponent>(idB, "Collider");
+        if (!colB) continue;
+        const layerB = (colB as any).layer !== undefined ? (colB as any).layer : 1;
+        if (!(maskA & layerB)) continue;
+
+        const pairKey = idA < idB ? `${idA},${idB}` : `${idB},${idA}`;
+        if (processedPairs.has(pairKey)) continue;
+        processedPairs.add(pairKey);
+
+        const posB = world.getComponent<PositionComponent>(idB, "Position")!;
+        if (this.isCollidingWithComponents(posA, colA, posB, colB)) {
+          this.onCollision(world, idA, idB);
         }
       }
     }

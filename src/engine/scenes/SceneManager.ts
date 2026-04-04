@@ -1,87 +1,133 @@
 import { Scene } from "./Scene";
-import { Renderer } from "../rendering/Renderer";
+import { World } from "../core/World";
+
+export type TransitionType = 'instant' | 'fade' | 'slide';
+
+export interface SceneTransition {
+  type: TransitionType;
+  durationMs: number;
+}
 
 /**
- * Manages game scenes and their lifecycle transitions.
- * Responsible for updating and rendering the active scene.
+ * Manages a stack of game scenes and their lifecycle transitions.
  */
 export class SceneManager {
-  private currentScene: Scene | null = null;
+  private stack: Scene[] = [];
+  private scenes = new Map<string, Scene>();
 
   /**
-   * Transitions to a new scene.
-   * Calls onExit() on the old scene and onEnter() on the new one.
-   *
-   * @param scene - The new scene to transition to.
+   * Registers a scene by name.
    */
-  public transitionTo(scene: Scene): void {
-    if (this.currentScene) {
-      this.currentScene.onExit();
-    }
-
-    this.currentScene = scene;
-    this.currentScene.onEnter();
+  public register(scene: Scene): void {
+    this.scenes.set(scene.name, scene);
   }
 
   /**
-   * Restarts the current scene.
+   * Pushes a new scene onto the stack.
    */
-  public restartCurrentScene(): void {
-    if (this.currentScene) {
-      this.currentScene.onExit();
-      const world = this.currentScene.getWorld();
-      world.clear();
-      world.clearSystems();
-      this.currentScene.onEnter();
+  public async push(name: string, transition?: SceneTransition): Promise<void> {
+    const scene = this.scenes.get(name);
+    if (!scene) throw new Error(`Scene not found: ${name}`);
+
+    // Optional: Pause current scene
+    const current = this.current();
+    if (current) {
+      current.onPause();
+    }
+
+    this.stack.push(scene);
+    await scene.onEnter(scene.getWorld());
+  }
+
+  /**
+   * Pops the current scene from the stack.
+   */
+  public async pop(transition?: SceneTransition): Promise<void> {
+    if (this.stack.length <= 1) {
+      console.warn("Cannot pop the last scene in the stack.");
+      return;
+    }
+
+    const scene = this.stack.pop()!;
+    await scene.onExit(scene.getWorld());
+
+    const next = this.current();
+    if (next) {
+      next.onResume();
     }
   }
 
   /**
-   * Pauses the active scene.
+   * Replaces the current scene with a new one.
    */
-  public pause(): void {
-    if (this.currentScene) {
-      this.currentScene.onPause();
+  public async replace(name: string, transition?: SceneTransition): Promise<void> {
+    const scene = this.scenes.get(name);
+    if (!scene) throw new Error(`Scene not found: ${name}`);
+
+    const current = this.stack.pop();
+    if (current) {
+      await current.onExit(current.getWorld());
     }
+
+    this.stack.push(scene);
+    await scene.onEnter(scene.getWorld());
   }
 
   /**
-   * Resumes the active scene.
+   * Gets the currently active scene.
    */
-  public resume(): void {
-    if (this.currentScene) {
-      this.currentScene.onResume();
-    }
+  public current(): Scene | null {
+    return this.stack.length > 0 ? this.stack[this.stack.length - 1] : null;
   }
 
   /**
    * Updates the current scene.
-   *
-   * @param deltaTime - Time elapsed since the last update in milliseconds.
    */
-  public update(deltaTime: number): void {
-    if (this.currentScene) {
-      this.currentScene.update(deltaTime);
+  public update(dt: number): void {
+    const active = this.current();
+    if (active) {
+      active.onUpdate(dt, active.getWorld());
     }
   }
 
   /**
    * Renders the current scene.
-   *
-   * @param renderer - The renderer instance to use.
    */
-  public render(renderer: Renderer): void {
-    if (this.currentScene) {
-      this.currentScene.render(renderer);
+  public render(alpha: number): void {
+    const active = this.current();
+    if (active) {
+      active.onRender(alpha);
     }
   }
 
-  /**
-   * Gets the currently active scene.
-   *
-   * @returns The active scene or null if none is set.
-   */
+  // Backward compatibility methods
+  public transitionTo(scene: Scene): void {
+    this.register(scene);
+    this.replace(scene.name);
+  }
+
   public getCurrentScene(): Scene | null {
-    return this.currentScene;
+    return this.current();
+  }
+
+  public restartCurrentScene(): void {
+    const active = this.current();
+    if (active) {
+      const world = active.getWorld();
+      active.onExit(world);
+      world.clear();
+      world.clearSystems();
+      active.onEnter(world);
+    }
+  }
+
+  public pause(): void {
+    const active = this.current();
+    if (active) active.onPause();
+  }
+
+  public resume(): void {
+    const active = this.current();
+    if (active) active.onResume();
   }
 }

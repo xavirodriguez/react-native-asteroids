@@ -83,6 +83,13 @@ export class World {
   }
 
   /**
+   * Alias for {@link query} to support the required ECS extension interface.
+   */
+  getEntitiesWith(...componentTypes: string[]): Entity[] {
+    return this.query(...componentTypes);
+  }
+
+  /**
    * Removes a component of a specific type from an entity.
    *
    * @param entity - The entity to remove the component from.
