@@ -31,7 +31,7 @@ export class GameLoop {
         this.fixedDeltaTime = 1000 / config.fixedHz;
       }
       if (config.maxDeltaMs) {
-        this.maxDeltaMs = config.maxDeltaMs;
+        this.maxDeltaTime = config.maxDeltaMs;
       }
     }
   }
