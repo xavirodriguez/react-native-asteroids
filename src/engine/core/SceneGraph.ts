@@ -61,9 +61,11 @@ export class SceneGraph {
       if (parent) {
         parent.childIds = parent.childIds.filter(id => id !== entityId);
       }
-    } else {
-      this.roots.delete(entityId);
     }
+
+    // Always attempt to remove from roots, covering cases where parentId
+    // was set but the parent didn't exist in the graph.
+    this.roots.delete(entityId);
 
     if (reparentChildren) {
       for (const childId of node.childIds) {
