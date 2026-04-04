@@ -118,8 +118,12 @@ export class InputSystem {
 
   private emitGesture(gesture: Omit<GestureEvent, 'scale'>): void {
     const pooled = this.acquireGesture();
+    pooled.direction = undefined;
+    pooled.duration = undefined;
+    pooled.scale = undefined;
     Object.assign(pooled, gesture);
     this.gestureBuffer.push(pooled);
+  }
   }
 
   private acquireGesture(): GestureEvent {
