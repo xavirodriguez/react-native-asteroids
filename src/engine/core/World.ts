@@ -160,6 +160,8 @@ export class World {
     this.components.clear();
     this.componentIndex.clear();
     this.queryCache.clear();
+    this.nextEntityId = 1;
+    this.freeEntities = [];
     this.version++;
   }
 
