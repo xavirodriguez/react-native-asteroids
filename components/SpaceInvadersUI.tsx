@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
-import { GameStateComponent } from "../games/space-invaders/types/SpaceInvadersTypes";
+import { GameStateComponent } from "../src/games/space-invaders/types/SpaceInvadersTypes";
 
 interface SpaceInvadersUIProps {
   gameState: GameStateComponent;

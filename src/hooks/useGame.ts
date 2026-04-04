@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { activateKeepAwakeAsync } from "expo-keep-awake";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import type { BaseGame } from "../engine/core/BaseGame";
 
 // Constructor type - accepts any class that extends BaseGame
@@ -34,6 +34,9 @@ export function useGame<
   const [, forceUpdate] = useState(0);
 
   // Optimization: Throttle React state updates to 15 FPS to prevent bridge saturation
+  const lastUpdateTimeRef = useRef<number>(0);
+  const lastPausedRef = useRef<boolean>(false);
+  const THROTTLE_MS = 1000 / 15;
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -63,6 +66,7 @@ export function useGame<
       unsubscribe();
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       game.destroy();
+      deactivateKeepAwake();
     };
   // GameClass is stable, and we use refs for mutable state in the subscription.
   }, []);
