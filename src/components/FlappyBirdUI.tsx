@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
-import { FlappyBirdState } from "../src/games/flappybird/types/FlappyBirdTypes";
+import { FlappyBirdState } from "../games/flappybird/types/FlappyBirdTypes";
 
 interface FlappyBirdUIProps {
   gameState: FlappyBirdState;

@@ -6,6 +6,7 @@ const GAMES = [
   { id: "asteroids", label: "ASTEROIDES" },
   { id: "space-invaders", label: "SPACE INVADERS" },
   { id: "flappybird", label: "FLAPPY BIRD" },
+  { id: "multiplayer", label: "MULTIPLAYER" },
 ] as const;
 
 export default function HomeScreen() {
@@ -17,7 +18,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             key={game.id}
             style={styles.menuButton}
-            onPress={() => router.push(`/${game.id}/`)}
+            onPress={() => router.push(`/${game.id}/` as any)}
           >
             <Text style={styles.menuButtonText}>{game.label}</Text>
           </TouchableOpacity>

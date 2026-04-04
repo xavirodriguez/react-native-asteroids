@@ -5,14 +5,11 @@ import {
   type AsteroidComponent,
   type HealthComponent,
   type Entity,
-  type ComponentType,
   GAME_CONFIG,
   RenderComponent,
-  ReclaimableComponent,
 } from "../../../types/GameTypes";
 
 import { createAsteroid, createParticle } from "../EntityFactory";
-import { getGameState } from "../GameUtils";
 import { ScreenShakeComponent } from "../../../engine/types/EngineTypes";
 import { hapticDamage, hapticDeath } from "../../../utils/haptics";
 import { ParticlePool } from "../EntityPool";
@@ -241,8 +238,10 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
   private addScore(scoreContext: { world: World; points: number }): void {
     const { world, points } = scoreContext;
-    const gameState = getGameState(world);
-    gameState.score += points;
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
+    if (gameState) {
+      gameState.score += points;
+    }
   }
 
 }

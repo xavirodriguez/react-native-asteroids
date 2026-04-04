@@ -12,5 +12,6 @@ import { type GameStateComponent, INITIAL_GAME_STATE } from "../../types/GameTyp
  * @returns The current {@link GameStateComponent} or {@link INITIAL_GAME_STATE} if not found.
  */
 export function getGameState(world: World): GameStateComponent {
-  return world.getSingleton<GameStateComponent>("GameState") ?? INITIAL_GAME_STATE;
+  const state = world.getSingleton<GameStateComponent>("GameState");
+  return state || { ...INITIAL_GAME_STATE };
 }
