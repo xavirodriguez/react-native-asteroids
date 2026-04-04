@@ -103,7 +103,7 @@ export class SceneManager {
   // Backward compatibility methods
   public transitionTo(scene: Scene): void {
     this.register(scene);
-    this.replace(scene.name);
+    this.replace(scene.name).catch(console.error);
   }
 
   public getCurrentScene(): Scene | null {
@@ -114,10 +114,22 @@ export class SceneManager {
     const active = this.current();
     if (active) {
       const world = active.getWorld();
-      active.onExit(world);
-      world.clear();
-      world.clearSystems();
-      active.onEnter(world);
+      const exitResult = active.onExit(world);
+
+      const reset = () => {
+        world.clear();
+        world.clearSystems();
+        const enterResult = active.onEnter(world);
+        if (enterResult instanceof Promise) {
+          enterResult.catch(console.error);
+        }
+      };
+
+      if (exitResult instanceof Promise) {
+        exitResult.then(reset).catch(console.error);
+      } else {
+        reset();
+      }
     }
   }
 
