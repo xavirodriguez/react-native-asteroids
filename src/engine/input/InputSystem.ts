@@ -59,10 +59,9 @@ export class InputSystem {
    * Consumes and empties the gesture buffer.
    */
   public consumeGestures(): GestureEvent[] {
-    const result = this.gestureBuffer.map(g => ({ ...g }));
+    const result = [...this.gestureBuffer];
     this.gestureBuffer.length = 0;
     return result;
-  }
   }
 
   /**

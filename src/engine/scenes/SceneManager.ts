@@ -106,17 +106,29 @@ export class SceneManager {
   // Backward compatibility methods
   public transitionTo(scene: Scene): void {
     this.register(scene);
-    // Note: This is an async gap where stack is empty if replace is called.
-    // However, to keep it synchronous for legacy callers, we push immediately
-    // but the lifecycle methods remain async.
 
     const prev = this.stack.pop();
     this.stack.push(scene);
 
-    (async () => {
-      if (prev) await prev.onExit(prev.getWorld());
-      await scene.onEnter(scene.getWorld());
-    })().catch(console.error);
+    const world = scene.getWorld();
+
+    const triggerEnter = () => {
+      const enterResult = scene.onEnter(world);
+      if (enterResult instanceof Promise) {
+        enterResult.catch(console.error);
+      }
+    };
+
+    if (prev) {
+      const exitResult = prev.onExit(prev.getWorld());
+      if (exitResult instanceof Promise) {
+        exitResult.then(triggerEnter).catch(console.error);
+      } else {
+        triggerEnter();
+      }
+    } else {
+      triggerEnter();
+    }
   }
 
   public getCurrentScene(): Scene | null {
