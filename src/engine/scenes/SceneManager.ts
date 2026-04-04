@@ -19,6 +19,9 @@ export class SceneManager {
    * Registers a scene by name.
    */
   public register(scene: Scene): void {
+    if (scene.name === "Unnamed Scene") {
+      console.warn("Scene registered without a unique name. This may cause collisions.");
+    }
     this.scenes.set(scene.name, scene);
   }
 
@@ -103,7 +106,17 @@ export class SceneManager {
   // Backward compatibility methods
   public transitionTo(scene: Scene): void {
     this.register(scene);
-    this.replace(scene.name).catch(console.error);
+    // Note: This is an async gap where stack is empty if replace is called.
+    // However, to keep it synchronous for legacy callers, we push immediately
+    // but the lifecycle methods remain async.
+
+    const prev = this.stack.pop();
+    this.stack.push(scene);
+
+    (async () => {
+      if (prev) await prev.onExit(prev.getWorld());
+      await scene.onEnter(scene.getWorld());
+    })().catch(console.error);
   }
 
   public getCurrentScene(): Scene | null {

@@ -3,41 +3,25 @@ import { World } from "../core/World";
 import { PositionComponent, ColliderComponent, Entity, ReclaimableComponent, AABB } from "../types/EngineTypes";
 import { SpatialHash } from "../collision/SpatialHash";
 
-class BoundData {
-  id: Entity = 0;
-  pos: PositionComponent = { type: "Position", x: 0, y: 0 };
-  col: ColliderComponent = { type: "Collider", radius: 0 };
-  minX: number = 0;
-  maxX: number = 0;
-}
-
 /**
  * Generic Collision System for the TinyAsterEngine.
- * Handles circle-to-circle collision detection with Sweep and Prune optimization.
+ * Handles circle-to-circle collision detection with Spatial Hash broadphase optimization.
  */
 export abstract class CollisionSystem extends System {
-  // Pre-allocate array to store bounds data and minimize GC pressure
-  private boundsCache: BoundData[] = [];
-  private activeBounds: BoundData[] = [];
   private spatialHash = new SpatialHash(100);
   private queryResult = new Set<Entity>();
   private aabb: AABB = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+  private processedPairs = new Set<number>();
 
   /**
    * Updates the collision state.
-   * Optimizes checks using a simple Sweep and Prune algorithm.
-   * Complexity: O(n log n) for sorting, plus O(n + collisions) for the sweep.
+   * Optimizes checks using a Spatial Hashing algorithm for broadphase.
    */
   public update(world: World, deltaTime: number): void {
     void deltaTime;
     const colliders = world.query("Position", "Collider");
     const n = colliders.length;
     if (n < 2) return;
-
-    // Adjust cache size if needed
-    while (this.boundsCache.length < n) {
-      this.boundsCache.push(new BoundData());
-    }
 
     // Broadphase with Spatial Hash
     this.spatialHash.clear();
@@ -60,7 +44,7 @@ export abstract class CollisionSystem extends System {
       this.spatialHash.insert(id, this.aabb);
     }
 
-    const processedPairs = new Set<string>();
+    this.processedPairs.clear();
 
     for (let i = 0; i < n; i++) {
       const idA = colliders[i];
@@ -90,9 +74,10 @@ export abstract class CollisionSystem extends System {
         const layerB = (colB as any).layer !== undefined ? (colB as any).layer : 1;
         if (!(maskA & layerB)) continue;
 
-        const pairKey = idA < idB ? `${idA},${idB}` : `${idB},${idA}`;
-        if (processedPairs.has(pairKey)) continue;
-        processedPairs.add(pairKey);
+        // Optimized pair key for zero-allocation tracking
+        const pairKey = idA < idB ? (idA << 16) | idB : (idB << 16) | idA;
+        if (this.processedPairs.has(pairKey)) continue;
+        this.processedPairs.add(pairKey);
 
         const posB = world.getComponent<PositionComponent>(idB, "Position")!;
         if (this.isCollidingWithComponents(posA, colA, posB, colB)) {

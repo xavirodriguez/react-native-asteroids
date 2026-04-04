@@ -8,6 +8,20 @@ export interface Component {
 
 export type Entity = number;
 
+export interface Transform {
+  x: number;
+  y: number;
+  rotation: number; // radianes
+  scaleX: number;
+  scaleY: number;
+}
+
+export interface Velocity {
+  vx: number;
+  vy: number;
+  angularVelocity: number;
+}
+
 /**
  * Components provided by the engine as reusable primitives.
  */
@@ -80,6 +94,24 @@ export interface BoundaryComponent extends Component {
 export interface FrictionComponent extends Component {
   type: "Friction";
   value: number; // 0 to 1, where 1 is no friction and 0 is instant stop
+}
+
+export interface RenderableComponent extends Component {
+  type: "Renderable";
+  shape: 'sprite' | 'rect' | 'circle' | 'line';
+  textureId: string | null;
+  width: number;
+  height: number;
+  color: string;
+  visible: boolean;
+  zOrder: number;
+}
+
+export interface AABB {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
 }
 
 export interface ScreenShake {

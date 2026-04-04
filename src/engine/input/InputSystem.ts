@@ -6,6 +6,7 @@ import { TouchPoint, GestureEvent, TouchPhase } from "./InputTypes";
  */
 export class InputSystem {
   private activeTouches = new Map<number, TouchPoint>();
+  private startPositions = new Map<number, { x: number, y: number, timestamp: number }>();
   private gestureBuffer: GestureEvent[] = [];
   private gesturePool: GestureEvent[] = [];
   private poolIndex = 0;
@@ -23,12 +24,13 @@ export class InputSystem {
     for (const point of points) {
       if (point.phase === 'began') {
         this.activeTouches.set(point.id, { ...point });
+        this.startPositions.set(point.id, { x: point.x, y: point.y, timestamp: point.timestamp });
       } else if (point.phase === 'moved') {
         this.activeTouches.set(point.id, { ...point });
-        this.detectPinch(point);
       } else if (point.phase === 'ended' || point.phase === 'cancelled') {
         this.detectGestures(point);
         this.activeTouches.delete(point.id);
+        this.startPositions.delete(point.id);
       }
     }
   }
@@ -67,17 +69,15 @@ export class InputSystem {
    */
   public flush(): void {
     this.poolIndex = 0;
-    // Gesture buffer is already cleared by consumeGestures() typically,
-    // but if not, logic should be careful not to keep stale gestures.
   }
 
   private detectGestures(endPoint: TouchPoint): void {
-    const startPoint = this.activeTouches.get(endPoint.id);
-    if (!startPoint) return;
+    const start = this.startPositions.get(endPoint.id);
+    if (!start) return;
 
-    const duration = endPoint.timestamp - startPoint.timestamp;
-    const dx = endPoint.x - startPoint.x;
-    const dy = endPoint.y - startPoint.y;
+    const duration = endPoint.timestamp - start.timestamp;
+    const dx = endPoint.x - start.x;
+    const dy = endPoint.y - start.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     // Tap
@@ -94,7 +94,7 @@ export class InputSystem {
     if (velocity > this.SWIPE_MIN_VELOCITY) {
       this.emitGesture({
         type: 'swipe',
-        position: { x: startPoint.x, y: startPoint.y },
+        position: { x: start.x, y: start.y },
         direction: { x: dx / distance, y: dy / distance }
       });
       return;
@@ -104,20 +104,20 @@ export class InputSystem {
     if (duration >= this.HOLD_MIN_DURATION && distance < this.TAP_MAX_DISTANCE) {
       this.emitGesture({
         type: 'hold',
-        position: { x: startPoint.x, y: startPoint.y },
+        position: { x: start.x, y: start.y },
         duration
       });
     }
   }
 
-  private detectPinch(movePoint: TouchPoint): void {
-    if (this.activeTouches.size !== 2) return;
-    // Logic for pinch would compare distance between 2 current move points vs 2 start points
-    // Simplified for now
-  }
-
   private emitGesture(gesture: Omit<GestureEvent, 'scale'>): void {
     const pooled = this.acquireGesture();
+
+    // Clear stale properties from prior usage before assign
+    pooled.direction = undefined;
+    pooled.duration = undefined;
+    pooled.scale = undefined;
+
     Object.assign(pooled, gesture);
     this.gestureBuffer.push(pooled);
   }
