@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { activateKeepAwakeAsync } from "expo-keep-awake";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { Client, Room } from "colyseus.js";
 import type { BaseGame } from "../engine/core/BaseGame";
 
@@ -33,6 +33,7 @@ export function useMultiplayerGame<
   const roomRef = useRef<Room | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     activateKeepAwakeAsync().catch(() => {});
 
     // Connect to the Colyseus server
@@ -41,10 +42,17 @@ export function useMultiplayerGame<
     async function connect() {
       try {
         const room = await client.joinOrCreate("asteroids");
+
+        if (cancelled) {
+          room.leave();
+          return;
+        }
+
         roomRef.current = room;
         setConnected(true);
 
         room.onStateChange((state) => {
+          if (cancelled) return;
           // [ASUMO: El estado del servidor se mapea directamente al TState del juego]
           setGameState(state as unknown as TState);
         });
@@ -54,15 +62,23 @@ export function useMultiplayerGame<
           setConnected(false);
         });
       } catch (e) {
-        console.error("Failed to connect to multiplayer server:", e);
+        if (!cancelled) {
+          console.error("Failed to connect to multiplayer server:", e);
+        }
       }
     }
 
     connect();
 
     return () => {
+      cancelled = true;
       if (roomRef.current) {
         roomRef.current.leave();
+      }
+      try {
+        deactivateKeepAwake();
+      } catch {
+        // Ignore errors on web
       }
     };
   }, []);
