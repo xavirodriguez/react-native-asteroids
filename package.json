@@ -12,9 +12,9 @@
     "build:dev": "eas build --profile development --platform all",
     "build:preview": "eas build --profile preview --platform all",
     "build:prod": "eas build --profile production --platform all",
+    "deploy:dev": "eas update --branch development --message 'Dev deploy'",
     "deploy:preview": "eas update --branch preview --message 'Preview deploy'",
-    "deploy:prod": "eas update --branch production --message 'Production deploy'",
-    "deploy:dev": "eas update --branch development --message 'Dev deploy'"
+    "deploy:prod": "eas update --branch production --message 'Production deploy'"
   },
   "jest": {
     "preset": "jest-expo"
@@ -39,7 +39,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
-    "expo": "^55.0.7",
+    "expo": "^55.0.11",
     "expo-constants": "~55.0.8",
     "expo-dev-client": "~55.0.17",
     "expo-font": "~55.0.4",

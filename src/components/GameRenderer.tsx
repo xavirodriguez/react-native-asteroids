@@ -1,7 +1,7 @@
 import React, { useMemo, useRef } from "react";
 import { View, StyleSheet, Platform } from "react-native";
-import type { World } from "../src/engine/core/World";
-import { GAME_CONFIG } from "../src/types/GameTypes";
+import type { World } from "../engine/core/World";
+import { GAME_CONFIG } from "../types/GameTypes";
 
 // Conditionally import Skia components for non-web platforms
 let Canvas: any, Drawing: any;
@@ -35,7 +35,7 @@ export const GameRenderer = React.memo(function GameRenderer({ world, onInitiali
         // We only use EngineSkiaRenderer on non-web or if explicitly needed
         // but here we are in a Skia-specific component.
         try {
-            const { SkiaRenderer: EngineSkiaRenderer } = require("../src/engine/rendering/SkiaRenderer");
+            const { SkiaRenderer: EngineSkiaRenderer } = require("../engine/rendering/SkiaRenderer");
             const renderer = new EngineSkiaRenderer(canvas);
             if (onInitialize) onInitialize(renderer);
             rendererRef.current = renderer;

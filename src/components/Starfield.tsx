@@ -1,9 +1,9 @@
 import React, { useMemo } from "react";
 import { Circle, Group } from "@shopify/react-native-skia";
-import type { World } from "../src/engine/core/World";
+import type { World } from "../engine/core/World";
 import {
   type GameStateComponent,
-} from "../src/types/GameTypes";
+} from "../types/GameTypes";
 
 interface StarfieldProps {
   world: World;

@@ -2,10 +2,10 @@ import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Platform } from "react-native";
 import {
   GAME_CONFIG,
-} from "../src/types/GameTypes";
-import { CanvasRenderer as EngineCanvasRenderer } from "../src/engine/rendering/CanvasRenderer";
-import type { World } from "../src/engine/core/World";
-import type { Renderer } from "../src/engine/rendering/Renderer";
+} from "../types/GameTypes";
+import { CanvasRenderer as EngineCanvasRenderer } from "../engine/rendering/CanvasRenderer";
+import type { World } from "../engine/core/World";
+import type { Renderer } from "../engine/rendering/Renderer";
 
 interface CanvasRendererProps {
   world: World;

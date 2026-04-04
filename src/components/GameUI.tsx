@@ -12,7 +12,7 @@ import Animated, {
   useAnimatedStyle,
   withSequence,
 } from "react-native-reanimated";
-import type { GameStateComponent } from "../src/types/GameTypes";
+import type { GameStateComponent } from "../types/GameTypes";
 
 // Conditionally import Skia components
 let Canvas: any, BackdropBlur: any, Fill: any;

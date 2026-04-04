@@ -2,7 +2,6 @@ import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../../../types/GameTypes";
 import { spawnAsteroidWave, createUfo } from "../EntityFactory";
-import { getGameState } from "../GameUtils";
 import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
 import { RandomService } from "../../../engine/utils/RandomService";
 
@@ -22,7 +21,8 @@ export class AsteroidGameStateSystem extends System implements IGameStateSystem 
    * Updates the game state by processing various sub-tasks.
    */
   public update(world: World, deltaTime: number): void {
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
+    if (!gameState) return;
 
     this.updatePlayerStatus({ world, gameState, deltaTime });
     this.updateAsteroidsCount(world, gameState);

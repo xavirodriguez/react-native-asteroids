@@ -1,149 +1,35 @@
-import { useState } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, Platform } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import { CanvasRenderer } from "@/components/CanvasRenderer";
-import { SpaceInvadersUI } from "@/components/SpaceInvadersUI";
-import { SpaceInvadersControls } from "@/components/SpaceInvadersControls";
-import { useSpaceInvadersGame } from "@/hooks/useSpaceInvadersGame";
+import { Platform } from "react-native";
+import { GameScreen } from "@/src/components/GameScreen";
+import { SpaceInvadersUI } from "@/src/components/SpaceInvadersUI";
+import { SpaceInvadersControls } from "@/src/components/SpaceInvadersControls";
+import { useSpaceInvadersGame } from "@/src/hooks/useSpaceInvadersGame";
 
-export default function SpaceInvadersScreen() {
+/**
+ * Space Invaders Game Route.
+ * Thin wrapper around the generic GameScreen component.
+ */
+export default function SpaceInvadersRoute() {
   const { game, gameState, handleInput, isPaused, togglePause, highScore } = useSpaceInvadersGame();
-  const [started, setStarted] = useState(false);
 
-  if (!game) return null;
-
-  if (!started) {
-    return (
-      <StartScreen
-        title="SPACE INVADERS"
-        highScore={highScore}
-        onStart={() => setStarted(true)}
-        instructions={Platform.OS === "web" ? "←→ Mover  Espacio Disparar" : "Controles táctiles"}
-      />
-    );
-  }
+  const controlHandlers = {
+    onMoveLeft: (pressed: boolean) => handleInput({ moveLeft: pressed }),
+    onMoveRight: (pressed: boolean) => handleInput({ moveRight: pressed }),
+    onShoot: (pressed: boolean) => handleInput({ shoot: pressed }),
+  };
 
   return (
-    <SafeAreaProvider>
-      <View style={styles.container}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backButtonText}>← MENÚ</Text>
-        </TouchableOpacity>
-
-        <SpaceInvadersUI
-          gameState={gameState}
-          onRestart={() => game.restart()}
-          onPause={() => togglePause()}
-          isPaused={isPaused}
-          highScore={highScore}
-        />
-        <CanvasRenderer
-          world={game.getWorld()}
-          onInitialize={(renderer) => game.initializeRenderer(renderer)}
-        />
-        <SpaceInvadersControls
-          onMoveLeft={(pressed) => handleInput({ moveLeft: pressed })}
-          onMoveRight={(pressed) => handleInput({ moveRight: pressed })}
-          onShoot={(pressed) => handleInput({ shoot: pressed })}
-        />
-      </View>
-    </SafeAreaProvider>
+    <GameScreen
+      title="SPACE INVADERS"
+      highScore={highScore}
+      instructions={Platform.OS === "web" ? "←→ Mover  Espacio Disparar" : "Controles táctiles"}
+      game={game}
+      gameState={gameState}
+      isPaused={isPaused}
+      togglePause={togglePause}
+      uiComponent={SpaceInvadersUI}
+      controlsComponent={SpaceInvadersControls}
+      handleInput={handleInput}
+      controlHandlers={controlHandlers}
+    />
   );
 }
-
-const StartScreen: React.FC<{
-  title: string;
-  highScore: number;
-  onStart: () => void;
-  instructions: string;
-}> = ({
-  title,
-  highScore,
-  onStart,
-  instructions,
-}) => {
-  return (
-    <SafeAreaProvider>
-      <View style={styles.startScreen}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backButtonText}>← MENÚ</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.instructions}>{instructions}</Text>
-        <Text style={styles.highScoreText}>Récord: {highScore}</Text>
-        <TouchableOpacity style={styles.startButton} onPress={onStart}>
-          <Text style={styles.startButtonText}>JUGAR</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaProvider>
-  );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "black",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  startScreen: {
-    flex: 1,
-    backgroundColor: "black",
-    alignItems: "center",
-    justifyContent: "center",
-    width: '100%',
-  },
-  title: {
-    fontSize: 48,
-    color: "white",
-    fontFamily: "monospace",
-    fontWeight: "bold",
-    marginBottom: 40,
-    textAlign: "center",
-  },
-  instructions: {
-    fontSize: 16,
-    color: "#CCCCCC",
-    fontFamily: "monospace",
-    marginBottom: 10,
-    textAlign: "center",
-    paddingHorizontal: 20,
-  },
-  highScoreText: {
-    fontSize: 20,
-    color: "#FFD700",
-    fontFamily: "monospace",
-    marginBottom: 40,
-  },
-  startButton: {
-    backgroundColor: "white",
-    paddingHorizontal: 40,
-    paddingVertical: 16,
-    borderRadius: 8,
-  },
-  startButtonText: {
-    color: "black",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  backButton: {
-    position: "absolute",
-    top: 50,
-    left: 20,
-    zIndex: 100,
-    padding: 10,
-  },
-  backButtonText: {
-    color: "#AAAAAA",
-    fontSize: 16,
-    fontFamily: "monospace",
-  }
-});
