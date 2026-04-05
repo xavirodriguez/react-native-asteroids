@@ -1,6 +1,7 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity, TransformComponent, RenderComponent, ScreenShakeComponent } from "../types/EngineTypes";
+import { RandomService } from "../utils/RandomService";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -105,8 +106,8 @@ export class CanvasRenderer implements Renderer {
     const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
     if (shake?.config && shake.config.duration > 0) {
       const { intensity } = shake.config;
-      const shakeX = (Math.random() - 0.5) * intensity;
-      const shakeY = (Math.random() - 0.5) * intensity;
+      const shakeX = (RandomService.next() - 0.5) * intensity;
+      const shakeY = (RandomService.next() - 0.5) * intensity;
       ctx.translate(shakeX, shakeY);
     }
 

@@ -17,6 +17,7 @@ export class RandomService {
    * Mulberry32 algorithm.
    */
   public static next(): number {
+    "worklet";
     let t = (this.seed = (this.seed + 0x6d2b79f5) | 0);
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
@@ -27,6 +28,7 @@ export class RandomService {
    * Generates a random float between min and max.
    */
   public static nextRange(min: number, max: number): number {
+    "worklet";
     return min + this.next() * (max - min);
   }
 
@@ -34,6 +36,7 @@ export class RandomService {
    * Generates a random integer between min (inclusive) and max (exclusive).
    */
   public static nextInt(min: number, max: number): number {
+    "worklet";
     return Math.floor(this.nextRange(min, max));
   }
 
@@ -41,6 +44,7 @@ export class RandomService {
    * Returns true or false based on a probability (0 to 1).
    */
   public static chance(probability: number): boolean {
+    "worklet";
     return this.next() < probability;
   }
 
@@ -48,6 +52,7 @@ export class RandomService {
    * Returns -1 or 1 randomly.
    */
   public static nextSign(): number {
+    "worklet";
     return this.next() < 0.5 ? -1 : 1;
   }
 }

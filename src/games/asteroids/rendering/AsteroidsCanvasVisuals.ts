@@ -2,6 +2,7 @@ import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
 import { TransformComponent, RenderComponent, TTLComponent, ScreenShakeComponent, HealthComponent } from "../../../engine/types/EngineTypes";
 import { InputComponent, GameStateComponent, ShipComponent, UfoComponent, AsteroidComponent } from "../types/AsteroidTypes";
 import { World } from "../../../engine/core/World";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
   const size = render.size;
@@ -31,7 +32,7 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
   // Thrust Propulsion Flame
   if (input?.thrust) {
     ctx.save();
-    const flameLen = size * (1.2 + Math.random() * 0.4);
+    const flameLen = size * (1.2 + RandomService.next() * 0.4);
     const gradient = ctx.createLinearGradient(-size / 2, 0, -flameLen, 0);
     gradient.addColorStop(0, "orange");
     gradient.addColorStop(0.5, "yellow");
