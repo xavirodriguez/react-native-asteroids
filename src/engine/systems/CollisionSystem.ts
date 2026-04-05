@@ -27,7 +27,7 @@ export abstract class CollisionSystem extends System {
   );
   private activeBounds: BoundData[] = [];
   private spatialHash: SpatialHash = new SpatialHash(150);
-  private processedPairs: Set<number> = new Set();
+  private processedPairs: Set<string> = new Set();
 
   /**
    * Updates the collision state.
@@ -71,8 +71,8 @@ export abstract class CollisionSystem extends System {
         if (a.id === bId) return;
 
         // Ensure we only check each pair once
-        // Numerical key for pairId to avoid string GC
-        const pairId = a.id < bId ? (a.id << 16) | (bId & 0xFFFF) : (bId << 16) | (a.id & 0xFFFF);
+        // Principle 5: Composite keys without assuming ID ranges
+        const pairId = a.id < bId ? `${a.id},${bId}` : `${bId},${a.id}`;
         if (this.processedPairs.has(pairId)) return;
         this.processedPairs.add(pairId);
 

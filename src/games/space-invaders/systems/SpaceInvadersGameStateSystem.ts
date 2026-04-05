@@ -27,6 +27,11 @@ export class SpaceInvadersGameStateSystem extends System {
     const invaders = world.query("Invader");
     gameState.invadersRemaining = invaders.length;
 
+    // 2. Check for game over (lives or invaders reached bottom)
+    if (gameState.lives <= 0) {
+      gameState.isGameOver = true;
+    }
+
     // 2. Handle level progression
     if (gameState.invadersRemaining === 0) {
       gameState.level += 1;

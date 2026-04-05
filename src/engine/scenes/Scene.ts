@@ -18,23 +18,23 @@ export abstract class Scene {
    * Called when the scene becomes the active scene.
    * Useful for initializing entities and systems.
    */
-  public onEnter(): void {}
+  public onEnter(): void | Promise<void> {}
 
   /**
    * Called when the scene is no longer the active scene.
    * Useful for cleanup.
    */
-  public onExit(): void {}
+  public onExit(): void | Promise<void> {}
 
   /**
    * Called when the game is paused while this scene is active.
    */
-  public onPause(): void {}
+  public onPause(): void | Promise<void> {}
 
   /**
    * Called when the game is resumed while this scene is active.
    */
-  public onResume(): void {}
+  public onResume(): void | Promise<void> {}
 
   /**
    * Updates the scene logic.

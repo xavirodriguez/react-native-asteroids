@@ -9,23 +9,26 @@ describe("SpaceInvadersGameStateSystem", () => {
   let game: SpaceInvadersGame;
   let system: SpaceInvadersGameStateSystem;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     game = new SpaceInvadersGame();
+    // SpaceInvadersGame uses SceneManager, but we need to ensure the scene is initialized for world access
+    // Wait for the transition to complete
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const scene = game.sceneManager.getCurrentScene();
+    if (scene) {
+      await scene.onEnter();
+    }
     world = game.getWorld();
     system = new SpaceInvadersGameStateSystem(game);
   });
 
   it("should initialize with level 1", () => {
-    createGameState(world);
     const state = getGameState(world);
     expect(state.level).toBe(1);
     expect(state.isGameOver).toBe(false);
   });
 
   it("should increment level when no invaders remain", () => {
-    createGameState(world);
-    const state = getGameState(world);
-
     // Initial state has 0 invaders (system will spawn wave on first update if count is 0)
     system.update(world, 16.67);
 
@@ -45,10 +48,10 @@ describe("SpaceInvadersGameStateSystem", () => {
   });
 
   it("should detect game over when lives reach 0", () => {
-    createGameState(world);
     const state = getGameState(world);
     state.lives = 0;
-    state.isGameOver = true;
+
+    system.update(world, 16);
 
     expect(system.isGameOver()).toBe(true);
   });

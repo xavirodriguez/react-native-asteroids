@@ -4,12 +4,15 @@ import { InputController } from "./InputController";
  * Controller implementation for touch-based inputs, primarily for mobile.
  * Detects complex gestures: Tap, Swipe, Hold.
  */
+interface TouchState {
+  readonly startPos: { readonly x: number; readonly y: number };
+  readonly startTime: number;
+}
+
 export class TouchController<TInputState extends Record<string, boolean>>
   extends InputController<TInputState> {
 
-  private touchStartTime: number = 0;
-  private touchStartX: number = 0;
-  private touchStartY: number = 0;
+  private touchState: TouchState | null = null;
   private isHolding: boolean = false;
   private holdThreshold: number = 500; // ms
   private swipeThreshold: number = 30; // pixels
@@ -32,9 +35,10 @@ export class TouchController<TInputState extends Record<string, boolean>>
    * Handles touch start event.
    */
   public onTouchStart(x: number, y: number): void {
-    this.touchStartTime = Date.now();
-    this.touchStartX = x;
-    this.touchStartY = y;
+    this.touchState = {
+      startPos: { x, y },
+      startTime: Date.now(),
+    };
     this.isHolding = false;
   }
 
@@ -42,9 +46,11 @@ export class TouchController<TInputState extends Record<string, boolean>>
    * Handles touch move event.
    */
   public onTouchMove(x: number, y: number): void {
-    if (!this.isHolding && Date.now() - this.touchStartTime > this.holdThreshold) {
-      const dx = x - this.touchStartX;
-      const dy = y - this.touchStartY;
+    if (!this.touchState) return;
+
+    if (!this.isHolding && Date.now() - this.touchState.startTime > this.holdThreshold) {
+      const dx = x - this.touchState.startPos.x;
+      const dy = y - this.touchState.startPos.y;
       if (Math.sqrt(dx * dx + dy * dy) < this.swipeThreshold) {
         this.isHolding = true;
         this.setInputs({ hold: true } as unknown as Partial<TInputState>);
@@ -56,9 +62,11 @@ export class TouchController<TInputState extends Record<string, boolean>>
    * Handles touch end event.
    */
   public onTouchEnd(x: number, y: number): void {
-    const duration = Date.now() - this.touchStartTime;
-    const dx = x - this.touchStartX;
-    const dy = y - this.touchStartY;
+    if (!this.touchState) return;
+
+    const duration = Date.now() - this.touchState.startTime;
+    const dx = x - this.touchState.startPos.x;
+    const dy = y - this.touchState.startPos.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     if (this.isHolding) {

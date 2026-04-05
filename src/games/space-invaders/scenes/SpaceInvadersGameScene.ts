@@ -49,6 +49,9 @@ export class SpaceInvadersGameScene extends Scene {
   }
 
   public onEnter(): void {
+    this.world.clear();
+    this.world.clearSystems();
+
     // 1. Systems registration
     const inputSys = new SpaceInvadersInputSystem(this.inputManager, this.playerBulletPool);
     if (this.game.isMultiplayer) inputSys.setMultiplayerMode(true);
