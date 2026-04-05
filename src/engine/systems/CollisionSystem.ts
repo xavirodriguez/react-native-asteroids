@@ -1,28 +1,38 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { TransformComponent, ColliderComponent, Entity, ReclaimableComponent } from "../types/EngineTypes";
+import { SpatialHash } from "../collision/SpatialHash";
+import { ObjectPool } from "../utils/ObjectPool";
 
 class BoundData {
   id: Entity = 0;
   pos: TransformComponent = { type: "Transform", x: 0, y: 0 };
   col: ColliderComponent = { type: "Collider", radius: 0 };
-  minX: number = 0;
-  maxX: number = 0;
 }
 
 /**
  * Generic Collision System for the TinyAsterEngine.
- * Handles circle-to-circle collision detection with Sweep and Prune optimization.
+ * Handles circle-to-circle collision detection with Spatial Hash broadphase optimization.
  */
 export abstract class CollisionSystem extends System {
-  // Pre-allocate array to store bounds data and minimize GC pressure
-  private boundsCache: BoundData[] = [];
+  // Use ObjectPool to manage BoundData objects and minimize GC pressure
+  private boundsPool: ObjectPool<BoundData> = new ObjectPool<BoundData>(
+    () => new BoundData(),
+    (b) => {
+      b.id = 0;
+      b.pos = null as any;
+      b.col = null as any;
+    },
+    20
+  );
   private activeBounds: BoundData[] = [];
+  private spatialHash: SpatialHash = new SpatialHash(150);
+  private processedPairs: Set<number> = new Set();
 
   /**
    * Updates the collision state.
-   * Optimizes checks using a simple Sweep and Prune algorithm.
-   * Complexity: O(n log n) for sorting, plus O(n + collisions) for the sweep.
+   * Optimizes checks using a numerical Spatial Hash broadphase.
+   * Complexity: O(n) average case for uniform distributions.
    */
   public update(world: World, deltaTime: number): void {
     void deltaTime;
@@ -30,57 +40,51 @@ export abstract class CollisionSystem extends System {
     const n = colliders.length;
     if (n < 2) return;
 
-    // Adjust cache size if needed
-    while (this.boundsCache.length < n) {
-      this.boundsCache.push(new BoundData());
-    }
+    // Release previous frame's bounds back to the pool
+    this.activeBounds.forEach(b => this.boundsPool.release(b));
+    this.activeBounds.length = 0;
 
-    // Fill cache with current frame data and prepare active subset
-    this.activeBounds.length = n;
+    this.spatialHash.clear();
+    this.processedPairs.clear();
+
+    // Populate spatial hash and active bounds using the pool
     for (let i = 0; i < n; i++) {
       const id = colliders[i];
       const pos = world.getComponent<TransformComponent>(id, "Transform")!;
       const col = world.getComponent<ColliderComponent>(id, "Collider")!;
-      const b = this.boundsCache[i];
+
+      const b = this.boundsPool.acquire();
       b.id = id;
       b.pos = pos;
       b.col = col;
-      b.minX = pos.x - col.radius;
-      b.maxX = pos.x + col.radius;
-      this.activeBounds[i] = b;
+      this.activeBounds.push(b);
+
+      this.spatialHash.add(id, pos.x, pos.y, col.radius);
     }
 
-    // Sort by minX
-    this.activeBounds.sort((a, b) => a.minX - b.minX);
-
-    // Sweep and Prune
+    // Narrow phase detection based on spatial hash candidates
     for (let i = 0; i < n; i++) {
       const a = this.activeBounds[i];
-      const a_maxX = a.maxX;
+      const candidates = this.spatialHash.getCandidates(a.pos.x, a.pos.y, a.col.radius);
 
-      for (let j = i + 1; j < n; j++) {
-        const b = this.activeBounds[j];
+      candidates.forEach((bId) => {
+        if (a.id === bId) return;
 
-        // Since activeBounds is sorted by minX, if b's minX is already past a's maxX,
-        // no further objects in the list can overlap with a on the X-axis.
-        if (b.minX > a_maxX) {
-          break;
+        // Ensure we only check each pair once
+        // Numerical key for pairId to avoid string GC
+        const pairId = a.id < bId ? (a.id << 16) | (bId & 0xFFFF) : (bId << 16) | (a.id & 0xFFFF);
+        if (this.processedPairs.has(pairId)) return;
+        this.processedPairs.add(pairId);
+
+        const bPos = world.getComponent<TransformComponent>(bId, "Transform");
+        const bCol = world.getComponent<ColliderComponent>(bId, "Collider");
+
+        if (bPos && bCol && this.isCollidingWithComponents(a.pos, a.col, bPos, bCol)) {
+          this.onCollision(world, a.id, bId);
         }
-
-        if (this.isCollidingWithComponents(a.pos, a.col, b.pos, b.col)) {
-          this.onCollision(world, a.id, b.id);
-        }
-      }
+      });
     }
 
-    // Clear references in the cache that are no longer part of activeBounds
-    // to prevent memory leaks and allow GC to reclaim old components.
-    for (let i = n; i < this.boundsCache.length; i++) {
-      const b = this.boundsCache[i];
-      b.id = 0;
-      b.pos = null as any;
-      b.col = null as any;
-    }
   }
 
   /**

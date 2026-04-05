@@ -7,9 +7,10 @@ import { Renderer } from "../rendering/Renderer";
  */
 export class SceneManager {
   private currentScene: Scene | null = null;
+  private sceneStack: Scene[] = [];
 
   /**
-   * Transitions to a new scene.
+   * Transitions to a new scene, clearing the current stack.
    * Calls onExit() on the old scene and onEnter() on the new one.
    *
    * @param scene - The new scene to transition to.
@@ -19,8 +20,40 @@ export class SceneManager {
       this.currentScene.onExit();
     }
 
+    this.sceneStack = [scene];
     this.currentScene = scene;
     this.currentScene.onEnter();
+  }
+
+  /**
+   * Pushes a new scene onto the stack.
+   * The current scene is paused before the new scene is entered.
+   */
+  public push(scene: Scene): void {
+    if (this.currentScene) {
+      this.currentScene.onPause();
+    }
+    this.sceneStack.push(scene);
+    this.currentScene = scene;
+    this.currentScene.onEnter();
+  }
+
+  /**
+   * Pops the current scene from the stack.
+   * The previous scene is resumed.
+   */
+  public pop(): void {
+    if (this.sceneStack.length <= 1) return;
+
+    const poppedScene = this.sceneStack.pop();
+    if (poppedScene) {
+      poppedScene.onExit();
+    }
+
+    this.currentScene = this.sceneStack[this.sceneStack.length - 1];
+    if (this.currentScene) {
+      this.currentScene.onResume();
+    }
   }
 
   /**
