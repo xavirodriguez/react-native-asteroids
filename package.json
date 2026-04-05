@@ -20,6 +20,7 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@colyseus/sdk": "^0.17.37",
     "@expo/dom-webview": "^0.1.5",
     "@expo/metro-runtime": "~55.0.6",
     "@expo/ngrok": "4.1.0",

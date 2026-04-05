@@ -5,6 +5,7 @@ import type { GameStateComponent, InputState } from "../../../types/GameTypes";
 export type { UpdateListener };
 
 export interface IAsteroidsGame extends IGame<IAsteroidsGame> {
+  isMultiplayer: boolean;
   // Override with specific types
   getGameState(): GameStateComponent;
   setInput(input: Partial<InputState>): void;

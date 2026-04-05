@@ -19,7 +19,14 @@ export class SpaceInvadersInputSystem extends System {
     this.bulletPool = bulletPool;
   }
 
+  private isMultiplayer = false;
+
+  public setMultiplayerMode(active: boolean) {
+    this.isMultiplayer = active;
+  }
+
   public update(world: World, deltaTime: number): void {
+    if (this.isMultiplayer) return;
     const inputs = this.inputManager.getCombinedInputs();
     const entities = world.query("Player", "Input", "Transform", "Velocity");
 
