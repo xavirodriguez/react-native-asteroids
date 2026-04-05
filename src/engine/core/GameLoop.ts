@@ -17,7 +17,7 @@ export class GameLoop {
   private readonly maxDeltaTime: number = 100;
 
   private updateListeners: Set<(deltaTime: number) => void> = new Set();
-  private renderListeners: Set<(deltaTime: number) => void> = new Set();
+  private renderListeners: Set<(deltaTime: number, alpha: number) => void> = new Set();
 
   constructor() {}
 
@@ -60,7 +60,7 @@ export class GameLoop {
    * @param listener - Callback function.
    * @returns Unsubscribe function.
    */
-  public subscribeRender(listener: (deltaTime: number) => void): () => void {
+  public subscribeRender(listener: (deltaTime: number, alpha: number) => void): () => void {
     this.renderListeners.add(listener);
     return () => this.renderListeners.delete(listener);
   }
@@ -69,7 +69,7 @@ export class GameLoop {
    * Legacy subscribe method for backward compatibility.
    * Maps to render subscription.
    */
-  public subscribe(listener: (deltaTime: number) => void): () => void {
+  public subscribe(listener: (deltaTime: number, alpha: number) => void): () => void {
     return this.subscribeRender(listener);
   }
 
@@ -96,7 +96,8 @@ export class GameLoop {
     }
 
     // Render phase
-    this.renderListeners.forEach((listener) => listener(deltaTime));
+    const alpha = this.accumulator / this.fixedDeltaTime;
+    this.renderListeners.forEach((listener) => listener(deltaTime, alpha));
 
     this.gameLoopId = requestAnimationFrame(this.loop);
   };

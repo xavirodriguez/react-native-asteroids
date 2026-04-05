@@ -113,14 +113,26 @@ export class CanvasRenderer implements Renderer {
     // Background Effects (e.g., Starfield)
     this.backgroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
 
-    // Render Entities
+    // Render Pipeline: Collect, Sort, Execute
     const entities = world.query("Transform", "Render");
-    entities.forEach((entity) => {
-      const pos = world.getComponent<TransformComponent>(entity, "Transform");
-      const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (pos && render) {
-        this.drawEntity(entity, { Position: pos, Render: render }, world);
-      }
+
+    // Command-based sorting by zIndex
+    const renderCommands = entities.map(entity => {
+      const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
+      const render = world.getComponent<RenderComponent>(entity, "Render")!;
+      return {
+        entity,
+        pos,
+        render,
+        zIndex: render.zIndex ?? 0
+      };
+    });
+
+    renderCommands.sort((a, b) => a.zIndex - b.zIndex);
+
+    // Execute draw commands
+    renderCommands.forEach((cmd) => {
+      this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render }, world);
     });
 
     // Foreground Effects (e.g., CRT)
@@ -137,9 +149,21 @@ export class CanvasRenderer implements Renderer {
     const pos = components["Transform"] as TransformComponent;
     const render = components["Render"] as RenderComponent;
 
+    // Use world coordinates if available from HierarchySystem
+    const x = pos.worldX ?? pos.x;
+    const y = pos.worldY ?? pos.y;
+    const rotation = pos.worldRotation ?? render.rotation;
+
     ctx.save();
-    ctx.translate(pos.x, pos.y);
-    ctx.rotate(render.rotation);
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+
+    // Scale support
+    const scaleX = pos.worldScaleX ?? pos.scaleX ?? 1;
+    const scaleY = pos.worldScaleY ?? pos.scaleY ?? 1;
+    if (scaleX !== 1 || scaleY !== 1) {
+      ctx.scale(scaleX, scaleY);
+    }
 
     const customDrawer = this.shapeRegistry.get(render.shape);
     if (customDrawer) {

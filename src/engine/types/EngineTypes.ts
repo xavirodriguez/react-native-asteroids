@@ -22,6 +22,12 @@ export interface TransformComponent extends Component {
   rotation: number;
   scaleX: number;
   scaleY: number;
+  parent?: Entity;
+  worldX?: number;
+  worldY?: number;
+  worldRotation?: number;
+  worldScaleX?: number;
+  worldScaleY?: number;
 }
 
 /**
@@ -66,6 +72,7 @@ export interface RenderComponent extends Component {
   size: number;
   color: string;
   rotation: number;
+  zIndex?: number;
   trailPositions?: { x: number; y: number }[];
   vertices?: { x: number; y: number }[];
   internalLines?: { x1: number; y1: number; x2: number; y2: number }[];

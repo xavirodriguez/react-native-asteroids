@@ -3,20 +3,44 @@
  */
 export class AssetLoader {
   private cache: Map<string, any> = new Map();
+  private refCounts: Map<string, number> = new Map();
 
   /**
-   * Preload assets.
+   * Preload assets and increment reference counts.
    *
    * @param assets - A dictionary of asset paths/keys to preload.
    * @returns A promise that resolves when all assets are loaded.
    */
   public async preload(assets: Record<string, string>): Promise<void> {
     const promises = Object.entries(assets).map(async ([key, path]) => {
-      const asset = await this.loadAsset(path);
-      this.cache.set(key, asset);
+      if (!this.cache.has(key)) {
+        const asset = await this.loadAsset(path);
+        this.cache.set(key, asset);
+        this.refCounts.set(key, 0);
+      }
+      this.refCounts.set(key, (this.refCounts.get(key) || 0) + 1);
     });
 
     await Promise.all(promises);
+  }
+
+  /**
+   * Unloads assets by decrementing reference counts.
+   * Assets are removed from cache when reference count reaches zero.
+   *
+   * @param keys - List of asset keys to unload.
+   */
+  public unload(keys: string[]): void {
+    keys.forEach((key) => {
+      const count = (this.refCounts.get(key) || 0) - 1;
+      if (count <= 0) {
+        this.cache.delete(key);
+        this.refCounts.delete(key);
+        // In a real environment, we would also call asset.release() if needed
+      } else {
+        this.refCounts.set(key, count);
+      }
+    });
   }
 
   /**
