@@ -3,6 +3,8 @@ import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
+  private fixedTimeStep = 16.66; // 60 FPS
+  private inputBuffers = new Map<string, any[]>();
 
   onCreate(options: any) {
     this.state = new AsteroidsState();
@@ -10,28 +12,15 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.state.gameHeight = 600;
     this.state.gameStarted = false;
     this.state.gameOver = false;
+    this.state.serverTick = 0;
 
-    this.setSimulationInterval((deltaTime) => this.update(deltaTime));
+    this.setPatchRate(50); // 20 FPS network patches
+    this.setSimulationInterval((dt) => this.update(dt), this.fixedTimeStep);
 
-    this.onMessage("input", (client, data: {
-      thrust: boolean;
-      rotateLeft: boolean;
-      rotateRight: boolean;
-      shoot: boolean;
-    }) => {
-      const player = this.state.players.get(client.sessionId);
-      if (!player || !player.alive) return;
-
-      const dt = 16.66 / 1000;
-      if (data.rotateLeft) player.angle -= 3 * dt;
-      if (data.rotateRight) player.angle += 3 * dt;
-      if (data.thrust) {
-        player.velocityX += Math.cos(player.angle) * 200 * dt;
-        player.velocityY += Math.sin(player.angle) * 200 * dt;
-      }
-      if (data.shoot) {
-          this.spawnBullet(client.sessionId, player);
-      }
+    this.onMessage("input", (client, data) => {
+      const buffer = this.inputBuffers.get(client.sessionId) || [];
+      buffer.push({ ...data, tickId: data.tickId });
+      this.inputBuffers.set(client.sessionId, buffer);
     });
 
     this.onMessage("start_game", () => {
@@ -42,13 +31,14 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
 
   onJoin(client: Client, options: any) {
     const player = new Player();
+    player.sessionId = client.sessionId;
+    player.name = options.name || `Player ${this.clients.length}`;
     player.x = Math.random() * this.state.gameWidth;
     player.y = Math.random() * this.state.gameHeight;
     player.angle = 0;
     player.score = 0;
     player.lives = 3;
     player.alive = true;
-    player.name = options.name || `Player ${this.clients.length}`;
     this.state.players.set(client.sessionId, player);
   }
 
@@ -58,118 +48,133 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       await this.allowReconnection(client, 10);
     } catch (e) {
       this.state.players.delete(client.sessionId);
+      this.inputBuffers.delete(client.sessionId);
     }
   }
 
-  update(deltaTime: number) {
+  update(dt: number) {
     if (!this.state.gameStarted) return;
+    this.state.serverTick++;
 
-    const dt = deltaTime / 1000;
+    const dtSec = dt / 1000;
 
-    // Move players
-    this.state.players.forEach((player) => {
+    // 1. Process Inputs
+    this.state.players.forEach((player, sessionId) => {
       if (!player.alive) return;
-      player.x += player.velocityX * dt;
-      player.y += player.velocityY * dt;
+
+      const buffer = this.inputBuffers.get(sessionId);
+      // Process all pending inputs in the buffer to handle network bursts
+      while (buffer && buffer.length > 0) {
+        const input = buffer.shift();
+        this.applyPlayerInput(player, input, dtSec);
+      }
+
+      // Global physics integration (Friction and movement outside of input block)
       player.velocityX *= 0.99;
       player.velocityY *= 0.99;
-
-      if (player.x < 0) player.x = this.state.gameWidth;
-      if (player.x > this.state.gameWidth) player.x = 0;
-      if (player.y < 0) player.y = this.state.gameHeight;
-      if (player.y > this.state.gameHeight) player.y = 0;
+      this.integratePosition(player, dtSec);
+      this.applyWrapping(player);
     });
 
-    // Move asteroids
+    // 2. Move asteroids
     this.state.asteroids.forEach((asteroid) => {
-        asteroid.x += asteroid.velocityX * dt;
-        asteroid.y += asteroid.velocityY * dt;
-
-        if (asteroid.x < 0) asteroid.x = this.state.gameWidth;
-        if (asteroid.x > this.state.gameWidth) asteroid.x = 0;
-        if (asteroid.y < 0) asteroid.y = this.state.gameHeight;
-        if (asteroid.y > this.state.gameHeight) asteroid.y = 0;
+      this.integratePosition(asteroid, dtSec);
+      this.applyWrapping(asteroid);
     });
 
-    // Move bullets
+    // 3. Move bullets
     this.state.bullets.forEach((bullet, id) => {
-        bullet.x += bullet.velocityX * dt;
-        bullet.y += bullet.velocityY * dt;
-
-        if (bullet.x < 0 || bullet.x > this.state.gameWidth || bullet.y < 0 || bullet.y > this.state.gameHeight) {
-            this.state.bullets.delete(id);
-        }
+      this.integratePosition(bullet, dtSec);
+      if (bullet.x < 0 || bullet.x > this.state.gameWidth || bullet.y < 0 || bullet.y > this.state.gameHeight) {
+        this.state.bullets.delete(id);
+      }
     });
 
-    // Collision detection - Bullet vs Asteroid
-    const bulletsToRemove = new Set<string>();
-    const asteroidsToRemove = new Set<string>();
+    // 4. Collision detection (Authoritative)
+    this.checkCollisions();
+  }
 
-    this.state.bullets.forEach((bullet, bulletId) => {
-        this.state.asteroids.forEach((asteroid, asteroidId) => {
-            if (asteroidsToRemove.has(asteroidId)) return;
-            const dx = bullet.x - asteroid.x;
-            const dy = bullet.y - asteroid.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < 30) {
-                bulletsToRemove.add(bulletId);
-                asteroidsToRemove.add(asteroidId);
-                const owner = this.state.players.get(bullet.ownerId);
-                if (owner) owner.score += 100;
-            }
-        });
-    });
-
-    bulletsToRemove.forEach(id => this.state.bullets.delete(id));
-    asteroidsToRemove.forEach(id => this.state.asteroids.delete(id));
-
-    // Respawn asteroid if none left (after all deletions)
-    if (this.state.asteroids.size === 0 && this.state.gameStarted) {
-        this.spawnAsteroids(6);
+  private applyPlayerInput(player: Player, data: any, dtSec: number) {
+    if (data.rotateLeft) player.angle -= 3 * dtSec;
+    if (data.rotateRight) player.angle += 3 * dtSec;
+    if (data.thrust) {
+      player.velocityX += Math.cos(player.angle) * 200 * dtSec;
+      player.velocityY += Math.sin(player.angle) * 200 * dtSec;
     }
+    if (data.shoot) {
+      this.spawnBullet(player.sessionId, player);
+    }
+  }
 
-    // Ship vs Asteroid collision
-    this.state.players.forEach((player, sessionId) => {
-        if (!player.alive) return;
-        this.state.asteroids.forEach((asteroid) => {
-            const dx = player.x - asteroid.x;
-            const dy = player.y - asteroid.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < 25) {
-                player.lives--;
-                player.x = this.state.gameWidth / 2;
-                player.y = this.state.gameHeight / 2;
-                player.velocityX = 0;
-                player.velocityY = 0;
-                if (player.lives <= 0) {
-                    player.alive = false;
-                }
-            }
-        });
+  private integratePosition(entity: any, dtSec: number) {
+    entity.x += entity.velocityX * dtSec;
+    entity.y += entity.velocityY * dtSec;
+  }
+
+  private applyWrapping(entity: any) {
+    if (entity.x < 0) entity.x = this.state.gameWidth;
+    if (entity.x > this.state.gameWidth) entity.x = 0;
+    if (entity.y < 0) entity.y = this.state.gameHeight;
+    if (entity.y > this.state.gameHeight) entity.y = 0;
+  }
+
+  private checkCollisions() {
+    // Bullet vs Asteroid
+    this.state.bullets.forEach((bullet, bulletId) => {
+      this.state.asteroids.forEach((asteroid, asteroidId) => {
+        const dx = bullet.x - asteroid.x;
+        const dy = bullet.y - asteroid.y;
+        if (Math.sqrt(dx*dx + dy*dy) < 30) {
+          this.state.bullets.delete(bulletId);
+          this.state.asteroids.delete(asteroidId);
+          const owner = this.state.players.get(bullet.ownerId);
+          if (owner) owner.score += 100;
+        }
+      });
     });
+
+    // Player vs Asteroid
+    this.state.players.forEach((player) => {
+      if (!player.alive) return;
+      this.state.asteroids.forEach((asteroid) => {
+        const dx = player.x - asteroid.x;
+        const dy = player.y - asteroid.y;
+        if (Math.sqrt(dx*dx + dy*dy) < 25) {
+          player.lives--;
+          player.x = this.state.gameWidth / 2;
+          player.y = this.state.gameHeight / 2;
+          player.velocityX = 0;
+          player.velocityY = 0;
+          if (player.lives <= 0) player.alive = false;
+        }
+      });
+    });
+
+    if (this.state.asteroids.size === 0 && this.state.gameStarted) {
+      this.spawnAsteroids(6);
+    }
   }
 
   spawnBullet(ownerId: string, player: Player) {
-      // Cooldown check could be here
-      const bullet = new Bullet();
-      bullet.ownerId = ownerId;
-      bullet.x = player.x;
-      bullet.y = player.y;
-      bullet.velocityX = Math.cos(player.angle) * 400;
-      bullet.velocityY = Math.sin(player.angle) * 400;
-      this.state.bullets.set(Math.random().toString(36).substring(7), bullet);
+    const bullet = new Bullet();
+    bullet.ownerId = ownerId;
+    bullet.x = player.x;
+    bullet.y = player.y;
+    bullet.velocityX = Math.cos(player.angle) * 400;
+    bullet.velocityY = Math.sin(player.angle) * 400;
+    this.state.bullets.set(Math.random().toString(36).substring(7), bullet);
   }
 
   spawnAsteroids(count: number) {
-      for(let i=0; i<count; i++) {
-          const asteroid = new Asteroid();
-          asteroid.id = Math.random().toString(36).substring(7);
-          asteroid.x = Math.random() * this.state.gameWidth;
-          asteroid.y = Math.random() * this.state.gameHeight;
-          asteroid.velocityX = (Math.random() - 0.5) * 150;
-          asteroid.velocityY = (Math.random() - 0.5) * 150;
-          asteroid.size = 3;
-          this.state.asteroids.set(asteroid.id, asteroid);
-      }
+    for(let i=0; i<count; i++) {
+      const asteroid = new Asteroid();
+      asteroid.id = Math.random().toString(36).substring(7);
+      asteroid.x = Math.random() * this.state.gameWidth;
+      asteroid.y = Math.random() * this.state.gameHeight;
+      asteroid.velocityX = (Math.random() - 0.5) * 150;
+      asteroid.velocityY = (Math.random() - 0.5) * 150;
+      asteroid.size = 3;
+      this.state.asteroids.set(asteroid.id, asteroid);
+    }
   }
 }
