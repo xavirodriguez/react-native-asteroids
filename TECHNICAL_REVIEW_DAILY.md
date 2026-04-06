@@ -1,12 +1,12 @@
 # Daily Technical Review Report: TinyAsteroids Engine & Retro Arcade
 **Fecha:** 2025-05-21
-**Estado Global:** Saludable, con determinismo visual reforzado.
+**Estado Global:** Saludable, con correcciones arquitectónicas.
 
 ---
 
 ### 1. Resumen ejecutivo
 
-El proyecto continúa madurando hacia una arquitectura de motor de juego sólida. En la revisión de hoy, se ha atacado el problema del **determinismo visual** mediante la sustitución de `Math.random()` por un `RandomService` sembrable en todas las capas de renderizado (Canvas, Svg, Skia). Además, se ha formalizado la **deprecación del componente GameEngine.tsx**, marcando el camino para la unificación total bajo el estándar de `BaseGame` y `Scene`.
+El proyecto continúa madurando hacia una arquitectura de motor de juego sólida. En la revisión de hoy, se ha atacado el problema de la **deriva arquitectónica** mediante la formalización de la **deprecación del componente GameEngine.tsx**, marcando el camino para la unificación total bajo el estándar de `BaseGame` y `Scene`. Se ha decidido mantener el uso de `Math.random()` para efectos puramente visuales para preservar el flujo determinista de la lógica de juego.
 
 ---
 
@@ -16,22 +16,22 @@ El proyecto continúa madurando hacia una arquitectura de motor de juego sólida
 |---|---|---|---|
 | 1. Separar gameplay, render y UI | **OK** | 5 | Separación clara y ahora forzada por la deprecación de componentes híbridos. |
 | 2. Game loop explícito | **OK** | 5 | Inalterado, sigue siendo la autoridad del tiempo. |
-| 3. Lógica determinista | **OK** | 5 | **MEJORADO:** El renderizado ahora es reproducible mediante `RandomService`. |
+| 3. Lógica determinista | **OK** | 5 | La lógica core sigue siendo determinista al usar `RandomService`. |
 | 4. Data-oriented para entidades | **OK** | 5 | ECS puro mantenido. |
 | 5. Composición sobre herencia | **OK** | 5 | Uso correcto de componentes. |
 | 6. Aislar motor físico | **PARCIAL** | 3 | **AVANCE:** `GameEngine.tsx` marcado para migración a `PhysicsSystem`. |
 | 7. Máquina de estados explícita | **OK** | 4 | Gestión centralizada sólida. |
-| 8. Estado efímero vs persistente | **OK** | 5 | Separación mantenida. |
+| 8. Estado efímero vs persistente | **OK** | 5 | Reparación mantenida. |
 | 9. Desacoplo de input | **OK** | 5 | `InputManager` eficiente. |
 | 10. Delta time estable | **OK** | 5 | Garantizado por el motor. |
 | 11. UI como proyección | **OK** | 5 | Proyección reactiva sin interferencias. |
 | 12. Configuración en constantes | **OK** | 5 | Centralizado en `GAME_CONFIG`. |
 | 13. Tipos explícitos y unions | **OK** | 5 | Tipado fuerte en todo el dominio. |
 | 14. Validación de datos | **OK** | 5 | Uso de Zod en persistencia. |
-| 15. Aislamiento de efectos | **OK** | 5 | Centralización de aleatoriedad visual. |
+| 15. Aislamiento de efectos | **OK** | 5 | Separación lograda entre lógica y renderizado. |
 | 16. Optimización de frecuencia | **OK** | 5 | Priorización de 60fps lógicos. |
 | 17. Responsabilidad única | **OK** | 5 | Módulos especializados. |
-| 18. Testeable sin UI | **OK** | 5 | 50 tests PASS y facilitados por el determinismo. |
+| 18. Testeable sin UI | **OK** | 5 | 50 tests PASS. |
 | 19. Extensibilidad controlada | **OK** | 5 | Nuevo Core Engine es la base de todo crecimiento. |
 | 20. Claridad temporal/espacial | **OK** | 5 | Coherencia total. |
 
@@ -39,23 +39,23 @@ El proyecto continúa madurando hacia una arquitectura de motor de juego sólida
 
 ### 3. Hallazgos prioritarios
 
-#### A. Centralización del Determinismo Visual
-*   **Severidad**: Alta (Positivo)
-*   **Evidencia**: Refactorización de `CanvasRenderer.ts`, `StarField.ts`, `SvgRenderer.tsx` y `GameCanvas.tsx`.
-*   **Por qué importa**: Permite la implementación de sistemas de replays y multijugador sincronizado donde los efectos visuales (humo, sacudidas, estrellas) son idénticos para todos los observadores.
-*   **Acción**: Se ha inyectado `RandomService` con soporte para Worklets en Reanimated.
-
-#### B. Contención de la Deriva Arquitectónica
+#### A. Contención de la Deriva Arquitectónica
 *   **Severidad**: Media
 *   **Evidencia**: `src/game/GameEngine.tsx` marcado como `@deprecated` con advertencias en tiempo de ejecución.
 *   **Por qué importa**: Evita que nuevos desarrolladores sigan el patrón de "lógica de juego en componentes React", protegiendo la pureza del ECS.
 *   **Acción**: Se recomienda la migración inmediata a `BaseGame` en la próxima fase.
 
+#### B. Determinismo de Lógica vs. Renderizado
+*   **Severidad**: Baja
+*   **Evidencia**: Reversión de `RandomService` a `Math.random()` en capas de renderizado.
+*   **Por qué importa**: Protege la secuencia determinista de la lógica de juego frente a llamadas de renderizado que dependen del framerate.
+*   **Acción**: Se ha mantenido la separación estricta para asegurar que el gameplay sea reproducible independientemente del renderizado.
+
 ---
 
 ### 4. Deriva hacia pensamiento web/app
 
-*   **Estado**: Controlado. La eliminación del sesgo web en la gestión del loop es la prioridad actual y se ha ejecutado con éxito en los componentes de renderizado.
+*   **Estado**: Controlado. La eliminación de `GameEngine.tsx` como modelo a seguir es el paso definitivo para erradicar patrones de apps React tradicionales en el motor.
 
 ---
 
@@ -76,13 +76,12 @@ El proyecto continúa madurando hacia una arquitectura de motor de juego sólida
 ### 7. Testability y cobertura útil
 
 *   **Estado**: 50 tests PASS.
-*   **Mejora**: La aleatoriedad sembrable ahora permite tests de regresión visual mucho más precisos.
 
 ---
 
 ### 8. Riesgos de rendimiento
 
-*   **UI Thread**: El uso de `RandomService` en el hilo de UI (Skia/Reanimated) ha sido protegido con etiquetas `"worklet"`, evitando crashes potenciales.
+*   **UI Thread**: Riesgos de crash por hilos mitigados al no inyectar servicios complejos de JS en worklets de Reanimated para tareas visuales triviales.
 
 ---
 
