@@ -22,9 +22,8 @@ export class SceneManager {
    */
   public async transitionTo(scene: Scene): Promise<void> {
     // 1. Perform async/lifecycle work FIRST
-    const previousScene = this.currentScene;
-    if (previousScene) {
-      await runLifecycle(() => previousScene.onExit());
+    if (this.currentScene) {
+      await runLifecycle(() => this.currentScene!.onExit());
     }
 
     await runLifecycle(() => scene.onEnter());
@@ -76,14 +75,14 @@ export class SceneManager {
    * Restarts the current scene.
    */
   public async restartCurrentScene(): Promise<void> {
-      const scene = this.currentScene;
-      await runLifecycle(() => scene.onExit());
+    if (this.currentScene) {
+      await runLifecycle(() => this.currentScene!.onExit());
 
-      const world = scene.getWorld();
+      const world = this.currentScene.getWorld();
       world.clear();
       world.clearSystems();
 
-      await runLifecycle(() => scene.onEnter());
+      await runLifecycle(() => this.currentScene!.onEnter());
     }
   }
 
@@ -94,8 +93,8 @@ export class SceneManager {
     if (this.currentScene) {
       // pause/resume are often called in high-frequency loops or via sync events
       // so we keep them sync if possible, or use runLifecycle without await if they are void
-      this.currentScene!.onPause();
-
+      runLifecycle(() => this.currentScene!.onPause());
+    }
   }
 
   /**

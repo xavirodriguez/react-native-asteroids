@@ -52,7 +52,6 @@ export class ObjectPool<T> {
    * Resets the object before storing it to avoid holding references.
    */
   public release(obj: T): void {
-    // We still reset on release to clear references immediately (GC)
     this.reset(obj);
     this.pool.push(obj);
   }

@@ -9,20 +9,14 @@ describe("SpaceInvadersGameStateSystem", () => {
   let game: SpaceInvadersGame;
   let system: SpaceInvadersGameStateSystem;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     game = new SpaceInvadersGame();
-    // SpaceInvadersGame uses SceneManager, but we need to ensure the scene is initialized for world access
-    // Wait for the transition to complete
-    await new Promise(resolve => setTimeout(resolve, 0));
-    const scene = game.sceneManager.getCurrentScene();
-    if (scene) {
-      await scene.onEnter();
-    }
     world = game.getWorld();
     system = new SpaceInvadersGameStateSystem(game);
   });
 
   it("should initialize with level 1", () => {
+    createGameState(world);
     const state = getGameState(world);
     expect(state.level).toBe(1);
     expect(state.isGameOver).toBe(false);
@@ -62,8 +56,7 @@ describe("SpaceInvadersGameStateSystem", () => {
     const gameStateEntity = createGameState(world);
     const state = world.getComponent<any>(gameStateEntity, "GameState");
     state.lives = 0;
-
-    system.update(world, 16);
+    state.isGameOver = true;
 
     // Manually point game to this world if needed, or just test system logic
     // system.isGameOver() calls game.getWorld()

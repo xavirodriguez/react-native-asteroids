@@ -36,38 +36,8 @@ export class SpaceInvadersGame
     });
   }
 
-  protected async registerSystems(): Promise<void> {
-    if (!this.playerBulletPool) this.playerBulletPool = new PlayerBulletPool();
-    if (!this.enemyBulletPool) this.enemyBulletPool = new EnemyBulletPool();
-    if (!this.particlePool) this.particlePool = new ParticlePool();
-
-    const DEFAULT_INPUT: InputState = {
-      moveLeft: false,
-      moveRight: false,
-      shoot: false
-    };
-
-    const SI_KEYMAP = {
-      [GAME_CONFIG.KEYS.LEFT]: "moveLeft" as const,
-      [GAME_CONFIG.KEYS.RIGHT]: "moveRight" as const,
-      [GAME_CONFIG.KEYS.SHOOT]: "shoot" as const,
-    };
-
-    // Ensure controllers are not duplicated on restart
-    this.inputManager.cleanup();
-    this.inputManager.addController(new KeyboardController<InputState>(SI_KEYMAP, DEFAULT_INPUT));
-    this.inputManager.addController(new TouchController<InputState>());
-
-    // We use a scene to manage systems and entities
-    const gameScene = new SpaceInvadersGameScene(
-      this,
-      this.inputManager,
-      this.playerBulletPool,
-      this.enemyBulletPool,
-      this.particlePool
-    );
-
-    await this.sceneManager.transitionTo(gameScene);
+  protected registerSystems(): void {
+    this.registerSystemsAsync().catch(console.error);
   }
 
   protected initializeEntities(): void {
@@ -130,7 +100,43 @@ export class SpaceInvadersGame
   }
 
   protected async _onBeforeRestart(): Promise<void> {
-    await this.registerSystems();
+    // During restart, we DO want to await the full transition
+    await this.registerSystemsAsync();
+  }
+
+  /**
+   * Async version of registerSystems for use in restart()
+   */
+  private async registerSystemsAsync(): Promise<void> {
+    if (!this.playerBulletPool) this.playerBulletPool = new PlayerBulletPool();
+    if (!this.enemyBulletPool) this.enemyBulletPool = new EnemyBulletPool();
+    if (!this.particlePool) this.particlePool = new ParticlePool();
+
+    const DEFAULT_INPUT: InputState = {
+      moveLeft: false,
+      moveRight: false,
+      shoot: false
+    };
+
+    const SI_KEYMAP = {
+      [GAME_CONFIG.KEYS.LEFT]: "moveLeft" as const,
+      [GAME_CONFIG.KEYS.RIGHT]: "moveRight" as const,
+      [GAME_CONFIG.KEYS.SHOOT]: "shoot" as const,
+    };
+
+    this.inputManager.cleanup();
+    this.inputManager.addController(new KeyboardController<InputState>(SI_KEYMAP, DEFAULT_INPUT));
+    this.inputManager.addController(new TouchController<InputState>());
+
+    const gameScene = new SpaceInvadersGameScene(
+      this,
+      this.inputManager,
+      this.playerBulletPool,
+      this.enemyBulletPool,
+      this.particlePool
+    );
+
+    await this.sceneManager.transitionTo(gameScene);
   }
 }
 
