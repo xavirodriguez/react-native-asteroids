@@ -2,6 +2,8 @@ import { InputController } from "./InputController";
 
 /**
  * Controller implementation for touch-based inputs, primarily for mobile.
+ *
+ * @deprecated Use UnifiedInputSystem instead for semantic action-based input.
  * Detects complex gestures: Tap, Swipe, Hold.
  *
  * Principle 1: Immutable State for Snapshots

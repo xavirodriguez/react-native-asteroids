@@ -3,6 +3,8 @@ import { InputController } from "./InputController";
 /**
  * Centralized manager for handling multiple input sources.
  *
+ * @deprecated Use UnifiedInputSystem instead for semantic action-based input.
+ *
  * @remarks
  * The InputManager maintains a list of {@link InputController}s and aggregates
  * their states into a single, unified input state.

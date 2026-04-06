@@ -15,6 +15,8 @@ export const useSharedCamera = (initialState: Partial<CameraState> = {}): Shared
 
 /**
  * CameraSystem: Manages camera logic like follow, lerp, shake, and bounds.
+ *
+ * @deprecated Use Camera2D instead for a platform-agnostic implementation.
  */
 export class CameraSystem {
   private targetEntityId: number | null = null;

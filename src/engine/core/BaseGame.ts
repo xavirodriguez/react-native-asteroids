@@ -1,6 +1,8 @@
 import { World } from "./World";
 import { GameLoop } from "./GameLoop";
 import { InputManager } from "../input/InputManager";
+import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
+import { EventBus } from "./EventBus";
 import { SceneManager } from "../scenes/SceneManager";
 import { runLifecycle } from "../utils/LifecycleUtils";
 import type { IGame, UpdateListener } from "./IGame";
@@ -21,6 +23,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   protected world: World;
   protected gameLoop: GameLoop;
   protected inputManager: InputManager<TInput>;
+  protected unifiedInput: UnifiedInputSystem;
+  protected eventBus: EventBus;
   protected sceneManager: SceneManager;
   public isMultiplayer: boolean;
 
@@ -35,7 +39,11 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
     this.world = new World();
     this.gameLoop = new GameLoop();
     this.inputManager = new InputManager<TInput>();
+    this.unifiedInput = new UnifiedInputSystem();
+    this.eventBus = new EventBus();
     this.sceneManager = new SceneManager();
+
+    this.registerEventBusSingleton();
 
     this._config = config;
 
@@ -46,6 +54,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
     // Notify React on each logical update frame
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (!this._isPaused) {
+        // Update input system first
+        const activeWorld = this.getWorld();
+        this.unifiedInput.update(activeWorld, deltaTime);
+
         // Simple games update this.world, advanced games update via sceneManager
         if (this.sceneManager.getCurrentScene()) {
           this.sceneManager.update(deltaTime);
@@ -151,6 +163,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   protected _onBeforeRestart(): void | Promise<void> {}
 
   // ─── Engine-internal methods ─────────────────────────────────────────────
+
+  private registerEventBusSingleton(): void {
+    const entity = this.world.createEntity();
+    this.world.addComponent(entity, {
+      type: "EventBus",
+      bus: this.eventBus,
+    });
+  }
 
   private _notifyListeners(): void {
     for (const listener of this._listeners) {
