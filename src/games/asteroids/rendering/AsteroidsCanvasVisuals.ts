@@ -2,7 +2,6 @@ import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
 import { TransformComponent, RenderComponent, TTLComponent, ScreenShakeComponent, HealthComponent } from "../../../engine/types/EngineTypes";
 import { InputComponent, GameStateComponent, ShipComponent, UfoComponent, AsteroidComponent } from "../types/AsteroidTypes";
 import { World } from "../../../engine/core/World";
-import { RandomService } from "../../../engine/utils/RandomService";
 
 export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
   const size = render.size;

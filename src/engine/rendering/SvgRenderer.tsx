@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import Svg, { Polygon, Circle, Line, Rect, G, Ellipse, Polyline, Defs, Filter, FeGaussianBlur, FeMerge, FeMergeNode, LinearGradient, Stop, RadialGradient, Pattern } from "react-native-svg";
 import { World } from "../core/World";
-import { RandomService } from "../utils/RandomService";
 import {
   type TransformComponent,
   type RenderComponent,

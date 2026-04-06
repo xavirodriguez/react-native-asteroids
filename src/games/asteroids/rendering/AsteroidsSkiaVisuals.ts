@@ -1,7 +1,6 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
 import { TransformComponent, HealthComponent, TTLComponent } from "../../../engine/types/EngineTypes";
 import { Platform } from "react-native";
-import { RandomService } from "../../../engine/utils/RandomService";
 
 // Lazy initialize paint to avoid issues in environments where Skia is not fully ready at module load time
 let paint: any = null;

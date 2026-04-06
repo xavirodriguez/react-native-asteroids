@@ -1,5 +1,4 @@
 import { Star } from "../types/GameTypes";
-import { RandomService } from "../utils/RandomService";
 
 /**
  * Generates a random starfield.

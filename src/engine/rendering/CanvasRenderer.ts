@@ -1,7 +1,6 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity, TransformComponent, RenderComponent, ScreenShakeComponent } from "../types/EngineTypes";
-import { RandomService } from "../utils/RandomService";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
