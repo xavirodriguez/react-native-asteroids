@@ -3,6 +3,9 @@ import { Entity } from "../types/EngineTypes";
 /**
  * Numerical Spatial Hash for efficient broadphase collision detection.
  * Divides the 2D space into a grid and maps entities to cells.
+ *
+ * Principle 5: Compound Keys Without Range Assumptions
+ * Uses string-based keys `${i},${j}` to avoid overflow issues from bit-shifting.
  */
 export class SpatialHash {
   private cellSize: number;
@@ -30,7 +33,7 @@ export class SpatialHash {
 
     for (let i = minX; i <= maxX; i++) {
       for (let j = minY; j <= maxY; j++) {
-        // Principle 5: Composite keys without assuming ID ranges
+        // Principle 5: Always correct for any coordinate range
         const key = `${i},${j}`;
         if (!this.grid.has(key)) {
           this.grid.set(key, []);

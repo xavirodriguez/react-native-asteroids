@@ -179,7 +179,7 @@ export class AsteroidsGame
 export class NullAsteroidsGame implements IAsteroidsGame {
   private _world = new World();
   public start() {} public stop() {} public pause() {} public resume() {}
-  public restart() {} public destroy() {}
+  public async restart() {} public destroy() {}
   public getWorld() { return this._world; }
   public isPausedState() { return false; }
   public isGameOver() { return false; }

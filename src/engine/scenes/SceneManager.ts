@@ -5,6 +5,10 @@ import { runLifecycle } from "../utils/LifecycleUtils";
 /**
  * Manages game scenes and their lifecycle transitions.
  * Responsible for updating and rendering the active scene.
+ *
+ * Principle 3: Atomic State Transitions
+ * Lifecycle methods (onExit, onEnter, onPause, onResume) are executed
+ * before the synchronous stack mutation.
  */
 export class SceneManager {
   private currentScene: Scene | null = null;
@@ -17,13 +21,14 @@ export class SceneManager {
    * @param scene - The new scene to transition to.
    */
   public async transitionTo(scene: Scene): Promise<void> {
+    // 1. Perform async/lifecycle work FIRST
     if (this.currentScene) {
       await runLifecycle(() => this.currentScene!.onExit());
     }
 
     await runLifecycle(() => scene.onEnter());
 
-    // Sychronous state mutations at the end
+    // 2. Perform synchronous mutation LAST
     this.sceneStack = [scene];
     this.currentScene = scene;
   }
@@ -33,13 +38,14 @@ export class SceneManager {
    * The current scene is paused before the new scene is entered.
    */
   public async push(scene: Scene): Promise<void> {
+    // 1. Perform async/lifecycle work FIRST
     if (this.currentScene) {
       await runLifecycle(() => this.currentScene!.onPause());
     }
 
     await runLifecycle(() => scene.onEnter());
 
-    // Sychronous state mutations at the end
+    // 2. Perform synchronous mutation LAST
     this.sceneStack.push(scene);
     this.currentScene = scene;
   }
@@ -51,19 +57,18 @@ export class SceneManager {
   public async pop(): Promise<void> {
     if (this.sceneStack.length <= 1) return;
 
+    // 1. Perform async/lifecycle work FIRST
     const poppedScene = this.sceneStack[this.sceneStack.length - 1];
-    if (poppedScene) {
-      await runLifecycle(() => poppedScene.onExit());
-    }
+    await runLifecycle(() => poppedScene.onExit());
 
     const nextScene = this.sceneStack[this.sceneStack.length - 2];
     if (nextScene) {
       await runLifecycle(() => nextScene.onResume());
     }
 
-    // Sychronous state mutations at the end
+    // 2. Perform synchronous mutation LAST
     this.sceneStack.pop();
-    this.currentScene = this.sceneStack[this.sceneStack.length - 1] || null;
+    this.currentScene = nextScene;
   }
 
   /**
@@ -72,9 +77,11 @@ export class SceneManager {
   public async restartCurrentScene(): Promise<void> {
     if (this.currentScene) {
       await runLifecycle(() => this.currentScene!.onExit());
+
       const world = this.currentScene.getWorld();
       world.clear();
       world.clearSystems();
+
       await runLifecycle(() => this.currentScene!.onEnter());
     }
   }
@@ -84,7 +91,9 @@ export class SceneManager {
    */
   public pause(): void {
     if (this.currentScene) {
-      this.currentScene.onPause();
+      // pause/resume are often called in high-frequency loops or via sync events
+      // so we keep them sync if possible, or use runLifecycle without await if they are void
+      runLifecycle(() => this.currentScene!.onPause());
     }
   }
 
@@ -93,7 +102,7 @@ export class SceneManager {
    */
   public resume(): void {
     if (this.currentScene) {
-      this.currentScene.onResume();
+      runLifecycle(() => this.currentScene!.onResume());
     }
   }
 

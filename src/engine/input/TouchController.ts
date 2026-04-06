@@ -3,16 +3,21 @@ import { InputController } from "./InputController";
 /**
  * Controller implementation for touch-based inputs, primarily for mobile.
  * Detects complex gestures: Tap, Swipe, Hold.
+ *
+ * Principle 1: Immutable State for Snapshots
+ * The start position and start time of a touch event are stored as readonly properties
+ * for the duration of the gesture.
  */
-interface TouchState {
-  readonly startPos: { readonly x: number; readonly y: number };
+interface TouchSnapshot {
+  readonly startX: number;
+  readonly startY: number;
   readonly startTime: number;
 }
 
 export class TouchController<TInputState extends Record<string, boolean>>
   extends InputController<TInputState> {
 
-  private touchState: TouchState | null = null;
+  private snapshot: TouchSnapshot | null = null;
   private isHolding: boolean = false;
   private holdThreshold: number = 500; // ms
   private swipeThreshold: number = 30; // pixels
@@ -35,9 +40,10 @@ export class TouchController<TInputState extends Record<string, boolean>>
    * Handles touch start event.
    */
   public onTouchStart(x: number, y: number): void {
-    this.touchState = {
-      startPos: { x, y },
-      startTime: Date.now(),
+    this.snapshot = {
+      startX: x,
+      startY: y,
+      startTime: Date.now()
     };
     this.isHolding = false;
   }
@@ -46,11 +52,11 @@ export class TouchController<TInputState extends Record<string, boolean>>
    * Handles touch move event.
    */
   public onTouchMove(x: number, y: number): void {
-    if (!this.touchState) return;
+    if (!this.snapshot) return;
 
-    if (!this.isHolding && Date.now() - this.touchState.startTime > this.holdThreshold) {
-      const dx = x - this.touchState.startPos.x;
-      const dy = y - this.touchState.startPos.y;
+    if (!this.isHolding && Date.now() - this.snapshot.startTime > this.holdThreshold) {
+      const dx = x - this.snapshot.startX;
+      const dy = y - this.snapshot.startY;
       if (Math.sqrt(dx * dx + dy * dy) < this.swipeThreshold) {
         this.isHolding = true;
         this.setInputs({ hold: true } as unknown as Partial<TInputState>);
@@ -62,16 +68,17 @@ export class TouchController<TInputState extends Record<string, boolean>>
    * Handles touch end event.
    */
   public onTouchEnd(x: number, y: number): void {
-    if (!this.touchState) return;
+    if (!this.snapshot) return;
 
-    const duration = Date.now() - this.touchState.startTime;
-    const dx = x - this.touchState.startPos.x;
-    const dy = y - this.touchState.startPos.y;
+    const duration = Date.now() - this.snapshot.startTime;
+    const dx = x - this.snapshot.startX;
+    const dy = y - this.snapshot.startY;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     if (this.isHolding) {
       this.setInputs({ hold: false } as unknown as Partial<TInputState>);
       this.isHolding = false;
+      this.snapshot = null;
       return;
     }
 
@@ -88,6 +95,8 @@ export class TouchController<TInputState extends Record<string, boolean>>
       // Detected tap
       this.emitGesture("tap");
     }
+
+    this.snapshot = null;
   }
 
   private emitGesture(gesture: string): void {

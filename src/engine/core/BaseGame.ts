@@ -2,6 +2,7 @@ import { World } from "./World";
 import { GameLoop } from "./GameLoop";
 import { InputManager } from "../input/InputManager";
 import { SceneManager } from "../scenes/SceneManager";
+import { runLifecycle } from "../utils/LifecycleUtils";
 import type { IGame, UpdateListener } from "./IGame";
 
 export interface BaseGameConfig {
@@ -29,7 +30,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   private _config: BaseGameConfig;
 
   constructor(config: BaseGameConfig = {}) {
-    this.isMultiplayer = config.isMultiplayer || false;
+    const { isMultiplayer = false } = config;
+    this.isMultiplayer = isMultiplayer;
     this.world = new World();
     this.gameLoop = new GameLoop();
     this.inputManager = new InputManager<TInput>();
@@ -95,15 +97,21 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
     this._notifyListeners();
   }
 
-  public restart(): void {
-    if (this.sceneManager.getCurrentScene()) {
-      this.sceneManager.restartCurrentScene();
-    } else {
+  public async restart(): Promise<void> {
+    const initialScene = this.sceneManager.getCurrentScene();
+
+    await runLifecycle(() => this._onBeforeRestart());
+
+    const currentScene = this.sceneManager.getCurrentScene();
+
+    if (initialScene && currentScene === initialScene) {
+      // Scene didn't change during _onBeforeRestart, so we restart the current one.
+      await this.sceneManager.restartCurrentScene();
+    } else if (!initialScene && !currentScene) {
       this.world.clear();
       this.initializeEntities();
     }
 
-    this._onBeforeRestart();
     if (this._isPaused) this.resume();
     this._notifyListeners();
   }
@@ -137,10 +145,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   // ─── Optional hook — can be overridden ───────────────────────────────────
 
   /**
-   * Called during restart() before initializeEntities().
+   * Called during restart() after scene/world restart.
    * Useful for resetting internal game state (e.g., gameOverLogged = false).
    */
-  protected _onBeforeRestart(): void {}
+  protected _onBeforeRestart(): void | Promise<void> {}
 
   // ─── Engine-internal methods ─────────────────────────────────────────────
 
@@ -169,7 +177,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
       }
     }
     if (e.code === this._config.restartKey) {
-      this.restart();
+      this.restart().catch(console.error);
     }
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
+import { useKeepAwake } from "./useKeepAwake";
 import type { BaseGame } from "../engine/core/BaseGame";
 
 // Constructor type - accepts any class that extends BaseGame
@@ -40,8 +40,10 @@ export function useGame<
   const THROTTLE_MS = 1000 / 15;
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Principle 4: Use encapsulated hook for symmetric resource management
+  useKeepAwake(!isPaused);
+
   useEffect(() => {
-    activateKeepAwakeAsync().catch(() => {});
     // @ts-ignore - Constructor argument handling
     const game = new GameClass({ isMultiplayer });
     gameRef.current = game;
@@ -68,7 +70,6 @@ export function useGame<
       unsubscribe();
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       game.destroy();
-      deactivateKeepAwake();
     };
   // Re-initialize if multiplayer mode or game class changes
   }, [GameClass, isMultiplayer]);
