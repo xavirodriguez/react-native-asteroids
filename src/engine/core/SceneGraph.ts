@@ -15,6 +15,8 @@ export interface SceneNode {
 /**
  * Manages the hierarchy of entities and their transformations.
  * Ensures that child entities' transforms are relative to their parents.
+ *
+ * @deprecated Use HierarchySystem instead for ECS-integrated transform calculations.
  */
 export class SceneGraph {
   private nodes = new Map<Entity, SceneNode>();

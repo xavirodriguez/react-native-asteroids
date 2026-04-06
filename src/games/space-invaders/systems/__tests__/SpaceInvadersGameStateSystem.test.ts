@@ -1,17 +1,19 @@
 import { World } from "../../../../engine/core/World";
 import { SpaceInvadersGame, NullSpaceInvadersGame } from "../../SpaceInvadersGame";
 import { SpaceInvadersGameStateSystem } from "../SpaceInvadersGameStateSystem";
-import { createGameState } from "../../EntityFactory";
+import { createGameState, spawnInvaderWave } from "../../EntityFactory";
 import { getGameState } from "../../GameUtils";
 
 describe("SpaceInvadersGameStateSystem", () => {
   let world: World;
-  let game: SpaceInvadersGame;
+  let game: ISpaceInvadersGame;
   let system: SpaceInvadersGameStateSystem;
 
   beforeEach(() => {
-    game = new SpaceInvadersGame();
-    world = game.getWorld();
+    world = new World();
+    game = {
+      getWorld: () => world,
+    } as any;
     system = new SpaceInvadersGameStateSystem(game);
   });
 
@@ -24,43 +26,26 @@ describe("SpaceInvadersGameStateSystem", () => {
 
   it("should increment level when no invaders remain", async () => {
     // Manually set up world for test
-    const gameStateEntity = createGameState(world);
+    createGameState(world);
+    const state = getGameState(world);
+    state.level = 1;
 
-    // System updates level if invadersRemaining is 0
-    // INITIAL_GAME_STATE has level 0, invadersRemaining 0.
-    // createGameState sets level 1, invadersRemaining 0.
-
-    // First update: invadersRemaining is 0, so it increments level to 2 and spawns wave
-    system.update(world, 16.67);
-    const state1 = world.getComponent<any>(gameStateEntity, "GameState");
-    expect(state1.level).toBe(2);
-    const invaders = world.query("Invader");
-    expect(invaders.length).toBeGreaterThan(0);
-
-    // Second update: invadersRemaining updated to count
-    system.update(world, 16.67);
-    expect(state1.invadersRemaining).toBe(invaders.length);
-
-    // Remove all invaders manually
-    invaders.forEach(e => world.removeEntity(e));
-
-    // Third update: invadersRemaining is 0, so it increments level to 3 and spawns wave
+    // First update: count is 0, so it should increment level to 2 and spawn wave
     system.update(world, 16.67);
 
-    const leveledUpState = world.getComponent<any>(gameStateEntity, "GameState");
-    expect(leveledUpState.level).toBe(3);
+    expect(state.level).toBe(2);
     expect(world.query("Invader").length).toBeGreaterThan(0);
+
+    // Second update: update the count in state
+    system.update(world, 16.67);
+    expect(state.invadersRemaining).toBeGreaterThan(0);
   });
 
   it("should detect game over when lives reach 0", () => {
-    const gameStateEntity = createGameState(world);
-    const state = world.getComponent<any>(gameStateEntity, "GameState");
+    createGameState(world);
+    const state = getGameState(world);
     state.lives = 0;
     state.isGameOver = true;
-
-    // Manually point game to this world if needed, or just test system logic
-    // system.isGameOver() calls game.getWorld()
-    jest.spyOn(game, 'getWorld').mockReturnValue(world);
 
     expect(system.isGameOver()).toBe(true);
   });

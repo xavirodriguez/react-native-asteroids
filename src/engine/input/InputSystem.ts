@@ -2,6 +2,8 @@ import { TouchPoint, GestureEvent, TouchPhase } from "./InputTypes";
 
 /**
  * Abstraction layer to manage touch inputs and gesture detection.
+ *
+ * @deprecated Use UnifiedInputSystem instead for semantic action-based input.
  * Converts raw React Native touches into consumable gestures for game logic.
  */
 export class InputSystem {

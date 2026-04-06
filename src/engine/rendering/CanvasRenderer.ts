@@ -1,6 +1,6 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
-import { Entity, TransformComponent, RenderComponent, ScreenShakeComponent } from "../types/EngineTypes";
+import { Entity, TransformComponent, RenderComponent, ScreenShakeComponent, AnimatorComponent, Camera2DComponent } from "../types/EngineTypes";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -101,13 +101,22 @@ export class CanvasRenderer implements Renderer {
 
     ctx.save(); // Global save for potential transform effects
 
-    // Apply Screen Shake if present (promoted from Asteroids to Engine)
-    const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
-    if (shake?.config && shake.config.duration > 0) {
-      const { intensity } = shake.config;
-      const shakeX = (Math.random() - 0.5) * intensity;
-      const shakeY = (Math.random() - 0.5) * intensity;
-      ctx.translate(shakeX, shakeY);
+    // Apply Camera transform and Screen Shake
+    const cam = world.getSingleton<Camera2DComponent>("Camera2D");
+    if (cam) {
+      const shakeX = (Math.random() - 0.5) * cam.shakeIntensity;
+      const shakeY = (Math.random() - 0.5) * cam.shakeIntensity;
+      ctx.scale(cam.zoom, cam.zoom);
+      ctx.translate(-cam.x + shakeX, -cam.y + shakeY);
+    } else {
+      // Fallback to legacy Screen Shake if present (promoted from Asteroids to Engine)
+      const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
+      if (shake?.config && shake.config.duration > 0) {
+        const { intensity } = shake.config;
+        const shakeX = (Math.random() - 0.5) * intensity;
+        const shakeY = (Math.random() - 0.5) * intensity;
+        ctx.translate(shakeX, shakeY);
+      }
     }
 
     // Background Effects (e.g., Starfield)
@@ -130,6 +139,9 @@ export class CanvasRenderer implements Renderer {
 
     renderCommands.sort((a, b) => a.zIndex - b.zIndex);
 
+    // Render Tilemaps first
+    this.drawTilemaps(world);
+
     // Execute draw commands
     renderCommands.forEach((cmd) => {
       this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render }, world);
@@ -149,28 +161,70 @@ export class CanvasRenderer implements Renderer {
     const pos = components["Transform"] as TransformComponent;
     const render = components["Render"] as RenderComponent;
 
-    // Use world coordinates if available from HierarchySystem
-    const x = pos.worldX ?? pos.x;
-    const y = pos.worldY ?? pos.y;
-    const rotation = pos.worldRotation ?? render.rotation;
+    // Use world coordinates from HierarchySystem (single source of truth)
+    const x = pos.worldX !== undefined ? pos.worldX : pos.x;
+    const y = pos.worldY !== undefined ? pos.worldY : pos.y;
+    const rotation = pos.worldRotation !== undefined ? pos.worldRotation : render.rotation;
 
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotation);
 
     // Scale support
-    const scaleX = pos.worldScaleX ?? pos.scaleX ?? 1;
-    const scaleY = pos.worldScaleY ?? pos.scaleY ?? 1;
+    const scaleX = pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1);
+    const scaleY = pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1);
     if (scaleX !== 1 || scaleY !== 1) {
       ctx.scale(scaleX, scaleY);
     }
 
     const customDrawer = this.shapeRegistry.get(render.shape);
     if (customDrawer) {
+      // Check if entity has an animator and apply frame mapping
+      const animator = world.getComponent<AnimatorComponent>(entity, "Animator");
+      if (animator) {
+        const config = animator.animations[animator.current];
+        if (config) {
+          const currentFrame = config.frames[animator.frame];
+          // We can pass frame info to drawers via custom components or extended interface
+          (render as any)._currentFrame = currentFrame;
+        }
+      }
+
       customDrawer(ctx, entity, pos, render, world);
     }
 
     ctx.restore();
+  }
+
+  public drawTilemaps(world: World): void {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const tilemaps = world.query("Tilemap");
+
+    tilemaps.forEach(entity => {
+      const tilemap = world.getComponent<TilemapComponent>(entity, "Tilemap")!;
+      const range = (tilemap as any)._visibleRange || {
+        startX: 0, startY: 0, endX: tilemap.data.width, endY: tilemap.data.height
+      };
+
+      ctx.save();
+      const tileSize = tilemap.data.tileSize;
+
+      for (const layer of tilemap.data.layers) {
+        for (let y = range.startY; y < range.endY; y++) {
+          for (let x = range.startX; x < range.endX; x++) {
+            const index = y * tilemap.data.width + x;
+            const tileId = layer.tiles[index];
+            if (tileId !== 0) {
+              // Simulating tile rendering: rectangle with color based on ID
+              ctx.fillStyle = `rgb(${(tileId * 50) % 255}, ${(tileId * 100) % 255}, ${(tileId * 150) % 255})`;
+              ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+            }
+          }
+        }
+      }
+      ctx.restore();
+    });
   }
 
   public drawParticles(world: World): void {

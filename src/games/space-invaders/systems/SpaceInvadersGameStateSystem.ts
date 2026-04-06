@@ -29,7 +29,7 @@ export class SpaceInvadersGameStateSystem extends System {
 
     // 2. Handle level progression
     if (gameState.invadersRemaining === 0) {
-      gameState.level += 1;
+      gameState.level++;
       spawnInvaderWave(world, gameState.level);
     }
 
@@ -44,8 +44,10 @@ export class SpaceInvadersGameStateSystem extends System {
 
   public isGameOver(): boolean {
     const world = this.game.getWorld();
-    const gameState = getGameState(world);
-    return gameState.isGameOver;
+    const entities = world.query("GameState");
+    if (entities.length === 0) return false;
+    const gameState = world.getComponent<GameStateComponent>(entities[0], "GameState");
+    return gameState?.isGameOver || false;
   }
 
   public resetGameOverState(): void {
