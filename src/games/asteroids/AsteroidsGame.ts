@@ -16,6 +16,8 @@ import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory"
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
+import { InputFrame, EntitySnapshot } from "../../multiplayer/NetTypes";
+import { InterpolationBuffer } from "../../multiplayer/InterpolationSystem";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "../../engine/rendering/Renderer";
@@ -34,6 +36,8 @@ export class AsteroidsGame
   private assetLoader: AssetLoader;
   private bulletPool: BulletPool;
   private particlePool: ParticlePool;
+  private entityInterpolationBuffers = new Map<string, InterpolationBuffer>();
+  private serverEntities = new Map<string, number>();
 
   constructor(config: { isMultiplayer?: boolean } = {}) {
     super({
@@ -47,52 +51,183 @@ export class AsteroidsGame
     this.isMultiplayer = active;
   }
 
-  public updateFromServer(state: any) {
+  public predictLocalPlayer(input: InputFrame, deltaTime: number) {
+    const dt = deltaTime / 1000;
+    const ships = this.world.query("Ship", "Transform", "Velocity", "Render");
+
+    ships.forEach((entity) => {
+        const tag = this.world.getComponent<any>(entity, "Tag");
+        if (tag && tag.tags.includes("LocalPlayer")) {
+            const pos = this.world.getComponent<any>(entity, "Transform");
+            const vel = this.world.getComponent<any>(entity, "Velocity");
+            const render = this.world.getComponent<any>(entity, "Render");
+
+            if (pos && vel && render) {
+                // Apply same logic as server
+                const rotateLeft = input.actions.includes("rotateLeft") || input.axes.rotate_left > 0;
+                const rotateRight = input.actions.includes("rotateRight") || input.axes.rotate_right > 0;
+                const thrust = input.actions.includes("thrust") || input.axes.thrust > 0;
+
+                if (rotateLeft) render.rotation -= 3 * dt;
+                if (rotateRight) render.rotation += 3 * dt;
+                if (thrust) {
+                    vel.dx += Math.cos(render.rotation) * 200 * dt;
+                    vel.dy += Math.sin(render.rotation) * 200 * dt;
+                }
+
+                // Physics integration
+                vel.dx *= 0.99;
+                vel.dy *= 0.99;
+                pos.x += vel.dx * dt;
+                pos.y += vel.dy * dt;
+
+                // Wrapping
+                if (pos.x < 0) pos.x = 800;
+                if (pos.x > 800) pos.x = 0;
+                if (pos.y < 0) pos.y = 600;
+                if (pos.y > 600) pos.y = 0;
+            }
+        }
+    });
+  }
+
+  public updateFromServer(state: any, localSessionId?: string) {
     if (!this.isMultiplayer || !state) return;
 
-    // Clear and rebuild entities based on server state
-    this.world.clear();
+    const currentServerIds = new Set<string>();
 
-    // Re-create players from server state
+    // 1. Buffering snapshots for remote entities
     if (state.players) {
         state.players.forEach((player: any, sessionId: string) => {
-            const ship = this.world.createEntity();
-            this.world.addComponent(ship, { type: "Transform", x: player.x, y: player.y, rotation: player.angle, scaleX: 1, scaleY: 1 });
-            this.world.addComponent(ship, {
-                type: "Render",
-                shape: "triangle",
-                size: 10,
-                color: player.alive ? "white" : "rgba(255,0,0,0.5)",
-                rotation: player.angle,
-                trailPositions: []
-            });
-            this.world.addComponent(ship, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0, trailPositions: [] });
-            this.world.addComponent(ship, { type: "Tag", tags: ["Ship"] });
-            this.world.addComponent(ship, { type: "Health", current: player.lives, max: 3, invulnerableRemaining: 0 });
+            currentServerIds.add(sessionId);
+            if (sessionId !== localSessionId) {
+                let buffer = this.entityInterpolationBuffers.get(sessionId);
+                if (!buffer) {
+                    buffer = new InterpolationBuffer(10);
+                    this.entityInterpolationBuffers.set(sessionId, buffer);
+                }
+                buffer.push({
+                    tick: state.serverTick,
+                    x: player.x,
+                    y: player.y,
+                    angle: player.angle,
+                    timestamp: Date.now()
+                });
+            }
+
+            let entity = this.serverEntities.get(sessionId);
+            if (entity === undefined) {
+                entity = this.world.createEntity();
+                this.serverEntities.set(sessionId, entity);
+                this.world.addComponent(entity, { type: "Transform", x: player.x, y: player.y, rotation: player.angle, scaleX: 1, scaleY: 1 });
+                this.world.addComponent(entity, {
+                    type: "Render",
+                    shape: "triangle",
+                    size: 10,
+                    color: "white",
+                    rotation: player.angle,
+                    trailPositions: []
+                });
+                this.world.addComponent(entity, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0, trailPositions: [] });
+                const tags = ["Ship"];
+                if (sessionId === localSessionId) tags.push("LocalPlayer");
+                this.world.addComponent(entity, { type: "Tag", tags });
+                this.world.addComponent(entity, { type: "Health", current: player.lives, max: 3, invulnerableRemaining: 0 });
+                if (sessionId === localSessionId) {
+                    this.world.addComponent(entity, { type: "Velocity", dx: player.velocityX, dy: player.velocityY });
+                }
+            }
+
+            const pos = this.world.getComponent<any>(entity, "Transform");
+            const render = this.world.getComponent<any>(entity, "Render");
+            const health = this.world.getComponent<any>(entity, "Health");
+            const vel = this.world.getComponent<any>(entity, "Velocity");
+
+            if (sessionId === localSessionId) {
+                // Reconciliation logic
+                const dx = Math.abs(pos.x - player.x);
+                const dy = Math.abs(pos.y - player.y);
+                const THRESHOLD = 5;
+
+                if (dx > THRESHOLD || dy > THRESHOLD) {
+                    pos.x = player.x;
+                    pos.y = player.y;
+                }
+                if (vel) {
+                    vel.dx = player.velocityX;
+                    vel.dy = player.velocityY;
+                }
+                render.rotation = player.angle;
+            } else {
+                // Interpolation logic
+                const buffer = this.entityInterpolationBuffers.get(sessionId);
+                const snapshot = buffer?.getAt(Date.now() - 100);
+                if (snapshot) {
+                    pos.x = snapshot.prev.x + (snapshot.next.x - snapshot.prev.x) * snapshot.alpha;
+                    pos.y = snapshot.prev.y + (snapshot.next.y - snapshot.prev.y) * snapshot.alpha;
+                    render.rotation = snapshot.prev.angle !== undefined && snapshot.next.angle !== undefined ?
+                        snapshot.prev.angle + (snapshot.next.angle - snapshot.prev.angle) * snapshot.alpha : player.angle;
+                } else {
+                    pos.x = player.x;
+                    pos.y = player.y;
+                    render.rotation = player.angle;
+                }
+            }
+            if (health) health.current = player.lives;
+            render.color = player.alive ? "white" : "rgba(255,0,0,0.5)";
         });
     }
 
-    // Re-create asteroids from server state
+    // 2. Asteroids
     if (state.asteroids) {
-        state.asteroids.forEach((asteroid: any) => {
-            const ast = this.world.createEntity();
-            this.world.addComponent(ast, { type: "Transform", x: asteroid.x, y: asteroid.y, rotation: 0, scaleX: 1, scaleY: 1 });
-            this.world.addComponent(ast, { type: "Render", shape: "polygon", size: 30, color: "white", rotation: 0 });
-            this.world.addComponent(ast, { type: "Asteroid", size: "large" });
-            this.world.addComponent(ast, { type: "Tag", tags: ["Asteroid"] });
+        state.asteroids.forEach((asteroid: any, id: string) => {
+            currentServerIds.add(id);
+            let entity = this.serverEntities.get(id);
+            if (entity === undefined) {
+                entity = this.world.createEntity();
+                this.serverEntities.set(id, entity);
+                this.world.addComponent(entity, { type: "Transform", x: asteroid.x, y: asteroid.y, rotation: 0, scaleX: 1, scaleY: 1 });
+                this.world.addComponent(entity, { type: "Render", shape: "polygon", size: 30, color: "white", rotation: 0 });
+                this.world.addComponent(entity, { type: "Asteroid", size: "large" });
+                this.world.addComponent(entity, { type: "Tag", tags: ["Asteroid"] });
+            }
+            const pos = this.world.getComponent<any>(entity, "Transform");
+            if (pos) {
+                pos.x = asteroid.x;
+                pos.y = asteroid.y;
+            }
         });
     }
 
-    // Re-create bullets from server state
+    // 3. Bullets
     if (state.bullets) {
-        state.bullets.forEach((bullet: any) => {
-            const b = this.world.createEntity();
-            this.world.addComponent(b, { type: "Transform", x: bullet.x, y: bullet.y, rotation: 0, scaleX: 1, scaleY: 1 });
-            this.world.addComponent(b, { type: "Render", shape: "bullet_shape", size: 2, color: "white", rotation: 0 });
-            this.world.addComponent(b, { type: "Bullet" });
-            this.world.addComponent(b, { type: "Tag", tags: ["Bullet"] });
+        state.bullets.forEach((bullet: any, id: string) => {
+            currentServerIds.add(id);
+            let entity = this.serverEntities.get(id);
+            if (entity === undefined) {
+                entity = this.world.createEntity();
+                this.serverEntities.set(id, entity);
+                this.world.addComponent(entity, { type: "Transform", x: bullet.x, y: bullet.y, rotation: 0, scaleX: 1, scaleY: 1 });
+                this.world.addComponent(entity, { type: "Render", shape: "bullet_shape", size: 2, color: "white", rotation: 0 });
+                this.world.addComponent(entity, { type: "Bullet" });
+                this.world.addComponent(entity, { type: "Tag", tags: ["Bullet"] });
+            }
+            const pos = this.world.getComponent<any>(entity, "Transform");
+            if (pos) {
+                pos.x = bullet.x;
+                pos.y = bullet.y;
+            }
         });
     }
+
+    // 4. Cleanup stale entities
+    this.serverEntities.forEach((entity, id) => {
+        if (!currentServerIds.has(id)) {
+            this.world.removeEntity(entity);
+            this.serverEntities.delete(id);
+            this.entityInterpolationBuffers.delete(id);
+        }
+    });
   }
 
   protected registerSystems(): void {
@@ -174,6 +309,7 @@ export class AsteroidsGame
   public isGameOver(): boolean {
     return this.gameStateSystem.isGameOver();
   }
+
 }
 
 export class NullAsteroidsGame implements IAsteroidsGame {

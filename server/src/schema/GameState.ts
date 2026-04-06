@@ -31,6 +31,7 @@ export class AsteroidsState extends Schema {
   @type({ map: Bullet }) bullets = new MapSchema<Bullet>();
 
   @type("uint32") serverTick: number = 0;
+  @type("uint32") lastProcessedTick: number = 0;
   @type("boolean") gameStarted: boolean = false;
   @type("boolean") gameOver: boolean = false;
   @type("number") gameWidth: number = 800;
