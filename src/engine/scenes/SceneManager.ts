@@ -22,8 +22,9 @@ export class SceneManager {
    */
   public async transitionTo(scene: Scene): Promise<void> {
     // 1. Perform async/lifecycle work FIRST
-    if (this.currentScene) {
-      await runLifecycle(() => this.currentScene!.onExit());
+    const previousScene = this.currentScene;
+    if (previousScene) {
+      await runLifecycle(() => previousScene.onExit());
     }
 
     await runLifecycle(() => scene.onEnter());
