@@ -93,8 +93,8 @@ export class SceneManager {
     if (this.currentScene) {
       // pause/resume are often called in high-frequency loops or via sync events
       // so we keep them sync if possible, or use runLifecycle without await if they are void
-      runLifecycle(() => this.currentScene!.onPause());
-    }
+      this.currentScene!.onPause();
+
   }
 
   /**
