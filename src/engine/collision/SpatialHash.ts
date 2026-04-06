@@ -1,68 +1,69 @@
-import { Entity } from "../types/EngineTypes";
+import { Entity, AABB } from "../types/EngineTypes";
 
 /**
- * Numerical Spatial Hash for efficient broadphase collision detection.
- * Divides the 2D space into a grid and maps entities to cells.
- *
- * Principle 5: Compound Keys Without Range Assumptions
- * Uses string-based keys `${i},${j}` to avoid overflow issues from bit-shifting.
+ * A spatial hashing implementation to provide efficient broadphase collision detection (O(n log n)).
+ * Divides the 2D world into a grid of cells and tracks which entities are in which cells.
  */
 export class SpatialHash {
-  private cellSize: number;
-  private grid: Map<string, Entity[]> = new Map();
+  private grid = new Map<number, Entity[]>();
+  private cellPool: Entity[][] = []; // Pool for the entity lists
 
-  constructor(cellSize: number = 100) {
-    this.cellSize = cellSize;
+  constructor(public cellSize: number) {}
+
+  /**
+   * Inserts an entity into all cells that its AABB overlaps.
+   */
+  public insert(id: Entity, aabb: AABB): void {
+    const minX = Math.floor(aabb.minX / this.cellSize);
+    const maxX = Math.floor(aabb.maxX / this.cellSize);
+    const minY = Math.floor(aabb.minY / this.cellSize);
+    const maxY = Math.floor(aabb.maxY / this.cellSize);
+
+    for (let x = minX; x <= maxX; x++) {
+      for (let y = minY; y <= maxY; y++) {
+        // Use a numerical key to avoid string allocations
+        const key = (x << 16) | (y & 0xFFFF);
+        let cell = this.grid.get(key);
+        if (!cell) {
+          cell = this.cellPool.pop() || [];
+          this.grid.set(key, cell);
+        }
+        cell.push(id);
+      }
+    }
   }
 
   /**
-   * Clears the hash.
+   * Queries all entities in cells that the given AABB overlaps.
+   * Returns a list of unique candidates.
+   */
+  public query(aabb: AABB, result: Set<Entity>): void {
+    const minX = Math.floor(aabb.minX / this.cellSize);
+    const maxX = Math.floor(aabb.maxX / this.cellSize);
+    const minY = Math.floor(aabb.minY / this.cellSize);
+    const maxY = Math.floor(aabb.maxY / this.cellSize);
+
+    for (let x = minX; x <= maxX; x++) {
+      for (let y = minY; y <= maxY; y++) {
+        const key = (x << 16) | (y & 0xFFFF);
+        const cell = this.grid.get(key);
+        if (cell) {
+          for (let i = 0; i < cell.length; i++) {
+            result.add(cell[i]);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Clears the grid and returns lists to the pool.
    */
   public clear(): void {
+    for (const cell of this.grid.values()) {
+      cell.length = 0;
+      this.cellPool.push(cell);
+    }
     this.grid.clear();
-  }
-
-  /**
-   * Adds an entity to the hash based on its bounding box.
-   */
-  public add(entity: Entity, x: number, y: number, radius: number): void {
-    const minX = Math.floor((x - radius) / this.cellSize);
-    const maxX = Math.floor((x + radius) / this.cellSize);
-    const minY = Math.floor((y - radius) / this.cellSize);
-    const maxY = Math.floor((y + radius) / this.cellSize);
-
-    for (let i = minX; i <= maxX; i++) {
-      for (let j = minY; j <= maxY; j++) {
-        // Principle 5: Always correct for any coordinate range
-        const key = `${i},${j}`;
-        if (!this.grid.has(key)) {
-          this.grid.set(key, []);
-        }
-        this.grid.get(key)!.push(entity);
-      }
-    }
-  }
-
-  /**
-   * Returns a list of potential collision candidates for a given entity.
-   */
-  public getCandidates(x: number, y: number, radius: number): Set<Entity> {
-    const candidates = new Set<Entity>();
-    const minX = Math.floor((x - radius) / this.cellSize);
-    const maxX = Math.floor((x + radius) / this.cellSize);
-    const minY = Math.floor((y - radius) / this.cellSize);
-    const maxY = Math.floor((y + radius) / this.cellSize);
-
-    for (let i = minX; i <= maxX; i++) {
-      for (let j = minY; j <= maxY; j++) {
-        const key = `${i},${j}`;
-        const entities = this.grid.get(key);
-        if (entities) {
-          entities.forEach((e) => candidates.add(e));
-        }
-      }
-    }
-
-    return candidates;
   }
 }

@@ -1,38 +1,21 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { TransformComponent, ColliderComponent, Entity, ReclaimableComponent } from "../types/EngineTypes";
+import { PositionComponent, ColliderComponent, Entity, ReclaimableComponent, AABB } from "../types/EngineTypes";
 import { SpatialHash } from "../collision/SpatialHash";
-import { ObjectPool } from "../utils/ObjectPool";
-
-class BoundData {
-  id: Entity = 0;
-  pos: TransformComponent = { type: "Transform", x: 0, y: 0 };
-  col: ColliderComponent = { type: "Collider", radius: 0 };
-}
 
 /**
  * Generic Collision System for the TinyAsterEngine.
  * Handles circle-to-circle collision detection with Spatial Hash broadphase optimization.
  */
 export abstract class CollisionSystem extends System {
-  // Use ObjectPool to manage BoundData objects and minimize GC pressure
-  private boundsPool: ObjectPool<BoundData> = new ObjectPool<BoundData>(
-    () => new BoundData(),
-    (b) => {
-      b.id = 0;
-      b.pos = null as any;
-      b.col = null as any;
-    },
-    20
-  );
-  private activeBounds: BoundData[] = [];
-  private spatialHash: SpatialHash = new SpatialHash(150);
-  private processedPairs: Set<number> = new Set();
+  private spatialHash = new SpatialHash(100);
+  private queryResult = new Set<Entity>();
+  private aabb: AABB = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+  private processedPairs = new Set<number>();
 
   /**
    * Updates the collision state.
-   * Optimizes checks using a numerical Spatial Hash broadphase.
-   * Complexity: O(n) average case for uniform distributions.
+   * Optimizes checks using a Spatial Hashing algorithm for broadphase.
    */
   public update(world: World, deltaTime: number): void {
     void deltaTime;
@@ -40,47 +23,65 @@ export abstract class CollisionSystem extends System {
     const n = colliders.length;
     if (n < 2) return;
 
-    // Release previous frame's bounds back to the pool
-    this.activeBounds.forEach(b => this.boundsPool.release(b));
-    this.activeBounds.length = 0;
-
+    // Broadphase with Spatial Hash
     this.spatialHash.clear();
-    this.processedPairs.clear();
-
-    // Populate spatial hash and active bounds using the pool
     for (let i = 0; i < n; i++) {
       const id = colliders[i];
       const pos = world.getComponent<TransformComponent>(id, "Transform")!;
       const col = world.getComponent<ColliderComponent>(id, "Collider")!;
 
-      const b = this.boundsPool.acquire();
-      b.id = id;
-      b.pos = pos;
-      b.col = col;
-      this.activeBounds.push(b);
+      const layer = (col as any).layer !== undefined ? (col as any).layer : 1;
+      const mask = (col as any).mask !== undefined ? (col as any).mask : 1;
+      if (layer === 0 && mask === 0) continue;
 
-      this.spatialHash.add(id, pos.x, pos.y, col.radius);
+      const halfWidth = (col as any).width ? (col as any).width / 2 : col.radius;
+      const halfHeight = (col as any).height ? (col as any).height / 2 : col.radius;
+
+      this.aabb.minX = pos.x - halfWidth;
+      this.aabb.maxX = pos.x + halfWidth;
+      this.aabb.minY = pos.y - halfHeight;
+      this.aabb.maxY = pos.y + halfHeight;
+      this.spatialHash.insert(id, this.aabb);
     }
 
-    // Narrow phase detection based on spatial hash candidates
+    this.processedPairs.clear();
+
     for (let i = 0; i < n; i++) {
-      const a = this.activeBounds[i];
-      const candidates = this.spatialHash.getCandidates(a.pos.x, a.pos.y, a.col.radius);
+      const idA = colliders[i];
+      const posA = world.getComponent<PositionComponent>(idA, "Position")!;
+      const colA = world.getComponent<ColliderComponent>(idA, "Collider");
 
-      candidates.forEach((bId) => {
-        if (a.id === bId) return;
+      if (!colA) continue;
+      const maskA = (colA as any).mask !== undefined ? (colA as any).mask : 1;
+      if (maskA === 0) continue;
 
-        // Ensure we only check each pair once
-        // Numerical key for pairId to avoid string GC
-        const pairId = a.id < bId ? (a.id << 16) | (bId & 0xFFFF) : (bId << 16) | (a.id & 0xFFFF);
-        if (this.processedPairs.has(pairId)) return;
-        this.processedPairs.add(pairId);
+      const halfWidth = (colA as any).width ? (colA as any).width / 2 : colA.radius;
+      const halfHeight = (colA as any).height ? (colA as any).height / 2 : colA.radius;
 
-        const bPos = world.getComponent<TransformComponent>(bId, "Transform");
-        const bCol = world.getComponent<ColliderComponent>(bId, "Collider");
+      this.aabb.minX = posA.x - halfWidth;
+      this.aabb.maxX = posA.x + halfWidth;
+      this.aabb.minY = posA.y - halfHeight;
+      this.aabb.maxY = posA.y + halfHeight;
 
-        if (bPos && bCol && this.isCollidingWithComponents(a.pos, a.col, bPos, bCol)) {
-          this.onCollision(world, a.id, bId);
+      this.queryResult.clear();
+      this.spatialHash.query(this.aabb, this.queryResult);
+
+      for (const idB of this.queryResult) {
+        if (idA === idB) continue;
+
+        const colB = world.getComponent<ColliderComponent>(idB, "Collider");
+        if (!colB) continue;
+        const layerB = (colB as any).layer !== undefined ? (colB as any).layer : 1;
+        if (!(maskA & layerB)) continue;
+
+        // Optimized pair key for zero-allocation tracking
+        const pairKey = idA < idB ? (idA << 16) | idB : (idB << 16) | idA;
+        if (this.processedPairs.has(pairKey)) continue;
+        this.processedPairs.add(pairKey);
+
+        const posB = world.getComponent<PositionComponent>(idB, "Position")!;
+        if (this.isCollidingWithComponents(posA, colA, posB, colB)) {
+          this.onCollision(world, idA, idB);
         }
       });
     }

@@ -1,18 +1,32 @@
 import { Scene } from "./Scene";
-import { Renderer } from "../rendering/Renderer";
-import { runLifecycle } from "../utils/LifecycleUtils";
+import { World } from "../core/World";
+import { runLifecycle } from "../utils/Lifecycle";
+
+export type TransitionType = 'instant' | 'fade' | 'slide';
+
+export interface SceneTransition {
+  type: TransitionType;
+  durationMs: number;
+}
 
 /**
- * Manages game scenes and their lifecycle transitions.
- * Responsible for updating and rendering the active scene.
- *
- * Principle 3: Atomic State Transitions
- * Lifecycle methods (onExit, onEnter, onPause, onResume) are executed
- * before the synchronous stack mutation.
+ * Manages a stack of game scenes and their lifecycle transitions.
  */
 export class SceneManager {
   private currentScene: Scene | null = null;
   private sceneStack: Scene[] = [];
+  private scenes = new Map<string, Scene>();
+
+  /**
+   * Registers a scene by name.
+   */
+  public register(scene: Scene): void {
+    const name = (scene as any).name || "Unnamed Scene";
+    if (name === "Unnamed Scene") {
+      console.warn("Scene registered without a unique name. This may cause collisions.");
+    }
+    this.scenes.set(name, scene);
+  }
 
   /**
    * Transitions to a new scene, clearing the current stack.
@@ -20,55 +34,61 @@ export class SceneManager {
    *
    * @param scene - The new scene to transition to.
    */
-  public async transitionTo(scene: Scene): Promise<void> {
-    // 1. Perform async/lifecycle work FIRST
-    if (this.currentScene) {
-      await runLifecycle(() => this.currentScene!.onExit());
-    }
+  public transitionTo(scene: Scene): void {
+    const prev = this.currentScene;
 
-    await runLifecycle(() => scene.onEnter());
-
-    // 2. Perform synchronous mutation LAST
     this.sceneStack = [scene];
     this.currentScene = scene;
+
+    const triggerEnter = () => {
+      runLifecycle(() => (scene as any).onEnter ? (scene as any).onEnter(scene.getWorld()) : (scene as any).onEnter())
+        .catch(console.error);
+    };
+
+    if (prev) {
+      const exitResult = (prev as any).onExit ? (prev as any).onExit(prev.getWorld()) : (prev as any).onExit();
+      if (exitResult instanceof Promise) {
+        exitResult.then(triggerEnter).catch(console.error);
+      } else {
+        triggerEnter();
+      }
+    } else {
+      triggerEnter();
+    }
   }
 
   /**
    * Pushes a new scene onto the stack.
    * The current scene is paused before the new scene is entered.
    */
-  public async push(scene: Scene): Promise<void> {
-    // 1. Perform async/lifecycle work FIRST
+  public push(scene: Scene): void {
     if (this.currentScene) {
-      await runLifecycle(() => this.currentScene!.onPause());
+      this.currentScene.onPause();
     }
-
-    await runLifecycle(() => scene.onEnter());
-
-    // 2. Perform synchronous mutation LAST
     this.sceneStack.push(scene);
     this.currentScene = scene;
+
+    runLifecycle(() => (scene as any).onEnter ? (scene as any).onEnter(scene.getWorld()) : (scene as any).onEnter())
+      .catch(console.error);
   }
 
   /**
    * Pops the current scene from the stack.
    * The previous scene is resumed.
    */
-  public async pop(): Promise<void> {
+  public pop(): void {
     if (this.sceneStack.length <= 1) return;
 
-    // 1. Perform async/lifecycle work FIRST
-    const poppedScene = this.sceneStack[this.sceneStack.length - 1];
-    await runLifecycle(() => poppedScene.onExit());
-
-    const nextScene = this.sceneStack[this.sceneStack.length - 2];
-    if (nextScene) {
-      await runLifecycle(() => nextScene.onResume());
+    const poppedScene = this.sceneStack.pop();
+    if (poppedScene) {
+      runLifecycle(() => (poppedScene as any).onExit ? (poppedScene as any).onExit(poppedScene.getWorld()) : (poppedScene as any).onExit())
+        .catch(console.error);
     }
 
-    // 2. Perform synchronous mutation LAST
-    this.sceneStack.pop();
-    this.currentScene = nextScene;
+    this.currentScene = this.sceneStack[this.sceneStack.length - 1];
+    if (this.currentScene) {
+      this.currentScene.onResume();
+    }
   }
 
   /**
@@ -76,13 +96,23 @@ export class SceneManager {
    */
   public async restartCurrentScene(): Promise<void> {
     if (this.currentScene) {
-      await runLifecycle(() => this.currentScene!.onExit());
+      const scene = this.currentScene;
+      const world = scene.getWorld();
 
-      const world = this.currentScene.getWorld();
-      world.clear();
-      world.clearSystems();
+      const exitResult = (scene as any).onExit ? (scene as any).onExit(world) : (scene as any).onExit();
 
-      await runLifecycle(() => this.currentScene!.onEnter());
+      const reset = () => {
+        world.clear();
+        world.clearSystems();
+        runLifecycle(() => (scene as any).onEnter ? (scene as any).onEnter(world) : (scene as any).onEnter())
+          .catch(console.error);
+      };
+
+      if (exitResult instanceof Promise) {
+        exitResult.then(reset).catch(console.error);
+      } else {
+        reset();
+      }
     }
   }
 
@@ -122,7 +152,7 @@ export class SceneManager {
    *
    * @param renderer - The renderer instance to use.
    */
-  public render(renderer: Renderer): void {
+  public render(renderer: any): void {
     if (this.currentScene) {
       this.currentScene.render(renderer);
     }

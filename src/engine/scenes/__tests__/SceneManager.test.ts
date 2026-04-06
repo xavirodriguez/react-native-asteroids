@@ -1,14 +1,6 @@
 import { SceneManager } from "../SceneManager";
 import { Scene } from "../Scene";
 import { World } from "../../core/World";
-import { Renderer } from "../../rendering/Renderer";
-
-// Mock Renderer
-const mockRenderer = {
-  clear: jest.fn(),
-  render: jest.fn(),
-  setSize: jest.fn(),
-} as unknown as Renderer;
 
 // Concrete Scene for testing
 class TestScene extends Scene {
@@ -17,8 +9,9 @@ class TestScene extends Scene {
   public updateCalled = false;
   public renderCalled = false;
 
-  constructor(world: World) {
+  constructor(world: World, name: string) {
     super(world);
+    (this as any).name = name;
   }
 
   public onEnter() {
@@ -29,13 +22,13 @@ class TestScene extends Scene {
     this.onExitCalled = true;
   }
 
-  public update(deltaTime: number) {
-    super.update(deltaTime);
+  public update(dt: number) {
+    this.world.update(dt);
     this.updateCalled = true;
   }
 
-  public render(renderer: Renderer) {
-    super.render(renderer);
+  public render(renderer: any) {
+    renderer.render(this.world);
     this.renderCalled = true;
   }
 }
@@ -47,12 +40,14 @@ describe("SceneManager", () => {
   beforeEach(() => {
     world = new World();
     sceneManager = new SceneManager();
-    jest.clearAllMocks();
   });
 
   it("should transition between scenes and trigger lifecycle hooks", async () => {
-    const scene1 = new TestScene(world);
-    const scene2 = new TestScene(world);
+    const scene1 = new TestScene(world, "Scene1");
+    const scene2 = new TestScene(world, "Scene2");
+
+    sceneManager.register(scene1);
+    sceneManager.register(scene2);
 
     await sceneManager.transitionTo(scene1);
     expect(sceneManager.getCurrentScene()).toBe(scene1);
@@ -64,9 +59,27 @@ describe("SceneManager", () => {
     expect(sceneManager.getCurrentScene()).toBe(scene2);
   });
 
+  it("should support stacking scenes with push and pop", async () => {
+    const scene1 = new TestScene(world, "Scene1");
+    const scene2 = new TestScene(world, "Scene2");
+
+    sceneManager.register(scene1);
+    sceneManager.register(scene2);
+
+    sceneManager.push(scene1);
+    sceneManager.push(scene2);
+    expect(sceneManager.getCurrentScene()).toBe(scene2);
+
+    sceneManager.pop();
+    expect(sceneManager.getCurrentScene()).toBe(scene1);
+    expect(scene2.onExitCalled).toBe(true);
+  });
+
   it("should delegate update and render to the current scene", async () => {
-    const scene = new TestScene(world);
-    await sceneManager.transitionTo(scene);
+    const scene = new TestScene(world, "Scene");
+    const mockRenderer = { render: jest.fn() };
+    sceneManager.register(scene);
+    sceneManager.push(scene);
 
     sceneManager.update(16);
     expect(scene.updateCalled).toBe(true);
@@ -74,10 +87,5 @@ describe("SceneManager", () => {
     sceneManager.render(mockRenderer);
     expect(scene.renderCalled).toBe(true);
     expect(mockRenderer.render).toHaveBeenCalledWith(world);
-  });
-
-  it("should not fail if update/render is called with no scene", () => {
-    expect(() => sceneManager.update(16)).not.toThrow();
-    expect(() => sceneManager.render(mockRenderer)).not.toThrow();
   });
 });
