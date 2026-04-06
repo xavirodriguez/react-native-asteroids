@@ -11,7 +11,7 @@ class TestScene extends Scene {
 
   constructor(world: World, name: string) {
     super(world);
-    this.name = name;
+    (this as any).name = name;
   }
 
   public onEnter() {
@@ -22,12 +22,13 @@ class TestScene extends Scene {
     this.onExitCalled = true;
   }
 
-  public onUpdate(dt: number, world: World) {
-    super.onUpdate(dt, world);
+  public update(dt: number) {
+    this.world.update(dt);
     this.updateCalled = true;
   }
 
-  public onRender(alpha: number) {
+  public render(renderer: any) {
+    renderer.render(this.world);
     this.renderCalled = true;
   }
 }
@@ -48,14 +49,14 @@ describe("SceneManager", () => {
     sceneManager.register(scene1);
     sceneManager.register(scene2);
 
-    await sceneManager.push("Scene1");
-    expect(sceneManager.current()).toBe(scene1);
+    sceneManager.transitionTo(scene1);
+    expect(sceneManager.getCurrentScene()).toBe(scene1);
     expect(scene1.onEnterCalled).toBe(true);
 
-    await sceneManager.replace("Scene2");
+    sceneManager.transitionTo(scene2);
     expect(scene1.onExitCalled).toBe(true);
     expect(scene2.onEnterCalled).toBe(true);
-    expect(sceneManager.current()).toBe(scene2);
+    expect(sceneManager.getCurrentScene()).toBe(scene2);
   });
 
   it("should support stacking scenes with push and pop", async () => {
@@ -65,24 +66,26 @@ describe("SceneManager", () => {
     sceneManager.register(scene1);
     sceneManager.register(scene2);
 
-    await sceneManager.push("Scene1");
-    await sceneManager.push("Scene2");
-    expect(sceneManager.current()).toBe(scene2);
+    sceneManager.push(scene1);
+    sceneManager.push(scene2);
+    expect(sceneManager.getCurrentScene()).toBe(scene2);
 
-    await sceneManager.pop();
-    expect(sceneManager.current()).toBe(scene1);
+    sceneManager.pop();
+    expect(sceneManager.getCurrentScene()).toBe(scene1);
     expect(scene2.onExitCalled).toBe(true);
   });
 
   it("should delegate update and render to the current scene", async () => {
     const scene = new TestScene(world, "Scene");
+    const mockRenderer = { render: jest.fn() };
     sceneManager.register(scene);
-    await sceneManager.push("Scene");
+    sceneManager.push(scene);
 
     sceneManager.update(16);
     expect(scene.updateCalled).toBe(true);
 
-    sceneManager.render(0.5);
+    sceneManager.render(mockRenderer);
     expect(scene.renderCalled).toBe(true);
+    expect(mockRenderer.render).toHaveBeenCalledWith(world);
   });
 });
