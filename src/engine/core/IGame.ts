@@ -15,7 +15,7 @@ export interface IGame<TGame = unknown> {
   stop(): void;
   pause(): void;
   resume(): void;
-  restart(): void;
+  restart(): void | Promise<void>;
   destroy(): void;
   getWorld(): World;
   isPausedState(): boolean;

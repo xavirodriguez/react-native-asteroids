@@ -36,7 +36,7 @@ export class SpaceInvadersGame
     });
   }
 
-  protected registerSystems(): void {
+  protected async registerSystems(): Promise<void> {
     if (!this.playerBulletPool) this.playerBulletPool = new PlayerBulletPool();
     if (!this.enemyBulletPool) this.enemyBulletPool = new EnemyBulletPool();
     if (!this.particlePool) this.particlePool = new ParticlePool();
@@ -67,7 +67,7 @@ export class SpaceInvadersGame
       this.particlePool
     );
 
-    this.sceneManager.transitionTo(gameScene);
+    await this.sceneManager.transitionTo(gameScene);
   }
 
   protected initializeEntities(): void {
@@ -129,15 +129,15 @@ export class SpaceInvadersGame
     return this.getGameState().isGameOver;
   }
 
-  protected _onBeforeRestart(): void {
-    this.registerSystems();
+  protected async _onBeforeRestart(): Promise<void> {
+    await this.registerSystems();
   }
 }
 
 export class NullSpaceInvadersGame implements ISpaceInvadersGame {
   private _world = new World();
   public start() {} public stop() {} public pause() {} public resume() {}
-  public restart() {} public destroy() {}
+  public async restart() {} public destroy() {}
   public getWorld() { return this._world; }
   public isPausedState() { return false; }
   public isGameOver() { return false; }

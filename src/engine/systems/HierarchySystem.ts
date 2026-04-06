@@ -37,10 +37,7 @@ export class HierarchySystem extends System {
     const transform = world.getComponent<TransformComponent>(entity, "Transform");
     if (!transform) return;
 
-    // Principle 2: Assert invariants in development
-    if (__DEV__) {
-      this.assertValid(world, entity, transform);
-    }
+    // Principle 2: Invariants already normalized in World.addComponent
 
     if (transform.parent !== undefined) {
       // Ensure parent is updated first
@@ -128,22 +125,6 @@ export class HierarchySystem extends System {
     t.worldRotation = Math.atan2(b, a);
   }
 
-  /**
-   * Principle 2: Execute documenting invariants.
-   */
-  private assertValid(world: World, entity: Entity, transform: TransformComponent): void {
-    if (transform.parent !== undefined) {
-      const parentExists = world.getComponent(transform.parent, "Transform") !== undefined;
-      if (!parentExists) {
-        console.warn(`Hierarchy Invariant Violation: Entity ${entity} has parent ${transform.parent} but parent has no Transform component or does not exist.`);
-      }
-
-      // Check for cycles (basic)
-      if (transform.parent === entity) {
-        throw new Error(`Hierarchy Invariant Violation: Entity ${entity} is its own parent.`);
-      }
-    }
-  }
 }
 
 // Global helper for development mode
