@@ -94,7 +94,7 @@ export class SceneManager {
   /**
    * Restarts the current scene.
    */
-  public restartCurrentScene(): void {
+  public async restartCurrentScene(): Promise<void> {
     if (this.currentScene) {
       const scene = this.currentScene;
       const world = scene.getWorld();
@@ -121,7 +121,9 @@ export class SceneManager {
    */
   public pause(): void {
     if (this.currentScene) {
-      this.currentScene.onPause();
+      // pause/resume are often called in high-frequency loops or via sync events
+      // so we keep them sync if possible, or use runLifecycle without await if they are void
+      runLifecycle(() => this.currentScene!.onPause());
     }
   }
 
@@ -130,7 +132,7 @@ export class SceneManager {
    */
   public resume(): void {
     if (this.currentScene) {
-      this.currentScene.onResume();
+      runLifecycle(() => this.currentScene!.onResume());
     }
   }
 

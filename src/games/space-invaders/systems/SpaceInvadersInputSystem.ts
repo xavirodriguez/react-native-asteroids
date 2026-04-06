@@ -1,7 +1,7 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { InputManager } from "../../../engine/input/InputManager";
-import { PositionComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
 import { InputComponent, InputState, GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { PlayerBulletPool } from "../EntityPool";
 import { createPlayerBullet } from "../EntityFactory";
@@ -19,13 +19,20 @@ export class SpaceInvadersInputSystem extends System {
     this.bulletPool = bulletPool;
   }
 
+  private isMultiplayer = false;
+
+  public setMultiplayerMode(active: boolean) {
+    this.isMultiplayer = active;
+  }
+
   public update(world: World, deltaTime: number): void {
+    if (this.isMultiplayer) return;
     const inputs = this.inputManager.getCombinedInputs();
-    const entities = world.query("Player", "Input", "Position", "Velocity");
+    const entities = world.query("Player", "Input", "Transform", "Velocity");
 
     entities.forEach((entity) => {
       const input = world.getComponent<InputComponent>(entity, "Input");
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
 
       if (input && pos && vel) {

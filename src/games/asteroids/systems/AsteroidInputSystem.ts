@@ -4,7 +4,7 @@ import {
   type InputComponent,
   type VelocityComponent,
   type RenderComponent,
-  type PositionComponent,
+  type TransformComponent,
   type InputState,
   GAME_CONFIG,
 } from "../../../types/GameTypes";
@@ -53,8 +53,15 @@ export class AsteroidInputSystem extends System {
    * @param world - The ECS world.
    * @param deltaTime - Time since last frame in milliseconds.
    */
+  private isMultiplayer = false;
+
+  public setMultiplayerMode(active: boolean) {
+    this.isMultiplayer = active;
+  }
+
   public update(world: World, deltaTime: number): void {
-    const ships = world.query("Ship", "Input", "Position", "Velocity", "Render");
+    if (this.isMultiplayer) return; // Inputs handled by React hook in multiplayer
+    const ships = world.query("Ship", "Input", "Transform", "Velocity", "Render");
     ships.forEach((entity) => this.updateShipEntity({ world, entity, deltaTime }));
   }
 
@@ -81,7 +88,7 @@ export class AsteroidInputSystem extends System {
     const { world, entity, input, deltaTime } = context;
     const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
     const render = world.getComponent<RenderComponent>(entity, "Render");
-    const pos = world.getComponent<PositionComponent>(entity, "Position");
+    const pos = world.getComponent<TransformComponent>(entity, "Transform");
 
     if (vel && render && pos) {
       this.applyShipMovement({ world, pos, vel, render, input, deltaTime });
@@ -105,7 +112,7 @@ export class AsteroidInputSystem extends System {
 
   private applyShipMovement(context: {
     world: World;
-    pos: PositionComponent;
+    pos: TransformComponent;
     vel: VelocityComponent;
     render: RenderComponent;
     input: InputComponent;
@@ -130,7 +137,7 @@ export class AsteroidInputSystem extends System {
 
   private applyThrust(context: {
     world: World;
-    pos: PositionComponent;
+    pos: TransformComponent;
     vel: VelocityComponent;
     render: RenderComponent;
     input: InputComponent;
@@ -164,7 +171,7 @@ export class AsteroidInputSystem extends System {
 
   private handleShipShooting(context: {
     world: World;
-    pos: PositionComponent;
+    pos: TransformComponent;
     render: RenderComponent;
     input: InputComponent;
   }): void {

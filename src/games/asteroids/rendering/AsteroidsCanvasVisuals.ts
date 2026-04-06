@@ -1,5 +1,5 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { PositionComponent, RenderComponent, TTLComponent, ScreenShakeComponent, HealthComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent, RenderComponent, TTLComponent, ScreenShakeComponent, HealthComponent } from "../../../engine/types/EngineTypes";
 import { InputComponent, GameStateComponent, ShipComponent, UfoComponent, AsteroidComponent } from "../types/AsteroidTypes";
 import { World } from "../../../engine/core/World";
 
@@ -116,16 +116,6 @@ export const asteroidsCRTEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, 
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
-};
-
-export const asteroidsScreenShakeEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world) => {
-    const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
-
-    if (shake?.config && shake.config.duration > 0) {
-      const shakeX = (Math.random() - 0.5) * shake.config.intensity;
-      const shakeY = (Math.random() - 0.5) * shake.config.intensity;
-      ctx.translate(shakeX, shakeY);
-    }
 };
 
 export const drawAsteroidsBullet: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render) => {

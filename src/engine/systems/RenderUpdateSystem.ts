@@ -1,6 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { PositionComponent, RenderComponent } from "../types/EngineTypes";
+import { TransformComponent, RenderComponent } from "../types/EngineTypes";
 
 /**
  * Generic rendering-related updates (rotation, trails, flashes).
@@ -21,9 +21,9 @@ export class RenderUpdateSystem extends System {
   }
 
   protected updateTrails(world: World): void {
-    const entities = world.query("Position", "Render");
+    const entities = world.query("Transform", "Render");
     entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const render = world.getComponent<RenderComponent>(entity, "Render");
 
       if (pos && render && render.trailPositions) {

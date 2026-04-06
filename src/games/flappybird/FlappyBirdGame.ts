@@ -32,10 +32,11 @@ export class FlappyBirdGame
 
   private gameStateSystem: FlappyBirdGameStateSystem;
 
-  constructor() {
+  constructor(config: { isMultiplayer?: boolean } = {}) {
     super({
       pauseKey: FLAPPY_CONFIG.KEYS.PAUSE,
-      restartKey: FLAPPY_CONFIG.KEYS.RESTART
+      restartKey: FLAPPY_CONFIG.KEYS.RESTART,
+      isMultiplayer: config.isMultiplayer
     });
   }
 
@@ -51,14 +52,45 @@ export class FlappyBirdGame
 
     this.gameStateSystem = new FlappyBirdGameStateSystem(this);
 
-    this.world.addSystem(new FlappyBirdInputSystem(this.inputManager));
+    const inputSys = new FlappyBirdInputSystem(this.inputManager);
+    if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
+
+    this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new FlappyBirdCollisionSystem(this));
     this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new FlappyBirdRenderSystem());
   }
 
+  public setMultiplayerMode(active: boolean) {
+    this.isMultiplayer = active;
+  }
+
+  public updateFromServer(state: any) {
+    if (!this.isMultiplayer || !state) return;
+    this.world.clear();
+
+    if (state.players) {
+        state.players.forEach((player: any) => {
+            const b = this.world.createEntity();
+            this.world.addComponent(b, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 });
+            this.world.addComponent(b, { type: "Render", shape: "bird", size: 15, color: player.alive ? "yellow" : "gray", rotation: 0 });
+            this.world.addComponent(b, { type: "Bird", velocityY: player.velocityY, isAlive: player.alive });
+        });
+    }
+
+    if (state.pipes) {
+        state.pipes.forEach((pipe: any) => {
+            const p = this.world.createEntity();
+            this.world.addComponent(p, { type: "Transform", x: pipe.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 });
+            this.world.addComponent(p, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 });
+            this.world.addComponent(p, { type: "Pipe", gapY: pipe.gapY, gapSize: 140, scored: false });
+        });
+    }
+  }
+
   protected initializeEntities(): void {
+    if (this.isMultiplayer) return;
     createGameState(this.world);
     createBird({ world: this.world, x: FLAPPY_CONFIG.BIRD_X, y: FLAPPY_CONFIG.BIRD_START_Y });
     createGround(this.world);
@@ -89,7 +121,7 @@ export class FlappyBirdGame
 export class NullFlappyBirdGame implements IFlappyBirdGame {
   private _world = new World();
   public start() {} public stop() {} public pause() {} public resume() {}
-  public restart() {} public destroy() {}
+  public async restart() {} public destroy() {}
   public getWorld() { return this._world; }
   public isPausedState() { return false; }
   public isGameOver() { return false; }

@@ -49,11 +49,11 @@ describe("SceneManager", () => {
     sceneManager.register(scene1);
     sceneManager.register(scene2);
 
-    sceneManager.transitionTo(scene1);
+    await sceneManager.transitionTo(scene1);
     expect(sceneManager.getCurrentScene()).toBe(scene1);
     expect(scene1.onEnterCalled).toBe(true);
 
-    sceneManager.transitionTo(scene2);
+    await sceneManager.transitionTo(scene2);
     expect(scene1.onExitCalled).toBe(true);
     expect(scene2.onEnterCalled).toBe(true);
     expect(sceneManager.getCurrentScene()).toBe(scene2);

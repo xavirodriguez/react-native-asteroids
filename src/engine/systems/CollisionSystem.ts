@@ -19,7 +19,7 @@ export abstract class CollisionSystem extends System {
    */
   public update(world: World, deltaTime: number): void {
     void deltaTime;
-    const colliders = world.query("Position", "Collider");
+    const colliders = world.query("Transform", "Collider");
     const n = colliders.length;
     if (n < 2) return;
 
@@ -27,7 +27,7 @@ export abstract class CollisionSystem extends System {
     this.spatialHash.clear();
     for (let i = 0; i < n; i++) {
       const id = colliders[i];
-      const pos = world.getComponent<PositionComponent>(id, "Position")!;
+      const pos = world.getComponent<TransformComponent>(id, "Transform")!;
       const col = world.getComponent<ColliderComponent>(id, "Collider")!;
 
       const layer = (col as any).layer !== undefined ? (col as any).layer : 1;
@@ -83,14 +83,15 @@ export abstract class CollisionSystem extends System {
         if (this.isCollidingWithComponents(posA, colA, posB, colB)) {
           this.onCollision(world, idA, idB);
         }
-      }
+      });
     }
+
   }
 
   /**
    * Internal collision check using pre-retrieved components.
    */
-  private isCollidingWithComponents(posA: PositionComponent, colA: ColliderComponent, posB: PositionComponent, colB: ColliderComponent): boolean {
+  private isCollidingWithComponents(posA: TransformComponent, colA: ColliderComponent, posB: TransformComponent, colB: ColliderComponent): boolean {
     const dx = posA.x - posB.x;
     const dy = posA.y - posB.y;
     const distanceSq = dx * dx + dy * dy;
@@ -102,8 +103,8 @@ export abstract class CollisionSystem extends System {
    * Circle-to-circle collision check.
    */
   protected isColliding(world: World, entityA: Entity, entityB: Entity): boolean {
-    const posA = world.getComponent<PositionComponent>(entityA, "Position");
-    const posB = world.getComponent<PositionComponent>(entityB, "Position");
+    const posA = world.getComponent<TransformComponent>(entityA, "Transform");
+    const posB = world.getComponent<TransformComponent>(entityB, "Transform");
     const colA = world.getComponent<ColliderComponent>(entityA, "Collider");
     const colB = world.getComponent<ColliderComponent>(entityB, "Collider");
 

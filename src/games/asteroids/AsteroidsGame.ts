@@ -16,11 +16,10 @@ import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory"
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
-import { getGameState } from "./GameUtils";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "../../engine/rendering/Renderer";
-import { drawAsteroidsShip, drawAsteroidsUfo, asteroidsStarfieldEffect, asteroidsCRTEffect, asteroidsScreenShakeEffect, drawAsteroidsBullet, drawAsteroidsParticle, drawAsteroidsAsteroid } from "./rendering/AsteroidsCanvasVisuals";
+import { drawAsteroidsShip, drawAsteroidsUfo, asteroidsStarfieldEffect, asteroidsCRTEffect, drawAsteroidsBullet, drawAsteroidsParticle, drawAsteroidsAsteroid } from "./rendering/AsteroidsCanvasVisuals";
 import { Platform } from "react-native";
 
 /**
@@ -36,8 +35,64 @@ export class AsteroidsGame
   private bulletPool: BulletPool;
   private particlePool: ParticlePool;
 
-  constructor() {
-    super({ pauseKey: GAME_CONFIG.KEYS.PAUSE, restartKey: GAME_CONFIG.KEYS.RESTART });
+  constructor(config: { isMultiplayer?: boolean } = {}) {
+    super({
+      pauseKey: GAME_CONFIG.KEYS.PAUSE,
+      restartKey: GAME_CONFIG.KEYS.RESTART,
+      isMultiplayer: config.isMultiplayer
+    });
+  }
+
+  public setMultiplayerMode(active: boolean) {
+    this.isMultiplayer = active;
+  }
+
+  public updateFromServer(state: any) {
+    if (!this.isMultiplayer || !state) return;
+
+    // Clear and rebuild entities based on server state
+    this.world.clear();
+
+    // Re-create players from server state
+    if (state.players) {
+        state.players.forEach((player: any, sessionId: string) => {
+            const ship = this.world.createEntity();
+            this.world.addComponent(ship, { type: "Transform", x: player.x, y: player.y, rotation: player.angle, scaleX: 1, scaleY: 1 });
+            this.world.addComponent(ship, {
+                type: "Render",
+                shape: "triangle",
+                size: 10,
+                color: player.alive ? "white" : "rgba(255,0,0,0.5)",
+                rotation: player.angle,
+                trailPositions: []
+            });
+            this.world.addComponent(ship, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0, trailPositions: [] });
+            this.world.addComponent(ship, { type: "Tag", tags: ["Ship"] });
+            this.world.addComponent(ship, { type: "Health", current: player.lives, max: 3, invulnerableRemaining: 0 });
+        });
+    }
+
+    // Re-create asteroids from server state
+    if (state.asteroids) {
+        state.asteroids.forEach((asteroid: any) => {
+            const ast = this.world.createEntity();
+            this.world.addComponent(ast, { type: "Transform", x: asteroid.x, y: asteroid.y, rotation: 0, scaleX: 1, scaleY: 1 });
+            this.world.addComponent(ast, { type: "Render", shape: "polygon", size: 30, color: "white", rotation: 0 });
+            this.world.addComponent(ast, { type: "Asteroid", size: "large" });
+            this.world.addComponent(ast, { type: "Tag", tags: ["Asteroid"] });
+        });
+    }
+
+    // Re-create bullets from server state
+    if (state.bullets) {
+        state.bullets.forEach((bullet: any) => {
+            const b = this.world.createEntity();
+            this.world.addComponent(b, { type: "Transform", x: bullet.x, y: bullet.y, rotation: 0, scaleX: 1, scaleY: 1 });
+            this.world.addComponent(b, { type: "Render", shape: "bullet_shape", size: 2, color: "white", rotation: 0 });
+            this.world.addComponent(b, { type: "Bullet" });
+            this.world.addComponent(b, { type: "Tag", tags: ["Bullet"] });
+        });
+    }
   }
 
   protected registerSystems(): void {
@@ -63,6 +118,7 @@ export class AsteroidsGame
     this.inputManager.addController(new TouchController<InputState>());
 
     const inputSys = new AsteroidInputSystem(this.inputManager, this.bulletPool, this.particlePool);
+    if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
     this.gameStateSystem = new AsteroidGameStateSystem(this);
 
     this.world.addSystem(inputSys);
@@ -91,7 +147,6 @@ export class AsteroidsGame
       renderer.registerShape("particle", drawAsteroidsParticle);
       renderer.registerShape("polygon", drawAsteroidsAsteroid);
       renderer.registerBackgroundEffect("starfield", asteroidsStarfieldEffect);
-      renderer.registerBackgroundEffect("screenshake", asteroidsScreenShakeEffect);
       renderer.registerForegroundEffect("crt", asteroidsCRTEffect);
     } else if (renderer.type === "skia" && Platform.OS !== "web") {
       try {
@@ -113,7 +168,7 @@ export class AsteroidsGame
   }
 
   public getGameState(): GameStateComponent {
-    return getGameState(this.getWorld());
+    return this.getWorld().getSingleton<GameStateComponent>("GameState") ?? INITIAL_GAME_STATE;
   }
 
   public isGameOver(): boolean {
@@ -124,7 +179,7 @@ export class AsteroidsGame
 export class NullAsteroidsGame implements IAsteroidsGame {
   private _world = new World();
   public start() {} public stop() {} public pause() {} public resume() {}
-  public restart() {} public destroy() {}
+  public async restart() {} public destroy() {}
   public getWorld() { return this._world; }
   public isPausedState() { return false; }
   public isGameOver() { return false; }

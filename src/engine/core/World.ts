@@ -53,6 +53,21 @@ export class World {
   addComponent<T extends Component>(entity: Entity, component: T): void {
     const type = component.type;
 
+    // Principle 2: Strong Invariants - Normalizar en addNode (addComponent en ECS)
+    if (type === "Transform") {
+      const transform = component as any;
+      if (transform.parent !== undefined) {
+        if (!this.entities.has(transform.parent)) {
+          if (__DEV__) {
+            console.warn(`Hierarchy Invariant Violation: Entity ${entity} has parent ${transform.parent} but parent does not exist in world.`);
+          }
+          transform.parent = undefined; // Normalizar SIEMPRE
+        } else if (transform.parent === entity) {
+          throw new Error(`Hierarchy Invariant Violation: Entity ${entity} cannot be its own parent.`);
+        }
+      }
+    }
+
     this.ensureComponentStorage(type);
 
     this.components.get(type)?.set(entity, component);
@@ -236,3 +251,6 @@ export class World {
     }
   }
 }
+
+// Global helper for development mode
+const __DEV__ = process.env.NODE_ENV !== "production";

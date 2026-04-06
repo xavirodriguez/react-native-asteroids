@@ -9,7 +9,7 @@ import { CameraSystem, useSharedCamera } from "../engine/camera/CameraSystem";
 import { InputSystem } from "../engine/input/InputSystem";
 import { CollisionRouter } from "../engine/collision/CollisionRouter";
 import { GameCanvas } from "../engine/rendering/skia/GameCanvas";
-import { TransformComponent, RenderableComponent, RigidBodyComponent, TagComponent } from "../engine/core/types/CoreTypes";
+import { TransformComponent, RenderableComponent, RigidBodyComponent, TagComponent } from "../engine/types/EngineTypes";
 import { Entity } from "../engine/types/EngineTypes";
 
 const { width, height } = Dimensions.get("window");

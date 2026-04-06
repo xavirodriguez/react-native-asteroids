@@ -6,6 +6,7 @@ import { Renderer } from "../../../engine/rendering/Renderer";
  * Public interface for the Space Invaders game controller.
  */
 export interface ISpaceInvadersGame {
+  isMultiplayer: boolean;
   start(): void;
   stop(): void;
   pause(): void;

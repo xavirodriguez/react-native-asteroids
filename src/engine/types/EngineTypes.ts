@@ -27,11 +27,30 @@ export interface Velocity {
 /**
  * Components provided by the engine as reusable primitives.
  */
-export interface PositionComponent extends Component {
-  type: "Position";
+
+/**
+ * Base transform for all game entities.
+ */
+export interface TransformComponent extends Component {
+  type: "Transform";
   x: number;
   y: number;
+  rotation: number;
+  scaleX: number;
+  scaleY: number;
+  parent?: Entity;
+  worldX?: number;
+  worldY?: number;
+  worldRotation?: number;
+  worldScaleX?: number;
+  worldScaleY?: number;
 }
+
+/**
+ * LEGACY: Alias for TransformComponent to facilitate migration.
+ * @deprecated Use TransformComponent instead.
+ */
+export type PositionComponent = TransformComponent;
 
 export interface VelocityComponent extends Component {
   type: "Velocity";
@@ -69,6 +88,7 @@ export interface RenderComponent extends Component {
   size: number;
   color: string;
   rotation: number;
+  zIndex?: number;
   trailPositions?: { x: number; y: number }[];
   vertices?: { x: number; y: number }[];
   internalLines?: { x1: number; y1: number; x2: number; y2: number }[];
@@ -91,6 +111,8 @@ export interface BoundaryComponent extends Component {
   width: number;
   height: number;
   mode: BoundaryMode;
+  bounceX?: boolean;
+  bounceY?: boolean;
 }
 
 export interface FrictionComponent extends Component {
@@ -124,4 +146,48 @@ export interface ScreenShake {
 export interface ScreenShakeComponent extends Component {
   type: "ScreenShake";
   config: ScreenShake | null;
+}
+
+/**
+ * Metadata for identifying entities and their collision profiles.
+ */
+export interface TagComponent extends Component {
+  type: "Tag";
+  tags: string[];
+}
+
+/**
+ * Configuration for Matter.js rigid body adapter.
+ */
+export interface RigidBodyComponent extends Component {
+  type: "RigidBody";
+  bodyId: number | string; // Reference to Matter.Body.id
+  isStatic: boolean;
+  isSensor: boolean;
+  restitution: number;
+  friction: number;
+  density: number;
+  collisionFilter: {
+    group: number;
+    category: number;
+    mask: number;
+  };
+}
+
+/**
+ * Unified renderable descriptor for Skia.
+ */
+export type RenderType = "circle" | "rect" | "sprite" | "atlas" | "text" | "path" | "particle";
+
+export interface RenderableComponent extends Component {
+  type: "Renderable";
+  renderType: RenderType;
+  color: string;
+  opacity: number;
+  visible: boolean;
+  zIndex: number;
+  size: { width: number; height: number; radius?: number };
+  spriteKey?: string; // For atlas or simple image lookup
+  text?: string;
+  pathData?: string;
 }

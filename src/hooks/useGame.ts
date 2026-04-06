@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
+import { useKeepAwake } from "./useKeepAwake";
 import type { BaseGame } from "../engine/core/BaseGame";
 
 // Constructor type - accepts any class that extends BaseGame
@@ -23,7 +23,8 @@ export function useGame<
   TInput extends Record<string, boolean>
 >(
   GameClass: GameConstructor<TGame, TState, TInput>,
-  initialState: TState | null = null
+  initialState: TState | null = null,
+  isMultiplayer: boolean = false
 ): UseGameResult<TGame, TState, TInput> {
 
   // useRef so the instance is not recreated on every render
@@ -39,9 +40,12 @@ export function useGame<
   const THROTTLE_MS = 1000 / 15;
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Principle 4: Use encapsulated hook for symmetric resource management
+  useKeepAwake(!isPaused);
+
   useEffect(() => {
-    activateKeepAwakeAsync().catch(() => {});
-    const game = new GameClass();
+    // @ts-ignore - Constructor argument handling
+    const game = new GameClass({ isMultiplayer });
     gameRef.current = game;
     game.start();
 
@@ -66,10 +70,9 @@ export function useGame<
       unsubscribe();
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       game.destroy();
-      deactivateKeepAwake();
     };
-  // GameClass is stable, and we use refs for mutable state in the subscription.
-  }, []);
+  // Re-initialize if multiplayer mode or game class changes
+  }, [GameClass, isMultiplayer]);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
     gameRef.current?.setInput(input);
