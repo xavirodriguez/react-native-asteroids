@@ -76,14 +76,14 @@ export class SceneManager {
    * Restarts the current scene.
    */
   public async restartCurrentScene(): Promise<void> {
-    if (this.currentScene) {
-      await runLifecycle(() => this.currentScene!.onExit());
+      const scene = this.currentScene;
+      await runLifecycle(() => scene.onExit());
 
-      const world = this.currentScene.getWorld();
+      const world = scene.getWorld();
       world.clear();
       world.clearSystems();
 
-      await runLifecycle(() => this.currentScene!.onEnter());
+      await runLifecycle(() => scene.onEnter());
     }
   }
 
