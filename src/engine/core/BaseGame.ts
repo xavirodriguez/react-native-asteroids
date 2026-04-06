@@ -29,7 +29,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   private _config: BaseGameConfig;
 
   constructor(config: BaseGameConfig = {}) {
-    this.isMultiplayer = config.isMultiplayer || false;
+    const { isMultiplayer = false } = config;
+    this.isMultiplayer = isMultiplayer;
     this.world = new World();
     this.gameLoop = new GameLoop();
     this.inputManager = new InputManager<TInput>();

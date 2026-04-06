@@ -50,23 +50,23 @@ describe("SceneManager", () => {
     jest.clearAllMocks();
   });
 
-  it("should transition between scenes and trigger lifecycle hooks", () => {
+  it("should transition between scenes and trigger lifecycle hooks", async () => {
     const scene1 = new TestScene(world);
     const scene2 = new TestScene(world);
 
-    sceneManager.transitionTo(scene1);
+    await sceneManager.transitionTo(scene1);
     expect(sceneManager.getCurrentScene()).toBe(scene1);
     expect(scene1.onEnterCalled).toBe(true);
 
-    sceneManager.transitionTo(scene2);
+    await sceneManager.transitionTo(scene2);
     expect(scene1.onExitCalled).toBe(true);
     expect(scene2.onEnterCalled).toBe(true);
     expect(sceneManager.getCurrentScene()).toBe(scene2);
   });
 
-  it("should delegate update and render to the current scene", () => {
+  it("should delegate update and render to the current scene", async () => {
     const scene = new TestScene(world);
-    sceneManager.transitionTo(scene);
+    await sceneManager.transitionTo(scene);
 
     sceneManager.update(16);
     expect(scene.updateCalled).toBe(true);
