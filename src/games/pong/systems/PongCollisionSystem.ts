@@ -7,7 +7,29 @@ export class PongCollisionSystem extends CollisionSystem {
   protected onCollision(world: World, entityA: Entity, entityB: Entity): void {
     const paddleBall = this.matchPair(world, entityA, entityB, "Paddle", "Ball");
     if (paddleBall) {
-        // Logic for bouncing on paddles should go here (omitted for brevity)
+        const { Paddle: paddleEntity, Ball: ballEntity } = paddleBall;
+        const ballPos = world.getComponent<TransformComponent>(ballEntity, "Transform")!;
+        const ballVel = world.getComponent<VelocityComponent>(ballEntity, "Velocity")!;
+        const paddlePos = world.getComponent<TransformComponent>(paddleEntity, "Transform")!;
+
+        // Reverse ball direction on x-axis
+        ballVel.dx *= -1;
+
+        // Add some vertical influence based on where the ball hit the paddle
+        const relativeHitY = (ballPos.y - paddlePos.y) / (PONG_CONFIG.PADDLE_HEIGHT / 2);
+        ballVel.dy = relativeHitY * PONG_CONFIG.BALL_SPEED_START;
+
+        // Increase speed slightly
+        ballVel.dx *= PONG_CONFIG.BALL_SPEED_INC;
+        ballVel.dy *= PONG_CONFIG.BALL_SPEED_INC;
+
+        // Reposition ball to prevent multiple collisions
+        const paddleSide = world.getComponent<any>(paddleEntity, "Paddle").side;
+        if (paddleSide === "left") {
+          ballPos.x = paddlePos.x + PONG_CONFIG.PADDLE_WIDTH / 2 + PONG_CONFIG.BALL_SIZE + 1;
+        } else {
+          ballPos.x = paddlePos.x - PONG_CONFIG.PADDLE_WIDTH / 2 - PONG_CONFIG.BALL_SIZE - 1;
+        }
     }
   }
 

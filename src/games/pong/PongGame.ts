@@ -6,6 +6,7 @@ import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
 import { PongCollisionSystem } from "./systems/PongCollisionSystem";
 import { PongGameStateSystem } from "./systems/PongGameStateSystem";
+import { PongInputSystem } from "./systems/PongInputSystem";
 import { PongEntityFactory } from "./EntityFactory";
 import { PONG_CONFIG, type PongState, type PongInput } from "./types";
 
@@ -34,8 +35,9 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     this.inputManager.addController(new TouchController<PongInput>());
 
     this.stateSystem = new PongGameStateSystem();
-    this.world.addSystem(new PongCollisionSystem());
+    this.world.addSystem(new PongInputSystem(this.inputManager));
     this.world.addSystem(new MovementSystem());
+    this.world.addSystem(new PongCollisionSystem());
     this.world.addSystem(new BoundarySystem());
     this.world.addSystem(this.stateSystem);
   }
@@ -53,5 +55,9 @@ export class PongGame extends BaseGame<PongState, PongInput> {
 
   public isGameOver(): boolean {
     return this.stateSystem.isGameOver();
+  }
+
+  protected _onBeforeRestart(): void {
+    this.stateSystem.resetGameOverState(this.world);
   }
 }
