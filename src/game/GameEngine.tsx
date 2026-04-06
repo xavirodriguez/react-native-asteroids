@@ -16,6 +16,10 @@ const { width, height } = Dimensions.get("window");
 
 /**
  * Main Game Component: Bootstraps the engine and the demo scene.
+ *
+ * @deprecated This component is part of an architectural divergence and does not follow the
+ * standard BaseGame/Scene engine pattern. Please use the core engine infrastructure
+ * (src/engine/core) for new game modules.
  */
 export const GameEngine: React.FC = () => {
   // 1. Initialize Core Systems
@@ -33,6 +37,11 @@ export const GameEngine: React.FC = () => {
 
   // 3. Define Demo Scene
   useEffect(() => {
+    console.warn(
+      "GameEngine: This component is deprecated and follows a non-standard architectural path. " +
+      "Migrate to the BaseGame/Scene engine standard."
+    );
+
     sceneManager.registerScene({
       id: "level",
       onEnter: (w: World) => {

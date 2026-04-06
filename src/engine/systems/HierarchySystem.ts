@@ -2,6 +2,8 @@ import { System } from "../core/System";
 import { World } from "../core/World";
 import { Entity, TransformComponent } from "../types/EngineTypes";
 
+type Mat3 = [number, number, number, number, number, number, number, number, number];
+
 /**
  * 3x3 Matrix for 2D transformations.
  * Row-major order: [m00, m01, m02, m10, m11, m12, m20, m21, m22]
@@ -22,7 +24,40 @@ type Mat3 = [number, number, number, number, number, number];
  * Enforces hierarchical invariants through assertValid() in development.
  */
 export class HierarchySystem extends System {
+  private static trsToMatrix(t: TransformComponent): Mat3 {
+    const cos = Math.cos(t.rotation);
+    const sin = Math.sin(t.rotation);
+    // [m00, m01, m02, m10, m11, m12, m20, m21, m22]
+    // m02 = x, m12 = y
+    return [
+      cos * t.scaleX, -sin * t.scaleY, t.x,
+      sin * t.scaleX, cos * t.scaleY, t.y,
+      0, 0, 1
+    ];
+  }
+
+  private static multiplyMat3(a: Mat3, b: Mat3): Mat3 {
+    return [
+      a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
+      a[0] * b[1] + a[1] * b[4] + a[2] * b[7],
+      a[0] * b[2] + a[1] * b[5] + a[2] * b[8],
+
+      a[3] * b[0] + a[4] * b[3] + a[5] * b[6],
+      a[3] * b[1] + a[4] * b[4] + a[5] * b[7],
+      a[3] * b[2] + a[4] * b[5] + a[5] * b[8],
+
+      a[6] * b[0] + a[7] * b[3] + a[8] * b[6],
+      a[6] * b[1] + a[7] * b[4] + a[8] * b[7],
+      a[6] * b[2] + a[7] * b[5] + a[8] * b[8]
+    ];
+  }
+
   public update(world: World, _deltaTime: number): void {
+    // Principal 2: Run validation in development
+    if (process.env.NODE_ENV === "development") {
+      this.assertValid(world);
+    }
+
     const transforms = world.query("Transform");
     const processed = new Set<Entity>();
 
@@ -61,6 +96,32 @@ export class HierarchySystem extends System {
     }
 
     processed.add(entity);
+  }
+
+  /**
+   * Principle 2: Strong Invariants in Hierarchical Structures.
+   * Validates the integrity of the scene graph/transform tree in DEV mode.
+   */
+  public assertValid(world: World): void {
+    if (process.env.NODE_ENV !== "development") return;
+
+    const transforms = world.query("Transform");
+    const entitySet = new Set(world.getAllEntities());
+
+    transforms.forEach((id) => {
+      const t = world.getComponent<TransformComponent>(id, "Transform");
+      if (!t) return;
+
+      // Invariant: If a node has a parent, the parent MUST exist in the world
+      if (t.parent !== undefined && !entitySet.has(t.parent)) {
+        throw new Error(`Inconsistent hierarchy: Entity ${id} has parent ${t.parent} but it does not exist in the world.`);
+      }
+
+      // Invariant: No self-parenting
+      if (t.parent === id) {
+        throw new Error(`Inconsistent hierarchy: Entity ${id} is its own parent.`);
+      }
+    });
   }
 
   private setToLocal(transform: TransformComponent): void {
