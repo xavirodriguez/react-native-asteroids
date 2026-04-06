@@ -1,113 +1,109 @@
-# Daily Technical Review Report: TinyAsteroids Engine & Retro Arcade
-**Fecha:** 2025-05-20
-**Estado Global:** Saludable con consolidación en curso.
+# Informe de Revisión Técnica Diaria - Lead Technical Reviewer
+**Fecha:** 2024-05-24
+**Proyecto:** Indie Game Engine (React Native + Skia + ECS)
 
 ---
 
 ### 1. Resumen ejecutivo
-
-El proyecto mantiene una arquitectura de motor ECS (`TinyAsterEngine`) robusta y bien diseñada. La unificación de tipos en `EngineTypes.ts` se ha completado con éxito, eliminando la deuda técnica de `CoreTypes.ts`. Sin embargo, persiste una **divergencia arquitectónica de alta prioridad**: el componente experimental `src/game/GameEngine.tsx` utiliza un ciclo de vida basado en Reanimated y Matter.js directo que ignora el estándar del motor. Además, se han detectado múltiples usos de `Math.random()` en módulos de renderizado, lo que degrada el determinismo visual esperado en una arquitectura de este tipo.
+El proyecto presenta una base sólida orientada a ECS (Entity Component System) y una clara intención de separar el núcleo del juego de la capa de React. Se observa una implementación robusta de juegos clásicos (Asteroids, Pong, Space Invaders) con un motor propio. Sin embargo, existen inconsistencias en la integración de la física (mezcla de manual vs Matter.js), una duplicidad de sistemas de renderizado (Canvas tradicional vs Skia) y una dependencia incipiente de Reanimated para el loop principal en algunos componentes que podría comprometer el determinismo si no se maneja con cuidado a través del `GameLoop` centralizado. La arquitectura es mayoritariamente "Game-First", pero hay zonas donde los patrones de React/Web están empezando a filtrarse, especialmente en la gestión de snapshots para el renderizado.
 
 ---
 
 ### 2. Puntuación por principio
 
-| Principio | Estado | Puntos (0-5) | Justificación |
-|---|---|---|---|
-| 1. Separar gameplay, render y UI | **OK** | 5 | Separación lograda en juegos principales (Asteroids, Space Invaders). |
-| 2. Game loop explícito | **OK** | 5 | `GameLoop.ts` con fixed timestep de 60 FPS es la autoridad. |
-| 3. Lógica determinista | **PARCIAL** | 4 | Lógica core usa `RandomService`, pero el renderizado usa `Math.random()`. |
-| 4. Data-oriented para entidades | **OK** | 5 | ECS puro con IDs y componentes planos. |
-| 5. Composición sobre herencia | **OK** | 5 | Las entidades se definen dinámicamente por sus componentes. |
-| 6. Física tras capa de dominio | **CRÍTICO** | 2 | Divergencia entre `CollisionSystem` y Matter.js experimental. |
-| 7. Máquina de estados explícita | **OK** | 4 | Gestión centralizada en `BaseGameStateSystem`. |
-| 8. Estado efímero vs persistente | **OK** | 5 | Separación clara entre World y AsyncStorage/Zod. |
-| 9. Desacoplo de input | **OK** | 5 | `InputManager` traduce hardware a comandos de dominio. |
-| 10. Delta time estable | **OK** | 5 | Loop con acumulador de paso fijo garantizado. |
-| 11. UI como proyección | **OK** | 5 | React consume proyecciones con throttling de 15 FPS. |
-| 12. Configuración en constantes | **OK** | 5 | `GAME_CONFIG` centralizado y tipado. |
-| 13. Tipos explícitos y unions | **OK** | 5 | **CONSOLIDADO:** Tipos unificados en `EngineTypes.ts`. |
-| 14. Validación de datos | **OK** | 5 | Uso de Zod para persistencia de HighScores. |
-| 15. Aislamiento de efectos | **OK** | 5 | Servicios aislados para haptics y assets. |
-| 16. Optimización de frecuencia | **OK** | 5 | Priorización del loop lógico (60fps) sobre el renderizado React (15fps). |
-| 17. Responsabilidad única | **OK** | 5 | Sistemas modulares (Boundary, Friction, TTL). |
-| 18. Testeable sin UI | **OK** | 5 | 50 tests confirman la estabilidad de las reglas de juego. |
-| 19. Extensibilidad controlada | **OK** | 5 | Patrón `Scene` y `BaseGame` facilita la iteración rápida. |
-| 20. Claridad temporal/espacial | **OK** | 5 | World versioning y caché de queries aseguran coherencia. |
+| Principio | Estado | Puntuación | Justificación |
+| :--- | :--- | :---: | :--- |
+| 1. Separar gameplay, render y UI | OK | 4/5 | Muy bien separado en la mayoría de los juegos; `GameEngine.tsx` mezcla algo de escena demo. |
+| 2. Game loop explícito | OK | 4/5 | Existe `GameLoop.ts` con fixed timestep, fundamental para la estabilidad. |
+| 3. Lógica determinista | PARCIAL | 3/5 | Uso de `Math.random()` detectado en visuales y reset de bola en Pong; requiere `RandomService`. |
+| 4. Data-oriented para entidades | OK | 4/5 | ECS bien implementado con componentes como interfaces de datos puras. |
+| 5. Priorizar composición | OK | 5/5 | Uso extensivo de ECS y sistemas modulares. |
+| 6. Aislar motor físico | PARCIAL | 3/5 | Existe `IPhysicsAdapter`, pero Asteroids usa integración manual. Falta uniformidad. |
+| 7. Máquina de estados explícita | OK | 4/5 | Implementado correctamente en `AsteroidGameStateSystem` y similares. |
+| 8. Estado efímero vs persistente | OK | 4/5 | `SaveSystem` maneja la persistencia de forma aislada y tipada. |
+| 9. Desacoplar input físico | OK | 5/5 | `UnifiedInputSystem` desacopla perfectamente el hardware de las acciones. |
+| 10. Delta time estable | OK | 4/5 | `GameLoop` usa acumulador para asegurar actualizaciones lógicas a 60Hz. |
+| 11. UI como proyección | OK | 4/5 | HUDs leen de singletons en el World; no tienen autoridad sobre el gameplay. |
+| 12. Configuración encapsulada | OK | 5/5 | Uso de `GAME_CONFIG` centralizados y constantes tipadas. |
+| 13. Modelar con tipos/unions | OK | 5/5 | Excelente uso de TypeScript para definir el dominio. |
+| 14. Validar datos externos | OK | 4/5 | Uso de Zod en persistencia asegura integridad de datos. |
+| 15. Aislar efectos secundarios | OK | 4/5 | Servicios dedicados para Audio, Haptics y Assets. |
+| 16. Optimizar frecuencia | OK | 4/5 | El loop de 60Hz (lógica) prima sobre el framerate de renderizado. |
+| 17. Responsabilidad única | OK | 4/5 | Sistemas ECS bien definidos y desacoplados. |
+| 18. Testeable sin UI | OK | 5/5 | Cobertura de tests unitarios en sistemas críticos es muy buena. |
+| 19. Extensibilidad controlada | OK | 4/5 | Arquitectura permite añadir juegos/sistemas sin romper el core. |
+| 20. Claridad temporal/espacial | OK | 4/5 | Uso de `localTick` y snapshots en multiplayer bien planteado. |
 
 ---
 
 ### 3. Hallazgos prioritarios
 
-#### A. Divergencia de Motor: Matter.js vs ECS Estable
-*   **Severidad**: Alta
-*   **Evidencia**: `src/game/GameEngine.tsx` usa `useFrameCallback` y Matter.js directamente, operando como un "segundo motor" fuera de `BaseGame`.
-*   **Por qué importa**: Fragmenta la arquitectura, duplica el mantenimiento y crea inconsistencias en el comportamiento de las entidades físicas.
-*   **Recomendación**: Migrar la lógica de `GameEngine.tsx` a un `PhysicsSystem` oficial que utilice el `MatterPhysicsAdapter` ya existente.
+#### Hallazgo 1: Divergencia en integración física
+- **Severidad:** Alta
+- **Evidencia:** `AsteroidsGame.ts` implementa integración de Euler manual en `predictLocalPlayer`, mientras que `src/game/GameEngine.tsx` usa `MatterPhysicsAdapter`.
+- **Por qué importa:** Mantener dos formas de resolver física (manual vs motor) aumenta la deuda técnica y dificulta la implementación de colisiones complejas de forma uniforme.
+- **Recomendación:** Formalizar el uso de un "SimplePhysicsSystem" para juegos arcade y reservar Matter.js para simulaciones de cuerpos rígidos, pero ambos bajo la misma interfaz `IPhysicsAdapter`.
 
-#### B. Uso de Math.random() en Renderizado
-*   **Severidad**: Media
-*   **Evidencia**: Detectado en `AsteroidsSkiaVisuals.ts`, `AsteroidsCanvasVisuals.ts` y `StarField.ts`.
-*   **Por qué importa**: Rompe el determinismo visual. Dos ejecuciones con la misma semilla de `RandomService` se verán diferentes (ej. el parpadeo de las estrellas o el humo de la nave).
-*   **Recomendación**: Pasar una referencia al `RandomService` (o una semilla derivada) a las funciones de renderizado para efectos aleatorios visuales.
+#### Hallazgo 2: Fuga de determinismo por aleatoriedad no controlada
+- **Severidad:** Media
+- **Evidencia:** `PongGameStateSystem.ts` usa `Math.random()` en `resetBall`. `AsteroidsSkiaVisuals.ts` usa `Math.random()` para el efecto de estrellas.
+- **Por qué importa:** Impide la implementación fiable de replays y puede causar desincronización en multiplayer autoritativo si la semilla no se comparte.
+- **Recomendación:** Migrar todo uso de aleatoriedad al `RandomService` (Mulberry32) inyectando una semilla por partida/sesión.
 
-#### C. Lógica de UI mezclada con el Loop
-*   **Severidad**: Baja
-*   **Evidencia**: `src/components/GameEngine.tsx` (el wrapper de React) utiliza `setVersion` en cada frame del render loop.
-*   **Por qué importa**: Aunque es necesario para disparar el re-render de React, debe asegurarse que el componente que recibe el world sea lo más ligero posible.
-*   **Recomendación**: Asegurar que los Renderers (Canvas/Skia) sean los únicos que respondan a este cambio de versión para minimizar el trabajo del reconciliador de React.
+#### Hallazgo 3: Presión de GC en el Render Snapshot
+- **Severidad:** Media
+- **Evidencia:** En `src/game/GameEngine.tsx`, se mapean todas las entidades a un nuevo array de objetos cada frame en `useFrameCallback`.
+- **Por qué importa:** En React Native, la creación masiva de objetos efímeros en cada frame (60 veces por segundo) dispara el Garbage Collector, causando micro-stuttering (tirones) en dispositivos móviles.
+- **Recomendación:** Implementar un pool de objetos para el snapshot o usar `SharedValue` de Reanimated de forma que solo se actualicen propiedades escalares en buffers pre-asignados.
 
 ---
 
 ### 4. Deriva hacia pensamiento web/app
-
-*   **Señal detectada**: El uso de `useFrameCallback` de Reanimated para controlar el flujo principal de juego en la rama experimental.
-*   **Corrección**: Reanimated es excelente para animaciones de UI, pero para un motor de juego con lógica de colisiones y física determinista, se debe usar un loop de paso fijo independiente del framerate de la pantalla, como el implementado en `GameLoop.ts`.
+Se detecta en `src/components/GameEngine.tsx` el uso de `setVersion(v => v + 1)` disparado por `subscribeRender`.
+- **Problema:** Forzar un re-render de React cada frame es un antipatrón en motores de juego de alto rendimiento. React debe usarse para el HUD y menús, no para orquestar el renderizado del canvas.
+- **Corrección:** El `GameCanvas` de Skia debería reaccionar a cambios en `SharedValues` o refs, eliminando la necesidad de que el componente padre de React se actualice por cada tick del loop.
 
 ---
 
 ### 5. Calidad del núcleo del juego
-
-*   **Loop**: Excelente, el patrón acumulador es el estándar de oro.
-*   **Estado**: Robusto, el caché de queries en el `World` es una optimización de alto nivel.
-*   **Input**: Muy bien diseñado, soporta múltiples controladores de forma transparente.
-*   **Física**: La dualidad entre `CollisionSystem` y Matter.js es el único punto débil; requiere unificación.
+- **Loop:** Excelente implementación con acumulador y fixed timestep en `GameLoop.ts`.
+- **Estado:** Uso correcto de singletons en el `World` para estado global de juego.
+- **Input:** Desacoplamiento total mediante `UnifiedInputSystem`, muy robusto.
+- **Timing:** Controlado correctamente mediante `deltaTime`.
 
 ---
 
 ### 6. Calidad de la capa de UI y app shell
-
-*   **HUD**: Desacoplado y reactivo a las proyecciones de estado.
-*   **Navegación**: Correcta, `Expo Router` se encarga del ciclo de vida de las escenas de alto nivel.
-*   **Overlays**: Los menús de pausa y Game Over no interfieren con la precisión del loop.
+- **HUD/Menús:** Bien aislados. Se comunican con el motor mediante lectura de estado, cumpliendo con el Principio 11.
+- **Navegación:** Expo Router se usa correctamente para transiciones entre juegos sin interferir en la lógica interna de los mismos.
 
 ---
 
 ### 7. Testabilidad y cobertura útil
-
-*   **Estado**: 50 tests PASS.
-*   **Calidad**: Los tests en `Integration.test.ts` son ejemplares, validando ciclos de vida completos (spawn -> collision -> split -> score).
-*   **Mejora**: Añadir tests para el `PhysicsSystem` (Matter.js) una vez integrado en el flujo ECS principal.
+- La lógica crítica de los sistemas (Movimiento, Colisiones, GameState) está cubierta por tests en Jest que corren fuera del entorno de UI. Esto es excelente para la estabilidad a largo plazo.
+- **Área a mejorar:** Tests de integración para el `CollisionRouter` con Matter.js y validación de determinismo del `RandomService`.
 
 ---
 
 ### 8. Riesgos de rendimiento
-
-*   **GC Pressure**: El `boundsCache` en `CollisionSystem` está ahora controlado.
-*   **Bridge RN**: El throttling a 15 FPS en `useGame` es una salvaguarda vital para el rendimiento en dispositivos Android de gama media.
+- **Rerender innecesario:** Confirmado en `GameEngine.tsx` vía `setVersion`.
+- **Asignaciones por frame:** Elevadas en la generación de snapshots de renderizado.
+- **Acoplamiento:** El `StarField.ts` depende de tipos específicos de Asteroids, lo cual es una fuga de abstracción.
 
 ---
 
 ### 9. Acciones recomendadas
 
-*   **Hacer hoy**: (COMPLETADO) Unificar tipos y documentar la divergencia de Matter.js.
-*   **Hacer esta semana**: Migrar un juego existente (o crear una escena nueva) que utilice el `PhysicsSystem` con Matter.js para demostrar la integración oficial.
-*   **Hacer más adelante**: Implementar `Skia Atlas` para el renderizado masivo de partículas y estrellas, eliminando los bucles de dibujo individuales en el Canvas.
+- **Hacer hoy:**
+  1. Unificar el uso de `RandomService` en `PongGameStateSystem.ts` y eliminar `Math.random()`.
+  2. Envolver `deactivateKeepAwake()` en `try/catch` (detectado como riesgo en memoria previa).
+- **Hacer esta semana:**
+  1. Refactorizar el snapshot de renderizado en `GameEngine.tsx` para evitar la creación de arrays/objetos nuevos cada frame.
+  2. Extraer la lógica de estelas (trails) de `AsteroidRenderSystem` a un `TrailSystem` genérico en el core del motor.
+- **Hacer más adelante:**
+  1. Unificar los adaptadores de física bajo una arquitectura que permita intercambiar Matter.js por un integrador ligero de forma transparente para los sistemas.
 
 ---
 
 ### 10. Prompt de seguimiento para el próximo día
-
-```markdown
-"Finalizar la integración de Matter.js como un sistema ECS estándar. Migrar la lógica de bodies de 'src/game/GameEngine.tsx' a un nuevo nivel en Asteroids que use el PhysicsSystem y el MatterPhysicsAdapter. Asegurar que todos los efectos aleatorios en el renderizado utilicen una semilla controlada en lugar de Math.random()."
-```
+"Revisar el progreso en la eliminación de `Math.random()` en los sistemas de gameplay y verificar si se ha optimizado el puente de comunicación entre el GameLoop y la UI de React para reducir la presión sobre el GC y los re-renders innecesarios."
