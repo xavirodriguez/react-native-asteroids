@@ -6,7 +6,7 @@ import { Entity } from "../types/EngineTypes";
  */
 export class SpatialHash {
   private cellSize: number;
-  private grid: Map<number, Entity[]> = new Map();
+  private grid: Map<string, Entity[]> = new Map();
 
   constructor(cellSize: number = 100) {
     this.cellSize = cellSize;
@@ -30,8 +30,8 @@ export class SpatialHash {
 
     for (let i = minX; i <= maxX; i++) {
       for (let j = minY; j <= maxY; j++) {
-        // Use numerical key to avoid string GC pressure
-        const key = (i << 16) | (j & 0xFFFF);
+        // Principle 5: Composite keys without assuming ID ranges
+        const key = `${i},${j}`;
         if (!this.grid.has(key)) {
           this.grid.set(key, []);
         }
@@ -52,7 +52,7 @@ export class SpatialHash {
 
     for (let i = minX; i <= maxX; i++) {
       for (let j = minY; j <= maxY; j++) {
-        const key = (i << 16) | (j & 0xFFFF);
+        const key = `${i},${j}`;
         const entities = this.grid.get(key);
         if (entities) {
           entities.forEach((e) => candidates.add(e));

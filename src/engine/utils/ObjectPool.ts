@@ -17,10 +17,23 @@ export class ObjectPool<T> {
 
   public acquire(): T {
     const obj = this.pool.pop() || this.factory();
-    return obj;
+    // Principle 6: Object Pool - Reset before reuse
+    this.reset(obj);
+
+    // Principle 6: Object Pool - consume() SIEMPRE retorna copias, nunca referencias
+    // Note: Shallow copy is sufficient for current BoundData and simple engine structures.
+    const copy = { ...obj };
+
+    // In DEV, freeze the returned object to detect mutations
+    if (process.env.NODE_ENV === "development") {
+      Object.freeze(copy);
+    }
+
+    return copy as T;
   }
 
   public release(obj: T): void {
+    // We still reset on release to clear references immediately (GC)
     this.reset(obj);
     this.pool.push(obj);
   }

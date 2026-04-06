@@ -1,5 +1,6 @@
 import { Scene } from "./Scene";
 import { Renderer } from "../rendering/Renderer";
+import { runLifecycle } from "../utils/LifecycleUtils";
 
 /**
  * Manages game scenes and their lifecycle transitions.
@@ -15,57 +16,66 @@ export class SceneManager {
    *
    * @param scene - The new scene to transition to.
    */
-  public transitionTo(scene: Scene): void {
+  public async transitionTo(scene: Scene): Promise<void> {
     if (this.currentScene) {
-      this.currentScene.onExit();
+      await runLifecycle(() => this.currentScene!.onExit());
     }
 
+    await runLifecycle(() => scene.onEnter());
+
+    // Sychronous state mutations at the end
     this.sceneStack = [scene];
     this.currentScene = scene;
-    this.currentScene.onEnter();
   }
 
   /**
    * Pushes a new scene onto the stack.
    * The current scene is paused before the new scene is entered.
    */
-  public push(scene: Scene): void {
+  public async push(scene: Scene): Promise<void> {
     if (this.currentScene) {
-      this.currentScene.onPause();
+      await runLifecycle(() => this.currentScene!.onPause());
     }
+
+    await runLifecycle(() => scene.onEnter());
+
+    // Sychronous state mutations at the end
     this.sceneStack.push(scene);
     this.currentScene = scene;
-    this.currentScene.onEnter();
   }
 
   /**
    * Pops the current scene from the stack.
    * The previous scene is resumed.
    */
-  public pop(): void {
+  public async pop(): Promise<void> {
     if (this.sceneStack.length <= 1) return;
 
-    const poppedScene = this.sceneStack.pop();
+    const poppedScene = this.sceneStack[this.sceneStack.length - 1];
     if (poppedScene) {
-      poppedScene.onExit();
+      await runLifecycle(() => poppedScene.onExit());
     }
 
-    this.currentScene = this.sceneStack[this.sceneStack.length - 1];
-    if (this.currentScene) {
-      this.currentScene.onResume();
+    const nextScene = this.sceneStack[this.sceneStack.length - 2];
+    if (nextScene) {
+      await runLifecycle(() => nextScene.onResume());
     }
+
+    // Sychronous state mutations at the end
+    this.sceneStack.pop();
+    this.currentScene = this.sceneStack[this.sceneStack.length - 1] || null;
   }
 
   /**
    * Restarts the current scene.
    */
-  public restartCurrentScene(): void {
+  public async restartCurrentScene(): Promise<void> {
     if (this.currentScene) {
-      this.currentScene.onExit();
+      await runLifecycle(() => this.currentScene!.onExit());
       const world = this.currentScene.getWorld();
       world.clear();
       world.clearSystems();
-      this.currentScene.onEnter();
+      await runLifecycle(() => this.currentScene!.onEnter());
     }
   }
 
