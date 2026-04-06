@@ -117,7 +117,14 @@ export class HierarchySystem extends System {
 
     // Extract scale
     const scaleX = Math.sqrt(a * a + b * b);
-    const scaleY = Math.sqrt(c * c + d * d);
+    let scaleY = Math.sqrt(c * c + d * d);
+
+    // Check determinant sign to detect negative scale (flipping)
+    const det = a * d - b * c;
+    if (det < 0) {
+      scaleY = -scaleY;
+    }
+
     t.worldScaleX = scaleX;
     t.worldScaleY = scaleY;
 
