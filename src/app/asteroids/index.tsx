@@ -14,7 +14,7 @@ export default function AsteroidsScreen() {
   const { game, gameState, handleInput, isPaused, togglePause, highScore } = useAsteroidsGame(isMulti && started);
   const [playerName, setPlayerName] = useState("Jugador");
 
-  const { room, connected, serverState } = useMultiplayer("asteroids", playerName, isMulti && started);
+  const { room, connected, serverState, sendInput, inputBufferRef, lastProcessedTickRef } = useMultiplayer("asteroids", playerName, isMulti && started);
 
   useEffect(() => {
     if (isMulti && connected && game) {
@@ -24,9 +24,20 @@ export default function AsteroidsScreen() {
 
   useEffect(() => {
     if (isMulti && serverState && game) {
-        (game as any).updateFromServer(serverState);
+        const sessionId = room?.sessionId;
+        const lastTick = lastProcessedTickRef.current;
+        const pendingInputs = inputBufferRef.current;
+
+        (game as any).updateFromServer(serverState, sessionId);
+
+        // Re-apply pending inputs for reconciliation
+        if (sessionId && pendingInputs.length > 0) {
+            pendingInputs.forEach(frame => {
+                (game as any).predictLocalPlayer(frame, 16.66);
+            });
+        }
     }
-  }, [isMulti, serverState, game]);
+  }, [isMulti, serverState, game, room?.sessionId]);
 
   if (!game) return null;
 
@@ -46,7 +57,10 @@ export default function AsteroidsScreen() {
 
   const handleMultiplayerInput = (input: any) => {
     if (isMulti && room) {
-        room.send("input", input);
+        const frame = sendInput(input);
+        if (frame) {
+            (game as any).predictLocalPlayer(frame, 16.66);
+        }
     } else {
         handleInput(input);
     }

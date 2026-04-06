@@ -1,10 +1,13 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
+import { InputFrame, EntitySnapshot, ReplayFrame } from "./NetTypes";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
   private fixedTimeStep = 16.66; // 60 FPS
-  private inputBuffers = new Map<string, any[]>();
+  private inputBuffers = new Map<string, InputFrame[]>();
+  private stateHistory = new Map<number, Map<string, EntitySnapshot>>();
+  private replayFrames: ReplayFrame[] = [];
 
   onCreate(options: any) {
     this.state = new AsteroidsState();
@@ -17,15 +20,69 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.setPatchRate(50); // 20 FPS network patches
     this.setSimulationInterval((dt) => this.update(dt), this.fixedTimeStep);
 
-    this.onMessage("input", (client, data) => {
+    this.onMessage("input", (client, frame: InputFrame) => {
       const buffer = this.inputBuffers.get(client.sessionId) || [];
-      buffer.push({ ...data, tickId: data.tickId });
+      buffer.push(frame);
       this.inputBuffers.set(client.sessionId, buffer);
+    });
+
+    this.onMessage("sync_tick", (client) => {
+      client.send("sync_tick", {
+        serverTick: this.state.serverTick,
+        timestamp: Date.now()
+      });
     });
 
     this.onMessage("start_game", () => {
       this.state.gameStarted = true;
       this.spawnAsteroids(6);
+    });
+
+    this.onMessage("shoot", (client, data: { tick: number }) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player || !player.alive) return;
+
+      // Lag compensation: check hit against historical state
+      const historicState = this.stateHistory.get(data.tick);
+      if (historicState) {
+          // Calculate bullet trajectory (simplified: instant hitscan for validation)
+          const originX = player.x;
+          const originY = player.y;
+          const angle = player.angle;
+          const dirX = Math.cos(angle);
+          const dirY = Math.sin(angle);
+
+          let hitDetected = false;
+          historicState.forEach((target, targetId) => {
+              if (targetId === client.sessionId) return;
+
+              // Simple circle collision check for lag compensation
+              const dx = target.x - originX;
+              const dy = target.y - originY;
+              const distSq = dx * dx + dy * dy;
+              const radius = 30; // Asteroid radius
+
+              // This is a very basic "is it roughly in front of me" check
+              // for a real hitscan we'd use ray-circle intersection
+              if (distSq < radius * radius * 4) {
+                  const dot = (dx * dirX + dy * dirY) / Math.sqrt(distSq);
+                  if (dot > 0.95) { // Roughly facing the target
+                      const asteroid = this.state.asteroids.get(targetId);
+                      if (asteroid) {
+                          this.state.asteroids.delete(targetId);
+                          player.score += 100;
+                          hitDetected = true;
+                      }
+                  }
+              }
+          });
+
+          if (!hitDetected) {
+              this.spawnBullet(client.sessionId, player);
+          }
+      } else {
+          this.spawnBullet(client.sessionId, player);
+      }
     });
   }
 
@@ -55,18 +112,23 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   update(dt: number) {
     if (!this.state.gameStarted) return;
     this.state.serverTick++;
+    this.state.lastProcessedTick = this.state.serverTick;
 
     const dtSec = dt / 1000;
 
     // 1. Process Inputs
-    this.state.players.forEach((player, sessionId) => {
+    this.state.players.forEach((player: Player, sessionId: string) => {
       if (!player.alive) return;
 
       const buffer = this.inputBuffers.get(sessionId);
-      // Process all pending inputs in the buffer to handle network bursts
-      while (buffer && buffer.length > 0) {
-        const input = buffer.shift();
-        this.applyPlayerInput(player, input, dtSec);
+      if (buffer) {
+        // Process frames that match current server tick or older (late frames)
+        const framesToProcess = buffer.filter(f => f.tick <= this.state.serverTick);
+        framesToProcess.forEach(frame => {
+          this.applyPlayerInput(player, frame, dtSec);
+        });
+        // Keep only future frames
+        this.inputBuffers.set(sessionId, buffer.filter(f => f.tick > this.state.serverTick));
       }
 
       // Global physics integration (Friction and movement outside of input block)
@@ -77,13 +139,13 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     });
 
     // 2. Move asteroids
-    this.state.asteroids.forEach((asteroid) => {
+    this.state.asteroids.forEach((asteroid: Asteroid) => {
       this.integratePosition(asteroid, dtSec);
       this.applyWrapping(asteroid);
     });
 
     // 3. Move bullets
-    this.state.bullets.forEach((bullet, id) => {
+    this.state.bullets.forEach((bullet: Bullet, id: string) => {
       this.integratePosition(bullet, dtSec);
       if (bullet.x < 0 || bullet.x > this.state.gameWidth || bullet.y < 0 || bullet.y > this.state.gameHeight) {
         this.state.bullets.delete(id);
@@ -92,16 +154,67 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
 
     // 4. Collision detection (Authoritative)
     this.checkCollisions();
+
+    // 5. Record for Replay
+    const currentInputs: Record<string, InputFrame[]> = {};
+    this.state.players.forEach((_player: Player, sessionId: string) => {
+        const buffer = this.inputBuffers.get(sessionId);
+        if (buffer) {
+            currentInputs[sessionId] = buffer.filter(f => f.tick === this.state.serverTick);
+        }
+    });
+
+    this.replayFrames.push({
+        tick: this.state.serverTick,
+        inputs: currentInputs,
+        events: [] // We could add events here (e.g. game start, collisions)
+    });
+
+    // Limit replay to 5 minutes (5 * 60 * 60 = 18000 ticks)
+    if (this.replayFrames.length > 18000) {
+        this.replayFrames.shift();
+    }
+
+    // 6. Store history for lag compensation
+    const snapshot = new Map<string, EntitySnapshot>();
+    this.state.players.forEach((p: Player, id: string) => {
+        snapshot.set(id, { tick: this.state.serverTick, x: p.x, y: p.y, angle: p.angle, timestamp: Date.now() });
+    });
+    this.state.asteroids.forEach((a: Asteroid, id: string) => {
+        snapshot.set(id, { tick: this.state.serverTick, x: a.x, y: a.y, timestamp: Date.now() });
+    });
+    this.stateHistory.set(this.state.serverTick, snapshot);
+    if (this.stateHistory.size > 60) {
+        const oldestTick = this.state.serverTick - 60;
+        this.stateHistory.delete(oldestTick);
+    }
+
+    // 7. Check Game Over to broadcast replay
+    if (this.state.gameOver && this.replayFrames.length > 0) {
+        this.broadcast("replay", {
+            version: 1,
+            roomId: this.roomId,
+            startTick: this.replayFrames[0].tick,
+            endTick: this.state.serverTick,
+            frames: this.replayFrames
+        });
+        this.replayFrames = []; // Clear after broadcast
+    }
   }
 
-  private applyPlayerInput(player: Player, data: any, dtSec: number) {
-    if (data.rotateLeft) player.angle -= 3 * dtSec;
-    if (data.rotateRight) player.angle += 3 * dtSec;
-    if (data.thrust) {
+  private applyPlayerInput(player: Player, frame: InputFrame, dtSec: number) {
+    const rotateLeft = frame.actions.includes("rotateLeft") || frame.axes.rotate_left > 0;
+    const rotateRight = frame.actions.includes("rotateRight") || frame.axes.rotate_right > 0;
+    const thrust = frame.actions.includes("thrust") || frame.axes.thrust > 0;
+    const shoot = frame.actions.includes("shoot");
+
+    if (rotateLeft) player.angle -= 3 * dtSec;
+    if (rotateRight) player.angle += 3 * dtSec;
+    if (thrust) {
       player.velocityX += Math.cos(player.angle) * 200 * dtSec;
       player.velocityY += Math.sin(player.angle) * 200 * dtSec;
     }
-    if (data.shoot) {
+    if (shoot) {
       this.spawnBullet(player.sessionId, player);
     }
   }
@@ -120,8 +233,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
 
   private checkCollisions() {
     // Bullet vs Asteroid
-    this.state.bullets.forEach((bullet, bulletId) => {
-      this.state.asteroids.forEach((asteroid, asteroidId) => {
+    this.state.bullets.forEach((bullet: Bullet, bulletId: string) => {
+      this.state.asteroids.forEach((asteroid: Asteroid, asteroidId: string) => {
         const dx = bullet.x - asteroid.x;
         const dy = bullet.y - asteroid.y;
         if (Math.sqrt(dx*dx + dy*dy) < 30) {
@@ -134,9 +247,9 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     });
 
     // Player vs Asteroid
-    this.state.players.forEach((player) => {
+    this.state.players.forEach((player: Player) => {
       if (!player.alive) return;
-      this.state.asteroids.forEach((asteroid) => {
+      this.state.asteroids.forEach((asteroid: Asteroid) => {
         const dx = player.x - asteroid.x;
         const dy = player.y - asteroid.y;
         if (Math.sqrt(dx*dx + dy*dy) < 25) {

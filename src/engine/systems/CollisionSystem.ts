@@ -48,7 +48,7 @@ export abstract class CollisionSystem extends System {
 
     for (let i = 0; i < n; i++) {
       const idA = colliders[i];
-      const posA = world.getComponent<PositionComponent>(idA, "Position")!;
+      const posA = world.getComponent<TransformComponent>(idA, "Transform")!;
       const colA = world.getComponent<ColliderComponent>(idA, "Collider");
 
       if (!colA) continue;
@@ -79,13 +79,12 @@ export abstract class CollisionSystem extends System {
         if (this.processedPairs.has(pairKey)) continue;
         this.processedPairs.add(pairKey);
 
-        const posB = world.getComponent<PositionComponent>(idB, "Position")!;
+        const posB = world.getComponent<TransformComponent>(idB, "Transform")!;
         if (this.isCollidingWithComponents(posA, colA, posB, colB)) {
           this.onCollision(world, idA, idB);
         }
-      });
+      }
     }
-
   }
 
   /**
