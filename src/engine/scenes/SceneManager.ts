@@ -1,6 +1,6 @@
 import { Scene } from "./Scene";
 import { World } from "../core/World";
-import { runLifecycle } from "../utils/Lifecycle";
+import { runLifecycle } from "../utils/LifecycleUtils";
 
 export type TransitionType = 'instant' | 'fade' | 'slide';
 
@@ -32,62 +32,60 @@ export class SceneManager {
    * Transitions to a new scene, clearing the current stack.
    * Calls onExit() on the old scene and onEnter() on the new one.
    *
+   * Principle 3: Atomic State Transitions.
+   * Asynchronous lifecycle work is awaited BEFORE synchronous mutations.
+   *
    * @param scene - The new scene to transition to.
    */
-  public transitionTo(scene: Scene): void {
+  public async transitionTo(scene: Scene): Promise<void> {
     const prev = this.currentScene;
 
+    if (prev) {
+      await runLifecycle(() => (prev as any).onExit ? (prev as any).onExit(prev.getWorld()) : (prev as any).onExit());
+    }
+
+    await runLifecycle(() => (scene as any).onEnter ? (scene as any).onEnter(scene.getWorld()) : (scene as any).onEnter());
+
+    // Atomic synchronous mutation at the end
     this.sceneStack = [scene];
     this.currentScene = scene;
-
-    const triggerEnter = () => {
-      runLifecycle(() => (scene as any).onEnter ? (scene as any).onEnter(scene.getWorld()) : (scene as any).onEnter())
-        .catch(console.error);
-    };
-
-    if (prev) {
-      const exitResult = (prev as any).onExit ? (prev as any).onExit(prev.getWorld()) : (prev as any).onExit();
-      if (exitResult instanceof Promise) {
-        exitResult.then(triggerEnter).catch(console.error);
-      } else {
-        triggerEnter();
-      }
-    } else {
-      triggerEnter();
-    }
   }
 
   /**
    * Pushes a new scene onto the stack.
    * The current scene is paused before the new scene is entered.
    */
-  public push(scene: Scene): void {
+  public async push(scene: Scene): Promise<void> {
     if (this.currentScene) {
-      this.currentScene.onPause();
+      await runLifecycle(() => this.currentScene!.onPause());
     }
+
+    await runLifecycle(() => (scene as any).onEnter ? (scene as any).onEnter(scene.getWorld()) : (scene as any).onEnter());
+
+    // Atomic synchronous mutation at the end
     this.sceneStack.push(scene);
     this.currentScene = scene;
-
-    runLifecycle(() => (scene as any).onEnter ? (scene as any).onEnter(scene.getWorld()) : (scene as any).onEnter())
-      .catch(console.error);
   }
 
   /**
    * Pops the current scene from the stack.
    * The previous scene is resumed.
    */
-  public pop(): void {
+  public async pop(): Promise<void> {
     if (this.sceneStack.length <= 1) return;
 
-    const poppedScene = this.sceneStack.pop();
+    const poppedScene = this.sceneStack[this.sceneStack.length - 1];
+
     if (poppedScene) {
-      runLifecycle(() => (poppedScene as any).onExit ? (poppedScene as any).onExit(poppedScene.getWorld()) : (poppedScene as any).onExit())
-        .catch(console.error);
+      await runLifecycle(() => (poppedScene as any).onExit ? (poppedScene as any).onExit(poppedScene.getWorld()) : (poppedScene as any).onExit());
     }
 
+    // Atomic synchronous mutation
+    this.sceneStack.pop();
     this.currentScene = this.sceneStack[this.sceneStack.length - 1];
+
     if (this.currentScene) {
-      this.currentScene.onResume();
+      await runLifecycle(() => this.currentScene!.onResume());
     }
   }
 
@@ -99,20 +97,13 @@ export class SceneManager {
       const scene = this.currentScene;
       const world = scene.getWorld();
 
-      const exitResult = (scene as any).onExit ? (scene as any).onExit(world) : (scene as any).onExit();
+      await runLifecycle(() => (scene as any).onExit ? (scene as any).onExit(world) : (scene as any).onExit());
 
-      const reset = () => {
-        world.clear();
-        world.clearSystems();
-        runLifecycle(() => (scene as any).onEnter ? (scene as any).onEnter(world) : (scene as any).onEnter())
-          .catch(console.error);
-      };
+      // Synchronous mutations
+      world.clear();
+      world.clearSystems();
 
-      if (exitResult instanceof Promise) {
-        exitResult.then(reset).catch(console.error);
-      } else {
-        reset();
-      }
+      await runLifecycle(() => (scene as any).onEnter ? (scene as any).onEnter(world) : (scene as any).onEnter());
     }
   }
 

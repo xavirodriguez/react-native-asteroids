@@ -1,4 +1,5 @@
 import { Star } from "../types/GameTypes";
+import { RandomService } from "../utils/RandomService";
 
 /**
  * Generates a random starfield.
@@ -9,10 +10,10 @@ import { Star } from "../types/GameTypes";
  */
 export function generateStarField(count: number, width: number, height: number): Star[] {
   return Array.from({ length: count }, () => ({
-    x: Math.random() * width,
-    y: Math.random() * height,
-    size: Math.random() * 1.5 + 0.5,
-    brightness: Math.random() * 0.7 + 0.3,
+    x: RandomService.next() * width,
+    y: RandomService.next() * height,
+    size: RandomService.next() * 1.5 + 0.5,
+    brightness: RandomService.next() * 0.7 + 0.3,
     twinklePhase: 0,
     twinkleSpeed: 0,
     layer: 0,

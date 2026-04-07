@@ -1,6 +1,7 @@
 import { World } from "../../../engine/core/World";
 import { PongState, PONG_CONFIG } from "../types";
 import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
+import { RandomService } from "../../../engine/utils/RandomService";
 import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
 
 export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
@@ -51,7 +52,7 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
     pos.x = PONG_CONFIG.WIDTH / 2;
     pos.y = PONG_CONFIG.HEIGHT / 2;
     vel.dx = direction === "right" ? -PONG_CONFIG.BALL_SPEED_START : PONG_CONFIG.BALL_SPEED_START;
-    vel.dy = (Math.random() - 0.5) * PONG_CONFIG.BALL_SPEED_START;
+    vel.dy = (RandomService.next() - 0.5) * PONG_CONFIG.BALL_SPEED_START;
   }
 
   protected getGameState(world: World): PongState | undefined {

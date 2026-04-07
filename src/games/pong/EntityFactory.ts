@@ -1,12 +1,13 @@
 import { World } from "../../engine/core/World";
 import { PONG_CONFIG } from "./types";
 import { TransformComponent, VelocityComponent, RenderComponent, ColliderComponent, BoundaryComponent, TagComponent } from "../../engine/types/EngineTypes";
+import { RandomService } from "../../engine/utils/RandomService";
 
 export const PongEntityFactory = {
   createBall(world: World) {
     const ball = world.createEntity();
     world.addComponent(ball, { type: "Transform", x: PONG_CONFIG.WIDTH / 2, y: PONG_CONFIG.HEIGHT / 2, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-    world.addComponent(ball, { type: "Velocity", dx: PONG_CONFIG.BALL_SPEED_START, dy: PONG_CONFIG.BALL_SPEED_START * (Math.random() > 0.5 ? 1 : -1) } as VelocityComponent);
+    world.addComponent(ball, { type: "Velocity", dx: PONG_CONFIG.BALL_SPEED_START, dy: PONG_CONFIG.BALL_SPEED_START * (RandomService.next() > 0.5 ? 1 : -1) } as VelocityComponent);
     world.addComponent(ball, { type: "Render", shape: "circle", size: PONG_CONFIG.BALL_SIZE, color: "white", rotation: 0 } as RenderComponent);
     world.addComponent(ball, { type: "Collider", radius: PONG_CONFIG.BALL_SIZE } as ColliderComponent);
     world.addComponent(ball, { type: "Boundary", width: PONG_CONFIG.WIDTH, height: PONG_CONFIG.HEIGHT, mode: "bounce", bounceX: false, bounceY: true } as BoundaryComponent);
