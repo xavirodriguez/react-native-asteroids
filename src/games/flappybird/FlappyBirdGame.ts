@@ -10,7 +10,6 @@ import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
 import { FlappyBirdRenderSystem } from "./systems/FlappyBirdRenderSystem";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
 import { Renderer } from "../../engine/rendering/Renderer";
-import { getGameState } from "./GameUtils";
 import {
   createBird,
   createGameState,
@@ -106,7 +105,7 @@ export class FlappyBirdGame
   }
 
   public getGameState(): FlappyBirdState {
-    return getGameState(this.getWorld());
+    return this.getWorld().getSingleton<FlappyBirdState>("FlappyState") || { ...INITIAL_FLAPPY_STATE };
   }
 
   public isGameOver(): boolean {

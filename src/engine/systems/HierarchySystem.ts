@@ -89,6 +89,10 @@ export class HierarchySystem extends System {
     }
 
     processed.add(entity);
+
+    if (__DEV__) {
+      this.assertValid(world, entity);
+    }
   }
 
   private setToLocal(transform: TransformComponent): void {
@@ -151,6 +155,23 @@ export class HierarchySystem extends System {
 
     // Extract rotation
     t.worldRotation = Math.atan2(b, a);
+  }
+
+  /**
+   * Principle 2: Enforces hierarchical invariants.
+   */
+  public assertValid(world: World, entity: Entity): void {
+    const transform = world.getComponent<TransformComponent>(entity, "Transform");
+    if (!transform) return;
+
+    if (transform.parent !== undefined) {
+      if (!world.getAllEntities().includes(transform.parent)) {
+        throw new Error(`Hierarchy Invariant Violation: Entity ${entity} has parent ${transform.parent} but parent does not exist in world.`);
+      }
+      if (transform.parent === entity) {
+        throw new Error(`Hierarchy Invariant Violation: Entity ${entity} cannot be its own parent.`);
+      }
+    }
   }
 
 }

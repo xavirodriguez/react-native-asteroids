@@ -3,6 +3,7 @@ import { PongState, PONG_CONFIG } from "../types";
 import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
   private state: PongState = { scoreP1: 0, scoreP2: 0, isGameOver: false };

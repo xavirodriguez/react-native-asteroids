@@ -1,5 +1,6 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
+import { RandomService } from "../utils/RandomService";
 import { Entity, TransformComponent, RenderComponent, ScreenShakeComponent, AnimatorComponent, Camera2DComponent } from "../types/EngineTypes";
 import { RandomService } from "../utils/RandomService";
 
@@ -104,6 +105,7 @@ export class CanvasRenderer implements Renderer {
 
     // Apply Camera transform and Screen Shake
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
+    const renderRandom = RandomService.getInstance("render");
     if (cam) {
       const shakeX = (RandomService.next() - 0.5) * cam.shakeIntensity;
       const shakeY = (RandomService.next() - 0.5) * cam.shakeIntensity;

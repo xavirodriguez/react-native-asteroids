@@ -54,6 +54,8 @@ export class SceneManager {
   /**
    * Pushes a new scene onto the stack.
    * The current scene is paused before the new scene is entered.
+   *
+   * Principle 3: Atomic State Transitions
    */
   public async push(scene: Scene): Promise<void> {
     if (this.currentScene) {
@@ -70,6 +72,8 @@ export class SceneManager {
   /**
    * Pops the current scene from the stack.
    * The previous scene is resumed.
+   *
+   * Principle 3: Atomic State Transitions
    */
   public async pop(): Promise<void> {
     if (this.sceneStack.length <= 1) return;
@@ -91,6 +95,8 @@ export class SceneManager {
 
   /**
    * Restarts the current scene.
+   *
+   * Principle 3: Atomic State Transitions
    */
   public async restartCurrentScene(): Promise<void> {
     if (this.currentScene) {
