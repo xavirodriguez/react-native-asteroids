@@ -1,6 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { TransformComponent, RenderComponent } from "../types/EngineTypes";
+import { PositionComponent, RenderComponent } from "../core/CoreComponents";
 
 /**
  * Generic rendering-related updates (rotation, trails, flashes).
@@ -26,10 +26,10 @@ export class RenderUpdateSystem extends System {
       const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const render = world.getComponent<RenderComponent>(entity, "Render");
 
-      if (pos && render && render.trailPositions) {
-        render.trailPositions.push({ x: pos.x, y: pos.y });
-        if (render.trailPositions.length > this.trailMaxLength) {
-          render.trailPositions.shift();
+      if (pos && render && render.data?.trailPositions) {
+        render.data.trailPositions.push({ x: pos.x, y: pos.y });
+        if (render.data.trailPositions.length > this.trailMaxLength) {
+          render.data.trailPositions.shift();
         }
       }
     });
@@ -63,8 +63,8 @@ export class RenderUpdateSystem extends System {
     const entities = world.query("Render");
     entities.forEach((entity) => {
       const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (render && render.hitFlashFrames && render.hitFlashFrames > 0) {
-        render.hitFlashFrames--;
+      if (render && render.data?.hitFlashFrames && render.data.hitFlashFrames > 0) {
+        render.data.hitFlashFrames--;
       }
     });
   }

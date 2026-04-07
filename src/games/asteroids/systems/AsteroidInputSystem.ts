@@ -155,34 +155,25 @@ export class AsteroidInputSystem extends System {
   }): void {
     const { world, position, velocity, render, input, deltaTimeInSeconds } = context;
     if (input.thrust) {
-      velocity.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTimeInSeconds;
-      velocity.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTimeInSeconds;
-      this.spawnThrustParticles({ world, position, velocity, rotation: render.rotation });
-    }
-  }
+      vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
+      vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
 
-  private spawnThrustParticles(params: {
-    world: World;
-    position: PositionComponent;
-    velocity: VelocityComponent;
-    rotation: number;
-  }): void {
-    const { world, position, velocity, rotation } = params;
-    const particleCount = RandomService.nextInt(3, 6);
-    for (let i = 0; i < particleCount; i++) {
-      const angle = rotation + Math.PI + (RandomService.next() - 0.5) * 0.5;
-      const speed = RandomService.nextRange(50, 100);
-      createParticle({
-        world,
-        x: position.x - Math.cos(rotation) * 10,
-        y: position.y - Math.sin(rotation) * 10,
-        dx: Math.cos(angle) * speed + velocity.dx * 0.5,
-        dy: Math.sin(angle) * speed + velocity.dy * 0.5,
-        color: i % 2 === 0 ? "#FF8800" : "#FFFF00",
-        ttl: 400,
-        size: RandomService.nextRange(1, 3),
-        pool: this.particlePool,
-      });
+      // Improvement 8: Spawn 3-5 small thrust particles
+      const particleCount = 3 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < particleCount; i++) {
+        const angle = render.rotation + Math.PI + (Math.random() - 0.5) * 0.5;
+        const speed = 50 + Math.random() * 50;
+        createParticle({
+          world,
+          x: pos.x - Math.cos(render.rotation) * 10,
+          y: pos.y - Math.sin(render.rotation) * 10,
+          dx: Math.cos(angle) * speed + vel.dx * 0.5,
+          dy: Math.sin(angle) * speed + vel.dy * 0.5,
+          color: i % 2 === 0 ? "#FF8800" : "#FFFF00",
+          ttl: 400,
+          size: 1 + Math.random() * 2,
+        });
+      }
     }
   }
 
@@ -201,7 +192,7 @@ export class AsteroidInputSystem extends System {
     const { world, position, render, input } = context;
     const canShoot = input.shoot && input.shootCooldownRemaining <= 0;
     if (canShoot) {
-      createBullet({ world, x: position.x, y: position.y, angle: render.rotation, pool: this.bulletPool });
+      createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
       input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN;
       hapticShoot();
     }

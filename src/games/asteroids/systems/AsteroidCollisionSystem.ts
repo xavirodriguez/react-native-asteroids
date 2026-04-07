@@ -140,9 +140,12 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     const { world, asteroid, bullet } = context;
     const position = world.getComponent<PositionComponent>(asteroid, "Position");
     const render = world.getComponent<RenderComponent>(asteroid, "Render");
-
-    if (position && render) {
-      this.applyBulletImpactVisuals(world, render, position);
+    if (pos) {
+      this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT);
+    }
+    // Improvement 9: Hit flash effect
+    if (render) {
+      render.data = { ...render.data, hitFlashFrames: 8 };
     }
 
     this.handleAsteroidDestructionLogic(world, asteroid, bullet);
@@ -173,7 +176,6 @@ export class AsteroidCollisionSystem extends CollisionSystem {
         dy: (RandomService.next() - 0.5) * 160, // [-80, 80]
         color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
         ttl: GAME_CONFIG.PARTICLE_TTL_BASE,
-        pool: this.particlePool,
       });
     }
   }
@@ -246,7 +248,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
     [a1, a2].forEach(entity => {
       const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (render) render.hitFlashFrames = 10;
+      if (render) render.data = { ...render.data, hitFlashFrames: 10 };
     });
   }
 

@@ -1,51 +1,163 @@
-import { Platform } from "react-native";
+import { Skia, SkCanvas, SkPaint } from "@shopify/react-native-skia";
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
-import { Entity, TransformComponent, RenderComponent } from "../types/EngineTypes";
+import { Entity } from "../core/Entity";
+import { PositionComponent, RenderComponent, TTLComponent } from "../core/CoreComponents";
+
+export type SkiaShapeDrawer = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => void;
 
 /**
  * Procedural Skia Renderer implementation.
- * Refactored to use a shape registry and effect hooks for extensibility.
- * Safe for Web by lazy-loading Skia.
+ * Generic and extensible via shape drawers.
  */
 export class SkiaRenderer implements Renderer {
-  public readonly type = "skia";
-  private canvas: any = null;
-  private width: number = 0;
-  private height: number = 0;
-  private paint: any = null;
-  private shapeRegistry: Map<string, any> = new Map();
-  private backgroundEffects: Map<string, any> = new Map();
-  private foregroundEffects: Map<string, any> = new Map();
+  protected canvas: SkCanvas | null = null;
+  protected width: number = 0;
+  protected height: number = 0;
+  protected paint: SkPaint;
+  private shapeDrawers = new Map<string, SkiaShapeDrawer>();
+  private postEntityDrawers = new Map<string, SkiaShapeDrawer>();
+  private preRenderHooks: ((canvas: SkCanvas, world: World) => void)[] = [];
+  private postRenderHooks: ((canvas: SkCanvas, world: World) => void)[] = [];
 
   constructor(canvas?: any) {
     if (canvas) {
       this.canvas = canvas;
     }
-
-    if (Platform.OS !== "web") {
-      try {
-          const { Skia } = require("@shopify/react-native-skia");
-          if (typeof Skia !== "undefined" && Skia.Paint) {
-              this.paint = Skia.Paint();
-          }
-      } catch (e) {}
-    }
-
-    this.registerDefaultShapes();
+    this.paint = Skia.Paint();
+    this.registerDefaultDrawers();
   }
 
-  private registerDefaultShapes(): void {
-    if (Platform.OS === "web") return;
-    try {
-        const { Skia } = require("@shopify/react-native-skia");
-        if (typeof Skia === "undefined" || !Skia.Color || !Skia.PaintStyle) return;
+  public registerShapeDrawer(shape: string, drawer: SkiaShapeDrawer): void {
+    this.shapeDrawers.set(shape, drawer);
+  }
 
-        this.registerShape("circle", (canvas: any, paint: any, render: any) => {
-          paint.setColor(Skia.Color(render.color));
-          paint.setStyle(Skia.PaintStyle.Fill);
-          canvas.drawCircle(0, 0, render.size, paint);
-        });
+  public registerPostEntityDrawer(shape: string, drawer: SkiaShapeDrawer): void {
+    this.postEntityDrawers.set(shape, drawer);
+  }
+
+  public addPreRenderHook(hook: (canvas: SkCanvas, world: World) => void): void {
+    this.preRenderHooks.push(hook);
+  }
+
+  public addPostRenderHook(hook: (canvas: SkCanvas, world: World) => void): void {
+    this.postRenderHooks.push(hook);
+  }
+
+  private registerDefaultDrawers(): void {
+    this.registerShapeDrawer("circle", (canvas, _, __, render, paint) => {
+      paint.setColor(Skia.Color(render.color));
+      paint.setStyle(Skia.PaintStyle.Fill);
+      canvas.drawCircle(0, 0, render.size, paint);
+    });
+
+    this.registerShapeDrawer("rect", (canvas, _, __, render, paint) => {
+      paint.setColor(Skia.Color(render.color));
+      paint.setStyle(Skia.PaintStyle.Fill);
+      canvas.drawRect(Skia.XYWHRect(-render.size / 2, -render.size / 2, render.size, render.size), paint);
+    });
+
+    this.registerShapeDrawer("polygon", (canvas, _, __, render, paint) => {
+      if (!render.vertices || render.vertices.length === 0) return;
+
+      const path = Skia.Path.Make();
+      path.moveTo(render.vertices[0].x, render.vertices[0].y);
+      for (let i = 1; i < render.vertices.length; i++) {
+          path.lineTo(render.vertices[i].x, render.vertices[i].y);
+      }
+      path.close();
+
+      const isHitFlash = render.data?.hitFlashFrames && render.data.hitFlashFrames > 0;
+      paint.setColor(isHitFlash ? Skia.Color("rgba(255, 255, 255, 0.5)") : Skia.Color("#333"));
+      paint.setStyle(Skia.PaintStyle.Fill);
+      canvas.drawPath(path, paint);
+
+      paint.setColor(isHitFlash ? Skia.Color("white") : Skia.Color(render.color));
+      paint.setStyle(Skia.PaintStyle.Stroke);
+      paint.setStrokeWidth(2);
+      canvas.drawPath(path, paint);
+
+      if (render.data?.internalLines) {
+          paint.setColor(Skia.Color("#222"));
+          paint.setStrokeWidth(1);
+          render.data.internalLines.forEach((line: any) => {
+              canvas.drawLine(line.x1, line.y1, line.x2, line.y2, paint);
+          });
+      }
+    });
+
+    this.registerShapeDrawer("line", (canvas, _, __, render, paint) => {
+      paint.setColor(Skia.Color(render.color));
+      paint.setStrokeWidth(2);
+      canvas.drawLine(-render.size / 2, 0, render.size / 2, 0, paint);
+    });
+  }
+
+  public setCanvas(canvas: SkCanvas): void {
+    this.canvas = canvas;
+  }
+
+  public setSize(width: number, height: number): void {
+    this.width = width;
+    this.height = height;
+  }
+
+  public clear(): void {
+    if (!this.canvas) return;
+    this.canvas.clear(Skia.Color("black"));
+  }
+
+  public render(world: World): void {
+    if (!this.canvas) return;
+    const canvas = this.canvas;
+
+    this.clear();
+
+    const gameStateEntity = world.query("GameState")[0];
+    const gameState = gameStateEntity
+      ? (world.getComponent<any>(gameStateEntity, "GameState"))
+      : null;
+
+    let shakeX = 0;
+    let shakeY = 0;
+    if (gameState?.screenShake && gameState.screenShake.framesLeft > 0) {
+      shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
+      shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
+    }
+
+    canvas.save();
+    canvas.translate(shakeX, shakeY);
+
+    this.preRenderHooks.forEach(hook => hook(canvas, world));
+
+    const entities = world.query("Position", "Render");
+    entities.forEach((entity) => {
+      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const render = world.getComponent<RenderComponent>(entity, "Render");
+      if (pos && render && render.shape !== "particle") {
+        this.drawEntity(entity, pos, render, world);
+      }
+    });
+
+    this.drawParticles(world);
+
+    canvas.restore();
+
+    this.postRenderHooks.forEach(hook => hook(canvas, world));
+  }
+
+  public drawEntity(entity: Entity, pos: PositionComponent, render: RenderComponent, world: World): void {
+    if (!this.canvas) return;
+    const canvas = this.canvas;
+
+    canvas.save();
+    canvas.translate(pos.x, pos.y);
+    canvas.rotate((render.rotation * 180) / Math.PI, 0, 0);
+
+    const drawer = this.shapeDrawers.get(render.shape);
+    if (drawer) {
+        drawer(canvas, entity, world, render, this.paint);
+    }
 
         this.registerShape("polygon", (canvas: any, paint: any, render: any) => {
           if (!render.vertices || render.vertices.length === 0) {
@@ -74,90 +186,13 @@ export class SkiaRenderer implements Renderer {
           canvas.drawPath(path, paint);
         });
 
-        this.registerShape("line", (canvas: any, paint: any, render: any) => {
-          paint.setColor(Skia.Color(render.color));
-          paint.setStrokeWidth(2);
-          canvas.drawLine(-render.size / 2, 0, render.size / 2, 0, paint);
-        });
-    } catch (e) {}
+    const postDrawer = this.postEntityDrawers.get(render.shape);
+    if (postDrawer) {
+        postDrawer(canvas, entity, world, render, this.paint);
+    }
   }
 
   public registerShape(name: string, drawer: any): void {
     this.shapeRegistry.set(name, drawer);
   }
-
-  public registerBackgroundEffect(name: string, effect: any): void {
-    this.backgroundEffects.set(name, effect);
-  }
-
-  public registerForegroundEffect(name: string, effect: any): void {
-    this.foregroundEffects.set(name, effect);
-  }
-
-  public setCanvas(canvas: any): void {
-    this.canvas = canvas;
-  }
-
-  public setSize(width: number, height: number): void {
-    this.width = width;
-    this.height = height;
-  }
-
-  public clear(): void {
-    if (Platform.OS === "web") return;
-    try {
-        const { Skia } = require("@shopify/react-native-skia");
-        if (!this.canvas || typeof Skia === "undefined" || !Skia.Color) return;
-        this.canvas.clear(Skia.Color("black"));
-    } catch (e) {}
-  }
-
-  public render(world: World): void {
-    if (Platform.OS === "web") return;
-    try {
-        const { Skia } = require("@shopify/react-native-skia");
-        if (!this.canvas || typeof Skia === "undefined") return;
-        const canvas = this.canvas;
-
-        this.clear();
-
-        this.backgroundEffects.forEach(effect => effect(canvas, world, this.width, this.height));
-
-        canvas.save();
-
-        const entities = world.query("Transform", "Render");
-        entities.forEach((entity) => {
-          const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
-          const render = world.getComponent<RenderComponent>(entity, "Render")!;
-          if (render) {
-            this.drawEntity(entity, { Position: pos, Render: render }, world);
-          }
-        });
-
-        canvas.restore();
-
-        this.foregroundEffects.forEach((effect: any) => effect(canvas, world, this.width, this.height));
-    } catch (e) {}
-  }
-
-  public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
-    if (!this.canvas) return;
-    const canvas = this.canvas;
-    const pos = components["Transform"] as TransformComponent;
-    const render = components["Render"] as RenderComponent;
-
-    if (!pos || !render) return;
-
-    canvas.save();
-    canvas.translate(pos.x, pos.y);
-    canvas.rotate((render.rotation * 180) / Math.PI, 0, 0);
-
-    const drawer = this.shapeRegistry.get(render.shape);
-    if (drawer) {
-      drawer(canvas, entity, pos, render, world);
-    }
-
-    canvas.restore();
-  }
-
 }
