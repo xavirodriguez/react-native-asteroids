@@ -86,13 +86,22 @@ export class AsteroidInputSystem extends System {
     deltaTime: number;
   }): void {
     const { world, entity, input, deltaTime } = context;
-    const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
-    const render = world.getComponent<RenderComponent>(entity, "Render");
-    const pos = world.getComponent<TransformComponent>(entity, "Transform");
+    this.handleMovementAndShooting(world, entity, input, deltaTime);
+  }
 
-    if (vel && render && pos) {
-      this.applyShipMovement({ world, pos, vel, render, input, deltaTime });
-      this.handleShipShooting({ world, pos, render, input });
+  private handleMovementAndShooting(
+    world: World,
+    entity: number,
+    input: InputComponent,
+    deltaTime: number
+  ): void {
+    const velocity = world.getComponent<VelocityComponent>(entity, "Velocity");
+    const render = world.getComponent<RenderComponent>(entity, "Render");
+    const position = world.getComponent<PositionComponent>(entity, "Position");
+
+    if (velocity && render && position) {
+      this.applyShipMovement({ world, position, velocity, render, input, deltaTime });
+      this.handleShipShooting({ world, position, render, input });
     }
   }
 
@@ -112,73 +121,87 @@ export class AsteroidInputSystem extends System {
 
   private applyShipMovement(context: {
     world: World;
-    pos: TransformComponent;
-    vel: VelocityComponent;
+    position: PositionComponent;
+    velocity: VelocityComponent;
     render: RenderComponent;
     input: InputComponent;
     deltaTime: number;
   }): void {
-    const { world, pos, vel, render, input, deltaTime } = context;
-    const dt = deltaTime / 1000;
+    const { world, position, velocity, render, input, deltaTime } = context;
+    const deltaTimeInSeconds = deltaTime / 1000;
 
-    this.applyRotation({ render, input, dt });
-    this.applyThrust({ world, pos, vel, render, input, dt });
+    this.applyRotation({ render, input, deltaTimeInSeconds });
+    this.applyThrust({ world, position, velocity, render, input, deltaTimeInSeconds });
+    this.applyFriction(velocity, deltaTime);
   }
 
   private applyRotation(context: {
     render: RenderComponent;
     input: InputComponent;
-    dt: number;
+    deltaTimeInSeconds: number;
   }): void {
-    const { render, input, dt } = context;
-    if (input.rotateLeft) render.rotation -= GAME_CONFIG.SHIP_ROTATION_SPEED * dt;
-    if (input.rotateRight) render.rotation += GAME_CONFIG.SHIP_ROTATION_SPEED * dt;
+    const { render, input, deltaTimeInSeconds } = context;
+    if (input.rotateLeft) render.rotation -= GAME_CONFIG.SHIP_ROTATION_SPEED * deltaTimeInSeconds;
+    if (input.rotateRight) render.rotation += GAME_CONFIG.SHIP_ROTATION_SPEED * deltaTimeInSeconds;
   }
 
   private applyThrust(context: {
     world: World;
-    pos: TransformComponent;
-    vel: VelocityComponent;
+    position: PositionComponent;
+    velocity: VelocityComponent;
     render: RenderComponent;
     input: InputComponent;
-    dt: number;
+    deltaTimeInSeconds: number;
   }): void {
-    const { world, pos, vel, render, input, dt } = context;
+    const { world, position, velocity, render, input, deltaTimeInSeconds } = context;
     if (input.thrust) {
-      vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
-      vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
-
-      // Improvement 8: Spawn 3-5 small thrust particles
-      const particleCount = RandomService.nextInt(3, 6);
-      for (let i = 0; i < particleCount; i++) {
-        const angle = render.rotation + Math.PI + (RandomService.next() - 0.5) * 0.5;
-        const speed = RandomService.nextRange(50, 100);
-        createParticle({
-          world,
-          x: pos.x - Math.cos(render.rotation) * 10,
-          y: pos.y - Math.sin(render.rotation) * 10,
-          dx: Math.cos(angle) * speed + vel.dx * 0.5,
-          dy: Math.sin(angle) * speed + vel.dy * 0.5,
-          color: i % 2 === 0 ? "#FF8800" : "#FFFF00",
-          ttl: 400,
-          size: RandomService.nextRange(1, 3),
-          pool: this.particlePool,
-        });
-      }
+      velocity.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTimeInSeconds;
+      velocity.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTimeInSeconds;
+      this.spawnThrustParticles({ world, position, velocity, rotation: render.rotation });
     }
   }
 
+  private spawnThrustParticles(params: {
+    world: World;
+    position: PositionComponent;
+    velocity: VelocityComponent;
+    rotation: number;
+  }): void {
+    const { world, position, velocity, rotation } = params;
+    const particleCount = RandomService.nextInt(3, 6);
+    for (let i = 0; i < particleCount; i++) {
+      const angle = rotation + Math.PI + (RandomService.next() - 0.5) * 0.5;
+      const speed = RandomService.nextRange(50, 100);
+      createParticle({
+        world,
+        x: position.x - Math.cos(rotation) * 10,
+        y: position.y - Math.sin(rotation) * 10,
+        dx: Math.cos(angle) * speed + velocity.dx * 0.5,
+        dy: Math.sin(angle) * speed + velocity.dy * 0.5,
+        color: i % 2 === 0 ? "#FF8800" : "#FFFF00",
+        ttl: 400,
+        size: RandomService.nextRange(1, 3),
+        pool: this.particlePool,
+      });
+    }
+  }
+
+  private applyFriction(velocity: VelocityComponent, deltaTime: number): void {
+    const frictionFactor = Math.pow(GAME_CONFIG.SHIP_FRICTION, deltaTime / (1000 / 60));
+    velocity.dx *= frictionFactor;
+    velocity.dy *= frictionFactor;
+  }
 
   private handleShipShooting(context: {
     world: World;
-    pos: TransformComponent;
+    position: PositionComponent;
     render: RenderComponent;
     input: InputComponent;
   }): void {
-    const { world, pos, render, input } = context;
+    const { world, position, render, input } = context;
     const canShoot = input.shoot && input.shootCooldownRemaining <= 0;
     if (canShoot) {
-      createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation, pool: this.bulletPool });
+      createBullet({ world, x: position.x, y: position.y, angle: render.rotation, pool: this.bulletPool });
       input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN;
       hapticShoot();
     }
