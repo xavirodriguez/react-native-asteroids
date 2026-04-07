@@ -148,6 +148,16 @@ export interface ScreenShakeComponent extends Component {
   config: ScreenShake | null;
 }
 
+export interface Star {
+  x: number;
+  y: number;
+  size: number;
+  brightness: number;
+  twinklePhase: number;
+  twinkleSpeed: number;
+  layer: number;
+}
+
 /**
  * Metadata for identifying entities and their collision profiles.
  */

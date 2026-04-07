@@ -1,7 +1,6 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
 import { HealthComponent } from "../../../engine/types/EngineTypes";
-import { FLAPPY_CONFIG } from "../types/FlappyBirdTypes";
-import { getGameState } from "../GameUtils";
+import { FLAPPY_CONFIG, FlappyBirdState } from "../types/FlappyBirdTypes";
 
 /**
  * Visuals for the bird.
@@ -129,7 +128,8 @@ export const drawFlappyGround: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _en
  */
 let bgOffset = 0;
 export const scrollingBackgroundEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world, width, height) => {
-  const gameState = getGameState(world);
+  const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
+  if (!gameState) return;
 
   // Background sky
   const gradient = ctx.createLinearGradient(0, 0, 0, height);

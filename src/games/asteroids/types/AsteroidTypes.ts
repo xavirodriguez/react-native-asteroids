@@ -53,20 +53,7 @@ export interface AsteroidComponent extends Component {
   size: "large" | "medium" | "small";
 }
 
-export interface Star {
-  x: number;
-  y: number;
-  size: number;
-  brightness: number;
-  twinklePhase: number;
-  twinkleSpeed: number;
-  layer: number;
-}
-
-export interface ScreenShake {
-  intensity: number;
-  duration: number;
-}
+import { Star, ScreenShake } from "../../../engine/types/EngineTypes";
 
 /**
  * Component to track global game progress and state.

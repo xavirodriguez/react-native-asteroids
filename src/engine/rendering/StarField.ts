@@ -1,4 +1,4 @@
-import { Star } from "../types/GameTypes";
+import { Star } from "../types/EngineTypes";
 
 /**
  * Generates a random starfield.
