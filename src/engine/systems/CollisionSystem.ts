@@ -74,7 +74,8 @@ export abstract class CollisionSystem extends System {
         const layerB = (colB as any).layer !== undefined ? (colB as any).layer : 1;
         if (!(maskA & layerB)) continue;
 
-        // Principle 5: Composite keys without assuming ID ranges
+        // Principle 5: Composite keys without assuming ID ranges.
+        // Using string-based keys for safety.
         const pairKey = idA < idB ? `${idA},${idB}` : `${idB},${idA}`;
         if (this.processedPairs.has(pairKey)) continue;
         this.processedPairs.add(pairKey);

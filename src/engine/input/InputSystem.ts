@@ -8,7 +8,7 @@ import { TouchPoint, GestureEvent, TouchPhase } from "./InputTypes";
  */
 export class InputSystem {
   private activeTouches = new Map<number, TouchPoint>();
-  private startPositions = new Map<number, { x: number, y: number, timestamp: number }>();
+  private startPositions = new Map<number, Readonly<{ x: number, y: number, timestamp: number }>>();
   private gestureBuffer: GestureEvent[] = [];
   private gesturePool: GestureEvent[] = [];
   private poolIndex = 0;
@@ -114,12 +114,6 @@ export class InputSystem {
 
   private emitGesture(gesture: Omit<GestureEvent, 'scale'>): void {
     const pooled = this.acquireGesture();
-
-    // Clear stale properties from prior usage before assign
-    pooled.direction = undefined;
-    pooled.duration = undefined;
-    pooled.scale = undefined;
-
     Object.assign(pooled, gesture);
     this.gestureBuffer.push(pooled);
   }
@@ -128,6 +122,19 @@ export class InputSystem {
     if (this.poolIndex >= this.gesturePool.length) {
       this.gesturePool.push({ type: 'tap', position: { x: 0, y: 0 } });
     }
-    return this.gesturePool[this.poolIndex++];
+    const pooled = this.gesturePool[this.poolIndex++];
+    this.resetGesture(pooled);
+    return pooled;
+  }
+
+  /**
+   * Principle 6: Explicit reset before reuse.
+   */
+  private resetGesture(g: GestureEvent): void {
+    g.type = 'tap';
+    g.position = { x: 0, y: 0 };
+    g.direction = undefined;
+    g.duration = undefined;
+    g.scale = undefined;
   }
 }

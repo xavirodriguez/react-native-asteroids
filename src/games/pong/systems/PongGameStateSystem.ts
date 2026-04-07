@@ -1,6 +1,7 @@
 import { World } from "../../../engine/core/World";
 import { PongState, PONG_CONFIG } from "../types";
 import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
+import { RandomService } from "../../../engine/utils/RandomService";
 import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
 import { RandomService } from "../../../engine/utils/RandomService";
 

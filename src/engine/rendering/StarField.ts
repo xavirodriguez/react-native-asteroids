@@ -11,10 +11,10 @@ import { RandomService } from "../utils/RandomService";
 export function generateStarField(count: number, width: number, height: number): Star[] {
   const renderRandom = RandomService.getInstance("render");
   return Array.from({ length: count }, () => ({
-    x: renderRandom.next() * width,
-    y: renderRandom.next() * height,
-    size: renderRandom.next() * 1.5 + 0.5,
-    brightness: renderRandom.next() * 0.7 + 0.3,
+    x: RandomService.next() * width,
+    y: RandomService.next() * height,
+    size: RandomService.next() * 1.5 + 0.5,
+    brightness: RandomService.next() * 0.7 + 0.3,
     twinklePhase: 0,
     twinkleSpeed: 0,
     layer: 0,

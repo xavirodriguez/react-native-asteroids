@@ -2,6 +2,7 @@ import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { RandomService } from "../utils/RandomService";
 import { Entity, TransformComponent, RenderComponent, ScreenShakeComponent, AnimatorComponent, Camera2DComponent } from "../types/EngineTypes";
+import { RandomService } from "../utils/RandomService";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -106,8 +107,8 @@ export class CanvasRenderer implements Renderer {
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
     const renderRandom = RandomService.getInstance("render");
     if (cam) {
-      const shakeX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
-      const shakeY = (renderRandom.next() - 0.5) * cam.shakeIntensity;
+      const shakeX = (RandomService.next() - 0.5) * cam.shakeIntensity;
+      const shakeY = (RandomService.next() - 0.5) * cam.shakeIntensity;
       ctx.scale(cam.zoom, cam.zoom);
       ctx.translate(-cam.x + shakeX, -cam.y + shakeY);
     } else {
@@ -115,8 +116,8 @@ export class CanvasRenderer implements Renderer {
       const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
       if (shake?.config && shake.config.duration > 0) {
         const { intensity } = shake.config;
-        const shakeX = (renderRandom.next() - 0.5) * intensity;
-        const shakeY = (renderRandom.next() - 0.5) * intensity;
+        const shakeX = (RandomService.next() - 0.5) * intensity;
+        const shakeY = (RandomService.next() - 0.5) * intensity;
         ctx.translate(shakeX, shakeY);
       }
     }

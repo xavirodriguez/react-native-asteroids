@@ -66,9 +66,8 @@ const WorldView: React.FC<WorldViewProps> = ({ world, width, height, renderables
   let transform = "";
   if (gameState?.screenShake && (gameState.screenShake.duration > 0 || gameState.screenShake.framesLeft > 0)) {
     const intensity = gameState.screenShake.intensity || 5;
-    const renderRandom = RandomService.getInstance("render");
-    const dx = (renderRandom.next() - 0.5) * intensity;
-    const dy = (renderRandom.next() - 0.5) * intensity;
+    const dx = (RandomService.next() - 0.5) * intensity;
+    const dy = (RandomService.next() - 0.5) * intensity;
     transform = `translate(${dx}, ${dy})`;
   }
 
