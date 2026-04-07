@@ -102,6 +102,7 @@ export class CanvasRenderer implements Renderer {
     ctx.save(); // Global save for potential transform effects
 
     // Apply Camera transform and Screen Shake
+    // Note: Using Math.random() for visual shake to avoid gameplay seed drift
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
     if (cam) {
       const shakeX = (Math.random() - 0.5) * cam.shakeIntensity;

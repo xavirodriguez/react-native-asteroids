@@ -22,8 +22,7 @@ import { InterpolationBuffer } from "../../multiplayer/InterpolationSystem";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "../../engine/rendering/Renderer";
-import { drawAsteroidsShip, drawAsteroidsUfo, asteroidsStarfieldEffect, asteroidsCRTEffect, drawAsteroidsBullet, drawAsteroidsParticle, drawAsteroidsAsteroid } from "./rendering/AsteroidsCanvasVisuals";
-import { Platform } from "react-native";
+import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManager";
 
 /**
  * Main game controller for Asteroids.
@@ -277,27 +276,7 @@ export class AsteroidsGame
    * Registers game-specific rendering logic to the provided renderer.
    */
   public initializeRenderer(renderer: Renderer): void {
-    if (renderer.type === "canvas") {
-      renderer.registerShape("triangle", drawAsteroidsShip);
-      renderer.registerShape("ufo", drawAsteroidsUfo);
-      renderer.registerShape("bullet_shape", drawAsteroidsBullet);
-      renderer.registerShape("particle", drawAsteroidsParticle);
-      renderer.registerShape("polygon", drawAsteroidsAsteroid);
-      renderer.registerBackgroundEffect("starfield", asteroidsStarfieldEffect);
-      renderer.registerForegroundEffect("crt", asteroidsCRTEffect);
-    } else if (renderer.type === "skia" && Platform.OS !== "web") {
-      try {
-        const { drawSkiaShip, drawSkiaUfo, skiaStarfieldEffect, skiaScreenShakeEffect, drawSkiaBullet, drawSkiaParticle } = require("./rendering/AsteroidsSkiaVisuals");
-        renderer.registerShape("triangle", drawSkiaShip);
-        renderer.registerShape("ufo", drawSkiaUfo);
-        renderer.registerShape("bullet_shape", drawSkiaBullet);
-        renderer.registerShape("particle", drawSkiaParticle);
-        renderer.registerBackgroundEffect("starfield", skiaStarfieldEffect);
-        renderer.registerBackgroundEffect("screenshake", skiaScreenShakeEffect);
-      } catch (e) {
-        console.warn("Failed to load Skia visuals", e);
-      }
-    }
+    initializeAsteroidsRenderer(renderer);
   }
 
   protected _onBeforeRestart(): void {

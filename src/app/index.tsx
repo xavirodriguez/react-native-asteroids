@@ -1,12 +1,19 @@
 import { router } from "expo-router";
 import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import type { Href } from "expo-router";
 
-const GAMES = [
-  { id: "asteroids", label: "ASTEROIDES" },
-  { id: "space-invaders", label: "SPACE INVADERS" },
-  { id: "flappybird", label: "FLAPPY BIRD" },
-] as const;
+interface GameEntry {
+  id: string;
+  label: string;
+  href: Href<string>;
+}
+
+const GAMES: GameEntry[] = [
+  { id: "asteroids", label: "ASTEROIDES", href: "/asteroids" },
+  { id: "space-invaders", label: "SPACE INVADERS", href: "/space-invaders" },
+  { id: "flappybird", label: "FLAPPY BIRD", href: "/flappybird" },
+];
 
 export default function HomeScreen() {
   return (
@@ -17,7 +24,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             key={game.id}
             style={styles.menuButton}
-            onPress={() => router.push(`/${game.id}/`)}
+            onPress={() => router.push(game.href)}
           >
             <Text style={styles.menuButtonText}>{game.label}</Text>
           </TouchableOpacity>

@@ -5,6 +5,7 @@ import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
 import { EventBus } from "./EventBus";
 import { SceneManager } from "../scenes/SceneManager";
 import { runLifecycle } from "../utils/LifecycleUtils";
+import { RandomService } from "../utils/RandomService";
 import type { IGame, UpdateListener } from "./IGame";
 
 export interface BaseGameConfig {
@@ -46,6 +47,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
     this.registerEventBusSingleton();
 
     this._config = config;
+
+    // Initialize deterministic random service with a default seed
+    RandomService.setSeed(Date.now());
 
     // Register systems and initial entities - responsibility of the concrete game
     this.registerSystems();
