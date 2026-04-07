@@ -420,8 +420,8 @@ El proyecto **Retro Arcade** demuestra una madurez técnica notable en su núcle
 - **Prioridad:** Alta.
 
 #### Determinismo y RandomService
-- **Hallazgo:** Se encontraron múltiples usos de `Math.random()` en `src/engine/rendering/` y en lógica de juego (`PongGameStateSystem.ts`), ignorando el `RandomService` seedable que ya existe en el proyecto.
-- **Veredicto:** **Debe implementarse**. El determinismo es vital para replays y sincronización multijugador.
+ - **Hallazgo:** Se encontraron múltiples usos de `Math.random()` en lógica de juego (`PongGameStateSystem.ts`, `EntityFactory.ts`) y en sistemas de renderizado (`CanvasRenderer.ts`, `StarField.ts`), ignorando el `RandomService` seedable que ya existe en el proyecto. Sin embargo, se debe tener precaución al migrar código de renderizado (como efectos visuales en Reanimated) para no ensuciar el PRNG de lógica ni causar fallos en hilos UI.
+ - **Veredicto:** **Debe implementarse**. El determinismo de la lógica core es vital para replays y sincronización multijugador.
 - **Prioridad:** Alta.
 
 ---
@@ -431,7 +431,7 @@ El proyecto **Retro Arcade** demuestra una madurez técnica notable en su núcle
 | ID | Bloque | Práctica | Estado actual | Veredicto | Prioridad | Esfuerzo | Riesgo | Acción concreta | Motivo de negocio/técnico |
 |---|---|---|---|---|---|---|---|---|---|
 | **A1** | **EXT** | Unificación Física | No cumple | **Debe implementarse** | **Alta** | Alto | Medio | Eliminar `src/game/GameEngine.tsx` y migrar Matter.js a un `PhysicsSystem` oficial en el ECS. | Eliminar divergencia arquitectónica crítica. |
-| **A2** | **EXT** | Blindaje Determinismo | No cumple | **Debe implementarse** | **Alta** | Medio | Bajo | Reemplazar `Math.random()` por `RandomService` en todos los renderers y lógica de juego. | Garantizar replays y fidelidad multijugador. |
+| **A2** | **EXT** | Blindaje Determinismo | No cumple | **Debe implementarse** | **Alta** | Medio | Bajo | Migrar `Math.random()` a `RandomService` en Lógica de Juego. Mantener `Math.random()` para efectos visuales efímeros. | Garantizar replays y sincronización sin 'seed drift' por renderizado. |
 | **B1** | **1** | 1.2 Layouts locales | No cumple | **Debe implementarse** | **Media** | Bajo | Bajo | Crear `_layout.tsx` por carpeta de juego y eliminar configuración manual del root layout. | Escalabilidad y orden de navegación. |
 | **B2** | **1** | 1.3 Rutas tipadas | Parcial | **Debe implementarse** | **Media** | Bajo | Bajo | Refactorizar `router.push` para usar tipos estáticos en lugar de template strings. | Seguridad de navegación en compilación. |
 | **C1** | **7** | 7.3 Auto-Updates | Parcial | **Debe implementarse** | **Media** | Medio | Bajo | Configurar GitHub Actions para ejecutar `eas update --branch preview` automáticamente. | Mejorar DX y agilidad de feedback. |
