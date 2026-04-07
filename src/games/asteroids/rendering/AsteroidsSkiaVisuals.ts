@@ -1,6 +1,7 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
 import { TransformComponent, HealthComponent, TTLComponent } from "../../../engine/types/EngineTypes";
 import { Platform } from "react-native";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 // Lazy initialize paint to avoid issues in environments where Skia is not fully ready at module load time
 let paint: any = null;
@@ -158,8 +159,9 @@ export const skiaScreenShakeEffect: EffectDrawer<any> = (canvas, world) => {
         const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
 
         if (gameState?.screenShake && gameState.screenShake.duration > 0) {
-          const shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
-          const shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
+          const renderRandom = RandomService.getInstance("render");
+          const shakeX = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
+          const shakeY = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
           canvas.translate(shakeX, shakeY);
         }
     } catch (e) {}

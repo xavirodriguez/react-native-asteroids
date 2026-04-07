@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import Svg, { Polygon, Circle, Line, Rect, G, Ellipse, Polyline, Defs, Filter, FeGaussianBlur, FeMerge, FeMergeNode, LinearGradient, Stop, RadialGradient, Pattern } from "react-native-svg";
 import { World } from "../core/World";
+import { RandomService } from "../utils/RandomService";
 import {
   type TransformComponent,
   type RenderComponent,
@@ -65,8 +66,9 @@ const WorldView: React.FC<WorldViewProps> = ({ world, width, height, renderables
   let transform = "";
   if (gameState?.screenShake && (gameState.screenShake.duration > 0 || gameState.screenShake.framesLeft > 0)) {
     const intensity = gameState.screenShake.intensity || 5;
-    const dx = (Math.random() - 0.5) * intensity;
-    const dy = (Math.random() - 0.5) * intensity;
+    const renderRandom = RandomService.getInstance("render");
+    const dx = (renderRandom.next() - 0.5) * intensity;
+    const dy = (renderRandom.next() - 0.5) * intensity;
     transform = `translate(${dx}, ${dy})`;
   }
 

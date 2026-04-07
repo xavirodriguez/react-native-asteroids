@@ -1,4 +1,5 @@
-import { Star } from "../types/EngineTypes";
+import { Star } from "../types/GameTypes";
+import { RandomService } from "../utils/RandomService";
 
 /**
  * Generates a random starfield.
@@ -8,11 +9,12 @@ import { Star } from "../types/EngineTypes";
  * @returns Array of Star objects.
  */
 export function generateStarField(count: number, width: number, height: number): Star[] {
+  const renderRandom = RandomService.getInstance("render");
   return Array.from({ length: count }, () => ({
-    x: Math.random() * width,
-    y: Math.random() * height,
-    size: Math.random() * 1.5 + 0.5,
-    brightness: Math.random() * 0.7 + 0.3,
+    x: renderRandom.next() * width,
+    y: renderRandom.next() * height,
+    size: renderRandom.next() * 1.5 + 0.5,
+    brightness: renderRandom.next() * 0.7 + 0.3,
     twinklePhase: 0,
     twinkleSpeed: 0,
     layer: 0,

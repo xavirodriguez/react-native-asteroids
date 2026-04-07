@@ -33,6 +33,20 @@ export class RenderUpdateSystem extends System {
         }
       }
     });
+
+    // Support game-specific trail components (like Asteroids Ship)
+    const shipEntities = world.query("Transform", "Ship");
+    shipEntities.forEach((entity) => {
+        const pos = world.getComponent<TransformComponent>(entity, "Transform");
+        const ship = world.getComponent<any>(entity, "Ship");
+
+        if (pos && ship && ship.trailPositions) {
+            ship.trailPositions.push({ x: pos.x, y: pos.y });
+            if (ship.trailPositions.length > this.trailMaxLength) {
+                ship.trailPositions.shift();
+            }
+        }
+    });
   }
 
   private updateRotation(world: World, deltaTime: number): void {
