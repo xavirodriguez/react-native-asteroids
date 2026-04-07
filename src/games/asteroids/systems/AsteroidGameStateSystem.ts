@@ -32,14 +32,17 @@ export class AsteroidGameStateSystem extends System implements IGameStateSystem 
   }
 
   private manageUfoSpawning(world: World, deltaTime: number): void {
-    // 0.1% chance per second
     if (RandomService.chance(0.001 * (deltaTime / 1000))) {
-      const ufos = world.query("Ufo");
-      if (ufos.length === 0) {
-        const x = RandomService.chance(0.5) ? 0 : GAME_CONFIG.SCREEN_WIDTH;
-        const y = RandomService.nextRange(50, GAME_CONFIG.SCREEN_HEIGHT - 50);
-        createUfo(world, x, y);
-      }
+      this.trySpawnUfo(world);
+    }
+  }
+
+  private trySpawnUfo(world: World): void {
+    const ufos = world.query("Ufo");
+    if (ufos.length === 0) {
+      const x = RandomService.chance(0.5) ? 0 : GAME_CONFIG.SCREEN_WIDTH;
+      const y = RandomService.nextRange(50, GAME_CONFIG.SCREEN_HEIGHT - 50);
+      createUfo(world, x, y);
     }
   }
 

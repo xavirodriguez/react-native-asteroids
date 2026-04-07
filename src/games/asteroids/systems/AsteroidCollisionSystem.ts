@@ -61,9 +61,9 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     if (match) {
       const matchUfo = (match as Record<"Ufo" | "Bullet", Entity>).Ufo;
       const matchBullet = (match as Record<"Ufo" | "Bullet", Entity>).Bullet;
-      const pos = world.getComponent<PositionComponent>(matchUfo, "Position");
-      if (pos) {
-        this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
+      const position = world.getComponent<PositionComponent>(matchUfo, "Position");
+      if (position) {
+        this.spawnExplosion(world, position, GAME_CONFIG.PARTICLE_COUNT * 2);
       }
       this.destroyEntity(world, matchUfo);
       this.destroyEntity(world, matchBullet);
@@ -86,9 +86,9 @@ export class AsteroidCollisionSystem extends CollisionSystem {
       const health = world.getComponent<HealthComponent>(matchShip, "Health");
       if (this.canShipTakeDamage(health)) {
         this.applyDamageToShip(world, health);
-        const pos = world.getComponent<PositionComponent>(matchUfo, "Position");
-        if (pos) {
-          this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
+        const position = world.getComponent<PositionComponent>(matchUfo, "Position");
+        if (position) {
+          this.spawnExplosion(world, position, GAME_CONFIG.PARTICLE_COUNT * 2);
         }
         this.destroyEntity(world, matchUfo);
       }
@@ -156,26 +156,37 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     bullet: Entity;
   }): void {
     const { world, asteroid, bullet } = context;
-    const pos = world.getComponent<PositionComponent>(asteroid, "Position");
+    const position = world.getComponent<PositionComponent>(asteroid, "Position");
     const render = world.getComponent<RenderComponent>(asteroid, "Render");
-    if (pos) {
-      this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT);
+
+    if (position && render) {
+      this.applyBulletImpactVisuals(world, render, position);
     }
-    // Improvement 9: Hit flash effect
-    if (render) {
-      render.hitFlashFrames = 8;
-    }
+
+    this.handleAsteroidDestructionLogic(world, asteroid, bullet);
+  }
+
+  private applyBulletImpactVisuals(
+    world: World,
+    render: RenderComponent,
+    position: PositionComponent
+  ): void {
+    this.spawnExplosion(world, position, GAME_CONFIG.PARTICLE_COUNT);
+    render.hitFlashFrames = 8;
+  }
+
+  private handleAsteroidDestructionLogic(world: World, asteroid: Entity, bullet: Entity): void {
     this.splitAsteroid({ world, asteroidEntity: asteroid });
     this.destroyEntity(world, bullet);
     this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
   }
 
-  private spawnExplosionParticles(world: World, pos: PositionComponent, count: number): void {
+  private spawnExplosion(world: World, position: PositionComponent, count: number): void {
     for (let i = 0; i < count; i++) {
       createParticle({
         world,
-        x: pos.x,
-        y: pos.y,
+        x: position.x,
+        y: position.y,
         dx: (RandomService.next() - 0.5) * 160, // [-80, 80]
         dy: (RandomService.next() - 0.5) * 160, // [-80, 80]
         color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
@@ -218,38 +229,37 @@ export class AsteroidCollisionSystem extends CollisionSystem {
   private splitAsteroid(asteroidContext: { world: World; asteroidEntity: Entity }): void {
     const { world, asteroidEntity } = asteroidContext;
     const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
-    const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position");
+    const position = world.getComponent<PositionComponent>(asteroidEntity, "Position");
 
-    if (asteroid && pos) {
-      this.executeSplitStrategy({ world, pos, size: asteroid.size });
+    if (asteroid && position) {
+      this.executeSplitStrategy({ world, position, size: asteroid.size });
     }
     this.destroyEntity(world, asteroidEntity);
   }
 
   private executeSplitStrategy(splitParams: {
     world: World;
-    pos: PositionComponent;
+    position: PositionComponent;
     size: AsteroidComponent["size"];
   }): void {
-    const { world, pos, size } = splitParams;
+    const { world, position, size } = splitParams;
     const config = ASTEROID_SPLIT_CONFIG[size];
 
     if (config) {
-      this.spawnSplit({ world, pos, size: config.nextSize, offset: config.offset });
+      this.spawnSplit({ world, position, size: config.nextSize, offset: config.offset });
     }
   }
 
   private spawnSplit(spawnConfig: {
     world: World;
-    pos: PositionComponent;
+    position: PositionComponent;
     size: "medium" | "small";
     offset: number;
   }): void {
-    const { world, pos, size, offset } = spawnConfig;
-    const a1 = createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size });
-    const a2 = createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size });
+    const { world, position, size, offset } = spawnConfig;
+    const a1 = createAsteroid({ world, x: position.x + offset, y: position.y + offset, size });
+    const a2 = createAsteroid({ world, x: position.x - offset, y: position.y - offset, size });
 
-    // Improvement 9: Apply hit flash to split children
     [a1, a2].forEach(entity => {
       const render = world.getComponent<RenderComponent>(entity, "Render");
       if (render) render.hitFlashFrames = 10;

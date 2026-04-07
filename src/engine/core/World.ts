@@ -5,8 +5,8 @@ import { System } from "./System";
  * ECS World class that manages the lifecycle of entities, components, and systems.
  */
 export class World {
-  private entities = new Set<Entity>();
-  private components = new Map<string, Map<Entity, Component>>();
+  private activeEntities = new Set<Entity>();
+  private componentMaps = new Map<string, Map<Entity, Component>>();
   private componentIndex = new Map<string, Set<Entity>>();
   private systems: System[] = [];
   private nextEntityId = 1;
@@ -15,7 +15,7 @@ export class World {
   /**
    * Cache for query results to avoid redundant computations and GC pressure.
    */
-  private queryCache = new Map<string, { version: number; entities: Entity[] }>();
+  private cachedQueryResults = new Map<string, { version: number; entities: Entity[] }>();
 
   /**
    * Current version of the world structure.
@@ -30,7 +30,7 @@ export class World {
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
-    this.entities.add(id);
+    this.activeEntities.add(id);
     this.version++;
     return id;
   }
@@ -55,7 +55,7 @@ export class World {
 
     this.ensureComponentStorage(type);
 
-    this.components.get(type)?.set(entity, component);
+    this.componentMaps.get(type)?.set(entity, component);
     this.componentIndex.get(type)?.add(entity);
     this.version++;
   }
@@ -68,7 +68,7 @@ export class World {
    * @returns The component instance if found, otherwise `undefined`.
    */
   getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
-    return this.components.get(type)?.get(entity) as T;
+    return this.componentMaps.get(type)?.get(entity) as T;
   }
 
   /**
@@ -89,7 +89,7 @@ export class World {
    * @param type - The type of the component to remove.
    */
   removeComponent(entity: Entity, type: string): void {
-    const componentMap = this.components.get(type);
+    const componentMap = this.componentMaps.get(type);
     if (componentMap && componentMap.delete(entity)) {
       this.componentIndex.get(type)?.delete(entity)
       this.version++;
@@ -106,23 +106,15 @@ export class World {
   query(...componentTypes: string[]): Entity[] {
     if (componentTypes.length === 0) return [];
 
-    const cacheKey = componentTypes.sort().join(",");
-    const cached = this.queryCache.get(cacheKey);
+    const cacheKey = [...componentTypes].sort().join(",");
+    const cachedEntities = this.getCachedEntities(cacheKey);
 
-    if (cached && cached.version === this.version) {
-      return cached.entities;
+    if (cachedEntities) {
+      return cachedEntities;
     }
 
-    const sortedTypes = this.getSortedTypes(componentTypes);
-    const candidates = this.componentIndex.get(sortedTypes[0]);
-
-    if (!candidates || candidates.size === 0) {
-      this.queryCache.set(cacheKey, { version: this.version, entities: [] });
-      return [];
-    }
-
-    const result = this.filterByComponents(candidates, sortedTypes.slice(1));
-    this.queryCache.set(cacheKey, { version: this.version, entities: result });
+    const result = this.performFiltering(componentTypes);
+    this.cachedQueryResults.set(cacheKey, { version: this.version, entities: result });
     return result;
   }
 
@@ -132,13 +124,9 @@ export class World {
    * @param entity - The entity to remove.
    */
   removeEntity(entity: Entity): void {
-    this.components.forEach((componentMap, type) => {
-      if (componentMap.delete(entity)) {
-        this.componentIndex.get(type)?.delete(entity);
-      }
-    });
+    this.removeEntityFromComponentMaps(entity);
 
-    if (this.entities.delete(entity)) {
+    if (this.activeEntities.delete(entity)) {
       this.freeEntities.push(entity);
       this.version++;
     }
@@ -149,10 +137,10 @@ export class World {
    * Systems remain registered.
    */
   clear(): void {
-    this.entities.clear();
-    this.components.clear();
+    this.activeEntities.clear();
+    this.componentMaps.clear();
     this.componentIndex.clear();
-    this.queryCache.clear();
+    this.cachedQueryResults.clear();
     this.version++;
   }
 
@@ -180,7 +168,36 @@ export class World {
    * @returns An array of all {@link Entity} IDs.
    */
   getAllEntities(): Entity[] {
-    return Array.from(this.entities);
+    return Array.from(this.activeEntities);
+  }
+
+  private removeEntityFromComponentMaps(entity: Entity): void {
+    this.componentMaps.forEach((componentMap, type) => {
+      if (componentMap.delete(entity)) {
+        this.componentIndex.get(type)?.delete(entity);
+      }
+    });
+  }
+
+  private getCachedEntities(cacheKey: string): Entity[] | undefined {
+    const cached = this.cachedQueryResults.get(cacheKey);
+
+    if (cached && cached.version === this.version) {
+      return cached.entities;
+    }
+
+    return undefined;
+  }
+
+  private performFiltering(componentTypes: string[]): Entity[] {
+    const sortedTypes = this.getSortedTypes(componentTypes);
+    const candidates = this.componentIndex.get(sortedTypes[0]);
+
+    if (!candidates || candidates.size === 0) {
+      return [];
+    }
+
+    return this.filterByComponents(candidates, sortedTypes.slice(1));
   }
 
   private filterByComponents(entities: Set<Entity>, types: string[]): Entity[] {
@@ -198,8 +215,8 @@ export class World {
   }
 
   private ensureComponentStorage(type: string): void {
-    if (!this.components.has(type)) {
-      this.components.set(type, new Map());
+    if (!this.componentMaps.has(type)) {
+      this.componentMaps.set(type, new Map());
       this.componentIndex.set(type, new Set());
     }
   }
