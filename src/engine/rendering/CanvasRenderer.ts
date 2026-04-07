@@ -104,9 +104,10 @@ export class CanvasRenderer implements Renderer {
 
     // Apply Camera transform and Screen Shake
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
+    const renderRandom = RandomService.getInstance("render");
     if (cam) {
-      const shakeX = (RandomService.next() - 0.5) * cam.shakeIntensity;
-      const shakeY = (RandomService.next() - 0.5) * cam.shakeIntensity;
+      const shakeX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
+      const shakeY = (renderRandom.next() - 0.5) * cam.shakeIntensity;
       ctx.scale(cam.zoom, cam.zoom);
       ctx.translate(-cam.x + shakeX, -cam.y + shakeY);
     } else {
@@ -114,8 +115,8 @@ export class CanvasRenderer implements Renderer {
       const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
       if (shake?.config && shake.config.duration > 0) {
         const { intensity } = shake.config;
-        const shakeX = (RandomService.next() - 0.5) * intensity;
-        const shakeY = (RandomService.next() - 0.5) * intensity;
+        const shakeX = (renderRandom.next() - 0.5) * intensity;
+        const shakeY = (renderRandom.next() - 0.5) * intensity;
         ctx.translate(shakeX, shakeY);
       }
     }

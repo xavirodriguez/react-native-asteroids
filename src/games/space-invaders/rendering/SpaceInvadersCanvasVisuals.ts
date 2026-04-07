@@ -76,8 +76,9 @@ export const spaceInvadersScreenShakeEffect: EffectDrawer<CanvasRenderingContext
   const gameState = world.getComponent<GameStateComponent>(entities[0], "GameState");
   if (gameState && gameState.screenShake && gameState.screenShake.duration > 0) {
     const { intensity } = gameState.screenShake;
-    const dx = (RandomService.next() - 0.5) * intensity;
-    const dy = (RandomService.next() - 0.5) * intensity;
+    const renderRandom = RandomService.getInstance("render");
+    const dx = (renderRandom.next() - 0.5) * intensity;
+    const dy = (renderRandom.next() - 0.5) * intensity;
     ctx.translate(dx, dy);
   }
 };

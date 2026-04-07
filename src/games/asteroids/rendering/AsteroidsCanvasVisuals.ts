@@ -32,7 +32,8 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
   // Thrust Propulsion Flame
   if (input?.thrust) {
     ctx.save();
-    const flameLen = size * (1.2 + RandomService.next() * 0.4);
+    const renderRandom = RandomService.getInstance("render");
+    const flameLen = size * (1.2 + renderRandom.next() * 0.4);
     const gradient = ctx.createLinearGradient(-size / 2, 0, -flameLen, 0);
     gradient.addColorStop(0, "orange");
     gradient.addColorStop(0.5, "yellow");
