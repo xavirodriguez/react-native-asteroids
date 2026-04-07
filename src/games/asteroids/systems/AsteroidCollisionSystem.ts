@@ -162,7 +162,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     }
     // Improvement 9: Hit flash effect
     if (render) {
-      render.hitFlashFrames = 8;
+      render.data = { ...render.data, hitFlashFrames: 8 };
     }
     this.splitAsteroid({ world, asteroidEntity: asteroid });
     this.destroyEntity(world, bullet);
@@ -179,7 +179,6 @@ export class AsteroidCollisionSystem extends CollisionSystem {
         dy: (Math.random() - 0.5) * 160, // [-80, 80]
         color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
         ttl: GAME_CONFIG.PARTICLE_TTL_BASE,
-        pool: this.particlePool,
       });
     }
   }
@@ -251,7 +250,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     // Improvement 9: Apply hit flash to split children
     [a1, a2].forEach(entity => {
       const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (render) render.hitFlashFrames = 10;
+      if (render) render.data = { ...render.data, hitFlashFrames: 10 };
     });
   }
 

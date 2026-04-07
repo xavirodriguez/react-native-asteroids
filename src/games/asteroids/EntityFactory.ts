@@ -22,8 +22,11 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
   return ship;
 };
 
-export const createBullet = ({ world, x, y, dx, dy }: { world: World; x: number; y: number; dx: number; dy: number }) => {
+export const createBullet = ({ world, x, y, angle }: { world: World; x: number; y: number; angle: number }) => {
   const bullet = world.createEntity();
+  const dx = Math.cos(angle) * GAME_CONFIG.BULLET_SPEED;
+  const dy = Math.sin(angle) * GAME_CONFIG.BULLET_SPEED;
+
   world.addComponent(bullet, { type: "Position", x, y } as PositionComponent);
   world.addComponent(bullet, { type: "Velocity", dx, dy } as VelocityComponent);
   world.addComponent(bullet, { type: "Render", shape: "circle", size: GAME_CONFIG.BULLET_SIZE, color: "white", rotation: 0 } as RenderComponent);
@@ -100,15 +103,24 @@ export const createUfo = ({ world }: { world: World }) => {
   return ufo;
 };
 
-export const createParticle = ({ world, x, y, color }: { world: World; x: number; y: number; color: string }) => {
+export interface CreateParticleParams {
+    world: World;
+    x: number;
+    y: number;
+    dx: number;
+    dy: number;
+    color: string;
+    ttl?: number;
+    size?: number;
+}
+
+export const createParticle = (params: CreateParticleParams) => {
+  const { world, x, y, dx, dy, color, ttl = GAME_CONFIG.PARTICLE_TTL_BASE, size = 2 } = params;
   const particle = world.createEntity();
-  const angle = Math.random() * Math.PI * 2;
-  const speed = Math.random() * GAME_CONFIG.PARTICLE_SPEED_BASE + 20;
-  const ttl = Math.random() * GAME_CONFIG.PARTICLE_TTL_BASE + 200;
 
   world.addComponent(particle, { type: "Position", x, y } as PositionComponent);
-  world.addComponent(particle, { type: "Velocity", dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed } as VelocityComponent);
-  world.addComponent(particle, { type: "Render", shape: "particle", size: 2, color, rotation: 0 } as RenderComponent);
+  world.addComponent(particle, { type: "Velocity", dx, dy } as VelocityComponent);
+  world.addComponent(particle, { type: "Render", shape: "particle", size, color, rotation: 0 } as RenderComponent);
   world.addComponent(particle, { type: "TTL", remaining: ttl, total: ttl } as TTLComponent);
   return particle;
 };

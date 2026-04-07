@@ -35,9 +35,7 @@ export class AsteroidGameStateSystem extends System implements IGameStateSystem 
     if (Math.random() < 0.001 * (deltaTime / 1000)) {
       const ufos = world.query("Ufo");
       if (ufos.length === 0) {
-        const x = Math.random() > 0.5 ? 0 : GAME_CONFIG.SCREEN_WIDTH;
-        const y = 50 + Math.random() * (GAME_CONFIG.SCREEN_HEIGHT - 100);
-        createUfo(world, x, y);
+        createUfo({ world });
       }
     }
   }

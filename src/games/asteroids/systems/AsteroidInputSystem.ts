@@ -155,7 +155,6 @@ export class AsteroidInputSystem extends System {
           color: i % 2 === 0 ? "#FF8800" : "#FFFF00",
           ttl: 400,
           size: 1 + Math.random() * 2,
-          pool: this.particlePool,
         });
       }
     }
@@ -176,7 +175,7 @@ export class AsteroidInputSystem extends System {
     const { world, pos, render, input } = context;
     const canShoot = input.shoot && input.shootCooldownRemaining <= 0;
     if (canShoot) {
-      createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation, pool: this.bulletPool });
+      createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
       input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN;
       hapticShoot();
     }
