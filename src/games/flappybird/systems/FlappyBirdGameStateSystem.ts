@@ -3,10 +3,10 @@ import { World } from "../../../engine/core/World";
 import { TransformComponent } from "../../../engine/types/EngineTypes";
 import {
   PipeComponent,
-  FLAPPY_CONFIG
+  FLAPPY_CONFIG,
+  FlappyBirdState
 } from "../types/FlappyBirdTypes";
 import { IFlappyBirdGame, IFlappyStateSystem } from "../types/GameInterfaces";
-import { getGameState } from "../GameUtils";
 import { createPipe } from "../EntityFactory";
 import { RandomService } from "../../../engine/utils/RandomService";
 
@@ -24,7 +24,8 @@ export class FlappyBirdGameStateSystem extends System implements IFlappyStateSys
   }
 
   public update(world: World, deltaTime: number): void {
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
+    if (!gameState) return;
 
     if (gameState.isGameOver) {
       if (!this.gameOverLogged) {
