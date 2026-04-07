@@ -5,6 +5,7 @@ import {
 } from "../src/types/GameTypes";
 import { CanvasRenderer as EngineCanvasRenderer } from "../src/engine/rendering/CanvasRenderer";
 import type { World } from "../src/engine/core/World";
+import { drawShip, drawUfo, drawFlash, drawAsteroidStarField, drawAsteroidCRTEffect } from "../src/games/asteroids/rendering/AsteroidShapeDrawers";
 
 interface CanvasRendererProps {
   world: World;
@@ -24,7 +25,31 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world }) => {
     if (!ctx) return;
 
     if (!rendererRef.current) {
-      rendererRef.current = new EngineCanvasRenderer(ctx);
+      const renderer = new EngineCanvasRenderer(ctx);
+
+      // Register Asteroids-specific shape drawers
+      renderer.registerShapeDrawer("triangle", drawShip);
+      renderer.registerShapeDrawer("ufo", drawUfo);
+      renderer.registerShapeDrawer("flash", drawFlash);
+
+      // Register custom hooks for Asteroids
+      renderer.addPreRenderHook((ctx, world) => {
+        const gameStateEntity = world.query("GameState")[0];
+        const gameState = gameStateEntity ? (world.getComponent<any>(gameStateEntity, "GameState")) : null;
+        if (gameState?.stars) {
+          drawAsteroidStarField(ctx, gameState.stars, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT, world);
+        }
+      });
+
+      renderer.addPostRenderHook((ctx, world) => {
+        const gameStateEntity = world.query("GameState")[0];
+        const gameState = gameStateEntity ? (world.getComponent<any>(gameStateEntity, "GameState")) : null;
+        if (gameState?.debugCRT !== false) {
+          drawAsteroidCRTEffect(ctx, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
+        }
+      });
+
+      rendererRef.current = renderer;
     } else {
       rendererRef.current.setContext(ctx);
     }
