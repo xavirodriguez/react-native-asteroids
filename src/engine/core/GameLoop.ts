@@ -25,15 +25,11 @@ export class GameLoop {
   private updateListeners: Set<(deltaTime: number) => void> = new Set();
   private renderListeners: Set<(alpha: number, deltaTime: number) => void> = new Set();
 
-  constructor(config?: LoopConfig) {
-    if (config) {
-      if (config.fixedHz) {
-        this.fixedDeltaTime = 1000 / config.fixedHz;
-      }
-      if (config.maxDeltaMs) {
-        this.maxDeltaTime = config.maxDeltaMs;
-      }
-    }
+  constructor(config: LoopConfig = {}) {
+    // Principle 8: Defensive constructor with destructuring and defaults
+    const { fixedHz = 60, maxDeltaMs = 100 } = config;
+    this.fixedDeltaTime = 1000 / fixedHz;
+    this.maxDeltaTime = maxDeltaMs;
   }
 
   /**

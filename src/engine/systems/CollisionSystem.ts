@@ -11,7 +11,7 @@ export abstract class CollisionSystem extends System {
   private spatialHash = new SpatialHash(100);
   private queryResult = new Set<Entity>();
   private aabb: AABB = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-  private processedPairs = new Set<number>();
+  private processedPairs = new Set<string>();
 
   /**
    * Updates the collision state.
@@ -74,8 +74,8 @@ export abstract class CollisionSystem extends System {
         const layerB = (colB as any).layer !== undefined ? (colB as any).layer : 1;
         if (!(maskA & layerB)) continue;
 
-        // Optimized pair key for zero-allocation tracking
-        const pairKey = idA < idB ? (idA << 16) | idB : (idB << 16) | idA;
+        // Principle 5: Composite keys without assuming ID ranges
+        const pairKey = idA < idB ? `${idA},${idB}` : `${idB},${idA}`;
         if (this.processedPairs.has(pairKey)) continue;
         this.processedPairs.add(pairKey);
 
