@@ -53,6 +53,21 @@ export class World {
   addComponent<T extends Component>(entity: Entity, component: T): void {
     const type = component.type;
 
+    // Principle 2: Strong Invariants - Normalizar en addNode (addComponent en ECS)
+    if (type === "Transform") {
+      const transform = component as any;
+      if (transform.parent !== undefined) {
+        if (!this.entities.has(transform.parent)) {
+          if (__DEV__) {
+            console.warn(`Hierarchy Invariant Violation: Entity ${entity} has parent ${transform.parent} but parent does not exist in world.`);
+          }
+          transform.parent = undefined; // Normalizar SIEMPRE
+        } else if (transform.parent === entity) {
+          throw new Error(`Hierarchy Invariant Violation: Entity ${entity} cannot be its own parent.`);
+        }
+      }
+    }
+
     this.ensureComponentStorage(type);
 
     this.componentMaps.get(type)?.set(entity, component);
@@ -80,6 +95,13 @@ export class World {
    */
   hasComponent(entity: Entity, type: string): boolean {
     return this.componentIndex.get(type)?.has(entity) ?? false;
+  }
+
+  /**
+   * Alias for {@link query} to support the required ECS extension interface.
+   */
+  getEntitiesWith(...componentTypes: string[]): Entity[] {
+    return this.query(...componentTypes);
   }
 
   /**
@@ -200,6 +222,29 @@ export class World {
     return this.filterByComponents(candidates, sortedTypes.slice(1));
   }
 
+  /**
+   * Retrieves a singleton component from the world.
+   * If the component is frozen, it replaces it with a mutable copy.
+   *
+   * @param type - The component type to retrieve.
+   * @returns The component if found, otherwise `undefined`.
+   */
+  getSingleton<T extends Component>(type: string): T | undefined {
+    const [entity] = this.query(type);
+    if (entity === undefined) return undefined;
+
+    const component = this.getComponent<T>(entity, type);
+    if (!component) return undefined;
+
+    if (Object.isFrozen(component)) {
+      const mutableCopy = { ...component };
+      this.addComponent(entity, mutableCopy);
+      return mutableCopy;
+    }
+
+    return component;
+  }
+
   private filterByComponents(entities: Set<Entity>, types: string[]): Entity[] {
     return Array.from(entities).filter((entity) =>
       types.every((type) => this.componentIndex.get(type)?.has(entity)),
@@ -221,3 +266,6 @@ export class World {
     }
   }
 }
+
+// Global helper for development mode
+const __DEV__ = process.env.NODE_ENV !== "production";

@@ -1,7 +1,6 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
-import { getGameState } from "../GameUtils";
 import { spawnInvaderWave } from "../EntityFactory";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";
 
@@ -16,8 +15,9 @@ export class SpaceInvadersGameStateSystem extends System {
     this.game = game;
   }
 
-  public update(world: World, _deltaTime: number): void {
-    const gameState = getGameState(world);
+  public update(world: World, deltaTime: number): void {
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
+    if (!gameState) return;
 
     if (gameState.isGameOver) {
       return;
@@ -29,13 +29,13 @@ export class SpaceInvadersGameStateSystem extends System {
 
     // 2. Handle level progression
     if (gameState.invadersRemaining === 0) {
-      gameState.level += 1;
+      gameState.level++;
       spawnInvaderWave(world, gameState.level);
     }
 
     // 3. Update screen shake duration
     if (gameState.screenShake) {
-      gameState.screenShake.duration -= 1;
+      gameState.screenShake.duration -= deltaTime;
       if (gameState.screenShake.duration <= 0) {
         gameState.screenShake = null;
       }
@@ -44,13 +44,16 @@ export class SpaceInvadersGameStateSystem extends System {
 
   public isGameOver(): boolean {
     const world = this.game.getWorld();
-    const gameState = getGameState(world);
-    return gameState.isGameOver;
+    const entities = world.query("GameState");
+    if (entities.length === 0) return false;
+    const gameState = world.getComponent<GameStateComponent>(entities[0], "GameState");
+    return gameState?.isGameOver || false;
   }
 
   public resetGameOverState(): void {
     const world = this.game.getWorld();
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
+    if (!gameState) return;
     gameState.isGameOver = false;
     gameState.score = 0;
     gameState.level = 1;

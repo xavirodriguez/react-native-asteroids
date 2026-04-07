@@ -3,8 +3,7 @@ import { AsteroidCollisionSystem } from "../AsteroidCollisionSystem";
 import { ParticlePool } from "../../EntityPool";
 import { createAsteroid, createShip, createBullet, createGameState } from "../../EntityFactory";
 import { BulletPool } from "../../EntityPool";
-import { getGameState } from "../../GameUtils";
-import { GAME_CONFIG } from "../../types/AsteroidTypes";
+import { GAME_CONFIG, type GameStateComponent } from "../../types/AsteroidTypes";
 
 describe("AsteroidCollisionSystem", () => {
   let world: World;
@@ -24,13 +23,13 @@ describe("AsteroidCollisionSystem", () => {
     const asteroid = createAsteroid({ world, x: 100, y: 100, size: "small" });
     const bullet = createBullet({ world, x: 100, y: 100, angle: 0, pool: bulletPool });
 
-    const initialScore = getGameState(world).score;
+    const initialScore = world.getSingleton<GameStateComponent>("GameState")!.score;
 
     system.update(world, 16.66);
 
     expect(world.getAllEntities()).not.toContain(asteroid);
     expect(world.getAllEntities()).not.toContain(bullet);
-    expect(getGameState(world).score).toBe(initialScore + GAME_CONFIG.ASTEROID_SCORE);
+    expect(world.getSingleton<GameStateComponent>("GameState")!.score).toBe(initialScore + GAME_CONFIG.ASTEROID_SCORE);
   });
 
   it("should split a large asteroid into two medium ones on bullet collision", () => {

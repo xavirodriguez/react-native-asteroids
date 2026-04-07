@@ -16,7 +16,14 @@ export class FlappyBirdInputSystem extends System {
     this.inputManager = inputManager;
   }
 
+  private isMultiplayer = false;
+
+  public setMultiplayerMode(active: boolean) {
+    this.isMultiplayer = active;
+  }
+
   public update(world: World, deltaTime: number): void {
+    if (this.isMultiplayer) return;
     const inputs = this.inputManager.getCombinedInputs();
     const entities = world.query("Bird", "FlappyInput", "Velocity");
 

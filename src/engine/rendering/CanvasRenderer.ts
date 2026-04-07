@@ -1,6 +1,8 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
-import { Entity, PositionComponent, RenderComponent } from "../types/EngineTypes";
+import { RandomService } from "../utils/RandomService";
+import { Entity, TransformComponent, RenderComponent, ScreenShakeComponent, AnimatorComponent, Camera2DComponent } from "../types/EngineTypes";
+import { RandomService } from "../utils/RandomService";
 
 /**
  * Procedural Canvas 2D Renderer implementation.
@@ -101,17 +103,52 @@ export class CanvasRenderer implements Renderer {
 
     ctx.save(); // Global save for potential transform effects
 
-    // Background Effects (e.g., Starfield, Screen Shake)
+    // Apply Camera transform and Screen Shake
+    // Note: Using Math.random() for visual shake to avoid gameplay seed drift
+    const cam = world.getSingleton<Camera2DComponent>("Camera2D");
+    const renderRandom = RandomService.getInstance("render");
+    if (cam) {
+      const shakeX = (RandomService.next() - 0.5) * cam.shakeIntensity;
+      const shakeY = (RandomService.next() - 0.5) * cam.shakeIntensity;
+      ctx.scale(cam.zoom, cam.zoom);
+      ctx.translate(-cam.x + shakeX, -cam.y + shakeY);
+    } else {
+      // Fallback to legacy Screen Shake if present (promoted from Asteroids to Engine)
+      const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
+      if (shake?.config && shake.config.duration > 0) {
+        const { intensity } = shake.config;
+        const shakeX = (RandomService.next() - 0.5) * intensity;
+        const shakeY = (RandomService.next() - 0.5) * intensity;
+        ctx.translate(shakeX, shakeY);
+      }
+    }
+
+    // Background Effects (e.g., Starfield)
     this.backgroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
 
-    // Render Entities
-    const entities = world.query("Position", "Render");
-    entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
-      const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (pos && render) {
-        this.drawEntity(entity, { Position: pos, Render: render }, world);
-      }
+    // Render Pipeline: Collect, Sort, Execute
+    const entities = world.query("Transform", "Render");
+
+    // Command-based sorting by zIndex
+    const renderCommands = entities.map(entity => {
+      const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
+      const render = world.getComponent<RenderComponent>(entity, "Render")!;
+      return {
+        entity,
+        pos,
+        render,
+        zIndex: render.zIndex ?? 0
+      };
+    });
+
+    renderCommands.sort((a, b) => a.zIndex - b.zIndex);
+
+    // Render Tilemaps first
+    this.drawTilemaps(world);
+
+    // Execute draw commands
+    renderCommands.forEach((cmd) => {
+      this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render }, world);
     });
 
     // Foreground Effects (e.g., CRT)
@@ -125,19 +162,73 @@ export class CanvasRenderer implements Renderer {
   public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
-    const pos = components["Position"] as PositionComponent;
+    const pos = components["Transform"] as TransformComponent;
     const render = components["Render"] as RenderComponent;
 
+    // Use world coordinates from HierarchySystem (single source of truth)
+    const x = pos.worldX !== undefined ? pos.worldX : pos.x;
+    const y = pos.worldY !== undefined ? pos.worldY : pos.y;
+    const rotation = pos.worldRotation !== undefined ? pos.worldRotation : render.rotation;
+
     ctx.save();
-    ctx.translate(pos.x, pos.y);
-    ctx.rotate(render.rotation);
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+
+    // Scale support
+    const scaleX = pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1);
+    const scaleY = pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1);
+    if (scaleX !== 1 || scaleY !== 1) {
+      ctx.scale(scaleX, scaleY);
+    }
 
     const customDrawer = this.shapeRegistry.get(render.shape);
     if (customDrawer) {
+      // Check if entity has an animator and apply frame mapping
+      const animator = world.getComponent<AnimatorComponent>(entity, "Animator");
+      if (animator) {
+        const config = animator.animations[animator.current];
+        if (config) {
+          const currentFrame = config.frames[animator.frame];
+          // We can pass frame info to drawers via custom components or extended interface
+          (render as any)._currentFrame = currentFrame;
+        }
+      }
+
       customDrawer(ctx, entity, pos, render, world);
     }
 
     ctx.restore();
+  }
+
+  public drawTilemaps(world: World): void {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const tilemaps = world.query("Tilemap");
+
+    tilemaps.forEach(entity => {
+      const tilemap = world.getComponent<TilemapComponent>(entity, "Tilemap")!;
+      const range = (tilemap as any)._visibleRange || {
+        startX: 0, startY: 0, endX: tilemap.data.width, endY: tilemap.data.height
+      };
+
+      ctx.save();
+      const tileSize = tilemap.data.tileSize;
+
+      for (const layer of tilemap.data.layers) {
+        for (let y = range.startY; y < range.endY; y++) {
+          for (let x = range.startX; x < range.endX; x++) {
+            const index = y * tilemap.data.width + x;
+            const tileId = layer.tiles[index];
+            if (tileId !== 0) {
+              // Simulating tile rendering: rectangle with color based on ID
+              ctx.fillStyle = `rgb(${(tileId * 50) % 255}, ${(tileId * 100) % 255}, ${(tileId * 150) % 255})`;
+              ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+            }
+          }
+        }
+      }
+      ctx.restore();
+    });
   }
 
   public drawParticles(world: World): void {

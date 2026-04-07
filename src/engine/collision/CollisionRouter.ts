@@ -1,6 +1,6 @@
 import Matter from "matter-js";
 import { World } from "../core/World";
-import { TagComponent } from "../core/types/CoreTypes";
+import { TagComponent } from "../types/EngineTypes";
 
 export interface CollisionEvent {
   type: string;

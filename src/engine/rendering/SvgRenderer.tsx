@@ -2,8 +2,9 @@ import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import Svg, { Polygon, Circle, Line, Rect, G, Ellipse, Polyline, Defs, Filter, FeGaussianBlur, FeMerge, FeMergeNode, LinearGradient, Stop, RadialGradient, Pattern } from "react-native-svg";
 import { World } from "../core/World";
+import { RandomService } from "../utils/RandomService";
 import {
-  type PositionComponent,
+  type TransformComponent,
   type RenderComponent,
   type HealthComponent,
   type TTLComponent,
@@ -28,7 +29,7 @@ interface SvgRendererProps {
  */
 export const SvgRenderer: React.FC<SvgRendererProps> = ({ world, width, height, customRenderers, backgroundEffects, foregroundEffects }) => {
   const renderables = useMemo(
-    () => world.query("Position", "Render"),
+    () => world.query("Transform", "Render"),
     [world.version]
   );
 
@@ -65,8 +66,8 @@ const WorldView: React.FC<WorldViewProps> = ({ world, width, height, renderables
   let transform = "";
   if (gameState?.screenShake && (gameState.screenShake.duration > 0 || gameState.screenShake.framesLeft > 0)) {
     const intensity = gameState.screenShake.intensity || 5;
-    const dx = (Math.random() - 0.5) * intensity;
-    const dy = (Math.random() - 0.5) * intensity;
+    const dx = (RandomService.next() - 0.5) * intensity;
+    const dy = (RandomService.next() - 0.5) * intensity;
     transform = `translate(${dx}, ${dy})`;
   }
 
@@ -120,7 +121,7 @@ interface EntityRendererProps {
 }
 
 const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world, width, height, customRenderers }) => {
-  const pos = world.getComponent<PositionComponent>(entity, "Position");
+  const pos = world.getComponent<TransformComponent>(entity, "Transform");
   const render = world.getComponent<RenderComponent>(entity, "Render");
 
   if (!pos || !render) return <></>;
@@ -145,7 +146,7 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world, width, h
   );
 };
 
-const calculateMotionBlur = (world: World, entity: number, pos: PositionComponent, render: RenderComponent) => {
+const calculateMotionBlur = (world: World, entity: number, pos: TransformComponent, render: RenderComponent) => {
   const vel = world.getComponent<{type: string, dx: number, dy: number}>(entity, "Velocity");
   if (!vel || !render.trailPositions || render.trailPositions.length < 3) return [];
 
@@ -155,11 +156,11 @@ const calculateMotionBlur = (world: World, entity: number, pos: PositionComponen
   return render.trailPositions
     .slice(-4, -1)
     .reverse()
-    .map((p) => ({ ...pos, x: p.x, y: p.y } as PositionComponent));
+    .map((p) => ({ ...pos, x: p.x, y: p.y } as TransformComponent));
 };
 
-const calculateGhosts = (pos: PositionComponent, size: number, w: number, h: number) => {
-  const ghosts: PositionComponent[] = [];
+const calculateGhosts = (pos: TransformComponent, size: number, w: number, h: number) => {
+  const ghosts: TransformComponent[] = [];
   const margin = size * 2;
 
   const nearLeft = pos.x < margin;
@@ -183,7 +184,7 @@ const calculateGhosts = (pos: PositionComponent, size: number, w: number, h: num
 const renderByShape = (params: {
   entity: number;
   world: World;
-  pos: PositionComponent;
+  pos: TransformComponent;
   render: RenderComponent;
   customRenderers?: Record<string, (params: any) => React.ReactElement>;
 }) => {
@@ -208,7 +209,7 @@ const renderByShape = (params: {
 };
 
 const renderLineShape = (params: {
-  pos: PositionComponent;
+  pos: TransformComponent;
   render: RenderComponent;
 }) => {
   const { pos, render } = params;
@@ -224,7 +225,7 @@ const renderLineShape = (params: {
 };
 
 const renderCircleShape = (params: {
-  pos: PositionComponent;
+  pos: TransformComponent;
   render: RenderComponent;
 }) => {
   const { pos, render } = params;
@@ -240,7 +241,7 @@ const renderCircleShape = (params: {
 };
 
 const renderPolygonShape = (params: {
-  pos: PositionComponent;
+  pos: TransformComponent;
   render: RenderComponent;
 }) => (
   <PolygonRenderer
@@ -257,7 +258,7 @@ const renderPolygonShape = (params: {
 const renderParticleShape = (params: {
   entity: number;
   world: World;
-  pos: PositionComponent;
+  pos: TransformComponent;
   render: RenderComponent;
 }) => {
   const { entity, world, pos, render } = params;
@@ -342,8 +343,8 @@ const ParticleRenderer: React.FC<{
 
   // Dynamic color transition (White -> Orange -> Red)
   const variation = (seed * 13) % 20 - 10;
-  let hue = 20 + variation;
-  let lightness = 50 + (1 - alpha) * 50;
+  const hue = 20 + variation;
+  const lightness = 50 + (1 - alpha) * 50;
 
   const fill = `hsl(${hue}, 100%, ${lightness}%)`;
   const currentSize = size * (0.2 + 0.8 * alpha);

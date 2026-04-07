@@ -1,8 +1,8 @@
 import { World } from "../../../../engine/core/World";
 import { AsteroidGameStateSystem } from "../AsteroidGameStateSystem";
 import { createGameState, createAsteroid, createShip } from "../../EntityFactory";
-import { getGameState } from "../../GameUtils";
 import { HealthComponent } from "../../../../engine/types/EngineTypes";
+import { type GameStateComponent } from "../../types/AsteroidTypes";
 
 describe("AsteroidGameStateSystem", () => {
   let world: World;
@@ -16,7 +16,7 @@ describe("AsteroidGameStateSystem", () => {
   });
 
   it("should update asteroid count correctly", () => {
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<GameStateComponent>("GameState")!;
     expect(gameState.asteroidsRemaining).toBe(0);
 
     createAsteroid({ world, x: 100, y: 100, size: "large" });
@@ -28,7 +28,7 @@ describe("AsteroidGameStateSystem", () => {
   });
 
   it("should advance level and spawn asteroids when all are destroyed", () => {
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<GameStateComponent>("GameState")!;
     gameState.level = 1;
 
     // Ensure world is empty of asteroids
@@ -47,7 +47,7 @@ describe("AsteroidGameStateSystem", () => {
   });
 
   it("should trigger game over when player loses all lives", () => {
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<GameStateComponent>("GameState")!;
     const ship = createShip({ world, x: 400, y: 300 });
     const health = world.getComponent<HealthComponent>(ship, "Health")!;
 
@@ -63,7 +63,7 @@ describe("AsteroidGameStateSystem", () => {
   });
 
   it("should reset game over state when requested", () => {
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<GameStateComponent>("GameState")!;
     const ship = createShip({ world, x: 400, y: 300 });
     const health = world.getComponent<HealthComponent>(ship, "Health")!;
 

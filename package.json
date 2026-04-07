@@ -8,12 +8,19 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
-    "lint": "eslint . --ext .ts,.tsx --fix"
+    "lint": "eslint . --ext .ts,.tsx --fix",
+    "build:dev": "eas build --profile development --platform all",
+    "build:preview": "eas build --profile preview --platform all",
+    "build:prod": "eas build --profile production --platform all",
+    "deploy:preview": "eas update --branch preview --message 'Preview deploy'",
+    "deploy:prod": "eas update --branch production --message 'Production deploy'",
+    "deploy:dev": "eas update --branch development --message 'Dev deploy'"
   },
   "jest": {
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@colyseus/sdk": "^0.17.37",
     "@expo/dom-webview": "^0.1.5",
     "@expo/metro-runtime": "~55.0.6",
     "@expo/ngrok": "4.1.0",
@@ -33,7 +40,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
-    "expo": "^55.0.7",
+    "expo": "~55.0.7",
     "expo-constants": "~55.0.8",
     "expo-dev-client": "~55.0.17",
     "expo-font": "~55.0.4",

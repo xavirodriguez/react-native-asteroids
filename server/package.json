@@ -1,0 +1,20 @@
+{
+  "name": "asteroides-server",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "npx tsx src/index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@colyseus/core": "^0.17.0",
+    "@colyseus/schema": "^4.0.19",
+    "@colyseus/ws-transport": "^0.17.0",
+    "colyseus": "^0.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "tsx": "^4.x",
+    "typescript": "^5.x"
+  }
+}

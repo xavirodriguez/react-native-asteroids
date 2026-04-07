@@ -21,7 +21,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
 
   protected initializeEntities(): void {
     const ball = this.world.createEntity();
-    this.world.addComponent(ball, { type: "Position", x: 400, y: 300 });
+    this.world.addComponent(ball, { type: "Transform", x: 400, y: 300 });
     this.world.addComponent(ball, { type: "Velocity", dx: 100, dy: 100 });
     this.world.addComponent(ball, { type: "Render", shape: "circle", size: 10, color: "white", rotation: 0 });
     this.world.addComponent(ball, { type: "Collider", radius: 10 });

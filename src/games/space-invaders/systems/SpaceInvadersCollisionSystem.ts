@@ -1,11 +1,10 @@
-import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
+import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
+import { Entity } from "../../../engine/types/EngineTypes";
 import {
-  PositionComponent,
-  ColliderComponent,
+  TransformComponent,
   HealthComponent,
   RenderComponent,
-  ReclaimableComponent
 } from "../../../engine/types/EngineTypes";
 import {
   GameStateComponent,
@@ -16,11 +15,12 @@ import {
 import { getGameState } from "../GameUtils";
 import { ParticlePool } from "../EntityPool";
 import { createParticle } from "../EntityFactory";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 /**
  * System that handles all game collisions.
  */
-export class SpaceInvadersCollisionSystem extends System {
+export class SpaceInvadersCollisionSystem extends CollisionSystem {
   private particlePool: ParticlePool;
 
   constructor(particlePool: ParticlePool) {
@@ -28,68 +28,53 @@ export class SpaceInvadersCollisionSystem extends System {
     this.particlePool = particlePool;
   }
 
-  public update(world: World, _deltaTime: number): void {
-    const collidables = world.query("Position", "Collider");
-    const gameState = getGameState(world);
+  protected onCollision(world: World, e1: Entity, e2: Entity): void {
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
+    if (!gameState || gameState.isGameOver) return;
 
-    if (gameState.isGameOver) return;
+    this.handleCollision(world, e1, e2, gameState);
+  }
 
-    // Standard O(n^2) collision for simplicity, can be optimized later
-    for (let i = 0; i < collidables.length; i++) {
-      for (let j = i + 1; j < collidables.length; j++) {
-        const e1 = collidables[i];
-        const e2 = collidables[j];
+  public override update(world: World, deltaTime: number): void {
+    super.update(world, deltaTime);
 
-        if (this.checkCollision(world, e1, e2)) {
-          this.handleCollision(world, e1, e2, gameState);
-        }
-      }
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
+    if (gameState) {
+      // Special check: Invaders reaching the bottom
+      this.checkInvadersBottom(world, gameState);
     }
-
-    // Special check: Invaders reaching the bottom
-    this.checkInvadersBottom(world, gameState);
   }
 
-  private checkCollision(world: World, e1: number, e2: number): boolean {
-    const p1 = world.getComponent<PositionComponent>(e1, "Position");
-    const c1 = world.getComponent<ColliderComponent>(e1, "Collider");
-    const p2 = world.getComponent<PositionComponent>(e2, "Position");
-    const c2 = world.getComponent<ColliderComponent>(e2, "Collider");
-
-    if (!p1 || !c1 || !p2 || !c2) return false;
-
-    const dx = p1.x - p2.x;
-    const dy = p1.y - p2.y;
-    const distanceSq = dx * dx + dy * dy;
-    const radiusSum = c1.radius + c2.radius;
-
-    return distanceSq < radiusSum * radiusSum;
-  }
-
-  private handleCollision(world: World, e1: number, e2: number, gameState: GameStateComponent): void {
-    this.matchPair(world, e1, e2, "PlayerBullet", "Invader", (bullet, invader) => {
+  private handleCollision(world: World, e1: Entity, e2: Entity, gameState: GameStateComponent): void {
+    const invaderBullet = this.matchPair(world, e1, e2, "PlayerBullet", "Invader");
+    if (invaderBullet) {
+      const { PlayerBullet: bullet, Invader: invader } = invaderBullet;
       const invaderComp = world.getComponent<InvaderComponent>(invader, "Invader");
-      if (!invaderComp) return;
-      gameState.score += invaderComp.points;
+      if (invaderComp) {
+        gameState.score += invaderComp.points;
+      }
 
-      const pos = world.getComponent<PositionComponent>(invader, "Position");
+      const pos = world.getComponent<TransformComponent>(invader, "Transform");
       if (pos) this.createExplosion(world, pos.x, pos.y, "#FFFFFF");
 
       this.destroyEntity(world, invader);
-      this.reclaimEntity(world, bullet);
-    });
+      this.destroyEntity(world, bullet);
+      return;
+    }
 
-    this.matchPair(world, e1, e2, "PlayerBullet", "Shield", (bullet, shield) => {
+    const bulletShield = this.matchPair(world, e1, e2, "PlayerBullet", "Shield") ||
+                        this.matchPair(world, e1, e2, "EnemyBullet", "Shield");
+    if (bulletShield) {
+      const bullet = (bulletShield as any).PlayerBullet || (bulletShield as any).EnemyBullet;
+      const shield = (bulletShield as any).Shield;
       this.damageShield(world, shield);
-      this.reclaimEntity(world, bullet);
-    });
+      this.destroyEntity(world, bullet);
+      return;
+    }
 
-    this.matchPair(world, e1, e2, "EnemyBullet", "Shield", (bullet, shield) => {
-      this.damageShield(world, shield);
-      this.reclaimEntity(world, bullet);
-    });
-
-    this.matchPair(world, e1, e2, "EnemyBullet", "Player", (bullet, player) => {
+    const enemyBulletPlayer = this.matchPair(world, e1, e2, "EnemyBullet", "Player");
+    if (enemyBulletPlayer) {
+      const { EnemyBullet: bullet, Player: player } = enemyBulletPlayer;
       const health = world.getComponent<HealthComponent>(player, "Health");
       if (health && health.invulnerableRemaining <= 0) {
         health.current -= 1;
@@ -99,43 +84,26 @@ export class SpaceInvadersCollisionSystem extends System {
         if (render) render.hitFlashFrames = 10;
 
         gameState.lives = health.current;
-        gameState.screenShake = { intensity: 10, duration: 20 };
+        gameState.screenShake = { intensity: 10, duration: 300 };
 
         if (health.current <= 0) {
           gameState.isGameOver = true;
         }
       }
-      this.reclaimEntity(world, bullet);
-    });
-
-    this.matchPair(world, e1, e2, "Invader", "Player", (_invader, _player) => {
-      gameState.isGameOver = true;
-    });
-
-    this.matchPair(world, e1, e2, "Invader", "Shield", (_invader, shield) => {
-      this.destroyEntity(world, shield);
-    });
-  }
-
-  private matchPair(
-    world: World,
-    e1: number,
-    e2: number,
-    type1: string,
-    type2: string,
-    handler: (entity1: number, entity2: number) => void
-  ): void {
-    const has1 = world.getComponent(e1, type1);
-    const has2 = world.getComponent(e2, type2);
-    if (has1 && has2) {
-      handler(e1, e2);
+      this.destroyEntity(world, bullet);
       return;
     }
 
-    const hasR1 = world.getComponent(e1, type2);
-    const hasR2 = world.getComponent(e2, type1);
-    if (hasR1 && hasR2) {
-      handler(e2, e1);
+    const invaderPlayer = this.matchPair(world, e1, e2, "Invader", "Player");
+    if (invaderPlayer) {
+      gameState.isGameOver = true;
+      return;
+    }
+
+    const invaderShield = this.matchPair(world, e1, e2, "Invader", "Shield");
+    if (invaderShield) {
+      this.destroyEntity(world, invaderShield.Shield);
+      return;
     }
   }
 
@@ -152,22 +120,11 @@ export class SpaceInvadersCollisionSystem extends System {
     }
   }
 
-  private destroyEntity(world: World, entity: number): void {
-    world.removeEntity(entity);
-  }
-
-  private reclaimEntity(world: World, entity: number): void {
-    const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
-    if (reclaimable) {
-      reclaimable.onReclaim(world, entity);
-    }
-    world.removeEntity(entity);
-  }
 
   private createExplosion(world: World, x: number, y: number, color: string): void {
     for (let i = 0; i < GAME_CONFIG.PARTICLE_COUNT; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 100 + 50;
+      const angle = RandomService.next() * Math.PI * 2;
+      const speed = RandomService.next() * 100 + 50;
       createParticle(
         world,
         x,
@@ -181,11 +138,11 @@ export class SpaceInvadersCollisionSystem extends System {
   }
 
   private checkInvadersBottom(world: World, gameState: GameStateComponent): void {
-    const invaders = world.query("Invader", "Position");
+    const invaders = world.query("Invader", "Transform");
     const limit = GAME_CONFIG.SCREEN_HEIGHT - 100;
 
     for (const invader of invaders) {
-      const pos = world.getComponent<PositionComponent>(invader, "Position");
+      const pos = world.getComponent<TransformComponent>(invader, "Transform");
       if (pos && pos.y > limit) {
         gameState.isGameOver = true;
         break;

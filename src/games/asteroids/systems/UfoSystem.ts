@@ -1,6 +1,6 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
-import { PositionComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
 import { UfoComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 
 /**
@@ -9,11 +9,11 @@ import { UfoComponent, GAME_CONFIG } from "../types/AsteroidTypes";
  */
 export class UfoSystem extends System {
   public update(world: World, deltaTime: number): void {
-    const ufos = world.query("Ufo", "Position", "Velocity");
+    const ufos = world.query("Ufo", "Transform", "Velocity");
     const dt = deltaTime / 1000;
 
     ufos.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
       const ufo = world.getComponent<UfoComponent>(entity, "Ufo");
 

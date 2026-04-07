@@ -1,7 +1,7 @@
 import { World } from "../../engine/core/World"
 import { type Entity, GAME_CONFIG } from "../../types/GameTypes"
 import { BulletPool, ParticlePool } from "./EntityPool"
-import { generateStarField } from "../../game/StarField"
+import { generateStarField } from "../../engine/rendering/StarField"
 import { RandomService } from "../../engine/utils/RandomService"
 
 /**
@@ -72,14 +72,25 @@ function addShipMovementComponents(config: {
   y: number
 }): void {
   const { world, ship, x, y } = config
-  world.addComponent(ship, { type: "Position", x, y })
+  world.addComponent(ship, { type: "Transform", x, y })
   world.addComponent(ship, { type: "Velocity", dx: 0, dy: 0 })
+  world.addComponent(ship, {
+    type: "Friction",
+    value: GAME_CONFIG.SHIP_FRICTION,
+  })
+  world.addComponent(ship, {
+    type: "Boundary",
+    width: GAME_CONFIG.SCREEN_WIDTH,
+    height: GAME_CONFIG.SCREEN_HEIGHT,
+    mode: "wrap",
+  })
   world.addComponent(ship, {
     type: "Render",
     shape: "triangle",
     size: GAME_CONFIG.SHIP_RENDER_SIZE,
     color: "#CCCCCC",
     rotation: 0,
+    trailPositions: [],
   })
 }
 
@@ -95,7 +106,6 @@ function addShipMetaComponents(config: { world: World; ship: Entity }): void {
     type: "Ship",
     hyperspaceTimer: 0,
     hyperspaceCooldownRemaining: 0,
-    trailPositions: [], // Improvement 2: Ship trail positions
   })
   world.addComponent(ship, { type: "Collider", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS })
 }
@@ -146,11 +156,17 @@ function addAsteroidMovementComponents(config: {
   y: number
 }): void {
   const { world, asteroid, x, y } = config
-  world.addComponent(asteroid, { type: "Position", x, y })
+  world.addComponent(asteroid, { type: "Transform", x, y })
   world.addComponent(asteroid, {
     type: "Velocity",
     dx: (RandomService.next() - 0.5) * 100,
     dy: (RandomService.next() - 0.5) * 100,
+  })
+  world.addComponent(asteroid, {
+    type: "Boundary",
+    width: GAME_CONFIG.SCREEN_WIDTH,
+    height: GAME_CONFIG.SCREEN_HEIGHT,
+    mode: "wrap",
   })
 }
 
@@ -234,9 +250,14 @@ export function createGameState(config: { world: World }): Entity {
     asteroidsRemaining: 0,
     isGameOver: false,
     stars,
-    screenShake: null, // Improvement 4: Screen shake
     debugCRT: true, // Improvement 10: Enable CRT effects by default
   })
+
+  world.addComponent(gameState, {
+    type: "ScreenShake",
+    config: null,
+  })
+
   return gameState
 }
 
@@ -275,8 +296,14 @@ export function createParticle(options: CreateParticleParams): Entity {
  */
 export function createUfo(world: World, x: number, y: number): Entity {
   const ufo = world.createEntity();
-  world.addComponent(ufo, { type: "Position", x, y });
+  world.addComponent(ufo, { type: "Transform", x, y });
   world.addComponent(ufo, { type: "Velocity", dx: 80, dy: 0 });
+  world.addComponent(ufo, {
+    type: "Boundary",
+    width: GAME_CONFIG.SCREEN_WIDTH,
+    height: GAME_CONFIG.SCREEN_HEIGHT,
+    mode: "destroy",
+  });
   world.addComponent(ufo, {
     type: "Render",
     shape: "ufo",

@@ -4,7 +4,7 @@ import {
   type InputComponent,
   type VelocityComponent,
   type RenderComponent,
-  type PositionComponent,
+  type TransformComponent,
   type InputState,
   GAME_CONFIG,
 } from "../../../types/GameTypes";
@@ -53,8 +53,15 @@ export class AsteroidInputSystem extends System {
    * @param world - The ECS world.
    * @param deltaTime - Time since last frame in milliseconds.
    */
+  private isMultiplayer = false;
+
+  public setMultiplayerMode(active: boolean) {
+    this.isMultiplayer = active;
+  }
+
   public update(world: World, deltaTime: number): void {
-    const ships = world.query("Ship", "Input", "Position", "Velocity", "Render");
+    if (this.isMultiplayer) return; // Inputs handled by React hook in multiplayer
+    const ships = world.query("Ship", "Input", "Transform", "Velocity", "Render");
     ships.forEach((entity) => this.updateShipEntity({ world, entity, deltaTime }));
   }
 

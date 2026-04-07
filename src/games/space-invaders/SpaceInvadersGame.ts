@@ -7,7 +7,6 @@ import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
 import { SpaceInvadersGameScene } from "./scenes/SpaceInvadersGameScene";
 import { Renderer } from "../../engine/rendering/Renderer";
-import { getGameState } from "./GameUtils";
 import {
   drawSpaceInvadersPlayer,
   drawSpaceInvadersInvader,
@@ -28,45 +27,16 @@ export class SpaceInvadersGame
   private enemyBulletPool: EnemyBulletPool;
   private particlePool: ParticlePool;
 
-  constructor() {
+  constructor(config: { isMultiplayer?: boolean } = {}) {
     super({
       pauseKey: GAME_CONFIG.KEYS.PAUSE,
-      restartKey: GAME_CONFIG.KEYS.RESTART
+      restartKey: GAME_CONFIG.KEYS.RESTART,
+      isMultiplayer: config.isMultiplayer
     });
   }
 
   protected registerSystems(): void {
-    if (!this.playerBulletPool) this.playerBulletPool = new PlayerBulletPool();
-    if (!this.enemyBulletPool) this.enemyBulletPool = new EnemyBulletPool();
-    if (!this.particlePool) this.particlePool = new ParticlePool();
-
-    const DEFAULT_INPUT: InputState = {
-      moveLeft: false,
-      moveRight: false,
-      shoot: false
-    };
-
-    const SI_KEYMAP = {
-      [GAME_CONFIG.KEYS.LEFT]: "moveLeft" as const,
-      [GAME_CONFIG.KEYS.RIGHT]: "moveRight" as const,
-      [GAME_CONFIG.KEYS.SHOOT]: "shoot" as const,
-    };
-
-    // Ensure controllers are not duplicated on restart
-    this.inputManager.cleanup();
-    this.inputManager.addController(new KeyboardController<InputState>(SI_KEYMAP, DEFAULT_INPUT));
-    this.inputManager.addController(new TouchController<InputState>());
-
-    // We use a scene to manage systems and entities
-    const gameScene = new SpaceInvadersGameScene(
-      this,
-      this.inputManager,
-      this.playerBulletPool,
-      this.enemyBulletPool,
-      this.particlePool
-    );
-
-    this.sceneManager.transitionTo(gameScene);
+    this.registerSystemsAsync().catch(console.error);
   }
 
   protected initializeEntities(): void {
@@ -87,7 +57,7 @@ export class SpaceInvadersGame
 
   public getGameState(): GameStateComponent {
     const world = this.getWorld();
-    return getGameState(world);
+    return world.getSingleton<GameStateComponent>("GameState") || INITIAL_GAME_STATE;
   }
 
   public getWorld(): World {
@@ -95,19 +65,84 @@ export class SpaceInvadersGame
     return this.sceneManager.getCurrentScene()?.getWorld() || this.world;
   }
 
+  public setMultiplayerMode(active: boolean) {
+    this.isMultiplayer = active;
+  }
+
+  public updateFromServer(state: any) {
+    if (!this.isMultiplayer || !state) return;
+    const world = this.getWorld();
+    world.clear();
+
+    if (state.players) {
+      state.players.forEach((player: any) => {
+        const p = world.createEntity();
+        world.addComponent(p, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 });
+        world.addComponent(p, { type: "Render", shape: "player_ship", size: 20, color: player.alive ? "green" : "red", rotation: 0 });
+        world.addComponent(p, { type: "Player" });
+      });
+    }
+
+    if (state.invaders) {
+      state.invaders.forEach((invader: any) => {
+        if (!invader.alive) return;
+        const i = world.createEntity();
+        world.addComponent(i, { type: "Transform", x: invader.x, y: invader.y, rotation: 0, scaleX: 1, scaleY: 1 });
+        world.addComponent(i, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 });
+        world.addComponent(i, { type: "Invader", row: 0, col: 0, points: 10 });
+      });
+    }
+  }
+
   public isGameOver(): boolean {
     return this.getGameState().isGameOver;
   }
 
-  protected _onBeforeRestart(): void {
-    this.registerSystems();
+  protected async _onBeforeRestart(): Promise<void> {
+    // During restart, we DO want to await the full transition
+    await this.registerSystemsAsync();
+  }
+
+  /**
+   * Async version of registerSystems for use in restart()
+   */
+  private async registerSystemsAsync(): Promise<void> {
+    if (!this.playerBulletPool) this.playerBulletPool = new PlayerBulletPool();
+    if (!this.enemyBulletPool) this.enemyBulletPool = new EnemyBulletPool();
+    if (!this.particlePool) this.particlePool = new ParticlePool();
+
+    const DEFAULT_INPUT: InputState = {
+      moveLeft: false,
+      moveRight: false,
+      shoot: false
+    };
+
+    const SI_KEYMAP = {
+      [GAME_CONFIG.KEYS.LEFT]: "moveLeft" as const,
+      [GAME_CONFIG.KEYS.RIGHT]: "moveRight" as const,
+      [GAME_CONFIG.KEYS.SHOOT]: "shoot" as const,
+    };
+
+    this.inputManager.cleanup();
+    this.inputManager.addController(new KeyboardController<InputState>(SI_KEYMAP, DEFAULT_INPUT));
+    this.inputManager.addController(new TouchController<InputState>());
+
+    const gameScene = new SpaceInvadersGameScene(
+      this,
+      this.inputManager,
+      this.playerBulletPool,
+      this.enemyBulletPool,
+      this.particlePool
+    );
+
+    await this.sceneManager.transitionTo(gameScene);
   }
 }
 
 export class NullSpaceInvadersGame implements ISpaceInvadersGame {
   private _world = new World();
   public start() {} public stop() {} public pause() {} public resume() {}
-  public restart() {} public destroy() {}
+  public async restart() {} public destroy() {}
   public getWorld() { return this._world; }
   public isPausedState() { return false; }
   public isGameOver() { return false; }

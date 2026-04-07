@@ -1,12 +1,12 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
-import { PositionComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent } from "../../../engine/types/EngineTypes";
 import {
   PipeComponent,
-  FLAPPY_CONFIG
+  FLAPPY_CONFIG,
+  FlappyBirdState
 } from "../types/FlappyBirdTypes";
 import { IFlappyBirdGame, IFlappyStateSystem } from "../types/GameInterfaces";
-import { getGameState } from "../GameUtils";
 import { createPipe } from "../EntityFactory";
 import { RandomService } from "../../../engine/utils/RandomService";
 
@@ -24,7 +24,8 @@ export class FlappyBirdGameStateSystem extends System implements IFlappyStateSys
   }
 
   public update(world: World, deltaTime: number): void {
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
+    if (!gameState) return;
 
     if (gameState.isGameOver) {
       if (!this.gameOverLogged) {
@@ -48,9 +49,9 @@ export class FlappyBirdGameStateSystem extends System implements IFlappyStateSys
     }
 
     // Remove pipes that are off-screen and update score
-    const pipes = world.query("Pipe", "Position");
+    const pipes = world.query("Pipe", "Transform");
     pipes.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const pipe = world.getComponent<PipeComponent>(entity, "Pipe");
       if (pos && pipe) {
         if (pos.x < -FLAPPY_CONFIG.PIPE_WIDTH) {

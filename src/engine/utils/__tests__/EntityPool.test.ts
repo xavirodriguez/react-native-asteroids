@@ -1,6 +1,6 @@
 import { World } from "../../core/World";
 import { EntityPool } from "../EntityPool";
-import { PositionComponent, TTLComponent, ReclaimableComponent } from "../../types/EngineTypes";
+import { TransformComponent, TTLComponent, ReclaimableComponent } from "../../types/EngineTypes";
 
 describe("EntityPool", () => {
   let world: World;
@@ -10,7 +10,7 @@ describe("EntityPool", () => {
   });
 
   interface TestComponents {
-    position: PositionComponent;
+    position: TransformComponent;
     ttl: TTLComponent;
     reclaimable: ReclaimableComponent;
   }
@@ -18,7 +18,7 @@ describe("EntityPool", () => {
   it("should acquire an entity with components", () => {
     const pool = new EntityPool<TestComponents>(
       () => ({
-        position: { type: "Position", x: 0, y: 0 },
+        position: { type: "Transform", x: 0, y: 0 },
         ttl: { type: "TTL", remaining: 10, total: 10 },
         reclaimable: { type: "Reclaimable", onReclaim: () => {} }
       }),
@@ -31,7 +31,7 @@ describe("EntityPool", () => {
     const { entity, components } = pool.acquire(world);
 
     expect(entity).toBeDefined();
-    expect(world.hasComponent(entity, "Position")).toBe(true);
+    expect(world.hasComponent(entity, "Transform")).toBe(true);
     expect(world.hasComponent(entity, "TTL")).toBe(true);
     expect(world.hasComponent(entity, "Reclaimable")).toBe(true);
     expect(components.position.x).toBe(0);
@@ -43,7 +43,7 @@ describe("EntityPool", () => {
       () => {
         factoryCount++;
         return {
-          position: { type: "Position", x: 0, y: 0 },
+          position: { type: "Transform", x: 0, y: 0 },
           ttl: { type: "TTL", remaining: 10, total: 10 },
           reclaimable: { type: "Reclaimable", onReclaim: () => {} }
         };
@@ -80,7 +80,7 @@ describe("EntityPool", () => {
   it("should automatically wire up Reclaimable component", () => {
     const pool = new EntityPool<TestComponents>(
       () => ({
-        position: { type: "Position", x: 0, y: 0 },
+        position: { type: "Transform", x: 0, y: 0 },
         ttl: { type: "TTL", remaining: 10, total: 10 },
         reclaimable: { type: "Reclaimable", onReclaim: () => {} }
       }),

@@ -1,6 +1,6 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
-import { PositionComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent } from "../../../engine/types/EngineTypes";
 import { FormationComponent, InvaderComponent, GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { EnemyBulletPool } from "../EntityPool";
 import { createEnemyBullet } from "../EntityFactory";
@@ -25,7 +25,7 @@ export class SpaceInvadersFormationSystem extends System {
     const formation = world.getComponent<FormationComponent>(formationEntity, "Formation");
     if (!formation) return;
 
-    const invaders = world.query("Invader", "Position");
+    const invaders = world.query("Invader", "Transform");
     if (invaders.length === 0) return;
 
     // 1. Calculate current speed based on remaining invaders
@@ -39,7 +39,7 @@ export class SpaceInvadersFormationSystem extends System {
 
     if (formation.stepDownPending) {
       invaders.forEach(entity => {
-        const pos = world.getComponent<PositionComponent>(entity, "Position");
+        const pos = world.getComponent<TransformComponent>(entity, "Transform");
         if (pos) {
           pos.y += formation.descentStep;
         }
@@ -49,7 +49,7 @@ export class SpaceInvadersFormationSystem extends System {
     } else {
       const moveX = formation.direction * formation.speed * (deltaTime / 1000);
       invaders.forEach(entity => {
-        const pos = world.getComponent<PositionComponent>(entity, "Position");
+        const pos = world.getComponent<TransformComponent>(entity, "Transform");
         if (pos) {
           pos.x += moveX;
           if (pos.x < margin || pos.x > GAME_CONFIG.SCREEN_WIDTH - margin) {
@@ -80,7 +80,7 @@ export class SpaceInvadersFormationSystem extends System {
 
     invaderEntities.forEach(entity => {
       const invader = world.getComponent<InvaderComponent>(entity, "Invader");
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const pos = world.getComponent<TransformComponent>(entity, "Transform");
       if (invader && pos) {
         const existing = columns.get(invader.col);
         if (!existing || pos.y > existing.y) {
@@ -92,7 +92,7 @@ export class SpaceInvadersFormationSystem extends System {
     const activeColumns = Array.from(columns.values());
     if (activeColumns.length > 0) {
       const shooter = activeColumns[RandomService.nextInt(0, activeColumns.length)];
-      const shooterPos = world.getComponent<PositionComponent>(shooter.entity, "Position");
+      const shooterPos = world.getComponent<TransformComponent>(shooter.entity, "Transform");
       if (shooterPos) {
         createEnemyBullet(world, shooterPos.x, shooterPos.y + 15, this.enemyBulletPool);
       }

@@ -1,6 +1,7 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { PositionComponent, HealthComponent, TTLComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent, HealthComponent, TTLComponent } from "../../../engine/types/EngineTypes";
 import { Platform } from "react-native";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 // Lazy initialize paint to avoid issues in environments where Skia is not fully ready at module load time
 let paint: any = null;
@@ -127,9 +128,9 @@ export const skiaStarfieldEffect: EffectDrawer<any> = (canvas, world, width, hei
         const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
 
         if (gameState?.stars) {
-            const shipEntity = world.query("Ship", "Position")[0];
+            const shipEntity = world.query("Ship", "Transform")[0];
             const shipPos = shipEntity
-              ? world.getComponent<PositionComponent>(shipEntity, "Position")
+              ? world.getComponent<TransformComponent>(shipEntity, "Transform")
               : { x: width / 2, y: height / 2 };
 
             if (!shipPos) return;
@@ -158,8 +159,8 @@ export const skiaScreenShakeEffect: EffectDrawer<any> = (canvas, world) => {
         const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
 
         if (gameState?.screenShake && gameState.screenShake.duration > 0) {
-          const shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
-          const shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
+          const shakeX = (RandomService.next() - 0.5) * gameState.screenShake.intensity;
+          const shakeY = (RandomService.next() - 0.5) * gameState.screenShake.intensity;
           canvas.translate(shakeX, shakeY);
         }
     } catch (e) {}
