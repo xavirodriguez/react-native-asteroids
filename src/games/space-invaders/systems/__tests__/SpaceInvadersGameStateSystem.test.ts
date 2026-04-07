@@ -2,7 +2,8 @@ import { World } from "../../../../engine/core/World";
 import { SpaceInvadersGame, NullSpaceInvadersGame } from "../../SpaceInvadersGame";
 import { SpaceInvadersGameStateSystem } from "../SpaceInvadersGameStateSystem";
 import { createGameState, spawnInvaderWave } from "../../EntityFactory";
-import { getGameState } from "../../GameUtils";
+import { GameStateComponent } from "../../types/SpaceInvadersTypes";
+import { ISpaceInvadersGame } from "../../types/GameInterfaces";
 
 describe("SpaceInvadersGameStateSystem", () => {
   let world: World;
@@ -19,7 +20,7 @@ describe("SpaceInvadersGameStateSystem", () => {
 
   it("should initialize with level 1", () => {
     createGameState(world);
-    const state = getGameState(world);
+    const state = world.getSingleton<GameStateComponent>("GameState")!;
     expect(state.level).toBe(1);
     expect(state.isGameOver).toBe(false);
   });
@@ -27,7 +28,7 @@ describe("SpaceInvadersGameStateSystem", () => {
   it("should increment level when no invaders remain", async () => {
     // Manually set up world for test
     createGameState(world);
-    const state = getGameState(world);
+    const state = world.getSingleton<GameStateComponent>("GameState")!;
     state.level = 1;
 
     // First update: count is 0, so it should increment level to 2 and spawn wave
@@ -43,7 +44,7 @@ describe("SpaceInvadersGameStateSystem", () => {
 
   it("should detect game over when lives reach 0", () => {
     createGameState(world);
-    const state = getGameState(world);
+    const state = world.getSingleton<GameStateComponent>("GameState")!;
     state.lives = 0;
     state.isGameOver = true;
 

@@ -1,9 +1,8 @@
 import { World } from "../../../../engine/core/World";
 import { FlappyBirdCollisionSystem } from "../FlappyBirdCollisionSystem";
 import { createBird, createPipe, createGameState } from "../../EntityFactory";
-import { FLAPPY_CONFIG } from "../../types/FlappyBirdTypes";
+import { FLAPPY_CONFIG, FlappyBirdState } from "../../types/FlappyBirdTypes";
 import { IFlappyBirdGame } from "../../types/GameInterfaces";
-import { getGameState } from "../../GameUtils";
 
 describe("FlappyBirdCollisionSystem", () => {
   let world: World;
@@ -29,7 +28,7 @@ describe("FlappyBirdCollisionSystem", () => {
 
     system.update(world, 16.6);
 
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<FlappyBirdState>("FlappyState")!;
     expect(gameState.isGameOver).toBe(true);
     expect(mockGame.pause).toHaveBeenCalled();
   });
@@ -42,7 +41,7 @@ describe("FlappyBirdCollisionSystem", () => {
 
     system.update(world, 16.6);
 
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<FlappyBirdState>("FlappyState")!;
     expect(gameState.isGameOver).toBe(false);
   });
 
@@ -55,7 +54,7 @@ describe("FlappyBirdCollisionSystem", () => {
 
     system.update(world, 16.6);
 
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<FlappyBirdState>("FlappyState")!;
     expect(gameState.isGameOver).toBe(true);
   });
 });
