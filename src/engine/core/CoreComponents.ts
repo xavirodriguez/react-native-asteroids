@@ -1,6 +1,8 @@
 import { Component } from "./Component";
 import { Entity } from "./Entity";
 
+export { Entity };
+
 /**
  * Components provided by the engine as reusable primitives.
  */

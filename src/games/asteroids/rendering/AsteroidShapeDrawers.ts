@@ -1,5 +1,6 @@
 import { World } from "../../../engine/core/World";
-import { Entity, HealthComponent, PositionComponent, RenderComponent, TTLComponent } from "../../../engine/core/CoreComponents";
+import { Entity } from "../../../engine/core/Entity";
+import { PositionComponent, RenderComponent, TTLComponent } from "../../../engine/core/CoreComponents";
 import { drawStarField } from "../../../game/StarField";
 
 export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => {
@@ -44,11 +45,12 @@ export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, world: W
     ctx.fillStyle = "red";
     ctx.fillRect(-size / 2, size / 6, size / 6, size / 8);
     ctx.fillRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8);
+};
 
-    // Trail
+export const drawAsteroidShipTrailDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => {
     const shipComp = world.getComponent<any>(entity, "Ship");
     if (shipComp && shipComp.trail) {
-        drawAsteroidShipTrail(ctx, shipComp.trail, size);
+        drawAsteroidShipTrail(ctx, shipComp.trail, render.size);
     }
 };
 

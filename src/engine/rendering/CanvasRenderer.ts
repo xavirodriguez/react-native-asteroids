@@ -14,6 +14,7 @@ export class CanvasRenderer implements Renderer {
   protected width: number = 0;
   protected height: number = 0;
   private shapeDrawers = new Map<string, ShapeDrawer>();
+  private postEntityDrawers = new Map<string, ShapeDrawer>();
   private preRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
   private postRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
 
@@ -26,6 +27,10 @@ export class CanvasRenderer implements Renderer {
 
   public registerShapeDrawer(shape: string, drawer: ShapeDrawer): void {
     this.shapeDrawers.set(shape, drawer);
+  }
+
+  public registerPostEntityDrawer(shape: string, drawer: ShapeDrawer): void {
+    this.postEntityDrawers.set(shape, drawer);
   }
 
   public addPreRenderHook(hook: (ctx: CanvasRenderingContext2D, world: World) => void): void {
@@ -162,6 +167,11 @@ export class CanvasRenderer implements Renderer {
     }
 
     ctx.restore();
+
+    const postDrawer = this.postEntityDrawers.get(render.shape);
+    if (postDrawer) {
+        postDrawer(ctx, entity, world, render);
+    }
   }
 
   public drawParticles(world: World): void {

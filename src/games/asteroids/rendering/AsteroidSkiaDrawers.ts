@@ -52,8 +52,9 @@ export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, ren
     paint.setStyle(Skia.PaintStyle.Fill);
     canvas.drawRect(Skia.XYWHRect(-size / 2, size / 6, size / 6, size / 8), paint);
     canvas.drawRect(Skia.XYWHRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8), paint);
+};
 
-    // Trail
+export const drawSkiaAsteroidShipTrailDrawer = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => {
     const shipComp = world.getComponent<any>(entity, "Ship");
     if (shipComp && shipComp.trail) {
         drawSkiaAsteroidShipTrail(canvas, shipComp.trail, paint);

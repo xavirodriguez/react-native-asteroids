@@ -125,7 +125,6 @@ export const createGameState = ({ world }: { world: World }) => {
   const gameState = world.createEntity();
   world.addComponent(gameState, {
     ...INITIAL_GAME_STATE,
-    level: 1,
     lives: GAME_CONFIG.SHIP_INITIAL_LIVES,
     stars: generateStarField(GAME_CONFIG.STAR_COUNT, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT),
     screenShake: null,

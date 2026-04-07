@@ -5,7 +5,7 @@ import {
 } from "../src/types/GameTypes";
 import { CanvasRenderer as EngineCanvasRenderer } from "../src/engine/rendering/CanvasRenderer";
 import type { World } from "../src/engine/core/World";
-import { drawShip, drawUfo, drawFlash, drawAsteroidStarField, drawAsteroidCRTEffect } from "../src/games/asteroids/rendering/AsteroidShapeDrawers";
+import { drawShip, drawUfo, drawFlash, drawAsteroidStarField, drawAsteroidCRTEffect, drawAsteroidShipTrailDrawer } from "../src/games/asteroids/rendering/AsteroidShapeDrawers";
 
 interface CanvasRendererProps {
   world: World;
@@ -31,6 +31,9 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world }) => {
       renderer.registerShapeDrawer("triangle", drawShip);
       renderer.registerShapeDrawer("ufo", drawUfo);
       renderer.registerShapeDrawer("flash", drawFlash);
+
+      // Register post-entity drawers (drawn after ctx.restore())
+      renderer.registerPostEntityDrawer("triangle", drawAsteroidShipTrailDrawer);
 
       // Register custom hooks for Asteroids
       renderer.addPreRenderHook((ctx, world) => {

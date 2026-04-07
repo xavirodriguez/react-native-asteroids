@@ -16,6 +16,7 @@ export class SkiaRenderer implements Renderer {
   protected height: number = 0;
   protected paint: SkPaint;
   private shapeDrawers = new Map<string, SkiaShapeDrawer>();
+  private postEntityDrawers = new Map<string, SkiaShapeDrawer>();
   private preRenderHooks: ((canvas: SkCanvas, world: World) => void)[] = [];
   private postRenderHooks: ((canvas: SkCanvas, world: World) => void)[] = [];
 
@@ -29,6 +30,10 @@ export class SkiaRenderer implements Renderer {
 
   public registerShapeDrawer(shape: string, drawer: SkiaShapeDrawer): void {
     this.shapeDrawers.set(shape, drawer);
+  }
+
+  public registerPostEntityDrawer(shape: string, drawer: SkiaShapeDrawer): void {
+    this.postEntityDrawers.set(shape, drawer);
   }
 
   public addPreRenderHook(hook: (canvas: SkCanvas, world: World) => void): void {
@@ -155,6 +160,11 @@ export class SkiaRenderer implements Renderer {
     }
 
     canvas.restore();
+
+    const postDrawer = this.postEntityDrawers.get(render.shape);
+    if (postDrawer) {
+        postDrawer(canvas, entity, world, render, this.paint);
+    }
   }
 
   public drawParticles(world: World): void {
