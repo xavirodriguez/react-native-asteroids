@@ -4,7 +4,7 @@ import {
   type InputComponent,
   type VelocityComponent,
   type RenderComponent,
-  type PositionComponent,
+  type TransformComponent,
   type InputState,
   GAME_CONFIG,
 } from "../../../types/GameTypes";
@@ -12,6 +12,7 @@ import { createBullet, createParticle } from "../EntityFactory";
 import { hapticShoot } from "../../../utils/haptics";
 import { InputManager } from "../../../engine/input/InputManager";
 import { BulletPool, ParticlePool } from "../EntityPool";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 /**
  * System responsible for processing user input and applying it to the ship's state.
@@ -52,8 +53,15 @@ export class AsteroidInputSystem extends System {
    * @param world - The ECS world.
    * @param deltaTime - Time since last frame in milliseconds.
    */
+  private isMultiplayer = false;
+
+  public setMultiplayerMode(active: boolean) {
+    this.isMultiplayer = active;
+  }
+
   public update(world: World, deltaTime: number): void {
-    const ships = world.query("Ship", "Input", "Position", "Velocity", "Render");
+    if (this.isMultiplayer) return; // Inputs handled by React hook in multiplayer
+    const ships = world.query("Ship", "Input", "Transform", "Velocity", "Render");
     ships.forEach((entity) => this.updateShipEntity({ world, entity, deltaTime }));
   }
 
@@ -78,13 +86,22 @@ export class AsteroidInputSystem extends System {
     deltaTime: number;
   }): void {
     const { world, entity, input, deltaTime } = context;
-    const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
-    const render = world.getComponent<RenderComponent>(entity, "Render");
-    const pos = world.getComponent<PositionComponent>(entity, "Position");
+    this.handleMovementAndShooting(world, entity, input, deltaTime);
+  }
 
-    if (vel && render && pos) {
-      this.applyShipMovement({ world, pos, vel, render, input, deltaTime });
-      this.handleShipShooting({ world, pos, render, input });
+  private handleMovementAndShooting(
+    world: World,
+    entity: number,
+    input: InputComponent,
+    deltaTime: number
+  ): void {
+    const velocity = world.getComponent<VelocityComponent>(entity, "Velocity");
+    const render = world.getComponent<RenderComponent>(entity, "Render");
+    const position = world.getComponent<PositionComponent>(entity, "Position");
+
+    if (velocity && render && position) {
+      this.applyShipMovement({ world, position, velocity, render, input, deltaTime });
+      this.handleShipShooting({ world, position, render, input });
     }
   }
 
@@ -104,39 +121,39 @@ export class AsteroidInputSystem extends System {
 
   private applyShipMovement(context: {
     world: World;
-    pos: PositionComponent;
-    vel: VelocityComponent;
+    position: PositionComponent;
+    velocity: VelocityComponent;
     render: RenderComponent;
     input: InputComponent;
     deltaTime: number;
   }): void {
-    const { world, pos, vel, render, input, deltaTime } = context;
-    const dt = deltaTime / 1000;
+    const { world, position, velocity, render, input, deltaTime } = context;
+    const deltaTimeInSeconds = deltaTime / 1000;
 
-    this.applyRotation({ render, input, dt });
-    this.applyThrust({ world, pos, vel, render, input, dt });
-    this.applyFriction(vel, deltaTime);
+    this.applyRotation({ render, input, deltaTimeInSeconds });
+    this.applyThrust({ world, position, velocity, render, input, deltaTimeInSeconds });
+    this.applyFriction(velocity, deltaTime);
   }
 
   private applyRotation(context: {
     render: RenderComponent;
     input: InputComponent;
-    dt: number;
+    deltaTimeInSeconds: number;
   }): void {
-    const { render, input, dt } = context;
-    if (input.rotateLeft) render.rotation -= GAME_CONFIG.SHIP_ROTATION_SPEED * dt;
-    if (input.rotateRight) render.rotation += GAME_CONFIG.SHIP_ROTATION_SPEED * dt;
+    const { render, input, deltaTimeInSeconds } = context;
+    if (input.rotateLeft) render.rotation -= GAME_CONFIG.SHIP_ROTATION_SPEED * deltaTimeInSeconds;
+    if (input.rotateRight) render.rotation += GAME_CONFIG.SHIP_ROTATION_SPEED * deltaTimeInSeconds;
   }
 
   private applyThrust(context: {
     world: World;
-    pos: PositionComponent;
-    vel: VelocityComponent;
+    position: PositionComponent;
+    velocity: VelocityComponent;
     render: RenderComponent;
     input: InputComponent;
-    dt: number;
+    deltaTimeInSeconds: number;
   }): void {
-    const { world, pos, vel, render, input, dt } = context;
+    const { world, position, velocity, render, input, deltaTimeInSeconds } = context;
     if (input.thrust) {
       vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
       vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
@@ -160,19 +177,19 @@ export class AsteroidInputSystem extends System {
     }
   }
 
-  private applyFriction(vel: VelocityComponent, deltaTime: number): void {
+  private applyFriction(velocity: VelocityComponent, deltaTime: number): void {
     const frictionFactor = Math.pow(GAME_CONFIG.SHIP_FRICTION, deltaTime / (1000 / 60));
-    vel.dx *= frictionFactor;
-    vel.dy *= frictionFactor;
+    velocity.dx *= frictionFactor;
+    velocity.dy *= frictionFactor;
   }
 
   private handleShipShooting(context: {
     world: World;
-    pos: PositionComponent;
+    position: PositionComponent;
     render: RenderComponent;
     input: InputComponent;
   }): void {
-    const { world, pos, render, input } = context;
+    const { world, position, render, input } = context;
     const canShoot = input.shoot && input.shootCooldownRemaining <= 0;
     if (canShoot) {
       createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });

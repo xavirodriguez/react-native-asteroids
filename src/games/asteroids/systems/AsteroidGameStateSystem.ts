@@ -1,33 +1,31 @@
-import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
-import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../../../types/GameTypes";
+import { type GameStateComponent, type HealthComponent, GAME_CONFIG, INITIAL_GAME_STATE } from "../../../types/GameTypes";
 import { spawnAsteroidWave, createUfo } from "../EntityFactory";
-import { getGameState } from "../GameUtils";
 import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
+import { RandomService } from "../../../engine/utils/RandomService";
+import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.
  */
-export class AsteroidGameStateSystem extends System implements IGameStateSystem {
-  private gameOverLogged = false;
-  private gameInstance: IAsteroidsGame | undefined;
+export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateComponent> implements IGameStateSystem {
 
   constructor(gameInstance?: IAsteroidsGame) {
-    super();
-    this.gameInstance = gameInstance;
+    super(gameInstance as any);
   }
 
   /**
    * Updates the game state by processing various sub-tasks.
    */
-  public update(world: World, deltaTime: number): void {
-    const gameState = getGameState(world);
-
+  protected updateGameState(world: World, gameState: GameStateComponent, deltaTime: number): void {
     this.updatePlayerStatus({ world, gameState, deltaTime });
     this.updateAsteroidsCount(world, gameState);
     this.manageWaveProgression(world, gameState);
     this.manageUfoSpawning(world, deltaTime);
-    this.updateGameOverStatus(world, gameState);
+  }
+
+  protected getGameState(world: World): GameStateComponent | undefined {
+    return world.getSingleton<GameStateComponent>("GameState");
   }
 
   private manageUfoSpawning(world: World, deltaTime: number): void {
@@ -88,27 +86,8 @@ export class AsteroidGameStateSystem extends System implements IGameStateSystem 
     }
   }
 
-  private updateGameOverStatus(world: World, gameState: GameStateComponent): void {
-    const isGameOver = this.evaluateGameOverCondition(gameState);
-    gameState.isGameOver = isGameOver;
-
-    if (isGameOver) {
-      this.handleGameOverOnce(gameState);
-    } else {
-      this.gameOverLogged = false;
-    }
-  }
-
-  private evaluateGameOverCondition(gameState: GameStateComponent): boolean {
+  protected evaluateGameOverCondition(gameState: GameStateComponent): boolean {
     return gameState.lives <= 0;
-  }
-
-  private handleGameOverOnce(gameState: GameStateComponent): void {
-    void gameState;
-    if (!this.gameOverLogged) {
-      this.gameOverLogged = true;
-      this.gameInstance?.pause();
-    }
   }
 
   private calculateWaveCount(level: number): number {

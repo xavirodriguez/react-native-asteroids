@@ -1,11 +1,17 @@
 import { World } from "./World";
 import { GameLoop } from "./GameLoop";
 import { InputManager } from "../input/InputManager";
+import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
+import { EventBus } from "./EventBus";
+import { SceneManager } from "../scenes/SceneManager";
+import { runLifecycle } from "../utils/LifecycleUtils";
+import { RandomService } from "../utils/RandomService";
 import type { IGame, UpdateListener } from "./IGame";
 
 export interface BaseGameConfig {
   pauseKey?: string;    // Key code for pausing, e.g., "KeyP"
   restartKey?: string;  // Key code for restarting, e.g., "KeyR"
+  isMultiplayer?: boolean;
 }
 
 /**
@@ -18,6 +24,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   protected world: World;
   protected gameLoop: GameLoop;
   protected inputManager: InputManager<TInput>;
+  protected unifiedInput: UnifiedInputSystem;
+  protected eventBus: EventBus;
+  protected sceneManager: SceneManager;
+  public isMultiplayer: boolean;
 
   private _isPaused = false;
   private _listeners = new Set<UpdateListener<BaseGame<TState, TInput>>>();
@@ -25,19 +35,39 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   private _config: BaseGameConfig;
 
   constructor(config: BaseGameConfig = {}) {
+    const { isMultiplayer = false } = config;
+    this.isMultiplayer = isMultiplayer;
     this.world = new World();
-    this.gameLoop = new GameLoop(this.world);
+    this.gameLoop = new GameLoop();
     this.inputManager = new InputManager<TInput>();
+    this.unifiedInput = new UnifiedInputSystem();
+    this.eventBus = new EventBus();
+    this.sceneManager = new SceneManager();
+
+    this.registerEventBusSingleton();
 
     this._config = config;
+
+    // Initialize deterministic random service with a default seed
+    RandomService.setSeed(Date.now());
 
     // Register systems and initial entities - responsibility of the concrete game
     this.registerSystems();
     this.initializeEntities();
 
     // Notify React on each logical update frame
-    this.gameLoop.subscribeUpdate(() => {
+    this.gameLoop.subscribeUpdate((deltaTime) => {
       if (!this._isPaused) {
+        // Update input system first
+        const activeWorld = this.getWorld();
+        this.unifiedInput.update(activeWorld, deltaTime);
+
+        // Simple games update this.world, advanced games update via sceneManager
+        if (this.sceneManager.getCurrentScene()) {
+          this.sceneManager.update(deltaTime);
+        } else {
+          this.world.update(deltaTime);
+        }
         this._notifyListeners();
       }
     });
@@ -72,19 +102,32 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   public pause(): void {
     if (this._isPaused) return;
     this._isPaused = true;
+    this.sceneManager.pause();
     this._notifyListeners();
   }
 
   public resume(): void {
     if (!this._isPaused) return;
     this._isPaused = false;
+    this.sceneManager.resume();
     this._notifyListeners();
   }
 
-  public restart(): void {
-    this.world.clear();
-    this._onBeforeRestart();
-    this.initializeEntities();
+  public async restart(): Promise<void> {
+    const initialScene = this.sceneManager.getCurrentScene();
+
+    await runLifecycle(() => this._onBeforeRestart());
+
+    const currentScene = this.sceneManager.getCurrentScene();
+
+    if (initialScene && currentScene === initialScene) {
+      // Scene didn't change during _onBeforeRestart, so we restart the current one.
+      await this.sceneManager.restartCurrentScene();
+    } else if (!initialScene && !currentScene) {
+      this.world.clear();
+      this.initializeEntities();
+    }
+
     if (this._isPaused) this.resume();
     this._notifyListeners();
   }
@@ -97,7 +140,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   }
 
   public getWorld(): World {
-    return this.world;
+    const activeScene = this.sceneManager.getCurrentScene();
+    return activeScene ? activeScene.getWorld() : this.world;
   }
 
   public isPausedState(): boolean {
@@ -117,12 +161,20 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   // ─── Optional hook — can be overridden ───────────────────────────────────
 
   /**
-   * Called during restart() before initializeEntities().
+   * Called during restart() after scene/world restart.
    * Useful for resetting internal game state (e.g., gameOverLogged = false).
    */
-  protected _onBeforeRestart(): void {}
+  protected _onBeforeRestart(): void | Promise<void> {}
 
   // ─── Engine-internal methods ─────────────────────────────────────────────
+
+  private registerEventBusSingleton(): void {
+    const entity = this.world.createEntity();
+    this.world.addComponent(entity, {
+      type: "EventBus",
+      bus: this.eventBus,
+    });
+  }
 
   private _notifyListeners(): void {
     for (const listener of this._listeners) {
@@ -149,7 +201,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
       }
     }
     if (e.code === this._config.restartKey) {
-      this.restart();
+      this.restart().catch(console.error);
     }
   }
 }

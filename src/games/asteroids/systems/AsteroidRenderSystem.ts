@@ -1,36 +1,18 @@
 import { World } from "../../../engine/core/World";
 import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
 import {
-  type GameStateComponent,
   GAME_CONFIG,
 } from "../../../types/GameTypes";
 
 /**
- * System responsible for Asteroids-specific rendering logic (e.g., screen shake).
+ * System responsible for Asteroids-specific rendering logic.
+ *
+ * @remarks
+ * Extends the engine's RenderUpdateSystem to inherit generic updates like rotation and trails.
  */
 export class AsteroidRenderSystem extends RenderUpdateSystem {
   constructor() {
+    // Pass the Asteroids-specific trail length to the engine's generic system
     super(GAME_CONFIG.TRAIL_MAX_LENGTH);
-  }
-
-  /**
-   * Updates rendering-related state.
-   */
-  public override update(world: World, deltaTime: number): void {
-    super.update(world, deltaTime);
-    this.updateScreenShake(world);
-  }
-
-  private updateScreenShake(world: World): void {
-    const gameStateEntity = world.query("GameState")[0];
-    if (!gameStateEntity) return;
-
-    const gameState = world.getComponent<GameStateComponent>(gameStateEntity, "GameState");
-    if (gameState?.screenShake && gameState.screenShake.framesLeft > 0) {
-      gameState.screenShake.framesLeft--;
-      if (gameState.screenShake.framesLeft <= 0) {
-        gameState.screenShake = null;
-      }
-    }
   }
 }

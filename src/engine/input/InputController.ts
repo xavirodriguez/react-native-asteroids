@@ -5,7 +5,7 @@
  * Input controllers decouple the source of input (keyboard, touch, gamepad) from the game logic.
  * TInputState is a Record of boolean flags representing different input actions.
  */
-export abstract class InputController<TInputState extends Record<string, boolean> = Record<string, boolean>> {
+export abstract class InputController<TInputState extends Record<string, boolean> = { [key: string]: boolean }> {
   /** The current state of inputs. */
   protected inputs: TInputState = {} as TInputState;
 

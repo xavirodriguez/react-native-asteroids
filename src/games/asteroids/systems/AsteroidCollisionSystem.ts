@@ -1,7 +1,7 @@
 import { World } from "../../../engine/core/World";
 import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
 import {
-  type PositionComponent,
+  type TransformComponent,
   type AsteroidComponent,
   type HealthComponent,
   type Entity,
@@ -12,9 +12,11 @@ import {
 } from "../../../types/GameTypes";
 
 import { createAsteroid, createParticle } from "../EntityFactory";
-import { getGameState } from "../GameUtils";
+import { type GameStateComponent } from "../types/AsteroidTypes";
+import { ScreenShakeComponent } from "../../../engine/types/EngineTypes";
 import { hapticDamage, hapticDeath } from "../../../utils/haptics";
 import { ParticlePool } from "../EntityPool";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 const ASTEROID_SPLIT_CONFIG: Record<
   AsteroidComponent["size"],
@@ -42,30 +44,30 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
   private resolveCollision(collisionPair: { world: World; entityA: Entity; entityB: Entity }): void {
     const { world, entityA, entityB } = collisionPair;
-    const pair = { entityA, entityB };
 
-    if (this.handleBulletAsteroidPair({ world, pair })) return;
-    if (this.handleShipAsteroidPair({ world, pair })) return;
-    if (this.handleBulletUfoPair({ world, pair })) return;
-    this.handleShipUfoPair({ world, pair });
+    if (this.handleBulletAsteroidPair({ world, entityA, entityB })) return;
+    if (this.handleShipAsteroidPair({ world, entityA, entityB })) return;
+    if (this.handleBulletUfoPair({ world, entityA, entityB })) return;
+    this.handleShipUfoPair({ world, entityA, entityB });
   }
 
   private handleBulletUfoPair(context: {
     world: World;
-    pair: { entityA: Entity; entityB: Entity };
+    entityA: Entity;
+    entityB: Entity;
   }): boolean {
-    const { world, pair } = context;
-    const match = this.matchPair({ world, pair, type1: "Bullet", type2: "Ufo" });
+    const { world, entityA, entityB } = context;
+    const match = this.matchPair(world, entityA, entityB, "Bullet", "Ufo");
 
     if (match) {
-      const matchUfo = (match as any).Ufo as Entity;
-      const matchBullet = (match as any).Bullet as Entity;
-      const pos = world.getComponent<PositionComponent>(matchUfo, "Position");
-      if (pos) {
-        this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
+      const matchUfo = (match as Record<"Ufo" | "Bullet", Entity>).Ufo;
+      const matchBullet = (match as Record<"Ufo" | "Bullet", Entity>).Bullet;
+      const position = world.getComponent<PositionComponent>(matchUfo, "Position");
+      if (position) {
+        this.spawnExplosion(world, position, GAME_CONFIG.PARTICLE_COUNT * 2);
       }
-      this.destroyEntity(world, matchUfo);
-      this.destroyEntity(world, matchBullet);
+      this.destroyEntity(world, Ufo);
+      this.destroyEntity(world, Bullet);
       this.addScore({ world, points: 100 });
       return true;
     }
@@ -74,22 +76,22 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
   private handleShipUfoPair(context: {
     world: World;
-    pair: { entityA: Entity; entityB: Entity };
+    entityA: Entity;
+    entityB: Entity;
   }): boolean {
-    const { world, pair } = context;
-    const match = this.matchPair({ world, pair, type1: "Ship", type2: "Ufo" });
+    const { world, entityA, entityB } = context;
+    const match = this.matchPair(world, entityA, entityB, "Ship", "Ufo");
 
     if (match) {
-      const matchShip = (match as any).Ship as Entity;
-      const matchUfo = (match as any).Ufo as Entity;
-      const health = world.getComponent<HealthComponent>(matchShip, "Health");
+      const { Ship, Ufo } = match;
+      const health = world.getComponent<HealthComponent>(Ship, "Health");
       if (this.canShipTakeDamage(health)) {
         this.applyDamageToShip(world, health);
-        const pos = world.getComponent<PositionComponent>(matchUfo, "Position");
-        if (pos) {
-          this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT * 2);
+        const position = world.getComponent<PositionComponent>(matchUfo, "Position");
+        if (position) {
+          this.spawnExplosion(world, position, GAME_CONFIG.PARTICLE_COUNT * 2);
         }
-        this.destroyEntity(world, matchUfo);
+        this.destroyEntity(world, Ufo);
       }
       return true;
     }
@@ -98,18 +100,17 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
   private handleBulletAsteroidPair(context: {
     world: World;
-    pair: { entityA: Entity; entityB: Entity };
+    entityA: Entity;
+    entityB: Entity;
   }): boolean {
-    const { world, pair } = context;
-    const match = this.matchPair({ world, pair, type1: "Bullet", type2: "Asteroid" });
+    const { world, entityA, entityB } = context;
+    const match = this.matchPair(world, entityA, entityB, "Bullet", "Asteroid");
 
     if (match) {
-      const matchAsteroid = (match as any).Asteroid as Entity;
-      const matchBullet = (match as any).Bullet as Entity;
       this.handleBulletAsteroidCollision({
         world,
-        asteroid: matchAsteroid,
-        bullet: matchBullet,
+        asteroid: match.Asteroid,
+        bullet: match.Bullet,
       });
       return true;
     }
@@ -118,35 +119,17 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
   private handleShipAsteroidPair(context: {
     world: World;
-    pair: { entityA: Entity; entityB: Entity };
+    entityA: Entity;
+    entityB: Entity;
   }): boolean {
-    const { world, pair } = context;
-    const match = this.matchPair({ world, pair, type1: "Ship", type2: "Asteroid" });
+    const { world, entityA, entityB } = context;
+    const match = this.matchPair(world, entityA, entityB, "Ship", "Asteroid");
 
     if (match) {
-      const matchShip = (match as any).Ship as Entity;
-      this.handleShipAsteroidCollision({ world, shipEntity: matchShip });
+      this.handleShipAsteroidCollision({ world, shipEntity: match.Ship });
       return true;
     }
     return false;
-  }
-
-  private matchPair<T1 extends ComponentType, T2 extends ComponentType>(config: {
-    world: World;
-    pair: { entityA: Entity; entityB: Entity };
-    type1: T1;
-    type2: T2;
-  }): Record<T1 | T2, Entity> | undefined {
-    const { world, pair, type1, type2 } = config;
-    const { entityA, entityB } = pair;
-
-    if (world.hasComponent(entityA, type1) && world.hasComponent(entityB, type2)) {
-      return { [type1]: entityA, [type2]: entityB } as Record<T1 | T2, Entity>;
-    }
-    if (world.hasComponent(entityB, type1) && world.hasComponent(entityA, type2)) {
-      return { [type1]: entityB, [type2]: entityA } as Record<T1 | T2, Entity>;
-    }
-    return undefined;
   }
 
   private handleBulletAsteroidCollision(context: {
@@ -155,7 +138,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     bullet: Entity;
   }): void {
     const { world, asteroid, bullet } = context;
-    const pos = world.getComponent<PositionComponent>(asteroid, "Position");
+    const position = world.getComponent<PositionComponent>(asteroid, "Position");
     const render = world.getComponent<RenderComponent>(asteroid, "Render");
     if (pos) {
       this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT);
@@ -164,19 +147,33 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     if (render) {
       render.data = { ...render.data, hitFlashFrames: 8 };
     }
+
+    this.handleAsteroidDestructionLogic(world, asteroid, bullet);
+  }
+
+  private applyBulletImpactVisuals(
+    world: World,
+    render: RenderComponent,
+    position: PositionComponent
+  ): void {
+    this.spawnExplosion(world, position, GAME_CONFIG.PARTICLE_COUNT);
+    render.hitFlashFrames = 8;
+  }
+
+  private handleAsteroidDestructionLogic(world: World, asteroid: Entity, bullet: Entity): void {
     this.splitAsteroid({ world, asteroidEntity: asteroid });
     this.destroyEntity(world, bullet);
     this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
   }
 
-  private spawnExplosionParticles(world: World, pos: PositionComponent, count: number): void {
+  private spawnExplosion(world: World, position: PositionComponent, count: number): void {
     for (let i = 0; i < count; i++) {
       createParticle({
         world,
-        x: pos.x,
-        y: pos.y,
-        dx: (Math.random() - 0.5) * 160, // [-80, 80]
-        dy: (Math.random() - 0.5) * 160, // [-80, 80]
+        x: position.x,
+        y: position.y,
+        dx: (RandomService.next() - 0.5) * 160, // [-80, 80]
+        dy: (RandomService.next() - 0.5) * 160, // [-80, 80]
         color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
         ttl: GAME_CONFIG.PARTICLE_TTL_BASE,
       });
@@ -200,11 +197,13 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     health.current--;
     health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
 
-    const gameState = getGameState(world);
-    gameState.screenShake = {
-      intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,
-      framesLeft: GAME_CONFIG.SHAKE_DURATION_IMPACT,
-    };
+    const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
+    if (shake) {
+      shake.config = {
+        intensity: 8,
+        duration: 15,
+      };
+    }
 
     if (health.current <= 0) {
       hapticDeath();
@@ -216,38 +215,37 @@ export class AsteroidCollisionSystem extends CollisionSystem {
   private splitAsteroid(asteroidContext: { world: World; asteroidEntity: Entity }): void {
     const { world, asteroidEntity } = asteroidContext;
     const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
-    const pos = world.getComponent<PositionComponent>(asteroidEntity, "Position");
+    const position = world.getComponent<PositionComponent>(asteroidEntity, "Position");
 
-    if (asteroid && pos) {
-      this.executeSplitStrategy({ world, pos, size: asteroid.size });
+    if (asteroid && position) {
+      this.executeSplitStrategy({ world, position, size: asteroid.size });
     }
     this.destroyEntity(world, asteroidEntity);
   }
 
   private executeSplitStrategy(splitParams: {
     world: World;
-    pos: PositionComponent;
+    position: PositionComponent;
     size: AsteroidComponent["size"];
   }): void {
-    const { world, pos, size } = splitParams;
+    const { world, position, size } = splitParams;
     const config = ASTEROID_SPLIT_CONFIG[size];
 
     if (config) {
-      this.spawnSplit({ world, pos, size: config.nextSize, offset: config.offset });
+      this.spawnSplit({ world, position, size: config.nextSize, offset: config.offset });
     }
   }
 
   private spawnSplit(spawnConfig: {
     world: World;
-    pos: PositionComponent;
+    position: PositionComponent;
     size: "medium" | "small";
     offset: number;
   }): void {
-    const { world, pos, size, offset } = spawnConfig;
-    const a1 = createAsteroid({ world, x: pos.x + offset, y: pos.y + offset, size });
-    const a2 = createAsteroid({ world, x: pos.x - offset, y: pos.y - offset, size });
+    const { world, position, size, offset } = spawnConfig;
+    const a1 = createAsteroid({ world, x: position.x + offset, y: position.y + offset, size });
+    const a2 = createAsteroid({ world, x: position.x - offset, y: position.y - offset, size });
 
-    // Improvement 9: Apply hit flash to split children
     [a1, a2].forEach(entity => {
       const render = world.getComponent<RenderComponent>(entity, "Render");
       if (render) render.data = { ...render.data, hitFlashFrames: 10 };
@@ -256,18 +254,10 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
   private addScore(scoreContext: { world: World; points: number }): void {
     const { world, points } = scoreContext;
-    const gameState = getGameState(world);
-    gameState.score += points;
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
+    if (gameState) {
+      gameState.score += points;
+    }
   }
 
-  /**
-   * Destroys an entity, notifying its pool if it's reclaimable.
-   */
-  private destroyEntity(world: World, entity: Entity): void {
-    const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
-    if (reclaimable) {
-      reclaimable.onReclaim(world, entity);
-    }
-    world.removeEntity(entity);
-  }
 }

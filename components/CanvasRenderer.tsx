@@ -9,9 +9,10 @@ import { drawShip, drawUfo, drawFlash, drawAsteroidStarField, drawAsteroidCRTEff
 
 interface CanvasRendererProps {
   world: World;
+  onInitialize?: (renderer: Renderer) => void;
 }
 
-export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world }) => {
+export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, onInitialize }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<EngineCanvasRenderer | null>(null);
 
@@ -72,7 +73,7 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world }) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [world]);
+  }, [world, onInitialize]);
 
   return (
     <View style={styles.container}>

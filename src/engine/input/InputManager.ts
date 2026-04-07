@@ -3,6 +3,8 @@ import { InputController } from "./InputController";
 /**
  * Centralized manager for handling multiple input sources.
  *
+ * @deprecated Use UnifiedInputSystem instead for semantic action-based input.
+ *
  * @remarks
  * The InputManager maintains a list of {@link InputController}s and aggregates
  * their states into a single, unified input state.
@@ -25,6 +27,14 @@ export class InputManager<TInputState extends Record<string, boolean>> {
    */
   public cleanup(): void {
     this.controllers.forEach((c) => c.cleanup());
+    this.controllers = [];
+  }
+
+  /**
+   * Clears all registered controllers without calling cleanup on them.
+   * Useful when the controllers themselves are managed elsewhere.
+   */
+  public clearControllers(): void {
     this.controllers = [];
   }
 

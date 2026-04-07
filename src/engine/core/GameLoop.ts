@@ -1,5 +1,3 @@
-import { World } from "./World";
-
 /**
  * Manages the game heartbeat and system updates using a fixed timestep.
  *
@@ -7,23 +5,31 @@ import { World } from "./World";
  * Uses an accumulator pattern to ensure consistent physics/logic updates (60 FPS)
  * regardless of the rendering framerate.
  */
+
+export interface LoopConfig {
+  fixedHz?: number; // default: 60
+  maxDeltaMs?: number; // default: 100 (evita spiral of death)
+}
+
 export class GameLoop {
-  private world: World;
   private isRunning: boolean = false;
   private lastTime: number = 0;
   private gameLoopId?: number;
   private accumulator: number = 0;
 
   /** Fixed timestep for logic updates (60 FPS = 16.66ms) */
-  private readonly fixedDeltaTime: number = 1000 / 60;
+  private fixedDeltaTime: number = 1000 / 60;
   /** Maximum elapsed time allowed in a single frame to prevent "spiral of death" */
-  private readonly maxDeltaTime: number = 100;
+  private maxDeltaTime: number = 100;
 
   private updateListeners: Set<(deltaTime: number) => void> = new Set();
-  private renderListeners: Set<(deltaTime: number) => void> = new Set();
+  private renderListeners: Set<(alpha: number, deltaTime: number) => void> = new Set();
 
-  constructor(world: World) {
-    this.world = world;
+  constructor(config: LoopConfig = {}) {
+    // Principle 8: Defensive constructor with destructuring and defaults
+    const { fixedHz = 60, maxDeltaMs = 100 } = config;
+    this.fixedDeltaTime = 1000 / fixedHz;
+    this.maxDeltaTime = maxDeltaMs;
   }
 
   /**
@@ -62,10 +68,10 @@ export class GameLoop {
   /**
    * Subscribes a listener to the render phase (variable framerate).
    *
-   * @param listener - Callback function.
+   * @param listener - Callback function receiving alpha (0-1) and deltaTime.
    * @returns Unsubscribe function.
    */
-  public subscribeRender(listener: (deltaTime: number) => void): () => void {
+  public subscribeRender(listener: (alpha: number, deltaTime: number) => void): () => void {
     this.renderListeners.add(listener);
     return () => this.renderListeners.delete(listener);
   }
@@ -74,7 +80,7 @@ export class GameLoop {
    * Legacy subscribe method for backward compatibility.
    * Maps to render subscription.
    */
-  public subscribe(listener: (deltaTime: number) => void): () => void {
+  public subscribe(listener: (alpha: number, deltaTime: number) => void): () => void {
     return this.subscribeRender(listener);
   }
 
@@ -96,13 +102,13 @@ export class GameLoop {
 
     // Fixed timestep updates
     while (this.accumulator >= this.fixedDeltaTime) {
-      this.world.update(this.fixedDeltaTime);
       this.updateListeners.forEach((listener) => listener(this.fixedDeltaTime));
       this.accumulator -= this.fixedDeltaTime;
     }
 
-    // Render phase
-    this.renderListeners.forEach((listener) => listener(deltaTime));
+    // Render phase with alpha interpolation
+    const alpha = this.accumulator / this.fixedDeltaTime;
+    this.renderListeners.forEach((listener) => listener(alpha, deltaTime));
 
     this.gameLoopId = requestAnimationFrame(this.loop);
   };

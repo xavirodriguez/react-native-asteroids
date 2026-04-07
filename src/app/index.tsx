@@ -1,84 +1,41 @@
-import { useState } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, Platform } from "react-native";
+import { router } from "expo-router";
+import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-// Note: Component imports use the '@/' alias configured in tsconfig.json
-import { CanvasRenderer } from "../../components/CanvasRenderer";
-import { GameControls } from "../../components/GameControls";
-import { GameUI } from "../../components/GameUI";
-import { useAsteroidsGame } from "../hooks/useAsteroidsGame";
+import type { Href } from "expo-router";
 
-/**
- * Main application component that integrates the game engine with the React UI.
- */
-export default function App() {
-  const { game, gameState, handleInput, isPaused, togglePause, highScore } = useAsteroidsGame();
-  const [started, setStarted] = useState(false);
+interface GameEntry {
+  id: string;
+  label: string;
+  href: Href<string>;
+}
 
-  if (!game) {
-    return <View />;
-  }
+const GAMES: GameEntry[] = [
+  { id: "asteroids", label: "ASTEROIDES", href: "/asteroids" },
+  { id: "space-invaders", label: "SPACE INVADERS", href: "/space-invaders" },
+  { id: "flappybird", label: "FLAPPY BIRD", href: "/flappybird" },
+];
 
-  if (!started) {
-    return (
-      <SafeAreaProvider>
-        <StartScreen highScore={highScore} onStart={() => setStarted(true)} />
-      </SafeAreaProvider>
-    );
-  }
-
+export default function HomeScreen() {
   return (
     <SafeAreaProvider>
-      <View style={styles.container}>
-        <GameUI
-          gameState={gameState}
-          onRestart={() => game.restart()}
-          onPause={() => togglePause()}
-          isPaused={isPaused}
-          highScore={highScore}
-        />
-        <CanvasRenderer world={game.getWorld()} />
-        <GameControls
-          onThrust={(pressed) => handleInput({ thrust: pressed })}
-          onRotateLeft={(pressed) => handleInput({ rotateLeft: pressed })}
-          onRotateRight={(pressed) => handleInput({ rotateRight: pressed })}
-          onShoot={(pressed) => handleInput({ shoot: pressed })}
-          onHyperspace={(pressed) => handleInput({ hyperspace: pressed })}
-        />
+      <View style={styles.menuContainer}>
+        <Text style={styles.title}>RETRO ARCADE</Text>
+        {GAMES.map((game) => (
+          <TouchableOpacity
+            key={game.id}
+            style={styles.menuButton}
+            onPress={() => router.push(game.href)}
+          >
+            <Text style={styles.menuButtonText}>{game.label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </SafeAreaProvider>
   );
 }
 
-const StartScreen: React.FC<{ highScore: number; onStart: () => void }> = ({
-  highScore,
-  onStart,
-}) => {
-  const instructions =
-    Platform.OS === "web"
-      ? "↑ Empujar  ←→ Rotar  Espacio Disparar  Shift Hiperspacio"
-      : "Controles táctiles en pantalla";
-
-  return (
-    <View style={styles.startScreen}>
-      <Text style={styles.title}>ASTEROIDES</Text>
-      <Text style={styles.instructions}>{instructions}</Text>
-      <Text style={styles.highScoreText}>Récord: {highScore}</Text>
-      <TouchableOpacity style={styles.startButton} onPress={onStart}>
-        <Text style={styles.startButtonText}>JUGAR</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "black",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  startScreen: {
+  menuContainer: {
     flex: 1,
     backgroundColor: "black",
     alignItems: "center",
@@ -89,31 +46,24 @@ const styles = StyleSheet.create({
     color: "white",
     fontFamily: "monospace",
     fontWeight: "bold",
-    marginBottom: 20,
-  },
-  instructions: {
-    fontSize: 16,
-    color: "#CCCCCC",
-    fontFamily: "monospace",
-    marginBottom: 10,
-    textAlign: "center",
-    paddingHorizontal: 20,
-  },
-  highScoreText: {
-    fontSize: 20,
-    color: "#FFD700",
-    fontFamily: "monospace",
     marginBottom: 40,
+    textAlign: "center",
   },
-  startButton: {
-    backgroundColor: "white",
+  menuButton: {
+    backgroundColor: "transparent",
+    borderWidth: 2,
+    borderColor: "white",
     paddingHorizontal: 40,
     paddingVertical: 16,
     borderRadius: 8,
+    width: 300,
+    alignItems: "center",
+    marginTop: 20,
   },
-  startButtonText: {
-    color: "black",
+  menuButtonText: {
+    color: "white",
     fontSize: 20,
     fontWeight: "bold",
+    fontFamily: "monospace",
   },
 });

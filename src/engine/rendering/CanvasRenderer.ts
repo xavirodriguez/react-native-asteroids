@@ -127,35 +127,52 @@ export class CanvasRenderer implements Renderer {
       shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
     }
 
-    ctx.save();
-    ctx.translate(shakeX, shakeY);
+    // Background Effects (e.g., Starfield)
+    this.backgroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
+
+    // Render Pipeline: Collect, Sort, Execute
+    const entities = world.query("Transform", "Render");
+
+    // Command-based sorting by zIndex
+    const renderCommands = entities.map(entity => {
+      const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
+      const render = world.getComponent<RenderComponent>(entity, "Render")!;
+      return {
+        entity,
+        pos,
+        render,
+        zIndex: render.zIndex ?? 0
+      };
+    });
 
     this.preRenderHooks.forEach(hook => hook(ctx, world));
 
-    // Render Entities
-    const entities = world.query("Position", "Render");
-    entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
-      const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (pos && render) {
-        this.drawEntity(entity, pos, render, world);
-      }
+    // Render Tilemaps first
+    this.drawTilemaps(world);
+
+    // Execute draw commands
+    renderCommands.forEach((cmd) => {
+      this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render }, world);
     });
 
-    this.drawParticles(world);
-
+    // Foreground Effects (e.g., CRT)
+    ctx.save();
+    this.foregroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
     ctx.restore();
 
     this.postRenderHooks.forEach(hook => hook(ctx, world));
   }
 
-  public drawEntity(entity: Entity, pos: PositionComponent, render: RenderComponent, world: World): void {
+  public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
+    const pos = components["Transform"] as TransformComponent;
+    const render = components["Render"] as RenderComponent;
 
-    ctx.save();
-    ctx.translate(pos.x, pos.y);
-    ctx.rotate(render.rotation);
+    // Use world coordinates from HierarchySystem (single source of truth)
+    const x = pos.worldX !== undefined ? pos.worldX : pos.x;
+    const y = pos.worldY !== undefined ? pos.worldY : pos.y;
+    const rotation = pos.worldRotation !== undefined ? pos.worldRotation : render.rotation;
 
     if (render.data?.hitFlashFrames && render.data.hitFlashFrames > 0) {
       ctx.globalCompositeOperation = "lighter";
@@ -174,7 +191,7 @@ export class CanvasRenderer implements Renderer {
     }
   }
 
-  public drawParticles(world: World): void {
+  public drawTilemaps(world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const entities = world.query("Position", "Render").filter(e => {

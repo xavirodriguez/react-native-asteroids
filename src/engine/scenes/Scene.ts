@@ -1,5 +1,4 @@
 import { World } from "../core/World";
-import { Renderer } from "../rendering/Renderer";
 
 /**
  * Abstract base class for all game scenes.
@@ -14,37 +13,41 @@ export abstract class Scene {
     this.world = world;
   }
 
+  public name: string = "Unnamed Scene";
+
   /**
    * Called when the scene becomes the active scene.
    * Useful for initializing entities and systems.
    */
-  public onEnter(): void {}
+  public onEnter(world: World): void | Promise<void> {}
 
   /**
    * Called when the scene is no longer the active scene.
    * Useful for cleanup.
    */
-  public onExit(): void {}
+  public onExit(world: World): void | Promise<void> {}
 
   /**
-   * Updates the scene logic.
-   * Defaults to updating the scene's ECS world.
-   *
-   * @param deltaTime - Time elapsed since the last update in milliseconds.
+   * Called when the game is paused while this scene is active.
    */
-  public update(deltaTime: number): void {
-    this.world.update(deltaTime);
+  public onPause(): void {}
+
+  /**
+   * Called when the game is resumed while this scene is active.
+   */
+  public onResume(): void {}
+
+  /**
+   * Called when the game is being updated.
+   */
+  public onUpdate(dt: number, world: World): void {
+    world.update(dt);
   }
 
   /**
-   * Renders the scene.
-   * Defaults to rendering the scene's ECS world using the provided renderer.
-   *
-   * @param renderer - The renderer instance to use.
+   * Called when the game is being rendered.
    */
-  public render(renderer: Renderer): void {
-    renderer.render(this.world);
-  }
+  public onRender(alpha: number): void {}
 
   /**
    * Gets the ECS world for this scene.

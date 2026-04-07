@@ -20,7 +20,7 @@ export class SkiaRenderer implements Renderer {
   private preRenderHooks: ((canvas: SkCanvas, world: World) => void)[] = [];
   private postRenderHooks: ((canvas: SkCanvas, world: World) => void)[] = [];
 
-  constructor(canvas?: SkCanvas) {
+  constructor(canvas?: any) {
     if (canvas) {
       this.canvas = canvas;
     }
@@ -159,7 +159,32 @@ export class SkiaRenderer implements Renderer {
         drawer(canvas, entity, world, render, this.paint);
     }
 
-    canvas.restore();
+        this.registerShape("polygon", (canvas: any, paint: any, render: any) => {
+          if (!render.vertices || render.vertices.length === 0) {
+            paint.setColor(Skia.Color(render.color));
+            paint.setStyle(Skia.PaintStyle.Fill);
+            canvas.drawCircle(0, 0, render.size, paint);
+            return;
+          }
+
+          if (!Skia.Path) return;
+          const path = Skia.Path.Make();
+          path.moveTo(render.vertices[0].x, render.vertices[0].y);
+          for (let i = 1; i < render.vertices.length; i++) {
+            path.lineTo(render.vertices[i].x, render.vertices[i].y);
+          }
+          path.close();
+
+          const isHitFlash = render.hitFlashFrames && render.hitFlashFrames > 0;
+          paint.setColor(isHitFlash ? Skia.Color("rgba(255, 255, 255, 0.5)") : Skia.Color("#333"));
+          paint.setStyle(Skia.PaintStyle.Fill);
+          canvas.drawPath(path, paint);
+
+          paint.setColor(isHitFlash ? Skia.Color("white") : Skia.Color(render.color));
+          paint.setStyle(Skia.PaintStyle.Stroke);
+          paint.setStrokeWidth(2);
+          canvas.drawPath(path, paint);
+        });
 
     const postDrawer = this.postEntityDrawers.get(render.shape);
     if (postDrawer) {
@@ -167,31 +192,7 @@ export class SkiaRenderer implements Renderer {
     }
   }
 
-  public drawParticles(world: World): void {
-    if (!this.canvas) return;
-    const canvas = this.canvas;
-    const entities = world.query("Position", "Render").filter(e => {
-        const r = world.getComponent<RenderComponent>(e, "Render");
-        return r?.shape === "particle";
-    });
-
-    entities.forEach(entity => {
-        const pos = world.getComponent<PositionComponent>(entity, "Position")!;
-        const render = world.getComponent<RenderComponent>(entity, "Render")!;
-        const ttl = world.getComponent<TTLComponent>(entity, "TTL");
-        if (!ttl) return;
-
-        const lifeRatio = ttl.remaining / ttl.total;
-        const hueVariation = (entity % 10) - 5;
-        const hue = 20 + hueVariation;
-        const lightness = 50 + (1 - lifeRatio) * 50;
-
-        this.paint.setColor(Skia.Color(`hsl(${hue}, 100%, ${lightness}%)`));
-        this.paint.setAlphaf(lifeRatio);
-        this.paint.setStyle(Skia.PaintStyle.Fill);
-
-        const size = render.size * lifeRatio;
-        canvas.drawCircle(pos.x, pos.y, size, this.paint);
-    });
+  public registerShape(name: string, drawer: any): void {
+    this.shapeRegistry.set(name, drawer);
   }
 }

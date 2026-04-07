@@ -9,6 +9,16 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
   world.addComponent(ship, { type: "Position", x, y } as PositionComponent);
   world.addComponent(ship, { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent);
   world.addComponent(ship, {
+    type: "Friction",
+    value: GAME_CONFIG.SHIP_FRICTION,
+  })
+  world.addComponent(ship, {
+    type: "Boundary",
+    width: GAME_CONFIG.SCREEN_WIDTH,
+    height: GAME_CONFIG.SCREEN_HEIGHT,
+    mode: "wrap",
+  })
+  world.addComponent(ship, {
     type: "Render",
     shape: "triangle",
     size: GAME_CONFIG.SHIP_RENDER_SIZE,

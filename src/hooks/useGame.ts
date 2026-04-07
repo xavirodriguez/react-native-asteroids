@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
+import { useKeepAwake } from "./useKeepAwake";
 import type { BaseGame } from "../engine/core/BaseGame";
 
 // Constructor type - accepts any class that extends BaseGame
@@ -23,34 +23,56 @@ export function useGame<
   TInput extends Record<string, boolean>
 >(
   GameClass: GameConstructor<TGame, TState, TInput>,
-  initialState: TState | null = null
+  initialState: TState | null = null,
+  isMultiplayer: boolean = false
 ): UseGameResult<TGame, TState, TInput> {
 
   // useRef so the instance is not recreated on every render
   const gameRef = useRef<TGame | null>(null);
+  const gameStateRef = useRef<TState | null>(initialState);
   const [gameState, setGameState] = useState<TState | null>(initialState);
   const [isPaused, setIsPaused] = useState(false);
   const [, forceUpdate] = useState(0);
 
+  // Optimization: Throttle React state updates to 15 FPS to prevent bridge saturation
+  const lastUpdateTimeRef = useRef<number>(0);
+  const lastPausedRef = useRef<boolean>(false);
+  const THROTTLE_MS = 1000 / 15;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Principle 4: Use encapsulated hook for symmetric resource management
+  useKeepAwake(!isPaused);
+
   useEffect(() => {
-    activateKeepAwakeAsync();
-    const game = new GameClass();
+    // @ts-ignore - Constructor argument handling
+    const game = new GameClass({ isMultiplayer });
     gameRef.current = game;
     game.start();
 
+    let lastUpdateTime = 0;
+    const UI_UPDATE_INTERVAL = 1000 / 15; // Throttled to 15 FPS for UI components
+
     const unsubscribe = game.subscribe((updatedGame) => {
-      setGameState(updatedGame.getGameState() as TState);
-      setIsPaused(updatedGame.isPausedState());
-      forceUpdate((v) => v + 1);
+      const state = updatedGame.getGameState() as TState;
+      gameStateRef.current = state;
+
+      const now = performance.now();
+      const isPausedNow = updatedGame.isPausedState();
+      if (isPausedNow !== isPaused || now - lastUpdateTime >= UI_UPDATE_INTERVAL) {
+        setGameState(state);
+        setIsPaused(isPausedNow);
+        forceUpdate((v) => v + 1);
+        lastUpdateTime = now;
+      }
     });
 
     return () => {
       unsubscribe();
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       game.destroy();
-      deactivateKeepAwake();
     };
-  // GameClass is stable (it's a class, not an object), doesn't need to be in deps
-  }, []);
+  // Re-initialize if multiplayer mode or game class changes
+  }, [GameClass, isMultiplayer]);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
     gameRef.current?.setInput(input);

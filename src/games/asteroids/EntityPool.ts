@@ -1,8 +1,9 @@
-import { ObjectPool } from "../../engine/utils/ObjectPool";
+import { PrefabPool } from "../../engine/utils/PrefabPool";
 import { World } from "../../engine/core/World";
 import {
   type Entity,
-  type PositionComponent,
+  type Component,
+  type TransformComponent,
   type VelocityComponent,
   type RenderComponent,
   type ColliderComponent,
@@ -11,97 +12,54 @@ import {
 } from "../../engine/types/EngineTypes";
 
 /**
- * Interface for pooled component data to minimize garbage collection.
+ * Interface for pooled component data.
  */
 interface BulletComponents {
-  position: PositionComponent;
+  position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
   collider: ColliderComponent;
   ttl: TTLComponent;
   reclaimable: ReclaimableComponent;
+  bullet: Component & { type: "Bullet" };
+}
+
+interface BulletParams {
+  x: number; y: number; dx: number; dy: number; size: number; color: string; ttl: number;
 }
 
 /**
- * Functional BulletPool that reuses component objects.
+ * BulletPool utilizing the engine's PrefabPool.
  */
-export class BulletPool {
-  private componentPool: ObjectPool<BulletComponents>;
-
+export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
   constructor(initialSize: number = 20) {
-    this.componentPool = new ObjectPool<BulletComponents>(
-      () => ({
-        position: { type: "Position", x: 0, y: 0 },
+    super({
+      factory: () => ({
+        position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
-        render: { type: "Render", shape: "circle", size: 0, color: "", rotation: 0 },
+        render: { type: "Render", shape: "bullet_shape", size: 0, color: "", rotation: 0 },
         collider: { type: "Collider", radius: 0 },
         ttl: { type: "TTL", remaining: 0, total: 0 },
-        reclaimable: {
-          type: "Reclaimable",
-          onReclaim: (world, entity) => this.release(world, entity)
-        }
+        reclaimable: { type: "Reclaimable", onReclaim: () => {} },
+        bullet: { type: "Bullet" }
       }),
-      (data) => {
-        // Reset data if needed, but World.addComponent overwrites most values anyway
-        data.position.x = 0;
-        data.position.y = 0;
-        data.velocity.dx = 0;
-        data.velocity.dy = 0;
+      reset: (data) => {
+        data.position.x = 0; data.position.y = 0;
+        data.velocity.dx = 0; data.velocity.dy = 0;
+      },
+      initializer: (data, p) => {
+        data.position.x = p.x; data.position.y = p.y;
+        data.velocity.dx = p.dx; data.velocity.dy = p.dy;
+        data.render.size = p.size; data.render.color = p.color;
+        data.collider.radius = p.size;
+        data.ttl.remaining = p.ttl; data.ttl.total = p.ttl;
       },
       initialSize
-    );
+    });
   }
 
-  /**
-   * Acquires a bullet from the pool, initializing it in the world.
-   */
   acquire(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
-    const data = this.componentPool.acquire();
-    const entity = world.createEntity();
-
-    data.position.x = x;
-    data.position.y = y;
-    data.velocity.dx = dx;
-    data.velocity.dy = dy;
-    data.render.size = size;
-    data.render.color = color;
-    data.render.rotation = 0;
-    data.collider.radius = size;
-    data.ttl.remaining = ttl;
-    data.ttl.total = ttl;
-
-    world.addComponent(entity, data.position);
-    world.addComponent(entity, data.velocity);
-    world.addComponent(entity, data.render);
-    world.addComponent(entity, data.collider);
-    world.addComponent(entity, data.ttl);
-    world.addComponent(entity, data.reclaimable);
-    world.addComponent(entity, { type: "Bullet" });
-
-    return entity;
-  }
-
-  /**
-   * Releases an entity's components back to the pool.
-   */
-  release(world: World, entity: Entity): void {
-    const pos = world.getComponent<PositionComponent>(entity, "Position");
-    const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
-    const render = world.getComponent<RenderComponent>(entity, "Render");
-    const collider = world.getComponent<ColliderComponent>(entity, "Collider");
-    const ttl = world.getComponent<TTLComponent>(entity, "TTL");
-    const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
-
-    if (pos && vel && render && collider && ttl && reclaimable) {
-      this.componentPool.release({
-        position: pos,
-        velocity: vel,
-        render: render,
-        collider: collider,
-        ttl: ttl,
-        reclaimable: reclaimable
-      });
-    }
+    return super.acquire(world, { x, y, dx, dy, size, color, ttl });
   }
 }
 
@@ -109,76 +67,44 @@ export class BulletPool {
  * Interface for pooled particle data.
  */
 interface ParticleComponents {
-  position: PositionComponent;
+  position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
   ttl: TTLComponent;
   reclaimable: ReclaimableComponent;
 }
 
-/**
- * Functional ParticlePool that reuses component objects.
- */
-export class ParticlePool {
-  private componentPool: ObjectPool<ParticleComponents>;
+interface ParticleParams {
+  x: number; y: number; dx: number; dy: number; size: number; color: string; ttl: number;
+}
 
+/**
+ * ParticlePool utilizing the engine's PrefabPool.
+ */
+export class ParticlePool extends PrefabPool<ParticleComponents, ParticleParams> {
   constructor(initialSize: number = 100) {
-    this.componentPool = new ObjectPool<ParticleComponents>(
-      () => ({
-        position: { type: "Position", x: 0, y: 0 },
+    super({
+      factory: () => ({
+        position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0 },
         ttl: { type: "TTL", remaining: 0, total: 0 },
-        reclaimable: {
-          type: "Reclaimable",
-          onReclaim: (world, entity) => this.release(world, entity)
-        }
+        reclaimable: { type: "Reclaimable", onReclaim: () => {} }
       }),
-      (data) => {
-        data.position.x = 0;
-        data.position.y = 0;
+      reset: (data) => {
+        data.position.x = 0; data.position.y = 0;
+      },
+      initializer: (data, p) => {
+        data.position.x = p.x; data.position.y = p.y;
+        data.velocity.dx = p.dx; data.velocity.dy = p.dy;
+        data.render.size = p.size; data.render.color = p.color;
+        data.ttl.remaining = p.ttl; data.ttl.total = p.ttl;
       },
       initialSize
-    );
+    });
   }
 
   acquire(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
-    const data = this.componentPool.acquire();
-    const entity = world.createEntity();
-
-    data.position.x = x;
-    data.position.y = y;
-    data.velocity.dx = dx;
-    data.velocity.dy = dy;
-    data.render.size = size;
-    data.render.color = color;
-    data.ttl.remaining = ttl;
-    data.ttl.total = ttl;
-
-    world.addComponent(entity, data.position);
-    world.addComponent(entity, data.velocity);
-    world.addComponent(entity, data.render);
-    world.addComponent(entity, data.ttl);
-    world.addComponent(entity, data.reclaimable);
-
-    return entity;
-  }
-
-  release(world: World, entity: Entity): void {
-    const pos = world.getComponent<PositionComponent>(entity, "Position");
-    const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
-    const render = world.getComponent<RenderComponent>(entity, "Render");
-    const ttl = world.getComponent<TTLComponent>(entity, "TTL");
-    const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
-
-    if (pos && vel && render && ttl && reclaimable) {
-      this.componentPool.release({
-        position: pos,
-        velocity: vel,
-        render: render,
-        ttl: ttl,
-        reclaimable: reclaimable
-      });
-    }
+    return super.acquire(world, { x, y, dx, dy, size, color, ttl });
   }
 }

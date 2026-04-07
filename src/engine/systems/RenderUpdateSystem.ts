@@ -6,7 +6,7 @@ import { PositionComponent, RenderComponent } from "../core/CoreComponents";
  * Generic rendering-related updates (rotation, trails, flashes).
  */
 export class RenderUpdateSystem extends System {
-  private trailMaxLength: number;
+  protected trailMaxLength: number;
 
   constructor(trailMaxLength: number = 10) {
     super();
@@ -20,10 +20,10 @@ export class RenderUpdateSystem extends System {
     world.version++;
   }
 
-  private updateTrails(world: World): void {
-    const entities = world.query("Position", "Render");
+  protected updateTrails(world: World): void {
+    const entities = world.query("Transform", "Render");
     entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const render = world.getComponent<RenderComponent>(entity, "Render");
 
       if (pos && render && render.data?.trailPositions) {
@@ -32,18 +32,20 @@ export class RenderUpdateSystem extends System {
           render.data.trailPositions.shift();
         }
       }
+    });
 
-      // Improvement 2: Ship trail
-      if (world.hasComponent(entity, "Ship")) {
-        const shipComp = world.getComponent<any>(entity, "Ship");
-        if (pos && shipComp) {
-          if (!shipComp.trail) shipComp.trail = [];
-          shipComp.trail.push({ x: pos.x, y: pos.y });
-          if (shipComp.trail.length > this.trailMaxLength) {
-            shipComp.trail.shift();
-          }
+    // Support game-specific trail components (like Asteroids Ship)
+    const shipEntities = world.query("Transform", "Ship");
+    shipEntities.forEach((entity) => {
+        const pos = world.getComponent<TransformComponent>(entity, "Transform");
+        const ship = world.getComponent<any>(entity, "Ship");
+
+        if (pos && ship && ship.trailPositions) {
+            ship.trailPositions.push({ x: pos.x, y: pos.y });
+            if (ship.trailPositions.length > this.trailMaxLength) {
+                ship.trailPositions.shift();
+            }
         }
-      }
     });
   }
 

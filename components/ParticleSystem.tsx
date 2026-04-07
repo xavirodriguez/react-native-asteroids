@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Circle, Group } from "@shopify/react-native-skia";
 import type { World } from "../src/engine/core/World";
 import {
-  type PositionComponent,
+  type TransformComponent,
   type RenderComponent,
   type TTLComponent,
 } from "../src/types/GameTypes";
@@ -16,7 +16,7 @@ interface ParticleSystemProps {
  */
 export const ParticleSystem: React.FC<ParticleSystemProps> = ({ world }) => {
   const particles = useMemo(() => {
-    return world.query("Position", "Render", "TTL").filter(entity => {
+    return world.query("Transform", "Render", "TTL").filter(entity => {
       const render = world.getComponent<RenderComponent>(entity, "Render");
       return render?.shape === "particle";
     });
@@ -37,7 +37,7 @@ interface ParticleItemProps {
 }
 
 const ParticleItem: React.FC<ParticleItemProps> = ({ entity, world }) => {
-  const pos = world.getComponent<PositionComponent>(entity, "Position");
+  const pos = world.getComponent<TransformComponent>(entity, "Transform");
   const render = world.getComponent<RenderComponent>(entity, "Render");
   const ttl = world.getComponent<TTLComponent>(entity, "TTL");
 
