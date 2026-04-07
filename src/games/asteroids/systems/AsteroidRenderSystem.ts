@@ -1,9 +1,6 @@
 import { World } from "../../../engine/core/World";
 import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
-import { TransformComponent } from "../../../engine/types/EngineTypes";
 import {
-  type GameStateComponent,
-  type ShipComponent,
   GAME_CONFIG,
 } from "../../../types/GameTypes";
 
@@ -15,6 +12,7 @@ import {
  */
 export class AsteroidRenderSystem extends RenderUpdateSystem {
   constructor() {
+    // Pass the Asteroids-specific trail length to the engine's generic system
     super(GAME_CONFIG.TRAIL_MAX_LENGTH);
   }
 }

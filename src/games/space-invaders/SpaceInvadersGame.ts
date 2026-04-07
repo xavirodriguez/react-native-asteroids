@@ -7,7 +7,6 @@ import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
 import { SpaceInvadersGameScene } from "./scenes/SpaceInvadersGameScene";
 import { Renderer } from "../../engine/rendering/Renderer";
-import { getGameState } from "./GameUtils";
 import {
   drawSpaceInvadersPlayer,
   drawSpaceInvadersInvader,
@@ -58,7 +57,7 @@ export class SpaceInvadersGame
 
   public getGameState(): GameStateComponent {
     const world = this.getWorld();
-    return getGameState(world);
+    return world.getSingleton<GameStateComponent>("GameState") || INITIAL_GAME_STATE;
   }
 
   public getWorld(): World {

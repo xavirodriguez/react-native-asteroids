@@ -1,7 +1,6 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
-import { getGameState } from "../GameUtils";
 import { spawnInvaderWave } from "../EntityFactory";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";
 
@@ -17,7 +16,8 @@ export class SpaceInvadersGameStateSystem extends System {
   }
 
   public update(world: World, deltaTime: number): void {
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
+    if (!gameState) return;
 
     if (gameState.isGameOver) {
       return;
@@ -52,7 +52,8 @@ export class SpaceInvadersGameStateSystem extends System {
 
   public resetGameOverState(): void {
     const world = this.game.getWorld();
-    const gameState = getGameState(world);
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
+    if (!gameState) return;
     gameState.isGameOver = false;
     gameState.score = 0;
     gameState.level = 1;

@@ -12,6 +12,7 @@ import { FrictionSystem } from "../../engine/systems/FrictionSystem";
 import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
+import { TransformComponent, VelocityComponent, RenderComponent, FrictionComponent, ScreenShakeComponent, TagComponent, HealthComponent } from "../../engine/types/EngineTypes";
 import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory";
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { KeyboardController } from "../../engine/input/KeyboardController";
@@ -56,11 +57,11 @@ export class AsteroidsGame
     const ships = this.world.query("Ship", "Transform", "Velocity", "Render");
 
     ships.forEach((entity) => {
-        const tag = this.world.getComponent<any>(entity, "Tag");
+        const tag = this.world.getComponent<TagComponent>(entity, "Tag");
         if (tag && tag.tags.includes("LocalPlayer")) {
-            const pos = this.world.getComponent<any>(entity, "Transform");
-            const vel = this.world.getComponent<any>(entity, "Velocity");
-            const render = this.world.getComponent<any>(entity, "Render");
+            const pos = this.world.getComponent<TransformComponent>(entity, "Transform");
+            const vel = this.world.getComponent<VelocityComponent>(entity, "Velocity");
+            const render = this.world.getComponent<RenderComponent>(entity, "Render");
 
             if (pos && vel && render) {
                 // Apply same logic as server
@@ -68,24 +69,25 @@ export class AsteroidsGame
                 const rotateRight = input.actions.includes("rotateRight") || input.axes.rotate_right > 0;
                 const thrust = input.actions.includes("thrust") || input.axes.thrust > 0;
 
-                if (rotateLeft) render.rotation -= 3 * dt;
-                if (rotateRight) render.rotation += 3 * dt;
+                if (rotateLeft) render.rotation -= GAME_CONFIG.SHIP_ROTATION_SPEED * dt;
+                if (rotateRight) render.rotation += GAME_CONFIG.SHIP_ROTATION_SPEED * dt;
                 if (thrust) {
-                    vel.dx += Math.cos(render.rotation) * 200 * dt;
-                    vel.dy += Math.sin(render.rotation) * 200 * dt;
+                    vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
+                    vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
                 }
 
                 // Physics integration
-                vel.dx *= 0.99;
-                vel.dy *= 0.99;
+                const friction = this.world.getComponent<FrictionComponent>(entity, "Friction")?.value ?? GAME_CONFIG.SHIP_FRICTION;
+                vel.dx *= friction;
+                vel.dy *= friction;
                 pos.x += vel.dx * dt;
                 pos.y += vel.dy * dt;
 
                 // Wrapping
-                if (pos.x < 0) pos.x = 800;
-                if (pos.x > 800) pos.x = 0;
-                if (pos.y < 0) pos.y = 600;
-                if (pos.y > 600) pos.y = 0;
+                if (pos.x < 0) pos.x = GAME_CONFIG.SCREEN_WIDTH;
+                if (pos.x > GAME_CONFIG.SCREEN_WIDTH) pos.x = 0;
+                if (pos.y < 0) pos.y = GAME_CONFIG.SCREEN_HEIGHT;
+                if (pos.y > GAME_CONFIG.SCREEN_HEIGHT) pos.y = 0;
             }
         }
     });
@@ -119,7 +121,7 @@ export class AsteroidsGame
             if (entity === undefined) {
                 entity = this.world.createEntity();
                 this.serverEntities.set(sessionId, entity);
-                this.world.addComponent(entity, { type: "Transform", x: player.x, y: player.y, rotation: player.angle, scaleX: 1, scaleY: 1 });
+                this.world.addComponent(entity, { type: "Transform", x: player.x, y: player.y, rotation: player.angle, scaleX: 1, scaleY: 1 } as TransformComponent);
                 this.world.addComponent(entity, {
                     type: "Render",
                     shape: "triangle",
@@ -127,14 +129,14 @@ export class AsteroidsGame
                     color: "white",
                     rotation: player.angle,
                     trailPositions: []
-                });
-                this.world.addComponent(entity, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0, trailPositions: [] });
+                } as RenderComponent);
+                this.world.addComponent(entity, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0 } as any);
                 const tags = ["Ship"];
                 if (sessionId === localSessionId) tags.push("LocalPlayer");
-                this.world.addComponent(entity, { type: "Tag", tags });
-                this.world.addComponent(entity, { type: "Health", current: player.lives, max: 3, invulnerableRemaining: 0 });
+                this.world.addComponent(entity, { type: "Tag", tags } as TagComponent);
+                this.world.addComponent(entity, { type: "Health", current: player.lives, max: 3, invulnerableRemaining: 0 } as HealthComponent);
                 if (sessionId === localSessionId) {
-                    this.world.addComponent(entity, { type: "Velocity", dx: player.velocityX, dy: player.velocityY });
+                    this.world.addComponent(entity, { type: "Velocity", dx: player.velocityX, dy: player.velocityY } as VelocityComponent);
                 }
             }
 
@@ -186,12 +188,12 @@ export class AsteroidsGame
             if (entity === undefined) {
                 entity = this.world.createEntity();
                 this.serverEntities.set(id, entity);
-                this.world.addComponent(entity, { type: "Transform", x: asteroid.x, y: asteroid.y, rotation: 0, scaleX: 1, scaleY: 1 });
-                this.world.addComponent(entity, { type: "Render", shape: "polygon", size: 30, color: "white", rotation: 0 });
-                this.world.addComponent(entity, { type: "Asteroid", size: "large" });
-                this.world.addComponent(entity, { type: "Tag", tags: ["Asteroid"] });
+                this.world.addComponent(entity, { type: "Transform", x: asteroid.x, y: asteroid.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+                this.world.addComponent(entity, { type: "Render", shape: "polygon", size: 30, color: "white", rotation: 0 } as RenderComponent);
+                this.world.addComponent(entity, { type: "Asteroid", size: "large" } as any);
+                this.world.addComponent(entity, { type: "Tag", tags: ["Asteroid"] } as TagComponent);
             }
-            const pos = this.world.getComponent<any>(entity, "Transform");
+            const pos = this.world.getComponent<TransformComponent>(entity, "Transform");
             if (pos) {
                 pos.x = asteroid.x;
                 pos.y = asteroid.y;
@@ -207,12 +209,12 @@ export class AsteroidsGame
             if (entity === undefined) {
                 entity = this.world.createEntity();
                 this.serverEntities.set(id, entity);
-                this.world.addComponent(entity, { type: "Transform", x: bullet.x, y: bullet.y, rotation: 0, scaleX: 1, scaleY: 1 });
-                this.world.addComponent(entity, { type: "Render", shape: "bullet_shape", size: 2, color: "white", rotation: 0 });
-                this.world.addComponent(entity, { type: "Bullet" });
-                this.world.addComponent(entity, { type: "Tag", tags: ["Bullet"] });
+                this.world.addComponent(entity, { type: "Transform", x: bullet.x, y: bullet.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+                this.world.addComponent(entity, { type: "Render", shape: "bullet_shape", size: 2, color: "white", rotation: 0 } as RenderComponent);
+                this.world.addComponent(entity, { type: "Bullet" } as any);
+                this.world.addComponent(entity, { type: "Tag", tags: ["Bullet"] } as TagComponent);
             }
-            const pos = this.world.getComponent<any>(entity, "Transform");
+            const pos = this.world.getComponent<TransformComponent>(entity, "Transform");
             if (pos) {
                 pos.x = bullet.x;
                 pos.y = bullet.y;

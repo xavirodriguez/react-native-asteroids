@@ -66,11 +66,11 @@ describe("SceneManager", () => {
     sceneManager.register(scene1);
     sceneManager.register(scene2);
 
-    sceneManager.push(scene1);
-    sceneManager.push(scene2);
+    await sceneManager.push(scene1);
+    await sceneManager.push(scene2);
     expect(sceneManager.getCurrentScene()).toBe(scene2);
 
-    sceneManager.pop();
+    await sceneManager.pop();
     expect(sceneManager.getCurrentScene()).toBe(scene1);
     expect(scene2.onExitCalled).toBe(true);
   });
@@ -79,7 +79,7 @@ describe("SceneManager", () => {
     const scene = new TestScene(world, "Scene");
     const mockRenderer = { render: jest.fn() };
     sceneManager.register(scene);
-    sceneManager.push(scene);
+    await sceneManager.push(scene);
 
     sceneManager.update(16);
     expect(scene.updateCalled).toBe(true);
