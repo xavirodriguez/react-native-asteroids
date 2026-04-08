@@ -12,7 +12,7 @@ import { TextRenderer } from "./text/TextRenderer";
 export function renderUI(ctx: CanvasRenderingContext2D, world: World): void {
     const uiEntities = world.query("UIElement");
 
-    const sortedEntities = uiEntities.sort((a, b) => {
+    const sortedEntities = [...uiEntities].sort((a, b) => {
         const elA = world.getComponent<UIElementComponent>(a, "UIElement")!;
         const elB = world.getComponent<UIElementComponent>(b, "UIElement")!;
         return elA.zIndex - elB.zIndex;
