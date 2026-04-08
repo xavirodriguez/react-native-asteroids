@@ -71,7 +71,20 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     // Notify React on each logical update frame
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (!this._isPaused) {
-        // Lockstep integration: only proceed if all inputs are ready for current tick
+        // Capture local input as frame and broadcast (MUST happen before tick check)
+        if (this.isMultiplayer && this.networkTransport) {
+          const inputState = this.unifiedInput.getInputState();
+          const frame = {
+            tick: this.currentTick,
+            timestamp: Date.now(),
+            actions: inputState.actions || [],
+            axes: inputState.axes || {},
+          };
+          this.inputBuffer.addLocalInput(frame);
+          this.networkTransport.send({ type: "input", frame, sessionId: this.networkTransport.getSessionId() });
+        }
+
+        // Lockstep integration: only proceed if all inputs (including local) are ready for current tick
         if (this.isMultiplayer && !this._isTickReady(this.currentTick)) {
           return;
         }
@@ -85,19 +98,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
           this._applyNetworkInputs(activeWorld, tickInputs);
         } else {
           this.unifiedInput.update(activeWorld, deltaTime);
-        }
-
-        // Capture local input as frame and broadcast
-        if (this.isMultiplayer && this.networkTransport) {
-          const inputState = this.unifiedInput.getInputState();
-          const frame = {
-            tick: this.currentTick,
-            timestamp: Date.now(),
-            actions: inputState.actions || [],
-            axes: inputState.axes || {},
-          };
-          this.inputBuffer.addLocalInput(frame);
-          this.networkTransport.send({ type: "input", frame, sessionId: this.networkTransport.getSessionId() });
         }
 
         // Simple games update this.world, advanced games update via sceneManager
