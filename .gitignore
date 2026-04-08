@@ -39,3 +39,7 @@ yarn-error.*
 
 # coverage
 coverage/
+
+server.log
+web_server.log
+npm_output.log
