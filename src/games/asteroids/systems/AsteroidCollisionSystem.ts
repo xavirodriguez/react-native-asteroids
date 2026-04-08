@@ -94,7 +94,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     }
 
     if (render) {
-      render.data = { ...render.data, hitFlashFrames: 8 };
+      render.hitFlashFrames = 8;
     }
 
     this.handleAsteroidDestructionLogic(world, asteroid, bullet);
@@ -185,7 +185,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
     [a1, a2].forEach(entity => {
       const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (render) render.data = { ...render.data, hitFlashFrames: 10 };
+      if (render) render.hitFlashFrames = 10;
     });
   }
 

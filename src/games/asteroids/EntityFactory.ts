@@ -81,7 +81,7 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
     rotation: Math.random() * Math.PI * 2,
     angularVelocity: (Math.random() - 0.5) * 0.04,
     vertices,
-    data: { internalLines, hitFlashFrames: 0 }
+    data: { internalLines }
   } as RenderComponent);
   world.addComponent(asteroid, { type: "Collider", radius } as ColliderComponent);
   world.addComponent(asteroid, { type: "Asteroid", size } as any);
