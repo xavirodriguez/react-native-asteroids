@@ -77,6 +77,7 @@ export default function FlappyBirdScreen() {
         />
         <CanvasRenderer
           world={game.getWorld()}
+          gameLoop={game.getGameLoop()}
           onInitialize={(renderer) => game.initializeRenderer(renderer)}
         />
         <FlappyBirdControls

@@ -6,13 +6,15 @@ import {
 import { CanvasRenderer as EngineCanvasRenderer } from "../src/engine/rendering/CanvasRenderer";
 import type { World } from "../src/engine/core/World";
 import { Renderer } from "../src/engine/rendering/Renderer";
+import { GameLoop } from "../src/engine/core/GameLoop";
 
 interface CanvasRendererProps {
   world: World;
+  gameLoop?: GameLoop;
   onInitialize?: (renderer: Renderer) => void;
 }
 
-export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, onInitialize }) => {
+export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, gameLoop, onInitialize }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<EngineCanvasRenderer | null>(null);
 
@@ -27,32 +29,25 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, onInitial
 
     if (!rendererRef.current) {
       const renderer = new EngineCanvasRenderer(ctx);
-
-      if (onInitialize) {
-        onInitialize(renderer);
-      }
-
+      if (onInitialize) onInitialize(renderer);
       rendererRef.current = renderer;
     } else {
       rendererRef.current.setContext(ctx);
     }
     rendererRef.current.setSize(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
 
-    let animationFrameId: number;
+    // Initial render
+    rendererRef.current.render(world);
 
-    const render = () => {
-      if (rendererRef.current) {
-        rendererRef.current.render(world);
-      }
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [world, onInitialize]);
+    if (gameLoop) {
+      const unsubscribe = gameLoop.subscribeRender(() => {
+        if (rendererRef.current) {
+          rendererRef.current.render(world);
+        }
+      });
+      return unsubscribe;
+    }
+  }, [world, gameLoop, onInitialize]);
 
   return (
     <View style={styles.container}>

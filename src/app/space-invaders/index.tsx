@@ -77,6 +77,7 @@ export default function SpaceInvadersScreen() {
         />
         <CanvasRenderer
           world={game.getWorld()}
+          gameLoop={game.getGameLoop()}
           onInitialize={(renderer) => game.initializeRenderer(renderer)}
         />
         <SpaceInvadersControls

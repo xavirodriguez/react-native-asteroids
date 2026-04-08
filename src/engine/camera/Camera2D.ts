@@ -1,6 +1,7 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { Camera2DComponent, TransformComponent, Entity } from "../types/EngineTypes";
+import { RandomService } from "../utils/RandomService";
 
 export interface CameraConfig {
   viewport: { width: number; height: number };
@@ -53,8 +54,9 @@ export class Camera2D extends System {
 
       // Handle shake decay and offset computation
       if (cam.shakeIntensity > 0) {
-        cam.shakeOffsetX = (Math.random() - 0.5) * cam.shakeIntensity;
-        cam.shakeOffsetY = (Math.random() - 0.5) * cam.shakeIntensity;
+        const renderRandom = RandomService.getInstance("render");
+        cam.shakeOffsetX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
+        cam.shakeOffsetY = (renderRandom.next() - 0.5) * cam.shakeIntensity;
 
         cam.shakeIntensity -= deltaTime * 0.05; // Decay rate
         if (cam.shakeIntensity < 0) {

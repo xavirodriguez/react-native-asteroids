@@ -7,6 +7,7 @@ import { UITextComponent, UIStyleComponent } from "../ui/UITypes";
 import { FontRegistry } from "../ui/text/FontRegistry";
 import { TextRenderer } from "../ui/text/TextRenderer";
 import { DebugSystem } from "../ui/debug/DebugSystem";
+import { RandomService } from "../utils/RandomService";
 
 export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => void;
 
@@ -163,8 +164,9 @@ export class CanvasRenderer implements Renderer {
     let shakeX = 0;
     let shakeY = 0;
     if (gameState?.screenShake && gameState.screenShake.remaining > 0) {
-      shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
-      shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
+      const renderRandom = RandomService.getInstance("render");
+      shakeX = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
+      shakeY = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
     }
 
     ctx.save();

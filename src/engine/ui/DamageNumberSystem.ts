@@ -3,6 +3,7 @@ import { World } from "../core/World";
 import { UIFactory } from "./UIFactory";
 import { UIElementComponent } from "./UITypes";
 import { TTLComponent } from "../core/CoreComponents";
+import { RandomService } from "../utils/RandomService";
 
 export interface DamageNumberComponent {
     type: "DamageNumber";
@@ -28,10 +29,11 @@ export class DamageNumberSystem extends System {
         element.offsetX = x;
         element.offsetY = y;
 
+        const gameplayRandom = RandomService.getInstance("gameplay");
         world.addComponent(entity, {
             type: "DamageNumber",
             value,
-            velocity: { x: (Math.random() - 0.5) * 40, y: -60 - Math.random() * 40 }
+            velocity: { x: (gameplayRandom.next() - 0.5) * 40, y: -60 - gameplayRandom.next() * 40 }
         } as DamageNumberComponent);
 
         world.addComponent(entity, {

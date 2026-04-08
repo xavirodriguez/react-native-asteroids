@@ -14,6 +14,7 @@ import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
 import { TransformComponent, VelocityComponent, RenderComponent, FrictionComponent, ScreenShakeComponent, TagComponent, HealthComponent } from "../../engine/types/EngineTypes";
+import { PhysicsUtils } from "../../engine/utils/PhysicsUtils";
 import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory";
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { KeyboardController } from "../../engine/input/KeyboardController";
@@ -52,48 +53,45 @@ export class AsteroidsGame
     this.isMultiplayer = active;
   }
 
+  /**
+   * Predicts local player movement for lag compensation.
+   * Utilizes the same logical steps as the engine's movement systems.
+   */
   public predictLocalPlayer(input: InputFrame, deltaTime: number) {
-    const dt = deltaTime / 1000;
+    const dtSeconds = deltaTime / 1000;
     const ships = this.world.query("Ship", "Transform", "Velocity", "Render");
 
     ships.forEach((entity) => {
-        const tag = this.world.getComponent<TagComponent>(entity, "Tag");
-        if (tag && tag.tags.includes("LocalPlayer")) {
-            const pos = this.world.getComponent<TransformComponent>(entity, "Transform");
-            const vel = this.world.getComponent<VelocityComponent>(entity, "Velocity");
-            const render = this.world.getComponent<RenderComponent>(entity, "Render");
+      const tag = this.world.getComponent<TagComponent>(entity, "Tag");
+      if (tag && tag.tags.includes("LocalPlayer")) {
+        const pos = this.world.getComponent<TransformComponent>(entity, "Transform");
+        const vel = this.world.getComponent<VelocityComponent>(entity, "Velocity");
+        const render = this.world.getComponent<RenderComponent>(entity, "Render");
+        const frictionComp = this.world.getComponent<FrictionComponent>(entity, "Friction");
 
-            if (pos && vel && render) {
-                // Apply same logic as server
-                const rotateLeft = input.actions.includes("rotateLeft") || input.axes.rotate_left > 0;
-                const rotateRight = input.actions.includes("rotateRight") || input.axes.rotate_right > 0;
-                const thrust = input.actions.includes("thrust") || input.axes.thrust > 0;
+        if (pos && vel && render) {
+          // 1. Apply Input-driven Acceleration (Matching AsteroidInputSystem)
+          const rotateLeft = input.actions.includes("rotateLeft") || (input.axes?.rotate_left ?? 0) > 0;
+          const rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;
+          const thrust = input.actions.includes("thrust") || (input.axes?.thrust ?? 0) > 0;
 
-                if (rotateLeft) render.rotation -= GAME_CONFIG.SHIP_ROTATION_SPEED * dt;
-                if (rotateRight) render.rotation += GAME_CONFIG.SHIP_ROTATION_SPEED * dt;
-                if (thrust) {
-                    vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
-                    vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
-                }
+          if (rotateLeft) render.rotation -= GAME_CONFIG.SHIP_ROTATION_SPEED * dtSeconds;
+          if (rotateRight) render.rotation += GAME_CONFIG.SHIP_ROTATION_SPEED * dtSeconds;
+          if (thrust) {
+            vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dtSeconds;
+            vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dtSeconds;
+          }
 
-                // Physics integration - Friction (Matching FrictionSystem.ts)
-                const friction = this.world.getComponent<FrictionComponent>(entity, "Friction")?.value ?? GAME_CONFIG.SHIP_FRICTION;
-                const dtFactor = deltaTime / (1000 / 60);
-                const frictionFactor = Math.pow(friction, dtFactor);
-                vel.dx *= frictionFactor;
-                vel.dy *= frictionFactor;
+          // 2. Apply Friction (Unified via PhysicsUtils)
+          PhysicsUtils.applyFriction(vel, frictionComp?.value ?? GAME_CONFIG.SHIP_FRICTION, deltaTime);
 
-                // Physics integration - Movement (Matching MovementSystem.ts)
-                pos.x += vel.dx * dt;
-                pos.y += vel.dy * dt;
+          // 3. Apply Movement (Unified via PhysicsUtils)
+          PhysicsUtils.integrateMovement(pos, vel, dtSeconds);
 
-                // Wrapping
-                if (pos.x < 0) pos.x = GAME_CONFIG.SCREEN_WIDTH;
-                if (pos.x > GAME_CONFIG.SCREEN_WIDTH) pos.x = 0;
-                if (pos.y < 0) pos.y = GAME_CONFIG.SCREEN_HEIGHT;
-                if (pos.y > GAME_CONFIG.SCREEN_HEIGHT) pos.y = 0;
-            }
+          // 4. Boundary Wrapping (Unified via PhysicsUtils)
+          PhysicsUtils.wrapBoundary(pos, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
         }
+      }
     });
   }
 
@@ -292,9 +290,11 @@ export class AsteroidsGame
 
 export class NullAsteroidsGame implements IAsteroidsGame {
   private _world = new World();
+  private _loop = new GameLoop();
   public start() {} public stop() {} public pause() {} public resume() {}
   public async restart() {} public destroy() {}
   public getWorld() { return this._world; }
+  public getGameLoop() { return this._loop; }
   public isPausedState() { return false; }
   public isGameOver() { return false; }
   public getGameState() { return INITIAL_GAME_STATE; }

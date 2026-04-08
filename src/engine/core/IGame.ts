@@ -1,4 +1,5 @@
 import type { World } from "./World";
+import type { GameLoop } from "./GameLoop";
 
 /**
  * Generic type for the update listener.
@@ -22,6 +23,7 @@ export interface IGame<TGame = unknown> {
   isGameOver(): boolean;
   setInput(input: Record<string, boolean>): void;
   subscribe(listener: UpdateListener<TGame>): () => void;
+  getGameLoop(): GameLoop;
   /**
    * Returns the current game state.
    * Overridden by each game with its specific type.

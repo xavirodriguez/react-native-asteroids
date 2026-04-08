@@ -13,6 +13,7 @@ import { createBullet, createParticle } from "../EntityFactory";
 import { hapticShoot } from "../../../utils/haptics";
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { RandomService } from "../../../engine/utils/RandomService";
+import { PhysicsUtils } from "../../../engine/utils/PhysicsUtils";
 
 /**
  * System responsible for processing user input and applying it to the ship's state.
@@ -183,9 +184,7 @@ export class AsteroidInputSystem extends System {
   }
 
   private applyFriction(velocity: VelocityComponent, deltaTime: number): void {
-    const frictionFactor = Math.pow(GAME_CONFIG.SHIP_FRICTION, deltaTime / (1000 / 60));
-    velocity.dx *= frictionFactor;
-    velocity.dy *= frictionFactor;
+    PhysicsUtils.applyFriction(velocity, GAME_CONFIG.SHIP_FRICTION, deltaTime);
   }
 
   private handleShipShooting(context: {

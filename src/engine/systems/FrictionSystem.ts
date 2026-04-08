@@ -1,6 +1,7 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { VelocityComponent, FrictionComponent } from "../types/EngineTypes";
+import { PhysicsUtils } from "../utils/PhysicsUtils";
 
 /**
  * Generic Friction System for the TinyAsterEngine.
@@ -13,16 +14,11 @@ export class FrictionSystem extends System {
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Velocity", "Friction");
 
-    // Calculate normalized factor based on 60 FPS reference
-    const dtFactor = deltaTime / (1000 / 60);
-
     entities.forEach((entity) => {
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!;
       const friction = world.getComponent<FrictionComponent>(entity, "Friction")!;
 
-      const frictionFactor = Math.pow(friction.value, dtFactor);
-      vel.dx *= frictionFactor;
-      vel.dy *= frictionFactor;
+      PhysicsUtils.applyFriction(vel, friction.value, deltaTime);
     });
   }
 }

@@ -91,6 +91,7 @@ export default function AsteroidsScreen() {
         />
         <CanvasRenderer
           world={game.getWorld()}
+          gameLoop={game.getGameLoop()}
           onInitialize={(renderer) => game.initializeRenderer(renderer)}
         />
         <GameControls

@@ -5,7 +5,7 @@ import { GameLoop } from "../engine/core/GameLoop";
 interface GameEngineProps {
   world: World;
   gameLoop: GameLoop;
-  renderComponent: React.ComponentType<{ world: World }>;
+  renderComponent: React.ComponentType<{ world: World; gameLoop: GameLoop }>;
 }
 
 /**
@@ -13,21 +13,13 @@ interface GameEngineProps {
  * Orchestrates the GameLoop and provides the world to the specified Renderer component.
  */
 export const GameEngine: React.FC<GameEngineProps> = ({ world, gameLoop, renderComponent: Renderer }) => {
-  const [, setVersion] = useState(0);
-
   useEffect(() => {
-    const unsubscribe = gameLoop.subscribeRender(() => {
-      // Trigger a React update for every frame to ensure the Renderer is updated.
-      setVersion(v => v + 1);
-    });
-
     gameLoop.start();
 
     return () => {
       gameLoop.stop();
-      unsubscribe();
     };
   }, [gameLoop]);
 
-  return <Renderer world={world} />;
+  return <Renderer world={world} gameLoop={gameLoop} />;
 };
