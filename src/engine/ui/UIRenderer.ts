@@ -80,10 +80,17 @@ function renderLabel(ctx: CanvasRenderingContext2D, entity: any, world: World, e
     const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
     if (!text || !style) return;
 
+    let textX = element.computedX;
+    if (style.textAlign === "center") {
+        textX = element.computedX + element.computedWidth / 2;
+    } else if (style.textAlign === "right") {
+        textX = element.computedX + element.computedWidth;
+    }
+
     TextRenderer.drawSystemText(
         ctx,
         text.content,
-        element.computedX,
+        textX,
         element.computedY,
         style.fontSize,
         style.textColor,
