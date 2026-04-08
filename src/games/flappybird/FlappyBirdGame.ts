@@ -31,7 +31,7 @@ export class FlappyBirdGame
   implements IFlappyBirdGame {
 
   private gameStateSystem: FlappyBirdGameStateSystem;
-  private _localInputManager: InputManager<FlappyBirdInput>;
+  private _localInputManager: InputManager<FlappyBirdInput> | null = null;
 
   constructor(config: { isMultiplayer?: boolean } = {}) {
     super({
@@ -39,7 +39,6 @@ export class FlappyBirdGame
       restartKey: FLAPPY_CONFIG.KEYS.RESTART,
       isMultiplayer: config.isMultiplayer
     });
-    this._localInputManager = new InputManager<FlappyBirdInput>();
   }
 
   protected registerSystems(): void {
@@ -48,11 +47,12 @@ export class FlappyBirdGame
       [FLAPPY_CONFIG.KEYS.FLAP]: "flap" as const,
     };
 
-    if (this._localInputManager) {
-        this._localInputManager.cleanup();
-        this._localInputManager.addController(new KeyboardController<FlappyBirdInput>(FLAPPY_KEYMAP, DEFAULT_INPUT));
-        this._localInputManager.addController(new TouchController<FlappyBirdInput>());
-    }
+    // Fix initialization order: Create if not exists since super() calls this
+    this._localInputManager = this._localInputManager || new InputManager<FlappyBirdInput>();
+
+    this._localInputManager.cleanup();
+    this._localInputManager.addController(new KeyboardController<FlappyBirdInput>(FLAPPY_KEYMAP, DEFAULT_INPUT));
+    this._localInputManager.addController(new TouchController<FlappyBirdInput>());
 
     this.gameStateSystem = new FlappyBirdGameStateSystem(this);
 
