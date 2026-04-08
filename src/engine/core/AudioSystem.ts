@@ -59,9 +59,11 @@ export class AudioSystem {
       source.start();
     } else {
       // Fallback to HTML Audio if Web Audio buffer not loaded
-      const audio = new Audio(`/assets/audio/${name}.wav`);
-      audio.volume = this.masterVolume * this.sfxVolume;
-      audio.play().catch(() => {});
+      if (typeof Audio !== "undefined") {
+        const audio = new Audio(`/assets/audio/${name}.wav`);
+        audio.volume = this.masterVolume * this.sfxVolume;
+        audio.play().catch(() => {});
+      }
     }
   }
 
@@ -112,7 +114,8 @@ export class AudioSystem {
     try {
       const response = await fetch(url);
       const arrayBuffer = await response.arrayBuffer();
-      return await this.ctx.decodeAudioBuffer(arrayBuffer);
+      // decodeAudioData is the standard method
+      return await this.ctx.decodeAudioData(arrayBuffer);
     } catch (e) {
       console.error(`Failed to load audio buffer: ${url}`, e);
       return null;

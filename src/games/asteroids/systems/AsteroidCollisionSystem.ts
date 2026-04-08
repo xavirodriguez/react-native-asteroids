@@ -1,18 +1,15 @@
 import { World } from "../../../engine/core/World";
 import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
 import {
-  type TransformComponent,
   type AsteroidComponent,
   type HealthComponent,
   type Entity,
-  type ComponentType,
-  GAME_CONFIG,
+  PositionComponent,
   RenderComponent,
-  ReclaimableComponent,
-} from "../../../types/GameTypes";
+} from "../../../engine/types/EngineTypes";
 
 import { createAsteroid, createParticle } from "../EntityFactory";
-import { type GameStateComponent } from "../types/AsteroidTypes";
+import { type GameStateComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 import { ScreenShakeComponent } from "../../../engine/types/EngineTypes";
 import { hapticDamage, hapticDeath } from "../../../utils/haptics";
 import { ParticlePool } from "../EntityPool";
@@ -47,55 +44,6 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
     if (this.handleBulletAsteroidPair({ world, entityA, entityB })) return;
     if (this.handleShipAsteroidPair({ world, entityA, entityB })) return;
-    if (this.handleBulletUfoPair({ world, entityA, entityB })) return;
-    this.handleShipUfoPair({ world, entityA, entityB });
-  }
-
-  private handleBulletUfoPair(context: {
-    world: World;
-    entityA: Entity;
-    entityB: Entity;
-  }): boolean {
-    const { world, entityA, entityB } = context;
-    const match = this.matchPair(world, entityA, entityB, "Bullet", "Ufo");
-
-    if (match) {
-      const matchUfo = (match as Record<"Ufo" | "Bullet", Entity>).Ufo;
-      const matchBullet = (match as Record<"Ufo" | "Bullet", Entity>).Bullet;
-      const position = world.getComponent<PositionComponent>(matchUfo, "Position");
-      if (position) {
-        this.spawnExplosion(world, position, GAME_CONFIG.PARTICLE_COUNT * 2);
-      }
-      this.destroyEntity(world, Ufo);
-      this.destroyEntity(world, Bullet);
-      this.addScore({ world, points: 100 });
-      return true;
-    }
-    return false;
-  }
-
-  private handleShipUfoPair(context: {
-    world: World;
-    entityA: Entity;
-    entityB: Entity;
-  }): boolean {
-    const { world, entityA, entityB } = context;
-    const match = this.matchPair(world, entityA, entityB, "Ship", "Ufo");
-
-    if (match) {
-      const { Ship, Ufo } = match;
-      const health = world.getComponent<HealthComponent>(Ship, "Health");
-      if (this.canShipTakeDamage(health)) {
-        this.applyDamageToShip(world, health);
-        const position = world.getComponent<PositionComponent>(matchUfo, "Position");
-        if (position) {
-          this.spawnExplosion(world, position, GAME_CONFIG.PARTICLE_COUNT * 2);
-        }
-        this.destroyEntity(world, Ufo);
-      }
-      return true;
-    }
-    return false;
   }
 
   private handleBulletAsteroidPair(context: {
@@ -138,26 +86,18 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     bullet: Entity;
   }): void {
     const { world, asteroid, bullet } = context;
-    const position = world.getComponent<PositionComponent>(asteroid, "Position");
+    const position = world.getComponent<PositionComponent>(asteroid, "Position") || world.getComponent<any>(asteroid, "Transform");
     const render = world.getComponent<RenderComponent>(asteroid, "Render");
-    if (pos) {
-      this.spawnExplosionParticles(world, pos, GAME_CONFIG.PARTICLE_COUNT);
+
+    if (position) {
+      this.spawnExplosion(world, position, GAME_CONFIG.PARTICLE_COUNT);
     }
-    // Improvement 9: Hit flash effect
+
     if (render) {
-      render.data = { ...render.data, hitFlashFrames: 8 };
+      render.hitFlashFrames = 8;
     }
 
     this.handleAsteroidDestructionLogic(world, asteroid, bullet);
-  }
-
-  private applyBulletImpactVisuals(
-    world: World,
-    render: RenderComponent,
-    position: PositionComponent
-  ): void {
-    this.spawnExplosion(world, position, GAME_CONFIG.PARTICLE_COUNT);
-    render.hitFlashFrames = 8;
   }
 
   private handleAsteroidDestructionLogic(world: World, asteroid: Entity, bullet: Entity): void {
@@ -172,10 +112,9 @@ export class AsteroidCollisionSystem extends CollisionSystem {
         world,
         x: position.x,
         y: position.y,
-        dx: (RandomService.next() - 0.5) * 160, // [-80, 80]
-        dy: (RandomService.next() - 0.5) * 160, // [-80, 80]
+        dx: (RandomService.next() - 0.5) * 160,
+        dy: (RandomService.next() - 0.5) * 160,
         color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
-        ttl: GAME_CONFIG.PARTICLE_TTL_BASE,
       });
     }
   }
@@ -199,10 +138,8 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
     const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
     if (shake) {
-      shake.config = {
-        intensity: 8,
-        duration: 15,
-      };
+      shake.intensity = GAME_CONFIG.SHAKE_INTENSITY_IMPACT;
+      shake.remaining = GAME_CONFIG.SHAKE_DURATION_IMPACT;
     }
 
     if (health.current <= 0) {
@@ -215,7 +152,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
   private splitAsteroid(asteroidContext: { world: World; asteroidEntity: Entity }): void {
     const { world, asteroidEntity } = asteroidContext;
     const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
-    const position = world.getComponent<PositionComponent>(asteroidEntity, "Position");
+    const position = world.getComponent<PositionComponent>(asteroidEntity, "Position") || world.getComponent<any>(asteroidEntity, "Transform");
 
     if (asteroid && position) {
       this.executeSplitStrategy({ world, position, size: asteroid.size });
@@ -248,7 +185,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
     [a1, a2].forEach(entity => {
       const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (render) render.data = { ...render.data, hitFlashFrames: 10 };
+      if (render) render.hitFlashFrames = 10;
     });
   }
 

@@ -1,6 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { ParticleEmitterComponent, ParticleEmitterConfig, TransformComponent, VelocityComponent, TTLComponent, RenderComponent, Entity } from "../types/EngineTypes";
+import { ParticleEmitterComponent, ParticleEmitterConfig, Entity } from "../types/EngineTypes";
 import { PrefabPool } from "../utils/PrefabPool";
 import { RandomService } from "../utils/RandomService";
 
@@ -27,28 +27,34 @@ export class ParticleSystem extends System {
       const config = emitter.config;
 
       // Handle burst emission
-      if (emitter.elapsed === 0 && config.burst > 0) {
+      if (emitter.elapsed === 0 && config.burst && config.burst > 0) {
         for (let i = 0; i < config.burst; i++) {
           this.spawnParticle(world, config);
+        }
+        if (!config.loop && config.rate === 0) {
+            emitter.active = false;
         }
       }
 
       // Handle continuous emission
-      emitter.elapsed += dtSeconds;
-      const particlesToSpawn = Math.floor(emitter.elapsed * config.rate);
-      for (let i = 0; i < particlesToSpawn; i++) {
-        this.spawnParticle(world, config);
-      }
-
       if (config.rate > 0) {
-        emitter.elapsed %= (1 / config.rate);
-      }
-
-      // Stop non-looping emitters after one burst or specific logic
-      if (!config.loop && config.rate === 0) {
-        emitter.active = false;
+          emitter.elapsed += dtSeconds;
+          const particlesToSpawn = Math.floor(emitter.elapsed * config.rate);
+          for (let i = 0; i < particlesToSpawn; i++) {
+            this.spawnParticle(world, config);
+          }
+          emitter.elapsed %= (1 / config.rate);
+      } else {
+          emitter.elapsed += dtSeconds; // Still advance elapsed for non-rate emitters
       }
     });
+  }
+
+  /**
+   * Static helper to emit a burst manually.
+   */
+  public emit(world: World, config: ParticleEmitterConfig): Entity {
+    return createEmitter(world, config);
   }
 
   private spawnParticle(world: World, config: ParticleEmitterConfig): void {
@@ -58,9 +64,11 @@ export class ParticleSystem extends System {
     const size = RandomService.nextRange(config.size.min, config.size.max);
     const color = config.color[RandomService.nextInt(0, config.color.length)];
 
+    const pos = config.position || { x: 0, y: 0 };
+
     this.particlePool.acquire(world, {
-      x: config.position.x,
-      y: config.position.y,
+      x: pos.x,
+      y: pos.y,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       size,

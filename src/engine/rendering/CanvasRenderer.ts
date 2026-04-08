@@ -1,12 +1,7 @@
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { PositionComponent, RenderComponent, TTLComponent, TransformComponent, ColliderComponent, VelocityComponent } from "../core/CoreComponents";
-import { UITextComponent, UIStyleComponent } from "../ui/UITypes";
-import { FontRegistry } from "../ui/text/FontRegistry";
-import { TextRenderer } from "../ui/text/TextRenderer";
-import { renderUI } from "../ui/UIRenderer";
-import { DebugConfigComponent } from "../ui/debug/DebugTypes";
+import { PositionComponent, RenderComponent, TTLComponent, TransformComponent, Component, TilemapComponent } from "../core/CoreComponents";
 
 export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => void;
 
@@ -15,7 +10,7 @@ export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world:
  * Generic and extensible via shape drawers.
  */
 export class CanvasRenderer implements Renderer {
-  public readonly type = "canvas";
+  public readonly type = 'canvas';
   protected ctx: CanvasRenderingContext2D | null = null;
   protected width: number = 0;
   protected height: number = 0;
@@ -26,6 +21,9 @@ export class CanvasRenderer implements Renderer {
   private backgroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
   private foregroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
 
+  private backgroundEffects = new Map<string, any>();
+  private foregroundEffects = new Map<string, any>();
+
   constructor(ctx?: CanvasRenderingContext2D) {
     if (ctx) {
       this.ctx = ctx;
@@ -35,6 +33,10 @@ export class CanvasRenderer implements Renderer {
 
   public registerShapeDrawer(shape: string, drawer: ShapeDrawer): void {
     this.shapeDrawers.set(shape, drawer);
+  }
+
+  public registerShape(name: string, drawer: any): void {
+      this.shapeDrawers.set(name, drawer);
   }
 
   public registerPostEntityDrawer(shape: string, drawer: ShapeDrawer): void {
@@ -61,6 +63,14 @@ export class CanvasRenderer implements Renderer {
     this.postRenderHooks.push(hook);
   }
 
+  public registerBackgroundEffect(name: string, drawer: any): void {
+      this.backgroundEffects.set(name, drawer);
+  }
+
+  public registerForegroundEffect(name: string, drawer: any): void {
+      this.foregroundEffects.set(name, drawer);
+  }
+
   private registerDefaultDrawers(): void {
     this.registerShapeDrawer("circle", (ctx, _, __, render) => {
       ctx.fillStyle = render.color;
@@ -79,7 +89,7 @@ export class CanvasRenderer implements Renderer {
       ctx.strokeStyle = render.color;
       ctx.lineWidth = 2;
       ctx.fillStyle = "#333";
-      if (render.data?.hitFlashFrames && render.data.hitFlashFrames > 0) {
+      if (render.hitFlashFrames && render.hitFlashFrames > 0) {
         ctx.strokeStyle = "white";
         ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
       }
@@ -161,7 +171,7 @@ export class CanvasRenderer implements Renderer {
 
     let shakeX = 0;
     let shakeY = 0;
-    if (gameState?.screenShake && gameState.screenShake.framesLeft > 0) {
+    if (gameState?.screenShake && gameState.screenShake.remaining > 0) {
       shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
       shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
     }
@@ -206,22 +216,24 @@ export class CanvasRenderer implements Renderer {
     this.postRenderHooks.forEach(hook => hook(ctx, world));
   }
 
-  public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
+  public drawEntity(entity: Entity, components: Record<string, Component>, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const pos = components["Transform"] as TransformComponent;
     const render = components["Render"] as RenderComponent;
 
+    if (!pos || !render) return;
+
+    // Use world coordinates from HierarchySystem (single source of truth)
+    const x = pos.worldX !== undefined ? pos.worldX : pos.x;
+    const y = pos.worldY !== undefined ? pos.worldY : pos.y;
+    const rotation = pos.worldRotation !== undefined ? pos.worldRotation : render.rotation;
+
     ctx.save();
-
-    const x = (pos as any).worldX !== undefined ? (pos as any).worldX : pos.x;
-    const y = (pos as any).worldY !== undefined ? (pos as any).worldY : pos.y;
-    const rotation = (pos as any).worldRotation !== undefined ? (pos as any).worldRotation : render.rotation;
-
     ctx.translate(x, y);
     ctx.rotate(rotation);
 
-    if (render.data?.hitFlashFrames && render.data.hitFlashFrames > 0) {
+    if (render.hitFlashFrames && render.hitFlashFrames > 0) {
       ctx.globalCompositeOperation = "lighter";
     }
 
@@ -239,45 +251,85 @@ export class CanvasRenderer implements Renderer {
   }
 
   public drawParticles(world: World): void {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const entities = world.query("Transform", "Render").filter(e => {
+        const r = world.getComponent<RenderComponent>(e, "Render");
+        return r?.shape === "particle";
+    });
+
+    entities.forEach(entity => {
+        const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
+        const render = world.getComponent<RenderComponent>(entity, "Render")!;
+        const ttl = world.getComponent<TTLComponent>(entity, "TTL");
+        if (!ttl) return;
+
+        const lifeRatio = ttl.remaining / ttl.total;
+        ctx.save();
+        ctx.translate(pos.x, pos.y);
+        ctx.globalAlpha = lifeRatio;
+
+        let hue = 20;
+        let saturation = 100;
+        let lightness = 50;
+
+        if (lifeRatio > 0.8) {
+            lightness = 100;
+        } else if (lifeRatio > 0.4) {
+            hue = 30;
+            lightness = 50 + (0.8 - lifeRatio) * 50;
+        } else {
+            hue = 0;
+            lightness = 25 + lifeRatio * 60;
+        }
+
+        const hueVariation = (entity % 10) - 5;
+        ctx.fillStyle = `hsl(${hue + hueVariation}, ${saturation}%, ${lightness}%)`;
+
+        if (lifeRatio > 0.8) {
+            ctx.shadowColor = "#ffffaa";
+            ctx.shadowBlur = 10;
+        }
+
+        const size = render.size * lifeRatio;
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
   }
 
-  private renderDebugInfo(ctx: CanvasRenderingContext2D, world: World): void {
-      const config = world.getSingleton<DebugConfigComponent>("DebugConfig");
-      if (!config) return;
+  public drawTilemaps(world: World): void {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const tilemaps = world.query("Tilemap");
 
-      const entities = world.getAllEntities();
-      for (const entity of entities) {
-          const pos = world.getComponent<PositionComponent>(entity, "Position") ||
-                      world.getComponent<any>(entity, "Transform");
-          if (!pos) continue;
+    tilemaps.forEach(entity => {
+        const tilemap = world.getComponent<TilemapComponent>(entity, "Tilemap")!;
+        const range = (tilemap as any)._visibleRange || {
+            startX: 0, startY: 0, endX: tilemap.data.width, endY: tilemap.data.height
+        };
 
-          if (config.showColliders) {
-              const collider = world.getComponent<ColliderComponent>(entity, "Collider");
-              if (collider) {
-                  ctx.strokeStyle = "rgba(0, 255, 0, 0.5)";
-                  ctx.lineWidth = 1;
-                  ctx.beginPath();
-                  ctx.arc(pos.x, pos.y, collider.radius, 0, Math.PI * 2);
-                  ctx.stroke();
-              }
-          }
+        for (const layer of tilemap.data.layers) {
+            for (let y = range.startY; y < range.endY; y++) {
+                for (let x = range.startX; x < range.endX; x++) {
+                    const tileId = layer.tiles[y * tilemap.data.width + x];
+                    if (tileId === 0) continue;
 
-          if (config.showVelocities) {
-              const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
-              if (vel) {
-                  ctx.strokeStyle = "rgba(0, 255, 255, 0.5)";
-                  ctx.beginPath();
-                  ctx.moveTo(pos.x, pos.y);
-                  ctx.lineTo(pos.x + vel.dx * 0.2, pos.y + vel.dy * 0.2);
-                  ctx.stroke();
-              }
-          }
-
-          if (config.showEntityIds) {
-              ctx.fillStyle = "white";
-              ctx.font = "10px monospace";
-              ctx.fillText(`#${entity}`, pos.x, pos.y - 10);
-          }
-      }
+                    const tileset = tilemap.data.tilesets.find(ts => ts.id === tileId);
+                    if (tileset) {
+                        // Drawing logic for tile (using simple color for now as textures require loading)
+                        ctx.fillStyle = tileset.solid ? "#555" : "#333";
+                        ctx.fillRect(
+                            x * tilemap.data.tileSize,
+                            y * tilemap.data.tileSize,
+                            tilemap.data.tileSize,
+                            tilemap.data.tileSize
+                        );
+                    }
+                }
+            }
+        }
+    });
   }
 }

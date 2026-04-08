@@ -1,23 +1,24 @@
 import { World } from "../../engine/core/World";
 import { AsteroidsGame } from "./AsteroidsGame";
 import { GAME_CONFIG, INITIAL_GAME_STATE } from "../../types/GameTypes";
-import { PositionComponent, VelocityComponent, RenderComponent, ColliderComponent, TTLComponent } from "../../engine/core/CoreComponents";
-import { generateStarField } from "../../game/StarField";
+import { TransformComponent, VelocityComponent, RenderComponent, ColliderComponent, TTLComponent } from "../../engine/core/CoreComponents";
+import { generateStarField } from "../../engine/rendering/StarField";
 
 export const createShip = ({ world, x, y }: { world: World; x: number; y: number }) => {
   const ship = world.createEntity();
-  world.addComponent(ship, { type: "Position", x, y } as PositionComponent);
+  world.addComponent(ship, { type: "Transform", x, y, rotation: -Math.PI / 2, scaleX: 1, scaleY: 1 } as TransformComponent);
   world.addComponent(ship, { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent);
   world.addComponent(ship, {
     type: "Friction",
     value: GAME_CONFIG.SHIP_FRICTION,
-  })
+  } as any);
   world.addComponent(ship, {
     type: "Boundary",
+    x: 0, y: 0,
     width: GAME_CONFIG.SCREEN_WIDTH,
     height: GAME_CONFIG.SCREEN_HEIGHT,
-    mode: "wrap",
-  })
+    behavior: "wrap",
+  } as any);
   world.addComponent(ship, {
     type: "Render",
     shape: "triangle",
@@ -26,9 +27,9 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
     rotation: -Math.PI / 2,
   } as RenderComponent);
   world.addComponent(ship, { type: "Collider", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS } as ColliderComponent);
-  world.addComponent(ship, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0, trail: [] });
-  world.addComponent(ship, { type: "Input", thrust: false, rotateLeft: false, rotateRight: false, shoot: false, hyperspace: false, shootCooldownRemaining: 0 });
-  world.addComponent(ship, { type: "Health", current: 3, max: 3, invulnerableRemaining: GAME_CONFIG.INVULNERABILITY_DURATION });
+  world.addComponent(ship, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0, trail: [] } as any);
+  world.addComponent(ship, { type: "Input", thrust: false, rotateLeft: false, rotateRight: false, shoot: false, hyperspace: false, shootCooldownRemaining: 0 } as any);
+  world.addComponent(ship, { type: "Health", current: 3, max: 3, invulnerableRemaining: GAME_CONFIG.INVULNERABILITY_DURATION } as any);
   return ship;
 };
 
@@ -37,12 +38,12 @@ export const createBullet = ({ world, x, y, angle }: { world: World; x: number; 
   const dx = Math.cos(angle) * GAME_CONFIG.BULLET_SPEED;
   const dy = Math.sin(angle) * GAME_CONFIG.BULLET_SPEED;
 
-  world.addComponent(bullet, { type: "Position", x, y } as PositionComponent);
+  world.addComponent(bullet, { type: "Transform", x, y, rotation: angle, scaleX: 1, scaleY: 1 } as TransformComponent);
   world.addComponent(bullet, { type: "Velocity", dx, dy } as VelocityComponent);
   world.addComponent(bullet, { type: "Render", shape: "circle", size: GAME_CONFIG.BULLET_SIZE, color: "white", rotation: 0 } as RenderComponent);
   world.addComponent(bullet, { type: "Collider", radius: GAME_CONFIG.BULLET_SIZE } as ColliderComponent);
   world.addComponent(bullet, { type: "TTL", remaining: GAME_CONFIG.BULLET_TTL, total: GAME_CONFIG.BULLET_TTL } as TTLComponent);
-  world.addComponent(bullet, { type: "Bullet" });
+  world.addComponent(bullet, { type: "Bullet" } as any);
   return bullet;
 };
 
@@ -70,7 +71,7 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
 
   const colors = { large: "#555555", medium: "#8B4513", small: "#AAAAAA" };
 
-  world.addComponent(asteroid, { type: "Position", x, y } as PositionComponent);
+  world.addComponent(asteroid, { type: "Transform", x, y, rotation: Math.random() * Math.PI * 2, scaleX: 1, scaleY: 1 } as TransformComponent);
   world.addComponent(asteroid, { type: "Velocity", dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed } as VelocityComponent);
   world.addComponent(asteroid, {
     type: "Render",
@@ -80,10 +81,10 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
     rotation: Math.random() * Math.PI * 2,
     angularVelocity: (Math.random() - 0.5) * 0.04,
     vertices,
-    data: { internalLines, hitFlashFrames: 0 }
+    data: { internalLines }
   } as RenderComponent);
   world.addComponent(asteroid, { type: "Collider", radius } as ColliderComponent);
-  world.addComponent(asteroid, { type: "Asteroid", size });
+  world.addComponent(asteroid, { type: "Asteroid", size } as any);
   return asteroid;
 };
 
@@ -105,11 +106,11 @@ export const createUfo = ({ world }: { world: World }) => {
   const side = Math.random() > 0.5 ? 0 : GAME_CONFIG.SCREEN_WIDTH;
   const y = Math.random() * GAME_CONFIG.SCREEN_HEIGHT;
 
-  world.addComponent(ufo, { type: "Position", x: side, y } as PositionComponent);
+  world.addComponent(ufo, { type: "Transform", x: side, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
   world.addComponent(ufo, { type: "Velocity", dx: side === 0 ? GAME_CONFIG.UFO_SPEED : -GAME_CONFIG.UFO_SPEED, dy: 0 } as VelocityComponent);
   world.addComponent(ufo, { type: "Render", shape: "ufo", size: GAME_CONFIG.UFO_SIZE, color: "#00FF00", rotation: 0 } as RenderComponent);
   world.addComponent(ufo, { type: "Collider", radius: GAME_CONFIG.UFO_SIZE } as ColliderComponent);
-  world.addComponent(ufo, { type: "Ufo", baseY: y, time: 0 });
+  world.addComponent(ufo, { type: "Ufo", baseY: y, time: 0 } as any);
   return ufo;
 };
 
@@ -128,7 +129,7 @@ export const createParticle = (params: CreateParticleParams) => {
   const { world, x, y, dx, dy, color, ttl = GAME_CONFIG.PARTICLE_TTL_BASE, size = 2 } = params;
   const particle = world.createEntity();
 
-  world.addComponent(particle, { type: "Position", x, y } as PositionComponent);
+  world.addComponent(particle, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
   world.addComponent(particle, { type: "Velocity", dx, dy } as VelocityComponent);
   world.addComponent(particle, { type: "Render", shape: "particle", size, color, rotation: 0 } as RenderComponent);
   world.addComponent(particle, { type: "TTL", remaining: ttl, total: ttl } as TTLComponent);
@@ -137,7 +138,7 @@ export const createParticle = (params: CreateParticleParams) => {
 
 export const createFlash = ({ world, x, y, size }: { world: World; x: number; y: number; size: number }) => {
   const flash = world.createEntity();
-  world.addComponent(flash, { type: "Position", x, y } as PositionComponent);
+  world.addComponent(flash, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
   world.addComponent(flash, { type: "Render", shape: "flash", size, color: "white", rotation: 0 } as RenderComponent);
   world.addComponent(flash, { type: "TTL", remaining: 100, total: 100 } as TTLComponent);
   return flash;
@@ -151,6 +152,7 @@ export const createGameState = ({ world }: { world: World }) => {
     stars: generateStarField(GAME_CONFIG.STAR_COUNT, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT),
     screenShake: null,
     debugCRT: true,
-  });
+    type: "GameState"
+  } as any);
   return gameState;
 };

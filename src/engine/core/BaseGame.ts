@@ -1,6 +1,5 @@
-import { World } from "./World";
+import { World } from "../core/World";
 import { GameLoop } from "./GameLoop";
-import { InputManager } from "../input/InputManager";
 import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
 import { EventBus } from "./EventBus";
 import { SceneManager } from "../scenes/SceneManager";
@@ -18,12 +17,11 @@ export interface BaseGameConfig {
  * Abstract base class for all games.
  * Provides boilerplate for lifecycle management, input, and listeners.
  */
-export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
+export abstract class BaseGame<TState, TInput extends Record<string, any>>
   implements IGame<BaseGame<TState, TInput>> {
 
   protected world: World;
   protected gameLoop: GameLoop;
-  protected inputManager: InputManager<TInput>;
   protected unifiedInput: UnifiedInputSystem;
   protected eventBus: EventBus;
   protected sceneManager: SceneManager;
@@ -39,7 +37,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
     this.isMultiplayer = isMultiplayer;
     this.world = new World();
     this.gameLoop = new GameLoop();
-    this.inputManager = new InputManager<TInput>();
     this.unifiedInput = new UnifiedInputSystem();
     this.eventBus = new EventBus();
     this.sceneManager = new SceneManager();
@@ -134,7 +131,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
 
   public destroy(): void {
     this.stop();
-    this.inputManager.cleanup();
+    this.unifiedInput.cleanup();
     this._unregisterKeyboardListeners();
     this._listeners.clear();
   }
@@ -148,9 +145,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
     return this._isPaused;
   }
 
-  public setInput(input: Partial<TInput>): void {
-    if (this._isPaused || this.isGameOver()) return;
-    this.inputManager.setInputs(input);
+  public setInput(_input: Partial<TInput>): void {
+    // Legacy method, inputs handled by UnifiedInputSystem
   }
 
   public subscribe(listener: UpdateListener<BaseGame<TState, TInput>>): () => void {
@@ -177,7 +173,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, boolean>>
   }
 
   private _notifyListeners(): void {
-    for (const listener of this._listeners) {
+    const listeners = Array.from(this._listeners);
+    for (const listener of listeners) {
       listener(this);
     }
   }

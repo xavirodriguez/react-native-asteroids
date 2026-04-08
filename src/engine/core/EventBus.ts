@@ -67,7 +67,8 @@ export class EventBus {
 
     if (pattern.endsWith("*")) {
       const prefix = pattern.slice(0, -1);
-      for (const event of this.handlers.keys()) {
+      const keys = Array.from(this.handlers.keys());
+      for (const event of keys) {
         if (event.startsWith(prefix)) {
           this.handlers.delete(event);
         }

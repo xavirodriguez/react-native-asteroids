@@ -48,9 +48,10 @@ export function createTilemapComponent(data: any): TilemapComponent {
         return true; // Treat out-of-bounds as solid
       }
 
+      const index = tileY * this.data.width + tileX;
+
       for (const layer of this.data.layers) {
         if (!layer.collidable) continue;
-        const index = tileY * this.data.width + tileX;
         const tileId = layer.tiles[index];
         if (tileId !== 0) {
           const tileset = this.data.tilesets.find((ts: any) => ts.id === tileId);

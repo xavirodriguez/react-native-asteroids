@@ -18,9 +18,9 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
    * Updates the game state by processing various sub-tasks.
    */
   protected updateGameState(world: World, gameState: GameStateComponent, deltaTime: number): void {
-    this.updatePlayerStatus({ world, gameState, deltaTime });
     this.updateAsteroidsCount(world, gameState);
     this.manageWaveProgression(world, gameState);
+    this.updatePlayerStatus({ world, gameState, deltaTime });
     this.manageUfoSpawning(world, deltaTime);
   }
 
@@ -30,7 +30,7 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
 
   private manageUfoSpawning(world: World, deltaTime: number): void {
     // 0.1% chance per second
-    if (Math.random() < 0.001 * (deltaTime / 1000)) {
+    if (RandomService.next() < 0.001 * (deltaTime / 1000)) {
       const ufos = world.query("Ufo");
       if (ufos.length === 0) {
         createUfo({ world });
@@ -61,6 +61,8 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
     const asteroidCount = this.calculateWaveCount(gameState.level);
     spawnAsteroidWave({ world, count: asteroidCount });
     gameState.level++;
+    // Recount immediately so next step or subscriber sees updated count
+    this.updateAsteroidsCount(world, gameState);
   }
 
   private updatePlayerStatus(context: {
