@@ -64,6 +64,6 @@ export abstract class Scene {
   }
 
   public render(renderer: any): void {
-    this.onRender(renderer);
+    renderer.render(this.world);
   }
 }

@@ -2,7 +2,7 @@ import { Skia, SkCanvas, SkPaint } from "@shopify/react-native-skia";
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { PositionComponent, RenderComponent, TTLComponent } from "../core/CoreComponents";
+import { RenderComponent, TTLComponent, TransformComponent } from "../core/CoreComponents";
 
 export type SkiaShapeDrawer = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => void;
 
@@ -130,9 +130,9 @@ export class SkiaRenderer implements Renderer {
 
     this.preRenderHooks.forEach(hook => hook(canvas, world));
 
-    const entities = world.query("Position", "Render");
+    const entities = world.query("Transform", "Render");
     entities.forEach((entity) => {
-      const pos = world.getComponent<PositionComponent>(entity, "Position");
+      const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const render = world.getComponent<RenderComponent>(entity, "Render");
       if (pos && render && render.shape !== "particle") {
         this.drawEntity(entity, pos, render, world);
@@ -146,12 +146,12 @@ export class SkiaRenderer implements Renderer {
     this.postRenderHooks.forEach(hook => hook(canvas, world));
   }
 
-  public drawEntity(entity: Entity, pos: PositionComponent, render: RenderComponent, world: World): void {
+  public drawEntity(entity: Entity, pos: TransformComponent, render: RenderComponent, world: World): void {
     if (!this.canvas) return;
     const canvas = this.canvas;
 
     canvas.save();
-    canvas.translate(pos.x, pos.y);
+    canvas.translate(pos.worldX ?? pos.x, pos.worldY ?? pos.y);
     canvas.rotate((render.rotation * 180) / Math.PI, 0, 0);
 
     const drawer = this.shapeDrawers.get(render.shape);

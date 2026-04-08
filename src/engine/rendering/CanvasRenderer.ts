@@ -6,6 +6,7 @@ import { renderUI } from "../ui/UIRenderer";
 import { UITextComponent, UIStyleComponent } from "../ui/UITypes";
 import { FontRegistry } from "../ui/text/FontRegistry";
 import { TextRenderer } from "../ui/text/TextRenderer";
+import { DebugSystem } from "../ui/debug/DebugSystem";
 
 export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => void;
 
@@ -185,6 +186,7 @@ export class CanvasRenderer implements Renderer {
 
     this.preRenderHooks.forEach(hook => hook(ctx, world));
 
+    renderCommands.sort((a, b) => a.zIndex - b.zIndex);
     renderCommands.forEach((cmd) => {
       this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render }, world);
     });
@@ -324,6 +326,7 @@ export class CanvasRenderer implements Renderer {
   }
 
   private renderDebugInfo(ctx: CanvasRenderingContext2D, world: World): void {
-      // Basic implementation for now to satisfy call in render()
+      const debugSys = new DebugSystem();
+      debugSys.renderDebug(ctx, world);
   }
 }
