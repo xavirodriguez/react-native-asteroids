@@ -6,17 +6,18 @@ import {
 import { CanvasRenderer as EngineCanvasRenderer } from "../src/engine/rendering/CanvasRenderer";
 import type { World } from "../src/engine/core/World";
 import { Renderer } from "../src/engine/rendering/Renderer";
+import { GameLoop } from "../src/engine/core/GameLoop";
 
 interface CanvasRendererProps {
   world: World;
+  gameLoop?: GameLoop;
   onInitialize?: (renderer: Renderer) => void;
 }
 
-export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, onInitialize }) => {
+export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, gameLoop, onInitialize }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<EngineCanvasRenderer | null>(null);
 
-  // Re-render effect: Called every time the component re-renders (triggered by GameEngine via version state)
   useEffect(() => {
     if (Platform.OS !== "web") return;
 
@@ -33,10 +34,20 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, onInitial
     } else {
       rendererRef.current.setContext(ctx);
     }
-
     rendererRef.current.setSize(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
+
+    // Initial render
     rendererRef.current.render(world);
-  });
+
+    if (gameLoop) {
+      const unsubscribe = gameLoop.subscribeRender(() => {
+        if (rendererRef.current) {
+          rendererRef.current.render(world);
+        }
+      });
+      return unsubscribe;
+    }
+  }, [world, gameLoop, onInitialize]);
 
   return (
     <View style={styles.container}>

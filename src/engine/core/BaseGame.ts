@@ -195,6 +195,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     return activeScene ? activeScene.getWorld() : this.world;
   }
 
+  public getGameLoop(): GameLoop {
+    return this.gameLoop;
+  }
+
   public isPausedState(): boolean {
     return this._isPaused;
   }
