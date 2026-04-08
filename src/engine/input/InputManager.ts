@@ -49,6 +49,21 @@ export class InputManager<TInputState extends Record<string, boolean>> {
   }
 
   /**
+   * Updates all registered controllers.
+   * Useful for controllers that need to perceive the world or handle timing.
+   */
+  public update(world: any, currentTime: number, tick?: number): void {
+    this.controllers.forEach((c: any) => {
+      if (typeof c.update === "function") {
+        c.update(world, currentTime);
+      }
+      if (tick !== undefined && typeof c.setTick === "function") {
+        c.setTick(tick);
+      }
+    });
+  }
+
+  /**
    * Aggregates input states from all registered controllers.
    *
    * @returns The unified input state.
