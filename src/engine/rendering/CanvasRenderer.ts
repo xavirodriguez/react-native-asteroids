@@ -186,8 +186,6 @@ export class CanvasRenderer implements Renderer {
 
     this.preRenderHooks.forEach(hook => hook(ctx, world));
 
-    renderCommands.sort((a, b) => a.zIndex - b.zIndex);
-
     renderCommands.forEach((cmd) => {
       this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render }, world);
     });

@@ -12,7 +12,7 @@ import { TextRenderer } from "./text/TextRenderer";
 export function renderUI(ctx: CanvasRenderingContext2D, world: World): void {
     const uiEntities = world.query("UIElement");
 
-    const sortedEntities = [...uiEntities].sort((a, b) => {
+    const sortedEntities = uiEntities.sort((a, b) => {
         const elA = world.getComponent<UIElementComponent>(a, "UIElement")!;
         const elB = world.getComponent<UIElementComponent>(b, "UIElement")!;
         return elA.zIndex - elB.zIndex;
@@ -80,17 +80,10 @@ function renderLabel(ctx: CanvasRenderingContext2D, entity: any, world: World, e
     const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
     if (!text || !style) return;
 
-    let textX = element.computedX;
-    if (style.textAlign === "center") {
-        textX = element.computedX + element.computedWidth / 2;
-    } else if (style.textAlign === "right") {
-        textX = element.computedX + element.computedWidth;
-    }
-
     TextRenderer.drawSystemText(
         ctx,
         text.content,
-        textX,
+        element.computedX,
         element.computedY,
         style.fontSize,
         style.textColor,
@@ -108,10 +101,19 @@ function renderButton(ctx: CanvasRenderingContext2D, entity: any, world: World, 
         ctx.save();
         if (btnState?.state === "pressed") {
             ctx.globalAlpha *= 0.8;
-        } else if (btnState?.state === "hovered") {
-            ctx.globalAlpha *= 1.1;
         }
+
         renderPanel(ctx, entity, world, element);
+
+        if (btnState?.state === "hovered") {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+            if (style.borderRadius > 0) {
+                drawRoundedRect(ctx, element.computedX, element.computedY, element.computedWidth, element.computedHeight, style.borderRadius);
+                ctx.fill();
+            } else {
+                ctx.fillRect(element.computedX, element.computedY, element.computedWidth, element.computedHeight);
+            }
+        }
         ctx.restore();
     }
 
