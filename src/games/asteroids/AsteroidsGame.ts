@@ -76,6 +76,17 @@ export class AsteroidsGame
                     vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
                 }
 
+                // Physics integration - Friction (Matching FrictionSystem.ts)
+                const friction = this.world.getComponent<FrictionComponent>(entity, "Friction")?.value ?? GAME_CONFIG.SHIP_FRICTION;
+                const dtFactor = deltaTime / (1000 / 60);
+                const frictionFactor = Math.pow(friction, dtFactor);
+                vel.dx *= frictionFactor;
+                vel.dy *= frictionFactor;
+
+                // Physics integration - Movement (Matching MovementSystem.ts)
+                pos.x += vel.dx * dt;
+                pos.y += vel.dy * dt;
+
                 // Wrapping
                 if (pos.x < 0) pos.x = GAME_CONFIG.SCREEN_WIDTH;
                 if (pos.x > GAME_CONFIG.SCREEN_WIDTH) pos.x = 0;

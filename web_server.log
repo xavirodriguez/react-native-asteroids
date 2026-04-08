@@ -9,12 +9,13 @@ Starting Metro Bundler
 Waiting on http://localhost:8081
 Logs for your project will appear below.
 Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 67.5% (1206/1468)
-λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 69.8% (1031/1234)
-λ Bundled 4525ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1676 modules)
-Web Bundled 4696ms node_modules/expo-router/entry.js (1681 modules)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 62.4% (740/949)
+λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 43.5% (530/804)
+λ Bundled 6643ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1676 modules)
+Web Bundled 6995ms node_modules/expo-router/entry.js (1686 modules)
 "textShadow*" style props are deprecated. Use "textShadow".
 "shadow*" style props are deprecated. Use "boxShadow".
 Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Web Bundled 1929ms node_modules/expo-router/entry.js (1647 modules)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 94.8% (1594/1637)
+Web Bundled 3707ms node_modules/expo-router/entry.js (1682 modules)
  LOG  [web] Logs will appear in the browser console

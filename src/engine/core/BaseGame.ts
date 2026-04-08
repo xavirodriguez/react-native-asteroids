@@ -208,13 +208,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   }
 
   public setInput(input: Partial<TInput>): void {
-    const world = this.getWorld();
-    let inputState = world.getSingleton<InputStateComponent>("InputState");
-    if (inputState) {
-      Object.entries(input).forEach(([action, pressed]) => {
-        inputState!.actions.set(action, pressed as boolean);
-      });
-    }
+    Object.entries(input).forEach(([action, pressed]) => {
+      this.unifiedInput.setOverride(action, pressed as boolean);
+    });
   }
 
   public subscribe(listener: UpdateListener<BaseGame<TState, TInput>>): () => void {
