@@ -2,7 +2,6 @@ import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
 import { RenderComponent } from "../../../engine/types/EngineTypes";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
-import { RandomService } from "../../../engine/utils/RandomService";
 
 /**
  * Visuals for the player ship.

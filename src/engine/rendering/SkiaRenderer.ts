@@ -1,8 +1,8 @@
-import { Skia, SkCanvas, SkPaint } from "@shopify/react-native-skia";
+import { Skia, SkCanvas, SkPaint, PaintStyle } from "@shopify/react-native-skia";
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TTLComponent, TransformComponent } from "../core/CoreComponents";
+import { RenderComponent, TTLComponent, TransformComponent, Component } from "../core/CoreComponents";
 
 export type SkiaShapeDrawer = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => void;
 
@@ -11,6 +11,7 @@ export type SkiaShapeDrawer = (canvas: SkCanvas, entity: Entity, world: World, r
  * Generic and extensible via shape drawers.
  */
 export class SkiaRenderer implements Renderer {
+  public readonly type = 'skia';
   protected canvas: SkCanvas | null = null;
   protected width: number = 0;
   protected height: number = 0;
@@ -47,13 +48,13 @@ export class SkiaRenderer implements Renderer {
   private registerDefaultDrawers(): void {
     this.registerShapeDrawer("circle", (canvas, _, __, render, paint) => {
       paint.setColor(Skia.Color(render.color));
-      paint.setStyle(Skia.PaintStyle.Fill);
+      paint.setStyle(PaintStyle.Fill);
       canvas.drawCircle(0, 0, render.size, paint);
     });
 
     this.registerShapeDrawer("rect", (canvas, _, __, render, paint) => {
       paint.setColor(Skia.Color(render.color));
-      paint.setStyle(Skia.PaintStyle.Fill);
+      paint.setStyle(PaintStyle.Fill);
       canvas.drawRect(Skia.XYWHRect(-render.size / 2, -render.size / 2, render.size, render.size), paint);
     });
 
@@ -69,11 +70,11 @@ export class SkiaRenderer implements Renderer {
 
       const isHitFlash = render.data?.hitFlashFrames && render.data.hitFlashFrames > 0;
       paint.setColor(isHitFlash ? Skia.Color("rgba(255, 255, 255, 0.5)") : Skia.Color("#333"));
-      paint.setStyle(Skia.PaintStyle.Fill);
+      paint.setStyle(PaintStyle.Fill);
       canvas.drawPath(path, paint);
 
       paint.setColor(isHitFlash ? Skia.Color("white") : Skia.Color(render.color));
-      paint.setStyle(Skia.PaintStyle.Stroke);
+      paint.setStyle(PaintStyle.Stroke);
       paint.setStrokeWidth(2);
       canvas.drawPath(path, paint);
 
@@ -131,12 +132,22 @@ export class SkiaRenderer implements Renderer {
     this.preRenderHooks.forEach(hook => hook(canvas, world));
 
     const entities = world.query("Transform", "Render");
-    entities.forEach((entity) => {
-      const pos = world.getComponent<TransformComponent>(entity, "Transform");
-      const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (pos && render && render.shape !== "particle") {
-        this.drawEntity(entity, pos, render, world);
-      }
+
+    const renderCommands = entities.map(entity => {
+      const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
+      const render = world.getComponent<RenderComponent>(entity, "Render")!;
+      return {
+        entity,
+        pos,
+        render,
+        zIndex: (render as any).zIndex ?? 0
+      };
+    });
+
+    renderCommands.sort((a, b) => a.zIndex - b.zIndex);
+
+    renderCommands.forEach((cmd) => {
+      this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render }, world);
     });
 
     this.drawParticles(world);
@@ -146,9 +157,13 @@ export class SkiaRenderer implements Renderer {
     this.postRenderHooks.forEach(hook => hook(canvas, world));
   }
 
-  public drawEntity(entity: Entity, pos: TransformComponent, render: RenderComponent, world: World): void {
+  public drawEntity(entity: Entity, components: Record<string, Component>, world: World): void {
     if (!this.canvas) return;
     const canvas = this.canvas;
+    const pos = components["Transform"] as TransformComponent;
+    const render = components["Render"] as RenderComponent;
+
+    if (!pos || !render) return;
 
     canvas.save();
     canvas.translate(pos.worldX ?? pos.x, pos.worldY ?? pos.y);
@@ -169,6 +184,14 @@ export class SkiaRenderer implements Renderer {
 
   public registerShape(name: string, drawer: any): void {
     this.shapeDrawers.set(name, drawer);
+  }
+
+  public registerBackgroundEffect(name: string, drawer: any): void {
+      // Basic implementation to satisfy Renderer interface
+  }
+
+  public registerForegroundEffect(name: string, drawer: any): void {
+      // Basic implementation to satisfy Renderer interface
   }
 
   public drawParticles(world: World): void {
