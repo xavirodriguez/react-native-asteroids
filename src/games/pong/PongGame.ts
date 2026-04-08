@@ -28,15 +28,12 @@ export type PongMode = "local" | "ai" | "online";
 export class PongGame extends BaseGame<PongState, PongInput> {
   private stateSystem!: PongGameStateSystem;
   private assetLoader: AssetLoader;
-  private inputManager: InputManager<PongInput>;
+  private inputManager!: InputManager<PongInput>;
   private aiController?: AIPongController;
   private networkController?: NetworkController;
 
-  private mode: PongMode;
-
   constructor(mode: PongMode = "local") {
-    super({ pauseKey: "Escape" });
-    this.mode = mode;
+    super({ pauseKey: "Escape", gameOptions: { mode } });
     this.assetLoader = new AssetLoader();
   }
 
@@ -56,8 +53,9 @@ export class PongGame extends BaseGame<PongState, PongInput> {
   }
 
   protected registerSystems(): void {
+    const mode = this._config.gameOptions?.mode || "local";
     this.inputManager = new InputManager<PongInput>();
-    this.setupControllers(this.mode);
+    this.setupControllers(mode);
 
     this.stateSystem = new PongGameStateSystem();
     this.world.addSystem(new PongInputSystem(this.inputManager));
@@ -84,5 +82,16 @@ export class PongGame extends BaseGame<PongState, PongInput> {
 
   protected _onBeforeRestart(): void {
     this.stateSystem.resetGameOverState(this.world);
+  }
+
+  protected shouldStallSimulation(): boolean {
+    if (this.networkController) {
+      // Access the internal tick of PongInputSystem would be ideal,
+      // but for simplicity we check if any future input is missing.
+      // A more robust implementation would pass the current simulation tick.
+      const inputSystem = (this.world as any).systems?.find((s: any) => s instanceof PongInputSystem);
+      return !this.networkController.hasInputForTick(inputSystem?.currentTick + 1 || 0);
+    }
+    return false;
   }
 }

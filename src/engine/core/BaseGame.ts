@@ -11,6 +11,7 @@ export interface BaseGameConfig {
   pauseKey?: string;    // Key code for pausing, e.g., "KeyP"
   restartKey?: string;  // Key code for restarting, e.g., "KeyR"
   isMultiplayer?: boolean;
+  gameOptions?: any;    // Generic field for subclass-specific initial options
 }
 
 /**
@@ -30,7 +31,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   private _isPaused = false;
   private _listeners = new Set<UpdateListener<BaseGame<TState, TInput>>>();
   private _globalKeyHandler = (e: KeyboardEvent) => this._handleGlobalKey(e);
-  private _config: BaseGameConfig;
+  protected _config: BaseGameConfig;
 
   constructor(config: BaseGameConfig = {}) {
     const { isMultiplayer = false } = config;
@@ -55,15 +56,17 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     // Notify React on each logical update frame
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (!this._isPaused) {
-        // Update input system first
-        const activeWorld = this.getWorld();
-        this.unifiedInput.update(activeWorld, deltaTime);
+        if (!this.shouldStallSimulation()) {
+          // Update input system first
+          const activeWorld = this.getWorld();
+          this.unifiedInput.update(activeWorld, deltaTime);
 
-        // Simple games update this.world, advanced games update via sceneManager
-        if (this.sceneManager.getCurrentScene()) {
-          this.sceneManager.update(deltaTime);
-        } else {
-          this.world.update(deltaTime);
+          // Simple games update this.world, advanced games update via sceneManager
+          if (this.sceneManager.getCurrentScene()) {
+            this.sceneManager.update(deltaTime);
+          } else {
+            this.world.update(deltaTime);
+          }
         }
         this._notifyListeners();
       }
@@ -143,6 +146,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   public isPausedState(): boolean {
     return this._isPaused;
+  }
+
+  /**
+   * Optional hook for subclasses to stall the entire world update.
+   * Useful for lockstep netcode waiting for inputs.
+   */
+  protected shouldStallSimulation(): boolean {
+    return false;
   }
 
   public setInput(_input: Partial<TInput>): void {
