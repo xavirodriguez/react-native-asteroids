@@ -9,10 +9,29 @@ export { Entity, Component };
  * Components provided by the engine as reusable primitives.
  */
 
+/**
+ * @deprecated Use TransformComponent instead
+ */
 export interface PositionComponent extends Component {
   type: "Position";
   x: number;
   y: number;
+}
+
+export interface TransformComponent extends Component {
+  type: "Transform";
+  x: number;
+  y: number;
+  rotation: number;
+  scaleX: number;
+  scaleY: number;
+  parent?: Entity;
+  // World space cache (managed by HierarchySystem)
+  worldX?: number;
+  worldY?: number;
+  worldRotation?: number;
+  worldScaleX?: number;
+  worldScaleY?: number;
 }
 
 export interface VelocityComponent extends Component {
@@ -21,12 +40,53 @@ export interface VelocityComponent extends Component {
   dy: number;
 }
 
+export interface FrictionComponent extends Component {
+  type: "Friction";
+  value: number; // 0-1, damping factor
+}
+
+export interface BoundaryComponent extends Component {
+  type: "Boundary";
+  width: number;
+  height: number;
+  mode: "wrap" | "bounce" | "destroy";
+  bounceX?: boolean;
+  bounceY?: boolean;
+}
+
+export interface TagComponent extends Component {
+  type: "Tag";
+  tags: string[];
+}
+
+/**
+ * RigidBodyComponent is used primarily by the Matter.js adapter.
+ * For the built-in physics engine, use PhysicsBody2DComponent.
+ */
+export interface RigidBodyComponent extends Component {
+  type: "RigidBody";
+  bodyId: number | string;
+  isStatic: boolean;
+  isSensor: boolean;
+  restitution: number;
+  friction: number;
+  density: number;
+  collisionFilter: {
+    group: number;
+    category: number;
+    mask: number;
+  };
+}
+
 export interface TTLComponent extends Component {
   type: "TTL";
   remaining: number;
   total: number;
 }
 
+/**
+ * @deprecated Use Collider2DComponent instead for multi-shape support
+ */
 export interface ColliderComponent extends Component {
   type: "Collider";
   radius: number;
@@ -45,6 +105,8 @@ export interface RenderComponent extends Component {
   hitFlashFrames?: number;
   /** Custom data for game-specific drawers */
   data?: Record<string, any>;
+  /** Trail positions for generic trail rendering */
+  trailPositions?: { x: number; y: number }[];
 }
 
 /**

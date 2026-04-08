@@ -18,6 +18,8 @@ export class CanvasRenderer implements Renderer {
   private postEntityDrawers = new Map<string, ShapeDrawer>();
   private preRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
   private postRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
+  private backgroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
+  private foregroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
 
   private backgroundEffects = new Map<string, any>();
   private foregroundEffects = new Map<string, any>();
@@ -39,6 +41,18 @@ export class CanvasRenderer implements Renderer {
 
   public registerPostEntityDrawer(shape: string, drawer: ShapeDrawer): void {
     this.postEntityDrawers.set(shape, drawer);
+  }
+
+  public registerShape(name: string, drawer: any): void {
+      this.registerShapeDrawer(name, drawer);
+  }
+
+  public registerBackgroundEffect(name: string, drawer: any): void {
+      this.backgroundEffects.push(drawer);
+  }
+
+  public registerForegroundEffect(name: string, drawer: any): void {
+      this.foregroundEffects.push(drawer);
   }
 
   public addPreRenderHook(hook: (ctx: CanvasRenderingContext2D, world: World) => void): void {
@@ -108,6 +122,25 @@ export class CanvasRenderer implements Renderer {
       ctx.lineTo(render.size / 2, 0);
       ctx.stroke();
     });
+
+    this.registerShapeDrawer("text", (ctx, entity, world, render) => {
+      const uiText = world.getComponent<UITextComponent>(entity, "UIText");
+      const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
+      if (!uiText) return;
+
+      const registry = FontRegistry.getInstance();
+      const fontName = style?.fontFamily || registry.getDefaultName();
+
+      TextRenderer.drawSystemText(
+          ctx,
+          uiText.content,
+          0, 0,
+          style?.fontSize ?? 16,
+          style?.textColor ?? render.color ?? "white",
+          fontName,
+          style?.textAlign ?? "left"
+      );
+    });
   }
 
   public setContext(ctx: CanvasRenderingContext2D): void {
@@ -143,13 +176,13 @@ export class CanvasRenderer implements Renderer {
       shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
     }
 
-    // Background Effects (e.g., Starfield)
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+
     this.backgroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
 
-    // Render Pipeline: Collect, Sort, Execute
     const entities = world.query("Transform", "Render");
 
-    // Command-based sorting by zIndex
     const renderCommands = entities.map(entity => {
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
       const render = world.getComponent<RenderComponent>(entity, "Render")!;
@@ -157,24 +190,28 @@ export class CanvasRenderer implements Renderer {
         entity,
         pos,
         render,
-        zIndex: render.zIndex ?? 0
+        zIndex: (render as any).zIndex ?? 0
       };
     });
 
     this.preRenderHooks.forEach(hook => hook(ctx, world));
 
-    // Render Tilemaps first
-    this.drawTilemaps(world);
-
-    // Execute draw commands
     renderCommands.forEach((cmd) => {
       this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render }, world);
     });
 
-    // Foreground Effects (e.g., CRT)
     ctx.save();
     this.foregroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
     ctx.restore();
+
+    ctx.restore(); // Balanced restore for shake - UI should NOT shake usually
+
+    renderUI(ctx, world);
+
+    const debugConfigEntity = world.query("DebugConfig")[0];
+    if (debugConfigEntity !== undefined) {
+        this.renderDebugInfo(ctx, world);
+    }
 
     this.postRenderHooks.forEach(hook => hook(ctx, world));
   }
