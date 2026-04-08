@@ -32,11 +32,12 @@ export class PongGame extends BaseGame<PongState, PongInput> {
   private aiController?: AIPongController;
   private networkController?: NetworkController;
 
+  private mode: PongMode;
+
   constructor(mode: PongMode = "local") {
     super({ pauseKey: "Escape" });
+    this.mode = mode;
     this.assetLoader = new AssetLoader();
-    this.inputManager = new InputManager<PongInput>();
-    this.setupControllers(mode);
   }
 
   private setupControllers(mode: PongMode): void {
@@ -55,6 +56,9 @@ export class PongGame extends BaseGame<PongState, PongInput> {
   }
 
   protected registerSystems(): void {
+    this.inputManager = new InputManager<PongInput>();
+    this.setupControllers(this.mode);
+
     this.stateSystem = new PongGameStateSystem();
     this.world.addSystem(new PongInputSystem(this.inputManager));
     this.world.addSystem(new MovementSystem());

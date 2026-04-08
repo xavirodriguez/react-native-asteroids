@@ -6,6 +6,7 @@ class PongPlayer extends Schema {
   @type("string") sessionId: string;
   @type("boolean") connected: boolean = true;
   @type("number") playerNumber: number; // 1 or 2
+  @type("boolean") ready: boolean = false;
 }
 
 class PongStateSchema extends Schema {
@@ -48,8 +49,9 @@ export class PongRoom extends Room<PongStateSchema> {
     this.onMessage("ready", (client) => {
       const player = this.state.players.get(client.sessionId);
       if (player) {
-          // Logic for starting game when both are ready
-          if (this.state.players.size === 2) {
+          player.ready = true;
+          const allReady = Array.from(this.state.players.values()).every(p => p.ready);
+          if (this.state.players.size === 2 && allReady) {
               this.state.gameStarted = true;
               this.broadcast("start", { seed: this.state.seed });
           }
