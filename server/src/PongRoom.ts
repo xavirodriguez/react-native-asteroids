@@ -23,6 +23,7 @@ class PongStateSchema extends Schema {
 export class PongRoom extends Room<PongStateSchema> {
   maxClients = 2;
   private inputBuffer = new Map<number, Map<string, PongInput>>();
+  private lastCleanedTick = 0;
 
   onCreate(options: any) {
     this.setState(new PongStateSchema());
