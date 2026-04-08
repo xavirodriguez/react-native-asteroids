@@ -17,8 +17,7 @@ export const GameEngine: React.FC<GameEngineProps> = ({ world, gameLoop, renderC
 
   useEffect(() => {
     const unsubscribe = gameLoop.subscribeRender(() => {
-      // Trigger a React update for every frame if necessary.
-      // Renderer components often depend on world.version which is updated in systems.
+      // Trigger a React update for every frame to ensure the Renderer is updated.
       setVersion(v => v + 1);
     });
 

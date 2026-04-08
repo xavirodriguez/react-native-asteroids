@@ -63,7 +63,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this._config = config;
 
     // Initialize deterministic random service with a default seed
-    RandomService.setSeed(Date.now());
+    const initialSeed = config.gameOptions?.seed ?? Date.now();
+    RandomService.setSeed(initialSeed);
 
     // Register systems and initial entities - responsibility of the concrete game
     this.registerSystems();
@@ -206,8 +207,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     return false;
   }
 
-  public setInput(_input: Partial<TInput>): void {
-    // Legacy method, inputs handled by UnifiedInputSystem
+  public setInput(input: Partial<TInput>): void {
+    Object.entries(input).forEach(([action, pressed]) => {
+      this.unifiedInput.setOverride(action, pressed as boolean);
+    });
   }
 
   public subscribe(listener: UpdateListener<BaseGame<TState, TInput>>): () => void {

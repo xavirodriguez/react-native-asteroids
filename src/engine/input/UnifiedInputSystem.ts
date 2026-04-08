@@ -9,6 +9,7 @@ import { InputStateComponent, InputAction } from "../types/EngineTypes";
 export class UnifiedInputSystem extends System {
   private bindings = new Map<InputAction, string[]>();
   private axisBindings = new Map<string, { pos: string[]; neg: string[] }>();
+  private overrides = new Map<InputAction, boolean>();
   private activeKeys = new Set<string>();
   private activeTouches = new Set<string>();
 
@@ -36,6 +37,14 @@ export class UnifiedInputSystem extends System {
    */
   public bindAxis(axis: string, pos: string[], neg: string[]): void {
     this.axisBindings.set(axis, { pos, neg });
+  }
+
+  /**
+   * Programmatically overrides a semantic action state.
+   * This override persists until explicitly changed.
+   */
+  public setOverride(action: InputAction, isPressed: boolean): void {
+    this.overrides.set(action, isPressed);
   }
 
   private setupListeners(): void {
@@ -70,10 +79,20 @@ export class UnifiedInputSystem extends System {
 
     // Update semantic actions based on bindings and active raw inputs
     this.bindings.forEach((inputs, action) => {
-      const isPressed = inputs.some(input =>
+      const isRawPressed = inputs.some(input =>
         this.activeKeys.has(input) || this.activeTouches.has(input)
       );
+      const isOverridden = this.overrides.get(action);
+      const isPressed = isOverridden !== undefined ? (isRawPressed || isOverridden) : isRawPressed;
+
       inputState!.actions.set(action, isPressed);
+    });
+
+    // Ensure actions that are ONLY overridden (not bound) are also updated
+    this.overrides.forEach((isPressed, action) => {
+      if (!this.bindings.has(action)) {
+        inputState!.actions.set(action, isPressed);
+      }
     });
 
     // Update axes based on bindings

@@ -3,6 +3,7 @@ import { AsteroidsGame } from "./AsteroidsGame";
 import { GAME_CONFIG, INITIAL_GAME_STATE } from "../../types/GameTypes";
 import { TransformComponent, VelocityComponent, RenderComponent, ColliderComponent, TTLComponent } from "../../engine/core/CoreComponents";
 import { generateStarField } from "../../engine/rendering/StarField";
+import { RandomService } from "../../engine/utils/RandomService";
 
 export const createShip = ({ world, x, y }: { world: World; x: number; y: number }) => {
   const ship = world.createEntity();
@@ -50,36 +51,37 @@ export const createBullet = ({ world, x, y, angle }: { world: World; x: number; 
 export const createAsteroid = ({ world, x, y, size }: { world: World; x: number; y: number; size: "large" | "medium" | "small" }) => {
   const asteroid = world.createEntity();
   const radius = GAME_CONFIG.ASTEROID_RADII[size];
-  const angle = Math.random() * Math.PI * 2;
-  const speed = (Math.random() * 50 + 20) * (size === "large" ? 1 : size === "medium" ? 1.5 : 2);
+  const gameplayRandom = RandomService.getInstance("gameplay");
+  const angle = gameplayRandom.next() * Math.PI * 2;
+  const speed = (gameplayRandom.next() * 50 + 20) * (size === "large" ? 1 : size === "medium" ? 1.5 : 2);
 
   const vertices = [];
-  const vertexCount = 8 + Math.floor(Math.random() * 5);
+  const vertexCount = 8 + Math.floor(gameplayRandom.next() * 5);
   for (let i = 0; i < vertexCount; i++) {
     const a = (i / vertexCount) * Math.PI * 2;
-    const r = radius * (0.8 + Math.random() * 0.4);
+    const r = radius * (0.8 + gameplayRandom.next() * 0.4);
     vertices.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
   }
 
   const internalLines = [];
-  const crackCount = 2 + Math.floor(Math.random() * 3);
+  const crackCount = 2 + Math.floor(gameplayRandom.next() * 3);
   for (let i = 0; i < crackCount; i++) {
-      const v1 = vertices[Math.floor(Math.random() * vertices.length)];
+      const v1 = vertices[Math.floor(gameplayRandom.next() * vertices.length)];
       const v2 = { x: v1.x * 0.3, y: v1.y * 0.3 };
       internalLines.push({ x1: v1.x, y1: v1.y, x2: v2.x, y2: v2.y });
   }
 
   const colors = { large: "#555555", medium: "#8B4513", small: "#AAAAAA" };
 
-  world.addComponent(asteroid, { type: "Transform", x, y, rotation: Math.random() * Math.PI * 2, scaleX: 1, scaleY: 1 } as TransformComponent);
+  world.addComponent(asteroid, { type: "Transform", x, y, rotation: gameplayRandom.next() * Math.PI * 2, scaleX: 1, scaleY: 1 } as TransformComponent);
   world.addComponent(asteroid, { type: "Velocity", dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed } as VelocityComponent);
   world.addComponent(asteroid, {
     type: "Render",
     shape: "polygon",
     size: radius,
     color: colors[size],
-    rotation: Math.random() * Math.PI * 2,
-    angularVelocity: (Math.random() - 0.5) * 0.04,
+    rotation: gameplayRandom.next() * Math.PI * 2,
+    angularVelocity: (gameplayRandom.next() - 0.5) * 0.04,
     vertices,
     data: { internalLines }
   } as RenderComponent);
@@ -89,11 +91,12 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
 };
 
 export const spawnAsteroidWave = ({ world, count }: { world: World; count: number }) => {
+  const gameplayRandom = RandomService.getInstance("gameplay");
   for (let i = 0; i < count; i++) {
     let x, y, dist;
     do {
-      x = Math.random() * GAME_CONFIG.SCREEN_WIDTH;
-      y = Math.random() * GAME_CONFIG.SCREEN_HEIGHT;
+      x = gameplayRandom.next() * GAME_CONFIG.SCREEN_WIDTH;
+      y = gameplayRandom.next() * GAME_CONFIG.SCREEN_HEIGHT;
       dist = Math.sqrt(Math.pow(x - GAME_CONFIG.SCREEN_CENTER_X, 2) + Math.pow(y - GAME_CONFIG.SCREEN_CENTER_Y, 2));
     } while (dist < GAME_CONFIG.INITIAL_ASTEROID_SPAWN_RADIUS);
 
@@ -103,8 +106,9 @@ export const spawnAsteroidWave = ({ world, count }: { world: World; count: numbe
 
 export const createUfo = ({ world }: { world: World }) => {
   const ufo = world.createEntity();
-  const side = Math.random() > 0.5 ? 0 : GAME_CONFIG.SCREEN_WIDTH;
-  const y = Math.random() * GAME_CONFIG.SCREEN_HEIGHT;
+  const gameplayRandom = RandomService.getInstance("gameplay");
+  const side = gameplayRandom.next() > 0.5 ? 0 : GAME_CONFIG.SCREEN_WIDTH;
+  const y = gameplayRandom.next() * GAME_CONFIG.SCREEN_HEIGHT;
 
   world.addComponent(ufo, { type: "Transform", x: side, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
   world.addComponent(ufo, { type: "Velocity", dx: side === 0 ? GAME_CONFIG.UFO_SPEED : -GAME_CONFIG.UFO_SPEED, dy: 0 } as VelocityComponent);

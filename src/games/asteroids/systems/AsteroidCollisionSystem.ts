@@ -4,7 +4,7 @@ import {
   type AsteroidComponent,
   type HealthComponent,
   type Entity,
-  PositionComponent,
+  TransformComponent,
   RenderComponent,
 } from "../../../engine/types/EngineTypes";
 
@@ -86,7 +86,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     bullet: Entity;
   }): void {
     const { world, asteroid, bullet } = context;
-    const position = world.getComponent<PositionComponent>(asteroid, "Position") || world.getComponent<any>(asteroid, "Transform");
+    const position = world.getComponent<TransformComponent>(asteroid, "Transform");
     const render = world.getComponent<RenderComponent>(asteroid, "Render");
 
     if (position) {
@@ -106,14 +106,15 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
   }
 
-  private spawnExplosion(world: World, position: PositionComponent, count: number): void {
+  private spawnExplosion(world: World, position: TransformComponent, count: number): void {
+    const gameplayRandom = RandomService.getInstance("gameplay");
     for (let i = 0; i < count; i++) {
       createParticle({
         world,
         x: position.x,
         y: position.y,
-        dx: (RandomService.next() - 0.5) * 160,
-        dy: (RandomService.next() - 0.5) * 160,
+        dx: (gameplayRandom.next() - 0.5) * 160,
+        dy: (gameplayRandom.next() - 0.5) * 160,
         color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
       });
     }
@@ -152,7 +153,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
   private splitAsteroid(asteroidContext: { world: World; asteroidEntity: Entity }): void {
     const { world, asteroidEntity } = asteroidContext;
     const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
-    const position = world.getComponent<PositionComponent>(asteroidEntity, "Position") || world.getComponent<any>(asteroidEntity, "Transform");
+    const position = world.getComponent<TransformComponent>(asteroidEntity, "Transform");
 
     if (asteroid && position) {
       this.executeSplitStrategy({ world, position, size: asteroid.size });
@@ -162,7 +163,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
   private executeSplitStrategy(splitParams: {
     world: World;
-    position: PositionComponent;
+    position: TransformComponent;
     size: AsteroidComponent["size"];
   }): void {
     const { world, position, size } = splitParams;
@@ -175,7 +176,7 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
   private spawnSplit(spawnConfig: {
     world: World;
-    position: PositionComponent;
+    position: TransformComponent;
     size: "medium" | "small";
     offset: number;
   }): void {

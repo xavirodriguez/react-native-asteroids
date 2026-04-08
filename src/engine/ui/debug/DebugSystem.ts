@@ -1,7 +1,7 @@
 import { System } from "../../core/System";
 import { World } from "../../core/World";
 import { DebugConfigComponent } from "./DebugTypes";
-import { PositionComponent, ColliderComponent, VelocityComponent } from "../../core/CoreComponents";
+import { TransformComponent, ColliderComponent, VelocityComponent } from "../../core/CoreComponents";
 
 export class DebugSystem extends System {
   private fps: number = 0;
@@ -34,8 +34,7 @@ export class DebugSystem extends System {
     const entities = world.getAllEntities();
 
     for (const entity of entities) {
-        const pos = world.getComponent<PositionComponent>(entity, "Position") ||
-                    world.getComponent<any>(entity, "Transform");
+        const pos = world.getComponent<TransformComponent>(entity, "Transform");
         if (!pos) continue;
 
         if (config.showColliders) {

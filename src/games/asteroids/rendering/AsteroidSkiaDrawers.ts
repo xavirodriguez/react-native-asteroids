@@ -1,7 +1,7 @@
 import { Skia, BlurStyle, SkCanvas, SkPaint } from "@shopify/react-native-skia";
 import { World } from "../../../engine/core/World";
 import { Entity } from "../../../engine/core/Entity";
-import { PositionComponent, RenderComponent, TTLComponent } from "../../../engine/core/CoreComponents";
+import { TransformComponent, RenderComponent, TTLComponent } from "../../../engine/core/CoreComponents";
 
 export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => {
     const size = render.size;
@@ -104,9 +104,9 @@ export const drawSkiaFlash = (canvas: SkCanvas, entity: Entity, world: World, re
 };
 
 export function drawSkiaAsteroidStarField(canvas: SkCanvas, stars: any[], width: number, height: number, world: World, paint: SkPaint): void {
-    const shipEntity = world.query("Ship", "Position")[0];
+    const shipEntity = world.query("Ship", "Transform")[0];
     const shipPos = shipEntity
-      ? world.getComponent<PositionComponent>(shipEntity, "Position")
+      ? world.getComponent<TransformComponent>(shipEntity, "Transform")
       : { x: width / 2, y: height / 2 };
 
     if (!shipPos) return;
