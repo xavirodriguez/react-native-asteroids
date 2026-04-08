@@ -3,6 +3,7 @@ import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
 import { RenderComponent, TTLComponent, TransformComponent, Component } from "../core/CoreComponents";
+import { RandomService } from "../utils/RandomService";
 
 export type SkiaShapeDrawer = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => void;
 
@@ -122,8 +123,9 @@ export class SkiaRenderer implements Renderer {
     let shakeX = 0;
     let shakeY = 0;
     if (gameState?.screenShake && gameState.screenShake.framesLeft > 0) {
-      shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
-      shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
+      const renderRandom = RandomService.getInstance("render");
+      shakeX = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
+      shakeY = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
     }
 
     canvas.save();

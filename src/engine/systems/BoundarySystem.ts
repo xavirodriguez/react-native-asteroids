@@ -7,6 +7,7 @@ import {
   Entity,
   ReclaimableComponent,
 } from "../types/EngineTypes";
+import { PhysicsUtils } from "../utils/PhysicsUtils";
 
 /**
  * Universal Boundary System that handles wrapping, bouncing, or destruction
@@ -54,10 +55,7 @@ export class BoundarySystem extends System {
   }
 
   private wrap(pos: TransformComponent, width: number, height: number): void {
-    if (pos.x < 0) pos.x = width;
-    else if (pos.x > width) pos.x = 0;
-    if (pos.y < 0) pos.y = height;
-    else if (pos.y > height) pos.y = 0;
+    PhysicsUtils.wrapBoundary(pos, width, height);
   }
 
   private bounce(pos: TransformComponent, vel: VelocityComponent, width: number, height: number, bounceX: boolean = true, bounceY: boolean = true): void {

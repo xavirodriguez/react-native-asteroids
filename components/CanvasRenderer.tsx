@@ -16,6 +16,7 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, onInitial
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<EngineCanvasRenderer | null>(null);
 
+  // Re-render effect: Called every time the component re-renders (triggered by GameEngine via version state)
   useEffect(() => {
     if (Platform.OS !== "web") return;
 
@@ -27,32 +28,15 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, onInitial
 
     if (!rendererRef.current) {
       const renderer = new EngineCanvasRenderer(ctx);
-
-      if (onInitialize) {
-        onInitialize(renderer);
-      }
-
+      if (onInitialize) onInitialize(renderer);
       rendererRef.current = renderer;
     } else {
       rendererRef.current.setContext(ctx);
     }
+
     rendererRef.current.setSize(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
-
-    let animationFrameId: number;
-
-    const render = () => {
-      if (rendererRef.current) {
-        rendererRef.current.render(world);
-      }
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [world, onInitialize]);
+    rendererRef.current.render(world);
+  });
 
   return (
     <View style={styles.container}>
