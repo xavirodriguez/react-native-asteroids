@@ -223,6 +223,8 @@ export interface Camera2DComponent extends Component {
   y: number;
   zoom: number;
   shakeIntensity: number;
+  shakeOffsetX: number;
+  shakeOffsetY: number;
   smoothing: number;
   offset: { x: number; y: number };
   bounds: { minX: number; minY: number; maxX: number; maxY: number } | null;

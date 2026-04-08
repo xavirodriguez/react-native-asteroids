@@ -51,10 +51,20 @@ export class Camera2D extends System {
         cam.y = Math.max(cam.bounds.minY, Math.min(cam.bounds.maxY - this.viewport.height / cam.zoom, cam.y));
       }
 
-      // Handle shake decay
+      // Handle shake decay and offset computation
       if (cam.shakeIntensity > 0) {
+        cam.shakeOffsetX = (Math.random() - 0.5) * cam.shakeIntensity;
+        cam.shakeOffsetY = (Math.random() - 0.5) * cam.shakeIntensity;
+
         cam.shakeIntensity -= deltaTime * 0.05; // Decay rate
-        if (cam.shakeIntensity < 0) cam.shakeIntensity = 0;
+        if (cam.shakeIntensity < 0) {
+            cam.shakeIntensity = 0;
+            cam.shakeOffsetX = 0;
+            cam.shakeOffsetY = 0;
+        }
+      } else {
+        cam.shakeOffsetX = 0;
+        cam.shakeOffsetY = 0;
       }
     });
   }
@@ -83,8 +93,8 @@ export class Camera2D extends System {
    * Transforms world coordinates to screen coordinates.
    */
   public static worldToScreen(worldPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
-    const shakeX = (Math.random() - 0.5) * cam.shakeIntensity;
-    const shakeY = (Math.random() - 0.5) * cam.shakeIntensity;
+    const shakeX = cam.shakeOffsetX || 0;
+    const shakeY = cam.shakeOffsetY || 0;
     return {
       x: (worldPos.x - cam.x + shakeX) * cam.zoom,
       y: (worldPos.y - cam.y + shakeY) * cam.zoom,
@@ -95,9 +105,11 @@ export class Camera2D extends System {
    * Transforms screen coordinates to world coordinates.
    */
   public static screenToWorld(screenPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
+    const shakeX = cam.shakeOffsetX || 0;
+    const shakeY = cam.shakeOffsetY || 0;
     return {
-      x: screenPos.x / cam.zoom + cam.x,
-      y: screenPos.y / cam.zoom + cam.y,
+      x: screenPos.x / cam.zoom + cam.x - shakeX,
+      y: screenPos.y / cam.zoom + cam.y - shakeY,
     };
   }
 }

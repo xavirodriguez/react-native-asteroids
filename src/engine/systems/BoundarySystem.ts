@@ -33,13 +33,14 @@ export class BoundarySystem extends System {
     boundary: BoundaryComponent,
     vel: VelocityComponent | undefined
   ): void {
-    const { width, height, mode } = boundary;
+    const { width, height } = boundary;
+    const behavior = boundary.behavior || boundary.mode;
 
     const isOutOfBounds = pos.x < 0 || pos.x > width || pos.y < 0 || pos.y > height;
 
     if (!isOutOfBounds) return;
 
-    switch (mode) {
+    switch (behavior) {
       case "wrap":
         this.wrap(pos, width, height);
         break;

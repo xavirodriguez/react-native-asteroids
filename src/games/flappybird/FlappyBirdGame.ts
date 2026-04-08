@@ -10,6 +10,7 @@ import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
 import { FlappyBirdRenderSystem } from "./systems/FlappyBirdRenderSystem";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
 import { Renderer } from "../../engine/rendering/Renderer";
+import { InputManager } from "../../engine/input/InputManager";
 import {
   createBird,
   createGameState,
@@ -30,6 +31,7 @@ export class FlappyBirdGame
   implements IFlappyBirdGame {
 
   private gameStateSystem: FlappyBirdGameStateSystem;
+  private _localInputManager: InputManager<FlappyBirdInput>;
 
   constructor(config: { isMultiplayer?: boolean } = {}) {
     super({
@@ -37,6 +39,7 @@ export class FlappyBirdGame
       restartKey: FLAPPY_CONFIG.KEYS.RESTART,
       isMultiplayer: config.isMultiplayer
     });
+    this._localInputManager = new InputManager<FlappyBirdInput>();
   }
 
   protected registerSystems(): void {
@@ -45,13 +48,15 @@ export class FlappyBirdGame
       [FLAPPY_CONFIG.KEYS.FLAP]: "flap" as const,
     };
 
-    this.inputManager.cleanup();
-    this.inputManager.addController(new KeyboardController<FlappyBirdInput>(FLAPPY_KEYMAP, DEFAULT_INPUT));
-    this.inputManager.addController(new TouchController<FlappyBirdInput>());
+    if (this._localInputManager) {
+        this._localInputManager.cleanup();
+        this._localInputManager.addController(new KeyboardController<FlappyBirdInput>(FLAPPY_KEYMAP, DEFAULT_INPUT));
+        this._localInputManager.addController(new TouchController<FlappyBirdInput>());
+    }
 
     this.gameStateSystem = new FlappyBirdGameStateSystem(this);
 
-    const inputSys = new FlappyBirdInputSystem(this.inputManager);
+    const inputSys = new FlappyBirdInputSystem(this._localInputManager);
     if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
 
     this.world.addSystem(inputSys);
