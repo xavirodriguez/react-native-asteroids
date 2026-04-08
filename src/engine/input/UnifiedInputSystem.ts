@@ -96,4 +96,28 @@ export class UnifiedInputSystem extends System {
     window.removeEventListener("pointerdown", this._onPointerDown);
     window.removeEventListener("pointerup", this._onPointerUp);
   }
+
+  /**
+   * Returns a snapshot of the current semantic input state.
+   */
+  public getInputState(): { actions: string[], axes: Record<string, number> } {
+    const actions: string[] = [];
+    const axes: Record<string, number> = {};
+
+    this.bindings.forEach((inputs, action) => {
+      const isPressed = inputs.some(input =>
+        this.activeKeys.has(input) || this.activeTouches.has(input)
+      );
+      if (isPressed) actions.push(action);
+    });
+
+    this.axisBindings.forEach((config, axis) => {
+      let value = 0;
+      if (config.pos.some(k => this.activeKeys.has(k))) value += 1;
+      if (config.neg.some(k => this.activeKeys.has(k))) value -= 1;
+      if (value !== 0) axes[axis] = value;
+    });
+
+    return { actions, axes };
+  }
 }

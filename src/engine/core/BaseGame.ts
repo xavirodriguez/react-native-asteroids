@@ -2,9 +2,14 @@ import { World } from "../core/World";
 import { GameLoop } from "./GameLoop";
 import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
 import { EventBus } from "./EventBus";
+import { InputBuffer } from "../network/InputBuffer";
+import { NetworkTransport } from "../network/NetworkTransport";
+import { ReplayRecorder } from "../debug/ReplayRecorder";
+import { StateHasher } from "../debug/StateHasher";
 import { SceneManager } from "../scenes/SceneManager";
 import { runLifecycle } from "../utils/LifecycleUtils";
 import { RandomService } from "../utils/RandomService";
+import { InputStateComponent } from "./CoreComponents";
 import type { IGame, UpdateListener } from "./IGame";
 
 export interface BaseGameConfig {
@@ -25,6 +30,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   protected unifiedInput: UnifiedInputSystem;
   protected eventBus: EventBus;
   protected sceneManager: SceneManager;
+  protected inputBuffer: InputBuffer;
+  protected networkTransport?: NetworkTransport;
+  protected replayRecorder: ReplayRecorder;
+  protected currentTick: number = 0;
   public isMultiplayer: boolean;
 
   private _isPaused = false;
@@ -40,8 +49,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this.unifiedInput = new UnifiedInputSystem();
     this.eventBus = new EventBus();
     this.sceneManager = new SceneManager();
+    this.inputBuffer = new InputBuffer();
+    this.replayRecorder = new ReplayRecorder();
 
     this.registerEventBusSingleton();
+
+    // Start recording by default if in debug mode
+    if (__DEV__) {
+      this.replayRecorder.startRecording();
+    }
 
     this._config = config;
 
@@ -55,9 +71,34 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     // Notify React on each logical update frame
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (!this._isPaused) {
+        // Lockstep integration: only proceed if all inputs are ready for current tick
+        if (this.isMultiplayer && !this._isTickReady(this.currentTick)) {
+          return;
+        }
+
         // Update input system first
         const activeWorld = this.getWorld();
-        this.unifiedInput.update(activeWorld, deltaTime);
+
+        if (this.isMultiplayer) {
+          // In multiplayer, we use inputs from the buffer for the current tick
+          const tickInputs = this.inputBuffer.getInputsForTick(this.currentTick);
+          this._applyNetworkInputs(activeWorld, tickInputs);
+        } else {
+          this.unifiedInput.update(activeWorld, deltaTime);
+        }
+
+        // Capture local input as frame and broadcast
+        if (this.isMultiplayer && this.networkTransport) {
+          const inputState = this.unifiedInput.getInputState();
+          const frame = {
+            tick: this.currentTick,
+            timestamp: Date.now(),
+            actions: inputState.actions || [],
+            axes: inputState.axes || {},
+          };
+          this.inputBuffer.addLocalInput(frame);
+          this.networkTransport.send({ type: "input", frame, sessionId: this.networkTransport.getSessionId() });
+        }
 
         // Simple games update this.world, advanced games update via sceneManager
         if (this.sceneManager.getCurrentScene()) {
@@ -65,6 +106,17 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
         } else {
           this.world.update(deltaTime);
         }
+
+        // Record for replay if recording
+        this.replayRecorder.recordTick(this.currentTick, this.inputBuffer.getInputsForTick(this.currentTick) as any);
+
+        // Debug desync detection
+        if (this.isMultiplayer && activeWorld.debugMode && this.currentTick % 60 === 0) {
+          const hash = StateHasher.calculateHash(activeWorld);
+          console.log(`[Tick ${this.currentTick}] State Hash: ${hash}`);
+        }
+
+        this.currentTick++;
         this._notifyListeners();
       }
     });
@@ -157,12 +209,60 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   // ─── Optional hook — can be overridden ───────────────────────────────────
 
   /**
+   * Sets the network transport for multiplayer games.
+   */
+  public setNetworkTransport(transport: NetworkTransport): void {
+    this.networkTransport = transport;
+    this.networkTransport.onMessage((data) => this._handleNetworkMessage(data));
+  }
+
+  /**
    * Called during restart() after scene/world restart.
    * Useful for resetting internal game state (e.g., gameOverLogged = false).
    */
   protected _onBeforeRestart(): void | Promise<void> {}
 
   // ─── Engine-internal methods ─────────────────────────────────────────────
+
+  private _applyNetworkInputs(world: World, tickInputs: Record<string, any>): void {
+    // This is a simplified implementation.
+    // Usually, you'd have one InputState per player or a merged one.
+    // For now, we'll merge all inputs into the InputState singleton for the simulation.
+    let mergedActions = new Set<string>();
+    let mergedAxes: Record<string, number> = {};
+
+    Object.values(tickInputs).forEach(frame => {
+      if (frame) {
+        // frame.actions is string[] from getInputState()
+        frame.actions?.forEach((a: string) => mergedActions.add(a));
+        // frame.axes is Record<string, number>
+        Object.entries(frame.axes || {}).forEach(([axis, val]) => {
+          mergedAxes[axis] = (mergedAxes[axis] || 0) + (val as number);
+        });
+      }
+    });
+
+    let inputState = world.getSingleton<InputStateComponent>("InputState");
+    if (inputState) {
+      inputState.actions.clear();
+      mergedActions.forEach(a => inputState!.actions.set(a, true));
+      inputState.axes.clear();
+      Object.entries(mergedAxes).forEach(([axis, val]) => inputState!.axes.set(axis, val));
+    }
+  }
+
+  private _handleNetworkMessage(data: any): void {
+    if (data.type === "input") {
+      this.inputBuffer.addRemoteInput(data.sessionId, data.frame);
+    }
+  }
+
+  private _isTickReady(tick: number): boolean {
+    // In a real scenario, we'd need a list of connected session IDs
+    // This is a simplified check
+    const expectedSessions = this.world.getResource<string[]>("connectedSessions") || [];
+    return this.inputBuffer.isTickReady(tick, expectedSessions);
+  }
 
   private registerEventBusSingleton(): void {
     const entity = this.world.createEntity();
