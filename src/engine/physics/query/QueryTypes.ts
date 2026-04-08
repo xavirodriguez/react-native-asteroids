@@ -1,3 +1,5 @@
+import { Entity } from "../../core/Entity";
+
 export interface RaycastHit {
   entity: Entity;
   pointX: number;

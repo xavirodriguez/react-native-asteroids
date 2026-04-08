@@ -4,7 +4,6 @@ import { SharedValue, useDerivedValue } from "react-native-reanimated";
 import { SharedCamera } from "../../core/types/SystemTypes";
 import { RandomService } from "../../utils/RandomService";
 import { RenderableComponent, TransformComponent } from "../../types/EngineTypes";
-import { RandomService } from "../../utils/RandomService";
 import { Entity } from "../../types/EngineTypes";
 
 // Conditionally import Skia components for non-web platforms
@@ -107,14 +106,14 @@ const EntityRenderer: React.FC<{
       opacity={renderable.opacity}
     >
       {renderable.renderType === "circle" && Circle && (
-        <Circle cx={0} cy={0} r={renderable.size.radius ?? 10} color={renderable.color} />
+        <Circle cx={0} cy={0} r={renderable.radius ?? renderable.size ?? 10} color={renderable.color} />
       )}
       {renderable.renderType === "rect" && Rect && (
         <Rect
-          x={-renderable.size.width / 2}
-          y={-renderable.size.height / 2}
-          width={renderable.size.width}
-          height={renderable.size.height}
+          x={-(renderable.width ?? 0) / 2}
+          y={-(renderable.height ?? 0) / 2}
+          width={renderable.width}
+          height={renderable.height}
           color={renderable.color}
         />
       )}

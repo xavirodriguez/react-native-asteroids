@@ -55,4 +55,15 @@ export abstract class Scene {
   public getWorld(): World {
     return this.world;
   }
+
+  /**
+   * Public forwarding methods for backward compatibility.
+   */
+  public update(dt: number): void {
+    this.onUpdate(dt, this.world);
+  }
+
+  public render(renderer: any): void {
+    renderer.render(this.world);
+  }
 }

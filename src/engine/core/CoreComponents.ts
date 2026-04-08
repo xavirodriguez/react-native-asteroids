@@ -47,15 +47,20 @@ export interface FrictionComponent extends Component {
 
 export interface BoundaryComponent extends Component {
   type: "Boundary";
+  x?: number;
+  y?: number;
   width: number;
   height: number;
-  mode: "wrap" | "bounce" | "destroy";
+  behavior: "wrap" | "bounce" | "destroy";
+  // Backward compatibility
+  mode?: "wrap" | "bounce" | "destroy";
   bounceX?: boolean;
   bounceY?: boolean;
 }
 
 export interface TagComponent extends Component {
   type: "Tag";
+  tag?: string; // legacy
   tags: string[];
 }
 
@@ -66,12 +71,12 @@ export interface TagComponent extends Component {
 export interface RigidBodyComponent extends Component {
   type: "RigidBody";
   bodyId: number | string;
-  isStatic: boolean;
-  isSensor: boolean;
-  restitution: number;
-  friction: number;
-  density: number;
-  collisionFilter: {
+  isStatic?: boolean;
+  isSensor?: boolean;
+  restitution?: number;
+  friction?: number;
+  density?: number;
+  collisionFilter?: {
     group: number;
     category: number;
     mask: number;
@@ -105,8 +110,6 @@ export interface RenderComponent extends Component {
   hitFlashFrames?: number;
   /** Custom data for game-specific drawers */
   data?: Record<string, any>;
-  /** Trail positions for generic trail rendering */
-  trailPositions?: { x: number; y: number }[];
 }
 
 /**
@@ -128,25 +131,6 @@ export interface ReclaimableComponent extends Component {
 }
 
 /**
- * Transform component for hierarchical positioning.
- */
-export interface TransformComponent extends Component {
-  type: "Transform";
-  x: number;
-  y: number;
-  rotation: number;
-  scaleX: number;
-  scaleY: number;
-  parent?: Entity;
-  // World-space values (calculated by HierarchySystem)
-  worldX?: number;
-  worldY?: number;
-  worldRotation?: number;
-  worldScaleX?: number;
-  worldScaleY?: number;
-}
-
-/**
  * Legacy Transform interface for compatibility.
  * @deprecated Use TransformComponent instead.
  */
@@ -157,22 +141,6 @@ export interface Transform {
   scaleX: number;
   scaleY: number;
   matrix?: number[];
-}
-
-/**
- * Boundary component for world constraints.
- */
-export interface BoundaryComponent extends Component {
-  type: "Boundary";
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  behavior: "wrap" | "bounce" | "destroy";
-  // Backward compatibility
-  mode?: "wrap" | "bounce" | "destroy";
-  bounceX?: boolean;
-  bounceY?: boolean;
 }
 
 /**
@@ -303,17 +271,6 @@ export interface AABB {
   maxY: number;
 }
 
-export interface RigidBodyComponent extends Component {
-  type: "RigidBody";
-  bodyId: any;
-  isStatic?: boolean;
-}
-
-export interface FrictionComponent extends Component {
-  type: "Friction";
-  value: number;
-}
-
 export interface ScreenShakeComponent extends Component {
   type: "ScreenShake";
   intensity: number;
@@ -350,17 +307,8 @@ export interface RenderableComponent extends Component {
   zOrder: number;
   opacity?: number;
   renderType?: string;
-  size?: number;
+  size?: any;
   radius?: number;
-}
-
-/**
- * Tag component for basic entity categorization.
- */
-export interface TagComponent extends Component {
-  type: "Tag";
-  tag?: string;
-  tags?: string[];
 }
 
 /**
