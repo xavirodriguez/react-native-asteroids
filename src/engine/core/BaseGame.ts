@@ -16,6 +16,7 @@ export interface BaseGameConfig {
   pauseKey?: string;    // Key code for pausing, e.g., "KeyP"
   restartKey?: string;  // Key code for restarting, e.g., "KeyR"
   isMultiplayer?: boolean;
+  gameOptions?: any;    // Generic field for subclass-specific initial options
 }
 
 /**
@@ -39,7 +40,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   private _isPaused = false;
   private _listeners = new Set<UpdateListener<BaseGame<TState, TInput>>>();
   private _globalKeyHandler = (e: KeyboardEvent) => this._handleGlobalKey(e);
-  private _config: BaseGameConfig;
+  protected _config: BaseGameConfig;
 
   constructor(config: BaseGameConfig = {}) {
     const { isMultiplayer = false } = config;
@@ -195,6 +196,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   public isPausedState(): boolean {
     return this._isPaused;
+  }
+
+  /**
+   * Optional hook for subclasses to stall the entire world update.
+   * Useful for lockstep netcode waiting for inputs.
+   */
+  protected shouldStallSimulation(): boolean {
+    return false;
   }
 
   public setInput(_input: Partial<TInput>): void {
