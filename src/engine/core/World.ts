@@ -57,7 +57,7 @@ export class World {
     if (type === "Transform") {
       const transform = component as any;
       if (transform.parent !== undefined) {
-        if (!this.entities.has(transform.parent)) {
+        if (!this.activeEntities.has(transform.parent)) {
           if (__DEV__) {
             console.warn(`Hierarchy Invariant Violation: Entity ${entity} has parent ${transform.parent} but parent does not exist in world.`);
           }

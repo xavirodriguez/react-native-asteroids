@@ -1,15 +1,34 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { Camera2DComponent, TransformComponent } from "../types/EngineTypes";
+import { Camera2DComponent, TransformComponent, Entity } from "../types/EngineTypes";
+
+export interface CameraConfig {
+  viewport: { width: number; height: number };
+  bounds?: { minX: number; minY: number; maxX: number; maxY: number };
+  smoothing?: number;
+  offset?: { x: number; y: number };
+}
 
 /**
  * Platform-agnostic 2D Camera logic.
  * Handles target following, lerping, and screen shake.
  */
 export class Camera2D extends System {
+  private viewport = { width: 800, height: 600 };
+
+  constructor(config?: CameraConfig) {
+    super();
+    if (config) {
+      this.viewport = config.viewport;
+    }
+  }
+
+  public setViewport(width: number, height: number): void {
+    this.viewport = { width, height };
+  }
+
   public update(world: World, deltaTime: number): void {
     const cameras = world.query("Camera2D");
-    const viewport = { width: 800, height: 600 }; // Default, could be injected
 
     cameras.forEach((camEntity) => {
       const cam = world.getComponent<Camera2DComponent>(camEntity, "Camera2D")!;
@@ -17,8 +36,8 @@ export class Camera2D extends System {
       if (cam.target !== undefined) {
         const targetPos = world.getComponent<TransformComponent>(cam.target, "Transform");
         if (targetPos) {
-          const targetX = targetPos.x - viewport.width / (2 * cam.zoom) + cam.offset.x;
-          const targetY = targetPos.y - viewport.height / (2 * cam.zoom) + cam.offset.y;
+          const targetX = targetPos.x - this.viewport.width / (2 * cam.zoom) + cam.offset.x;
+          const targetY = targetPos.y - this.viewport.height / (2 * cam.zoom) + cam.offset.y;
 
           // Apply smoothing (lerp)
           cam.x += (targetX - cam.x) * cam.smoothing;
@@ -28,8 +47,8 @@ export class Camera2D extends System {
 
       // Apply bounds
       if (cam.bounds) {
-        cam.x = Math.max(cam.bounds.minX, Math.min(cam.bounds.maxX - viewport.width / cam.zoom, cam.x));
-        cam.y = Math.max(cam.bounds.minY, Math.min(cam.bounds.maxY - viewport.height / cam.zoom, cam.y));
+        cam.x = Math.max(cam.bounds.minX, Math.min(cam.bounds.maxX - this.viewport.width / cam.zoom, cam.x));
+        cam.y = Math.max(cam.bounds.minY, Math.min(cam.bounds.maxY - this.viewport.height / cam.zoom, cam.y));
       }
 
       // Handle shake decay
@@ -38,6 +57,16 @@ export class Camera2D extends System {
         if (cam.shakeIntensity < 0) cam.shakeIntensity = 0;
       }
     });
+  }
+
+  /**
+   * Helper to set camera target.
+   */
+  public follow(world: World, target: Entity): void {
+    const cam = world.getSingleton<Camera2DComponent>("Camera2D");
+    if (cam) {
+      cam.target = target;
+    }
   }
 
   /**
@@ -54,9 +83,11 @@ export class Camera2D extends System {
    * Transforms world coordinates to screen coordinates.
    */
   public static worldToScreen(worldPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
+    const shakeX = (Math.random() - 0.5) * cam.shakeIntensity;
+    const shakeY = (Math.random() - 0.5) * cam.shakeIntensity;
     return {
-      x: (worldPos.x - cam.x) * cam.zoom,
-      y: (worldPos.y - cam.y) * cam.zoom,
+      x: (worldPos.x - cam.x + shakeX) * cam.zoom,
+      y: (worldPos.y - cam.y + shakeY) * cam.zoom,
     };
   }
 

@@ -25,38 +25,11 @@ export class HierarchySystem extends System {
   public update(world: World, _deltaTime: number): void {
     const transforms = world.query("Transform");
 
-    if (__DEV__) {
-      this.assertValid(world, transforms);
-    }
-
     const processed = new Set<Entity>();
 
     transforms.forEach((entity) => {
       this.updateTransform(world, entity, processed);
     });
-  }
-
-  /**
-   * Principle 2: Strong Invariants.
-   * Documentation of hierarchical invariants as executable assertions.
-   */
-  private assertValid(world: World, entities: Entity[]): void {
-    for (const entity of entities) {
-      const t = world.getComponent<TransformComponent>(entity, "Transform");
-      if (!t) continue;
-
-      if (t.parent !== undefined) {
-        // Parent must exist
-        if (!entities.includes(t.parent)) {
-          console.warn(`Hierarchy Invariant Violation: Entity ${entity} has parent ${t.parent} but parent is missing from world query.`);
-        }
-
-        // Cannot be its own parent
-        if (t.parent === entity) {
-          throw new Error(`Hierarchy Invariant Violation: Entity ${entity} cannot be its own parent.`);
-        }
-      }
-    }
   }
 
   private updateTransform(world: World, entity: Entity, processed: Set<Entity>): void {

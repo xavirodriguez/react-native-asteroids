@@ -34,8 +34,9 @@ export abstract class CollisionSystem extends System {
       const mask = (col as any).mask !== undefined ? (col as any).mask : 1;
       if (layer === 0 && mask === 0) continue;
 
-      const halfWidth = (col as any).width ? (col as any).width / 2 : col.radius;
-      const halfHeight = (col as any).height ? (col as any).height / 2 : col.radius;
+      const radius = col.radius || (col as any).size / 2 || 0;
+      const halfWidth = (col as any).width ? (col as any).width / 2 : radius;
+      const halfHeight = (col as any).height ? (col as any).height / 2 : radius;
 
       this.aabb.minX = pos.x - halfWidth;
       this.aabb.maxX = pos.x + halfWidth;
@@ -55,8 +56,9 @@ export abstract class CollisionSystem extends System {
       const maskA = (colA as any).mask !== undefined ? (colA as any).mask : 1;
       if (maskA === 0) continue;
 
-      const halfWidth = (colA as any).width ? (colA as any).width / 2 : colA.radius;
-      const halfHeight = (colA as any).height ? (colA as any).height / 2 : colA.radius;
+      const radiusA = colA.radius || (colA as any).size / 2 || 0;
+      const halfWidth = (colA as any).width ? (colA as any).width / 2 : radiusA;
+      const halfHeight = (colA as any).height ? (colA as any).height / 2 : radiusA;
 
       this.aabb.minX = posA.x - halfWidth;
       this.aabb.maxX = posA.x + halfWidth;
@@ -95,7 +97,9 @@ export abstract class CollisionSystem extends System {
     const dx = posA.x - posB.x;
     const dy = posA.y - posB.y;
     const distanceSq = dx * dx + dy * dy;
-    const radiusSum = colA.radius + colB.radius;
+    const radiusA = colA.radius || (colA as any).size / 2 || 0;
+    const radiusB = colB.radius || (colB as any).size / 2 || 0;
+    const radiusSum = radiusA + radiusB;
     return distanceSq < radiusSum * radiusSum;
   }
 
@@ -113,7 +117,9 @@ export abstract class CollisionSystem extends System {
     const dx = posA.x - posB.x;
     const dy = posA.y - posB.y;
     const distanceSq = dx * dx + dy * dy;
-    const radiusSum = colA.radius + colB.radius;
+    const radiusA = colA.radius || (colA as any).size / 2 || 0;
+    const radiusB = colB.radius || (colB as any).size / 2 || 0;
+    const radiusSum = radiusA + radiusB;
 
     return distanceSq < radiusSum * radiusSum;
   }

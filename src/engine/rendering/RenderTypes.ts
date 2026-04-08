@@ -4,7 +4,7 @@ import { Entity, Transform } from "../types/EngineTypes";
  * Commands emitted by the RenderSystem to be consumed by the adapter.
  */
 export interface RenderCommand {
-  type: 'sprite' | 'rect' | 'circle' | 'line';
+  type: string;
   entityId: Entity;
   worldTransform: Transform;
   alpha: number; // For interpolation

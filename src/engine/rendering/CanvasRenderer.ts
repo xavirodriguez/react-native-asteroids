@@ -1,7 +1,7 @@
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { PositionComponent, RenderComponent, TTLComponent } from "../core/CoreComponents";
+import { PositionComponent, RenderComponent, TTLComponent, TransformComponent, Component, TilemapComponent } from "../core/CoreComponents";
 
 export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => void;
 
@@ -10,6 +10,7 @@ export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world:
  * Generic and extensible via shape drawers.
  */
 export class CanvasRenderer implements Renderer {
+  public readonly type = 'canvas';
   protected ctx: CanvasRenderingContext2D | null = null;
   protected width: number = 0;
   protected height: number = 0;
@@ -17,6 +18,9 @@ export class CanvasRenderer implements Renderer {
   private postEntityDrawers = new Map<string, ShapeDrawer>();
   private preRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
   private postRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
+
+  private backgroundEffects = new Map<string, any>();
+  private foregroundEffects = new Map<string, any>();
 
   constructor(ctx?: CanvasRenderingContext2D) {
     if (ctx) {
@@ -29,6 +33,10 @@ export class CanvasRenderer implements Renderer {
     this.shapeDrawers.set(shape, drawer);
   }
 
+  public registerShape(name: string, drawer: any): void {
+      this.shapeDrawers.set(name, drawer);
+  }
+
   public registerPostEntityDrawer(shape: string, drawer: ShapeDrawer): void {
     this.postEntityDrawers.set(shape, drawer);
   }
@@ -39,6 +47,14 @@ export class CanvasRenderer implements Renderer {
 
   public addPostRenderHook(hook: (ctx: CanvasRenderingContext2D, world: World) => void): void {
     this.postRenderHooks.push(hook);
+  }
+
+  public registerBackgroundEffect(name: string, drawer: any): void {
+      this.backgroundEffects.set(name, drawer);
+  }
+
+  public registerForegroundEffect(name: string, drawer: any): void {
+      this.foregroundEffects.set(name, drawer);
   }
 
   private registerDefaultDrawers(): void {
@@ -59,7 +75,7 @@ export class CanvasRenderer implements Renderer {
       ctx.strokeStyle = render.color;
       ctx.lineWidth = 2;
       ctx.fillStyle = "#333";
-      if (render.data?.hitFlashFrames && render.data.hitFlashFrames > 0) {
+      if (render.hitFlashFrames && render.hitFlashFrames > 0) {
         ctx.strokeStyle = "white";
         ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
       }
@@ -122,7 +138,7 @@ export class CanvasRenderer implements Renderer {
 
     let shakeX = 0;
     let shakeY = 0;
-    if (gameState?.screenShake && gameState.screenShake.framesLeft > 0) {
+    if (gameState?.screenShake && gameState.screenShake.remaining > 0) {
       shakeX = (Math.random() - 0.5) * gameState.screenShake.intensity;
       shakeY = (Math.random() - 0.5) * gameState.screenShake.intensity;
     }
@@ -163,18 +179,24 @@ export class CanvasRenderer implements Renderer {
     this.postRenderHooks.forEach(hook => hook(ctx, world));
   }
 
-  public drawEntity(entity: Entity, components: Record<string, any>, world: World): void {
+  public drawEntity(entity: Entity, components: Record<string, Component>, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const pos = components["Transform"] as TransformComponent;
     const render = components["Render"] as RenderComponent;
+
+    if (!pos || !render) return;
 
     // Use world coordinates from HierarchySystem (single source of truth)
     const x = pos.worldX !== undefined ? pos.worldX : pos.x;
     const y = pos.worldY !== undefined ? pos.worldY : pos.y;
     const rotation = pos.worldRotation !== undefined ? pos.worldRotation : render.rotation;
 
-    if (render.data?.hitFlashFrames && render.data.hitFlashFrames > 0) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+
+    if (render.hitFlashFrames && render.hitFlashFrames > 0) {
       ctx.globalCompositeOperation = "lighter";
     }
 
@@ -191,16 +213,16 @@ export class CanvasRenderer implements Renderer {
     }
   }
 
-  public drawTilemaps(world: World): void {
+  public drawParticles(world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
-    const entities = world.query("Position", "Render").filter(e => {
+    const entities = world.query("Transform", "Render").filter(e => {
         const r = world.getComponent<RenderComponent>(e, "Render");
         return r?.shape === "particle";
     });
 
     entities.forEach(entity => {
-        const pos = world.getComponent<PositionComponent>(entity, "Position")!;
+        const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
         const render = world.getComponent<RenderComponent>(entity, "Render")!;
         const ttl = world.getComponent<TTLComponent>(entity, "TTL");
         if (!ttl) return;
@@ -237,6 +259,40 @@ export class CanvasRenderer implements Renderer {
         ctx.arc(0, 0, size, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
+    });
+  }
+
+  public drawTilemaps(world: World): void {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const tilemaps = world.query("Tilemap");
+
+    tilemaps.forEach(entity => {
+        const tilemap = world.getComponent<TilemapComponent>(entity, "Tilemap")!;
+        const range = (tilemap as any)._visibleRange || {
+            startX: 0, startY: 0, endX: tilemap.data.width, endY: tilemap.data.height
+        };
+
+        for (const layer of tilemap.data.layers) {
+            for (let y = range.startY; y < range.endY; y++) {
+                for (let x = range.startX; x < range.endX; x++) {
+                    const tileId = layer.tiles[y * tilemap.data.width + x];
+                    if (tileId === 0) continue;
+
+                    const tileset = tilemap.data.tilesets.find(ts => ts.id === tileId);
+                    if (tileset) {
+                        // Drawing logic for tile (using simple color for now as textures require loading)
+                        ctx.fillStyle = tileset.solid ? "#555" : "#333";
+                        ctx.fillRect(
+                            x * tilemap.data.tileSize,
+                            y * tilemap.data.tileSize,
+                            tilemap.data.tileSize,
+                            tilemap.data.tileSize
+                        );
+                    }
+                }
+            }
+        }
     });
   }
 }
