@@ -11,6 +11,14 @@ interface RegisteredSystem {
 
 /**
  * ECS World class that manages the lifecycle of entities, components, and systems.
+ *
+ * @remarks
+ * The World acts as the central hub for the ECS architecture. It maintains entity identity,
+ * component storage, and system execution order.
+ *
+ * Invariants:
+ * - Principle 2: Hierarchical structures (Transforms) must be valid (no self-parenting).
+ * - Principle 6: Singleton components retrieved via {@link World.getSingleton} are ensured to be mutable.
  */
 export class World {
   private activeEntities = new Set<Entity>();
@@ -23,6 +31,7 @@ export class World {
   private sortedSystems: System[] = [];
   private systemsNeedSorting = false;
   private profilers: Map<System, SystemProfiler> = new Map();
+  /** Whether system profiling is enabled. */
   public debugMode = false;
   private nextEntityId = 1;
   private freeEntities: Entity[] = [];
@@ -31,13 +40,19 @@ export class World {
   /**
    * Current version of the world structure.
    * Incremented whenever an entity or component is added or removed.
+   *
+   * @conceptualRisk [POTENTIAL_OVERFLOW] If the game runs for an extremely long time with high churn, version might overflow.
    */
   public version = 0;
 
   /**
    * Creates a new unique entity in the world.
    *
+   * @remarks
+   * Reuses IDs from {@link World.freeEntities} if available to minimize ID growth.
+   *
    * @returns The newly created {@link Entity} ID.
+   * @postcondition Increments {@link World.version}.
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -48,6 +63,8 @@ export class World {
 
   /**
    * Removes all registered systems from the world.
+   *
+   * @postcondition Systems list is empty and {@link World.version} is incremented.
    */
   clearSystems(): void {
     this.systems = [];
@@ -62,6 +79,13 @@ export class World {
    *
    * @param entity - The entity to attach the component to.
    * @param component - The component instance to attach.
+   *
+   * @throws Error if Hierarchy Invariant is violated (self-parenting).
+   * @conceptualRisk [HIERARCHY_NORMALIZATION] Silently resets parent to undefined if parent is missing.
+   * This prevents crashes but might mask logic errors in entity creation order.
+   *
+   * @postcondition Increments {@link World.version}.
+   * @postcondition Notifies reactive queries.
    */
   addComponent<T extends Component>(entity: Entity, component: T): void {
     const type = component.type;
@@ -123,7 +147,9 @@ export class World {
   }
 
   /**
-   * Alias for {@link query} to support the required ECS extension interface.
+   * Alias for {@link World.query} to support the required ECS extension interface.
+   *
+   * @param componentTypes - Types to filter by.
    */
   getEntitiesWith(...componentTypes: string[]): Entity[] {
     return this.query(...componentTypes);
@@ -134,6 +160,8 @@ export class World {
    *
    * @param entity - The entity to remove the component from.
    * @param type - The type of the component to remove.
+   *
+   * @postcondition Increments {@link World.version} if component was actually removed.
    */
   removeComponent(entity: Entity, type: string): void {
     const componentMap = this.componentMaps.get(type);
@@ -154,6 +182,10 @@ export class World {
    *
    * @param componentTypes - One or more component types to filter by.
    * @returns An array of {@link Entity} IDs that have all the required components.
+   *
+   * @remarks
+   * Query results are cached. The order of component types in the arguments does not
+   * affect the query identity.
    */
   query(...componentTypes: string[]): Entity[] {
     if (componentTypes.length === 0) return [];
@@ -192,6 +224,8 @@ export class World {
    * Removes an entity and all of its attached components from the world.
    *
    * @param entity - The entity to remove.
+   *
+   * @postcondition Entity is added to {@link World.freeEntities} and {@link World.version} is incremented.
    */
   removeEntity(entity: Entity): void {
     this.removeEntityFromComponentMaps(entity);
@@ -207,6 +241,8 @@ export class World {
   /**
    * Resets the entire world, removing all entities, components and resources.
    * Systems remain registered.
+   *
+   * @postcondition {@link World.version} is incremented.
    */
   clear(): void {
     this.activeEntities.clear();
@@ -221,6 +257,9 @@ export class World {
 
   /**
    * Sets a global resource in the world.
+   *
+   * @param name - Unique resource key.
+   * @param resource - Value to store.
    */
   setResource<T>(name: string, resource: T): void {
     this.resources.set(name, resource);
@@ -228,6 +267,9 @@ export class World {
 
   /**
    * Retrieves a global resource by name.
+   *
+   * @param name - Resource key.
+   * @returns Resource value or `undefined`.
    */
   getResource<T>(name: string): T | undefined {
     return this.resources.get(name) as T;
@@ -235,6 +277,8 @@ export class World {
 
   /**
    * Checks if a resource exists.
+   *
+   * @param name - Resource key.
    */
   hasResource(name: string): boolean {
     return this.resources.has(name);
@@ -242,6 +286,8 @@ export class World {
 
   /**
    * Removes a resource from the world.
+   *
+   * @param name - Resource key.
    */
   removeResource(name: string): void {
     this.resources.delete(name);
@@ -286,6 +332,8 @@ export class World {
 
   /**
    * Returns the average execution time for a system if profiling is enabled.
+   *
+   * @param system - Registered system to profile.
    */
   getSystemTiming(system: System): number {
     return this.profilers.get(system)?.getAverageTime() ?? 0;
@@ -339,6 +387,8 @@ export class World {
 
   /**
    * Returns all component types attached to an entity.
+   *
+   * @param entity - Target entity.
    */
   getEntityComponentTypes(entity: Entity): string[] {
     const set = this.entityComponentSets.get(entity);
@@ -371,10 +421,14 @@ export class World {
 
   /**
    * Retrieves a singleton component from the world.
-   * If the component is frozen, it replaces it with a mutable copy.
+   * If the component is frozen, it replaces it with a mutable copy (Principle 6).
    *
    * @param type - The component type to retrieve.
    * @returns The component if found, otherwise `undefined`.
+   *
+   * @remarks
+   * This method assumes only one entity possesses the given component type.
+   * If multiple entities match, it returns the first one found by {@link World.query}.
    */
   getSingleton<T extends Component>(type: string): T | undefined {
     const [entity] = this.query(type);
