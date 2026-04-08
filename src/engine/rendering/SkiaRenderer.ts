@@ -159,32 +159,7 @@ export class SkiaRenderer implements Renderer {
         drawer(canvas, entity, world, render, this.paint);
     }
 
-        this.registerShape("polygon", (canvas: any, paint: any, render: any) => {
-          if (!render.vertices || render.vertices.length === 0) {
-            paint.setColor(Skia.Color(render.color));
-            paint.setStyle(Skia.PaintStyle.Fill);
-            canvas.drawCircle(0, 0, render.size, paint);
-            return;
-          }
-
-          if (!Skia.Path) return;
-          const path = Skia.Path.Make();
-          path.moveTo(render.vertices[0].x, render.vertices[0].y);
-          for (let i = 1; i < render.vertices.length; i++) {
-            path.lineTo(render.vertices[i].x, render.vertices[i].y);
-          }
-          path.close();
-
-          const isHitFlash = render.hitFlashFrames && render.hitFlashFrames > 0;
-          paint.setColor(isHitFlash ? Skia.Color("rgba(255, 255, 255, 0.5)") : Skia.Color("#333"));
-          paint.setStyle(Skia.PaintStyle.Fill);
-          canvas.drawPath(path, paint);
-
-          paint.setColor(isHitFlash ? Skia.Color("white") : Skia.Color(render.color));
-          paint.setStyle(Skia.PaintStyle.Stroke);
-          paint.setStrokeWidth(2);
-          canvas.drawPath(path, paint);
-        });
+    canvas.restore();
 
     const postDrawer = this.postEntityDrawers.get(render.shape);
     if (postDrawer) {
@@ -193,6 +168,10 @@ export class SkiaRenderer implements Renderer {
   }
 
   public registerShape(name: string, drawer: any): void {
-    this.shapeRegistry.set(name, drawer);
+    this.shapeDrawers.set(name, drawer);
+  }
+
+  public drawParticles(world: World): void {
+    // Basic implementation for now to satisfy call in render()
   }
 }

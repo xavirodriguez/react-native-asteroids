@@ -1,7 +1,11 @@
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { PositionComponent, RenderComponent, TTLComponent, TransformComponent, Component, TilemapComponent } from "../core/CoreComponents";
+import { RenderComponent, TTLComponent, TransformComponent, Component, TilemapComponent } from "../core/CoreComponents";
+import { renderUI } from "../ui/UIRenderer";
+import { UITextComponent, UIStyleComponent } from "../ui/UITypes";
+import { FontRegistry } from "../ui/text/FontRegistry";
+import { TextRenderer } from "../ui/text/TextRenderer";
 
 export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => void;
 
@@ -21,9 +25,6 @@ export class CanvasRenderer implements Renderer {
   private backgroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
   private foregroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
 
-  private backgroundEffects = new Map<string, any>();
-  private foregroundEffects = new Map<string, any>();
-
   constructor(ctx?: CanvasRenderingContext2D) {
     if (ctx) {
       this.ctx = ctx;
@@ -33,10 +34,6 @@ export class CanvasRenderer implements Renderer {
 
   public registerShapeDrawer(shape: string, drawer: ShapeDrawer): void {
     this.shapeDrawers.set(shape, drawer);
-  }
-
-  public registerShape(name: string, drawer: any): void {
-      this.shapeDrawers.set(name, drawer);
   }
 
   public registerPostEntityDrawer(shape: string, drawer: ShapeDrawer): void {
@@ -61,14 +58,6 @@ export class CanvasRenderer implements Renderer {
 
   public addPostRenderHook(hook: (ctx: CanvasRenderingContext2D, world: World) => void): void {
     this.postRenderHooks.push(hook);
-  }
-
-  public registerBackgroundEffect(name: string, drawer: any): void {
-      this.backgroundEffects.set(name, drawer);
-  }
-
-  public registerForegroundEffect(name: string, drawer: any): void {
-      this.foregroundEffects.set(name, drawer);
   }
 
   private registerDefaultDrawers(): void {
@@ -243,6 +232,7 @@ export class CanvasRenderer implements Renderer {
     }
 
     ctx.restore();
+    ctx.globalCompositeOperation = "source-over";
 
     const postDrawer = this.postEntityDrawers.get(render.shape);
     if (postDrawer) {
@@ -331,5 +321,9 @@ export class CanvasRenderer implements Renderer {
             }
         }
     });
+  }
+
+  private renderDebugInfo(ctx: CanvasRenderingContext2D, world: World): void {
+      // Basic implementation for now to satisfy call in render()
   }
 }
