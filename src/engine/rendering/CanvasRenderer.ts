@@ -25,6 +25,7 @@ export class CanvasRenderer implements Renderer {
   private postRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
   private backgroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
   private foregroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
+  private debugSystem: DebugSystem = new DebugSystem();
 
   constructor(ctx?: CanvasRenderingContext2D) {
     if (ctx) {
@@ -326,7 +327,7 @@ export class CanvasRenderer implements Renderer {
   }
 
   private renderDebugInfo(ctx: CanvasRenderingContext2D, world: World): void {
-      const debugSys = new DebugSystem();
-      debugSys.renderDebug(ctx, world);
+      this.debugSystem.update(world, 0);
+      this.debugSystem.renderDebug(ctx, world);
   }
 }

@@ -152,8 +152,7 @@ export class SkiaRenderer implements Renderer {
 
     canvas.save();
     canvas.translate(pos.worldX ?? pos.x, pos.worldY ?? pos.y);
-    const rotation = pos.worldRotation !== undefined ? pos.worldRotation : render.rotation;
-    canvas.rotate((rotation * 180) / Math.PI, 0, 0);
+    canvas.rotate((render.rotation * 180) / Math.PI, 0, 0);
 
     const drawer = this.shapeDrawers.get(render.shape);
     if (drawer) {
