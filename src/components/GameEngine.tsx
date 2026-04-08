@@ -13,20 +13,11 @@ interface GameEngineProps {
  * Orchestrates the GameLoop and provides the world to the specified Renderer component.
  */
 export const GameEngine: React.FC<GameEngineProps> = ({ world, gameLoop, renderComponent: Renderer }) => {
-  const [, setVersion] = useState(0);
-
   useEffect(() => {
-    const unsubscribe = gameLoop.subscribeRender(() => {
-      // Trigger a React update for every frame if necessary.
-      // Renderer components often depend on world.version which is updated in systems.
-      setVersion(v => v + 1);
-    });
-
     gameLoop.start();
 
     return () => {
       gameLoop.stop();
-      unsubscribe();
     };
   }, [gameLoop]);
 

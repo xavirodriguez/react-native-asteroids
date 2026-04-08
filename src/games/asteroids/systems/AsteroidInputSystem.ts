@@ -6,11 +6,11 @@ import {
   type RenderComponent,
   type TransformComponent,
   type InputState,
+  type InputStateComponent,
   GAME_CONFIG,
-} from "../../../types/GameTypes";
+} from "../../../engine/types/EngineTypes";
 import { createBullet, createParticle } from "../EntityFactory";
 import { hapticShoot } from "../../../utils/haptics";
-import { InputManager } from "../../../engine/input/InputManager";
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { RandomService } from "../../../engine/utils/RandomService";
 
@@ -18,19 +18,17 @@ import { RandomService } from "../../../engine/utils/RandomService";
  * System responsible for processing user input and applying it to the ship's state.
  *
  * @remarks
- * This system decouples input collection (via {@link InputManager}) from the
- * application of that input to game entities.
+ * This system reads from the UnifiedInputSystem (via InputStateComponent)
+ * and applies it to game entities.
  */
 export class AsteroidInputSystem extends System {
   /**
    * Creates a new AsteroidInputSystem.
    *
-   * @param inputManager - The centralized input manager to poll for state.
    * @param bulletPool - The pool for creating bullets.
    * @param particlePool - The pool for creating particles.
    */
   constructor(
-    private inputManager: InputManager,
     private bulletPool: BulletPool,
     private particlePool: ParticlePool
   ) {
@@ -39,12 +37,12 @@ export class AsteroidInputSystem extends System {
 
   /**
    * Manually sets the input state. Useful for mobile touch controls.
-   * Proxies to the underlying {@link InputManager}.
    *
    * @param input - The new input state.
+   * @deprecated Use world.getSingleton<InputStateComponent>("InputState") instead.
    */
-  public setInput(input: Partial<InputState>): void {
-    this.inputManager.setInputs(input);
+  public setInput(_input: Partial<InputState>): void {
+    // Legacy method, inputs handled by UnifiedInputSystem
   }
 
   /**
@@ -70,13 +68,14 @@ export class AsteroidInputSystem extends System {
     const input = world.getComponent<InputComponent>(entity, "Input");
     if (!input) return;
 
-    this.updateShipState(input, deltaTime);
+    this.updateShipState({ world, input, deltaTime });
     this.processShipActions({ world, entity, input, deltaTime });
   }
 
-  private updateShipState(input: InputComponent, deltaTime: number): void {
+  private updateShipState(context: { world: World; input: InputComponent; deltaTime: number }): void {
+    const { world, input, deltaTime } = context;
     this.updateShootingCooldown(input, deltaTime);
-    this.updateShipInputState(input);
+    this.updateShipInputState({ world, input });
   }
 
   private processShipActions(context: {
@@ -97,7 +96,7 @@ export class AsteroidInputSystem extends System {
   ): void {
     const velocity = world.getComponent<VelocityComponent>(entity, "Velocity");
     const render = world.getComponent<RenderComponent>(entity, "Render");
-    const position = world.getComponent<PositionComponent>(entity, "Position");
+    const position = world.getComponent<TransformComponent>(entity, "Transform");
 
     if (velocity && render && position) {
       this.applyShipMovement({ world, position, velocity, render, input, deltaTime });
@@ -111,17 +110,21 @@ export class AsteroidInputSystem extends System {
     }
   }
 
-  private updateShipInputState(input: InputComponent): void {
-    const currentInputs = this.inputManager.getCombinedInputs();
-    input.thrust = currentInputs.thrust;
-    input.rotateLeft = currentInputs.rotateLeft;
-    input.rotateRight = currentInputs.rotateRight;
-    input.shoot = currentInputs.shoot;
+  private updateShipInputState(context: { world: World, input: InputComponent }): void {
+    const { world, input } = context;
+    const inputState = world.getSingleton<InputStateComponent>("InputState");
+    if (inputState) {
+      input.thrust = inputState.isPressed("thrust");
+      input.rotateLeft = inputState.isPressed("rotateLeft");
+      input.rotateRight = inputState.isPressed("rotateRight");
+      input.shoot = inputState.isPressed("shoot");
+      input.hyperspace = inputState.isPressed("hyperspace");
+    }
   }
 
   private applyShipMovement(context: {
     world: World;
-    position: PositionComponent;
+    position: TransformComponent;
     velocity: VelocityComponent;
     render: RenderComponent;
     input: InputComponent;
@@ -147,7 +150,7 @@ export class AsteroidInputSystem extends System {
 
   private applyThrust(context: {
     world: World;
-    position: PositionComponent;
+    position: TransformComponent;
     velocity: VelocityComponent;
     render: RenderComponent;
     input: InputComponent;
@@ -155,23 +158,25 @@ export class AsteroidInputSystem extends System {
   }): void {
     const { world, position, velocity, render, input, deltaTimeInSeconds } = context;
     if (input.thrust) {
-      vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
-      vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
+      velocity.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTimeInSeconds;
+      velocity.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTimeInSeconds;
+
+      const gameplayRandom = RandomService.getInstance("gameplay");
 
       // Improvement 8: Spawn 3-5 small thrust particles
-      const particleCount = 3 + Math.floor(Math.random() * 3);
+      const particleCount = 3 + Math.floor(gameplayRandom.next() * 3);
       for (let i = 0; i < particleCount; i++) {
-        const angle = render.rotation + Math.PI + (Math.random() - 0.5) * 0.5;
-        const speed = 50 + Math.random() * 50;
+        const angle = render.rotation + Math.PI + (gameplayRandom.next() - 0.5) * 0.5;
+        const speed = 50 + gameplayRandom.next() * 50;
         createParticle({
           world,
-          x: pos.x - Math.cos(render.rotation) * 10,
-          y: pos.y - Math.sin(render.rotation) * 10,
-          dx: Math.cos(angle) * speed + vel.dx * 0.5,
-          dy: Math.sin(angle) * speed + vel.dy * 0.5,
+          x: position.x - Math.cos(render.rotation) * 10,
+          y: position.y - Math.sin(render.rotation) * 10,
+          dx: Math.cos(angle) * speed + velocity.dx * 0.5,
+          dy: Math.sin(angle) * speed + velocity.dy * 0.5,
           color: i % 2 === 0 ? "#FF8800" : "#FFFF00",
           ttl: 400,
-          size: 1 + Math.random() * 2,
+          size: 1 + gameplayRandom.next() * 2,
         });
       }
     }
@@ -185,14 +190,14 @@ export class AsteroidInputSystem extends System {
 
   private handleShipShooting(context: {
     world: World;
-    position: PositionComponent;
+    position: TransformComponent;
     render: RenderComponent;
     input: InputComponent;
   }): void {
     const { world, position, render, input } = context;
     const canShoot = input.shoot && input.shootCooldownRemaining <= 0;
     if (canShoot) {
-      createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
+      createBullet({ world, x: position.x, y: position.y, angle: render.rotation });
       input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN;
       hapticShoot();
     }

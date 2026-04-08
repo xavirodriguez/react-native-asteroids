@@ -6,6 +6,7 @@ import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { UfoSystem } from "./systems/UfoSystem";
 import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
+import { InputStateComponent } from "../../engine/types/EngineTypes";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
 import { BoundarySystem } from "../../engine/systems/BoundarySystem";
 import { FrictionSystem } from "../../engine/systems/FrictionSystem";
@@ -74,13 +75,6 @@ export class AsteroidsGame
                     vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
                     vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dt;
                 }
-
-                // Physics integration
-                const friction = this.world.getComponent<FrictionComponent>(entity, "Friction")?.value ?? GAME_CONFIG.SHIP_FRICTION;
-                vel.dx *= friction;
-                vel.dy *= friction;
-                pos.x += vel.dx * dt;
-                pos.y += vel.dy * dt;
 
                 // Wrapping
                 if (pos.x < 0) pos.x = GAME_CONFIG.SCREEN_WIDTH;
@@ -237,26 +231,18 @@ export class AsteroidsGame
     if (!this.particlePool) this.particlePool = new ParticlePool();
     if (!this.assetLoader) this.assetLoader = new AssetLoader();
 
-    const DEFAULT_INPUT: InputState = {
-      thrust: false, rotateLeft: false, rotateRight: false,
-      shoot: false, hyperspace: false
-    };
+    // Configure UnifiedInputSystem bindings
+    this.unifiedInput.bind("thrust", [GAME_CONFIG.KEYS.THRUST]);
+    this.unifiedInput.bind("rotateLeft", [GAME_CONFIG.KEYS.ROTATE_LEFT]);
+    this.unifiedInput.bind("rotateRight", [GAME_CONFIG.KEYS.ROTATE_RIGHT]);
+    this.unifiedInput.bind("shoot", [GAME_CONFIG.KEYS.SHOOT]);
+    this.unifiedInput.bind("hyperspace", [GAME_CONFIG.KEYS.HYPERSPACE]);
 
-    const ASTEROID_KEYMAP = {
-      [GAME_CONFIG.KEYS.THRUST]: "thrust" as const,
-      [GAME_CONFIG.KEYS.ROTATE_LEFT]: "rotateLeft" as const,
-      [GAME_CONFIG.KEYS.ROTATE_RIGHT]: "rotateRight" as const,
-      [GAME_CONFIG.KEYS.SHOOT]: "shoot" as const,
-      [GAME_CONFIG.KEYS.HYPERSPACE]: "hyperspace" as const,
-    };
-
-    this.inputManager.addController(new KeyboardController<InputState>(ASTEROID_KEYMAP, DEFAULT_INPUT));
-    this.inputManager.addController(new TouchController<InputState>());
-
-    const inputSys = new AsteroidInputSystem(this.inputManager, this.bulletPool, this.particlePool);
+    const inputSys = new AsteroidInputSystem(this.bulletPool, this.particlePool);
     if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
     this.gameStateSystem = new AsteroidGameStateSystem(this);
 
+    this.world.addSystem(this.unifiedInput);
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new BoundarySystem());

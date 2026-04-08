@@ -1,7 +1,8 @@
 import { World } from "../../../engine/core/World";
 import { Entity } from "../../../engine/core/Entity";
-import { PositionComponent, RenderComponent, TTLComponent } from "../../../engine/core/CoreComponents";
-import { drawStarField } from "../../../game/StarField";
+import { TransformComponent, RenderComponent, TTLComponent } from "../../../engine/core/CoreComponents";
+import { drawStarField } from "../../../engine/rendering/StarField";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => {
     const size = render.size;
@@ -15,7 +16,8 @@ export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, world: W
     // Improvement 8: Thrust Propulsion Flame
     if (input?.thrust) {
       ctx.save();
-      const flameLen = size * (1.2 + Math.random() * 0.4);
+      const renderRandom = RandomService.getInstance("render");
+      const flameLen = size * (1.2 + renderRandom.next() * 0.4);
       const gradient = ctx.createLinearGradient(-size / 2, 0, -flameLen, 0);
       gradient.addColorStop(0, "orange");
       gradient.addColorStop(0.5, "yellow");
@@ -90,9 +92,9 @@ export const drawFlash = (ctx: CanvasRenderingContext2D, entity: Entity, world: 
 };
 
 export function drawAsteroidStarField(ctx: CanvasRenderingContext2D, stars: any[], width: number, height: number, world: World): void {
-    const shipEntity = world.query("Ship", "Position")[0];
+    const shipEntity = world.query("Ship", "Transform")[0];
     const shipPos = shipEntity
-      ? world.getComponent<PositionComponent>(shipEntity, "Position")
+      ? world.getComponent<TransformComponent>(shipEntity, "Transform")
       : { x: width / 2, y: height / 2 };
 
     if (!shipPos) return;

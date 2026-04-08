@@ -159,8 +159,9 @@ export const skiaScreenShakeEffect: EffectDrawer<any> = (canvas, world) => {
         const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
 
         if (gameState?.screenShake && gameState.screenShake.duration > 0) {
-          const shakeX = (RandomService.next() - 0.5) * gameState.screenShake.intensity;
-          const shakeY = (RandomService.next() - 0.5) * gameState.screenShake.intensity;
+      const renderRandom = RandomService.getInstance("render");
+      const shakeX = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
+      const shakeY = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
           canvas.translate(shakeX, shakeY);
         }
     } catch (e) {}
