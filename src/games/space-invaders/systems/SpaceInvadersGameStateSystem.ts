@@ -67,5 +67,8 @@ export class SpaceInvadersGameStateSystem extends System {
     gameState.score = 0;
     gameState.level = 1;
     gameState.lives = 3;
+    gameState.combo = 0;
+    gameState.multiplier = 1;
+    gameState.comboTimerRemaining = 0;
   }
 }

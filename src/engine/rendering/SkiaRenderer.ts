@@ -48,13 +48,17 @@ export class SkiaRenderer implements Renderer {
 
   private registerDefaultDrawers(): void {
     this.registerShapeDrawer("circle", (canvas, _, __, render, paint) => {
-      paint.setColor(Skia.Color(render.color));
+      const color = Skia.Color(render.color);
+      color[3] *= paint.getAlphaf();
+      paint.setColor(color);
       paint.setStyle(PaintStyle.Fill);
       canvas.drawCircle(0, 0, render.size, paint);
     });
 
     this.registerShapeDrawer("rect", (canvas, _, __, render, paint) => {
-      paint.setColor(Skia.Color(render.color));
+      const color = Skia.Color(render.color);
+      color[3] *= paint.getAlphaf();
+      paint.setColor(color);
       paint.setStyle(PaintStyle.Fill);
       canvas.drawRect(Skia.XYWHRect(-render.size / 2, -render.size / 2, render.size, render.size), paint);
     });
@@ -70,17 +74,23 @@ export class SkiaRenderer implements Renderer {
       path.close();
 
       const isHitFlash = render.data?.hitFlashFrames && render.data.hitFlashFrames > 0;
-      paint.setColor(isHitFlash ? Skia.Color("rgba(255, 255, 255, 0.5)") : Skia.Color("#333"));
+      const fillColor = Skia.Color(isHitFlash ? "rgba(255, 255, 255, 0.5)" : "#333");
+      fillColor[3] *= paint.getAlphaf();
+      paint.setColor(fillColor);
       paint.setStyle(PaintStyle.Fill);
       canvas.drawPath(path, paint);
 
-      paint.setColor(isHitFlash ? Skia.Color("white") : Skia.Color(render.color));
+      const strokeColor = Skia.Color(isHitFlash ? "white" : render.color);
+      strokeColor[3] *= paint.getAlphaf();
+      paint.setColor(strokeColor);
       paint.setStyle(PaintStyle.Stroke);
       paint.setStrokeWidth(2);
       canvas.drawPath(path, paint);
 
       if (render.data?.internalLines) {
-          paint.setColor(Skia.Color("#222"));
+          const lineColor = Skia.Color("#222");
+          lineColor[3] *= paint.getAlphaf();
+          paint.setColor(lineColor);
           paint.setStrokeWidth(1);
           render.data.internalLines.forEach((line: any) => {
               canvas.drawLine(line.x1, line.y1, line.x2, line.y2, paint);
@@ -89,7 +99,9 @@ export class SkiaRenderer implements Renderer {
     });
 
     this.registerShapeDrawer("line", (canvas, _, __, render, paint) => {
-      paint.setColor(Skia.Color(render.color));
+      const color = Skia.Color(render.color);
+      color[3] *= paint.getAlphaf();
+      paint.setColor(color);
       paint.setStrokeWidth(2);
       canvas.drawLine(-render.size / 2, 0, render.size / 2, 0, paint);
     });
