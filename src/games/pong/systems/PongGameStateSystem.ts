@@ -35,15 +35,16 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
         } else if (pos.x > this.config.WIDTH) {
             state.scoreP1++;
             this.resetBall(pos, vel, "left");
-            const eventBus = world.getResource<EventBus>("EventBus");
-            if (eventBus) eventBus.emit("pong:set_won");
         }
 
         if (state.scoreP1 >= this.config.WIN_SCORE) {
             state.isGameOver = true;
             state.winner = 1;
             const eventBus = world.getResource<EventBus>("EventBus");
-            if (eventBus) eventBus.emit("game:over");
+            if (eventBus) {
+                eventBus.emit("pong:set_won");
+                eventBus.emit("game:over");
+            }
         } else if (state.scoreP2 >= this.config.WIN_SCORE) {
             state.isGameOver = true;
             state.winner = 2;

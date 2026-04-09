@@ -79,7 +79,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     // Initialize deterministic random service with a provided or generated seed
     this.currentSeed = config.gameOptions?.seed ?? RandomService.getInstance("gameplay").nextInt(0, 0xFFFFFFFF);
     RandomService.setSeed(this.currentSeed);
-    RandomService.getInstance("gameplay", this.currentSeed);
+    RandomService.getInstance("gameplay").setSeed(this.currentSeed);
 
     // Initial setup handled by init()
     this.gameLoop.subscribeUpdate((deltaTime) => {

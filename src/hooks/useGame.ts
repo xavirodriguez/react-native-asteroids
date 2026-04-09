@@ -49,9 +49,11 @@ export function useGame<
     gameRef.current = game;
 
     // Async initialization
-    let destroyed = false;
+    let isMounted = true;
     game.init().then(() => {
-      if (!destroyed) game.start();
+      if (isMounted) {
+        game.start();
+      }
     }).catch(console.error);
 
     let lastUpdateTime = 0;
@@ -72,6 +74,7 @@ export function useGame<
     });
 
     return () => {
+      isMounted = false;
       unsubscribe();
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       game.destroy();
