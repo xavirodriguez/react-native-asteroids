@@ -82,6 +82,9 @@ export interface GameStateComponent extends Component {
   level: number;
   invadersRemaining: number;
   isGameOver: boolean;
+  combo: number;
+  multiplier: number;
+  comboTimerRemaining: number;
   highScoreCandidate?: number;
   screenShake?: { intensity: number; duration: number } | null;
 }
@@ -96,6 +99,9 @@ export const INITIAL_GAME_STATE: GameStateComponent = Object.freeze({
   level: 0,
   invadersRemaining: 0,
   isGameOver: false,
+  combo: 0,
+  multiplier: 1,
+  comboTimerRemaining: 0,
 });
 
 /**
@@ -158,4 +164,7 @@ export const GAME_CONFIG = {
   PARTICLE_COUNT: 8,
   PARTICLE_TTL_BASE: 500,
   TRAIL_MAX_LENGTH: 0, // No trails for Space Invaders usually
+
+  COMBO_TIMEOUT: 2000, // 2 segundos para mantener el combo
+  MAX_MULTIPLIER: 10,
 };

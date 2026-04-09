@@ -1,7 +1,8 @@
 import { World } from "../../../engine/core/World";
 import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
-import { Entity, TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
+import { Entity, TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
 import { PONG_CONFIG } from "../types";
+import { Juice } from "../../../engine/utils/Juice";
 
 export class PongCollisionSystem extends CollisionSystem {
   protected onCollision(world: World, entityA: Entity, entityB: Entity): void {
@@ -33,6 +34,28 @@ export class PongCollisionSystem extends CollisionSystem {
         } else {
           ballPos.x = paddlePos.x - PONG_CONFIG.PADDLE_WIDTH / 2 - PONG_CONFIG.BALL_SIZE - 1;
         }
+
+        // Juice: Squash de la bola
+        Juice.squash(world, ballEntity, 0.6, 1.4, 50);
+
+        // Juice: Recoil de la pala
+        const recoilDir = paddleSide === "left" ? -1 : 1;
+        const originalPaddleX = paddlePos.x;
+        Juice.add(world, paddleEntity, {
+          property: "x",
+          target: originalPaddleX + (recoilDir * 10),
+          duration: 50,
+          easing: "easeOut",
+          onComplete: (e) => {
+            Juice.add(world, e, { property: "x", target: originalPaddleX, duration: 150, easing: "elasticOut" });
+          }
+        });
+
+        // Juice: Hit flash
+        Juice.flash(world, paddleEntity, 5);
+
+        // Juice: Screen shake (pequeño)
+        Juice.shake(world, 3, 100);
     }
   }
 

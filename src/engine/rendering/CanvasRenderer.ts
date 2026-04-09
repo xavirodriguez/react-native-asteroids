@@ -263,10 +263,16 @@ export class CanvasRenderer implements Renderer {
     const x = pos.worldX !== undefined ? pos.worldX : pos.x;
     const y = pos.worldY !== undefined ? pos.worldY : pos.y;
     const rotation = pos.worldRotation !== undefined ? pos.worldRotation : render.rotation;
+    const scaleX = pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1);
+    const scaleY = pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1);
 
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotation);
+    ctx.scale(scaleX, scaleY);
+
+    const opacity = (render as any).opacity !== undefined ? (render as any).opacity : 1;
+    ctx.globalAlpha = opacity;
 
     if (render.hitFlashFrames && render.hitFlashFrames > 0) {
       ctx.globalCompositeOperation = "lighter";
