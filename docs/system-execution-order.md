@@ -1,0 +1,28 @@
+# Orden de Ejecución de Sistemas
+
+## El Ciclo del Frame
+El motor garantiza un orden de ejecución estricto basado en **Fases** y **Prioridades**. Esto previene problemas de "frame-behind" donde un sistema lee datos que aún no han sido actualizados por su dependencia lógica.
+
+## Fases Estándar (`SystemPhase`)
+
+| Fase | Responsabilidad | Ejemplo de Sistemas |
+|------|-----------------|---------------------|
+| **Input** | Procesar hardware y red | `UnifiedInputSystem`, `AIController` |
+| **Simulation** | Integración física básica | `MovementSystem`, `FrictionSystem` |
+| **Collision** | Detección y respuesta | `CollisionSystem`, `SpatialHashUpdate` |
+| **GameRules** | Lógica de alto nivel | `ScoreSystem`, `WaveSystem` |
+| **Presentation**| Efectos y preparación | `ScreenShakeSystem`, `RenderUpdateSystem` |
+
+## Algoritmo de Ordenación
+En cada `world.update()`, si la lista de sistemas ha cambiado (`systemsNeedSorting`), el World realiza un sort basado en:
+1. El peso de la **Fase** (definido en `SystemPhase`).
+2. La **Prioridad** numérica (valores más altos se ejecutan antes dentro de una misma fase).
+
+## Ciclo de Vida del Sistema
+1. **Registro**: Los sistemas se añaden al mundo mediante `world.addSystem(system, { phase, priority })`.
+2. **Update**: Se ejecutan secuencialmente en cada tick lógico (60Hz).
+3. **Cleanup**: Al destruir el mundo o la escena, los sistemas deben limpiar recursos externos (como listeners de red o timers) si los tuvieran.
+
+## Consecuencias de Alterar el Orden
+- Si el `CollisionSystem` se ejecuta antes que el `MovementSystem`, los proyectiles podrían atravesar paredes en el frame de impacto (tunneling).
+- Si el `RenderUpdateSystem` (que prepara los trails y rotaciones visuales) se ejecuta antes que la simulación física, el renderizado mostrará una posición "vieja", causando jitter visual.

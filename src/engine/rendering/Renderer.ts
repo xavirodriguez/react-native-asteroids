@@ -2,7 +2,11 @@ import { World } from "../core/World";
 import { Entity, Component, TransformComponent, RenderComponent } from "../types/EngineTypes";
 
 /**
- * Interface for custom shape drawing logic.
+ * Interfaz para la lógica de dibujo de formas personalizadas.
+ *
+ * @remarks
+ * Los juegos pueden registrar sus propios dibujadores para extender las capacidades visuales
+ * sin modificar el motor core.
  */
 export type ShapeDrawer<TContext> = (
   ctx: TContext,
@@ -13,7 +17,10 @@ export type ShapeDrawer<TContext> = (
 ) => void;
 
 /**
- * Interface for custom background/foreground effects.
+ * Interfaz para efectos personalizados de fondo (background) o primer plano (foreground).
+ *
+ * @remarks
+ * Útil para efectos globales como starfields, post-procesado CRT o partículas de ambiente.
  */
 export type EffectDrawer<TContext> = (
   ctx: TContext,
@@ -23,32 +30,41 @@ export type EffectDrawer<TContext> = (
 ) => void;
 
 /**
- * Abstract interface for game renderers.
+ * Interfaz abstracta para los renderizadores de juego.
+ * Define el contrato que debe cumplir cualquier backend de renderizado (Canvas, Skia, SVG).
+ *
+ * @remarks
+ * El diseño permite cambiar el backend de renderizado de forma transparente para la lógica ECS.
  */
 export interface Renderer {
   /**
-   * The type identifier for the renderer (e.g., 'canvas', 'skia').
+   * Identificador único del tipo de renderizador (e.g., 'canvas', 'skia').
    */
   readonly type: string;
 
   /**
-   * Clears the drawing surface.
+   * Limpia la superficie de dibujo.
+   * Normalmente rellena el fondo con un color sólido o lo deja transparente.
    */
   clear(): void;
 
   /**
-   * Renders the current world state.
+   * Renderiza el estado actual del mundo ECS completo.
    *
-   * @param world - The ECS world.
+   * @remarks
+   * Implementa el pipeline principal de renderizado: limpieza, efectos de fondo,
+   * dibujo de entidades por zIndex y efectos de primer plano.
+   *
+   * @param world - El mundo ECS a renderizar.
    */
   render(world: World): void;
 
   /**
-   * Draws a single entity using its components.
+   * Dibuja una única entidad utilizando sus componentes.
    *
-   * @param entity - The entity ID.
-   * @param components - A map of component types to component instances.
-   * @param world - The ECS world for context.
+   * @param entity - El ID de la entidad.
+   * @param components - Mapa de tipos de componentes a instancias para la entidad.
+   * @param world - El mundo ECS para contexto adicional.
    */
   drawEntity(entity: Entity, components: Record<string, Component>, world: World): void;
 

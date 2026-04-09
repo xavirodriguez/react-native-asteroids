@@ -1,15 +1,15 @@
 import { World } from "./World";
 
 /**
- * Standard phases for system execution.
+ * Fases estándar para la ejecución de sistemas.
  *
  * @remarks
- * Systems are executed in the following order:
- * 1. Input - Handling user or network input.
- * 2. Simulation - Physics and movement.
- * 3. Collision - Detection and resolution.
- * 4. GameRules - Score, lives, and logic.
- * 5. Presentation - Sound and preparation for rendering.
+ * Los sistemas se ejecutan en el siguiente orden secuencial:
+ * 1. `Input` - Procesamiento de entrada de usuario o red.
+ * 2. `Simulation` - Física, integración de movimiento y estados básicos.
+ * 3. `Collision` - Detección y resolución de colisiones.
+ * 4. `GameRules` - Lógica de alto nivel (puntuación, vidas, condiciones de victoria/derrota).
+ * 5. `Presentation` - Sonido, efectos visuales y preparación de datos para el renderer.
  */
 export enum SystemPhase {
   Input = "Input",
@@ -30,21 +30,26 @@ export interface SystemConfig {
 }
 
 /**
- * Base class for all game systems in the ECS architecture.
- * Systems implement the game logic by processing entities that possess specific sets of components.
+ * Clase base para todos los sistemas de juego en la arquitectura ECS.
+ * Los sistemas implementan la lógica del juego procesando entidades que poseen conjuntos
+ * específicos de componentes.
  *
  * @remarks
- * Systems should be stateless whenever possible, relying on the {@link World}'s components
- * or resources for state.
+ * Los sistemas deben ser, en la medida de lo posible, sin estado (stateless), confiando
+ * en los componentes del {@link World} o en sus recursos para almacenar datos.
+ *
+ * @packageDocumentation
  */
 export abstract class System {
   /**
-   * Updates the system logic for a single frame.
+   * Actualiza la lógica del sistema para un solo frame.
    *
-   * @param world - The ECS world containing entities and components.
-   * @param deltaTime - The time elapsed since the last frame in milliseconds.
+   * @param world - El mundo ECS que contiene las entidades y componentes.
+   * @param deltaTime - El tiempo transcurrido desde el último tick en milisegundos.
    *
-   * @conceptualRisk [UNIT_CONSISTENCY] `deltaTime` is in milliseconds. Some physics calculations might expect seconds.
+   * @conceptualRisk [UNIT_CONSISTENCY][LOW] `deltaTime` se entrega en milisegundos. Algunos
+   * cálculos físicos (como integraciones de velocidad) pueden esperar segundos, lo que
+   * requiere una división manual por 1000.
    */
   abstract update(world: World, deltaTime: number): void;
 }
