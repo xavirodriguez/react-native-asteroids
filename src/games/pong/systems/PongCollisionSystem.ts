@@ -2,7 +2,7 @@ import { World } from "../../../engine/core/World";
 import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
 import { Entity, TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
 import { PONG_CONFIG } from "../types";
-import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
+import { Juice } from "../../../engine/utils/Juice";
 
 export class PongCollisionSystem extends CollisionSystem {
   protected onCollision(world: World, entityA: Entity, entityB: Entity): void {
@@ -36,54 +36,26 @@ export class PongCollisionSystem extends CollisionSystem {
         }
 
         // Juice: Squash de la bola
-        JuiceSystem.add(world, ballEntity, {
-          property: "scaleX",
-          target: 0.6,
-          duration: 50,
-          easing: "easeOut",
-          onComplete: (e) => {
-            JuiceSystem.add(world, e, { property: "scaleX", target: 1, duration: 150, easing: "elasticOut" });
-          }
-        });
-        JuiceSystem.add(world, ballEntity, {
-          property: "scaleY",
-          target: 1.4,
-          duration: 50,
-          easing: "easeOut",
-          onComplete: (e) => {
-            JuiceSystem.add(world, e, { property: "scaleY", target: 1, duration: 150, easing: "elasticOut" });
-          }
-        });
+        Juice.squash(world, ballEntity, 0.6, 1.4, 50);
 
         // Juice: Recoil de la pala
         const recoilDir = paddleSide === "left" ? -1 : 1;
         const originalPaddleX = paddlePos.x;
-        JuiceSystem.add(world, paddleEntity, {
+        Juice.add(world, paddleEntity, {
           property: "x",
           target: originalPaddleX + (recoilDir * 10),
           duration: 50,
           easing: "easeOut",
           onComplete: (e) => {
-            JuiceSystem.add(world, e, { property: "x", target: originalPaddleX, duration: 150, easing: "elasticOut" });
+            Juice.add(world, e, { property: "x", target: originalPaddleX, duration: 150, easing: "elasticOut" });
           }
         });
 
         // Juice: Hit flash
-        const paddleRender = world.getComponent<RenderComponent>(paddleEntity, "Render");
-        if (paddleRender) {
-          paddleRender.hitFlashFrames = 5;
-        }
+        Juice.flash(world, paddleEntity, 5);
 
         // Juice: Screen shake (pequeño)
-        const gameStateEntity = world.query("GameState")[0];
-        if (gameStateEntity !== undefined) {
-          world.addComponent(gameStateEntity, {
-            type: "ScreenShake",
-            intensity: 3,
-            duration: 100,
-            remaining: 100
-          });
-        }
+        Juice.shake(world, 3, 100);
     }
   }
 

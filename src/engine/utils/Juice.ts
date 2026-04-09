@@ -60,6 +60,13 @@ export class Juice {
   }
 
   /**
+   * Helper estático para añadir una animación a una entidad.
+   */
+  public static add(world: World, entity: Entity, anim: any): void {
+    JuiceSystem.add(world, entity, anim);
+  }
+
+  /**
    * Efecto de squash & stretch.
    */
   public static squash(world: World, entity: Entity, sx: number = 1.5, sy: number = 0.5, duration: number = 100): void {
