@@ -7,14 +7,47 @@ import { SpaceInvadersUI } from "@/components/SpaceInvadersUI";
 import { SpaceInvadersControls } from "@/components/SpaceInvadersControls";
 import { useSpaceInvadersGame } from "@/hooks/useSpaceInvadersGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
+import { SeedWidget } from "@/components/SeedWidget";
+import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
+import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
+import { DailyChallengeService } from "@/services/DailyChallengeService";
+import { LeaderboardService } from "@/services/LeaderboardService";
+import { MutatorService } from "@/services/MutatorService";
+import { MutatorBadge } from "@/components/MutatorBadge";
 
 export default function SpaceInvadersScreen() {
   const [started, setStarted] = useState(false);
   const [isMulti, setIsMulti] = useState(false);
-  const { game, gameState, handleInput, isPaused, togglePause, highScore } = useSpaceInvadersGame(isMulti && started);
+  const [isDaily, setIsDaily] = useState(false);
+  const { game, gameState, handleInput, isPaused, togglePause, highScore, seed, restartWithSeed } = useSpaceInvadersGame(isMulti && started);
   const [playerName, setPlayerName] = useState("Jugador");
+  const [initialSeed, setInitialSeed] = useState<number | undefined>();
+  const [showDailyResults, setShowDailyResults] = useState(false);
+  const [activeMutators, setActiveMutators] = useState<any[]>([]);
 
   const { room, connected, serverState } = useMultiplayer("spaceinvaders", playerName, isMulti && started);
+
+  useEffect(() => {
+    MutatorService.isMutatorModeEnabled().then(enabled => {
+      if (enabled) {
+        setActiveMutators(MutatorService.getActiveMutatorsForGame("spaceinvaders"));
+      }
+    });
+  }, []);
+
+  const dailySubmittedRef = useRef(false);
+  useEffect(() => {
+    if (gameState?.isGameOver && isDaily && seed !== undefined && !dailySubmittedRef.current) {
+      const score = gameState.score;
+      dailySubmittedRef.current = true;
+      DailyChallengeService.markAttemptAsUsed("spaceinvaders", score, seed, 0);
+      LeaderboardService.submitDailyScore("spaceinvaders", DailyChallengeService.getDateKey(), score, playerName);
+      setShowDailyResults(true);
+    }
+    if (!gameState?.isGameOver) {
+      dailySubmittedRef.current = false;
+    }
+  }, [gameState?.isGameOver, isDaily, seed, gameState?.score, playerName]);
 
   useEffect(() => {
     if (isMulti && connected && game) {
@@ -35,11 +68,25 @@ export default function SpaceInvadersScreen() {
       <StartScreen
         title="SPACE INVADERS"
         highScore={highScore}
-        onStart={() => { setIsMulti(false); setStarted(true); }}
+        onStart={() => {
+          if (initialSeed !== undefined) {
+            restartWithSeed(initialSeed);
+          }
+          setIsMulti(false);
+          setStarted(true);
+        }}
         onStartMulti={() => { setIsMulti(true); setStarted(true); }}
         playerName={playerName}
         onPlayerNameChange={setPlayerName}
         instructions={Platform.OS === "web" ? "←→ Mover  Espacio Disparar" : "Controles táctiles"}
+        onSeedChange={setInitialSeed}
+        onStartDaily={(dailySeed) => {
+          restartWithSeed(dailySeed);
+          setIsDaily(true);
+          setIsMulti(false);
+          setStarted(true);
+        }}
+        activeMutators={activeMutators}
       />
     );
   }
@@ -74,6 +121,8 @@ export default function SpaceInvadersScreen() {
           onPause={() => togglePause()}
           isPaused={isPaused}
           highScore={highScore}
+          seed={seed}
+          onSetSeed={restartWithSeed}
         />
         <CanvasRenderer
           world={game.getWorld()}
@@ -85,6 +134,17 @@ export default function SpaceInvadersScreen() {
           onMoveRight={(pressed) => handleMultiplayerInput({ moveRight: pressed })}
           onShoot={(pressed) => handleMultiplayerInput({ shoot: pressed })}
         />
+
+        {showDailyResults && seed !== undefined && (
+          <View style={styles.overlay}>
+            <DailyResultsOverlay
+              gameId="spaceinvaders"
+              score={gameState.score}
+              seed={seed}
+              onClose={() => setShowDailyResults(false)}
+            />
+          </View>
+        )}
       </View>
     </SafeAreaProvider>
   );
@@ -98,6 +158,9 @@ const StartScreen: React.FC<{
   playerName: string;
   onPlayerNameChange: (name: string) => void;
   instructions: string;
+  onSeedChange?: (seed: number) => void;
+  onStartDaily?: (seed: number) => void;
+  activeMutators?: any[];
 }> = ({
   title,
   highScore,
@@ -106,6 +169,9 @@ const StartScreen: React.FC<{
   playerName,
   onPlayerNameChange,
   instructions,
+  onSeedChange,
+  onStartDaily,
+  activeMutators = [],
 }) => {
   return (
     <SafeAreaProvider>
@@ -128,6 +194,18 @@ const StartScreen: React.FC<{
 
         <Text style={styles.instructions}>{instructions}</Text>
         <Text style={styles.highScoreText}>Récord: {highScore}</Text>
+
+        {onStartDaily && <DailyChallengeBanner gameId="spaceinvaders" onPlay={onStartDaily} />}
+
+        <MutatorBadge mutators={activeMutators} />
+
+        {onSeedChange && (
+          <SeedWidget
+            seed={0}
+            onSeedEnter={onSeedChange}
+            style={{ marginBottom: 30 }}
+          />
+        )}
 
         <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.startButton} onPress={onStart}>

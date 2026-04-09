@@ -17,6 +17,7 @@ import { TransformComponent, VelocityComponent, RenderComponent, FrictionCompone
 import { PhysicsUtils } from "../../engine/utils/PhysicsUtils";
 import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory";
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
+import { MutatorService } from "../../services/MutatorService";
 import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
 import { InputFrame, EntitySnapshot } from "../../multiplayer/NetTypes";
@@ -40,13 +41,26 @@ export class AsteroidsGame
   private particlePool: ParticlePool;
   private entityInterpolationBuffers = new Map<string, InterpolationBuffer>();
   private serverEntities = new Map<string, number>();
+  public readonly gameId = "asteroids";
+  private config: typeof GAME_CONFIG;
 
-  constructor(config: { isMultiplayer?: boolean } = {}) {
+  constructor(config: { isMultiplayer?: boolean, seed?: number } = {}) {
     super({
       pauseKey: GAME_CONFIG.KEYS.PAUSE,
       restartKey: GAME_CONFIG.KEYS.RESTART,
-      isMultiplayer: config.isMultiplayer
+      isMultiplayer: config.isMultiplayer,
+      gameOptions: { seed: config.seed }
     });
+  }
+
+  public override async init(): Promise<void> {
+    const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
+    const enabled = await MutatorService.isMutatorModeEnabled();
+    this.config = enabled
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...GAME_CONFIG })
+      : { ...GAME_CONFIG };
+
+    await super.init();
   }
 
   public setMultiplayerMode(active: boolean) {
@@ -247,7 +261,7 @@ export class AsteroidsGame
     this.unifiedInput.bind("shoot", [GAME_CONFIG.KEYS.SHOOT]);
     this.unifiedInput.bind("hyperspace", [GAME_CONFIG.KEYS.HYPERSPACE]);
 
-    const inputSys = new AsteroidInputSystem(this.bulletPool, this.particlePool);
+    const inputSys = new AsteroidInputSystem(this.bulletPool, this.particlePool, this.config);
     if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
     this.gameStateSystem = new AsteroidGameStateSystem(this);
 

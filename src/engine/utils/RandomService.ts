@@ -31,7 +31,14 @@ export class RandomService {
    * Sets the seed for the global instance.
    */
   public static setSeed(newSeed: number): void {
-    this.globalInstance.seed = newSeed;
+    this.globalInstance.setSeed(newSeed);
+  }
+
+  /**
+   * Sets the seed for this specific instance.
+   */
+  public setSeed(newSeed: number): void {
+    this.seed = newSeed;
   }
 
   /**

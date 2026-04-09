@@ -9,7 +9,7 @@ import type { GameStateComponent, InputState } from "../games/space-invaders/typ
  * Custom hook to manage the lifecycle of the Space Invaders game engine.
  */
 export function useSpaceInvadersGame(isMultiplayer: boolean = false) {
-  const { game, gameState, isPaused, handleInput, togglePause } =
+  const { game, gameState, isPaused, handleInput, togglePause, restartWithSeed } =
     useGame<SpaceInvadersGame, GameStateComponent, InputState>(SpaceInvadersGame, INITIAL_GAME_STATE, isMultiplayer);
 
   const { highScore, updateHighScore } = useHighScore("space-invaders-high-score");
@@ -27,6 +27,8 @@ export function useSpaceInvadersGame(isMultiplayer: boolean = false) {
     handleInput,
     isPaused,
     togglePause,
-    highScore
+    highScore,
+    seed: game?.getSeed(),
+    restartWithSeed
   };
 }

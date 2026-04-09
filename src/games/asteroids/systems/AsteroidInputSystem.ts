@@ -31,7 +31,8 @@ export class AsteroidInputSystem extends System {
    */
   constructor(
     private bulletPool: BulletPool,
-    private particlePool: ParticlePool
+    private particlePool: ParticlePool,
+    private config: typeof GAME_CONFIG = GAME_CONFIG
   ) {
     super();
   }
@@ -145,8 +146,8 @@ export class AsteroidInputSystem extends System {
     deltaTimeInSeconds: number;
   }): void {
     const { render, input, deltaTimeInSeconds } = context;
-    if (input.rotateLeft) render.rotation -= GAME_CONFIG.SHIP_ROTATION_SPEED * deltaTimeInSeconds;
-    if (input.rotateRight) render.rotation += GAME_CONFIG.SHIP_ROTATION_SPEED * deltaTimeInSeconds;
+    if (input.rotateLeft) render.rotation -= this.config.SHIP_ROTATION_SPEED * deltaTimeInSeconds;
+    if (input.rotateRight) render.rotation += this.config.SHIP_ROTATION_SPEED * deltaTimeInSeconds;
   }
 
   private applyThrust(context: {
@@ -159,14 +160,8 @@ export class AsteroidInputSystem extends System {
   }): void {
     const { world, position, velocity, render, input, deltaTimeInSeconds } = context;
     if (input.thrust) {
-      // Impacto visual inicial (burst) al empezar a propulsar
-      if (!(input as any)._wasThrusting) {
-        (input as any)._wasThrusting = true;
-        this.spawnThrustBurst(world, position, render, velocity);
-      }
-
-      velocity.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTimeInSeconds;
-      velocity.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTimeInSeconds;
+      velocity.dx += Math.cos(render.rotation) * this.config.SHIP_THRUST * deltaTimeInSeconds;
+      velocity.dy += Math.sin(render.rotation) * this.config.SHIP_THRUST * deltaTimeInSeconds;
 
       const gameplayRandom = RandomService.getInstance("gameplay");
 
@@ -219,7 +214,7 @@ export class AsteroidInputSystem extends System {
   }
 
   private applyFriction(velocity: VelocityComponent, deltaTime: number): void {
-    PhysicsUtils.applyFriction(velocity, GAME_CONFIG.SHIP_FRICTION, deltaTime);
+    PhysicsUtils.applyFriction(velocity, this.config.SHIP_FRICTION, deltaTime);
   }
 
   private handleShipShooting(context: {
@@ -232,7 +227,7 @@ export class AsteroidInputSystem extends System {
     const canShoot = input.shoot && input.shootCooldownRemaining <= 0;
     if (canShoot) {
       createBullet({ world, x: position.x, y: position.y, angle: render.rotation });
-      input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN;
+      input.shootCooldownRemaining = this.config.BULLET_SHOOT_COOLDOWN;
       hapticShoot();
     }
   }

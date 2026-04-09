@@ -3,9 +3,14 @@ import { PongState, PONG_CONFIG } from "../types";
 import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
+import { EventBus } from "../../../engine/core/EventBus";
 
 export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
   private state: PongState = { scoreP1: 0, scoreP2: 0, isGameOver: false };
+
+  constructor(private config: typeof PONG_CONFIG = PONG_CONFIG) {
+    super();
+  }
 
   protected updateGameState(world: World, state: PongState, deltaTime: number): void {
     void deltaTime;
@@ -27,17 +32,24 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
         if (pos.x < 0) {
             state.scoreP2++;
             this.resetBall(pos, vel, "right");
-        } else if (pos.x > PONG_CONFIG.WIDTH) {
+        } else if (pos.x > this.config.WIDTH) {
             state.scoreP1++;
             this.resetBall(pos, vel, "left");
         }
 
-        if (state.scoreP1 >= PONG_CONFIG.WIN_SCORE) {
+        if (state.scoreP1 >= this.config.WIN_SCORE) {
             state.isGameOver = true;
             state.winner = 1;
-        } else if (state.scoreP2 >= PONG_CONFIG.WIN_SCORE) {
+            const eventBus = world.getResource<EventBus>("EventBus");
+            if (eventBus) {
+                eventBus.emit("pong:set_won");
+                eventBus.emit("game:over");
+            }
+        } else if (state.scoreP2 >= this.config.WIN_SCORE) {
             state.isGameOver = true;
             state.winner = 2;
+            const eventBus = world.getResource<EventBus>("EventBus");
+            if (eventBus) eventBus.emit("game:over");
         }
     });
 
@@ -49,11 +61,11 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
   }
 
   private resetBall(pos: TransformComponent, vel: VelocityComponent, direction: "left" | "right"): void {
-    pos.x = PONG_CONFIG.WIDTH / 2;
-    pos.y = PONG_CONFIG.HEIGHT / 2;
+    pos.x = this.config.WIDTH / 2;
+    pos.y = this.config.HEIGHT / 2;
     const gameplayRandom = RandomService.getInstance("gameplay");
-    vel.dx = direction === "right" ? -PONG_CONFIG.BALL_SPEED_START : PONG_CONFIG.BALL_SPEED_START;
-    vel.dy = (gameplayRandom.next() - 0.5) * PONG_CONFIG.BALL_SPEED_START;
+    vel.dx = direction === "right" ? -this.config.BALL_SPEED_START : this.config.BALL_SPEED_START;
+    vel.dy = (gameplayRandom.next() - 0.5) * this.config.BALL_SPEED_START;
   }
 
   protected getGameState(world: World): PongState | undefined {

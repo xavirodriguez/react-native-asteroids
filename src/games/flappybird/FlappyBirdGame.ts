@@ -23,6 +23,7 @@ import {
   drawFlappyGround,
   scrollingBackgroundEffect
 } from "./rendering/FlappyBirdCanvasVisuals";
+import { MutatorService } from "../../services/MutatorService";
 
 /**
  * Main game controller for Flappy Bird.
@@ -33,13 +34,26 @@ export class FlappyBirdGame
 
   private gameStateSystem: FlappyBirdGameStateSystem;
   private _localInputManager: InputManager<FlappyBirdInput> | null = null;
+  public readonly gameId = "flappybird";
+  private config: typeof FLAPPY_CONFIG;
 
-  constructor(config: { isMultiplayer?: boolean } = {}) {
+  constructor(config: { isMultiplayer?: boolean, seed?: number } = {}) {
     super({
       pauseKey: FLAPPY_CONFIG.KEYS.PAUSE,
       restartKey: FLAPPY_CONFIG.KEYS.RESTART,
-      isMultiplayer: config.isMultiplayer
+      isMultiplayer: config.isMultiplayer,
+      gameOptions: { seed: config.seed }
     });
+  }
+
+  public override async init(): Promise<void> {
+    const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
+    const enabled = await MutatorService.isMutatorModeEnabled();
+    this.config = enabled
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...FLAPPY_CONFIG })
+      : { ...FLAPPY_CONFIG };
+
+    await super.init();
   }
 
   protected registerSystems(): void {
@@ -55,9 +69,9 @@ export class FlappyBirdGame
     this._localInputManager.addController(new KeyboardController<FlappyBirdInput>(FLAPPY_KEYMAP, DEFAULT_INPUT));
     this._localInputManager.addController(new TouchController<FlappyBirdInput>());
 
-    this.gameStateSystem = new FlappyBirdGameStateSystem(this);
+    this.gameStateSystem = new FlappyBirdGameStateSystem(this, this.config);
 
-    const inputSys = new FlappyBirdInputSystem(this._localInputManager);
+    const inputSys = new FlappyBirdInputSystem(this._localInputManager, this.config);
     if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
 
     this.world.addSystem(inputSys);

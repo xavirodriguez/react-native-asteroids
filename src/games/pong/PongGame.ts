@@ -15,6 +15,7 @@ import { AIPongController } from "./input/AIPongController";
 import { NetworkController } from "./input/NetworkController";
 import { PONG_CONFIG, type PongState, type PongInput } from "./types";
 import { RandomService } from "../../engine/utils/RandomService";
+import { MutatorService } from "../../services/MutatorService";
 
 const PONG_KEYMAP = {
   "KeyW": "p1Up", "KeyS": "p1Down",
@@ -33,10 +34,22 @@ export class PongGame extends BaseGame<PongState, PongInput> {
   private inputManager!: InputManager<PongInput>;
   private aiController?: AIPongController;
   private networkController?: NetworkController;
+  public readonly gameId = "pong";
+  private config: typeof PONG_CONFIG;
 
   constructor(mode: PongMode = "local") {
     super({ pauseKey: "Escape", gameOptions: { mode } });
     this.assetLoader = new AssetLoader();
+  }
+
+  public override async init(): Promise<void> {
+    const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
+    const enabled = await MutatorService.isMutatorModeEnabled();
+    this.config = enabled
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...PONG_CONFIG })
+      : { ...PONG_CONFIG };
+
+    await super.init();
   }
 
   private setupControllers(mode: PongMode): void {
@@ -59,7 +72,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     this.inputManager = new InputManager<PongInput>();
     this.setupControllers(mode);
 
-    this.stateSystem = new PongGameStateSystem();
+    this.stateSystem = new PongGameStateSystem(this.config);
     this.world.addSystem(new PongInputSystem(this.inputManager));
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new JuiceSystem());

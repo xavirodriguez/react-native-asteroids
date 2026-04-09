@@ -47,7 +47,14 @@ export function useGame<
     // @ts-ignore - Constructor argument handling
     const game = new GameClass({ isMultiplayer });
     gameRef.current = game;
-    game.start();
+
+    // Async initialization
+    let isMounted = true;
+    game.init().then(() => {
+      if (isMounted) {
+        game.start();
+      }
+    }).catch(console.error);
 
     let lastUpdateTime = 0;
     const UI_UPDATE_INTERVAL = 1000 / 15; // Throttled to 15 FPS for UI components
@@ -67,6 +74,7 @@ export function useGame<
     });
 
     return () => {
+      isMounted = false;
       unsubscribe();
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       game.destroy();
