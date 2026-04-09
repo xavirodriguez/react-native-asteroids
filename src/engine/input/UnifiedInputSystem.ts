@@ -6,6 +6,10 @@ import { InputStateComponent, InputAction } from "../types/EngineTypes";
  * Sistema de entrada unificado que gestiona bindings de teclado y táctiles.
  * Mapea entradas crudas a acciones semánticas en un singleton `InputStateComponent`.
  *
+ * @responsibility Traducir eventos de hardware (teclado, puntero) a acciones abstractas del juego.
+ * @responsibility Mantener el componente singleton `InputState` actualizado en el `World`.
+ * @responsibility Permitir la inyección manual de estados mediante overrides para red y UI.
+ *
  * @remarks
  * El sistema permite desacoplar la lógica del juego de los dispositivos de hardware.
  * Soporta bindings de teclas, gestos táctiles, ejes (como joysticks virtuales) y
@@ -75,6 +79,18 @@ export class UnifiedInputSystem extends System {
     window.addEventListener("pointerup", this._onPointerUp);
   }
 
+  /**
+   * Sincroniza el estado de las entradas activas con el componente `InputState` en el mundo.
+   *
+   * @remarks
+   * Combina el estado real del hardware con los overrides programáticos.
+   * Si no existe un componente `InputState`, lo crea como un singleton.
+   *
+   * @param world - El mundo donde reside el componente de entrada.
+   * @param _deltaTime - Tiempo transcurrido (no utilizado actualmente para input).
+   *
+   * @mutates world - Crea o actualiza el componente `InputState`.
+   */
   public update(world: World, _deltaTime: number): void {
     let inputState = world.getSingleton<InputStateComponent>("InputState");
 
@@ -136,7 +152,12 @@ export class UnifiedInputSystem extends System {
    * Utilizado principalmente para enviar el estado de entrada a través de la red
    * en juegos multijugador.
    *
+   * @conceptualRisk [INPUT_DRIFT] `getInputState()` actualmente ignora `overrides` y solo considera
+   * entradas crudas de hardware. Esto puede causar desincronización si un sistema externo
+   * (como un joystick virtual UI) usa `setOverride`.
+   *
    * @returns Un objeto con la lista de acciones activas y el valor de los ejes.
+   * @queries activeKeys, activeTouches - Lee el estado de los acumuladores de eventos.
    */
   public getInputState(): { actions: string[], axes: Record<string, number> } {
     const actions: string[] = [];

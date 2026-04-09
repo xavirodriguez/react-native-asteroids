@@ -5,7 +5,12 @@
     "src/engine/core/System.ts": { "level": 5, "status": "completed" },
     "src/engine/core/Component.ts": { "level": 5, "status": "completed" },
     "src/engine/core/Query.ts": { "level": 5, "status": "completed" },
-    "src/engine/core/Entity.ts": { "level": 5, "status": "completed" }
+    "src/engine/core/Entity.ts": { "level": 5, "status": "completed" },
+    "src/engine/core/BaseGame.ts": { "level": 5, "status": "completed" },
+    "src/engine/core/GameLoop.ts": { "level": 5, "status": "completed" },
+    "src/engine/input/UnifiedInputSystem.ts": { "level": 5, "status": "completed" },
+    "src/engine/core/CoreComponents.ts": { "level": 5, "status": "completed" },
+    "src/engine/core/EntityPool.ts": { "level": 5, "status": "completed" }
   },
-  "lastUpdated": "2025-05-22T01:00:00Z"
+  "lastUpdated": "2025-05-23T01:00:00Z"
 }

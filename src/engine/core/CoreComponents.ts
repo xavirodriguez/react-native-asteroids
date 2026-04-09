@@ -6,11 +6,17 @@ import { StateMachine } from "./StateMachine";
 export { Entity, Component };
 
 /**
- * Components provided by the engine as reusable primitives.
+ * Componentes base proporcionados por el motor como primitivas reutilizables.
+ *
+ * @remarks
+ * Estos componentes forman el esquema fundamental del motor ECS y son consumidos
+ * por los sistemas principales (Rendering, Physics, Input).
+ *
+ * @responsibility Definir la estructura de datos para el estado del mundo.
  */
 
 /**
- * @deprecated Utilizar {@link TransformComponent} en su lugar.
+ * @deprecated Utilizar {@link TransformComponent} en su lugar para soporte de jerarquía y rotación.
  */
 export interface PositionComponent extends Component {
   type: "Position";
@@ -26,6 +32,10 @@ export interface PositionComponent extends Component {
  * @remarks
  * Sustituye al antiguo PositionComponent añadiendo rotación, escala y soporte para
  * jerarquías mediante el campo `parent`.
+ *
+ * @conceptualRisk [TRANSFORM] La mezcla de coordenadas locales (x, y) y calculadas (worldX, worldY)
+ * en el mismo componente puede llevar a errores si un sistema lee las globales antes de que el
+ * `HierarchySystem` las actualice en el frame actual.
  */
 export interface TransformComponent extends Component {
   type: "Transform";
@@ -55,7 +65,11 @@ export interface TransformComponent extends Component {
 }
 
 /**
- * Almacena el estado de la transformación en el frame anterior para interpolación visual.
+ * Almacena el estado de la transformación en el frame anterior.
+ *
+ * @remarks
+ * Esencial para realizar interpolación visual suave (mediante el valor `alpha` del `GameLoop`)
+ * cuando la tasa de renderizado es superior a la de simulación (fixed timestep).
  */
 export interface PreviousTransformComponent extends Component {
   type: "PreviousTransform";
@@ -163,6 +177,13 @@ export interface ColliderComponent extends Component {
 
 /**
  * Contiene los datos necesarios para que el motor de renderizado dibuje la entidad.
+ *
+ * @remarks
+ * Actúa como una interfaz de datos entre la simulación y el pipeline de renderizado
+ * (CanvasRenderer, SkiaRenderer).
+ *
+ * @conceptualRisk [RENDERING] `trailPositions` crece sin un límite explícito en la definición
+ * del componente, lo que podría impactar el rendimiento de memoria si no se gestiona por un sistema.
  */
 export interface RenderComponent extends Component {
   type: "Render";
@@ -228,7 +249,13 @@ export interface Transform {
 export type InputAction = string;
 
 /**
- * Singleton que almacena el estado de las entradas semánticas del usuario.
+ * Singleton que almacena el estado unificado de las entradas del usuario.
+ *
+ * @remarks
+ * Las acciones son booleanas (presionado o no), mientras que los ejes son valores
+ * normalizados (típicamente entre -1.0 y 1.0).
+ *
+ * @responsibility Proporcionar una vista desacoplada del estado de entrada para los sistemas.
  */
 export interface InputStateComponent extends Component {
   type: "InputState";
