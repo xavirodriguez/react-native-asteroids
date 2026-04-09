@@ -20,8 +20,16 @@ export interface BaseGameConfig {
 }
 
 /**
- * Abstract base class for all games.
- * Provides boilerplate for lifecycle management, input, and listeners.
+ * Clase base abstracta para todos los juegos del motor.
+ * Proporciona la infraestructura necesaria para la gestión del ciclo de vida, entrada de usuario,
+ * sincronización de red y comunicación con la UI de React.
+ *
+ * @remarks
+ * Los juegos concretos deben extender esta clase e implementar los métodos abstractos
+ * para registrar sistemas e inicializar entidades.
+ *
+ * @typeParam TState - El tipo que representa el estado público del juego (score, lives, etc).
+ * @typeParam TInput - El tipo que representa las acciones de entrada (Record de booleanos/números).
  */
 export abstract class BaseGame<TState, TInput extends Record<string, any>>
   implements IGame<BaseGame<TState, TInput>> {
@@ -128,16 +136,28 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   // ─── Abstract methods — REQUIRED for each game ───────────────────────────
 
-  /** Registers the game's ECS systems in this.world */
+  /**
+   * Registra los sistemas ECS del juego en `this.world`.
+   * @remarks Se llama automáticamente durante la construcción.
+   */
   protected abstract registerSystems(): void;
 
-  /** Creates the initial game entities in this.world */
+  /**
+   * Crea las entidades iniciales del juego en `this.world`.
+   * @remarks Se llama automáticamente durante la construcción.
+   */
   protected abstract initializeEntities(): void;
 
-  /** Returns the current game state (score, lives, level, etc.) */
+  /**
+   * Devuelve el estado actual del juego para consumo de la UI.
+   * @returns Un objeto de tipo `TState` con datos como puntuación, vidas, etc.
+   */
   public abstract getGameState(): TState;
 
-  /** Returns whether the game is in a game over state */
+  /**
+   * Indica si el juego ha terminado.
+   * @returns `true` si se ha alcanzado una condición de Game Over.
+   */
   public abstract isGameOver(): boolean;
 
   // ─── Final methods — DO NOT override in concrete games ───────────────────
@@ -204,8 +224,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   }
 
   /**
-   * Optional hook for subclasses to stall the entire world update.
-   * Useful for lockstep netcode waiting for inputs.
+   * Hook opcional para que las subclases detengan la actualización del mundo.
+   * Útil para netcode de tipo lockstep que espera a que lleguen inputs de todos los clientes.
+   *
+   * @returns `true` si la simulación debe pausarse en el tick actual.
    */
   protected shouldStallSimulation(): boolean {
     return false;
@@ -225,7 +247,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   // ─── Optional hook — can be overridden ───────────────────────────────────
 
   /**
-   * Sets the network transport for multiplayer games.
+   * Establece el transporte de red para juegos multijugador.
+   *
+   * @param transport - La instancia de transporte (e.g., Colyseus).
    */
   public setNetworkTransport(transport: NetworkTransport): void {
     this.networkTransport = transport;
@@ -233,8 +257,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   }
 
   /**
-   * Called during restart() after scene/world restart.
-   * Useful for resetting internal game state (e.g., gameOverLogged = false).
+   * Llamado durante `restart()` después de reiniciar la escena o el mundo.
+   * Útil para resetear estado interno del juego que no viva en componentes ECS.
    */
   protected _onBeforeRestart(): void | Promise<void> {}
 

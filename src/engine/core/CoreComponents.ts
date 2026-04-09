@@ -10,57 +10,106 @@ export { Entity, Component };
  */
 
 /**
- * @deprecated Use TransformComponent instead
+ * @deprecated Utilizar {@link TransformComponent} en su lugar.
  */
 export interface PositionComponent extends Component {
   type: "Position";
+  /** Coordenada X en píxeles. */
   x: number;
+  /** Coordenada Y en píxeles. */
   y: number;
 }
 
+/**
+ * Componente principal para posicionamiento y jerarquía espacial.
+ *
+ * @remarks
+ * Sustituye al antiguo PositionComponent añadiendo rotación, escala y soporte para
+ * jerarquías mediante el campo `parent`.
+ */
 export interface TransformComponent extends Component {
   type: "Transform";
+  /** Coordenada X local al padre (o global si no hay padre) en píxeles. */
   x: number;
+  /** Coordenada Y local al padre (o global si no hay padre) en píxeles. */
   y: number;
+  /** Rotación en radianes. */
   rotation: number;
+  /** Factor de escala horizontal. */
   scaleX: number;
+  /** Factor de escala vertical. */
   scaleY: number;
+  /** ID de la entidad padre para transformaciones jerárquicas. */
   parent?: Entity;
-  // World space cache (managed by HierarchySystem)
+
+  /** Coordenada X absoluta en el mundo (calculada por HierarchySystem). */
   worldX?: number;
+  /** Coordenada Y absoluta en el mundo (calculada por HierarchySystem). */
   worldY?: number;
+  /** Rotación absoluta en el mundo (calculada por HierarchySystem). */
   worldRotation?: number;
+  /** Escala X absoluta en el mundo (calculada por HierarchySystem). */
   worldScaleX?: number;
+  /** Escala Y absoluta en el mundo (calculada por HierarchySystem). */
   worldScaleY?: number;
 }
 
+/**
+ * Define la velocidad lineal de una entidad.
+ */
 export interface VelocityComponent extends Component {
   type: "Velocity";
+  /** Variación de píxeles en el eje X por tick de simulación (si se integra con deltaTime). */
   dx: number;
+  /** Variación de píxeles en el eje Y por tick de simulación. */
   dy: number;
 }
 
+/**
+ * Aplica una fuerza de rozamiento o amortiguación a la velocidad.
+ */
 export interface FrictionComponent extends Component {
   type: "Friction";
-  value: number; // 0-1, damping factor
+  /** Factor de amortiguación entre 0 y 1. (e.g., 0.99 para una pérdida del 1% por tick). */
+  value: number;
 }
 
+/**
+ * Define los límites espaciales para una entidad y su comportamiento al alcanzarlos.
+ */
 export interface BoundaryComponent extends Component {
   type: "Boundary";
+  /** Origen X del área delimitada (opcional, por defecto 0). */
   x?: number;
+  /** Origen Y del área delimitada (opcional, por defecto 0). */
   y?: number;
+  /** Ancho del área. */
   width: number;
+  /** Alto del área. */
   height: number;
+  /**
+   * Comportamiento al salir de los límites:
+   * - `wrap`: aparece por el lado opuesto.
+   * - `bounce`: rebota invirtiendo la velocidad.
+   * - `destroy`: elimina la entidad del mundo.
+   */
   behavior: "wrap" | "bounce" | "destroy";
-  // Backward compatibility
+  /** @deprecated Utilizar `behavior`. */
   mode?: "wrap" | "bounce" | "destroy";
+  /** Si debe rebotar específicamente en el eje X. */
   bounceX?: boolean;
+  /** Si debe rebotar específicamente en el eje Y. */
   bounceY?: boolean;
 }
 
+/**
+ * Permite añadir etiquetas semánticas a las entidades para filtrado rápido.
+ */
 export interface TagComponent extends Component {
   type: "Tag";
-  tag?: string; // legacy
+  /** @deprecated Utilizar `tags`. */
+  tag?: string;
+  /** Lista de etiquetas asociadas (e.g., ["Player", "LocalPlayer"]). */
   tags: string[];
 }
 
@@ -83,9 +132,14 @@ export interface RigidBodyComponent extends Component {
   };
 }
 
+/**
+ * Time To Live: Gestiona la destrucción automática de una entidad tras un tiempo.
+ */
 export interface TTLComponent extends Component {
   type: "TTL";
+  /** Tiempo restante de vida (ms). */
   remaining: number;
+  /** Tiempo total de vida inicial (ms). */
   total: number;
 }
 
@@ -97,28 +151,43 @@ export interface ColliderComponent extends Component {
   radius: number;
 }
 
+/**
+ * Contiene los datos necesarios para que el motor de renderizado dibuje la entidad.
+ */
 export interface RenderComponent extends Component {
   type: "Render";
+  /** Nombre del dibujador de forma registrado (e.g., "triangle", "circle"). */
   shape: string;
+  /** Tamaño base de la forma (e.g., radio para círculos). */
   size: number;
+  /** Color en formato CSS o hexadecimal. */
   color: string;
+  /** Rotación visual (puede diferir de la rotación física). */
   rotation: number;
+  /** Velocidad de rotación automática. */
   angularVelocity?: number;
+  /** Lista de vértices si la forma es un polígono. */
   vertices?: { x: number; y: number }[];
+  /** Orden de dibujo (capas). Valores más altos se dibujan encima. */
   zIndex?: number;
+  /** Historial de posiciones para efectos de estela (trail). */
   trailPositions?: { x: number; y: number }[];
+  /** Número de frames restantes para el efecto de destello (hit flash). */
   hitFlashFrames?: number;
-  /** Custom data for game-specific drawers */
+  /** Datos personalizados consumidos por shape drawers específicos del juego. */
   data?: Record<string, any>;
 }
 
 /**
- * Tracks the health or durability of an entity.
+ * Gestiona la salud y durabilidad de una entidad.
  */
 export interface HealthComponent extends Component {
   type: "Health";
+  /** Puntos de vida actuales. */
   current: number;
+  /** Puntos de vida máximos. */
   max: number;
+  /** Tiempo restante de invulnerabilidad (ms). */
   invulnerableRemaining: number;
 }
 
@@ -148,11 +217,18 @@ export interface Transform {
  */
 export type InputAction = string;
 
+/**
+ * Singleton que almacena el estado de las entradas semánticas del usuario.
+ */
 export interface InputStateComponent extends Component {
   type: "InputState";
+  /** Mapa de acciones activas (e.g., "shoot" -> true). */
   actions: Map<InputAction, boolean>;
+  /** Mapa de valores de ejes (e.g., "horizontal" -> -1.0 a 1.0). */
   axes: Map<string, number>;
+  /** Función de ayuda para comprobar si una acción está pulsada. */
   isPressed: (action: InputAction) => boolean;
+  /** Función de ayuda para obtener el valor de un eje. */
   getAxis: (axis: string) => number;
 }
 

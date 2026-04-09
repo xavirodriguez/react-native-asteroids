@@ -10,15 +10,19 @@ interface RegisteredSystem {
 }
 
 /**
- * ECS World class that manages the lifecycle of entities, components, and systems.
+ * Registro central del motor ECS que gestiona el ciclo de vida de entidades, componentes y sistemas.
  *
  * @remarks
- * The World acts as the central hub for the ECS architecture. It maintains entity identity,
- * component storage, and system execution order.
+ * El World actúa como el núcleo de la arquitectura ECS. Mantiene la identidad de las entidades,
+ * el almacenamiento de componentes y garantiza el orden de ejecución de los sistemas basado en
+ * fases y prioridades.
  *
- * Invariants:
- * - Principle 2: Hierarchical structures (Transforms) must be valid (no self-parenting).
- * - Principle 6: Singleton components retrieved via {@link World.getSingleton} are ensured to be mutable.
+ * Invariantes:
+ * - Principio 2: Las estructuras jerárquicas (Transforms) deben ser válidas (sin auto-parentesco).
+ * - Principio 6: Los componentes singleton recuperados mediante {@link World.getSingleton} están
+ * garantizados como mutables.
+ *
+ * @packageDocumentation
  */
 export class World {
   private activeEntities = new Set<Entity>();
@@ -38,21 +42,23 @@ export class World {
   private resources = new Map<string, any>();
 
   /**
-   * Current version of the world structure.
-   * Incremented whenever an entity or component is added or removed.
+   * Versión actual de la estructura del mundo.
+   * Se incrementa cada vez que se añade o elimina una entidad o componente.
    *
-   * @conceptualRisk [POTENTIAL_OVERFLOW] If the game runs for an extremely long time with high churn, version might overflow.
+   * @conceptualRisk [POTENTIAL_OVERFLOW][LOW] Si el juego corre por un tiempo extremadamente
+   * largo con alta rotación de entidades, la versión podría desbordarse.
    */
   public version = 0;
 
   /**
-   * Creates a new unique entity in the world.
+   * Crea una nueva entidad única en el mundo.
    *
    * @remarks
-   * Reuses IDs from {@link World.freeEntities} if available to minimize ID growth.
+   * Reutiliza IDs de {@link World.freeEntities} si están disponibles para minimizar el
+   * crecimiento de IDs y mejorar la localidad de caché en los índices.
    *
-   * @returns The newly created {@link Entity} ID.
-   * @postcondition Increments {@link World.version}.
+   * @returns El ID de la nueva {@link Entity}.
+   * @postcondition Incrementa {@link World.version}.
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -62,9 +68,12 @@ export class World {
   }
 
   /**
-   * Removes all registered systems from the world.
+   * Elimina todos los sistemas registrados en el mundo.
    *
-   * @postcondition Systems list is empty and {@link World.version} is incremented.
+   * @remarks
+   * Útil durante reinicios de escena para reconstruir el pipeline de ejecución.
+   *
+   * @postcondition La lista de sistemas queda vacía y {@link World.version} se incrementa.
    */
   clearSystems(): void {
     this.systems = [];
@@ -74,18 +83,19 @@ export class World {
   }
 
   /**
-   * Attaches a component to an entity.
-   * If the entity already has a component of this type, it will be overwritten.
+   * Adjunta un componente a una entidad.
+   * Si la entidad ya posee un componente de este tipo, será sobrescrito.
    *
-   * @param entity - The entity to attach the component to.
-   * @param component - The component instance to attach.
+   * @param entity - La entidad a la que se adjunta el componente.
+   * @param component - La instancia del componente a adjuntar.
    *
-   * @throws Error if Hierarchy Invariant is violated (self-parenting).
-   * @conceptualRisk [HIERARCHY_NORMALIZATION] Silently resets parent to undefined if parent is missing.
-   * This prevents crashes but might mask logic errors in entity creation order.
+   * @throws {Error} Si se viola el invariante de jerarquía (auto-parentesco).
+   * @conceptualRisk [HIERARCHY_NORMALIZATION][LOW] Resetea silenciosamente el parent a undefined
+   * si el parent no existe. Previene crashes pero puede ocultar errores de lógica en el orden
+   * de creación de entidades.
    *
-   * @postcondition Increments {@link World.version}.
-   * @postcondition Notifies reactive queries.
+   * @postcondition Incrementa {@link World.version}.
+   * @postcondition Notifica a las queries reactivas para actualizar sus resultados cacheados.
    */
   addComponent<T extends Component>(entity: Entity, component: T): void {
     const type = component.type;
@@ -125,43 +135,46 @@ export class World {
   }
 
   /**
-   * Retrieves a component of a specific type from an entity.
+   * Recupera un componente de un tipo específico de una entidad.
    *
-   * @param entity - The entity to get the component from.
-   * @param type - The type of the component to retrieve.
-   * @returns The component instance if found, otherwise `undefined`.
+   * @param entity - La entidad de la que se obtiene el componente.
+   * @param type - El nombre del tipo de componente a recuperar.
+   * @returns La instancia del componente si existe, de lo contrario `undefined`.
+   * @see {@link World.hasComponent}
    */
   getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
     return this.componentMaps.get(type)?.get(entity) as T;
   }
 
   /**
-   * Checks if an entity has a component of a specific type.
+   * Comprueba si una entidad posee un componente de un tipo específico.
    *
-   * @param entity - The entity to check.
-   * @param type - The component type to look for.
-   * @returns `true` if the entity has the component, otherwise `false`.
+   * @param entity - La entidad a comprobar.
+   * @param type - El tipo de componente a buscar.
+   * @returns `true` si la entidad posee el componente, de lo contrario `false`.
    */
   hasComponent(entity: Entity, type: string): boolean {
     return this.componentIndex.get(type)?.has(entity) ?? false;
   }
 
   /**
-   * Alias for {@link World.query} to support the required ECS extension interface.
+   * Alias de {@link World.query} para soportar interfaces extendidas de ECS.
    *
-   * @param componentTypes - Types to filter by.
+   * @param componentTypes - Tipos de componentes por los que filtrar.
+   * @returns Array de IDs de entidades que cumplen la query.
    */
   getEntitiesWith(...componentTypes: string[]): Entity[] {
     return this.query(...componentTypes);
   }
 
   /**
-   * Removes a component of a specific type from an entity.
+   * Elimina un componente de un tipo específico de una entidad.
    *
-   * @param entity - The entity to remove the component from.
-   * @param type - The type of the component to remove.
+   * @param entity - La entidad de la que se elimina el componente.
+   * @param type - El tipo de componente a eliminar.
    *
-   * @postcondition Increments {@link World.version} if component was actually removed.
+   * @postcondition Incrementa {@link World.version} si el componente fue realmente eliminado.
+   * @postcondition Notifica a las queries reactivas para eliminar la entidad de sus resultados.
    */
   removeComponent(entity: Entity, type: string): void {
     const componentMap = this.componentMaps.get(type);
@@ -177,15 +190,18 @@ export class World {
   }
 
   /**
-   * Queries entities that possess all of the specified component types.
-   * Uses live queries to avoid redundant work.
+   * Consulta las entidades que poseen todos los tipos de componentes especificados.
+   * Utiliza queries reactivas para evitar trabajo redundante.
    *
-   * @param componentTypes - One or more component types to filter by.
-   * @returns An array of {@link Entity} IDs that have all the required components.
+   * @param componentTypes - Uno o más tipos de componentes por los que filtrar.
+   * @returns Un array de IDs de {@link Entity} que poseen todos los componentes requeridos.
    *
    * @remarks
-   * Query results are cached. The order of component types in the arguments does not
-   * affect the query identity.
+   * Los resultados de las queries están cacheados internamente. El orden de los tipos de
+   * componentes en los argumentos no afecta la identidad de la query.
+   *
+   * @conceptualRisk [GC_PRESSURE][LOW] La generación frecuente de arrays de resultados puede
+   * presionar el recolector de basura si se abusa de queries efímeras en hot paths.
    */
   query(...componentTypes: string[]): Entity[] {
     if (componentTypes.length === 0) return [];
@@ -221,11 +237,12 @@ export class World {
   }
 
   /**
-   * Removes an entity and all of its attached components from the world.
+   * Elimina una entidad y todos sus componentes asociados del mundo.
    *
-   * @param entity - The entity to remove.
+   * @param entity - La entidad a eliminar.
    *
-   * @postcondition Entity is added to {@link World.freeEntities} and {@link World.version} is incremented.
+   * @postcondition La entidad se añade a {@link World.freeEntities} para su posterior
+   * reutilización e incrementa {@link World.version}.
    */
   removeEntity(entity: Entity): void {
     this.removeEntityFromComponentMaps(entity);
@@ -239,10 +256,10 @@ export class World {
   }
 
   /**
-   * Resets the entire world, removing all entities, components and resources.
-   * Systems remain registered.
+   * Reinicia el mundo por completo, eliminando todas las entidades, componentes y recursos.
+   * Los sistemas permanecen registrados.
    *
-   * @postcondition {@link World.version} is incremented.
+   * @postcondition {@link World.version} se incrementa significativamente.
    */
   clear(): void {
     this.activeEntities.clear();
@@ -256,20 +273,24 @@ export class World {
   }
 
   /**
-   * Sets a global resource in the world.
+   * Define un recurso global en el mundo.
    *
-   * @param name - Unique resource key.
-   * @param resource - Value to store.
+   * @remarks
+   * Los recursos son singletons que no están asociados a entidades específicas,
+   * útiles para estados compartidos como configuración o servicios de red.
+   *
+   * @param name - Clave única del recurso.
+   * @param resource - Valor o instancia a almacenar.
    */
   setResource<T>(name: string, resource: T): void {
     this.resources.set(name, resource);
   }
 
   /**
-   * Retrieves a global resource by name.
+   * Recupera un recurso global por su nombre.
    *
-   * @param name - Resource key.
-   * @returns Resource value or `undefined`.
+   * @param name - Clave del recurso.
+   * @returns El valor del recurso o `undefined` si no existe.
    */
   getResource<T>(name: string): T | undefined {
     return this.resources.get(name) as T;
@@ -294,10 +315,11 @@ export class World {
   }
 
   /**
-   * Registers a system to be updated by the world.
+   * Registra un sistema para ser actualizado por el mundo.
    *
-   * @param system - The {@link System} instance to add.
-   * @param config - Optional configuration for phase and priority.
+   * @param system - La instancia de {@link System} a añadir.
+   * @param config - Configuración opcional de fase y prioridad.
+   * @see {@link SystemPhase}
    */
   addSystem(system: System, config: SystemConfig = {}): void {
     const phase = config.phase ?? SystemPhase.Simulation;
@@ -308,9 +330,12 @@ export class World {
   }
 
   /**
-   * Updates all registered systems ordered by phase and priority.
+   * Actualiza todos los sistemas registrados ordenados por fase y prioridad.
    *
-   * @param deltaTime - Time elapsed since the last update in milliseconds.
+   * @param deltaTime - Tiempo transcurrido desde la última actualización en milisegundos.
+   *
+   * @remarks
+   * Si la lista de sistemas ha cambiado, se realiza una re-ordenación antes de la actualización.
    */
   update(deltaTime: number): void {
     if (this.systemsNeedSorting) {
@@ -420,15 +445,18 @@ export class World {
   }
 
   /**
-   * Retrieves a singleton component from the world.
-   * If the component is frozen, it replaces it with a mutable copy (Principle 6).
+   * Recupera un componente singleton del mundo.
+   * Si el componente está congelado (frozen), lo reemplaza por una copia mutable (Principio 6).
    *
-   * @param type - The component type to retrieve.
-   * @returns The component if found, otherwise `undefined`.
+   * @param type - El tipo de componente a recuperar.
+   * @returns El componente si se encuentra, de lo contrario `undefined`.
    *
    * @remarks
-   * This method assumes only one entity possesses the given component type.
-   * If multiple entities match, it returns the first one found by {@link World.query}.
+   * Este método asume que solo una entidad posee el tipo de componente dado.
+   * Si varias entidades coinciden, devuelve la primera encontrada por {@link World.query}.
+   *
+   * @sideEffect Puede mutar el estado del World si necesita reemplazar un componente frozen
+   * con una copia mutable para cumplir el Principio 6.
    */
   getSingleton<T extends Component>(type: string): T | undefined {
     const [entity] = this.query(type);

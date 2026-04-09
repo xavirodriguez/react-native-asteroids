@@ -1,9 +1,10 @@
 /**
- * Manages the game heartbeat and system updates using a fixed timestep.
+ * Gestiona el latido del juego y las actualizaciones de los sistemas usando un timestep fijo.
  *
  * @remarks
- * Uses an accumulator pattern to ensure consistent physics/logic updates (60 FPS)
- * regardless of the rendering framerate.
+ * Implementa un patrón de acumulador para garantizar actualizaciones de lógica y física
+ * consistentes (por defecto a 60 FPS), independientemente de la tasa de refresco del renderizado.
+ * Esto es crítico para el determinismo y la estabilidad de las simulaciones físicas.
  */
 
 export interface LoopConfig {
@@ -33,7 +34,11 @@ export class GameLoop {
   }
 
   /**
-   * Starts the game loop.
+   * Inicia el bucle de juego.
+   *
+   * @remarks
+   * Utiliza `requestAnimationFrame` para sincronizarse con la tasa de refresco del monitor.
+   * Inicializa el acumulador y el tiempo de referencia.
    */
   public start(): void {
     if (this.isRunning) return;
@@ -44,7 +49,7 @@ export class GameLoop {
   }
 
   /**
-   * Stops the game loop.
+   * Detiene el bucle de juego y cancela el siguiente frame programado.
    */
   public stop(): void {
     if (this.gameLoopId !== undefined) {
@@ -55,10 +60,14 @@ export class GameLoop {
   }
 
   /**
-   * Subscribes a listener to the update phase (fixed timestep).
+   * Suscribe un listener a la fase de actualización (fixed timestep).
    *
-   * @param listener - Callback function.
-   * @returns Unsubscribe function.
+   * @remarks
+   * Esta fase se ejecuta a una frecuencia constante (e.g., 60Hz). Es el lugar adecuado
+   * para lógica de juego, física e IA.
+   *
+   * @param listener - Función callback que recibe el deltaTime fijo en milisegundos.
+   * @returns Función para cancelar la suscripción.
    */
   public subscribeUpdate(listener: (deltaTime: number) => void): () => void {
     this.updateListeners.add(listener);
@@ -66,10 +75,15 @@ export class GameLoop {
   }
 
   /**
-   * Subscribes a listener to the render phase (variable framerate).
+   * Suscribe un listener a la fase de renderizado (framerate variable).
    *
-   * @param listener - Callback function receiving alpha (0-1) and deltaTime.
-   * @returns Unsubscribe function.
+   * @remarks
+   * Esta fase se ejecuta tan rápido como el navegador/dispositivo permita.
+   * Recibe un valor `alpha` que representa la fracción de tiempo transcurrido entre
+   * el último tick fijo y el siguiente, útil para interpolación visual.
+   *
+   * @param listener - Callback que recibe alpha (0-1) y el deltaTime real.
+   * @returns Función para cancelar la suscripción.
    */
   public subscribeRender(listener: (alpha: number, deltaTime: number) => void): () => void {
     this.renderListeners.add(listener);

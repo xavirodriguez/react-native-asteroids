@@ -3,8 +3,13 @@ import { System } from "../core/System";
 import { InputStateComponent, InputAction } from "../types/EngineTypes";
 
 /**
- * Unified Input System that manages keyboard and touch bindings.
- * Maps raw inputs to semantic actions in an InputStateComponent singleton.
+ * Sistema de entrada unificado que gestiona bindings de teclado y táctiles.
+ * Mapea entradas crudas a acciones semánticas en un singleton `InputStateComponent`.
+ *
+ * @remarks
+ * El sistema permite desacoplar la lógica del juego de los dispositivos de hardware.
+ * Soporta bindings de teclas, gestos táctiles, ejes (como joysticks virtuales) y
+ * permite forzar estados mediante `overrides` (útil para red o UI).
  */
 export class UnifiedInputSystem extends System {
   private bindings = new Map<InputAction, string[]>();
@@ -24,24 +29,36 @@ export class UnifiedInputSystem extends System {
   }
 
   /**
-   * Binds a semantic action to one or more raw input keys or gestures.
-   * @param action Semantic action name (e.g., "jump")
-   * @param inputs Array of raw input strings (e.g., ["Space", "ArrowUp", "TouchTap"])
+   * Vincula una acción semántica a una o más teclas crudas o gestos.
+   *
+   * @param action - Nombre de la acción semántica (e.g., "jump").
+   * @param inputs - Array de strings representando entradas crudas (e.g., ["Space", "ArrowUp", "TouchTap"]).
    */
   public bind(action: InputAction, inputs: string[]): void {
     this.bindings.set(action, inputs);
   }
 
   /**
-   * Binds an axis to raw inputs for positive and negative directions.
+   * Vincula un eje a entradas crudas para direcciones positiva y negativa.
+   *
+   * @param axis - Nombre del eje (e.g., "horizontal").
+   * @param pos - Entradas que activan el valor positivo (+1).
+   * @param neg - Entradas que activan el valor negativo (-1).
    */
   public bindAxis(axis: string, pos: string[], neg: string[]): void {
     this.axisBindings.set(axis, { pos, neg });
   }
 
   /**
-   * Programmatically overrides a semantic action state.
-   * This override persists until explicitly changed.
+   * Sobrescribe programáticamente el estado de una acción semántica.
+   * Este override persiste hasta que se cambie explícitamente o se limpie.
+   *
+   * @remarks
+   * Útil para controlar el juego desde componentes de UI de React o para aplicar
+   * inputs recibidos a través de la red en modo multijugador.
+   *
+   * @param action - La acción a sobrescribir.
+   * @param isPressed - El nuevo estado de presión.
    */
   public setOverride(action: InputAction, isPressed: boolean): void {
     this.overrides.set(action, isPressed);
@@ -105,7 +122,9 @@ export class UnifiedInputSystem extends System {
   }
 
   /**
-   * Cleans up global event listeners.
+   * Limpia los listeners de eventos globales registrados en `window`.
+   *
+   * @precondition Debe llamarse cuando el motor se destruye para evitar fugas de memoria.
    */
   public cleanup(): void {
     if (typeof window === "undefined" || typeof window.removeEventListener !== "function") return;
@@ -117,7 +136,13 @@ export class UnifiedInputSystem extends System {
   }
 
   /**
-   * Returns a snapshot of the current semantic input state.
+   * Devuelve una instantánea (snapshot) del estado semántico actual de la entrada.
+   *
+   * @remarks
+   * Utilizado principalmente para enviar el estado de entrada a través de la red
+   * en juegos multijugador.
+   *
+   * @returns Un objeto con la lista de acciones activas y el valor de los ejes.
    */
   public getInputState(): { actions: string[], axes: Record<string, number> } {
     const actions: string[] = [];

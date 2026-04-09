@@ -1,12 +1,12 @@
 import { Entity } from "../types/EngineTypes";
 
 /**
- * Represents a reactive query that maintains an up-to-date list of entities
- * that match a specific component signature.
+ * Representa una consulta reactiva que mantiene una lista actualizada de entidades
+ * que coinciden con una firma de componentes específica.
  *
  * @remarks
- * Queries are managed by the {@link World} and updated incrementally
- * when entities or components are added or removed.
+ * Las queries son gestionadas por el {@link World} y se actualizan de forma incremental
+ * cuando se añaden o eliminan entidades o componentes, evitando el escaneo total del mundo.
  */
 export class Query {
   private entities: Set<Entity> = new Set();
@@ -14,26 +14,26 @@ export class Query {
   private needsUpdateArray = false;
 
   /**
-   * Creates a new Query for a specific set of components.
-   * @param componentTypes - The required component types.
+   * Crea una nueva Query para un conjunto específico de componentes.
+   * @param componentTypes - Los tipos de componentes requeridos (firma de la query).
    */
   constructor(public readonly componentTypes: string[]) {}
 
   /**
-   * Checks if an entity should be part of this query based on its components.
+   * Comprueba si una entidad debe formar parte de esta query basado en sus componentes.
    *
-   * @param entityComponents - The set of component types the entity currently has.
-   * @returns `true` if the entity has ALL required component types.
+   * @param entityComponents - El conjunto de tipos de componentes que posee la entidad.
+   * @returns `true` si la entidad posee TODOS los tipos de componentes requeridos.
    */
   public matches(entityComponents: Set<string>): boolean {
     return this.componentTypes.every(type => entityComponents.has(type));
   }
 
   /**
-   * Adds an entity to the query result if it's not already present.
+   * Añade una entidad al resultado de la query si no está presente.
    *
-   * @param entity - The entity to add.
-   * @postcondition If entity was new, sets {@link Query.needsUpdateArray} to `true`.
+   * @param entity - La entidad a añadir.
+   * @postcondition Si la entidad era nueva, marca {@link Query.needsUpdateArray} como `true`.
    */
   public add(entity: Entity): void {
     if (!this.entities.has(entity)) {
@@ -43,10 +43,10 @@ export class Query {
   }
 
   /**
-   * Removes an entity from the query result.
+   * Elimina una entidad del resultado de la query.
    *
-   * @param entity - The entity to remove.
-   * @postcondition If entity was present, sets {@link Query.needsUpdateArray} to `true`.
+   * @param entity - La entidad a eliminar.
+   * @postcondition Si la entidad estaba presente, marca {@link Query.needsUpdateArray} como `true`.
    */
   public remove(entity: Entity): void {
     if (this.entities.delete(entity)) {
@@ -55,14 +55,16 @@ export class Query {
   }
 
   /**
-   * Returns the list of entities matching the query.
-   * Returns a cached array to avoid GC pressure.
+   * Devuelve la lista de entidades que coinciden con la query.
+   * Devuelve un array cacheado para minimizar la presión del GC.
    *
-   * @returns An array of {@link Entity} IDs.
+   * @returns Un array de IDs de {@link Entity}.
    *
    * @remarks
-   * The returned array is a reference to an internal cache.
-   * @conceptualRisk [MUTABLE_CACHE_LEAK] If a caller modifies the returned array, it will corrupt the Query state.
+   * El array devuelto es una referencia a un caché interno.
+   *
+   * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] Si un consumidor modifica el array devuelto
+   * (e.g., mediante `.push()` o `.sort()` in-place), corromperá el estado interno de la Query.
    */
   public getEntities(): Entity[] {
     if (this.needsUpdateArray) {
@@ -73,10 +75,11 @@ export class Query {
   }
 
   /**
-   * Returns the unique key for this query based on component types.
+   * Devuelve la clave única para esta query basada en los tipos de componentes.
    *
    * @remarks
-   * The key is a sorted, comma-separated string of component types.
+   * La clave es una cadena separada por comas y ordenada alfabéticamente de los tipos
+   * de componentes, garantizando que el orden de entrada no genere duplicados.
    */
   public get key(): string {
     return [...this.componentTypes].sort().join(",");

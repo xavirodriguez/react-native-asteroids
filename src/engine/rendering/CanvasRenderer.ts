@@ -12,8 +12,21 @@ import { RandomService } from "../utils/RandomService";
 export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => void;
 
 /**
- * Procedural Canvas 2D Renderer implementation.
- * Generic and extensible via shape drawers.
+ * Implementación de Renderer basada en la API de Canvas 2D.
+ * Es genérica y extensible mediante el registro de shape drawers y hooks de renderizado.
+ *
+ * @remarks
+ * Este renderer es óptimo para despliegues web y como backend de referencia.
+ * Implementa un pipeline completo que incluye:
+ * 1. Limpieza de pantalla.
+ * 2. Cálculo de Screen Shake basado en el estado del juego.
+ * 3. Ejecución de efectos de fondo.
+ * 4. Dibujo de entidades ordenadas por `zIndex`.
+ * 5. Ejecución de efectos de primer plano.
+ * 6. Renderizado de UI de motor.
+ * 7. Información de depuración.
+ *
+ * @packageDocumentation
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
@@ -43,6 +56,12 @@ export class CanvasRenderer implements Renderer {
     this.postEntityDrawers.set(shape, drawer);
   }
 
+  /**
+   * Registra un dibujador de formas personalizado.
+   *
+   * @param name - Identificador de la forma (e.g., "ship").
+   * @param drawer - Función que implementa la lógica de dibujo.
+   */
   public registerShape(name: string, drawer: any): void {
       this.registerShapeDrawer(name, drawer);
   }
@@ -144,12 +163,23 @@ export class CanvasRenderer implements Renderer {
     this.height = height;
   }
 
+  /**
+   * Limpia la superficie del canvas rellenándola con un color negro sólido.
+   */
   public clear(): void {
     if (!this.ctx) return;
     this.ctx.fillStyle = "black";
     this.ctx.fillRect(0, 0, this.width, this.height);
   }
 
+  /**
+   * Ejecuta el pipeline completo de renderizado para el mundo ECS dado.
+   *
+   * @param world - El mundo ECS que contiene las entidades a dibujar.
+   *
+   * @conceptualRisk [GC_PRESSURE][MEDIUM] Reconstruye el array `renderCommands` en cada frame,
+   * lo que genera presión en el recolector de basura si el número de entidades es muy elevado.
+   */
   public render(world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
@@ -210,6 +240,17 @@ export class CanvasRenderer implements Renderer {
     this.postRenderHooks.forEach(hook => hook(ctx, world));
   }
 
+  /**
+   * Dibuja una única entidad aplicando transformaciones de posición y rotación.
+   *
+   * @remarks
+   * Utiliza las coordenadas del mundo calculadas por el `HierarchySystem` si están disponibles,
+   * garantizando la correcta representación de jerarquías de entidades.
+   *
+   * @param entity - ID de la entidad.
+   * @param components - Componentes de la entidad (Transform y Render requeridos).
+   * @param world - Contexto del mundo.
+   */
   public drawEntity(entity: Entity, components: Record<string, Component>, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
@@ -245,6 +286,13 @@ export class CanvasRenderer implements Renderer {
     }
   }
 
+  /**
+   * Dibuja partículas de forma optimizada.
+   *
+   * @remarks
+   * Implementa una lógica específica para partículas que incluye variación de color (HSL),
+   * degradado de opacidad basado en el TTL y efectos de brillo (shadowBlur) en el nacimiento.
+   */
   public drawParticles(world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
