@@ -61,7 +61,7 @@ export class DailyLeaderboardStore {
         const data = fs.readFileSync(filePath, "utf-8");
         const entries = JSON.parse(data);
         this.cache.set(key, entries);
-        return entries;
+        return [...entries];
       } catch (e) {
         console.error("Error reading leaderboard file", e);
       }
