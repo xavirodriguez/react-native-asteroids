@@ -49,8 +49,9 @@ export function useGame<
     gameRef.current = game;
 
     // Async initialization
+    let destroyed = false;
     game.init().then(() => {
-      game.start();
+      if (!destroyed) game.start();
     }).catch(console.error);
 
     let lastUpdateTime = 0;
