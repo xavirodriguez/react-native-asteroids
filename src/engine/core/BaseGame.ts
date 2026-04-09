@@ -251,7 +251,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
       const gameId = (this as any).gameId;
       if (gameId) {
         const activeMutators = MutatorService.getActiveMutatorsForGame(gameId);
-        this.world.addResource("ActiveMutators", activeMutators);
+        this.world.setResource("ActiveMutators", activeMutators);
         this.world.addSystem(new MutatorSystem(activeMutators));
       }
     }

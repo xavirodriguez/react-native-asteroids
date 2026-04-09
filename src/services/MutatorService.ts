@@ -18,6 +18,9 @@ export class MutatorService {
     const m1 = MUTATORS[weekNumber % MUTATORS.length];
     const m2 = MUTATORS[(weekNumber + 1) % MUTATORS.length];
 
+    // Deduplicate if needed (though unlikely with current config)
+    if (m1.id === m2.id) return [m1];
+
     return [m1, m2];
   }
 

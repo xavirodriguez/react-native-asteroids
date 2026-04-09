@@ -52,6 +52,12 @@ export class SpaceInvadersGameScene extends Scene {
   }
 
   public onEnter(): void {
+    // Inject EventBus and other engine resources into the scene world
+    const eventBus = (this.game as any).eventBus;
+    if (eventBus) {
+      this.world.setResource("EventBus", eventBus);
+    }
+
     // 1. Systems registration
     const inputSys = new SpaceInvadersInputSystem(this.inputManager, this.playerBulletPool);
     if (this.game.isMultiplayer) inputSys.setMultiplayerMode(true);

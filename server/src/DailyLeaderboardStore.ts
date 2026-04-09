@@ -21,8 +21,9 @@ export class DailyLeaderboardStore {
   }
 
   private getKey(gameId: string, dateKey: string): string {
-    const safeGameId = gameId.replace(/[^a-zA-Z0-9_-]/g, '');
-    const safeDateKey = dateKey.replace(/[^a-zA-Z0-9_-]/g, '');
+    // Sanitize keys to prevent path traversal
+    const safeGameId = gameId.replace(/[^a-z0-9_-]/gi, "_");
+    const safeDateKey = dateKey.replace(/[^0-9]/g, "");
     return `${safeGameId}_${safeDateKey}`;
   }
 

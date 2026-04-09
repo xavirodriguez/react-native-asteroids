@@ -17,6 +17,7 @@ import { TransformComponent, VelocityComponent, RenderComponent, FrictionCompone
 import { PhysicsUtils } from "../../engine/utils/PhysicsUtils";
 import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory";
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
+import { MutatorService } from "../../services/MutatorService";
 import { KeyboardController } from "../../engine/input/KeyboardController";
 import { TouchController } from "../../engine/input/TouchController";
 import { InputFrame, EntitySnapshot } from "../../multiplayer/NetTypes";

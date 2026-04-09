@@ -22,6 +22,7 @@ import {
   drawFlappyGround,
   scrollingBackgroundEffect
 } from "./rendering/FlappyBirdCanvasVisuals";
+import { MutatorService } from "../../services/MutatorService";
 
 /**
  * Main game controller for Flappy Bird.

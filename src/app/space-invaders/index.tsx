@@ -35,12 +35,17 @@ export default function SpaceInvadersScreen() {
     });
   }, []);
 
+  const dailySubmittedRef = useRef(false);
   useEffect(() => {
-    if (gameState?.isGameOver && isDaily && seed !== undefined) {
+    if (gameState?.isGameOver && isDaily && seed !== undefined && !dailySubmittedRef.current) {
       const score = gameState.score;
+      dailySubmittedRef.current = true;
       DailyChallengeService.markAttemptAsUsed("spaceinvaders", score, seed, 0);
       LeaderboardService.submitDailyScore("spaceinvaders", DailyChallengeService.getDateKey(), score, playerName);
       setShowDailyResults(true);
+    }
+    if (!gameState?.isGameOver) {
+      dailySubmittedRef.current = false;
     }
   }, [gameState?.isGameOver, isDaily, seed, gameState?.score, playerName]);
 

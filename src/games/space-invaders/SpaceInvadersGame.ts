@@ -15,6 +15,7 @@ import {
   drawSpaceInvadersParticle,
   spaceInvadersScreenShakeEffect
 } from "./rendering/SpaceInvadersCanvasVisuals";
+import { MutatorService } from "../../services/MutatorService";
 
 /**
  * Main game controller for Space Invaders.

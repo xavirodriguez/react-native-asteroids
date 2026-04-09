@@ -2,7 +2,7 @@
  * Service to interact with the global daily leaderboard.
  */
 export class LeaderboardService {
-  private static BASE_URL = "http://localhost:2567"; // Default for local dev
+  private static BASE_URL = process.env.EXPO_PUBLIC_SERVER_URL || "http://localhost:2567";
 
   /**
    * Submits a score for the daily leaderboard.

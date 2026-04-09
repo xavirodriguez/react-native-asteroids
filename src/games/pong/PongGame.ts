@@ -13,6 +13,7 @@ import { AIPongController } from "./input/AIPongController";
 import { NetworkController } from "./input/NetworkController";
 import { PONG_CONFIG, type PongState, type PongInput } from "./types";
 import { RandomService } from "../../engine/utils/RandomService";
+import { MutatorService } from "../../services/MutatorService";
 
 const PONG_KEYMAP = {
   "KeyW": "p1Up", "KeyS": "p1Down",
