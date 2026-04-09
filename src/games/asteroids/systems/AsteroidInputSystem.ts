@@ -159,27 +159,62 @@ export class AsteroidInputSystem extends System {
   }): void {
     const { world, position, velocity, render, input, deltaTimeInSeconds } = context;
     if (input.thrust) {
+      // Impacto visual inicial (burst) al empezar a propulsar
+      if (!(input as any)._wasThrusting) {
+        (input as any)._wasThrusting = true;
+        this.spawnThrustBurst(world, position, render, velocity);
+      }
+
       velocity.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTimeInSeconds;
       velocity.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * deltaTimeInSeconds;
 
       const gameplayRandom = RandomService.getInstance("gameplay");
 
-      // Improvement 8: Spawn 3-5 small thrust particles
-      const particleCount = 3 + Math.floor(gameplayRandom.next() * 3);
+      // Intensidad de partículas basada en la velocidad actual
+      const currentSpeed = Math.sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy);
+      const intensity = Math.min(1.5, 0.5 + currentSpeed / 200);
+
+      const particleCount = Math.floor((3 + Math.floor(gameplayRandom.next() * 3)) * intensity);
       for (let i = 0; i < particleCount; i++) {
-        const angle = render.rotation + Math.PI + (gameplayRandom.next() - 0.5) * 0.5;
-        const speed = 50 + gameplayRandom.next() * 50;
+        const angle = render.rotation + Math.PI + (gameplayRandom.next() - 0.5) * 0.4;
+        const speed = (50 + gameplayRandom.next() * 80) * intensity;
+
+        // Colores de fusión: azul/blanco si va rápido, naranja/rojo si va lento
+        let color = "#FF8800";
+        if (currentSpeed > 200) color = "#44AAFF";
+        if (currentSpeed > 350) color = "#FFFFFF";
+
         createParticle({
           world,
           x: position.x - Math.cos(render.rotation) * 10,
           y: position.y - Math.sin(render.rotation) * 10,
           dx: Math.cos(angle) * speed + velocity.dx * 0.5,
           dy: Math.sin(angle) * speed + velocity.dy * 0.5,
-          color: i % 2 === 0 ? "#FF8800" : "#FFFF00",
-          ttl: 400,
-          size: 1 + gameplayRandom.next() * 2,
+          color: color,
+          ttl: 300 + gameplayRandom.next() * 200,
+          size: (1 + gameplayRandom.next() * 2) * intensity,
         });
       }
+    } else {
+      (input as any)._wasThrusting = false;
+    }
+  }
+
+  private spawnThrustBurst(world: World, position: TransformComponent, render: RenderComponent, velocity: VelocityComponent): void {
+    const gameplayRandom = RandomService.getInstance("gameplay");
+    for (let i = 0; i < 10; i++) {
+      const angle = render.rotation + Math.PI + (gameplayRandom.next() - 0.5) * 2;
+      const speed = 100 + gameplayRandom.next() * 100;
+      createParticle({
+        world,
+        x: position.x - Math.cos(render.rotation) * 10,
+        y: position.y - Math.sin(render.rotation) * 10,
+        dx: Math.cos(angle) * speed + velocity.dx,
+        dy: Math.sin(angle) * speed + velocity.dy,
+        color: "#FFFFFF",
+        ttl: 200,
+        size: 2 + gameplayRandom.next() * 3,
+      });
     }
   }
 

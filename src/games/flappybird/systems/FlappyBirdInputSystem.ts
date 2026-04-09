@@ -1,8 +1,9 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { InputManager } from "../../../engine/input/InputManager";
-import { VelocityComponent } from "../../../engine/types/EngineTypes";
+import { VelocityComponent, TransformComponent } from "../../../engine/types/EngineTypes";
 import { FlappyBirdInput, FlappyBirdInputComponent, BirdComponent, FLAPPY_CONFIG } from "../types/FlappyBirdTypes";
+import { Juice } from "../../../engine/utils/Juice";
 import { hapticShoot } from "../../../utils/haptics";
 
 /**
@@ -45,6 +46,9 @@ export class FlappyBirdInputSystem extends System {
           vel.dy = FLAPPY_CONFIG.FLAP_STRENGTH;
           input.flapCooldownRemaining = FLAPPY_CONFIG.FLAP_COOLDOWN;
           hapticShoot();
+
+          // Juice: Squash al aletear
+          Juice.squash(world, entity, 1.2, 0.8, 50);
         }
 
         // Apply gravity

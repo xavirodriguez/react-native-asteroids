@@ -167,9 +167,19 @@ export class SkiaRenderer implements Renderer {
 
     if (!pos || !render) return;
 
+    const x = pos.worldX !== undefined ? pos.worldX : pos.x;
+    const y = pos.worldY !== undefined ? pos.worldY : pos.y;
+    const rotation = pos.worldRotation !== undefined ? pos.worldRotation : render.rotation;
+    const scaleX = pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1);
+    const scaleY = pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1);
+
     canvas.save();
-    canvas.translate(pos.worldX ?? pos.x, pos.worldY ?? pos.y);
-    canvas.rotate((render.rotation * 180) / Math.PI, 0, 0);
+    canvas.translate(x, y);
+    canvas.rotate((rotation * 180) / Math.PI, 0, 0);
+    canvas.scale(scaleX, scaleY);
+
+    const opacity = (render as any).opacity !== undefined ? (render as any).opacity : 1;
+    this.paint.setAlphaf(opacity);
 
     const drawer = this.shapeDrawers.get(render.shape);
     if (drawer) {

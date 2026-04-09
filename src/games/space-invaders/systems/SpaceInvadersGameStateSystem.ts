@@ -40,6 +40,15 @@ export class SpaceInvadersGameStateSystem extends System {
         gameState.screenShake = null;
       }
     }
+
+    // 4. Update Combo Timer
+    if (gameState.comboTimerRemaining > 0) {
+      gameState.comboTimerRemaining -= deltaTime;
+      if (gameState.comboTimerRemaining <= 0) {
+        gameState.combo = 0;
+        gameState.multiplier = 1;
+      }
+    }
   }
 
   public isGameOver(): boolean {
