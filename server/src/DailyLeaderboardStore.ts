@@ -21,7 +21,9 @@ export class DailyLeaderboardStore {
   }
 
   private getKey(gameId: string, dateKey: string): string {
-    return `${gameId}_${dateKey}`;
+    const safeGameId = gameId.replace(/[^a-zA-Z0-9_-]/g, '');
+    const safeDateKey = dateKey.replace(/[^a-zA-Z0-9_-]/g, '');
+    return `${safeGameId}_${safeDateKey}`;
   }
 
   public addScore(gameId: string, dateKey: string, playerId: string, score: number) {
