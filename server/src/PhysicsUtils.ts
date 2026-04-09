@@ -7,7 +7,6 @@ import { TransformComponent, VelocityComponent } from "../types/EngineTypes";
 export class PhysicsUtils {
   /**
    * Applies linear integration to update position based on velocity.
-   * Supports both standard ECS components and proxy objects.
    */
   public static integrateMovement(pos: any, vel: any, deltaTimeInSeconds: number): void {
     const x = pos.x !== undefined ? "x" : "worldX";
@@ -21,8 +20,6 @@ export class PhysicsUtils {
 
   /**
    * Applies friction damping to velocity.
-   * Supports both standard ECS components and proxy objects.
-   * @param vel - Velocity object (standard or proxy)
    * @param friction - The friction coefficient (e.g., 0.99)
    * @param deltaTimeMs - Elapsed time in milliseconds.
    */

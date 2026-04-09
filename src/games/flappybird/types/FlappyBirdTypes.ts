@@ -42,6 +42,8 @@ export interface FlappyBirdState extends Component {
   score: number;
   isGameOver: boolean;
   highScore: number;
+  pipeSpawnTimer: number;
+  gameOverLogged: boolean;
 }
 
 /**
@@ -52,6 +54,8 @@ export const INITIAL_FLAPPY_STATE: FlappyBirdState = Object.freeze({
   score: 0,
   isGameOver: false,
   highScore: 0,
+  pipeSpawnTimer: 0,
+  gameOverLogged: false,
 });
 
 /**

@@ -1,6 +1,9 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, EntitySnapshot, ReplayFrame } from "./NetTypes";
+import { RandomService } from "./RandomService";
+import { PhysicsUtils } from "./PhysicsUtils";
+import { ShipPhysics } from "./ShipPhysics";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
@@ -8,9 +11,13 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private inputBuffers = new Map<string, InputFrame[]>();
   private stateHistory = new Map<number, Map<string, EntitySnapshot>>();
   private replayFrames: ReplayFrame[] = [];
+  private random: RandomService;
 
   onCreate(options: any) {
     this.state = new AsteroidsState();
+    this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
+    this.random = new RandomService(this.state.seed);
+
     this.state.gameWidth = 800;
     this.state.gameHeight = 600;
     this.state.gameStarted = false;
@@ -90,8 +97,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     const player = new Player();
     player.sessionId = client.sessionId;
     player.name = options.name || `Player ${this.clients.length}`;
-    player.x = Math.random() * this.state.gameWidth;
-    player.y = Math.random() * this.state.gameHeight;
+    player.x = this.random.nextRange(0, this.state.gameWidth);
+    player.y = this.random.nextRange(0, this.state.gameHeight);
     player.angle = 0;
     player.score = 0;
     player.lives = 3;
@@ -132,21 +139,20 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       }
 
       // Global physics integration (Friction and movement outside of input block)
-      player.velocityX *= 0.99;
-      player.velocityY *= 0.99;
+      PhysicsUtils.applyFriction(player as any, 0.99, dt);
       this.integratePosition(player, dtSec);
       this.applyWrapping(player);
     });
 
     // 2. Move asteroids
     this.state.asteroids.forEach((asteroid: Asteroid) => {
-      this.integratePosition(asteroid, dtSec);
+      PhysicsUtils.integrateMovement(asteroid, asteroid, dtSec);
       this.applyWrapping(asteroid);
     });
 
     // 3. Move bullets
     this.state.bullets.forEach((bullet: Bullet, id: string) => {
-      this.integratePosition(bullet, dtSec);
+      PhysicsUtils.integrateMovement(bullet, bullet, dtSec);
       if (bullet.x < 0 || bullet.x > this.state.gameWidth || bullet.y < 0 || bullet.y > this.state.gameHeight) {
         this.state.bullets.delete(id);
       }
@@ -208,21 +214,22 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     const thrust = frame.actions.includes("thrust") || frame.axes.thrust > 0;
     const shoot = frame.actions.includes("shoot");
 
-    if (rotateLeft) player.angle -= 3 * dtSec;
-    if (rotateRight) player.angle += 3 * dtSec;
-    if (thrust) {
-      player.velocityX += Math.cos(player.angle) * 200 * dtSec;
-      player.velocityY += Math.sin(player.angle) * 200 * dtSec;
-    }
+    const intent = { rotateLeft, rotateRight, thrust };
+    const renderProxy = { rotation: player.angle };
+    const velocityProxy = { dx: player.velocityX, dy: player.velocityY };
+
+    ShipPhysics.applyRotation(renderProxy, intent, dtSec);
+    ShipPhysics.applyThrust(null, null, velocityProxy, renderProxy, intent, dtSec);
+
+    player.angle = renderProxy.rotation;
+    player.velocityX = velocityProxy.dx;
+    player.velocityY = velocityProxy.dy;
+
     if (shoot) {
       this.spawnBullet(player.sessionId, player);
     }
   }
 
-  private integratePosition(entity: any, dtSec: number) {
-    entity.x += entity.velocityX * dtSec;
-    entity.y += entity.velocityY * dtSec;
-  }
 
   private applyWrapping(entity: any) {
     if (entity.x < 0) entity.x = this.state.gameWidth;
@@ -268,6 +275,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     }
   }
 
+  private generateId(): string {
+    return Math.floor(this.random.next() * 0xFFFFFFFFFF).toString(36);
+  }
+
   spawnBullet(ownerId: string, player: Player) {
     const bullet = new Bullet();
     bullet.ownerId = ownerId;
@@ -275,17 +286,17 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     bullet.y = player.y;
     bullet.velocityX = Math.cos(player.angle) * 400;
     bullet.velocityY = Math.sin(player.angle) * 400;
-    this.state.bullets.set(Math.random().toString(36).substring(7), bullet);
+    this.state.bullets.set(this.generateId(), bullet);
   }
 
   spawnAsteroids(count: number) {
     for(let i=0; i<count; i++) {
       const asteroid = new Asteroid();
-      asteroid.id = Math.random().toString(36).substring(7);
-      asteroid.x = Math.random() * this.state.gameWidth;
-      asteroid.y = Math.random() * this.state.gameHeight;
-      asteroid.velocityX = (Math.random() - 0.5) * 150;
-      asteroid.velocityY = (Math.random() - 0.5) * 150;
+      asteroid.id = this.generateId();
+      asteroid.x = this.random.nextRange(0, this.state.gameWidth);
+      asteroid.y = this.random.nextRange(0, this.state.gameHeight);
+      asteroid.velocityX = this.random.nextRange(-75, 75);
+      asteroid.velocityY = this.random.nextRange(-75, 75);
       asteroid.size = 3;
       this.state.asteroids.set(asteroid.id, asteroid);
     }

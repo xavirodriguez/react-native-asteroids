@@ -38,14 +38,6 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
     }
   }
 
-  public isGameOver(): boolean {
-    return this.gameOverLogged;
-  }
-
-  public resetGameOverState(): void {
-    this.gameOverLogged = false;
-  }
-
   private updateAsteroidsCount(world: World, gameState: GameStateComponent): void {
     const asteroids = world.query("Asteroid");
     gameState.asteroidsRemaining = asteroids.length;

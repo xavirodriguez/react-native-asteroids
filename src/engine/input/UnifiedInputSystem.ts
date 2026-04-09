@@ -83,13 +83,7 @@ export class UnifiedInputSystem extends System {
       inputState = {
         type: "InputState",
         actions: new Map(),
-        axes: new Map(),
-        isPressed: function(action: InputAction) {
-          return this.actions.get(action) || false;
-        },
-        getAxis: function(axis: string) {
-          return this.axes.get(axis) || 0;
-        }
+        axes: new Map()
       };
       world.addComponent(entity, inputState);
     }

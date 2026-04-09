@@ -1,12 +1,17 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { FlappyBirdState, Player, Pipe, Bird } from "./schema/GameState";
+import { RandomService } from "./RandomService";
 
 export class FlappyBirdRoom extends Room<FlappyBirdState> {
   maxClients = 8;
   pipeTimer = 0;
+  private random: RandomService;
 
   onCreate(options: any) {
     this.state = new FlappyBirdState();
+    this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
+    this.random = new RandomService(this.state.seed);
+
     this.state.gameStarted = false;
     this.state.gameOver = false;
 
@@ -96,9 +101,9 @@ export class FlappyBirdRoom extends Room<FlappyBirdState> {
 
   spawnPipe() {
       const pipe = new Pipe();
-      pipe.id = Math.random().toString(36).substring(7);
+      pipe.id = Math.floor(this.random.next() * 0xFFFFFFFFFF).toString(36);
       pipe.x = 450;
-      pipe.gapY = 150 + Math.random() * 300;
+      pipe.gapY = 150 + this.random.next() * 300;
       this.state.pipes.set(pipe.id, pipe);
   }
 }

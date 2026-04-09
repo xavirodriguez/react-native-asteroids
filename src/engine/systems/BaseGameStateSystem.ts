@@ -7,6 +7,7 @@ import { BaseGame } from "../core/BaseGame";
  */
 export interface IGameState {
   isGameOver: boolean;
+  gameOverLogged?: boolean;
 }
 
 /**
@@ -18,6 +19,7 @@ export interface IGameState {
 export abstract class BaseGameStateSystem<TState extends IGameState> extends System {
   protected gameOverLogged = false;
   protected gameInstance: BaseGame<any, any> | undefined;
+  protected _world: World | undefined;
 
   constructor(gameInstance?: BaseGame<any, any>) {
     super();
@@ -28,6 +30,7 @@ export abstract class BaseGameStateSystem<TState extends IGameState> extends Sys
    * Updates the game state by checking the game over condition.
    */
   public update(world: World, deltaTime: number): void {
+    this._world = world;
     const state = this.getGameState(world);
     if (!state) return;
 
@@ -55,20 +58,32 @@ export abstract class BaseGameStateSystem<TState extends IGameState> extends Sys
     state.isGameOver = isGameOver;
 
     if (isGameOver) {
-      if (!this.gameOverLogged) {
-        this.gameOverLogged = true;
+      if (state.gameOverLogged !== true) {
+        state.gameOverLogged = true;
         this.gameInstance?.pause();
       }
     } else {
-      this.gameOverLogged = false;
+      state.gameOverLogged = false;
     }
   }
 
-  public isGameOver(): boolean {
-    return this.gameOverLogged;
+  public isGameOver(world?: World): boolean {
+    const w = world || this._world;
+    if (w) {
+        const state = this.getGameState(w);
+        return state?.gameOverLogged || false;
+    }
+    return false;
   }
 
-  public resetGameOverState(): void {
-    this.gameOverLogged = false;
+  public resetGameOverState(world?: World): void {
+    const w = world || this._world;
+    if (w) {
+        const state = this.getGameState(w);
+        if (state) {
+            state.gameOverLogged = false;
+            state.isGameOver = false;
+        }
+    }
   }
 }

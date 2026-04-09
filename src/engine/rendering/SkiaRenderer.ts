@@ -2,7 +2,7 @@ import { Skia, SkCanvas, SkPaint, PaintStyle } from "@shopify/react-native-skia"
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TTLComponent, TransformComponent, Component } from "../core/CoreComponents";
+import { RenderComponent, TTLComponent, TransformComponent, PreviousTransformComponent, Component } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
 
 export type SkiaShapeDrawer = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => void;
@@ -121,6 +121,12 @@ export class SkiaRenderer implements Renderer {
     this.canvas.clear(Skia.Color("black"));
   }
 
+  private alpha: number = 1;
+
+  public setAlpha(alpha: number): void {
+    this.alpha = alpha;
+  }
+
   public render(world: World): void {
     if (!this.canvas) return;
     const canvas = this.canvas;
@@ -149,10 +155,25 @@ export class SkiaRenderer implements Renderer {
 
     const renderCommands = entities.map(entity => {
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
+      const prevPos = world.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
       const render = world.getComponent<RenderComponent>(entity, "Render")!;
+
+      // Interpolate position and rotation
+      const interpolatedPos = { ...pos };
+      if (prevPos && this.alpha < 1) {
+        interpolatedPos.x = prevPos.x + (pos.x - prevPos.x) * this.alpha;
+        interpolatedPos.y = prevPos.y + (pos.y - prevPos.y) * this.alpha;
+
+        // Shortest path rotation interpolation
+        let diff = pos.rotation - prevPos.rotation;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        interpolatedPos.rotation = prevPos.rotation + diff * this.alpha;
+      }
+
       return {
         entity,
-        pos,
+        pos: interpolatedPos,
         render,
         zIndex: (render as any).zIndex ?? 0
       };

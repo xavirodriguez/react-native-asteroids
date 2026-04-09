@@ -59,7 +59,7 @@ describe("AsteroidGameStateSystem", () => {
     system.update(world, 16.6);
 
     expect(gameState.isGameOver).toBe(true);
-    expect(system.isGameOver()).toBe(true);
+    expect(system.isGameOver(world)).toBe(true);
   });
 
   it("should reset game over state when requested", () => {
@@ -70,9 +70,9 @@ describe("AsteroidGameStateSystem", () => {
     health.current = 0;
     system.update(world, 16.6);
     expect(gameState.isGameOver).toBe(true);
-    expect(system.isGameOver()).toBe(true);
+    expect(system.isGameOver(world)).toBe(true);
 
-    system.resetGameOverState();
-    expect(system.isGameOver()).toBe(false);
+    system.resetGameOverState(world);
+    expect(system.isGameOver(world)).toBe(false);
   });
 });

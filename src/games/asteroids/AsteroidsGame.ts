@@ -12,9 +12,11 @@ import { BoundarySystem } from "../../engine/systems/BoundarySystem";
 import { FrictionSystem } from "../../engine/systems/FrictionSystem";
 import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
+import { ShipControlSystem } from "./systems/ShipControlSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
 import { TransformComponent, VelocityComponent, RenderComponent, FrictionComponent, ScreenShakeComponent, TagComponent, HealthComponent } from "../../engine/types/EngineTypes";
 import { PhysicsUtils } from "../../engine/utils/PhysicsUtils";
+import { ShipPhysics } from "./utils/ShipPhysics";
 import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory";
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { MutatorService } from "../../services/MutatorService";
@@ -89,15 +91,13 @@ export class AsteroidsGame
           const rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;
           const thrust = input.actions.includes("thrust") || (input.axes?.thrust ?? 0) > 0;
 
-          if (rotateLeft) render.rotation -= GAME_CONFIG.SHIP_ROTATION_SPEED * dtSeconds;
-          if (rotateRight) render.rotation += GAME_CONFIG.SHIP_ROTATION_SPEED * dtSeconds;
-          if (thrust) {
-            vel.dx += Math.cos(render.rotation) * GAME_CONFIG.SHIP_THRUST * dtSeconds;
-            vel.dy += Math.sin(render.rotation) * GAME_CONFIG.SHIP_THRUST * dtSeconds;
-          }
+          const intent: any = { rotateLeft, rotateRight, thrust };
+
+          ShipPhysics.applyRotation(render, intent, dtSeconds);
+          ShipPhysics.applyThrust(this.world, pos, vel, render, intent, dtSeconds);
 
           // 2. Apply Friction (Unified via PhysicsUtils)
-          PhysicsUtils.applyFriction(vel, frictionComp?.value ?? GAME_CONFIG.SHIP_FRICTION, deltaTime);
+          ShipPhysics.applyFriction(vel, deltaTime);
 
           // 3. Apply Movement (Unified via PhysicsUtils)
           PhysicsUtils.integrateMovement(pos, vel, dtSeconds);
@@ -267,6 +267,7 @@ export class AsteroidsGame
 
     this.world.addSystem(this.unifiedInput);
     this.world.addSystem(inputSys);
+    this.world.addSystem(new ShipControlSystem(this.config));
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new BoundarySystem());
     this.world.addSystem(new FrictionSystem());
@@ -289,7 +290,7 @@ export class AsteroidsGame
   }
 
   protected _onBeforeRestart(): void {
-    this.gameStateSystem.resetGameOverState();
+    this.gameStateSystem.resetGameOverState(this.world);
   }
 
   public getGameState(): GameStateComponent {
