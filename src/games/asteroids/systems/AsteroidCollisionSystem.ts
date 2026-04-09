@@ -14,6 +14,7 @@ import { ScreenShakeComponent } from "../../../engine/types/EngineTypes";
 import { hapticDamage, hapticDeath } from "../../../utils/haptics";
 import { ParticlePool } from "../EntityPool";
 import { RandomService } from "../../../engine/utils/RandomService";
+import { EventBus } from "../../../engine/core/EventBus";
 
 const ASTEROID_SPLIT_CONFIG: Record<
   AsteroidComponent["size"],
@@ -101,9 +102,15 @@ export class AsteroidCollisionSystem extends CollisionSystem {
   }
 
   private handleAsteroidDestructionLogic(world: World, asteroid: Entity, bullet: Entity): void {
+    const asteroidComp = world.getComponent<AsteroidComponent>(asteroid, "Asteroid");
+    const size = asteroidComp?.size || "small";
+
     this.splitAsteroid({ world, asteroidEntity: asteroid });
     this.destroyEntity(world, bullet);
     this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
+
+    const eventBus = world.getResource<EventBus>("EventBus");
+    if (eventBus) eventBus.emit("asteroid:destroyed", { size });
   }
 
   private spawnExplosion(world: World, position: TransformComponent, count: number): void {
@@ -145,6 +152,8 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
     if (health.current <= 0) {
       hapticDeath();
+      const eventBus = world.getResource<EventBus>("EventBus");
+      if (eventBus) eventBus.emit("game:over");
     } else {
       hapticDamage();
     }

@@ -11,6 +11,11 @@ import { runLifecycle } from "../utils/LifecycleUtils";
 import { RandomService } from "../utils/RandomService";
 import { InputStateComponent } from "./CoreComponents";
 import type { IGame, UpdateListener } from "./IGame";
+import { XPSystem } from "../systems/XPSystem";
+import { PaletteSystem } from "../systems/PaletteSystem";
+import { MutatorSystem } from "../systems/MutatorSystem";
+import { PlayerProfileService } from "../../services/PlayerProfileService";
+import { MutatorService } from "../../services/MutatorService";
 
 export interface BaseGameConfig {
   pauseKey?: string;    // Key code for pausing, e.g., "KeyP"
@@ -62,6 +67,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this.replayRecorder = new ReplayRecorder();
 
     this.registerEventBusSingleton();
+    this.world.setResource("EventBus", this.eventBus);
 
     // Start recording by default if in debug mode
     if (__DEV__) {
@@ -70,15 +76,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
     this._config = config;
 
-    // Initialize deterministic random service with a default seed
-    const initialSeed = config.gameOptions?.seed ?? Date.now();
-    RandomService.setSeed(initialSeed);
+    // Initialize deterministic random service with a provided or generated seed
+    this.currentSeed = config.gameOptions?.seed ?? RandomService.getInstance("gameplay").nextInt(0, 0xFFFFFFFF);
+    RandomService.setSeed(this.currentSeed);
+    RandomService.getInstance("gameplay", this.currentSeed);
 
-    // Register systems and initial entities - responsibility of the concrete game
-    this.registerSystems();
-    this.initializeEntities();
-
-    // Notify React on each logical update frame
+    // Initial setup handled by init()
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (!this._isPaused) {
         // Capture local input as frame and broadcast (MUST happen before tick check)
@@ -221,6 +224,37 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   public isPausedState(): boolean {
     return this._isPaused;
+  }
+
+  public getSeed(): number {
+    return this.currentSeed;
+  }
+
+  public getTick(): number {
+    return this.currentTick;
+  }
+
+  public async init(): Promise<void> {
+    await this.registerEngineSystems();
+    this.registerSystems();
+    this.initializeEntities();
+  }
+
+  protected async registerEngineSystems(): Promise<void> {
+    this.world.addSystem(new XPSystem(this.eventBus));
+
+    const profile = await PlayerProfileService.getProfile();
+    this.world.addSystem(new PaletteSystem(profile.activePalette));
+
+    const mutatorEnabled = await MutatorService.isMutatorModeEnabled();
+    if (mutatorEnabled) {
+      const gameId = (this as any).gameId;
+      if (gameId) {
+        const activeMutators = MutatorService.getActiveMutatorsForGame(gameId);
+        this.world.addResource("ActiveMutators", activeMutators);
+        this.world.addSystem(new MutatorSystem(activeMutators));
+      }
+    }
   }
 
   /**

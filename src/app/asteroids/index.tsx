@@ -7,14 +7,42 @@ import { GameUI } from "@/components/GameUI";
 import { GameControls } from "@/components/GameControls";
 import { useAsteroidsGame } from "@/hooks/useAsteroidsGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
+import { SeedWidget } from "@/components/SeedWidget";
+import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
+import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
+import { DailyChallengeService } from "@/services/DailyChallengeService";
+import { LeaderboardService } from "@/services/LeaderboardService";
+import { MutatorService } from "@/services/MutatorService";
+import { MutatorBadge } from "@/components/MutatorBadge";
 
 export default function AsteroidsScreen() {
   const [started, setStarted] = useState(false);
   const [isMulti, setIsMulti] = useState(false);
-  const { game, gameState, handleInput, isPaused, togglePause, highScore } = useAsteroidsGame(isMulti && started);
+  const [isDaily, setIsDaily] = useState(false);
+  const { game, gameState, handleInput, isPaused, togglePause, highScore, seed, restartWithSeed } = useAsteroidsGame(isMulti && started);
   const [playerName, setPlayerName] = useState("Jugador");
+  const [initialSeed, setInitialSeed] = useState<number | undefined>();
+  const [showDailyResults, setShowDailyResults] = useState(false);
+  const [activeMutators, setActiveMutators] = useState<any[]>([]);
 
   const { room, connected, serverState, sendInput, inputBufferRef, lastProcessedTickRef } = useMultiplayer("asteroids", playerName, isMulti && started);
+
+  useEffect(() => {
+    MutatorService.isMutatorModeEnabled().then(enabled => {
+      if (enabled) {
+        setActiveMutators(MutatorService.getActiveMutatorsForGame("asteroids"));
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (gameState?.isGameOver && isDaily && seed !== undefined) {
+      const score = gameState.score;
+      DailyChallengeService.markAttemptAsUsed("asteroids", score, seed, 0);
+      LeaderboardService.submitDailyScore("asteroids", DailyChallengeService.getDateKey(), score, playerName);
+      setShowDailyResults(true);
+    }
+  }, [gameState?.isGameOver, isDaily, seed, gameState?.score, playerName]);
 
   useEffect(() => {
     if (isMulti && connected && game) {
@@ -46,11 +74,25 @@ export default function AsteroidsScreen() {
       <StartScreen
         title="ASTEROIDES"
         highScore={highScore}
-        onStart={() => { setIsMulti(false); setStarted(true); }}
+        onStart={() => {
+          if (initialSeed !== undefined) {
+            restartWithSeed(initialSeed);
+          }
+          setIsMulti(false);
+          setStarted(true);
+        }}
         onStartMulti={() => { setIsMulti(true); setStarted(true); }}
         playerName={playerName}
         onPlayerNameChange={setPlayerName}
         instructions={Platform.OS === "web" ? "↑ Empujar  ←→ Rotar  Espacio Disparar  Shift Hiperspacio" : "Controles táctiles"}
+        onSeedChange={setInitialSeed}
+        onStartDaily={(dailySeed) => {
+          restartWithSeed(dailySeed);
+          setIsDaily(true);
+          setIsMulti(false);
+          setStarted(true);
+        }}
+        activeMutators={activeMutators}
       />
     );
   }
@@ -88,6 +130,8 @@ export default function AsteroidsScreen() {
           onPause={() => togglePause()}
           isPaused={isPaused}
           highScore={highScore}
+          seed={seed}
+          onSetSeed={restartWithSeed}
         />
         <CanvasRenderer
           world={game.getWorld()}
@@ -101,6 +145,17 @@ export default function AsteroidsScreen() {
           onShoot={(pressed) => handleMultiplayerInput({ shoot: pressed })}
           onHyperspace={(pressed) => handleMultiplayerInput({ hyperspace: pressed })}
         />
+
+        {showDailyResults && seed !== undefined && (
+          <View style={styles.overlay}>
+            <DailyResultsOverlay
+              gameId="asteroids"
+              score={gameState.score}
+              seed={seed}
+              onClose={() => setShowDailyResults(false)}
+            />
+          </View>
+        )}
       </View>
     </SafeAreaProvider>
   );
@@ -114,6 +169,9 @@ const StartScreen: React.FC<{
   playerName: string;
   onPlayerNameChange: (name: string) => void;
   instructions: string;
+  onSeedChange?: (seed: number) => void;
+  onStartDaily?: (seed: number) => void;
+  activeMutators?: any[];
 }> = ({
   title,
   highScore,
@@ -122,6 +180,9 @@ const StartScreen: React.FC<{
   playerName,
   onPlayerNameChange,
   instructions,
+  onSeedChange,
+  onStartDaily,
+  activeMutators = [],
 }) => {
   return (
     <SafeAreaProvider>
@@ -144,6 +205,18 @@ const StartScreen: React.FC<{
 
         <Text style={styles.instructions}>{instructions}</Text>
         <Text style={styles.highScoreText}>Récord: {highScore}</Text>
+
+        {onStartDaily && <DailyChallengeBanner gameId="asteroids" onPlay={onStartDaily} />}
+
+        <MutatorBadge mutators={activeMutators} />
+
+        {onSeedChange && (
+          <SeedWidget
+            seed={0}
+            onSeedEnter={onSeedChange}
+            style={{ marginBottom: 30 }}
+          />
+        )}
 
         <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.startButton} onPress={onStart}>

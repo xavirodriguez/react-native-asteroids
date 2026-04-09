@@ -1,6 +1,7 @@
 import { World } from "../../../engine/core/World";
 import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
 import { Entity } from "../../../engine/types/EngineTypes";
+import { EventBus } from "../../../engine/core/EventBus";
 import {
   TransformComponent,
   HealthComponent,
@@ -57,6 +58,9 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
       const pos = world.getComponent<TransformComponent>(invader, "Transform");
       if (pos) this.createExplosion(world, pos.x, pos.y, "#FFFFFF");
 
+      const eventBus = world.getResource<EventBus>("EventBus");
+      if (eventBus) eventBus.emit("si:kill", { chain: 1 });
+
       this.destroyEntity(world, invader);
       this.destroyEntity(world, bullet);
       return;
@@ -88,6 +92,8 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
 
         if (health.current <= 0) {
           gameState.isGameOver = true;
+          const eventBus = world.getResource<EventBus>("EventBus");
+          if (eventBus) eventBus.emit("game:over");
         }
       }
       this.destroyEntity(world, bullet);
@@ -97,6 +103,8 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
     const invaderPlayer = this.matchPair(world, e1, e2, "Invader", "Player");
     if (invaderPlayer) {
       gameState.isGameOver = true;
+      const eventBus = world.getResource<EventBus>("EventBus");
+      if (eventBus) eventBus.emit("game:over");
       return;
     }
 
@@ -145,6 +153,8 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
       const pos = world.getComponent<TransformComponent>(invader, "Transform");
       if (pos && pos.y > limit) {
         gameState.isGameOver = true;
+        const eventBus = world.getResource<EventBus>("EventBus");
+        if (eventBus) eventBus.emit("game:over");
         break;
       }
     }

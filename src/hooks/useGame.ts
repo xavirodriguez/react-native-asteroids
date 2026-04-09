@@ -47,7 +47,11 @@ export function useGame<
     // @ts-ignore - Constructor argument handling
     const game = new GameClass({ isMultiplayer });
     gameRef.current = game;
-    game.start();
+
+    // Async initialization
+    game.init().then(() => {
+      game.start();
+    }).catch(console.error);
 
     let lastUpdateTime = 0;
     const UI_UPDATE_INTERVAL = 1000 / 15; // Throttled to 15 FPS for UI components

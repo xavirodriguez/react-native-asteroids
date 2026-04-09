@@ -7,14 +7,42 @@ import { FlappyBirdUI } from "@/components/FlappyBirdUI";
 import { FlappyBirdControls } from "@/components/FlappyBirdControls";
 import { useFlappyBirdGame } from "@/hooks/useFlappyBirdGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
+import { SeedWidget } from "@/components/SeedWidget";
+import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
+import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
+import { DailyChallengeService } from "@/services/DailyChallengeService";
+import { LeaderboardService } from "@/services/LeaderboardService";
+import { MutatorService } from "@/services/MutatorService";
+import { MutatorBadge } from "@/components/MutatorBadge";
 
 export default function FlappyBirdScreen() {
   const [started, setStarted] = useState(false);
   const [isMulti, setIsMulti] = useState(false);
-  const { game, gameState, handleInput, isPaused, togglePause, highScore } = useFlappyBirdGame(isMulti && started);
+  const [isDaily, setIsDaily] = useState(false);
+  const { game, gameState, handleInput, isPaused, togglePause, highScore, seed, restartWithSeed } = useFlappyBirdGame(isMulti && started);
   const [playerName, setPlayerName] = useState("Jugador");
+  const [initialSeed, setInitialSeed] = useState<number | undefined>();
+  const [showDailyResults, setShowDailyResults] = useState(false);
+  const [activeMutators, setActiveMutators] = useState<any[]>([]);
 
   const { room, connected, serverState } = useMultiplayer("flappybird", playerName, isMulti && started);
+
+  useEffect(() => {
+    MutatorService.isMutatorModeEnabled().then(enabled => {
+      if (enabled) {
+        setActiveMutators(MutatorService.getActiveMutatorsForGame("flappybird"));
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (gameState?.isGameOver && isDaily && seed !== undefined) {
+      const score = gameState.score;
+      DailyChallengeService.markAttemptAsUsed("flappybird", score, seed, 0);
+      LeaderboardService.submitDailyScore("flappybird", DailyChallengeService.getDateKey(), score, playerName);
+      setShowDailyResults(true);
+    }
+  }, [gameState?.isGameOver, isDaily, seed, gameState?.score, playerName]);
 
   useEffect(() => {
     if (isMulti && connected && game) {
@@ -35,11 +63,25 @@ export default function FlappyBirdScreen() {
       <StartScreen
         title="FLAPPY BIRD"
         highScore={highScore}
-        onStart={() => { setIsMulti(false); setStarted(true); }}
+        onStart={() => {
+          if (initialSeed !== undefined) {
+            restartWithSeed(initialSeed);
+          }
+          setIsMulti(false);
+          setStarted(true);
+        }}
         onStartMulti={() => { setIsMulti(true); setStarted(true); }}
         playerName={playerName}
         onPlayerNameChange={setPlayerName}
         instructions={Platform.OS === "web" ? "Espacio saltar" : "Tocar pantalla para saltar"}
+        onSeedChange={setInitialSeed}
+        onStartDaily={(dailySeed) => {
+          restartWithSeed(dailySeed);
+          setIsDaily(true);
+          setIsMulti(false);
+          setStarted(true);
+        }}
+        activeMutators={activeMutators}
       />
     );
   }
@@ -74,6 +116,8 @@ export default function FlappyBirdScreen() {
           onPause={() => togglePause()}
           isPaused={isPaused}
           highScore={highScore}
+          seed={seed}
+          onSetSeed={restartWithSeed}
         />
         <CanvasRenderer
           world={game.getWorld()}
@@ -83,6 +127,17 @@ export default function FlappyBirdScreen() {
         <FlappyBirdControls
           onFlap={(pressed) => handleMultiplayerInput({ flap: pressed })}
         />
+
+        {showDailyResults && seed !== undefined && (
+          <View style={styles.overlay}>
+            <DailyResultsOverlay
+              gameId="flappybird"
+              score={gameState.score}
+              seed={seed}
+              onClose={() => setShowDailyResults(false)}
+            />
+          </View>
+        )}
       </View>
     </SafeAreaProvider>
   );
@@ -96,6 +151,9 @@ const StartScreen: React.FC<{
   playerName: string;
   onPlayerNameChange: (name: string) => void;
   instructions: string;
+  onSeedChange?: (seed: number) => void;
+  onStartDaily?: (seed: number) => void;
+  activeMutators?: any[];
 }> = ({
   title,
   highScore,
@@ -104,6 +162,9 @@ const StartScreen: React.FC<{
   playerName,
   onPlayerNameChange,
   instructions,
+  onSeedChange,
+  onStartDaily,
+  activeMutators = [],
 }) => {
   return (
     <SafeAreaProvider>
@@ -126,6 +187,18 @@ const StartScreen: React.FC<{
 
         <Text style={styles.instructions}>{instructions}</Text>
         <Text style={styles.highScoreText}>Récord: {highScore}</Text>
+
+        {onStartDaily && <DailyChallengeBanner gameId="flappybird" onPlay={onStartDaily} />}
+
+        <MutatorBadge mutators={activeMutators} />
+
+        {onSeedChange && (
+          <SeedWidget
+            seed={0}
+            onSeedEnter={onSeedChange}
+            style={{ marginBottom: 30 }}
+          />
+        )}
 
         <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.startButton} onPress={onStart}>

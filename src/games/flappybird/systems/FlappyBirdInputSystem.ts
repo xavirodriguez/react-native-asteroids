@@ -11,7 +11,7 @@ import { hapticShoot } from "../../../utils/haptics";
 export class FlappyBirdInputSystem extends System {
   private inputManager: InputManager<FlappyBirdInput>;
 
-  constructor(inputManager: InputManager<FlappyBirdInput>) {
+  constructor(inputManager: InputManager<FlappyBirdInput>, private config: typeof FLAPPY_CONFIG = FLAPPY_CONFIG) {
     super();
     this.inputManager = inputManager;
   }
@@ -42,14 +42,14 @@ export class FlappyBirdInputSystem extends System {
 
         // Apply flap
         if (input.flap && input.flapCooldownRemaining <= 0) {
-          vel.dy = FLAPPY_CONFIG.FLAP_STRENGTH;
-          input.flapCooldownRemaining = FLAPPY_CONFIG.FLAP_COOLDOWN;
+          vel.dy = this.config.FLAP_STRENGTH;
+          input.flapCooldownRemaining = this.config.FLAP_COOLDOWN;
           hapticShoot();
         }
 
         // Apply gravity
         const dt = deltaTime / 1000;
-        vel.dy += FLAPPY_CONFIG.GRAVITY * dt;
+        vel.dy += this.config.GRAVITY * dt;
 
         // Sync bird component velocityY
         bird.velocityY = vel.dy;

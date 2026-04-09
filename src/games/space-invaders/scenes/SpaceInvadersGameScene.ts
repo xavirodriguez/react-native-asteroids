@@ -30,13 +30,15 @@ export class SpaceInvadersGameScene extends Scene {
   private playerBulletPool: PlayerBulletPool;
   private enemyBulletPool: EnemyBulletPool;
   private particlePool: ParticlePool;
+  private config: typeof GAME_CONFIG;
 
   constructor(
     game: ISpaceInvadersGame,
     inputManager: InputManager<InputState>,
     playerBulletPool: PlayerBulletPool,
     enemyBulletPool: EnemyBulletPool,
-    particlePool: ParticlePool
+    particlePool: ParticlePool,
+    config: typeof GAME_CONFIG = GAME_CONFIG
   ) {
     // Note: in this engine, Scene creates its own World if not provided
     // but the constructor requires a World.
@@ -46,6 +48,7 @@ export class SpaceInvadersGameScene extends Scene {
     this.playerBulletPool = playerBulletPool;
     this.enemyBulletPool = enemyBulletPool;
     this.particlePool = particlePool;
+    this.config = config;
   }
 
   public onEnter(): void {
@@ -66,7 +69,7 @@ export class SpaceInvadersGameScene extends Scene {
     // 2. Initial entities
     if (this.game.isMultiplayer) return; // Wait for server state
     createGameState(this.world);
-    createPlayer(this.world, GAME_CONFIG.SCREEN_CENTER_X, GAME_CONFIG.SCREEN_HEIGHT - 50);
+    createPlayer(this.world, this.config.SCREEN_CENTER_X, this.config.SCREEN_HEIGHT - 50);
     createFormationController(this.world);
     spawnInvaderWave(this.world, 1);
     spawnShields(this.world);

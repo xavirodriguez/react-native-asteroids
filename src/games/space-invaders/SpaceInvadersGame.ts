@@ -26,13 +26,26 @@ export class SpaceInvadersGame
   private playerBulletPool: PlayerBulletPool;
   private enemyBulletPool: EnemyBulletPool;
   private particlePool: ParticlePool;
+  public readonly gameId = "spaceinvaders";
+  private config: typeof GAME_CONFIG;
 
-  constructor(config: { isMultiplayer?: boolean } = {}) {
+  constructor(config: { isMultiplayer?: boolean, seed?: number } = {}) {
     super({
       pauseKey: GAME_CONFIG.KEYS.PAUSE,
       restartKey: GAME_CONFIG.KEYS.RESTART,
-      isMultiplayer: config.isMultiplayer
+      isMultiplayer: config.isMultiplayer,
+      gameOptions: { seed: config.seed }
     });
+  }
+
+  public override async init(): Promise<void> {
+    const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
+    const enabled = await MutatorService.isMutatorModeEnabled();
+    this.config = enabled
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...GAME_CONFIG })
+      : { ...GAME_CONFIG };
+
+    await super.init();
   }
 
   protected registerSystems(): void {
@@ -132,7 +145,8 @@ export class SpaceInvadersGame
       this.inputManager,
       this.playerBulletPool,
       this.enemyBulletPool,
-      this.particlePool
+      this.particlePool,
+      this.config
     );
 
     await this.sceneManager.transitionTo(gameScene);

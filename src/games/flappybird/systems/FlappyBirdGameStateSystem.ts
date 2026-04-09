@@ -9,6 +9,7 @@ import {
 import { IFlappyBirdGame, IFlappyStateSystem } from "../types/GameInterfaces";
 import { createPipe } from "../EntityFactory";
 import { RandomService } from "../../../engine/utils/RandomService";
+import { EventBus } from "../../../engine/core/EventBus";
 
 /**
  * System that manages game logic: scores, spawner, and game over condition.
@@ -18,7 +19,7 @@ export class FlappyBirdGameStateSystem extends System implements IFlappyStateSys
   private pipeSpawnTimer: number = 0;
   private gameInstance: IFlappyBirdGame;
 
-  constructor(game: IFlappyBirdGame) {
+  constructor(game: IFlappyBirdGame, private config: typeof FLAPPY_CONFIG = FLAPPY_CONFIG) {
     super();
     this.gameInstance = game;
   }
@@ -31,18 +32,20 @@ export class FlappyBirdGameStateSystem extends System implements IFlappyStateSys
       if (!this.gameOverLogged) {
         this.gameOverLogged = true;
         this.gameInstance.pause();
+        const eventBus = world.getResource<EventBus>("EventBus");
+        if (eventBus) eventBus.emit("game:over");
       }
       return;
     }
 
     // Update Pipe Spawner
     this.pipeSpawnTimer += deltaTime;
-    if (this.pipeSpawnTimer >= FLAPPY_CONFIG.PIPE_SPAWN_INTERVAL) {
+    if (this.pipeSpawnTimer >= this.config.PIPE_SPAWN_INTERVAL) {
       const margin = 100;
-      const gapY = RandomService.nextInt(margin, FLAPPY_CONFIG.SCREEN_HEIGHT - margin);
+      const gapY = RandomService.nextInt(margin, this.config.SCREEN_HEIGHT - margin);
       createPipe({
         world,
-        x: FLAPPY_CONFIG.SCREEN_WIDTH + FLAPPY_CONFIG.PIPE_WIDTH,
+        x: this.config.SCREEN_WIDTH + this.config.PIPE_WIDTH,
         gapY,
       });
       this.pipeSpawnTimer = 0;
@@ -54,11 +57,13 @@ export class FlappyBirdGameStateSystem extends System implements IFlappyStateSys
       const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const pipe = world.getComponent<PipeComponent>(entity, "Pipe");
       if (pos && pipe) {
-        if (pos.x < -FLAPPY_CONFIG.PIPE_WIDTH) {
+        if (pos.x < -this.config.PIPE_WIDTH) {
           world.removeEntity(entity);
-        } else if (!pipe.scored && pos.x < FLAPPY_CONFIG.BIRD_X) {
+        } else if (!pipe.scored && pos.x < this.config.BIRD_X) {
           pipe.scored = true;
           gameState.score++;
+          const eventBus = world.getResource<EventBus>("EventBus");
+          if (eventBus) eventBus.emit("pipe:passed");
           if (gameState.score > gameState.highScore) {
             gameState.highScore = gameState.score;
           }
