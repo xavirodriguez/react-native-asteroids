@@ -29,12 +29,19 @@ export interface BaseGameConfig {
  * Proporciona la infraestructura necesaria para la gestión del ciclo de vida, entrada de usuario,
  * sincronización de red y comunicación con la UI de React.
  *
+ * @responsibility Orquestar el ciclo de vida del juego (init, start, update, pause, restart).
+ * @responsibility Gestionar la integración de red y el buffer de entrada para determinismo lockstep.
+ * @responsibility Actuar como puente entre el motor ECS y el framework de UI (React/Expo Router).
+ *
  * @remarks
  * Los juegos concretos deben extender esta clase e implementar los métodos abstractos
  * para registrar sistemas e inicializar entidades.
  *
  * @typeParam TState - El tipo que representa el estado público del juego (score, lives, etc).
  * @typeParam TInput - El tipo que representa las acciones de entrada (Record de booleanos/números).
+ *
+ * @conceptualRisk [DETERMINISM] `currentTick` utiliza el tipo numérico estándar de JS. Aunque `Number.MAX_SAFE_INTEGER`
+ * es alto, sesiones extremadamente largas podrían comprometer la comparación de ticks en el buffer.
  */
 export abstract class BaseGame<TState, TInput extends Record<string, any>>
   implements IGame<BaseGame<TState, TInput>> {
@@ -81,7 +88,20 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     RandomService.setSeed(this.currentSeed);
     RandomService.getInstance("gameplay").setSeed(this.currentSeed);
 
-    // Initial setup handled by init()
+    /**
+     * Suscripción al bucle de actualización.
+     *
+     * @remarks
+     * Orquesta la captura de entrada (local/red), el avance del tick de simulación
+     * y la actualización de escenas o mundo.
+     *
+     * @executionOrder
+     * 1. Captura de input local (en multijugador).
+     * 2. Verificación de preparación de tick (lockstep).
+     * 3. Aplicación de inputs (locales o remotos).
+     * 4. Actualización de SceneManager o World.
+     * 5. Registro de Replay.
+     */
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (!this._isPaused) {
         // Capture local input as frame and broadcast (MUST happen before tick check)
@@ -140,26 +160,38 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   // ─── Abstract methods — REQUIRED for each game ───────────────────────────
 
   /**
-   * Registra los sistemas ECS del juego en `this.world`.
-   * @remarks Se llama automáticamente durante la construcción.
+   * Registra los sistemas ECS específicos del juego en el `World` activo.
+   *
+   * @remarks
+   * Se invoca durante la fase de inicialización (`init`).
+   * @mutates world - Registra instancias de `System` en el despachador de sistemas.
    */
   protected abstract registerSystems(): void;
 
   /**
-   * Crea las entidades iniciales del juego en `this.world`.
-   * @remarks Se llama automáticamente durante la construcción.
+   * Crea las entidades iniciales del juego en el `World` activo.
+   *
+   * @remarks
+   * Se invoca durante la fase de inicialización (`init`) y en reinicios sin escenas.
+   * @mutates world - Crea entidades y añade componentes iniciales.
    */
   protected abstract initializeEntities(): void;
 
   /**
-   * Devuelve el estado actual del juego para consumo de la UI.
-   * @returns Un objeto de tipo `TState` con datos como puntuación, vidas, etc.
+   * Proyecta el estado interno del ECS a una estructura legible por la UI.
+   *
+   * @remarks
+   * Debe ser una operación pura de lectura (query) sobre el `World`.
+   * @returns Un snapshot de tipo `TState`.
+   * @queries world - Lee componentes de estado global (e.g., Score, Lives).
    */
   public abstract getGameState(): TState;
 
   /**
-   * Indica si el juego ha terminado.
-   * @returns `true` si se ha alcanzado una condición de Game Over.
+   * Evalúa las condiciones de finalización del juego.
+   *
+   * @returns `true` si se ha alcanzado un estado terminal de Game Over.
+   * @queries world - Comprueba el estado de entidades críticas (e.g., vida del jugador).
    */
   public abstract isGameOver(): boolean;
 
@@ -187,6 +219,19 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this._notifyListeners();
   }
 
+  /**
+   * Reinicia el estado del juego.
+   *
+   * @remarks
+   * Si hay escenas activas, delega el reinicio al `SceneManager`. Si no, limpia el `World`
+   * global y vuelve a ejecutar `initializeEntities`.
+   *
+   * @conceptualRisk [LIFECYCLE] `_onBeforeRestart` puede cambiar la escena actual, lo que altera el flujo
+   * de reinicio de la escena previa.
+   *
+   * @mutates world - Limpia entidades si no hay escenas.
+   * @mutates sceneManager - Reinicia la escena activa.
+   */
   public async restart(): Promise<void> {
     const initialScene = this.sceneManager.getCurrentScene();
 
@@ -234,6 +279,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     return this.currentTick;
   }
 
+  /**
+   * Inicializa el motor y el juego.
+   *
+   * @remarks
+   * Debe llamarse después de instanciar el juego pero antes de `start()`.
+   * Carga perfiles, mutadores y sistemas base antes de los específicos del juego.
+   *
+   * @mutates world - Registra sistemas de motor y del juego.
+   */
   public async init(): Promise<void> {
     await this.registerEngineSystems();
     this.registerSystems();
@@ -298,6 +352,20 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   // ─── Engine-internal methods ─────────────────────────────────────────────
 
+  /**
+   * Aplica los inputs recolectados de la red al estado del mundo para el tick actual.
+   *
+   * @remarks
+   * Implementación simplificada que colapsa todos los inputs remotos en el singleton `InputState`.
+   *
+   * @conceptualRisk [NETCODE] Mezclar inputs de múltiples jugadores en un solo singleton impide
+   * distinguir acciones individuales por entidad (e.g., qué jugador disparó). Requiere
+   * evolucionar hacia un `InputState` mapeado por ID de sesión.
+   *
+   * @param world - El mundo donde se aplicarán los inputs.
+   * @param tickInputs - Diccionario de frames de entrada indexado por ID de sesión.
+   * @mutates world - Actualiza el componente singleton `InputState`.
+   */
   private _applyNetworkInputs(world: World, tickInputs: Record<string, any>): void {
     // This is a simplified implementation.
     // Usually, you'd have one InputState per player or a merged one.

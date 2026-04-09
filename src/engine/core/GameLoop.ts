@@ -1,6 +1,10 @@
 /**
  * Gestiona el latido del juego y las actualizaciones de los sistemas usando un timestep fijo.
  *
+ * @responsibility Garantizar una tasa de actualización lógica constante (fixed timestep) para determinismo.
+ * @responsibility Desacoplar la simulación física de la tasa de refresco visual (FPS).
+ * @responsibility Proporcionar valores de interpolación (alpha) para un renderizado suave entre ticks.
+ *
  * @remarks
  * Implementa un patrón de acumulador para garantizar actualizaciones de lógica y física
  * consistentes (por defecto a 60 FPS), independientemente de la tasa de refresco del renderizado.
@@ -66,6 +70,9 @@ export class GameLoop {
    * Esta fase se ejecuta a una frecuencia constante (e.g., 60Hz). Es el lugar adecuado
    * para lógica de juego, física e IA.
    *
+   * @executionOrder La fase de actualización se ejecuta ANTES de la fase de renderizado.
+   * Si el acumulador es grande, puede ejecutarse múltiples veces por frame de renderizado.
+   *
    * @param listener - Función callback que recibe el deltaTime fijo en milisegundos.
    * @returns Función para cancelar la suscripción.
    */
@@ -78,9 +85,12 @@ export class GameLoop {
    * Suscribe un listener a la fase de renderizado (framerate variable).
    *
    * @remarks
-   * Esta fase se ejecuta tan rápido como el navegador/dispositivo permita.
+   * Esta fase se ejecuta tan rápido como el navegador/dispositivo permita (sincronizada con VSync).
    * Recibe un valor `alpha` que representa la fracción de tiempo transcurrido entre
    * el último tick fijo y el siguiente, útil para interpolación visual.
+   *
+   * @executionOrder Se ejecuta una vez por cada frame de `requestAnimationFrame`, después
+   * de haber procesado todos los ticks de actualización pendientes.
    *
    * @param listener - Callback que recibe alpha (0-1) y el deltaTime real.
    * @returns Función para cancelar la suscripción.
@@ -99,7 +109,16 @@ export class GameLoop {
   }
 
   /**
-   * The main loop execution.
+   * Implementación interna del bucle principal.
+   *
+   * @remarks
+   * Calcula el tiempo transcurrido, limita el delta para evitar el "espiral de la muerte"
+   * (donde demasiados ticks de física causan más retraso), y despacha eventos a los listeners.
+   *
+   * @conceptualRisk [PERFORMANCE] Si el tiempo de proceso de un tick es mayor que `fixedDeltaTime`,
+   * el bucle entrará en una espiral de muerte a menos que `maxDeltaTime` lo limite.
+   *
+   * @param currentTime - Tiempo actual proporcionado por `requestAnimationFrame`.
    */
   private loop = (currentTime: number): void => {
     if (!this.isRunning) return;
