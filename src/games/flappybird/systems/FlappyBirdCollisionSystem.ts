@@ -2,7 +2,8 @@ import { World } from "../../../engine/core/World";
 import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
 import { Entity, TransformComponent, ColliderComponent } from "../../../engine/types/EngineTypes";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
-import { FLAPPY_CONFIG, FlappyBirdState } from "../types/FlappyBirdTypes";
+import { FLAPPY_CONFIG, FlappyBirdState, BirdComponent } from "../types/FlappyBirdTypes";
+import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
 
 /**
  * System that handles collisions between the bird and pipes or ground.
@@ -112,6 +113,44 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
     const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
     if (gameState && !gameState.isGameOver) {
       gameState.isGameOver = true;
+
+      // Juice: Squash de impacto en todos los pájaros vivos
+      const birds = world.query("Bird");
+      birds.forEach(birdEntity => {
+        const bird = world.getComponent<BirdComponent>(birdEntity, "Bird");
+        if (bird) bird.isAlive = false;
+
+        JuiceSystem.add(world, birdEntity, {
+          property: "scaleX",
+          target: 1.5,
+          duration: 100,
+          easing: "easeOut",
+          onComplete: (e) => {
+            JuiceSystem.add(world, e, {
+              property: "scaleX",
+              target: 1,
+              duration: 200,
+              easing: "elasticOut"
+            });
+          }
+        });
+        JuiceSystem.add(world, birdEntity, {
+          property: "scaleY",
+          target: 0.5,
+          duration: 100,
+          easing: "easeOut",
+          onComplete: (e) => {
+            JuiceSystem.add(world, e, {
+              property: "scaleY",
+              target: 1,
+              duration: 200,
+              easing: "elasticOut"
+            });
+          }
+        });
+      });
+
+      // Pausar tras un pequeño delay para dejar ver el impacto (opcional, por ahora directo)
       this.game.pause();
     }
   }

@@ -1,6 +1,8 @@
 import { BaseGame } from "../../engine/core/BaseGame";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
 import { BoundarySystem } from "../../engine/systems/BoundarySystem";
+import { JuiceSystem } from "../../engine/systems/JuiceSystem";
+import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
 import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { KeyboardController } from "../../engine/input/KeyboardController";
 import { InputManager } from "../../engine/input/InputManager";
@@ -73,6 +75,8 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     this.stateSystem = new PongGameStateSystem(this.config);
     this.world.addSystem(new PongInputSystem(this.inputManager));
     this.world.addSystem(new MovementSystem());
+    this.world.addSystem(new JuiceSystem());
+    this.world.addSystem(new ScreenShakeSystem());
     this.world.addSystem(new PongCollisionSystem());
     this.world.addSystem(new BoundarySystem());
     this.world.addSystem(this.stateSystem);

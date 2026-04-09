@@ -3,6 +3,7 @@ import { World } from "../../../engine/core/World";
 import { InputManager } from "../../../engine/input/InputManager";
 import { MovementSystem } from "../../../engine/systems/MovementSystem";
 import { TTLSystem } from "../../../engine/systems/TTLSystem";
+import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
 import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
 import { SpaceInvadersInputSystem } from "../systems/SpaceInvadersInputSystem";
 import { BoundarySystem } from "../systems/BoundarySystem";
@@ -64,6 +65,7 @@ export class SpaceInvadersGameScene extends Scene {
 
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());
+    this.world.addSystem(new JuiceSystem());
     this.world.addSystem(new BoundarySystem());
     this.world.addSystem(new SpaceInvadersFormationSystem(this.enemyBulletPool));
     this.world.addSystem(new SpaceInvadersCollisionSystem(this.particlePool));

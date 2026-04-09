@@ -17,6 +17,7 @@ import { getGameState } from "../GameUtils";
 import { ParticlePool } from "../EntityPool";
 import { createParticle } from "../EntityFactory";
 import { RandomService } from "../../../engine/utils/RandomService";
+import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
 
 /**
  * System that handles all game collisions.
@@ -51,12 +52,38 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
     if (invaderBullet) {
       const { PlayerBullet: bullet, Invader: invader } = invaderBullet;
       const invaderComp = world.getComponent<InvaderComponent>(invader, "Invader");
+
+      // Lógica de Combo
+      gameState.combo += 1;
+      gameState.multiplier = Math.min(GAME_CONFIG.MAX_MULTIPLIER, 1 + Math.floor(gameState.combo / 5));
+      gameState.comboTimerRemaining = GAME_CONFIG.COMBO_TIMEOUT;
+
       if (invaderComp) {
-        gameState.score += invaderComp.points;
+        gameState.score += invaderComp.points * gameState.multiplier;
       }
 
       const pos = world.getComponent<TransformComponent>(invader, "Transform");
-      if (pos) this.createExplosion(world, pos.x, pos.y, "#FFFFFF");
+      if (pos) {
+        this.createExplosion(world, pos.x, pos.y, "#FFFFFF");
+
+        // Popup de combo flotante
+        const popup = world.createEntity();
+        world.addComponent(popup, { type: "Transform", x: pos.x, y: pos.y - 20, rotation: 0, scaleX: 1, scaleY: 1 });
+        world.addComponent(popup, {
+          type: "Render",
+          shape: "text",
+          size: 16,
+          color: "#FFFF00",
+          rotation: 0,
+          zIndex: 100,
+          data: { content: `x${gameState.multiplier}` }
+        });
+        world.addComponent(popup, { type: "UIText", content: `x${gameState.multiplier}` });
+        world.addComponent(popup, { type: "TTL", remaining: 1000, total: 1000 });
+
+        JuiceSystem.add(world, popup, { property: "y", target: pos.y - 60, duration: 1000, easing: "easeOut" });
+        JuiceSystem.add(world, popup, { property: "opacity", target: 0, duration: 1000, easing: "easeIn" });
+      }
 
       const eventBus = world.getResource<EventBus>("EventBus");
       if (eventBus) eventBus.emit("si:kill", { chain: 1 });

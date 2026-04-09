@@ -11,16 +11,16 @@ export class ScreenShakeSystem extends System {
    * Updates screen shake timer.
    */
   public update(world: World, deltaTime: number): void {
-    void deltaTime;
     const shakeEntity = world.query("ScreenShake")[0];
     if (shakeEntity === undefined) return;
 
     const shake = world.getComponent<ScreenShakeComponent>(shakeEntity, "ScreenShake");
-    if (shake?.config && shake.config.duration > 0) {
-      shake.config.duration--;
-      if (shake.config.duration <= 0) {
-        shake.config = null;
-      }
+    if (!shake) return;
+
+    if (shake.remaining > 0) {
+      shake.remaining -= deltaTime;
+    } else {
+      world.removeComponent(shakeEntity, "ScreenShake");
     }
   }
 }

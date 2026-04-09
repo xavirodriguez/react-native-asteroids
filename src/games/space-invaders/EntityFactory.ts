@@ -125,6 +125,9 @@ export function createGameState(world: World): Entity {
     level: 1,
     invadersRemaining: 0,
     isGameOver: false,
+    combo: 0,
+    multiplier: 1,
+    comboTimerRemaining: 0,
     screenShake: null,
   });
   return gameState;
