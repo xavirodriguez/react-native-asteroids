@@ -1,4 +1,5 @@
 import { createTilemapComponent } from "../TilemapRenderSystem";
+import { TilemapUtils } from "../../utils/ComponentUtils";
 
 describe("TilemapSystem", () => {
   const mapData = {
@@ -23,20 +24,20 @@ describe("TilemapSystem", () => {
 
   it("should return true for solid tiles", () => {
     const tilemap = createTilemapComponent(mapData);
-    expect(tilemap.isSolid(0, 0)).toBe(true);
-    expect(tilemap.isSolid(0, 1)).toBe(true);
-    expect(tilemap.isSolid(2, 1)).toBe(true);
+    expect(TilemapUtils.isSolid(tilemap, 0, 0)).toBe(true);
+    expect(TilemapUtils.isSolid(tilemap, 0, 1)).toBe(true);
+    expect(TilemapUtils.isSolid(tilemap, 2, 1)).toBe(true);
   });
 
   it("should return false for empty tiles", () => {
     const tilemap = createTilemapComponent(mapData);
-    expect(tilemap.isSolid(1, 0)).toBe(false);
-    expect(tilemap.isSolid(1, 2)).toBe(false);
+    expect(TilemapUtils.isSolid(tilemap, 1, 0)).toBe(false);
+    expect(TilemapUtils.isSolid(tilemap, 1, 2)).toBe(false);
   });
 
   it("should return true for out-of-bounds coordinates", () => {
     const tilemap = createTilemapComponent(mapData);
-    expect(tilemap.isSolid(-1, 0)).toBe(true);
-    expect(tilemap.isSolid(10, 0)).toBe(true);
+    expect(TilemapUtils.isSolid(tilemap, -1, 0)).toBe(true);
+    expect(TilemapUtils.isSolid(tilemap, 10, 0)).toBe(true);
   });
 });

@@ -1,7 +1,7 @@
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TTLComponent, TransformComponent, Component, TilemapComponent } from "../core/CoreComponents";
+import { RenderComponent, TTLComponent, TransformComponent, PreviousTransformComponent, Component, TilemapComponent } from "../core/CoreComponents";
 import { renderUI } from "../ui/UIRenderer";
 import { UITextComponent, UIStyleComponent } from "../ui/UITypes";
 import { FontRegistry } from "../ui/text/FontRegistry";
@@ -31,6 +31,7 @@ export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world:
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
   protected ctx: CanvasRenderingContext2D | null = null;
+  private alpha: number = 1;
   protected width: number = 0;
   protected height: number = 0;
   private shapeDrawers = new Map<string, ShapeDrawer>();
@@ -163,6 +164,10 @@ export class CanvasRenderer implements Renderer {
     this.height = height;
   }
 
+  public setAlpha(alpha: number): void {
+    this.alpha = alpha;
+  }
+
   /**
    * Limpia la superficie del canvas rellenándola con un color negro sólido.
    */
@@ -208,10 +213,25 @@ export class CanvasRenderer implements Renderer {
 
     const renderCommands = entities.map(entity => {
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
+      const prevPos = world.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
       const render = world.getComponent<RenderComponent>(entity, "Render")!;
+
+      // Interpolate position and rotation
+      const interpolatedPos = { ...pos };
+      if (prevPos && this.alpha < 1) {
+        interpolatedPos.x = prevPos.x + (pos.x - prevPos.x) * this.alpha;
+        interpolatedPos.y = prevPos.y + (pos.y - prevPos.y) * this.alpha;
+
+        // Shortest path rotation interpolation
+        let diff = pos.rotation - prevPos.rotation;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        interpolatedPos.rotation = prevPos.rotation + diff * this.alpha;
+      }
+
       return {
         entity,
-        pos,
+        pos: interpolatedPos,
         render,
         zIndex: (render as any).zIndex ?? 0
       };

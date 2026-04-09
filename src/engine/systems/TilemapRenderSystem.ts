@@ -37,29 +37,11 @@ export class TilemapRenderSystem extends System {
 }
 
 /**
- * Factory function to create a TilemapComponent with the isSolid helper.
+ * Factory function to create a TilemapComponent.
  */
 export function createTilemapComponent(data: any): TilemapComponent {
   return {
     type: "Tilemap",
-    data,
-    isSolid: function(tileX: number, tileY: number): boolean {
-      if (tileX < 0 || tileX >= this.data.width || tileY < 0 || tileY >= this.data.height) {
-        return true; // Treat out-of-bounds as solid
-      }
-
-      const index = tileY * this.data.width + tileX;
-
-      for (const layer of this.data.layers) {
-        if (!layer.collidable) continue;
-        const tileId = layer.tiles[index];
-        if (tileId !== 0) {
-          const tileset = this.data.tilesets.find((ts: any) => ts.id === tileId);
-          if (tileset && tileset.solid) return true;
-          if (tileId > 0) return true; // Default to solid if ID > 0 and no specific config
-        }
-      }
-      return false;
-    }
+    data
   };
 }

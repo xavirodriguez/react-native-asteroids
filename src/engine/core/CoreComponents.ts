@@ -35,6 +35,20 @@ export interface TransformComponent extends Component {
   y: number;
   /** Rotación en radianes. */
   rotation: number;
+  /** Escala X local. */
+  scaleX: number;
+  /** Escala Y local. */
+  scaleY: number;
+}
+
+/**
+ * Almacena el estado de la transformación en el frame anterior para interpolación visual.
+ */
+export interface PreviousTransformComponent extends Component {
+  type: "PreviousTransform";
+  x: number;
+  y: number;
+  rotation: number;
   /** Factor de escala horizontal. */
   scaleX: number;
   /** Factor de escala vertical. */
@@ -226,10 +240,10 @@ export interface InputStateComponent extends Component {
   actions: Map<InputAction, boolean>;
   /** Mapa de valores de ejes (e.g., "horizontal" -> -1.0 a 1.0). */
   axes: Map<string, number>;
-  /** Función de ayuda para comprobar si una acción está pulsada. */
-  isPressed: (action: InputAction) => boolean;
-  /** Función de ayuda para obtener el valor de un eje. */
-  getAxis: (axis: string) => number;
+  /** @deprecated Use InputUtils.isPressed instead */
+  isPressed?: (action: InputAction) => boolean;
+  /** @deprecated Use InputUtils.getAxis instead */
+  getAxis?: (axis: string) => number;
 }
 
 /**
@@ -317,7 +331,8 @@ export interface TilemapData {
 export interface TilemapComponent extends Component {
   type: "Tilemap";
   data: TilemapData;
-  isSolid: (tileX: number, tileY: number) => boolean;
+  /** @deprecated Use TilemapUtils.isSolid instead */
+  isSolid?: (tileX: number, tileY: number) => boolean;
 }
 
 /**

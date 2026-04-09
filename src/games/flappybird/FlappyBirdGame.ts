@@ -134,7 +134,7 @@ export class FlappyBirdGame
   }
 
   protected _onBeforeRestart(): void {
-    this.gameStateSystem.resetGameOverState();
+    this.gameStateSystem.resetGameOverState(this.world);
   }
 }
 

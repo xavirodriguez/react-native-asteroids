@@ -7,6 +7,7 @@ import { BaseGame } from "../core/BaseGame";
  */
 export interface IGameState {
   isGameOver: boolean;
+  gameOverLogged?: boolean;
 }
 
 /**
@@ -55,20 +56,30 @@ export abstract class BaseGameStateSystem<TState extends IGameState> extends Sys
     state.isGameOver = isGameOver;
 
     if (isGameOver) {
-      if (!this.gameOverLogged) {
-        this.gameOverLogged = true;
+      if (state.gameOverLogged !== true) {
+        state.gameOverLogged = true;
         this.gameInstance?.pause();
       }
     } else {
-      this.gameOverLogged = false;
+      state.gameOverLogged = false;
     }
   }
 
-  public isGameOver(): boolean {
-    return this.gameOverLogged;
+  public isGameOver(world?: World): boolean {
+    if (world) {
+        const state = this.getGameState(world);
+        return state?.gameOverLogged || false;
+    }
+    return false;
   }
 
-  public resetGameOverState(): void {
-    this.gameOverLogged = false;
+  public resetGameOverState(world?: World): void {
+    if (world) {
+        const state = this.getGameState(world);
+        if (state) {
+            state.gameOverLogged = false;
+            state.isGameOver = false;
+        }
+    }
   }
 }

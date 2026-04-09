@@ -36,6 +36,7 @@ export class AsteroidsState extends Schema {
   @type("boolean") gameOver: boolean = false;
   @type("number") gameWidth: number = 800;
   @type("number") gameHeight: number = 600;
+  @type("uint32") seed: number = 12345;
 }
 
 export class Invader extends Schema {
@@ -71,4 +72,5 @@ export class FlappyBirdState extends Schema {
   @type({ map: Pipe }) pipes = new MapSchema<Pipe>();
   @type("boolean") gameStarted: boolean = false;
   @type("boolean") gameOver: boolean = false;
+  @type("uint32") seed: number = 12345;
 }
