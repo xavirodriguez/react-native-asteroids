@@ -49,7 +49,7 @@ export class DailyLeaderboardStore {
   public getEntries(gameId: string, dateKey: string): LeaderboardEntry[] {
     const key = this.getKey(gameId, dateKey);
     if (this.cache.has(key)) {
-      return this.cache.get(key)!;
+      return [...this.cache.get(key)!];
     }
 
     const filePath = path.join(DailyLeaderboardStore.STORAGE_DIR, `${key}.json`);
