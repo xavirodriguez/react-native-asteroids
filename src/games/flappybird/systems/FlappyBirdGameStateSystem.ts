@@ -10,34 +10,17 @@ import { IFlappyBirdGame, IFlappyStateSystem } from "../types/GameInterfaces";
 import { createPipe } from "../EntityFactory";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { EventBus } from "../../../engine/core/EventBus";
+import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
 
 /**
  * System that manages game logic: scores, spawner, and game over condition.
  */
-export class FlappyBirdGameStateSystem extends System implements IFlappyStateSystem {
-  private gameInstance: IFlappyBirdGame;
-  private _world: World | undefined;
-
+export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdState> implements IFlappyStateSystem {
   constructor(game: IFlappyBirdGame, private config: typeof FLAPPY_CONFIG = FLAPPY_CONFIG) {
-    super();
-    this.gameInstance = game;
+    super(game as any);
   }
 
-  public update(world: World, deltaTime: number): void {
-    this._world = world;
-    const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
-    if (!gameState) return;
-
-    if (gameState.isGameOver) {
-      if (!gameState.gameOverLogged) {
-        gameState.gameOverLogged = true;
-        this.gameInstance.pause();
-        const eventBus = world.getResource<EventBus>("EventBus");
-        if (eventBus) eventBus.emit("game:over");
-      }
-      return;
-    }
-
+  protected updateGameState(world: World, gameState: FlappyBirdState, deltaTime: number): void {
     // Update Pipe Spawner
     gameState.pipeSpawnTimer += deltaTime;
     if (gameState.pipeSpawnTimer >= this.config.PIPE_SPAWN_INTERVAL) {
@@ -72,25 +55,12 @@ export class FlappyBirdGameStateSystem extends System implements IFlappyStateSys
     });
   }
 
-  public isGameOver(world?: World): boolean {
-    const w = world || this._world;
-    if (w) {
-      const state = w.getSingleton<FlappyBirdState>("FlappyState");
-      return state?.isGameOver || false;
-    }
-    return false;
+  protected getGameState(world: World): FlappyBirdState | undefined {
+    return world.getSingleton<FlappyBirdState>("FlappyState");
   }
 
-  public resetGameOverState(world?: World): void {
-    const w = world || this._world;
-    if (w) {
-      const state = w.getSingleton<FlappyBirdState>("FlappyState");
-      if (state) {
-        state.isGameOver = false;
-        state.gameOverLogged = false;
-        state.pipeSpawnTimer = 0;
-        state.score = 0;
-      }
-    }
+  protected evaluateGameOverCondition(state: FlappyBirdState): boolean {
+    // Note: The logic for setting isGameOver might be elsewhere or handled by collision
+    return state.isGameOver;
   }
 }

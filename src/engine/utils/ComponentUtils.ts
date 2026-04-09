@@ -35,6 +35,7 @@ export const TilemapUtils = {
       const tileId = layer.tiles[tileY * data.width + tileX];
       const tileset = data.tilesets.find(ts => ts.id === tileId);
       if (tileset?.solid) return true;
+      if (!tileset && tileId > 0) return true; // Default to solid if ID > 0 and no specific config
     }
     return false;
   }

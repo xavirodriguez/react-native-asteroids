@@ -9,7 +9,6 @@ import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem
  * System responsible for managing global game state, wave spawning, and game over conditions.
  */
 export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateComponent> implements IGameStateSystem {
-  private _world: World | undefined;
 
   constructor(gameInstance?: IAsteroidsGame) {
     super(gameInstance as any);
@@ -18,11 +17,6 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
   /**
    * Updates the game state by processing various sub-tasks.
    */
-  public update(world: World, deltaTime: number): void {
-    this._world = world;
-    super.update(world, deltaTime);
-  }
-
   protected updateGameState(world: World, gameState: GameStateComponent, deltaTime: number): void {
     this.updateAsteroidsCount(world, gameState);
     this.manageWaveProgression(world, gameState);
@@ -42,14 +36,6 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
         createUfo({ world });
       }
     }
-  }
-
-  public isGameOver(world?: World): boolean {
-    return super.isGameOver(world || this._world);
-  }
-
-  public resetGameOverState(world?: World): void {
-    super.resetGameOverState(world || this._world);
   }
 
   private updateAsteroidsCount(world: World, gameState: GameStateComponent): void {

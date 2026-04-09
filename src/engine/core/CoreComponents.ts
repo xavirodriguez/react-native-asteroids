@@ -35,20 +35,6 @@ export interface TransformComponent extends Component {
   y: number;
   /** Rotación en radianes. */
   rotation: number;
-  /** Escala X local. */
-  scaleX: number;
-  /** Escala Y local. */
-  scaleY: number;
-}
-
-/**
- * Almacena el estado de la transformación en el frame anterior para interpolación visual.
- */
-export interface PreviousTransformComponent extends Component {
-  type: "PreviousTransform";
-  x: number;
-  y: number;
-  rotation: number;
   /** Factor de escala horizontal. */
   scaleX: number;
   /** Factor de escala vertical. */
@@ -66,6 +52,16 @@ export interface PreviousTransformComponent extends Component {
   worldScaleX?: number;
   /** Escala Y absoluta en el mundo (calculada por HierarchySystem). */
   worldScaleY?: number;
+}
+
+/**
+ * Almacena el estado de la transformación en el frame anterior para interpolación visual.
+ */
+export interface PreviousTransformComponent extends Component {
+  type: "PreviousTransform";
+  x: number;
+  y: number;
+  rotation: number;
 }
 
 /**
