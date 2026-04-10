@@ -1,13 +1,28 @@
 import { TransformComponent, VelocityComponent } from "../types/EngineTypes";
 
 /**
- * Shared physics integration utilities to ensure consistency between
- * engine systems and game-level predictions.
+ * Utilidades de integración física compartidas.
+ * Garantiza la consistencia matemática entre los sistemas del motor y las predicciones de red.
+ *
+ * @responsibility Proveer algoritmos de integración estándar (Euler/Damping).
+ * @responsibility Centralizar el manejo de unidades (milisegundos vs segundos).
+ *
+ * @remarks
+ * Es crítico que tanto los `Systems` como el código de predicción en el cliente usen
+ * estas utilidades para evitar el "Implementation Drift" que causa desincronizaciones.
  */
 export class PhysicsUtils {
   /**
-   * Applies linear integration to update position based on velocity.
-   * Supports both standard ECS components and proxy objects.
+   * Aplica integración lineal para actualizar la posición basada en la velocidad.
+   * Soporta tanto componentes ECS estándar como objetos proxy (para predicción).
+   *
+   * @param pos - Objeto de posición (debe tener x,y o worldX,worldY).
+   * @param vel - Objeto de velocidad (debe tener dx,dy o velocityX,velocityY).
+   * @param deltaTimeInSeconds - Tiempo transcurrido en SEGUNDOS.
+   *
+   * @invariant No debe modificar el objeto `vel`.
+   * @conceptualRisk [PRECISION_LOSS] La acumulación de errores de punto flotante en integraciones
+   * largas puede causar divergencias mínimas entre clientes.
    */
   public static integrateMovement(pos: any, vel: any, deltaTimeInSeconds: number): void {
     const x = pos.x !== undefined ? "x" : "worldX";

@@ -2,6 +2,20 @@ import { AssetDescriptor, AssetHandle, AssetType } from "./AssetTypes";
 
 /**
  * AssetLoader for managing game assets with caching and reference counting.
+ *
+ * @responsibility Cargar y cachear recursos externos (imágenes, sonidos, JSON).
+ * @responsibility Gestionar el ciclo de vida de los recursos mediante conteo de referencias.
+ * @responsibility Proveer información sobre el progreso de carga.
+ *
+ * @remarks
+ * El sistema de referencia (`refCounts`) permite que múltiples escenas usen el mismo recurso,
+ * descargándolo de memoria solo cuando la última escena lo libera.
+ *
+ * @invariant Un recurso con estado 'ready' debe tener datos no nulos en `data`.
+ * @conceptualRisk [IO_LATENCY] No hay timeout implementado para cargas lentas, lo que puede
+ * bloquear transiciones de escena indefinidamente.
+ * @conceptualRisk [MEMORY_PRESSURE] Si no se llama a `unloadGroup` correctamente, la memoria
+ * no se liberará nunca (fuga de recursos).
  */
 export class AssetLoader {
   private cache = new Map<string, AssetHandle>();

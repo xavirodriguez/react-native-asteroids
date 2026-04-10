@@ -3,10 +3,18 @@
  * Proporciona instancias segregadas para simulación y efectos visuales para prevenir
  * la deriva de la semilla (seed drift).
  *
+ * @responsibility Proveer números aleatorios reproducibles basados en semillas.
+ * @responsibility Segregar el estado del PRNG entre simulación y presentación.
+ *
  * @remarks
  * Es imperativo utilizar `getInstance("gameplay")` para cualquier lógica que afecte
  * el estado del juego (IA, spawn, daño) para garantizar determinismo y soporte de replay.
  * Para efectos puramente estéticos (partículas, flashes), se debe usar `getInstance("render")`.
+ *
+ * @invariant Dos instancias con la misma semilla y el mismo número de llamadas a next() deben
+ * retornar exactamente la misma secuencia de valores.
+ * @conceptualRisk [SEED_COLLISION] El uso de la misma semilla en múltiples instancias "named"
+ * no coordinadas puede resultar en patrones de aleatoriedad idénticos.
  *
  * @packageDocumentation
  */

@@ -11,6 +11,14 @@ export interface SceneTransition {
 
 /**
  * Manages a stack of game scenes and their lifecycle transitions.
+ *
+ * @responsibility Administrar el ciclo de vida de las escenas (Enter, Exit, Pause, Resume).
+ * @responsibility Garantizar la atomicidad de las transiciones para evitar estados inconsistentes en el World.
+ * @responsibility Mantener una pila (stack) de escenas para soportar menús y sub-estados.
+ *
+ * @remarks
+ * Implementa el "Principio 3: Atomic State Transitions". Las mutaciones sincrónicas
+ * del estado del mundo solo ocurren después de que el trabajo asíncrono del ciclo de vida ha terminado.
  */
 export class SceneManager {
   private currentScene: Scene | null = null;
@@ -29,13 +37,15 @@ export class SceneManager {
   }
 
   /**
-   * Transitions to a new scene, clearing the current stack.
-   * Calls onExit() on the old scene and onEnter() on the new one.
+   * Transiciona a una nueva escena, limpiando el stack actual.
+   * Ejecuta onExit() en la escena antigua y onEnter() en la nueva.
    *
-   * Principle 3: Atomic State Transitions.
-   * Asynchronous lifecycle work is awaited BEFORE synchronous mutations.
+   * @param scene - La nueva instancia de Scene a la que transicionar.
    *
-   * @param scene - The new scene to transition to.
+   * @invariant El stack de escenas se reduce a exactamente 1 elemento tras la transición.
+   * @invariant No se debe llamar a update() mientras la transición asíncrona está en curso.
+   * @conceptualRisk [ASYNC_RACE] Si se inician múltiples transiciones concurrentes, el estado
+   * final del stack depende del orden de resolución de las promesas.
    */
   public async transitionTo(scene: Scene): Promise<void> {
     const prev = this.currentScene;
@@ -70,10 +80,11 @@ export class SceneManager {
   }
 
   /**
-   * Pops the current scene from the stack.
-   * The previous scene is resumed.
+   * Elimina la escena actual del stack y retoma la escena anterior.
    *
-   * Principle 3: Atomic State Transitions
+   * @invariant El stack debe tener al menos 2 elementos para permitir el pop.
+   * @invariant La escena recuperada recibirá una llamada a onResume().
+   * @conceptualRisk [EMPTY_STACK] Si el stack queda vacío, el GameLoop fallará al intentar actualizar null.
    */
   public async pop(): Promise<void> {
     if (this.sceneStack.length <= 1) return;

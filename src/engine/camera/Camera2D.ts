@@ -11,8 +11,17 @@ export interface CameraConfig {
 }
 
 /**
- * Platform-agnostic 2D Camera logic.
- * Handles target following, lerping, and screen shake.
+ * Lógica de Cámara 2D agnóstica a la plataforma.
+ * Gestiona el seguimiento de objetivos, suavizado (lerping) y efectos de sacudida (screen shake).
+ *
+ * @responsibility Transformar coordenadas del mundo a coordenadas de pantalla y viceversa.
+ * @responsibility Implementar suavizado de movimiento de cámara mediante interpolación.
+ * @responsibility Gestionar el ciclo de vida y decaimiento del Screen Shake.
+ *
+ * @remarks
+ * Esta clase opera sobre componentes `Camera2DComponent` y `TransformComponent`.
+ * El Screen Shake utiliza `RandomService.getInstance("render")` para garantizar que
+ * efectos visuales no afecten el determinismo de la simulación del juego.
  */
 export class Camera2D extends System {
   private viewport = { width: 800, height: 600 };
@@ -28,6 +37,17 @@ export class Camera2D extends System {
     this.viewport = { width, height };
   }
 
+  /**
+   * Actualiza el estado de todas las cámaras activas en el mundo.
+   *
+   * @param world - El mundo ECS que contiene las cámaras.
+   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   *
+   * @invariant El Screen Shake debe decaer linealmente hasta llegar a cero.
+   * @invariant El seguimiento del objetivo (follow) debe aplicar suavizado basado en `cam.smoothing`.
+   * @conceptualRisk [FPS_DEPENDENCE] El suavizado actual `cam.smoothing` no está compensado
+   * por deltaTime, lo que causa comportamientos diferentes a distintos framerates.
+   */
   public update(world: World, deltaTime: number): void {
     const cameras = world.query("Camera2D");
 
