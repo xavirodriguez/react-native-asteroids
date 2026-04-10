@@ -29,7 +29,11 @@ En cada `world.update()`, si la lista de sistemas ha cambiado (`systemsNeedSorti
 
 ## Dependencias Críticas Observadas
 
-1.  **InterpolationPrepSystem → Simulation**: Debe capturar el estado *antes* de que los sistemas de simulación muten la posición para permitir la interpolación visual suave.
-2.  **Simulation → Collision**: Los objetos deben moverse a su nueva posición potencial antes de que el motor de colisiones resuelva penetraciones.
-3.  **Collision → GameRules**: La lógica de puntuación y daño depende de los eventos de colisión generados en el tick actual.
-4.  **HierarchySystem → Presentation**: Debe resolver las coordenadas globales después de que todas las transformaciones locales hayan sido calculadas.
+1.  **InterpolationPrepSystem → Simulation**: Debe capturar el estado (`PreviousTransform`) *antes* de que los sistemas de simulación muten la posición para permitir la interpolación visual suave entre ticks físicos.
+2.  **Simulation → Collision**: Los objetos deben moverse a su nueva posición potencial (`MovementSystem`) antes de que el motor de colisiones (`CollisionSystem`) resuelva penetraciones.
+3.  **Collision → GameRules**: La lógica de puntuación y daño depende de los eventos de colisión generados y resueltos en el tick actual.
+4.  **HierarchySystem → Presentation**: Debe resolver las coordenadas globales después de que todas las transformaciones locales hayan sido calculadas, pero antes de que el renderer las consuma.
+
+## Riesgos de Ordenación
+- **Frame-Behind**: Si un sistema lee una posición antes de que el sistema de movimiento la actualice, el comportamiento del juego (e.g. IA o colisiones) estará un frame por detrás de la realidad visual.
+- **Jitter de Interpolación**: Si `InterpolationPrepSystem` no se ejecuta como el primer sistema de la simulación, capturará un estado parcial, rompiendo la suavidad visual en dispositivos de alta frecuencia de refresco.
