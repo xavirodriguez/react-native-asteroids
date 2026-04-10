@@ -1,9 +1,28 @@
 /**
- * Typed Event Bus for system-to-system and scene-to-system communication.
- * Supports namespaced events (namespace:event) and wildcards (*).
+ * Bus de eventos tipado para la comunicación desacoplada entre sistemas y escenas.
+ * Implementa el patrón Pub/Sub con soporte para espacios de nombres y comodines (wildcards).
+ *
+ * @remarks
+ * Los eventos pueden ser específicos (ej: `player:hit`) o genéricos mediante asterisco (ej: `player:*` o `*`).
  */
 export type EventHandler<T = any> = (payload: T) => void;
 
+/**
+ * Gestor central de eventos del motor.
+ *
+ * @responsibility Registrar subscritores para eventos específicos o patrones.
+ * @responsibility Despachar notificaciones de forma síncrona a todos los interesados.
+ * @responsibility Gestionar el ciclo de vida de las subscripciones (on, once, off).
+ *
+ * @contract Subscripción: Un handler registrado con `once` se elimina automáticamente tras su ejecución.
+ * @contract Notificación: Los handlers se ejecutan en bloques `try-catch` individuales para evitar
+ * que un fallo en un listener rompa la cadena de ejecución.
+ *
+ * @conceptualRisk [ORDER][MEDIUM] El orden de ejecución de los handlers para un mismo evento
+ * no está garantizado. No se debe depender del orden de registro.
+ * @conceptualRisk [RECURSION][LOW] No hay protección contra bucles infinitos de eventos
+ * (ej: Evento A dispara Evento B, que dispara de nuevo Evento A).
+ */
 export class EventBus {
   private handlers = new Map<string, Set<EventHandler>>();
 

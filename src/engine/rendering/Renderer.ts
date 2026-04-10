@@ -33,13 +33,16 @@ export type EffectDrawer<TContext> = (
  * Interfaz abstracta para los renderizadores de juego.
  * Define el contrato que debe cumplir cualquier backend de renderizado (Canvas, Skia, SVG).
  *
+ * @responsibility Actuar como el puente visual entre el estado del {@link World} y la pantalla.
+ * @responsibility Ordenar el dibujo de entidades por profundidad (zIndex).
+ * @responsibility Proporcionar hooks de extensión para efectos y formas personalizadas.
+ *
  * @remarks
  * El diseño permite cambiar el backend de renderizado de forma transparente para la lógica ECS.
+ * Los renderizadores son generalmente pasivos y reactivos a los cambios en {@link World.version}.
  */
 export interface Renderer {
-  /**
-   * Identificador único del tipo de renderizador (e.g., 'canvas', 'skia').
-   */
+  /** Identificador único del tipo de renderizador (e.g., 'canvas', 'skia'). */
   readonly type: string;
 
   /**
@@ -52,8 +55,13 @@ export interface Renderer {
    * Renderiza el estado actual del mundo ECS completo.
    *
    * @remarks
-   * Implementa el pipeline principal de renderizado: limpieza, efectos de fondo,
-   * dibujo de entidades por zIndex y efectos de primer plano.
+   * Implementa el pipeline principal de renderizado:
+   * 1. Limpieza (clear)
+   * 2. Efectos de fondo (backgroundEffects)
+   * 3. Ordenación (sorting por zIndex)
+   * 4. Dibujo de entidades (drawEntity)
+   * 5. Partículas (drawParticles)
+   * 6. Efectos de primer plano (foregroundEffects)
    *
    * @param world - El mundo ECS a renderizar.
    */
@@ -69,27 +77,33 @@ export interface Renderer {
   drawEntity(entity: Entity, components: Record<string, Component>, world: World): void;
 
   /**
-   * Draws particles separately for efficiency.
+   * Dibuja partículas de forma separada u optimizada.
    */
   drawParticles(world: World): void;
 
   /**
-   * Sets the viewport size.
+   * Establece las dimensiones del área de visualización.
+   *
+   * @param width - Ancho en píxeles lógicos.
+   * @param height - Alto en píxeles lógicos.
    */
   setSize(width: number, height: number): void;
 
   /**
-   * Registers a custom shape drawer.
+   * Registra un dibujador de formas personalizado para usar con el componente Render.
+   *
+   * @param name - Identificador de la forma (e.g., "star", "ship").
+   * @param drawer - Implementación de la lógica de dibujo específica del backend.
    */
   registerShape(name: string, drawer: ShapeDrawer<any>): void;
 
   /**
-   * Registers a background effect.
+   * Registra un efecto de fondo global.
    */
   registerBackgroundEffect(name: string, drawer: EffectDrawer<any>): void;
 
   /**
-   * Registers a foreground effect.
+   * Registra un efecto de primer plano global (UI, filtros).
    */
   registerForegroundEffect(name: string, drawer: EffectDrawer<any>): void;
 }

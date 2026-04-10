@@ -3,7 +3,25 @@ import { World } from "../core/World";
 import { RenderComponent, TransformComponent } from "../core/CoreComponents";
 
 /**
- * Generic rendering-related updates (rotation, trails, flashes).
+ * Sistema encargado de las actualizaciones de estado visual que no afectan la física.
+ * Gestiona rotaciones automáticas, acumulación de estelas (trails) y destellos de impacto (hit flashes).
+ *
+ * @responsibility Mantener el historial de posiciones para efectos de estela.
+ * @responsibility Actualizar la rotación visual basada en velocidad angular.
+ * @responsibility Gestionar el temporizador de los destellos de impacto.
+ * @queries Transform, Render, Ship
+ * @mutates Render.trailPositions, Render.rotation, Render.hitFlashFrames, World.version
+ * @executionOrder Fase: Presentation.
+ *
+ * @remarks
+ * Incrementa {@link World.version} en cada actualización para forzar el re-renderizado
+ * de componentes reactivos en la UI.
+ *
+ * @conceptualRisk [PERFORMANCE][MEDIUM] La acumulación de estelas para múltiples entidades
+ * incrementa el uso de memoria y puede degradar el rendimiento del renderer si `trailMaxLength`
+ * es muy elevado.
+ * @conceptualRisk [DETERMINISM][LOW] Este sistema muta `Render.rotation`. Si un sistema de
+ * colisiones lee la rotación del componente `Render` en lugar del `Transform`, habrá drift.
  */
 export class RenderUpdateSystem extends System {
   protected trailMaxLength: number;
