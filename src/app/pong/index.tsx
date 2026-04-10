@@ -10,10 +10,6 @@ export default function PongScreen() {
   const [started, setStarted] = useState(false);
   const { game, gameState, handleInput, isPaused, togglePause } = usePongGame();
 
-  const handleMultiplayerInput = (input: any) => {
-    handleInput(input);
-  };
-
   if (!game) return null;
 
   if (!started) {
@@ -47,9 +43,9 @@ export default function PongScreen() {
         </TouchableOpacity>
 
         <View style={styles.scoreBoard}>
-            <Text style={styles.scoreText}>{gameState?.p1Score ?? 0}</Text>
+            <Text style={styles.scoreText}>{gameState?.scoreP1 ?? 0}</Text>
             <View style={{ width: 100 }} />
-            <Text style={styles.scoreText}>{gameState?.p2Score ?? 0}</Text>
+            <Text style={styles.scoreText}>{gameState?.scoreP2 ?? 0}</Text>
         </View>
 
         <CanvasRenderer
@@ -59,10 +55,10 @@ export default function PongScreen() {
         />
 
         <PongControls
-          onP1Up={(pressed) => handleMultiplayerInput({ p1Up: pressed })}
-          onP1Down={(pressed) => handleMultiplayerInput({ p1Down: pressed })}
-          onP2Up={(pressed) => handleMultiplayerInput({ p2Up: pressed })}
-          onP2Down={(pressed) => handleMultiplayerInput({ p2Down: pressed })}
+          onP1Up={(pressed) => handleInput({ p1Up: pressed })}
+          onP1Down={(pressed) => handleInput({ p1Down: pressed })}
+          onP2Up={(pressed) => handleInput({ p2Up: pressed })}
+          onP2Down={(pressed) => handleInput({ p2Down: pressed })}
         />
 
         {gameState?.isGameOver && (

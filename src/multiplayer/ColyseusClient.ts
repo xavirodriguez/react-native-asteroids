@@ -1,6 +1,7 @@
 import { Client, Room } from "@colyseus/sdk";
 
-const COLYSEUS_ENDPOINT = "ws://127.0.0.1:2567";
+const COLYSEUS_ENDPOINT =
+  process.env.EXPO_PUBLIC_COLYSEUS_URL ?? "ws://127.0.0.1:2567";
 
 let client: Client | null = null;
 let room: Room | null = null;

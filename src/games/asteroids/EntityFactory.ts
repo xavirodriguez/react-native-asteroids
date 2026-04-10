@@ -6,6 +6,22 @@ import { createEmitter } from "../../engine/systems/ParticleSystem";
 import { generateStarField } from "../../engine/rendering/StarField";
 import { RandomService } from "../../engine/utils/RandomService";
 
+/**
+ * Factoría para la creación de entidades del juego Asteroids.
+ *
+ * @responsibility Centralizar la instanciación de naves, asteroides y UFOs con sus componentes iniciales.
+ * @conceptualRisk [DETERMINISM] El uso de `RandomService.getInstance("gameplay")` es obligatorio para
+ * garantizar que la generación procedimental sea idéntica en todos los clientes del sistema multiplayer.
+ * @packageDocumentation
+ */
+
+/**
+ * Crea la nave del jugador con sus componentes de física, entrada y salud.
+ * @param world - Mundo ECS.
+ * @param x - Posición inicial X.
+ * @param y - Posición inicial Y.
+ * @returns ID de la entidad creada.
+ */
 export const createShip = ({ world, x, y }: { world: World; x: number; y: number }) => {
   const ship = world.createEntity();
   world.addComponent(ship, { type: "Transform", x, y, rotation: -Math.PI / 2, scaleX: 1, scaleY: 1 } as TransformComponent);
@@ -49,6 +65,9 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
   return ship;
 };
 
+/**
+ * Crea un proyectil con velocidad inicial basada en el ángulo de disparo.
+ */
 export const createBullet = ({ world, x, y, angle }: { world: World; x: number; y: number; angle: number }) => {
   const bullet = world.createEntity();
   const dx = Math.cos(angle) * GAME_CONFIG.BULLET_SPEED;
@@ -63,25 +82,30 @@ export const createBullet = ({ world, x, y, angle }: { world: World; x: number; 
   return bullet;
 };
 
+/**
+ * Crea un asteroide con forma procedimental determinista.
+ * @conceptualRisk [PRNG_USAGE] Utiliza `gameplayRandom` para asegurar que la forma y velocidad
+ * sean consistentes en el buffer de predicción.
+ */
 export const createAsteroid = ({ world, x, y, size }: { world: World; x: number; y: number; size: "large" | "medium" | "small" }) => {
   const asteroid = world.createEntity();
   const radius = GAME_CONFIG.ASTEROID_RADII[size];
   const gameplayRandom = RandomService.getInstance("gameplay");
   const angle = gameplayRandom.next() * Math.PI * 2;
-  const speed = (gameplayRandom.next() * 50 + 20) * (size === "large" ? 1 : size === "medium" ? 1.5 : 2);
+  const speed = gameplayRandom.nextRange(20, 70) * (size === "large" ? 1 : size === "medium" ? 1.5 : 2);
 
   const vertices = [];
-  const vertexCount = 8 + Math.floor(gameplayRandom.next() * 5);
+  const vertexCount = 8 + gameplayRandom.nextInt(0, 5);
   for (let i = 0; i < vertexCount; i++) {
     const a = (i / vertexCount) * Math.PI * 2;
-    const r = radius * (0.8 + gameplayRandom.next() * 0.4);
+    const r = radius * gameplayRandom.nextRange(0.8, 1.2);
     vertices.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
   }
 
   const internalLines = [];
-  const crackCount = 2 + Math.floor(gameplayRandom.next() * 3);
+  const crackCount = 2 + gameplayRandom.nextInt(0, 3);
   for (let i = 0; i < crackCount; i++) {
-      const v1 = vertices[Math.floor(gameplayRandom.next() * vertices.length)];
+      const v1 = vertices[gameplayRandom.nextInt(0, vertices.length)];
       const v2 = { x: v1.x * 0.3, y: v1.y * 0.3 };
       internalLines.push({ x1: v1.x, y1: v1.y, x2: v2.x, y2: v2.y });
   }
@@ -105,13 +129,16 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
   return asteroid;
 };
 
+/**
+ * Spawnea una oleada inicial de asteroides fuera del radio de seguridad del jugador.
+ */
 export const spawnAsteroidWave = ({ world, count }: { world: World; count: number }) => {
   const gameplayRandom = RandomService.getInstance("gameplay");
   for (let i = 0; i < count; i++) {
     let x, y, dist;
     do {
-      x = gameplayRandom.next() * GAME_CONFIG.SCREEN_WIDTH;
-      y = gameplayRandom.next() * GAME_CONFIG.SCREEN_HEIGHT;
+      x = gameplayRandom.nextRange(0, GAME_CONFIG.SCREEN_WIDTH);
+      y = gameplayRandom.nextRange(0, GAME_CONFIG.SCREEN_HEIGHT);
       dist = Math.sqrt(Math.pow(x - GAME_CONFIG.SCREEN_CENTER_X, 2) + Math.pow(y - GAME_CONFIG.SCREEN_CENTER_Y, 2));
     } while (dist < GAME_CONFIG.INITIAL_ASTEROID_SPAWN_RADIUS);
 
@@ -119,11 +146,14 @@ export const spawnAsteroidWave = ({ world, count }: { world: World; count: numbe
   }
 };
 
+/**
+ * Crea un UFO que cruza la pantalla horizontalmente.
+ */
 export const createUfo = ({ world }: { world: World }) => {
   const ufo = world.createEntity();
   const gameplayRandom = RandomService.getInstance("gameplay");
   const side = gameplayRandom.next() > 0.5 ? 0 : GAME_CONFIG.SCREEN_WIDTH;
-  const y = gameplayRandom.next() * GAME_CONFIG.SCREEN_HEIGHT;
+  const y = gameplayRandom.nextRange(0, GAME_CONFIG.SCREEN_HEIGHT);
 
   world.addComponent(ufo, { type: "Transform", x: side, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
   world.addComponent(ufo, { type: "Velocity", dx: side === 0 ? GAME_CONFIG.UFO_SPEED : -GAME_CONFIG.UFO_SPEED, dy: 0 } as VelocityComponent);
@@ -144,6 +174,9 @@ export interface CreateParticleParams {
     size?: number;
 }
 
+/**
+ * Crea una partícula efímera para efectos visuales.
+ */
 export const createParticle = (params: CreateParticleParams) => {
   const { world, x, y, dx, dy, color, ttl = GAME_CONFIG.PARTICLE_TTL_BASE, size = 2 } = params;
   const particle = world.createEntity();
@@ -155,6 +188,9 @@ export const createParticle = (params: CreateParticleParams) => {
   return particle;
 };
 
+/**
+ * Crea un efecto de destello visual.
+ */
 export const createFlash = ({ world, x, y, size }: { world: World; x: number; y: number; size: number }) => {
   const flash = world.createEntity();
   world.addComponent(flash, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
@@ -163,6 +199,9 @@ export const createFlash = ({ world, x, y, size }: { world: World; x: number; y:
   return flash;
 };
 
+/**
+ * Inicializa el singleton de estado global del juego Asteroids.
+ */
 export const createGameState = ({ world }: { world: World }) => {
   const gameState = world.createEntity();
   world.addComponent(gameState, {
