@@ -91,6 +91,11 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
       const render = world.getComponent<RenderComponent>(invader, "Render");
       if (render) render.hitFlashFrames = 4;
 
+      const kamiComp = world.getComponent(invader, 'Kamikaze');
+      if (kamiComp) {
+        gameState.kamikazesActive--;
+      }
+
       this.destroyEntity(world, invader);
       this.destroyEntity(world, bullet);
       return;

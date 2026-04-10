@@ -2,27 +2,29 @@ import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { BirdComponent, FLAPPY_CONFIG, FlappyBirdInputComponent } from "../types/FlappyBirdTypes";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
-import { TransformComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
 
 export class FlappyBirdGlideSystem extends System {
   public update(world: World, deltaTime: number): void {
-    const birds = world.query("Bird", "FlappyInput", "Transform");
+    const birds = world.query("Bird", "FlappyInput", "Transform", "Velocity");
     const dtSeconds = deltaTime / 1000;
 
     birds.forEach(entity => {
       const bird = world.getComponent<BirdComponent>(entity, "Bird")!;
       const input = world.getComponent<FlappyBirdInputComponent>(entity, "FlappyInput")!;
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
+      const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!;
 
       if (bird.nearMissTimer > 0) {
         bird.nearMissTimer -= deltaTime;
       }
 
-      if (input.glide && bird.velocityY > 0 && bird.isAlive) {
+      if (input.glide && vel.dy > 0 && bird.isAlive) {
         // Reducir la gravedad aplicada (ya aplicada por MovementSystem, así que aplicamos una fuerza ascendente contraria)
         // O mejor, el MovementSystem aplica vel += grav * dt.
         // Aquí podemos restar parte de esa gravedad.
-        bird.velocityY -= FLAPPY_CONFIG.GRAVITY * 0.7 * dtSeconds;
+        vel.dy -= FLAPPY_CONFIG.GRAVITY * 0.7 * dtSeconds;
+        bird.velocityY = vel.dy;
         bird.isGliding = true;
 
         if (Math.random() < 0.2) {
