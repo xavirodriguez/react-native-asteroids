@@ -21,8 +21,10 @@ export class WeaponSystem extends System {
       }
 
       pickups.forEach((pickupEntity) => {
-        const pickupPos = world.getComponent<TransformComponent>(pickupEntity, "Transform")!;
-        const pickup = world.getComponent<WeaponPickupComponent>(pickupEntity, "WeaponPickup")!;
+        const pickupPos = world.getComponent<TransformComponent>(pickupEntity, "Transform");
+        const pickup = world.getComponent<WeaponPickupComponent>(pickupEntity, "WeaponPickup");
+
+        if (!pickupPos || !pickup) return;
 
         const dx = shipPos.x - pickupPos.x;
         const dy = shipPos.y - pickupPos.y;

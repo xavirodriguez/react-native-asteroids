@@ -33,6 +33,7 @@ export class EliteSquadronSystem extends System {
       }
     }
 
+    const dtSeconds = deltaTime / 1000;
     elites.forEach((entity) => {
       const elite = world.getComponent<EliteInvaderComponent>(entity, "EliteInvader")!;
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
@@ -45,8 +46,8 @@ export class EliteSquadronSystem extends System {
           if (dist < 5) {
             elite.phase = "returning";
           } else {
-            pos.x += (dx / dist) * 3;
-            pos.y += (dy / dist) * 3;
+            pos.x += (dx / dist) * 180 * dtSeconds;
+            pos.y += (dy / dist) * 180 * dtSeconds;
           }
         }
       } else if (elite.phase === "returning") {
@@ -58,8 +59,8 @@ export class EliteSquadronSystem extends System {
           pos.x = elite.originalX;
           pos.y = elite.originalY;
         } else {
-          pos.x += (dx / dist) * 2;
-          pos.y += (dy / dist) * 2;
+          pos.x += (dx / dist) * 120 * dtSeconds;
+          pos.y += (dy / dist) * 120 * dtSeconds;
         }
       }
     });
