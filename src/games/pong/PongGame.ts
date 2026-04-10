@@ -16,6 +16,8 @@ import { PongTouchController } from "./input/PongTouchController";
 import { AIPongController } from "./input/AIPongController";
 import { NetworkController } from "./input/NetworkController";
 import { PONG_CONFIG, type PongState, type PongInput } from "./types";
+import { Renderer } from "../../engine/rendering/Renderer";
+import { drawPongBall } from "./rendering/PongCanvasVisuals";
 import { RandomService } from "../../engine/utils/RandomService";
 import { MutatorService } from "../../services/MutatorService";
 
@@ -91,6 +93,12 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     PongEntityFactory.createPaddle(this.world, "left");
     PongEntityFactory.createPaddle(this.world, "right");
     PongEntityFactory.createGameState(this.world);
+  }
+
+  public initializeRenderer(renderer: Renderer): void {
+    if (renderer.type === "canvas") {
+      renderer.registerShape("circle", drawPongBall); // Override default circle with spinning ball
+    }
   }
 
   public getGameState(): PongState {
