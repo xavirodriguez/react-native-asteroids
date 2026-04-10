@@ -39,10 +39,6 @@ export class XPSystem extends System {
       this.accumulator.pendingXP += 10;
     });
 
-    this.eventBus.on("pipe:passed", () => {
-      this.accumulator.pendingXP += XP_TABLE.pipe_passed;
-    });
-
     this.eventBus.on("si:kill", (data: { chain: number }) => {
       this.accumulator.pendingXP += data.chain >= 5
         ? XP_TABLE.si_chain_kill

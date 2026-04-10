@@ -42,19 +42,10 @@ export interface SystemConfig {
  */
 export abstract class System {
   /**
-   * Actualiza la lógica del sistema para un solo tick o frame.
+   * Actualiza la lógica del sistema para un solo frame.
    *
-   * @remarks
-   * Este método es invocado por el {@link World} según la fase y prioridad asignadas.
-   * Los sistemas deben evitar efectos colaterales fuera del `world` para mantener
-   * la simulación predecible.
-   *
-   * @param world - El mundo ECS que contiene las entidades, componentes y recursos.
+   * @param world - El mundo ECS que contiene las entidades y componentes.
    * @param deltaTime - El tiempo transcurrido desde el último tick en milisegundos.
-   *
-   * @precondition El `world` debe estar en un estado consistente.
-   * @postcondition El estado del `world` se actualiza según la lógica del sistema.
-   * @sideEffect Puede mutar componentes de entidades o recursos del mundo.
    *
    * @conceptualRisk [UNIT_CONSISTENCY][LOW] `deltaTime` se entrega en milisegundos. Algunos
    * cálculos físicos (como integraciones de velocidad) pueden esperar segundos, lo que

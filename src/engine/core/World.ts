@@ -89,7 +89,7 @@ export class World {
    *
    * @remarks
    * Este método gestiona la indexación reactiva para las queries y valida invariantes críticos
-   * como las jerarquías de transformación (Principio 2).
+   * como las jerarquías de transformación.
    *
    * @param entity - La entidad a la que se adjunta el componente.
    * @param component - La instancia del componente a adjuntar.
@@ -102,8 +102,7 @@ export class World {
    *
    * @postcondition Incrementa {@link World.version}.
    * @postcondition Notifica a las queries reactivas para actualizar sus resultados cacheados.
-   * @sideEffect Altera {@link World.componentMaps}, {@link World.componentIndex} y
-   * {@link World.entityComponentSets}.
+   * @sideEffect Actualiza los mapas de componentes e índices de tipos por entidad.
    */
   addComponent<T extends Component>(entity: Entity, component: T): void {
     const type = component.type;
@@ -213,9 +212,6 @@ export class World {
    * presionar el recolector de basura si se abusa de queries efímeras en hot paths.
    * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] {@link Query.getEntities} devuelve una referencia
    * al array interno; no debe ser modificado por el consumidor.
-   *
-   * @sideEffect Puede instanciar una nueva {@link Query} y suscribirla a notificaciones de
-   * componentes si no existe una para la firma solicitada.
    */
   query(...componentTypes: string[]): Entity[] {
     if (componentTypes.length === 0) return [];
@@ -351,14 +347,10 @@ export class World {
   /**
    * Actualiza todos los sistemas registrados ordenados por fase y prioridad.
    *
-   * @remarks
-   * El World orquesta el pipeline de ejecución. Si la lista de sistemas ha cambiado,
-   * se realiza una re-ordenación antes de la actualización.
-   *
    * @param deltaTime - Tiempo transcurrido desde la última actualización en milisegundos.
    *
-   * @sideEffect Ejecuta el método `update` de cada sistema registrado.
-   * @sideEffect Si `debugMode` está activado, actualiza los profilers de los sistemas.
+   * @remarks
+   * Si la lista de sistemas ha cambiado, se realiza una re-ordenación antes de la actualización.
    */
   update(deltaTime: number): void {
     if (this.systemsNeedSorting) {

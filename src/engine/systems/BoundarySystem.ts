@@ -19,15 +19,6 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * @executionOrder Fase: Simulation. Debe ejecutarse después de MovementSystem.
  */
 export class BoundarySystem extends System {
-  /**
-   * Actualiza las entidades que poseen Transform y Boundary.
-   *
-   * @param world - El mundo ECS.
-   * @param deltaTime - Tiempo en milisegundos.
-   *
-   * @sideEffect Puede mutar `Transform` (wrap/bounce) o `Velocity` (bounce).
-   * @sideEffect Puede eliminar entidades del `world` (destroy).
-   */
   public update(world: World, deltaTime: number): void {
     void deltaTime;
     const entities = world.query("Transform", "Boundary");

@@ -75,8 +75,6 @@ export class GameLoop {
    *
    * @param listener - Función callback que recibe el deltaTime fijo en milisegundos.
    * @returns Función para cancelar la suscripción.
-   *
-   * @sideEffect Añade el listener a un `Set` interno de actualización.
    */
   public subscribeUpdate(listener: (deltaTime: number) => void): () => void {
     this.updateListeners.add(listener);
@@ -96,8 +94,6 @@ export class GameLoop {
    *
    * @param listener - Callback que recibe alpha (0-1) y el deltaTime real.
    * @returns Función para cancelar la suscripción.
-   *
-   * @sideEffect Añade el listener a un `Set` interno de renderizado.
    */
   public subscribeRender(listener: (alpha: number, deltaTime: number) => void): () => void {
     this.renderListeners.add(listener);

@@ -13,7 +13,6 @@ import { InputStateComponent } from "./CoreComponents";
 import type { IGame, UpdateListener } from "./IGame";
 import { XPSystem } from "../systems/XPSystem";
 import { PaletteSystem } from "../systems/PaletteSystem";
-import { ImpactFeedbackSystem } from "../systems/ImpactFeedbackSystem";
 import { MutatorSystem } from "../systems/MutatorSystem";
 import { PlayerProfileService } from "../../services/PlayerProfileService";
 import { MutatorService } from "../../services/MutatorService";
@@ -304,10 +303,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
    *
    * @precondition El entorno de ejecución debe estar listo (React Native / Expo cargado).
    * @postcondition El {@link World} está poblado con los sistemas y entidades iniciales.
-   *
-   * @sideEffect Registra sistemas globales y específicos en el {@link World}.
-   * @sideEffect Carga datos asíncronos de servicios (perfil, mutadores).
-   * @sideEffect Puebla el mundo con entidades iniciales.
+   * @mutates world - Registra sistemas de motor y del juego.
    */
   public async init(): Promise<void> {
     await this.registerEngineSystems();
@@ -317,7 +313,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   protected async registerEngineSystems(): Promise<void> {
     this.world.addSystem(new XPSystem(this.eventBus));
-    this.world.addSystem(new ImpactFeedbackSystem(this.eventBus));
 
     const profile = await PlayerProfileService.getProfile();
     this.world.addSystem(new PaletteSystem(profile.activePalette));
@@ -360,8 +355,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
    * Establece el transporte de red para juegos multijugador.
    *
    * @param transport - La instancia de transporte (e.g., Colyseus).
-   *
-   * @sideEffect Registra un callback de escucha en el transporte para manejar inputs remotos.
    */
   public setNetworkTransport(transport: NetworkTransport): void {
     this.networkTransport = transport;

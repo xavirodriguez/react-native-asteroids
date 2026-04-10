@@ -9,8 +9,6 @@ import { SpaceInvadersInputSystem } from "../systems/SpaceInvadersInputSystem";
 import { BoundarySystem } from "../systems/BoundarySystem";
 import { SpaceInvadersFormationSystem } from "../systems/SpaceInvadersFormationSystem";
 import { SpaceInvadersCollisionSystem } from "../systems/SpaceInvadersCollisionSystem";
-import { ComboSystem } from "../systems/ComboSystem";
-import { EliteSquadronSystem } from "../systems/EliteSquadronSystem";
 import { SpaceInvadersGameStateSystem } from "../systems/SpaceInvadersGameStateSystem";
 import { SpaceInvadersRenderSystem } from "../systems/SpaceInvadersRenderSystem";
 import { KamikazeSystem } from "../systems/KamikazeSystem";

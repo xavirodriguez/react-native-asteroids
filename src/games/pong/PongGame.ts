@@ -8,7 +8,6 @@ import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { KeyboardController } from "../../engine/input/KeyboardController";
 import { InputManager } from "../../engine/input/InputManager";
 import { PongCollisionSystem } from "./systems/PongCollisionSystem";
-import { PongJuiceSystem } from "./systems/PongJuiceSystem";
 import { PongGameStateSystem } from "./systems/PongGameStateSystem";
 import { PongInputSystem } from "./systems/PongInputSystem";
 import { PongSpinSystem } from "./systems/PongSpinSystem";

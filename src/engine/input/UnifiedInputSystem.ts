@@ -37,8 +37,6 @@ export class UnifiedInputSystem extends System {
    *
    * @param action - Nombre de la acción semántica (e.g., "jump").
    * @param inputs - Array de strings representando entradas crudas (e.g., ["Space", "ArrowUp", "TouchTap"]).
-   *
-   * @sideEffect Actualiza el mapa interno de `bindings`.
    */
   public bind(action: InputAction, inputs: string[]): void {
     this.bindings.set(action, inputs);
@@ -50,8 +48,6 @@ export class UnifiedInputSystem extends System {
    * @param axis - Nombre del eje (e.g., "horizontal").
    * @param pos - Entradas que activan el valor positivo (+1).
    * @param neg - Entradas que activan el valor negativo (-1).
-   *
-   * @sideEffect Actualiza el mapa interno de `axisBindings`.
    */
   public bindAxis(axis: string, pos: string[], neg: string[]): void {
     this.axisBindings.set(axis, { pos, neg });
@@ -67,8 +63,6 @@ export class UnifiedInputSystem extends System {
    *
    * @param action - La acción a sobrescribir.
    * @param isPressed - El nuevo estado de presión.
-   *
-   * @sideEffect Actualiza el mapa interno de `overrides`.
    */
   public setOverride(action: InputAction, isPressed: boolean): void {
     this.overrides.set(action, isPressed);

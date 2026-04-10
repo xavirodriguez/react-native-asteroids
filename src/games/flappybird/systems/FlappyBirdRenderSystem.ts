@@ -23,10 +23,15 @@ export class FlappyBirdRenderSystem extends RenderUpdateSystem {
       const render = world.getComponent<RenderComponent>(entity, "Render");
 
       if (bird && render) {
-        // Dynamic pitch based on velocity
-        // Valor negativo = mira arriba (flap), Valor positivo = pica hacia abajo (caída)
-        const rotation = Math.max(-0.5, Math.min(bird.velocityY * 0.005, 1.2));
-        render.rotation = rotation;
+        // Points up when moving up, points down when falling
+        const targetRotation = Math.atan2(bird.velocityY, 200) * 0.8;
+
+        // Framerate-independent lerp: 1 - exp(-speed * dt)
+        const lerpSpeed = 10;
+        const dtSeconds = deltaTime / 1000;
+        const lerpFactor = 1 - Math.exp(-lerpSpeed * dtSeconds);
+
+        render.rotation += (targetRotation - render.rotation) * lerpFactor;
       }
     });
   }

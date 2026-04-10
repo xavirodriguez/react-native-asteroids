@@ -16,10 +16,7 @@ El motor sigue un ciclo de vida estricto orquestado por la clase `BaseGame`:
     - Ejecuta el hook opcional `_onBeforeRestart`.
     - Delega el reinicio a la escena actual o limpia el `World` global.
     - Re-inicializa entidades.
-6.  **`destroy()`**:
-    - Detiene el `GameLoop`.
-    - Limpia los controladores de entrada (`UnifiedInputSystem.cleanup()`) y elimina listeners globales en `window`.
-    - Vacía los listeners del juego para evitar fugas de memoria.
+6.  **`destroy()`**: Detiene el loop, limpia listeners y libera referencias para el GC.
 
 ## Gestión de Recursos (Resources API)
 
