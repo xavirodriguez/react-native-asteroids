@@ -1,7 +1,13 @@
 import { ShapeDrawer } from "../../../engine/rendering/Renderer";
 import { BallComponent } from "../systems/PongSpinSystem";
 
-export const drawPongBall: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
+/**
+ * Drawer especializado para la pelota de Pong que incluye efectos de rotación (spin).
+ *
+ * @responsibility Renderizar la pelota y su indicador visual de efecto físico.
+ * @queries BallComponent - Para obtener el factor de rotación actual.
+ */
+export const drawPongBall: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, world, render) => {
   const { size, color } = render;
   const ballComp = world.getComponent<BallComponent>(entity, "Ball");
 
