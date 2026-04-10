@@ -24,8 +24,17 @@ type Mat3 = [number, number, number, number, number, number];
  * @remarks
  * Utiliza matrices 3x3 para manejar correctamente rotaciones con escalas no uniformes (Principio 9).
  * Valida invariantes de jerarquía en desarrollo (Principio 2).
+ *
+ * @conceptualRisk [STALE_WORLD_TRANSFORM][MEDIUM] Si un sistema modifica `parent` pero no se ejecuta
+ * `HierarchySystem` antes del renderizado, la entidad aparecerá en una posición incorrecta.
  */
 export class HierarchySystem extends System {
+  /**
+   * Actualiza las transformaciones del mundo para todas las entidades con Transform.
+   *
+   * @param world - El mundo ECS.
+   * @param _deltaTime - Tiempo transcurrido (no se utiliza en el cálculo estático).
+   */
   public update(world: World, _deltaTime: number): void {
     const transforms = world.query("Transform");
 
@@ -36,6 +45,14 @@ export class HierarchySystem extends System {
     });
   }
 
+  /**
+   * Calcula recursivamente la transformación del mundo de una entidad asegurando que
+   * el padre sea procesado primero.
+   *
+   * @sideEffect Actualiza propiedades `world*` en el componente `Transform`.
+   * @conceptualRisk [RECURSION_DEPTH][LOW] En jerarquías extremadamente profundas,
+   * podría ocurrir un desbordamiento de pila (Stack Overflow).
+   */
   private updateTransform(world: World, entity: Entity, processed: Set<Entity>): void {
     if (processed.has(entity)) return;
 
@@ -72,6 +89,9 @@ export class HierarchySystem extends System {
     }
   }
 
+  /**
+   * Iguala la transformación del mundo a la transformación local (entidad raíz).
+   */
   private setToLocal(transform: TransformComponent): void {
     transform.worldX = transform.x;
     transform.worldY = transform.y;
@@ -81,7 +101,7 @@ export class HierarchySystem extends System {
   }
 
   /**
-   * Principle 9: Converts transform properties to a 3x3 matrix.
+   * Principle 9: Convierte las propiedades de transformación a una matriz 3x3.
    */
   private getMatrixFromTransform(t: TransformComponent, useWorld: boolean): Mat3 {
     const x = useWorld ? (t.worldX ?? t.x) : t.x;
@@ -101,7 +121,7 @@ export class HierarchySystem extends System {
   }
 
   /**
-   * Principle 9: Multiplies two 3x3 affine matrices.
+   * Principle 9: Multiplica dos matrices afines 3x3.
    */
   private multiplyMat3(m1: Mat3, m2: Mat3): Mat3 {
     const [a1, c1, tx1, b1, d1, ty1] = m1;
@@ -114,9 +134,8 @@ export class HierarchySystem extends System {
   }
 
   /**
-   * Principle 9: Decomposes world matrix back to world transform properties.
-   * Note: Pure decomposition of rotation/scale from matrix can be ambiguous
-   * but for 2D engine it's sufficient for rendering.
+   * Principle 9: Descompone una matriz de mundo en propiedades de transformación.
+   * Nota: La descomposición pura de rotación/escala puede ser ambigua pero es suficiente para 2D.
    */
   private applyMatrixToWorldTransform(t: TransformComponent, m: Mat3): void {
     const [a, c, tx, b, d, ty] = m;
@@ -135,7 +154,7 @@ export class HierarchySystem extends System {
   }
 
   /**
-   * Principle 2: Enforces hierarchical invariants.
+   * Principle 2: Valida las invariantes jerárquicas (existencia del padre y evitar auto-referencias).
    */
   public assertValid(world: World, entity: Entity): void {
     const transform = world.getComponent<TransformComponent>(entity, "Transform");

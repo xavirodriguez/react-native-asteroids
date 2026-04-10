@@ -2,6 +2,9 @@ import { Component, Entity, TransformComponent, RenderComponent } from "../types
 import { System } from "../core/System";
 import { World } from "../core/World";
 
+/**
+ * Representa una animación de propiedad procedimental (Juice).
+ */
 export interface JuiceAnimation {
   property: "scaleX" | "scaleY" | "rotation" | "x" | "y" | "opacity";
   target: number;
@@ -12,6 +15,9 @@ export interface JuiceAnimation {
   onComplete?: (entity: Entity) => void;
 }
 
+/**
+ * Componente que contiene la lista de animaciones procedimentales activas.
+ */
 export interface JuiceComponent extends Component {
   type: "Juice";
   animations: JuiceAnimation[];
@@ -27,7 +33,25 @@ export function createJuiceComponent(): JuiceComponent {
   };
 }
 
+/**
+ * Sistema que procesa animaciones procedimentales (Juice) sobre las propiedades de Transform y Render.
+ *
+ * @responsibility Actualizar el valor de las propiedades animadas según la curva de easing.
+ * @responsibility Notificar la finalización de animaciones mediante el callback `onComplete`.
+ * @queries Juice, Transform, Render
+ * @mutates Transform, Render
+ * @executionOrder Fase: Presentation. Se ejecuta antes del renderizado.
+ *
+ * @conceptualRisk [MUTATION_CONFLICT][MEDIUM] Si múltiples animaciones modifican la misma
+ * propiedad simultáneamente, la última en el array `animations` sobrescribirá a las anteriores.
+ */
 export class JuiceSystem extends System {
+  /**
+   * Actualiza el progreso de todas las animaciones de Juice activas.
+   *
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Juice");
 
@@ -61,6 +85,9 @@ export class JuiceSystem extends System {
     });
   }
 
+  /**
+   * Obtiene el valor actual de una propiedad de una entidad.
+   */
   private getPropertyValue(prop: string, transform?: TransformComponent, render?: RenderComponent): number {
     switch (prop) {
       case "scaleX": return transform?.scaleX ?? 1;
@@ -73,6 +100,9 @@ export class JuiceSystem extends System {
     }
   }
 
+  /**
+   * Actualiza el valor de una propiedad en los componentes Transform o Render.
+   */
   private setPropertyValue(prop: string, value: number, transform?: TransformComponent, render?: RenderComponent): void {
     if (!transform && !render) return;
 
@@ -89,6 +119,9 @@ export class JuiceSystem extends System {
     }
   }
 
+  /**
+   * Aplica funciones de easing matemáticas (lineal, elástica, etc.).
+   */
   private applyEasing(t: number, easing: string): number {
     switch (easing) {
       case "easeIn": return t * t;
@@ -104,6 +137,7 @@ export class JuiceSystem extends System {
 
   /**
    * Helper estático para añadir una animación a una entidad.
+   * Si la entidad no tiene `JuiceComponent`, se le añade uno automáticamente.
    */
   public static add(world: World, entity: Entity, anim: Omit<JuiceAnimation, "elapsed">): void {
     let juice = world.getComponent<JuiceComponent>(entity, "Juice");

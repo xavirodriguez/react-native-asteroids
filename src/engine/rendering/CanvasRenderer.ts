@@ -15,16 +15,16 @@ export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world:
  * Implementación de Renderer basada en la API de Canvas 2D.
  * Es genérica y extensible mediante el registro de shape drawers y hooks de renderizado.
  *
+ * @responsibility Implementar el pipeline de renderizado 2D optimizado para web.
+ * @responsibility Gestionar la interpolación visual entre estados físicos de la simulación.
+ * @responsibility Proveer un registro de "Shape Drawers" para extender las capacidades visuales.
+ * @queries Transform, Render, GameState, UIText, UIStyle
+ * @mutates CanvasRenderingContext2D (Estado del lienzo)
+ * @executionOrder Fase: Renderizado (Sincronizado con requestAnimationFrame).
+ *
  * @remarks
- * Este renderer es óptimo para despliegues web y como backend de referencia.
- * Implementa un pipeline completo que incluye:
- * 1. Limpieza de pantalla.
- * 2. Cálculo de Screen Shake basado en el estado del juego.
- * 3. Ejecución de efectos de fondo.
- * 4. Dibujo de entidades ordenadas por `zIndex`.
- * 5. Ejecución de efectos de primer plano.
- * 6. Renderizado de UI de motor.
- * 7. Información de depuración.
+ * Implementa un pipeline completo que incluye Screen Shake, efectos de fondo/primer plano,
+ * renderizado de jerarquías y UI de motor.
  *
  * @packageDocumentation
  */
@@ -49,28 +49,37 @@ export class CanvasRenderer implements Renderer {
     this.registerDefaultDrawers();
   }
 
+  /**
+   * Registra una función de dibujo para una forma (shape) específica.
+   */
   public registerShapeDrawer(shape: string, drawer: ShapeDrawer): void {
     this.shapeDrawers.set(shape, drawer);
   }
 
+  /**
+   * Registra una función de dibujo que se ejecuta después de la forma principal (e.g., efectos).
+   */
   public registerPostEntityDrawer(shape: string, drawer: ShapeDrawer): void {
     this.postEntityDrawers.set(shape, drawer);
   }
 
   /**
-   * Registra un dibujador de formas personalizado.
-   *
-   * @param name - Identificador de la forma (e.g., "ship").
-   * @param drawer - Función que implementa la lógica de dibujo.
+   * Alias para registrar un dibujador de formas.
    */
   public registerShape(name: string, drawer: any): void {
       this.registerShapeDrawer(name, drawer);
   }
 
+  /**
+   * Registra un efecto visual de fondo que se ejecuta antes que las entidades.
+   */
   public registerBackgroundEffect(name: string, drawer: any): void {
       this.backgroundEffects.push(drawer);
   }
 
+  /**
+   * Registra un efecto visual de primer plano que se ejecuta después de las entidades.
+   */
   public registerForegroundEffect(name: string, drawer: any): void {
       this.foregroundEffects.push(drawer);
   }
@@ -83,6 +92,9 @@ export class CanvasRenderer implements Renderer {
     this.postRenderHooks.push(hook);
   }
 
+  /**
+   * Inicializa los dibujadores básicos (círculo, rectángulo, polígono, etc.).
+   */
   private registerDefaultDrawers(): void {
     this.registerShapeDrawer("circle", (ctx, _, __, render) => {
       ctx.fillStyle = render.color;
@@ -164,6 +176,11 @@ export class CanvasRenderer implements Renderer {
     this.height = height;
   }
 
+  /**
+   * Establece el factor de interpolación (alpha) para visual smoothing.
+   *
+   * @param alpha - Valor entre 0 y 1 representando el progreso entre el tick previo y el actual.
+   */
   public setAlpha(alpha: number): void {
     this.alpha = alpha;
   }
@@ -270,6 +287,8 @@ export class CanvasRenderer implements Renderer {
    * @param entity - ID de la entidad.
    * @param components - Componentes de la entidad (Transform y Render requeridos).
    * @param world - Contexto del mundo.
+   *
+   * @invariant El estado del lienzo se guarda y restaura en cada dibujo para evitar contaminación de estado.
    */
   public drawEntity(entity: Entity, components: Record<string, Component>, world: World): void {
     if (!this.ctx) return;
@@ -318,6 +337,9 @@ export class CanvasRenderer implements Renderer {
    * @remarks
    * Implementa una lógica específica para partículas que incluye variación de color (HSL),
    * degradado de opacidad basado en el TTL y efectos de brillo (shadowBlur) en el nacimiento.
+   *
+   * @conceptualRisk [DETERMINISM][LOW] Utiliza el ID de entidad (`entity % 10`) para introducir
+   * variaciones de tono, lo que es estable para efectos visuales.
    */
   public drawParticles(world: World): void {
     if (!this.ctx) return;
@@ -368,6 +390,12 @@ export class CanvasRenderer implements Renderer {
     });
   }
 
+  /**
+   * Renderiza capas de Tilemaps.
+   *
+   * @remarks Actualmente implementa un renderizado básico mediante rectángulos de colores.
+   * Las texturas requieren un sistema de carga de assets asíncrono.
+   */
   public drawTilemaps(world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
@@ -402,6 +430,9 @@ export class CanvasRenderer implements Renderer {
     });
   }
 
+  /**
+   * Invoca al `DebugSystem` para mostrar información de diagnóstico sobre el lienzo.
+   */
   private renderDebugInfo(ctx: CanvasRenderingContext2D, world: World): void {
       this.debugSystem.update(world, 0);
       this.debugSystem.renderDebug(ctx, world);

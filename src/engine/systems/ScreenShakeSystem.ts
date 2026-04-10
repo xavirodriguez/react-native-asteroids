@@ -3,12 +3,26 @@ import { World } from "../core/World";
 import { ScreenShakeComponent } from "../types/EngineTypes";
 
 /**
- * Generic Screen Shake System for the TinyAsterEngine.
- * Manages the countdown of shake duration.
+ * Sistema genérico de sacudida de pantalla (Screen Shake).
+ * Gestiona el temporizador de cuenta atrás para el efecto visual.
+ *
+ * @responsibility Decrementar el tiempo restante de la sacudida en cada frame.
+ * @responsibility Eliminar el componente `ScreenShake` una vez que el tiempo expira.
+ * @queries ScreenShake
+ * @mutates ScreenShake, World (Component removal)
+ * @executionOrder Fase: Presentation. Se ejecuta antes de los renderizadores.
+ *
+ * @conceptualRisk [SINGLETON_SHAKE][LOW] El sistema solo procesa la primera entidad
+ * con `ScreenShake` encontrada. Múltiples sacudidas simultáneas no se acumulan automáticamente.
  */
 export class ScreenShakeSystem extends System {
   /**
-   * Updates screen shake timer.
+   * Actualiza el temporizador de la sacudida de pantalla.
+   *
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   *
+   * @invariant El tiempo restante nunca será negativo después de que expire.
    */
   public update(world: World, deltaTime: number): void {
     const shakeEntity = world.query("ScreenShake")[0];

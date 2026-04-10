@@ -11,11 +11,20 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * @queries Transform, Velocity
  * @mutates Transform
  * @executionOrder Fase: Simulation. Debe ejecutarse antes de Collision y Boundary.
+ *
+ * @conceptualRisk [PRECISION][LOW] Utiliza integración de Euler simple; en juegos de alta velocidad
+ * o baja tasa de refresco, esto puede causar que los colisionadores atraviesen paredes (tunneling).
  */
 export class MovementSystem extends System {
   /**
+   * Actualiza la posición de todas las entidades que poseen Transform y Velocity.
+   *
    * @param world - El mundo ECS.
    * @param deltaTime - Tiempo en milisegundos. Se convierte internamente a segundos para paridad física.
+   *
+   * @invariant La velocidad se integra de forma independiente en los ejes X e Y.
+   * @conceptualRisk [UNIT_DRIFT] Si `PhysicsUtils.integrateMovement` espera segundos pero recibe ms,
+   * la simulación se acelerará 1000 veces. MovementSystem garantiza la conversión a segundos.
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Transform", "Velocity");

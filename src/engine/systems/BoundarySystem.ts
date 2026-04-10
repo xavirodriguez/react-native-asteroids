@@ -17,8 +17,17 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * @queries Transform, Boundary
  * @mutates Transform, Velocity, World (Entity removal)
  * @executionOrder Fase: Simulation. Debe ejecutarse después de MovementSystem.
+ *
+ * @conceptualRisk [DETERMINISM][LOW] La destrucción de entidades fuera de límites puede
+ * afectar el orden de las entidades procesadas en sistemas posteriores del mismo frame.
  */
 export class BoundarySystem extends System {
+  /**
+   * Actualiza todas las entidades que poseen Transform y Boundary.
+   *
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo transcurrido (no se utiliza actualmente).
+   */
   public update(world: World, deltaTime: number): void {
     void deltaTime;
     const entities = world.query("Transform", "Boundary");
@@ -32,6 +41,11 @@ export class BoundarySystem extends System {
     });
   }
 
+  /**
+   * Aplica la lógica de límites basada en el comportamiento configurado.
+   *
+   * @sideEffect Puede teletransportar la entidad, modificar su velocidad o eliminarla del mundo.
+   */
   private applyBoundary(
     world: World,
     entity: Entity,
@@ -59,10 +73,16 @@ export class BoundarySystem extends System {
     }
   }
 
+  /**
+   * Teletransporta la entidad al lado opuesto del área de límites.
+   */
   private wrap(pos: TransformComponent, width: number, height: number): void {
     PhysicsUtils.wrapBoundary(pos, width, height);
   }
 
+  /**
+   * Invierte la velocidad de la entidad para simular un rebote.
+   */
   private bounce(pos: TransformComponent, vel: VelocityComponent, width: number, height: number, bounceX: boolean = true, bounceY: boolean = true): void {
     if (bounceX) {
       if (pos.x < 0) {
@@ -85,6 +105,9 @@ export class BoundarySystem extends System {
     }
   }
 
+  /**
+   * Elimina la entidad del mundo, notificando al pool si es recuperable.
+   */
   private destroy(world: World, entity: Entity): void {
     const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
     if (reclaimable) {

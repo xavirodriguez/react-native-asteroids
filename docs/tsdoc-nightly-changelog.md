@@ -34,3 +34,26 @@
 - `UnifiedInputSystem.ts`: `getInputState()` ignores semantic `overrides`, causing potential drift between UI/Net and simulation.
 - `CoreComponents.ts`: `TransformComponent` data redundancy (local vs world) leads to stale read risks.
 - `EntityPool.ts`: Missing "double-release" protection leads to ID collision and world corruption.
+
+## [1.2.0] - 2025-05-24
+### Added
+- Full Level 5 TSDoc audit for 10 engine systems, renderers, and utilities:
+  - `src/engine/systems/MovementSystem.ts`
+  - `src/engine/systems/CollisionSystem.ts`
+  - `src/engine/systems/BoundarySystem.ts`
+  - `src/engine/systems/HierarchySystem.ts`
+  - `src/engine/systems/JuiceSystem.ts`
+  - `src/engine/systems/ParticleSystem.ts`
+  - `src/engine/systems/ScreenShakeSystem.ts`
+  - `src/engine/rendering/CanvasRenderer.ts`
+  - `src/engine/rendering/SkiaRenderer.ts`
+  - `src/engine/utils/PhysicsUtils.ts`
+
+### Detected Conceptual Risks
+- `MovementSystem.ts`: Euler integration precision issues at high speeds (tunneling).
+- `CollisionSystem.ts`: AABB broadphase with circular narrowphase creates drift for non-circular colliders.
+- `HierarchySystem.ts`: Risk of stale world transforms if execution order is not strictly enforced.
+- `JuiceSystem.ts`: Mutation conflict risk when multiple animations target the same property.
+- `ParticleSystem.ts`: Silent failure risk on pool exhaustion; visual-only particles should avoid global RNG.
+- `CanvasRenderer.ts`: Garbage Collector pressure from rebuilding render command arrays every frame.
+- `SkiaRenderer.ts`: Performance bottleneck risk due to JS-Native bridge overhead in entity-heavy scenes.

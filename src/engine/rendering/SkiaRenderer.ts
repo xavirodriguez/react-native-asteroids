@@ -19,6 +19,10 @@ export type SkiaShapeDrawer = (canvas: SkCanvas, entity: Entity, world: World, r
  * @remarks
  * Al igual que el {@link CanvasRenderer}, es extensible mediante el registro de shape drawers.
  * Es el renderizador preferido para iOS y Android por su rendimiento superior.
+ *
+ * @conceptualRisk [NATIVE_BRIDGE][MEDIUM] La comunicación frecuente entre JS y el hilo UI/Skia
+ * puede ser un cuello de botella si se procesan miles de entidades por frame.
+ * @packageDocumentation
  */
 export class SkiaRenderer implements Renderer {
   public readonly type = 'skia';
@@ -39,10 +43,16 @@ export class SkiaRenderer implements Renderer {
     this.registerDefaultDrawers();
   }
 
+  /**
+   * Registra una función de dibujo para una forma (shape) específica en Skia.
+   */
   public registerShapeDrawer(shape: string, drawer: SkiaShapeDrawer): void {
     this.shapeDrawers.set(shape, drawer);
   }
 
+  /**
+   * Registra una función de dibujo que se ejecuta después de la entidad principal.
+   */
   public registerPostEntityDrawer(shape: string, drawer: SkiaShapeDrawer): void {
     this.postEntityDrawers.set(shape, drawer);
   }
@@ -55,6 +65,11 @@ export class SkiaRenderer implements Renderer {
     this.postRenderHooks.push(hook);
   }
 
+  /**
+   * Inicializa los dibujadores básicos optimizados para Skia.
+   *
+   * @invariant El color de Skia se construye combinando el color del componente con la opacidad del paint.
+   */
   private registerDefaultDrawers(): void {
     this.registerShapeDrawer("circle", (canvas, _, __, render, paint) => {
       const color = Skia.Color(render.color);
@@ -136,6 +151,11 @@ export class SkiaRenderer implements Renderer {
     this.alpha = alpha;
   }
 
+  /**
+   * Ejecuta el pipeline de renderizado en el lienzo de Skia.
+   *
+   * @remarks Implementa el soporte para Screen Shake basado en el estado del componente `GameState`.
+   */
   public render(world: World): void {
     if (!this.canvas) return;
     const canvas = this.canvas;
@@ -201,6 +221,13 @@ export class SkiaRenderer implements Renderer {
     this.postRenderHooks.forEach(hook => hook(canvas, world));
   }
 
+  /**
+   * Dibuja una entidad individual en Skia.
+   *
+   * @invariant Aplica la rotación en grados (Skia) convirtiéndola desde radianes (ECS).
+   * @conceptualRisk [ROTATION_UNIT][LOW] Skia usa grados para `canvas.rotate`;
+   * el sistema realiza la conversión explícita `(rotation * 180) / Math.PI`.
+   */
   public drawEntity(entity: Entity, components: Record<string, Component>, world: World): void {
     if (!this.canvas) return;
     const canvas = this.canvas;

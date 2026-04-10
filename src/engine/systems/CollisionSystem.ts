@@ -12,9 +12,13 @@ import { SpatialHash } from "../collision/SpatialHash";
  * @queries Transform, Collider
  * @mutates Entidades (vía onCollision)
  * @executionOrder Fase: Collision. Debe ejecutarse después de MovementSystem.
+ *
  * @remarks
  * El sistema utiliza un hash espacial para evitar comprobaciones O(N²).
  * Soporta capas y máscaras de colisión para filtrado selectivo.
+ *
+ * @conceptualRisk [DETERMINISM][MEDIUM] El orden de las colisiones en el bucle puede variar si el
+ * array de entidades retornado por `world.query` no es determinista (aunque es estable en esta arquitectura).
  */
 export abstract class CollisionSystem extends System {
   private spatialHash = new SpatialHash(100);
@@ -23,8 +27,14 @@ export abstract class CollisionSystem extends System {
   private processedPairs = new Set<string>();
 
   /**
-   * Updates the collision state.
-   * Optimizes checks using a Spatial Hashing algorithm for broadphase.
+   * Actualiza el estado de las colisiones para todas las entidades con Collider.
+   * Optimiza las comprobaciones mediante el algoritmo de Spatial Hashing para la broadphase.
+   *
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo transcurrido (no se utiliza en la detección estática actual).
+   *
+   * @invariant No se detectan colisiones duplicadas (A-B y B-A) en el mismo tick.
+   * @invariant Solo se comprueban pares cuyas máscaras y capas de colisión coincidan (bitwise AND).
    */
   public update(world: World, deltaTime: number): void {
     void deltaTime;
@@ -100,7 +110,10 @@ export abstract class CollisionSystem extends System {
   }
 
   /**
-   * Internal collision check using pre-retrieved components.
+   * Comprobación interna de colisión círculo-círculo utilizando componentes ya recuperados.
+   *
+   * @conceptualRisk [AABB_NARROWPHASE][MEDIUM] El SpatialHash usa AABB para la broadphase pero
+   * la narrowphase actual es siempre circular. Colisionadores rectangulares pueden fallar.
    */
   private isCollidingWithComponents(posA: TransformComponent, colA: ColliderComponent, posB: TransformComponent, colB: ColliderComponent): boolean {
     const dx = posA.x - posB.x;
@@ -113,7 +126,8 @@ export abstract class CollisionSystem extends System {
   }
 
   /**
-   * Circle-to-circle collision check.
+   * Comprobación de colisión círculo-círculo entre dos entidades.
+   * Recupera componentes del mundo automáticamente.
    */
   protected isColliding(world: World, entityA: Entity, entityB: Entity): boolean {
     const posA = world.getComponent<TransformComponent>(entityA, "Transform");
@@ -146,9 +160,13 @@ export abstract class CollisionSystem extends System {
   protected abstract onCollision(world: World, entityA: Entity, entityB: Entity): void;
 
   /**
-   * Identifies if a pair of entities matches two specified component types.
-   * Returns an object mapping the types to their respective entities if they match,
-   * otherwise returns undefined.
+   * Identifica si un par de entidades coincide con dos tipos de componentes especificados.
+   *
+   * @returns Un objeto mapeando los tipos a sus respectivas entidades si coinciden,
+   * de lo contrario retorna `undefined`.
+   *
+   * @conceptualRisk [ASYMMETRIC_COLLISION][LOW] Si ambos poseen ambos componentes,
+   * el orden de retorno es arbitrario basado en la primera evaluación exitosa.
    */
   protected matchPair<T1 extends string, T2 extends string>(
     world: World,
@@ -167,7 +185,10 @@ export abstract class CollisionSystem extends System {
   }
 
   /**
-   * Destroys an entity, notifying its pool if it possesses a ReclaimableComponent.
+   * Destruye una entidad, notificando a su pool si posee un `ReclaimableComponent`.
+   *
+   * @conceptualRisk [STALE_ID][MEDIUM] Si el pool reutiliza el ID inmediatamente pero hay
+   * referencias colgantes en otros sistemas, se pueden producir errores de lógica difíciles de depurar.
    */
   protected destroyEntity(world: World, entity: Entity): void {
     const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");

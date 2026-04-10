@@ -5,8 +5,17 @@ import { PrefabPool } from "../utils/PrefabPool";
 import { RandomService } from "../utils/RandomService";
 
 /**
- * System that manages declarative particle emitters.
- * Spawns particles using a PrefabPool and updates emitter state.
+ * Sistema que gestiona emisores de partículas declarativos.
+ * Utiliza un `PrefabPool` para la adquisición y reciclaje eficiente de partículas.
+ *
+ * @responsibility Procesar emisores de partículas y spawnear nuevas entidades según la tasa de emisión.
+ * @responsibility Gestionar ráfagas iniciales (burst) y ciclos de vida de emisores.
+ * @queries ParticleEmitter
+ * @mutates ParticleEmitter, World (Entity creation via PrefabPool)
+ * @executionOrder Fase: Presentation.
+ *
+ * @conceptualRisk [POOL_EXHAUSTION][MEDIUM] Si el pool de partículas es pequeño y la tasa
+ * de emisión es alta, las partículas dejarán de aparecer sin aviso (silently fail).
  */
 export class ParticleSystem extends System {
   private particlePool: PrefabPool<any, any>;
@@ -16,6 +25,14 @@ export class ParticleSystem extends System {
     this.particlePool = particlePool;
   }
 
+  /**
+   * Actualiza todos los emisores de partículas activos en el mundo.
+   *
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   *
+   * @invariant Los emisores con `rate: 0` solo emiten ráfagas iniciales (si están configuradas).
+   */
   public update(world: World, deltaTime: number): void {
     const dtSeconds = deltaTime / 1000;
     const emitters = world.query("ParticleEmitter");
@@ -51,12 +68,18 @@ export class ParticleSystem extends System {
   }
 
   /**
-   * Static helper to emit a burst manually.
+   * Helper estático para emitir una ráfaga de partículas manualmente mediante una entidad emisor.
    */
   public emit(world: World, config: ParticleEmitterConfig): Entity {
     return createEmitter(world, config);
   }
 
+  /**
+   * Spawnea una partícula individual aplicando aleatoriedad determinista a sus propiedades.
+   *
+   * @conceptualRisk [DETERMINISM][LOW] Las partículas visuales deben usar `RandomService.getInstance("render")`
+   * para evitar desincronizar la simulación de juego en multiplayer. Actualmente usa la instancia global implícita.
+   */
   private spawnParticle(world: World, config: ParticleEmitterConfig): void {
     const angle = RandomService.nextRange(config.angle.min, config.angle.max) * (Math.PI / 180);
     const speed = RandomService.nextRange(config.speed.min, config.speed.max);
@@ -79,7 +102,7 @@ export class ParticleSystem extends System {
 }
 
 /**
- * Convenience method to create a ParticleEmitter entity.
+ * Método de conveniencia para crear una entidad emisora de partículas.
  */
 export function createEmitter(world: World, config: ParticleEmitterConfig): Entity {
   const entity = world.createEntity();
