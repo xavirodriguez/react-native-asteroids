@@ -27,7 +27,7 @@ export class FlappyBirdGlideSystem extends System {
         bird.velocityY = vel.dy;
         bird.isGliding = true;
 
-        if (Math.random() < 0.2) {
+        if (RandomService.getInstance("render").next() < 0.2) {
             createEmitter(world, {
                 position: { x: pos.x - 10, y: pos.y },
                 rate: 0,
