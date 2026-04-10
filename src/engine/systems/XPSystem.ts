@@ -35,8 +35,13 @@ export class XPSystem extends System {
       if (data.multiplier >= 5) this.accumulator.pendingXP += 25;
     });
 
+    this.eventBus.on("pipe:passed", () => {
+      this.accumulator.pendingXP += XP_TABLE.pipe_passed;
+    });
+
     this.eventBus.on("flappy:near_miss", () => {
       this.accumulator.pendingXP += 10;
+    });
     });
 
     this.eventBus.on("si:kill", (data: { chain: number }) => {
