@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
+import { ComboDisplay } from "@/components/ComboDisplay";
 import { FlappyBirdUI } from "@/components/FlappyBirdUI";
 import { FlappyBirdControls } from "@/components/FlappyBirdControls";
 import { useFlappyBirdGame } from "@/hooks/useFlappyBirdGame";
@@ -115,6 +116,7 @@ export default function FlappyBirdScreen() {
             </View>
         )}
 
+        <ComboDisplay multiplier={gameState?.comboMultiplier || 1} isActive={true} />
         <FlappyBirdUI
           gameState={gameState}
           onRestart={() => isMulti ? room?.send("start_game") : game.restart()}

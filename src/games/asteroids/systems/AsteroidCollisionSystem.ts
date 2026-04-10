@@ -105,9 +105,16 @@ export class AsteroidCollisionSystem extends CollisionSystem {
     const asteroidComp = world.getComponent<AsteroidComponent>(asteroid, "Asteroid");
     const size = asteroidComp?.size || "small";
 
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
+    if (gameState) {
+      gameState.lastBulletHit = true;
+      this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE * gameState.comboMultiplier });
+    } else {
+      this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
+    }
+
     this.splitAsteroid({ world, asteroidEntity: asteroid });
     this.destroyEntity(world, bullet);
-    this.addScore({ world, points: GAME_CONFIG.ASTEROID_SCORE });
 
     const eventBus = world.getResource<EventBus>("EventBus");
     if (eventBus) eventBus.emit("asteroid:destroyed", { size });
@@ -143,6 +150,12 @@ export class AsteroidCollisionSystem extends CollisionSystem {
   private applyDamageToShip(world: World, health: HealthComponent): void {
     health.current--;
     health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+
+    const ships = world.query("Ship", "Render");
+    ships.forEach(entity => {
+      const render = world.getComponent<RenderComponent>(entity, "Render");
+      if (render) render.hitFlashFrames = 6;
+    });
 
     const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
     if (shake) {

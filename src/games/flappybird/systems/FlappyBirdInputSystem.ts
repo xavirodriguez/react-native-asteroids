@@ -5,6 +5,7 @@ import { VelocityComponent, TransformComponent } from "../../../engine/types/Eng
 import { FlappyBirdInput, FlappyBirdInputComponent, BirdComponent, FLAPPY_CONFIG } from "../types/FlappyBirdTypes";
 import { Juice } from "../../../engine/utils/Juice";
 import { hapticShoot } from "../../../utils/haptics";
+import { InputBufferSystem } from "../../../engine/systems/InputBufferSystem";
 
 /**
  * System that handles player input and bird flap mechanics.
@@ -36,13 +37,18 @@ export class FlappyBirdInputSystem extends System {
       if (input && vel && bird && bird.isAlive) {
         // Sync input state
         input.flap = inputs.flap;
+        input.glide = inputs.flap; // Using same button for now as per design
 
         if (input.flapCooldownRemaining > 0) {
           input.flapCooldownRemaining -= deltaTime;
         }
 
         // Apply flap
-        if (input.flap && input.flapCooldownRemaining <= 0) {
+        if (input.flap) {
+          InputBufferSystem.buffer(world, entity, "flap");
+        }
+
+        if (input.flapCooldownRemaining <= 0 && (input.flap || InputBufferSystem.consume(world, entity, "flap"))) {
           vel.dy = this.config.FLAP_STRENGTH;
           input.flapCooldownRemaining = this.config.FLAP_COOLDOWN;
           hapticShoot();

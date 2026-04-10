@@ -87,6 +87,7 @@ export interface GameStateComponent extends Component {
   comboTimerRemaining: number;
   highScoreCandidate?: number;
   screenShake?: { intensity: number; duration: number } | null;
+  kamikazesActive: number;
 }
 
 /**
@@ -102,6 +103,7 @@ export const INITIAL_GAME_STATE: GameStateComponent = Object.freeze({
   combo: 0,
   multiplier: 1,
   comboTimerRemaining: 0,
+  kamikazesActive: 0,
 });
 
 /**

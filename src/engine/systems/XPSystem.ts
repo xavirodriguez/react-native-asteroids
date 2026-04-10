@@ -31,8 +31,12 @@ export class XPSystem extends System {
         : XP_TABLE.asteroid_destroyed;
     });
 
-    this.eventBus.on("pipe:passed", () => {
-      this.accumulator.pendingXP += XP_TABLE.pipe_passed;
+    this.eventBus.on("asteroid:combo_changed", (data: { multiplier: number }) => {
+      if (data.multiplier >= 5) this.accumulator.pendingXP += 25;
+    });
+
+    this.eventBus.on("flappy:near_miss", () => {
+      this.accumulator.pendingXP += 10;
     });
 
     this.eventBus.on("si:kill", (data: { chain: number }) => {
@@ -41,8 +45,16 @@ export class XPSystem extends System {
         : XP_TABLE.si_kill;
     });
 
+    this.eventBus.on("si:boss_defeated", () => {
+      this.accumulator.pendingXP += 200;
+    });
+
     this.eventBus.on("pong:set_won", () => {
       this.accumulator.pendingXP += XP_TABLE.pong_set_won;
+    });
+
+    this.eventBus.on("pong:charged_smash", () => {
+      this.accumulator.pendingXP += 5;
     });
 
     this.eventBus.on("game:over", async () => {

@@ -7,7 +7,15 @@ import { GameStateComponent } from "../types/SpaceInvadersTypes";
  * Visuals for the player ship.
  */
 export const drawSpaceInvadersPlayer: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
-  const { size, color } = render;
+  let { size, color } = render;
+
+  if (render.hitFlashFrames && render.hitFlashFrames > 0) {
+    if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) {
+      ctx.globalAlpha = 0.3;
+    }
+    color = "white";
+  }
+
   ctx.fillStyle = color;
 
   // Basic tank shape
@@ -19,7 +27,15 @@ export const drawSpaceInvadersPlayer: ShapeDrawer<CanvasRenderingContext2D> = (c
  * Visuals for an invader.
  */
 export const drawSpaceInvadersInvader: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
-  const { size, color } = render;
+  let { size, color } = render;
+
+  if (render.hitFlashFrames && render.hitFlashFrames > 0) {
+    if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) {
+      ctx.globalAlpha = 0.3;
+    }
+    color = "white";
+  }
+
   ctx.fillStyle = color;
 
   // Simple pixelated invader shape
@@ -50,7 +66,15 @@ export const drawSpaceInvadersBullet: ShapeDrawer<CanvasRenderingContext2D> = (c
  * Visuals for shield blocks.
  */
 export const drawSpaceInvadersShield: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
-  const { size, color } = render;
+  let { size, color } = render;
+
+  if (render.hitFlashFrames && render.hitFlashFrames > 0) {
+    if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) {
+      ctx.globalAlpha = 0.3;
+    }
+    color = "white";
+  }
+
   ctx.fillStyle = color;
   ctx.fillRect(-size / 2, -size / 2, size, size);
 };

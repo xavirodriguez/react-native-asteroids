@@ -4,6 +4,8 @@ import { Entity, TransformComponent, ColliderComponent } from "../../../engine/t
 import { IFlappyBirdGame } from "../types/GameInterfaces";
 import { FLAPPY_CONFIG, FlappyBirdState, BirdComponent } from "../types/FlappyBirdTypes";
 import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
+import { Juice } from "../../../engine/utils/Juice";
+import { createEmitter } from "../../../engine/systems/ParticleSystem";
 
 /**
  * System that handles collisions between the bird and pipes or ground.
@@ -104,6 +106,35 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
       ) {
         this.triggerGameOver(world);
         return true;
+      } else {
+        // Near Miss logic
+        const horizontalDist = Math.max(0, pipeLeft - birdRight, birdLeft - pipeRight);
+        const verticalDist = Math.max(0, pipeTop - birdBottom, birdTop - pipeBottom);
+        const dist = horizontalDist + verticalDist;
+
+        if (dist > 0 && dist < 12 && birdComp.isAlive) {
+           const birdC = world.getComponent<BirdComponent>(bird, "Bird")!;
+           if (birdC.nearMissTimer <= 0) {
+             birdC.nearMissTimer = 300;
+             const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
+             if (gameState) gameState.score += 50;
+
+             const eventBus = world.getResource<EventBus>("EventBus");
+             if (eventBus) eventBus.emit("flappy:near_miss", { points: 50 });
+
+             Juice.shake(world, 2, 100);
+             createEmitter(world, {
+                position: { x: birdPos.x, y: birdPos.y },
+                rate: 0, burst: 5,
+                color: ["#FFD700"],
+                size: {min:2, max:4},
+                speed: {min:40, max:80},
+                angle: {min:0, max:360},
+                lifetime: {min:0.3, max:0.5},
+                loop: false
+             });
+           }
+        }
       }
     }
     return false;
@@ -119,6 +150,9 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
       birds.forEach(birdEntity => {
         const bird = world.getComponent<BirdComponent>(birdEntity, "Bird");
         if (bird) bird.isAlive = false;
+
+        const render = world.getComponent<RenderComponent>(birdEntity, "Render");
+        if (render) render.hitFlashFrames = 8;
 
         JuiceSystem.add(world, birdEntity, {
           property: "scaleX",

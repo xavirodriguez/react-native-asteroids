@@ -88,6 +88,9 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
       const eventBus = world.getResource<EventBus>("EventBus");
       if (eventBus) eventBus.emit("si:kill", { chain: gameState.combo });
 
+      const render = world.getComponent<RenderComponent>(invader, "Render");
+      if (render) render.hitFlashFrames = 4;
+
       this.destroyEntity(world, invader);
       this.destroyEntity(world, bullet);
       return;

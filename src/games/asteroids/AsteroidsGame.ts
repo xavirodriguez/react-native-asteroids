@@ -3,6 +3,7 @@ import { BaseGame } from "../../engine/core/BaseGame";
 import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
 import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
+import { AsteroidComboSystem } from "./systems/AsteroidComboSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { UfoSystem } from "./systems/UfoSystem";
 import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
@@ -264,6 +265,7 @@ export class AsteroidsGame
     const inputSys = new AsteroidInputSystem(this.bulletPool, this.particlePool, this.config);
     if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
     this.gameStateSystem = new AsteroidGameStateSystem(this);
+    const comboSys = new AsteroidComboSystem();
 
     this.world.addSystem(this.unifiedInput);
     this.world.addSystem(inputSys);
@@ -272,6 +274,7 @@ export class AsteroidsGame
     this.world.addSystem(new BoundarySystem());
     this.world.addSystem(new FrictionSystem());
     this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
+    this.world.addSystem(comboSys);
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new UfoSystem());

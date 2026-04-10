@@ -3,6 +3,7 @@ import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
 import { Entity, TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
 import { PONG_CONFIG } from "../types";
 import { Juice } from "../../../engine/utils/Juice";
+import { createEmitter } from "../../../engine/systems/ParticleSystem";
 
 export class PongCollisionSystem extends CollisionSystem {
   protected onCollision(world: World, entityA: Entity, entityB: Entity): void {
@@ -50,6 +51,38 @@ export class PongCollisionSystem extends CollisionSystem {
             Juice.add(world, e, { property: "x", target: originalPaddleX, duration: 150, easing: "elasticOut" });
           }
         });
+
+        // Spin Logic
+        const paddleComp = world.getComponent<any>(paddleEntity, "Paddle");
+        const ballComp = world.getComponent<any>(ballEntity, "Ball");
+        if (paddleComp && ballComp) {
+          const spin = Math.max(-1, Math.min(1, paddleComp.lastVelocityY / 1000));
+          if (Math.abs(spin) > 0.3) {
+            ballComp.spinFactor = spin * 0.8;
+            ballComp.spinDecay = 0.02;
+
+            createEmitter(world, {
+              position: { x: ballPos.x, y: ballPos.y },
+              rate: 0, burst: 6,
+              color: ["#FFFF00", "#88FFFF"],
+              size: {min:1, max:3},
+              speed: {min:40, max:100},
+              angle: {min:0, max:360},
+              lifetime: {min:0.1, max:0.3},
+              loop: false
+            });
+          }
+
+          // Charged Smash
+          if (Math.abs(paddleComp.lastVelocityY) > 600) {
+            const charge = Math.min(1, Math.abs(paddleComp.lastVelocityY) / 1000);
+            ballVel.dx *= (1 + 0.2 * charge);
+            Juice.shake(world, charge * 5, 100);
+
+            const eventBus = world.getResource<EventBus>("EventBus");
+            if (eventBus) eventBus.emit("pong:charged_smash", { chargeLevel: charge });
+          }
+        }
 
         // Juice: Hit flash
         Juice.flash(world, paddleEntity, 5);

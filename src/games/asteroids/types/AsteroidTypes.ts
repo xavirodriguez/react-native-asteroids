@@ -65,6 +65,9 @@ export interface GameStateComponent extends Component {
   level: number;
   asteroidsRemaining: number;
   isGameOver: boolean;
+  comboCount: number;
+  comboMultiplier: number;
+  lastBulletHit: boolean;
   stars?: Star[];
   screenShake?: ScreenShake | null;
   debugCRT?: boolean;
@@ -80,6 +83,9 @@ export const INITIAL_GAME_STATE: GameStateComponent = Object.freeze({
   level: 0,
   asteroidsRemaining: 0,
   isGameOver: false,
+  comboCount: 0,
+  comboMultiplier: 1,
+  lastBulletHit: false,
 });
 
 /**

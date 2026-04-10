@@ -5,6 +5,7 @@ import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 import { ShipPhysics } from "../utils/ShipPhysics";
 import { createBullet } from "../EntityFactory";
 import { hapticShoot } from "../../../utils/haptics";
+import { AsteroidComboSystem } from "./AsteroidComboSystem";
 
 /**
  * System that applies physical forces and actions based on the ship's input intent.
@@ -35,7 +36,19 @@ export class ShipControlSystem extends System {
       }
 
       if (input.shoot && input.shootCooldownRemaining <= 0) {
-        createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
+        const bullet = createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
+
+        // Listen for TTL destruction (miss)
+        const ttl = world.getComponent<any>(bullet, "TTL");
+        if (ttl) {
+          const originalOnComplete = ttl.onComplete;
+          ttl.onComplete = () => {
+            if (originalOnComplete) originalOnComplete();
+            const comboSys = world.systems.find(s => s instanceof AsteroidComboSystem) as AsteroidComboSystem;
+            if (comboSys) comboSys.onBulletMissed(world);
+          };
+        }
+
         input.shootCooldownRemaining = this.config.BULLET_SHOOT_COOLDOWN;
         hapticShoot();
       }
