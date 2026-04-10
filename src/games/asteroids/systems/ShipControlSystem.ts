@@ -1,7 +1,8 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent, VelocityComponent, RenderComponent, Entity } from "../../../engine/types/EngineTypes";
 import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
+import { ActiveWeaponComponent } from "../types/WeaponTypes";
 import { ShipPhysics } from "../utils/ShipPhysics";
 import { createBullet } from "../EntityFactory";
 import { hapticShoot } from "../../../utils/haptics";
@@ -29,13 +30,42 @@ export class ShipControlSystem extends System {
       ShipPhysics.applyThrust(world, pos, vel, render, input, dtSeconds, this.config);
       ShipPhysics.applyFriction(vel, deltaTime, this.config);
 
+      // Handle Thruster Particles
+      if (input.thrust) {
+        const rotation = render.rotation;
+        const thrusterX = pos.x - Math.cos(rotation) * 12;
+        const thrusterY = pos.y - Math.sin(rotation) * 12;
+
+        const speed = Math.sqrt(vel.dx * vel.dx + vel.dy * vel.dy);
+        const colors = ["#4488FF", "#88AAFF"];
+        if (speed >= 50) colors.push("#FFFFFF");
+        if (speed >= 150) colors.push("#FFEEAA");
+
+        const { createEmitter } = require("../../../engine/systems/ParticleSystem");
+        createEmitter(world, {
+          position: { x: thrusterX, y: thrusterY },
+          rate: 0,
+          burst: 3,
+          lifetime: { min: 0.1, max: 0.3 },
+          speed: { min: 20, max: 80 },
+          angle: {
+            min: (rotation + Math.PI) * (180 / Math.PI) - 25,
+            max: (rotation + Math.PI) * (180 / Math.PI) + 25
+          },
+          size: { min: 1, max: 3 },
+          color: colors,
+          loop: false
+        });
+      }
+
       // 2. Handle Shooting
       if (input.shootCooldownRemaining > 0) {
         input.shootCooldownRemaining -= deltaTime;
       }
 
       if (input.shoot && input.shootCooldownRemaining <= 0) {
-        createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
+        const activeWeapon = world.getComponent<ActiveWeaponComponent>(entity, "ActiveWeapon");
+        this.fireWeapon(world, entity, pos, render, activeWeapon);
         input.shootCooldownRemaining = this.config.BULLET_SHOOT_COOLDOWN;
         hapticShoot();
       }

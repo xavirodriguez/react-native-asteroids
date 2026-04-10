@@ -289,7 +289,10 @@ export class CanvasRenderer implements Renderer {
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotation);
-    ctx.scale(scaleX, scaleY);
+
+    const dataScaleX = render.data?.scaleX ?? 1;
+    const dataScaleY = render.data?.scaleY ?? 1;
+    ctx.scale(scaleX * dataScaleX, scaleY * dataScaleY);
 
     const opacity = (render as any).opacity !== undefined ? (render as any).opacity : 1;
     ctx.globalAlpha = opacity;

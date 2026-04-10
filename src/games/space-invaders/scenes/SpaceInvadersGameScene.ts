@@ -9,6 +9,8 @@ import { SpaceInvadersInputSystem } from "../systems/SpaceInvadersInputSystem";
 import { BoundarySystem } from "../systems/BoundarySystem";
 import { SpaceInvadersFormationSystem } from "../systems/SpaceInvadersFormationSystem";
 import { SpaceInvadersCollisionSystem } from "../systems/SpaceInvadersCollisionSystem";
+import { ComboSystem } from "../systems/ComboSystem";
+import { EliteSquadronSystem } from "../systems/EliteSquadronSystem";
 import { SpaceInvadersGameStateSystem } from "../systems/SpaceInvadersGameStateSystem";
 import { SpaceInvadersRenderSystem } from "../systems/SpaceInvadersRenderSystem";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "../EntityPool";
@@ -69,6 +71,8 @@ export class SpaceInvadersGameScene extends Scene {
     this.world.addSystem(new BoundarySystem());
     this.world.addSystem(new SpaceInvadersFormationSystem(this.enemyBulletPool));
     this.world.addSystem(new SpaceInvadersCollisionSystem(this.particlePool));
+    this.world.addSystem(new ComboSystem());
+    this.world.addSystem(new EliteSquadronSystem());
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(new SpaceInvadersGameStateSystem(this.game));
     this.world.addSystem(new RenderUpdateSystem(0)); // No trails
