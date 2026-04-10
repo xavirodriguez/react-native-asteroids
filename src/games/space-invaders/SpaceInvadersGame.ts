@@ -3,8 +3,6 @@ import { BaseGame } from "../../engine/core/BaseGame";
 import { GameStateComponent, InputState, GAME_CONFIG, INITIAL_GAME_STATE } from "./types/SpaceInvadersTypes";
 import { ISpaceInvadersGame } from "./types/GameInterfaces";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
-import { KeyboardController } from "../../engine/input/KeyboardController";
-import { TouchController } from "../../engine/input/TouchController";
 import { SpaceInvadersGameScene } from "./scenes/SpaceInvadersGameScene";
 import { Renderer } from "../../engine/rendering/Renderer";
 import {
@@ -125,25 +123,13 @@ export class SpaceInvadersGame
     if (!this.enemyBulletPool) this.enemyBulletPool = new EnemyBulletPool();
     if (!this.particlePool) this.particlePool = new ParticlePool();
 
-    const DEFAULT_INPUT: InputState = {
-      moveLeft: false,
-      moveRight: false,
-      shoot: false
-    };
-
-    const SI_KEYMAP = {
-      [GAME_CONFIG.KEYS.LEFT]: "moveLeft" as const,
-      [GAME_CONFIG.KEYS.RIGHT]: "moveRight" as const,
-      [GAME_CONFIG.KEYS.SHOOT]: "shoot" as const,
-    };
-
-    this.inputManager.cleanup();
-    this.inputManager.addController(new KeyboardController<InputState>(SI_KEYMAP, DEFAULT_INPUT));
-    this.inputManager.addController(new TouchController<InputState>());
+    // Bind inputs for UnifiedInputSystem
+    this.unifiedInput.bind("moveLeft", [GAME_CONFIG.KEYS.LEFT]);
+    this.unifiedInput.bind("moveRight", [GAME_CONFIG.KEYS.RIGHT]);
+    this.unifiedInput.bind("shoot", [GAME_CONFIG.KEYS.SHOOT]);
 
     const gameScene = new SpaceInvadersGameScene(
       this,
-      this.inputManager,
       this.playerBulletPool,
       this.enemyBulletPool,
       this.particlePool,

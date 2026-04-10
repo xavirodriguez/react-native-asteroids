@@ -1,6 +1,5 @@
 import { Scene } from "../../../engine/scenes/Scene";
 import { World } from "../../../engine/core/World";
-import { InputManager } from "../../../engine/input/InputManager";
 import { MovementSystem } from "../../../engine/systems/MovementSystem";
 import { TTLSystem } from "../../../engine/systems/TTLSystem";
 import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
@@ -29,7 +28,6 @@ import { ISpaceInvadersGame } from "../types/GameInterfaces";
  */
 export class SpaceInvadersGameScene extends Scene {
   private game: ISpaceInvadersGame;
-  private inputManager: InputManager<InputState>;
   private playerBulletPool: PlayerBulletPool;
   private enemyBulletPool: EnemyBulletPool;
   private particlePool: ParticlePool;
@@ -37,7 +35,6 @@ export class SpaceInvadersGameScene extends Scene {
 
   constructor(
     game: ISpaceInvadersGame,
-    inputManager: InputManager<InputState>,
     playerBulletPool: PlayerBulletPool,
     enemyBulletPool: EnemyBulletPool,
     particlePool: ParticlePool,
@@ -47,7 +44,6 @@ export class SpaceInvadersGameScene extends Scene {
     // but the constructor requires a World.
     super(new World());
     this.game = game;
-    this.inputManager = inputManager;
     this.playerBulletPool = playerBulletPool;
     this.enemyBulletPool = enemyBulletPool;
     this.particlePool = particlePool;
@@ -62,9 +58,10 @@ export class SpaceInvadersGameScene extends Scene {
     }
 
     // 1. Systems registration
-    const inputSys = new SpaceInvadersInputSystem(this.inputManager, this.playerBulletPool);
+    const inputSys = new SpaceInvadersInputSystem(this.playerBulletPool);
     if (this.game.isMultiplayer) inputSys.setMultiplayerMode(true);
 
+    this.world.addSystem((this.game as any).unifiedInput);
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new JuiceSystem());
