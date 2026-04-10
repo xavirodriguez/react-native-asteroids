@@ -176,7 +176,7 @@ export const drawSpeedLines: EffectDrawer<CanvasRenderingContext2D> = (ctx, worl
   ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
   ctx.lineWidth = 2;
 
-  const frameCount = (world as any)._frameCount || 0; // Assuming frameCount exists or use Date
+  const frameCount = Date.now(); // Use timestamp for animation since World has no _frameCount
 
   for (let i = 0; i < lineCount; i++) {
     // Semi-random but consistent positions
