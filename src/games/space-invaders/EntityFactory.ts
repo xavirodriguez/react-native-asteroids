@@ -143,6 +143,7 @@ export function createGameState(world: World): Entity {
     multiplier: 1,
     comboTimerRemaining: 0,
     screenShake: null,
+    kamikazesActive: 0,
   });
   return gameState;
 }

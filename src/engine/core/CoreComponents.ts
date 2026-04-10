@@ -165,6 +165,8 @@ export interface TTLComponent extends Component {
   remaining: number;
   /** Tiempo total de vida inicial (ms). */
   total: number;
+  /** Callback opcional al finalizar el tiempo de vida. */
+  onComplete?: () => void;
 }
 
 /**
