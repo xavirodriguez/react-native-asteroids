@@ -1,10 +1,14 @@
 /**
- * Base interface for all components.
- * Every component must have a type discriminator.
+ * Interfaz base para todos los componentes del motor.
+ * Cada componente debe tener un discriminador de tipo único.
  *
  * @remarks
- * Components are POJOs (Plain Old JavaScript Objects) that hold data but no logic.
- * Systems process entities by filtering for these data structures.
+ * Los componentes son POJOs (Plain Old JavaScript Objects) que contienen datos pero no lógica.
+ * Los sistemas procesan entidades filtrando por estas estructuras de datos.
+ *
+ * @responsibility Almacenar el estado puro de un aspecto de la entidad (ej: posición, salud).
+ *
+ * @contract Data-Only: No debe contener métodos ni lógica compleja; solo propiedades escalares, arrays u objetos simples.
  */
 export interface Component {
   /**

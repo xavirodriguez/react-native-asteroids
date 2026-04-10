@@ -7,6 +7,12 @@ import { Entity } from "../types/EngineTypes";
  * @remarks
  * Las queries son gestionadas por el {@link World} y se actualizan de forma incremental
  * cuando se añaden o eliminan entidades o componentes, evitando el escaneo total del mundo.
+ *
+ * @responsibility Mantener un registro filtrado y actualizado de entidades.
+ * @responsibility Optimizar el acceso a grupos de entidades en los hot paths de los sistemas.
+ *
+ * @contract Inmutabilidad: El consumidor NO debe modificar el array devuelto por {@link getEntities}.
+ * @contract Reactividad: La query se sincroniza automáticamente con el estado del {@link World} mediante notificaciones estructurales.
  */
 export class Query {
   private entities: Set<Entity> = new Set();

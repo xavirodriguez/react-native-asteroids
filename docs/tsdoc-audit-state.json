@@ -1,16 +1,16 @@
 {
   "auditVersion": "1.0",
   "files": {
-    "src/engine/core/World.ts": { "level": 5, "status": "completed" },
-    "src/engine/core/System.ts": { "level": 5, "status": "completed" },
-    "src/engine/core/Component.ts": { "level": 5, "status": "completed" },
-    "src/engine/core/Query.ts": { "level": 5, "status": "completed" },
-    "src/engine/core/Entity.ts": { "level": 5, "status": "completed" },
-    "src/engine/core/BaseGame.ts": { "level": 5, "status": "completed" },
-    "src/engine/core/GameLoop.ts": { "level": 5, "status": "completed" },
+    "src/engine/core/World.ts": { "level": 9, "status": "completed" },
+    "src/engine/core/System.ts": { "level": 9, "status": "completed" },
+    "src/engine/core/Component.ts": { "level": 9, "status": "completed" },
+    "src/engine/core/Query.ts": { "level": 9, "status": "completed" },
+    "src/engine/core/Entity.ts": { "level": 9, "status": "completed" },
+    "src/engine/core/BaseGame.ts": { "level": 9, "status": "completed" },
+    "src/engine/core/GameLoop.ts": { "level": 9, "status": "completed" },
     "src/engine/input/UnifiedInputSystem.ts": { "level": 5, "status": "completed" },
     "src/engine/core/CoreComponents.ts": { "level": 5, "status": "completed" },
-    "src/engine/core/EntityPool.ts": { "level": 5, "status": "completed" },
+    "src/engine/core/EntityPool.ts": { "level": 9, "status": "completed" },
     "src/engine/systems/MovementSystem.ts": { "level": 5, "status": "completed" },
     "src/engine/systems/CollisionSystem.ts": { "level": 5, "status": "completed" },
     "src/engine/systems/FrictionSystem.ts": { "level": 5, "status": "completed" },
@@ -25,5 +25,5 @@
     "src/engine/core/StateMachine.ts": { "level": 9, "status": "completed" },
     "src/engine/rendering/Renderer.ts": { "level": 9, "status": "completed" }
   },
-  "lastUpdated": "2025-05-25T01:00:00Z"
+  "lastUpdated": "2025-05-26T01:00:00Z"
 }

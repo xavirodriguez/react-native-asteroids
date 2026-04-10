@@ -9,6 +9,9 @@
  * Implementa un patrón de acumulador para garantizar actualizaciones de lógica y física
  * consistentes (por defecto a 60 FPS), independientemente de la tasa de refresco del renderizado.
  * Esto es crítico para el determinismo y la estabilidad de las simulaciones físicas.
+ *
+ * @contract Timestep: La lógica solo avanza en pasos discretos de `fixedDeltaTime`.
+ * @contract Interpolación: El valor `alpha` entregado en `subscribeRender` está siempre en el rango [0, 1).
  */
 
 export interface LoopConfig {

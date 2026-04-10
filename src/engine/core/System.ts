@@ -38,6 +38,12 @@ export interface SystemConfig {
  * Los sistemas deben ser, en la medida de lo posible, sin estado (stateless), confiando
  * en los componentes del {@link World} o en sus recursos para almacenar datos.
  *
+ * @responsibility Implementar la lógica de comportamiento (behavior) sobre grupos de entidades.
+ * @responsibility Transformar el estado del mundo de forma determinista frame a frame.
+ *
+ * @contract Stateless: El sistema no debe almacenar estado interno que afecte la simulación;
+ * debe depender exclusivamente del {@link World} y componentes para facilitar replays y salvado.
+ *
  * @packageDocumentation
  */
 export abstract class System {

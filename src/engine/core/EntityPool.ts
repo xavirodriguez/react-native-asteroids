@@ -10,6 +10,9 @@ import { Entity } from "../types/EngineTypes";
  * @remarks
  * El uso de un pool es crítico en juegos con muchos proyectiles o partículas para evitar la
  * presión sobre el Garbage Collector (GC).
+ *
+ * @contract Reciclaje: {@link acquire} siempre devuelve un ID previamente liberado antes de generar uno nuevo.
+ * @contract Integridad: No debe permitirse liberar dos veces el mismo ID (Double-Release).
  */
 export class EntityPool {
   private pool: Entity[] = [];

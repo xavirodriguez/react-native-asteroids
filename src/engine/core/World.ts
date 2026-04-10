@@ -22,6 +22,14 @@ interface RegisteredSystem {
  * - Principio 6: Los componentes singleton recuperados mediante {@link World.getSingleton} están
  * garantizados como mutables.
  *
+ * @responsibility Administrar la creación y destrucción de entidades.
+ * @responsibility Almacenar componentes de forma indexada por tipo y entidad.
+ * @responsibility Notificar de forma reactiva a las consultas (Queries) sobre cambios estructurales.
+ * @responsibility Orquestar el ciclo de actualización de sistemas registrados.
+ *
+ * @contract Unicidad: Cada entidad tiene un ID numérico único en el ciclo de vida del {@link World}.
+ * @contract Reactividad: Las consultas obtenidas vía {@link query} se actualizan incrementalmente tras {@link addComponent} o {@link removeComponent}.
+ *
  * @packageDocumentation
  */
 export class World {
@@ -45,8 +53,12 @@ export class World {
    * Versión actual de la estructura del mundo.
    * Se incrementa cada vez que se añade o elimina una entidad o componente.
    *
-   * @conceptualRisk [POTENTIAL_OVERFLOW][LOW] Si el juego corre por un tiempo extremadamente
-   * largo con alta rotación de entidades, la versión podría desbordarse.
+   * @remarks
+   * Utilizado por renderizadores reactivos y el {@link ReplayRecorder} para detectar cambios.
+   *
+   * @conceptualRisk [VERSION_OVERFLOW][LOW] Si el juego corre por un tiempo extremadamente
+   * largo con alta rotación de entidades, el contador `version` podría superar
+   * `Number.MAX_SAFE_INTEGER`, perdiendo precisión en comparaciones de cambio.
    */
   public version = 0;
 

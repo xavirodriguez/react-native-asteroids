@@ -69,3 +69,20 @@
 - `RenderUpdateSystem.ts`: [DETERMINISM][LOW] Update of `Render.rotation` vs `Transform.rotation` can cause drift if used in physics.
 - `EventBus.ts`: [ORDER][MEDIUM] Non-guaranteed execution order of handlers.
 - `StateMachine.ts`: [CONTEXT_MUTATION][LOW] Shared context is mutable by reference, risk of side effects.
+
+## [1.4.0] - 2025-05-26
+### Added
+- Elevation of core ECS files to Level 9 TSDoc audit:
+  - `src/engine/core/World.ts`
+  - `src/engine/core/System.ts`
+  - `src/engine/core/Component.ts`
+  - `src/engine/core/Query.ts`
+  - `src/engine/core/Entity.ts`
+  - `src/engine/core/BaseGame.ts`
+  - `src/engine/core/GameLoop.ts`
+  - `src/engine/core/EntityPool.ts`
+
+### Detected Conceptual Risks
+- `World.ts`: [VERSION_OVERFLOW][LOW] Loss of change detection accuracy on very long sessions.
+- `Entity.ts`: [ID_REUSE][MEDIUM] Stale reference risk in external systems holding Entity IDs.
+- `BaseGame.ts`: [DETERMINISM][LOW] Standard JS number limit for `currentTick` in extremely long sessions.

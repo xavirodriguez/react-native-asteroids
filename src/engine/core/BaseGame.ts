@@ -40,7 +40,10 @@ export interface BaseGameConfig {
  * @typeParam TState - El tipo que representa el estado público del juego (score, lives, etc).
  * @typeParam TInput - El tipo que representa las acciones de entrada (Record de booleanos/números).
  *
- * @conceptualRisk [DETERMINISM] `currentTick` utiliza el tipo numérico estándar de JS. Aunque `Number.MAX_SAFE_INTEGER`
+ * @contract Determinismo: En modo multijugador, la simulación solo avanza cuando {@link _isTickReady} es true.
+ * @contract Unificación: El bucle de juego {@link GameLoop} es el único que debe disparar actualizaciones de estado.
+ *
+ * @conceptualRisk [DETERMINISM][LOW] `currentTick` utiliza el tipo numérico estándar de JS. Aunque `Number.MAX_SAFE_INTEGER`
  * es alto, sesiones extremadamente largas podrían comprometer la comparación de ticks en el buffer.
  */
 export abstract class BaseGame<TState, TInput extends Record<string, any>>
