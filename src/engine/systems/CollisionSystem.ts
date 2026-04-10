@@ -12,9 +12,14 @@ import { SpatialHash } from "../collision/SpatialHash";
  * @queries Transform, Collider
  * @mutates Entidades (vía onCollision)
  * @executionOrder Fase: Collision. Debe ejecutarse después de MovementSystem.
- * @remarks
- * El sistema utiliza un hash espacial para evitar comprobaciones O(N²).
- * Soporta capas y máscaras de colisión para filtrado selectivo.
+ *
+ * @contract Broadphase: Todas las entidades con Collider son insertadas en el {@link SpatialHash} cada tick.
+ * @contract Narrowphase: Se realizan comprobaciones de distancia euclidiana solo para entidades en celdas adyacentes.
+ * @invariant El sistema no modifica la posición de las entidades; la respuesta física es responsabilidad de {@link onCollision}.
+ *
+ * @conceptualRisk [PERFORMANCE][MEDIUM] Re-inserción masiva en el hash espacial cada frame genera presión en el GC.
+ * @conceptualRisk [TYPE_SAFETY][MEDIUM] Uso frecuente de `as any` para acceder a propiedades extendidas de `ColliderComponent`
+ * (layer, mask, size, width) rompe el contrato de tipos estáticos.
  */
 export abstract class CollisionSystem extends System {
   private spatialHash = new SpatialHash(100);
@@ -23,8 +28,14 @@ export abstract class CollisionSystem extends System {
   private processedPairs = new Set<string>();
 
   /**
-   * Updates the collision state.
-   * Optimizes checks using a Spatial Hashing algorithm for broadphase.
+   * Ejecuta el ciclo de detección de colisiones.
+   *
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo transcurrido (ignorado por este sistema, ya que las colisiones son discretas).
+   *
+   * @sideEffect Invoca `onCollision` de forma inmediata al detectar un par válido.
+   * @conceptualRisk [MUTATION][HIGH] Si `onCollision` elimina entidades del mundo, el iterador actual
+   * en `update` podría procesar referencias inválidas o saltarse entidades.
    */
   public update(world: World, deltaTime: number): void {
     void deltaTime;

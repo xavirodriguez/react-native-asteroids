@@ -21,9 +21,14 @@ type Mat3 = [number, number, number, number, number, number];
  * @mutates Transform (worldX, worldY, worldRotation, worldScaleX, worldScaleY)
  * @executionOrder Fase: Presentation (normalmente). Debe ejecutarse antes del renderizado.
  *
- * @remarks
- * Utiliza matrices 3x3 para manejar correctamente rotaciones con escalas no uniformes (Principio 9).
- * Valida invariantes de jerarquía en desarrollo (Principio 2).
+ * @contract Propagación: `WorldTransform = ParentWorldTransform * LocalTransform`.
+ * @contract Root: Si no hay padre, `WorldTransform = LocalTransform`.
+ * @invariant No modifica las propiedades locales (`x`, `y`, `rotation`, `scaleX`, `scaleY`) de la entidad.
+ *
+ * @conceptualRisk [PERFORMANCE][MEDIUM] La resolución recursiva en `updateTransform` tiene un coste O(N)
+ * por tick y puede causar desbordamiento de pila (Stack Overflow) en jerarquías extremadamente profundas.
+ * @conceptualRisk [DETERMINISM][LOW] La descomposición de matrices de vuelta a propiedades escalares
+ * (`applyMatrixToWorldTransform`) puede presentar imprecisiones de coma flotante acumulativas.
  */
 export class HierarchySystem extends System {
   public update(world: World, _deltaTime: number): void {

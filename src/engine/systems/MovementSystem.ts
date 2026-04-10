@@ -5,17 +5,28 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
 
 /**
  * Sistema genérico encargado de actualizar las posiciones de las entidades basado en su velocidad.
- * Implementa un integrador lineal simple (Euler).
+ * Implementa un integrador lineal simple (Euler explicit).
  *
  * @responsibility Integrar la velocidad en la posición para el tick actual.
  * @queries Transform, Velocity
- * @mutates Transform
+ * @mutates Transform.x, Transform.y
  * @executionOrder Fase: Simulation. Debe ejecutarse antes de Collision y Boundary.
+ *
+ * @conceptualRisk [DETERMINISM][CRITICAL] Existe lógica de integración duplicada entre este sistema
+ * y los helpers de predicción (ej. `predictLocalPlayer` en Asteroids). Cualquier cambio en `PhysicsUtils`
+ * debe ser verificado en ambos contextos para evitar desincronización en red.
+ * @conceptualRisk [TIME][LOW] El sistema recibe `deltaTime` en ms pero `PhysicsUtils` opera en segundos.
+ * Riesgo de errores de precisión por conversiones repetitivas si no se estandariza a nivel de motor.
  */
 export class MovementSystem extends System {
   /**
-   * @param world - El mundo ECS.
-   * @param deltaTime - Tiempo en milisegundos. Se convierte internamente a segundos para paridad física.
+   * Actualiza la posición de todas las entidades que poseen Transform y Velocity.
+   *
+   * @param world - El mundo ECS que contiene las entidades.
+   * @param deltaTime - Tiempo transcurrido desde el último tick en milisegundos.
+   *
+   * @contract La posición resultante es `p_new = p_old + (v * dt_seconds)`.
+   * @invariant No modifica la velocidad de la entidad.
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Transform", "Velocity");
