@@ -5,7 +5,7 @@ import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 import { ShipPhysics } from "../utils/ShipPhysics";
 import { createBullet } from "../EntityFactory";
 import { hapticShoot } from "../../../utils/haptics";
-import { AsteroidComboSystem } from "./AsteroidComboSystem";
+import { EventBus } from "../../../engine/core/EventBus";
 
 /**
  * System that applies physical forces and actions based on the ship's input intent.
@@ -44,8 +44,8 @@ export class ShipControlSystem extends System {
           const originalOnComplete = ttl.onComplete;
           ttl.onComplete = () => {
             if (originalOnComplete) originalOnComplete();
-            const comboSys = world.systems.find(s => s instanceof AsteroidComboSystem) as AsteroidComboSystem;
-            if (comboSys) comboSys.onBulletMissed(world);
+            const eventBus = world.getResource<EventBus>("EventBus");
+            if (eventBus) eventBus.emit("asteroid:bullet_missed");
           };
         }
 

@@ -4,7 +4,16 @@ import { GameStateComponent } from "../types/AsteroidTypes";
 import { EventBus } from "../../../engine/core/EventBus";
 
 export class AsteroidComboSystem extends System {
+  private eventBus: EventBus | null = null;
+
   public update(world: World, deltaTime: number): void {
+    if (!this.eventBus) {
+        this.eventBus = world.getResource<EventBus>("EventBus");
+        if (this.eventBus) {
+            this.eventBus.on("asteroid:bullet_missed", () => this.onBulletMissed(world));
+        }
+    }
+
     const gameState = world.getSingleton<GameStateComponent>("GameState");
     if (!gameState) return;
 
