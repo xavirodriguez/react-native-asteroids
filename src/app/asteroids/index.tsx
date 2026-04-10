@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
+import { ComboDisplay } from "@/components/ComboDisplay";
 import { GameUI } from "@/components/GameUI";
 import { GameControls } from "@/components/GameControls";
 import { useAsteroidsGame } from "@/hooks/useAsteroidsGame";
@@ -129,6 +130,7 @@ export default function AsteroidsScreen() {
             </View>
         )}
 
+        <ComboDisplay multiplier={gameState?.comboMultiplier || 1} isActive={true} />
         <GameUI
           gameState={gameState}
           onRestart={() => isMulti ? room?.send("start_game") : game.restart()}

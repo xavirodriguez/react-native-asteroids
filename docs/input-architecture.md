@@ -25,7 +25,6 @@ Son valores normalizados (típicamente entre -1.0 y 1.0) para movimiento continu
 El sistema permite forzar el estado de una acción mediante `setOverride(action, isPressed)`.
 - **Casos de Uso**: Controles en pantalla (botones de la UI de React), comandos recibidos por red en modo multijugador, o tutoriales guiados.
 - **Prioridad**: Los overrides tienen prioridad sobre la entrada de hardware o se combinan con ella (OR lógico).
-- **Persistencia**: Un override permanece activo hasta que se llame de nuevo a `setOverride` con `false`.
 
 ## Integración con React Native
 Para los controles táctiles complejos (como joysticks virtuales), se recomienda utilizar `BaseGame.setInput(partialInput)` desde los componentes de React, lo que utiliza internamente el mecanismo de overrides para inyectar el estado en el motor ECS.

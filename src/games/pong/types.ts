@@ -3,6 +3,7 @@ export interface PongState {
   scoreP2: number;
   isGameOver: boolean;
   winner?: number;
+  comboMultiplier: number;
 }
 
 export interface PongInput extends Record<string, boolean> {
@@ -25,21 +26,6 @@ export interface PongRoomState {
   seed: number;
 }
 
-import { Component } from "../../engine/types/EngineTypes";
-
-export interface SquashStretchComponent extends Component {
-  type: "SquashStretch";
-  scaleX: number;
-  scaleY: number;
-  timer: number;
-  duration: number;
-}
-
-export interface ChargedShotComponent extends Component {
-  type: "ChargedShot";
-  chargeLevel: number; // 0.0 a 1.0
-}
-
 export const PONG_CONFIG = {
   WIDTH: 800,
   HEIGHT: 600,
@@ -50,5 +36,4 @@ export const PONG_CONFIG = {
   BALL_SPEED_START: 300,
   BALL_SPEED_INC: 1.05,
   WIN_SCORE: 5,
-  CHARGE_THRESHOLD: 3,
 };

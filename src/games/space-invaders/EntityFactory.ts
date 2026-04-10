@@ -2,6 +2,7 @@ import { World } from "../../engine/core/World";
 import { Entity } from "../../engine/types/EngineTypes";
 import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
+import { createEmitter } from "../../engine/systems/ParticleSystem";
 
 /**
  * Creates the player entity.
@@ -32,6 +33,19 @@ export function createPlayer(world: World, x: number, y: number): Entity {
     shootCooldownRemaining: 0,
   });
   world.addComponent(player, { type: "Player" });
+
+  createEmitter(world, {
+    position: { x, y },
+    rate: 0,
+    burst: 4,
+    lifetime: { min: 1.0, max: 1.5 },
+    speed: { min: 30, max: 60 },
+    angle: { min: 260, max: 280 },
+    size: { min: 2, max: 4 },
+    color: ["#00FF00"],
+    loop: false
+  });
+
   return player;
 }
 
@@ -129,6 +143,7 @@ export function createGameState(world: World): Entity {
     multiplier: 1,
     comboTimerRemaining: 0,
     screenShake: null,
+    kamikazesActive: 0,
   });
   return gameState;
 }

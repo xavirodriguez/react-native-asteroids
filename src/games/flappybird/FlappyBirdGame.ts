@@ -8,6 +8,8 @@ import { FlappyBirdInputSystem } from "./systems/FlappyBirdInputSystem";
 import { FlappyBirdCollisionSystem } from "./systems/FlappyBirdCollisionSystem";
 import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
 import { FlappyBirdRenderSystem } from "./systems/FlappyBirdRenderSystem";
+import { FlappyBirdGlideSystem } from "./systems/FlappyBirdGlideSystem";
+import { InputBufferSystem } from "../../engine/systems/InputBufferSystem";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
 import { JuiceSystem } from "../../engine/systems/JuiceSystem";
 import { Renderer } from "../../engine/rendering/Renderer";
@@ -21,8 +23,7 @@ import {
   drawFlappyBird,
   drawFlappyPipe,
   drawFlappyGround,
-  scrollingBackgroundEffect,
-  drawSpeedLines
+  scrollingBackgroundEffect
 } from "./rendering/FlappyBirdCanvasVisuals";
 import { MutatorService } from "../../services/MutatorService";
 
@@ -75,7 +76,9 @@ export class FlappyBirdGame
     const inputSys = new FlappyBirdInputSystem(this._localInputManager, this.config);
     if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
 
+    this.world.addSystem(new InputBufferSystem());
     this.world.addSystem(inputSys);
+    this.world.addSystem(new FlappyBirdGlideSystem());
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new JuiceSystem());
     this.world.addSystem(new FlappyBirdCollisionSystem(this));
@@ -123,7 +126,6 @@ export class FlappyBirdGame
       renderer.registerShape("pipe", drawFlappyPipe);
       renderer.registerShape("ground", drawFlappyGround);
       renderer.registerBackgroundEffect("scrollingSky", scrollingBackgroundEffect);
-      renderer.registerBackgroundEffect("speedLines", drawSpeedLines);
     }
   }
 

@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
+import { ComboDisplay } from "@/components/ComboDisplay";
 import { SpaceInvadersUI } from "@/components/SpaceInvadersUI";
 import { SpaceInvadersControls } from "@/components/SpaceInvadersControls";
 import { useSpaceInvadersGame } from "@/hooks/useSpaceInvadersGame";
@@ -115,6 +116,7 @@ export default function SpaceInvadersScreen() {
             </View>
         )}
 
+        <ComboDisplay multiplier={gameState?.multiplier || 1} isActive={true} />
         <SpaceInvadersUI
           gameState={gameState}
           onRestart={() => isMulti ? room?.send("start_game") : game.restart()}

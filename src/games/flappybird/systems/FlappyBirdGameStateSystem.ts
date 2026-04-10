@@ -44,7 +44,7 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
           world.removeEntity(entity);
         } else if (!pipe.scored && pos.x < this.config.BIRD_X) {
           pipe.scored = true;
-          gameState.score++;
+          gameState.score += gameState.comboMultiplier || 1;
           const eventBus = world.getResource<EventBus>("EventBus");
           if (eventBus) eventBus.emit("pipe:passed");
           if (gameState.score > gameState.highScore) {

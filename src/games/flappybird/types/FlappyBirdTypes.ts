@@ -5,6 +5,7 @@ import { Component } from "../../../engine/types/EngineTypes";
  */
 export interface FlappyBirdInput {
   flap: boolean;
+  glide: boolean;
 }
 
 /**
@@ -22,6 +23,8 @@ export interface BirdComponent extends Component {
   type: "Bird";
   velocityY: number;
   isAlive: boolean;
+  isGliding: boolean;
+  nearMissTimer: number;
 }
 
 /**
@@ -44,6 +47,7 @@ export interface FlappyBirdState extends Component {
   highScore: number;
   pipeSpawnTimer: number;
   gameOverLogged: boolean;
+  comboMultiplier: number;
 }
 
 /**
@@ -56,6 +60,7 @@ export const INITIAL_FLAPPY_STATE: FlappyBirdState = Object.freeze({
   highScore: 0,
   pipeSpawnTimer: 0,
   gameOverLogged: false,
+  comboMultiplier: 1,
 });
 
 /**

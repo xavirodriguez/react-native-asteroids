@@ -23,14 +23,8 @@ export abstract class CollisionSystem extends System {
   private processedPairs = new Set<string>();
 
   /**
-   * Actualiza el estado de las colisiones.
-   * Optimiza las comprobaciones usando un algoritmo de Spatial Hashing para la fase ancha.
-   *
-   * @param world - El mundo ECS.
-   * @param deltaTime - Tiempo transcurrido (no utilizado).
-   *
-   * @sideEffect Puede invocar {@link onCollision} en las subclases, lo que suele mutar el mundo.
-   * @sideEffect Actualiza el `SpatialHash` interno.
+   * Updates the collision state.
+   * Optimizes checks using a Spatial Hashing algorithm for broadphase.
    */
   public update(world: World, deltaTime: number): void {
     void deltaTime;
@@ -45,7 +39,6 @@ export abstract class CollisionSystem extends System {
       const pos = world.getComponent<TransformComponent>(id, "Transform")!;
       const col = world.getComponent<ColliderComponent>(id, "Collider")!;
 
-      /** @conceptualRisk [TYPE_SAFETY][LOW] Acceso a propiedades no tipadas en ColliderComponent. */
       const layer = (col as any).layer !== undefined ? (col as any).layer : 1;
       const mask = (col as any).mask !== undefined ? (col as any).mask : 1;
       if (layer === 0 && mask === 0) continue;

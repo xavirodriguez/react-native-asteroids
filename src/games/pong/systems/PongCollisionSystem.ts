@@ -3,6 +3,7 @@ import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
 import { Entity, TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
 import { PONG_CONFIG } from "../types";
 import { Juice } from "../../../engine/utils/Juice";
+import { createEmitter } from "../../../engine/systems/ParticleSystem";
 
 export class PongCollisionSystem extends CollisionSystem {
   protected onCollision(world: World, entityA: Entity, entityB: Entity): void {
@@ -23,30 +24,6 @@ export class PongCollisionSystem extends CollisionSystem {
         // Map relativeHitY to a dy. Max angle should be around 45-60 degrees.
         ballVel.dy = relativeHitY * PONG_CONFIG.BALL_SPEED_START;
 
-        // Fase 2.2: Charged Shot
-        const paddleVel = world.getComponent<VelocityComponent>(paddleEntity, "Velocity")!;
-        const speed = Math.abs(paddleVel.dy);
-        if (speed > PONG_CONFIG.CHARGE_THRESHOLD) {
-          const chargeLevel = Math.min(speed / 10, 1);
-          ballVel.dx *= (1 + 0.15 * chargeLevel);
-          ballVel.dy += paddleVel.dy * 0.3;
-          world.addComponent(ballEntity, { type: "ChargedShot", chargeLevel } as any);
-
-          // Partículas de electricidad
-          const { createEmitter } = require("../../../engine/systems/ParticleSystem");
-          createEmitter(world, {
-            position: { x: ballPos.x, y: ballPos.y },
-            rate: 0,
-            burst: 8,
-            lifetime: { min: 0.2, max: 0.4 },
-            speed: { min: 50, max: 150 },
-            angle: { min: 0, max: 360 },
-            size: { min: 1, max: 2 },
-            color: ["#FFFF00", "#88FFFF"],
-            loop: false
-          });
-        }
-
         // Increase speed slightly
         ballVel.dx *= PONG_CONFIG.BALL_SPEED_INC;
         ballVel.dy *= PONG_CONFIG.BALL_SPEED_INC;
@@ -58,6 +35,9 @@ export class PongCollisionSystem extends CollisionSystem {
         } else {
           ballPos.x = paddlePos.x - PONG_CONFIG.PADDLE_WIDTH / 2 - PONG_CONFIG.BALL_SIZE - 1;
         }
+
+        // Juice: Squash de la bola
+        Juice.squash(world, ballEntity, 0.6, 1.4, 50);
 
         // Juice: Recoil de la pala
         const recoilDir = paddleSide === "left" ? -1 : 1;
@@ -72,37 +52,43 @@ export class PongCollisionSystem extends CollisionSystem {
           }
         });
 
+        // Spin Logic
+        const paddleComp = world.getComponent<any>(paddleEntity, "Paddle");
+        const ballComp = world.getComponent<any>(ballEntity, "Ball");
+        if (paddleComp && ballComp) {
+          const spin = Math.max(-1, Math.min(1, paddleComp.lastVelocityY / 1000));
+          if (Math.abs(spin) > 0.3) {
+            ballComp.spinFactor = spin * 0.8;
+            ballComp.spinDecay = 0.02;
+
+            createEmitter(world, {
+              position: { x: ballPos.x, y: ballPos.y },
+              rate: 0, burst: 6,
+              color: ["#FFFF00", "#88FFFF"],
+              size: {min:1, max:3},
+              speed: {min:40, max:100},
+              angle: {min:0, max:360},
+              lifetime: {min:0.1, max:0.3},
+              loop: false
+            });
+          }
+
+          // Charged Smash
+          if (Math.abs(paddleComp.lastVelocityY) > 600) {
+            const charge = Math.min(1, Math.abs(paddleComp.lastVelocityY) / 1000);
+            ballVel.dx *= (1 + 0.2 * charge);
+            Juice.shake(world, charge * 5, 100);
+
+            const eventBus = world.getResource<EventBus>("EventBus");
+            if (eventBus) eventBus.emit("pong:charged_smash", { chargeLevel: charge });
+          }
+        }
+
         // Juice: Hit flash
         Juice.flash(world, paddleEntity, 5);
 
         // Juice: Screen shake (pequeño)
         Juice.shake(world, 3, 100);
-
-        // Fase 1.3: Squash & Stretch
-        world.addComponent(ballEntity, {
-          type: "SquashStretch",
-          scaleX: 1.4,
-          scaleY: 0.6,
-          timer: 8,
-          duration: 8
-        } as any);
-
-        world.addComponent(paddleEntity, {
-          type: "SquashStretch",
-          scaleX: 0.85,
-          scaleY: 1.15,
-          timer: 6,
-          duration: 6
-        } as any);
-    } else {
-      // Wall collision or other
-      const ballWall = this.matchPair(world, entityA, entityB, "Ball", "Boundary"); // Boundary doesn't have a component usually but let's assume check
-      // For simplicity, we can just check if any ball is in the pair
-      const ball = world.getComponent(entityA, "Ball") ? entityA : world.getComponent(entityB, "Ball") ? entityB : null;
-      if (ball) {
-        // Reset charged shot on wall hit? Prompt says "pared o otra pala"
-        world.removeComponent(ball, "ChargedShot");
-      }
     }
   }
 

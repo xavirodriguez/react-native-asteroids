@@ -1,6 +1,8 @@
 import { World } from "../../engine/core/World";
 import { Entity } from "../../engine/types/EngineTypes";
 import { FLAPPY_CONFIG } from "./types/FlappyBirdTypes";
+import { createEmitter } from "../../engine/systems/ParticleSystem";
+import { createInputBufferComponent } from "../../engine/types/InputBufferComponent";
 
 /**
  * Parameters for creating a bird entity.
@@ -41,18 +43,34 @@ export function createBird(options: CreateBirdParams): Entity {
     type: "Bird",
     velocityY: 0,
     isAlive: true,
+    isGliding: false,
+    nearMissTimer: 0,
   });
   world.addComponent(bird, {
     type: "FlappyInput",
     flap: false,
+    glide: false,
     flapCooldownRemaining: 0,
   });
+  world.addComponent(bird, createInputBufferComponent(80));
   // Adding HealthComponent as suggested for rendering check
   world.addComponent(bird, {
     type: "Health",
     current: 1,
     max: 1,
     invulnerableRemaining: 0,
+  });
+
+  createEmitter(world, {
+    position: { x, y },
+    rate: 0,
+    burst: 3,
+    lifetime: { min: 0.8, max: 1.2 },
+    speed: { min: 20, max: 40 },
+    angle: { min: 260, max: 280 },
+    size: { min: 3, max: 5 },
+    color: ["#FFD700"],
+    loop: false
   });
 
   return bird;

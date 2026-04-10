@@ -3,18 +3,21 @@ import { MovementSystem } from "../../engine/systems/MovementSystem";
 import { BoundarySystem } from "../../engine/systems/BoundarySystem";
 import { JuiceSystem } from "../../engine/systems/JuiceSystem";
 import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
+import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
 import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { KeyboardController } from "../../engine/input/KeyboardController";
 import { InputManager } from "../../engine/input/InputManager";
 import { PongCollisionSystem } from "./systems/PongCollisionSystem";
-import { PongJuiceSystem } from "./systems/PongJuiceSystem";
 import { PongGameStateSystem } from "./systems/PongGameStateSystem";
 import { PongInputSystem } from "./systems/PongInputSystem";
+import { PongSpinSystem } from "./systems/PongSpinSystem";
 import { PongEntityFactory } from "./EntityFactory";
 import { PongTouchController } from "./input/PongTouchController";
 import { AIPongController } from "./input/AIPongController";
 import { NetworkController } from "./input/NetworkController";
 import { PONG_CONFIG, type PongState, type PongInput } from "./types";
+import { Renderer } from "../../engine/rendering/Renderer";
+import { drawPongBall } from "./rendering/PongCanvasVisuals";
 import { RandomService } from "../../engine/utils/RandomService";
 import { MutatorService } from "../../services/MutatorService";
 
@@ -79,8 +82,9 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     this.world.addSystem(new JuiceSystem());
     this.world.addSystem(new ScreenShakeSystem());
     this.world.addSystem(new PongCollisionSystem());
-    this.world.addSystem(new PongJuiceSystem());
+    this.world.addSystem(new PongSpinSystem());
     this.world.addSystem(new BoundarySystem());
+    this.world.addSystem(new RenderUpdateSystem());
     this.world.addSystem(this.stateSystem);
   }
 
@@ -89,6 +93,12 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     PongEntityFactory.createPaddle(this.world, "left");
     PongEntityFactory.createPaddle(this.world, "right");
     PongEntityFactory.createGameState(this.world);
+  }
+
+  public initializeRenderer(renderer: Renderer): void {
+    if (renderer.type === "canvas") {
+      renderer.registerShape("circle", drawPongBall); // Override default circle with spinning ball
+    }
   }
 
   public getGameState(): PongState {

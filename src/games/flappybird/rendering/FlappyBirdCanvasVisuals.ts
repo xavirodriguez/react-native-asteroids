@@ -6,7 +6,14 @@ import { FLAPPY_CONFIG, FlappyBirdState } from "../types/FlappyBirdTypes";
  * Visuals for the bird.
  */
 export const drawFlappyBird: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
-  const { size, color } = render;
+  let { size, color } = render;
+
+  if (render.hitFlashFrames && render.hitFlashFrames > 0) {
+    if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) {
+      ctx.globalAlpha = 0.3;
+    }
+    color = "white";
+  }
 
   const health = world.getComponent<HealthComponent>(entity, "Health");
   if (health && health.invulnerableRemaining > 0) {
@@ -31,6 +38,30 @@ export const drawFlappyBird: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entit
   ctx.beginPath();
   ctx.arc(size * 0.5, -size * 0.3, size * 0.1, 0, Math.PI * 2);
   ctx.fill();
+
+  // Glide trail/indicator
+  const birdComp = world.getComponent<BirdComponent>(entity, "Bird");
+  if (birdComp?.isGliding) {
+    ctx.strokeStyle = "rgba(170, 221, 255, 0.5)";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-size, 0);
+    ctx.lineTo(-size * 2, 0);
+    ctx.stroke();
+  }
+
+  // Near Miss text
+  if (birdComp && birdComp.nearMissTimer > 0) {
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
+    const alpha = birdComp.nearMissTimer / 300; // Assuming 300ms near miss timer
+    ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+    ctx.font = "bold 16px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("NEAR MISS! +50", pos.x, pos.y - 40);
+    ctx.restore();
+  }
 
   // Beak
   ctx.fillStyle = "#FF4500";
@@ -153,40 +184,5 @@ export const scrollingBackgroundEffect: EffectDrawer<CanvasRenderingContext2D> =
     ctx.arc(x + 15, y - 10, 15, 0, Math.PI * 2);
     ctx.arc(x + 30, y, 18, 0, Math.PI * 2);
     ctx.fill();
-  }
-};
-
-/**
- * Draw speed lines during fast descent.
- */
-export const drawSpeedLines: EffectDrawer<CanvasRenderingContext2D> = (ctx, world, width, height) => {
-  const birds = world.query("Bird", "Transform");
-  if (birds.length === 0) return;
-
-  const birdEntity = birds[0];
-  const bird = world.getComponent<any>(birdEntity, "Bird");
-  if (!bird || bird.velocityY < FLAPPY_CONFIG.GRAVITY * 0.7) return;
-
-  const maxFallSpeed = 600;
-  const velocityY = bird.velocityY;
-  const intensity = Math.min(velocityY / maxFallSpeed, 1);
-  const lineCount = 8;
-  const opacity = intensity * 0.6;
-
-  ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
-  ctx.lineWidth = 2;
-
-  const frameCount = (world as any)._frameCount || 0; // Assuming frameCount exists or use Date
-
-  for (let i = 0; i < lineCount; i++) {
-    // Semi-random but consistent positions
-    const side = i % 2 === 0 ? 20 : width - 20;
-    const y = ((i * 137 + frameCount * 10) % height);
-    const length = intensity * 60;
-
-    ctx.beginPath();
-    ctx.moveTo(side, y);
-    ctx.lineTo(side, y + length);
-    ctx.stroke();
   }
 };

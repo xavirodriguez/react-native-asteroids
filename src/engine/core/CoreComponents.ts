@@ -13,7 +13,6 @@ export { Entity, Component };
  * por los sistemas principales (Rendering, Physics, Input).
  *
  * @responsibility Definir la estructura de datos para el estado del mundo.
- * @packageDocumentation
  */
 
 /**
@@ -166,6 +165,8 @@ export interface TTLComponent extends Component {
   remaining: number;
   /** Tiempo total de vida inicial (ms). */
   total: number;
+  /** Callback opcional al finalizar el tiempo de vida. */
+  onComplete?: () => void;
 }
 
 /**

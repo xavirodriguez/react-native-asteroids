@@ -2,6 +2,7 @@ import { World } from "../../engine/core/World";
 import { AsteroidsGame } from "./AsteroidsGame";
 import { GAME_CONFIG, INITIAL_GAME_STATE } from "../../types/GameTypes";
 import { TransformComponent, VelocityComponent, RenderComponent, ColliderComponent, TTLComponent } from "../../engine/core/CoreComponents";
+import { createEmitter } from "../../engine/systems/ParticleSystem";
 import { generateStarField } from "../../engine/rendering/StarField";
 import { RandomService } from "../../engine/utils/RandomService";
 
@@ -31,6 +32,20 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
   world.addComponent(ship, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0, trail: [] } as any);
   world.addComponent(ship, { type: "Input", thrust: false, rotateLeft: false, rotateRight: false, shoot: false, hyperspace: false, shootCooldownRemaining: 0 } as any);
   world.addComponent(ship, { type: "Health", current: 3, max: 3, invulnerableRemaining: GAME_CONFIG.INVULNERABILITY_DURATION } as any);
+
+  // Tutorialization particles
+  createEmitter(world, {
+    position: { x, y },
+    rate: 0,
+    burst: 5,
+    lifetime: { min: 1.5, max: 2.0 },
+    speed: { min: 5, max: 15 },
+    angle: { min: 0, max: 360 }, // Direction towards center can be complex, using burst spread
+    size: { min: 2, max: 4 },
+    color: ["#4488FF"],
+    loop: false
+  });
+
   return ship;
 };
 

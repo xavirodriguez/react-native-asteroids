@@ -87,6 +87,7 @@ export interface GameStateComponent extends Component {
   comboTimerRemaining: number;
   highScoreCandidate?: number;
   screenShake?: { intensity: number; duration: number } | null;
+  kamikazesActive: number;
 }
 
 /**
@@ -102,6 +103,7 @@ export const INITIAL_GAME_STATE: GameStateComponent = Object.freeze({
   combo: 0,
   multiplier: 1,
   comboTimerRemaining: 0,
+  kamikazesActive: 0,
 });
 
 /**
@@ -160,8 +162,6 @@ export const GAME_CONFIG = {
 
   LEVEL_SPEED_MULTIPLIER: 1.1,
   MAX_DELTA_TIME: 100,
-
-  ELITE_HP: 2,
 
   PARTICLE_COUNT: 8,
   PARTICLE_TTL_BASE: 500,

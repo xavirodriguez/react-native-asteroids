@@ -13,7 +13,7 @@ import {
   ShieldComponent,
   GAME_CONFIG
 } from "../types/SpaceInvadersTypes";
-import { getGameState } from "../GameUtils";
+import { BossComponent } from "./BossSystem";
 import { ParticlePool } from "../EntityPool";
 import { createParticle } from "../EntityFactory";
 import { RandomService } from "../../../engine/utils/RandomService";
@@ -48,6 +48,30 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
   }
 
   private handleCollision(world: World, e1: Entity, e2: Entity, gameState: GameStateComponent): void {
+    const bossBullet = this.matchPair(world, e1, e2, "PlayerBullet", "Boss");
+    if (bossBullet) {
+      const { PlayerBullet: bullet, Boss: boss } = bossBullet;
+      const bossComp = world.getComponent<BossComponent>(boss, "Boss");
+      const health = world.getComponent<HealthComponent>(boss, "Health");
+
+      if (bossComp) {
+        bossComp.hp -= 1;
+        gameState.score += 100;
+        if (health) health.current = bossComp.hp;
+
+        const render = world.getComponent<RenderComponent>(boss, "Render");
+        if (render) render.hitFlashFrames = 5;
+
+        const pos = world.getComponent<TransformComponent>(boss, "Transform");
+        if (pos) {
+          this.createExplosion(world, pos.x, pos.y, "#FF00FF");
+        }
+      }
+
+      this.destroyEntity(world, bullet);
+      return;
+    }
+
     const invaderBullet = this.matchPair(world, e1, e2, "PlayerBullet", "Invader");
     if (invaderBullet) {
       const { PlayerBullet: bullet, Invader: invader } = invaderBullet;
@@ -87,6 +111,14 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
 
       const eventBus = world.getResource<EventBus>("EventBus");
       if (eventBus) eventBus.emit("si:kill", { chain: gameState.combo });
+
+      const render = world.getComponent<RenderComponent>(invader, "Render");
+      if (render) render.hitFlashFrames = 4;
+
+      const kamiComp = world.getComponent(invader, 'Kamikaze');
+      if (kamiComp) {
+        gameState.kamikazesActive--;
+      }
 
       this.destroyEntity(world, invader);
       this.destroyEntity(world, bullet);

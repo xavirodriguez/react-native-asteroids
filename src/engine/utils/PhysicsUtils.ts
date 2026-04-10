@@ -1,28 +1,13 @@
 import { TransformComponent, VelocityComponent } from "../types/EngineTypes";
 
 /**
- * Utilidades compartidas de integración física.
- *
- * @remarks
- * Centraliza la lógica matemática de movimiento y fricción para garantizar la paridad
- * entre los sistemas ECS del motor y las funciones de predicción/reconciliación en red.
- *
- * @responsibility Proporcionar funciones puras de integración física (Euler).
- * @packageDocumentation
+ * Shared physics integration utilities to ensure consistency between
+ * engine systems and game-level predictions.
  */
 export class PhysicsUtils {
   /**
-   * Aplica integración lineal para actualizar la posición basada en la velocidad.
-   *
-   * @remarks
-   * Soporta tanto componentes estándar de ECS como objetos proxy o POJOs, manejando
-   * polimorfismo entre coordenadas locales (`x`, `y`) y globales (`worldX`, `worldY`).
-   *
-   * @param pos - Objeto de posición (debe tener campos x/y o worldX/worldY).
-   * @param vel - Objeto de velocidad (debe tener campos dx/dy o velocityX/velocityY).
-   * @param deltaTimeInSeconds - Tiempo transcurrido en SEGUNDOS.
-   *
-   * @sideEffect Muta el objeto `pos` in-place.
+   * Applies linear integration to update position based on velocity.
+   * Supports both standard ECS components and proxy objects.
    */
   public static integrateMovement(pos: any, vel: any, deltaTimeInSeconds: number): void {
     const x = pos.x !== undefined ? "x" : "worldX";
@@ -35,17 +20,11 @@ export class PhysicsUtils {
   }
 
   /**
-   * Aplica amortiguación de fricción a la velocidad.
-   *
-   * @remarks
-   * Utiliza una fórmula de decaimiento exponencial para garantizar que la fricción
-   * sea independiente de la tasa de refresco (framerate independent).
-   *
-   * @param vel - Objeto de velocidad (estándar o proxy).
-   * @param friction - Coeficiente de fricción (e.g., 0.99 para 1% de pérdida por tick base).
-   * @param deltaTimeMs - Tiempo transcurrido en milisegundos.
-   *
-   * @sideEffect Muta el objeto `vel` in-place.
+   * Applies friction damping to velocity.
+   * Supports both standard ECS components and proxy objects.
+   * @param vel - Velocity object (standard or proxy)
+   * @param friction - The friction coefficient (e.g., 0.99)
+   * @param deltaTimeMs - Elapsed time in milliseconds.
    */
   public static applyFriction(vel: any, friction: number, deltaTimeMs: number): void {
     const dx = vel.dx !== undefined ? "dx" : "velocityX";

@@ -1,11 +1,21 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { TransformComponent, RenderComponent, TTLComponent, ScreenShakeComponent, HealthComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent, RenderComponent, TTLComponent, ScreenShakeComponent, HealthComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { InputComponent, GameStateComponent, ShipComponent, UfoComponent, AsteroidComponent } from "../types/AsteroidTypes";
 import { World } from "../../../engine/core/World";
 
 export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
   const size = render.size;
+
+  if (render.hitFlashFrames && render.hitFlashFrames > 0) {
+    if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) {
+      ctx.globalAlpha = 0.3;
+    }
+    ctx.fillStyle = "white";
+    ctx.strokeStyle = "white";
+  } else {
+    ctx.strokeStyle = color;
+  }
   const input = world.getComponent<InputComponent>(entity, "Input");
   const health = world.getComponent<HealthComponent>(entity, "Health");
 
@@ -13,15 +23,23 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
     if (Math.floor(health.invulnerableRemaining / 150) % 2 === 0) ctx.globalAlpha = 0.3;
   }
 
-  // Ship Trail (Requirement 2)
+  // Ship Trail (Requirement 2 & Vol 2. 2.1)
   if (render && render.trailPositions && render.trailPositions.length > 0) {
     ctx.save();
     // We need to draw in global coordinates. Since drawEntity already translated/rotated, we reset.
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
+    const speed = vel ? Math.sqrt(vel.dx * vel.dx + vel.dy * vel.dy) : 0;
+
+    let trailColor = "#4488FF"; // Cold blue
+    if (speed > 150) trailColor = "#FFFFFF"; // Plasma white
+    else if (speed > 50) trailColor = "#88AAFF"; // Light blue
+
     render.trailPositions.forEach((p, i) => {
-        const alpha = (i / render.trailPositions!.length) * 0.4;
+        const alpha = (i / render.trailPositions!.length) * 0.6;
         ctx.globalAlpha = alpha;
-        ctx.fillStyle = "#00ffff"; // Cyan
+        ctx.fillStyle = trailColor;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
         ctx.fill();
@@ -49,7 +67,6 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
     ctx.restore();
   }
 
-  ctx.strokeStyle = render.color;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(size, 0);

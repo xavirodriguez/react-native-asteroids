@@ -28,7 +28,8 @@ export class SpaceInvadersGameStateSystem extends System {
     gameState.invadersRemaining = invaders.length;
 
     // 2. Handle level progression
-    if (gameState.invadersRemaining === 0) {
+    const bosses = world.query("Boss");
+    if (gameState.invadersRemaining === 0 && bosses.length === 0) {
       gameState.level++;
       spawnInvaderWave(world, gameState.level);
     }
