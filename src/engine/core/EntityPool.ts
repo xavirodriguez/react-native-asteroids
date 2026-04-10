@@ -34,9 +34,9 @@ export class EntityPool {
    * @remarks
    * El ID liberado estará disponible en la próxima llamada a `acquire()`.
    *
-   * @conceptualRisk [ENTITY_REUSE] No hay una validación para evitar el "double-release" (liberar
-   * el mismo ID dos veces). Esto causaría que `acquire()` devuelva el mismo ID a dos
-   * solicitantes distintos, provocando corrupción de estado en el `World`.
+   * @conceptualRisk [ENTITY_REUSE][CRITICAL] No hay una validación para evitar el
+   * "double-release" (liberar el mismo ID dos veces). Esto causaría que `acquire()` devuelva el
+   * mismo ID a dos solicitantes distintos, provocando corrupción de estado en el `World`.
    *
    * @param id - El identificador de la entidad a liberar.
    */

@@ -13,13 +13,17 @@ import { Entity, TransformComponent } from "../types/EngineTypes";
 type Mat3 = [number, number, number, number, number, number];
 
 /**
- * System that calculates world-space transforms based on parent-child relationships.
+ * Sistema que calcula las transformaciones en el espacio del mundo basadas en relaciones jerárquicas.
  *
- * Principle 9: Matrices for Non-Uniform Scale
- * Composes transforms using 3x3 matrices to correctly handle rotation with non-uniform scaling.
+ * @responsibility Resolver la posición, rotación y escala absoluta de las entidades.
+ * @responsibility Garantizar que los hijos hereden correctamente las transformaciones de sus padres.
+ * @queries Transform
+ * @mutates Transform (worldX, worldY, worldRotation, worldScaleX, worldScaleY)
+ * @executionOrder Fase: Presentation (normalmente). Debe ejecutarse antes del renderizado.
  *
- * Principle 2: Strong Invariants
- * Enforces hierarchical invariants through assertValid() in development.
+ * @remarks
+ * Utiliza matrices 3x3 para manejar correctamente rotaciones con escalas no uniformes (Principio 9).
+ * Valida invariantes de jerarquía en desarrollo (Principio 2).
  */
 export class HierarchySystem extends System {
   public update(world: World, _deltaTime: number): void {

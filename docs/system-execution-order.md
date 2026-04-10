@@ -26,3 +26,10 @@ En cada `world.update()`, si la lista de sistemas ha cambiado (`systemsNeedSorti
 ## Consecuencias de Alterar el Orden
 - Si el `CollisionSystem` se ejecuta antes que el `MovementSystem`, los proyectiles podrían atravesar paredes en el frame de impacto (tunneling).
 - Si el `RenderUpdateSystem` (que prepara los trails y rotaciones visuales) se ejecuta antes que la simulación física, el renderizado mostrará una posición "vieja", causando jitter visual.
+
+## Dependencias Críticas Observadas
+
+1.  **InterpolationPrepSystem → Simulation**: Debe capturar el estado *antes* de que los sistemas de simulación muten la posición para permitir la interpolación visual suave.
+2.  **Simulation → Collision**: Los objetos deben moverse a su nueva posición potencial antes de que el motor de colisiones resuelva penetraciones.
+3.  **Collision → GameRules**: La lógica de puntuación y daño depende de los eventos de colisión generados en el tick actual.
+4.  **HierarchySystem → Presentation**: Debe resolver las coordenadas globales después de que todas las transformaciones locales hayan sido calculadas.

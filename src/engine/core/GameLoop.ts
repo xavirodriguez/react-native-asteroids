@@ -115,8 +115,8 @@ export class GameLoop {
    * Calcula el tiempo transcurrido, limita el delta para evitar el "espiral de la muerte"
    * (donde demasiados ticks de física causan más retraso), y despacha eventos a los listeners.
    *
-   * @conceptualRisk [PERFORMANCE] Si el tiempo de proceso de un tick es mayor que `fixedDeltaTime`,
-   * el bucle entrará en una espiral de muerte a menos que `maxDeltaTime` lo limite.
+   * @conceptualRisk [PERFORMANCE][MEDIUM] Si el tiempo de proceso de un tick es mayor que
+   * `fixedDeltaTime`, el bucle entrará en una espiral de muerte a menos que `maxDeltaTime` lo limite.
    *
    * @param currentTime - Tiempo actual proporcionado por `requestAnimationFrame`.
    */

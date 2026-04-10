@@ -4,8 +4,17 @@ import { TransformComponent, ColliderComponent, Entity, ReclaimableComponent, AA
 import { SpatialHash } from "../collision/SpatialHash";
 
 /**
- * Generic Collision System for the TinyAsterEngine.
- * Handles circle-to-circle collision detection with Spatial Hash broadphase optimization.
+ * Sistema de colisiones genérico para TinyAsterEngine.
+ * Gestiona la detección de colisiones círculo-círculo optimizada mediante Spatial Hashing.
+ *
+ * @responsibility Detectar pares de entidades en colisión y disparar el callback {@link onCollision}.
+ * @responsibility Mantener la eficiencia O(N) en la fase ancha (broadphase) usando {@link SpatialHash}.
+ * @queries Transform, Collider
+ * @mutates Entidades (vía onCollision)
+ * @executionOrder Fase: Collision. Debe ejecutarse después de MovementSystem.
+ * @remarks
+ * El sistema utiliza un hash espacial para evitar comprobaciones O(N²).
+ * Soporta capas y máscaras de colisión para filtrado selectivo.
  */
 export abstract class CollisionSystem extends System {
   private spatialHash = new SpatialHash(100);
@@ -125,8 +134,14 @@ export abstract class CollisionSystem extends System {
   }
 
   /**
-   * Abstract hook called when a collision is detected.
-   * Concrete games implement this to handle specific logic.
+   * Gancho abstracto invocado cuando se detecta una colisión entre dos entidades.
+   * Las subclases de juego deben implementar este método para definir la lógica de respuesta.
+   *
+   * @param world - El mundo ECS donde ocurre la colisión.
+   * @param entityA - La primera entidad del par en colisión.
+   * @param entityB - La segunda entidad del par en colisión.
+   *
+   * @sideEffect Puede eliminar entidades, aplicar daño o generar efectos visuales.
    */
   protected abstract onCollision(world: World, entityA: Entity, entityB: Entity): void;
 

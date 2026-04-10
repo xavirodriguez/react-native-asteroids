@@ -220,15 +220,18 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   }
 
   /**
-   * Reinicia el estado del juego.
+   * Reinicia el estado del juego por completo.
    *
    * @remarks
    * Si hay escenas activas, delega el reinicio al `SceneManager`. Si no, limpia el `World`
-   * global y vuelve a ejecutar `initializeEntities`.
+   * global y vuelve a ejecutar `initializeEntities`. Garantiza que el bucle de juego
+   * continúe ejecutándose si estaba en pausa.
    *
    * @conceptualRisk [LIFECYCLE] `_onBeforeRestart` puede cambiar la escena actual, lo que altera el flujo
    * de reinicio de la escena previa.
    *
+   * @postcondition El juego vuelve a su estado inicial.
+   * @sideEffect Llama al hook {@link BaseGame._onBeforeRestart}.
    * @mutates world - Limpia entidades si no hay escenas.
    * @mutates sceneManager - Reinicia la escena activa.
    */
@@ -251,6 +254,17 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this._notifyListeners();
   }
 
+  /**
+   * Libera todos los recursos utilizados por el juego.
+   *
+   * @remarks
+   * Detiene el bucle de juego, limpia los controladores de entrada y elimina todos los
+   * listeners de eventos para evitar fugas de memoria.
+   *
+   * @precondition El juego debe haber sido inicializado previamente.
+   * @postcondition No debe invocarse ningún método adicional tras la destrucción.
+   * @sideEffect Elimina listeners de `window` y vacía los conjuntos de suscripción internos.
+   */
   public destroy(): void {
     this.stop();
     this.unifiedInput.cleanup();
@@ -285,7 +299,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
    * @remarks
    * Debe llamarse después de instanciar el juego pero antes de `start()`.
    * Carga perfiles, mutadores y sistemas base antes de los específicos del juego.
+   * Orquesta la llamada a {@link BaseGame.registerSystems} y {@link BaseGame.initializeEntities}.
    *
+   * @precondition El entorno de ejecución debe estar listo (React Native / Expo cargado).
+   * @postcondition El {@link World} está poblado con los sistemas y entidades iniciales.
    * @mutates world - Registra sistemas de motor y del juego.
    */
   public async init(): Promise<void> {

@@ -59,6 +59,7 @@ export class World {
    *
    * @returns El ID de la nueva {@link Entity}.
    * @postcondition Incrementa {@link World.version}.
+   * @sideEffect Altera la lista interna de entidades activas y el pool de entidades libres.
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -86,9 +87,14 @@ export class World {
    * Adjunta un componente a una entidad.
    * Si la entidad ya posee un componente de este tipo, será sobrescrito.
    *
+   * @remarks
+   * Este método gestiona la indexación reactiva para las queries y valida invariantes críticos
+   * como las jerarquías de transformación.
+   *
    * @param entity - La entidad a la que se adjunta el componente.
    * @param component - La instancia del componente a adjuntar.
    *
+   * @precondition La entidad debe existir (haber sido creada previamente con {@link World.createEntity}).
    * @throws {Error} Si se viola el invariante de jerarquía (auto-parentesco).
    * @conceptualRisk [HIERARCHY_NORMALIZATION][LOW] Resetea silenciosamente el parent a undefined
    * si el parent no existe. Previene crashes pero puede ocultar errores de lógica en el orden
@@ -96,6 +102,7 @@ export class World {
    *
    * @postcondition Incrementa {@link World.version}.
    * @postcondition Notifica a las queries reactivas para actualizar sus resultados cacheados.
+   * @sideEffect Actualiza los mapas de componentes e índices de tipos por entidad.
    */
   addComponent<T extends Component>(entity: Entity, component: T): void {
     const type = component.type;
@@ -193,15 +200,18 @@ export class World {
    * Consulta las entidades que poseen todos los tipos de componentes especificados.
    * Utiliza queries reactivas para evitar trabajo redundante.
    *
-   * @param componentTypes - Uno o más tipos de componentes por los que filtrar.
-   * @returns Un array de IDs de {@link Entity} que poseen todos los componentes requeridos.
-   *
    * @remarks
    * Los resultados de las queries están cacheados internamente. El orden de los tipos de
    * componentes en los argumentos no afecta la identidad de la query.
+   * El filtrado optimiza la búsqueda empezando por el componente menos frecuente.
+   *
+   * @param componentTypes - Uno o más tipos de componentes por los que filtrar.
+   * @returns Un array de IDs de {@link Entity} que poseen todos los componentes requeridos.
    *
    * @conceptualRisk [GC_PRESSURE][LOW] La generación frecuente de arrays de resultados puede
    * presionar el recolector de basura si se abusa de queries efímeras en hot paths.
+   * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] {@link Query.getEntities} devuelve una referencia
+   * al array interno; no debe ser modificado por el consumidor.
    */
   query(...componentTypes: string[]): Entity[] {
     if (componentTypes.length === 0) return [];
@@ -239,10 +249,15 @@ export class World {
   /**
    * Elimina una entidad y todos sus componentes asociados del mundo.
    *
+   * @remarks
+   * Realiza la limpieza en todos los mapas de componentes, conjuntos de componentes por entidad
+   * y notifica a todas las queries activas para eliminar la entidad de sus cachés.
+   *
    * @param entity - La entidad a eliminar.
    *
    * @postcondition La entidad se añade a {@link World.freeEntities} para su posterior
    * reutilización e incrementa {@link World.version}.
+   * @sideEffect Notifica a todas las {@link Query} registradas.
    */
   removeEntity(entity: Entity): void {
     this.removeEntityFromComponentMaps(entity);
