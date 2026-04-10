@@ -23,6 +23,8 @@ export class EntityPool {
    * el contador global de IDs.
    *
    * @returns Un nuevo `Entity` (identificador numérico).
+   *
+   * @sideEffect Puede decrementar el tamaño del pool interno o incrementar el contador `nextId`.
    */
   public acquire(): Entity {
     return this.pool.length > 0 ? this.pool.pop()! : this.nextId++;
@@ -39,6 +41,8 @@ export class EntityPool {
    * mismo ID a dos solicitantes distintos, provocando corrupción de estado en el `World`.
    *
    * @param id - El identificador de la entidad a liberar.
+   *
+   * @sideEffect Añade el ID al pool interno de IDs libres.
    */
   public release(id: Entity): void {
     this.pool.push(id);

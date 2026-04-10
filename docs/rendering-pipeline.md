@@ -16,19 +16,19 @@ TinyAsterEngine utiliza un patrón **Decoupled Renderer**. El motor ECS simula e
 El ciclo de un frame de renderizado sigue estos pasos:
 
 1. **Clear**: Se limpia el buffer de dibujo (fondo negro sólido).
-2. **Screen Shake**: Se consulta el singleton `GameState` o `ScreenShake`. Si hay un impacto activo, se aplica un `translate` aleatorio al contexto basado en la intensidad restante.
+2. **Screen Shake**: Se consulta el componente `ScreenShake`. Si hay un impacto activo, se aplica un `translate` aleatorio al contexto usando `RandomService.getInstance("render")` para evitar la deriva de la semilla de gameplay.
 3. **Background Effects**: Se ejecutan los efectos registrados (e.g., Starfield).
-4. **Query & Filter**: Se buscan todas las entidades con `Transform` + `Render`.
-5. **Pre-Render Hooks**: Ganchos para que los juegos inyecten lógica visual previa (e.g., flashes de pantalla).
+4. **Interpolación**: Para cada entidad, se calcula su posición visual mezclando `PreviousTransform` y `Transform` usando el factor `alpha` del loop.
+5. **Pre-Render Hooks**: Ganchos para inyectar lógica visual previa.
 6. **Z-Indexing**: Las entidades se ordenan por su campo `zIndex` (0 por defecto).
 7. **Draw Entity**:
-   - Se guarda el estado del contexto (`ctx.save()`).
-   - Se aplican transformaciones: `translate(x, y)` y `rotate(angle)`.
-   - Se invoca al **Shape Drawer** correspondiente según `render.shape`.
-   - Se restaura el contexto (`ctx.restore()`).
-8. **Post-Entity Drawers**: Dibujo de efectos vinculados a la entidad pero fuera de su transformación (e.g., estelas de partículas/trails).
-9. **Foreground Effects**: Efectos globales por encima de todo (e.g., filtro CRT).
-10. **UI Rendering**: El sistema de UI de motor dibuja elementos de interfaz alineados a la pantalla.
+   - Se aplica la transformación de jerarquía (`worldX`, `worldY`, `worldRotation`) calculada por el `HierarchySystem`.
+   - Se aplica la opacidad del componente.
+   - Se invoca al **Shape Drawer** correspondiente.
+8. **Post-Entity Drawers**: Dibujo de efectos vinculados a la entidad (e.g., trails).
+9. **Foreground Effects**: Efectos globales por encima de todo.
+10. **UI Rendering**: El sistema de UI de motor dibuja elementos de interfaz.
+11. **Debug Overlay**: Si `DebugConfig` existe, se dibujan hitboxes y profilers.
 
 ## Extensibilidad: Shape Drawers
 Para añadir una nueva forma visual (e.g., un nuevo tipo de nave):

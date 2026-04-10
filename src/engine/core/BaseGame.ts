@@ -303,7 +303,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
    *
    * @precondition El entorno de ejecución debe estar listo (React Native / Expo cargado).
    * @postcondition El {@link World} está poblado con los sistemas y entidades iniciales.
-   * @mutates world - Registra sistemas de motor y del juego.
+   *
+   * @sideEffect Registra sistemas globales y específicos en el {@link World}.
+   * @sideEffect Carga datos asíncronos de servicios (perfil, mutadores).
+   * @sideEffect Puebla el mundo con entidades iniciales.
    */
   public async init(): Promise<void> {
     await this.registerEngineSystems();
@@ -355,6 +358,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
    * Establece el transporte de red para juegos multijugador.
    *
    * @param transport - La instancia de transporte (e.g., Colyseus).
+   *
+   * @sideEffect Registra un callback de escucha en el transporte para manejar inputs remotos.
    */
   public setNetworkTransport(transport: NetworkTransport): void {
     this.networkTransport = transport;

@@ -40,3 +40,4 @@ Esta sección documenta las fragilidades arquitectónicas y de diseño detectada
 | **DETERMINISM** | **HIGH** | `getInputState()` ignora los `overrides`. Esto significa que el input enviado por red no incluirá acciones de la UI táctil. | `UnifiedInputSystem.ts` |
 | **MEMORY** | **CRITICAL** | `EntityPool.release()` no previene el "double-release", lo que puede corromper la identidad de entidades en el `World`. | `EntityPool.ts` |
 | **PERFORMANCE**| **MEDIUM** | El loop de `GameLoop` puede disparar el "Spiral of Death" si la simulación es más lenta que el tiempo real, a pesar del límite `maxDeltaMs`. | `GameLoop.ts` |
+| **TYPE_SAFETY** | **LOW** | Uso frecuente de `as any` en sistemas core (`CollisionSystem`, `JuiceSystem`) para acceder a propiedades extendidas de componentes sin interfaz formal. | `CollisionSystem.ts`, `JuiceSystem.ts` |
