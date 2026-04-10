@@ -21,21 +21,11 @@ import { drawPongBall } from "./rendering/PongCanvasVisuals";
 import { RandomService } from "../../engine/utils/RandomService";
 import { MutatorService } from "../../services/MutatorService";
 
-const PONG_KEYMAP = {
-  "KeyW": "p1Up", "KeyS": "p1Down",
-  "ArrowUp": "p2Up", "ArrowDown": "p2Down",
-} as const;
-
-const DEFAULT_PONG_INPUT: PongInput = {
-  p1Up: false, p1Down: false, p2Up: false, p2Down: false
-};
-
 export type PongMode = "local" | "ai" | "online";
 
 export class PongGame extends BaseGame<PongState, PongInput> {
   private stateSystem!: PongGameStateSystem;
   private assetLoader: AssetLoader;
-  private inputManager!: InputManager<PongInput>;
   private aiController?: AIPongController;
   private networkController?: NetworkController;
   public readonly gameId = "pong";
@@ -56,28 +46,18 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     await super.init();
   }
 
-  private setupControllers(mode: PongMode): void {
-    this.inputManager.addController(
-      new KeyboardController<PongInput>(PONG_KEYMAP, DEFAULT_PONG_INPUT)
-    );
-    this.inputManager.addController(new PongTouchController());
-
-    if (mode === "ai") {
-      this.aiController = new AIPongController("medium");
-      this.inputManager.addController(this.aiController);
-    } else if (mode === "online") {
-      this.networkController = new NetworkController();
-      this.inputManager.addController(this.networkController);
-    }
-  }
-
   protected registerSystems(): void {
     const mode = this._config.gameOptions?.mode || "local";
-    this.inputManager = new InputManager<PongInput>();
-    this.setupControllers(mode);
+
+    // Bind inputs for UnifiedInputSystem
+    this.unifiedInput.bind("p1Up", ["KeyW"]);
+    this.unifiedInput.bind("p1Down", ["KeyS"]);
+    this.unifiedInput.bind("p2Up", ["ArrowUp"]);
+    this.unifiedInput.bind("p2Down", ["ArrowDown"]);
 
     this.stateSystem = new PongGameStateSystem(this.config);
-    this.world.addSystem(new PongInputSystem(this.inputManager));
+    this.world.addSystem(this.unifiedInput);
+    this.world.addSystem(new PongInputSystem());
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new JuiceSystem());
     this.world.addSystem(new ScreenShakeSystem());

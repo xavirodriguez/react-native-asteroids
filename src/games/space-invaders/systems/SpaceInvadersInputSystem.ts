@@ -1,21 +1,19 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
-import { InputManager } from "../../../engine/input/InputManager";
-import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
-import { InputComponent, InputState, GAME_CONFIG } from "../types/SpaceInvadersTypes";
+import { TransformComponent, VelocityComponent, InputStateComponent } from "../../../engine/types/EngineTypes";
+import { InputComponent, GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { PlayerBulletPool } from "../EntityPool";
 import { createPlayerBullet } from "../EntityFactory";
+import { InputUtils } from "../../../engine/utils/ComponentUtils";
 
 /**
  * System that handles player input and movement.
  */
 export class SpaceInvadersInputSystem extends System {
-  private inputManager: InputManager<InputState>;
   private bulletPool: PlayerBulletPool;
 
-  constructor(inputManager: InputManager<InputState>, bulletPool: PlayerBulletPool) {
+  constructor(bulletPool: PlayerBulletPool) {
     super();
-    this.inputManager = inputManager;
     this.bulletPool = bulletPool;
   }
 
@@ -27,7 +25,7 @@ export class SpaceInvadersInputSystem extends System {
 
   public update(world: World, deltaTime: number): void {
     if (this.isMultiplayer) return;
-    const inputs = this.inputManager.getCombinedInputs();
+    const inputState = world.getSingleton<InputStateComponent>("InputState");
     const entities = world.query("Player", "Input", "Transform", "Velocity");
 
     entities.forEach((entity) => {
@@ -37,9 +35,11 @@ export class SpaceInvadersInputSystem extends System {
 
       if (input && pos && vel) {
         // Sync input component with manager
-        input.moveLeft = inputs.moveLeft;
-        input.moveRight = inputs.moveRight;
-        input.shoot = inputs.shoot;
+        if (inputState) {
+          input.moveLeft = InputUtils.isPressed(inputState, "moveLeft");
+          input.moveRight = InputUtils.isPressed(inputState, "moveRight");
+          input.shoot = InputUtils.isPressed(inputState, "shoot");
+        }
 
         // Apply movement
         let moveX = 0;

@@ -1,32 +1,31 @@
 import { World } from "../../../../engine/core/World";
-import { InputManager } from "../../../../engine/input/InputManager";
 import { PongInputSystem } from "../PongInputSystem";
 import { PongEntityFactory } from "../../EntityFactory";
-import { PongInput, PONG_CONFIG } from "../../types";
-import { VelocityComponent, TagComponent } from "../../../../engine/types/EngineTypes";
+import { PONG_CONFIG } from "../../types";
+import { VelocityComponent, TagComponent, InputStateComponent } from "../../../../engine/types/EngineTypes";
 
 describe("PongInputSystem", () => {
   let world: World;
-  let inputManager: InputManager<PongInput>;
   let system: PongInputSystem;
-
-  class ManualController extends (require("../../../../engine/input/InputController").InputController) {
-    setup() {}
-    cleanup() {}
-  }
 
   beforeEach(() => {
     world = new World();
-    inputManager = new InputManager<PongInput>();
-    inputManager.addController(new ManualController());
-    system = new PongInputSystem(inputManager);
+    system = new PongInputSystem();
+
+    const inputEntity = world.createEntity();
+    world.addComponent(inputEntity, {
+      type: "InputState",
+      actions: new Map(),
+      axes: new Map()
+    } as InputStateComponent);
 
     PongEntityFactory.createPaddle(world, "left");
     PongEntityFactory.createPaddle(world, "right");
   });
 
   it("should move left paddle up when p1Up is true", () => {
-    inputManager.setInputs({ p1Up: true });
+    const inputState = world.getSingleton<InputStateComponent>("InputState")!;
+    inputState.actions.set("p1Up", true);
     system.update(world, 16);
 
     const leftPaddle = world.query("Paddle", "Velocity", "Tag").find(e =>
@@ -38,7 +37,8 @@ describe("PongInputSystem", () => {
   });
 
   it("should move right paddle down when p2Down is true", () => {
-    inputManager.setInputs({ p2Down: true });
+    const inputState = world.getSingleton<InputStateComponent>("InputState")!;
+    inputState.actions.set("p2Down", true);
     system.update(world, 16);
 
     const rightPaddle = world.query("Paddle", "Velocity", "Tag").find(e =>
