@@ -13,6 +13,7 @@ import { BoundarySystem } from "../../engine/systems/BoundarySystem";
 import { FrictionSystem } from "../../engine/systems/FrictionSystem";
 import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
+import { WeaponSystem } from "./systems/WeaponSystem";
 import { ShipControlSystem } from "./systems/ShipControlSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
 import { TransformComponent, VelocityComponent, RenderComponent, FrictionComponent, ScreenShakeComponent, TagComponent, HealthComponent } from "../../engine/types/EngineTypes";
@@ -269,6 +270,7 @@ export class AsteroidsGame
 
     this.world.addSystem(this.unifiedInput);
     this.world.addSystem(inputSys);
+    this.world.addSystem(new WeaponSystem());
     this.world.addSystem(new ShipControlSystem(this.config));
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new BoundarySystem());

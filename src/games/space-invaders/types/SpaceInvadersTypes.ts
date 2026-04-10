@@ -163,6 +163,8 @@ export const GAME_CONFIG = {
   LEVEL_SPEED_MULTIPLIER: 1.1,
   MAX_DELTA_TIME: 100,
 
+  ELITE_HP: 2,
+
   PARTICLE_COUNT: 8,
   PARTICLE_TTL_BASE: 500,
   TRAIL_MAX_LENGTH: 0, // No trails for Space Invaders usually

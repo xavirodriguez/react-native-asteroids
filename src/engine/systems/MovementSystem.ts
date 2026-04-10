@@ -14,8 +14,12 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  */
 export class MovementSystem extends System {
   /**
+   * Actualiza las entidades que poseen Transform y Velocity.
+   *
    * @param world - El mundo ECS.
    * @param deltaTime - Tiempo en milisegundos. Se convierte internamente a segundos para paridad física.
+   *
+   * @sideEffect Muta el componente `Transform` de cada entidad procesada.
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Transform", "Velocity");

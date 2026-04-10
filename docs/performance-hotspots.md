@@ -24,8 +24,9 @@ El bridge entre JavaScript y los componentes nativos de React Native es un cuell
 |----------|--------|------------|
 | **Broadphase de Colisiones** | Complejidad O(N²) | Uso de `SpatialHash` para reducir comprobaciones. |
 | **Integración Física** | Cálculos trigonométricos masivos | Pre-cálculo de tablas de senos/cosenos si fuera necesario (actualmente dinámico). |
-| **Reconstrucción de Render Commands** | Presión de GC | Uso de arrays pre-asignados y reutilización de objetos comando. |
+| **Reconstrucción de Render Commands** | Presión de GC | El `CanvasRenderer` reconstruye el array de comandos cada frame. Para optimizar, se deben usar backends más eficientes como Skia. |
 | **Serialización de Red** | Latencia y ancho de banda | Uso de deltas (patches) en lugar de enviar el estado completo. |
+| **Hierarchy Resolution** | Árboles profundos | El `HierarchySystem` utiliza una caché de procesamiento para evitar re-calcular nodos ya visitados en el frame actual. |
 
 ## Diagnóstico
 El motor incluye un **`SystemProfiler`** (activable vía `world.debugMode = true`) que registra el tiempo promedio de ejecución de cada sistema individual, permitiendo localizar rápidamente qué sistema está consumiendo el presupuesto de tiempo del frame.

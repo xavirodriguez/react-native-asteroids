@@ -33,7 +33,9 @@ export class Query {
    * Añade una entidad al resultado de la query si no está presente.
    *
    * @param entity - La entidad a añadir.
+   *
    * @postcondition Si la entidad era nueva, marca {@link Query.needsUpdateArray} como `true`.
+   * @sideEffect Altera el `Set` interno de entidades.
    */
   public add(entity: Entity): void {
     if (!this.entities.has(entity)) {
@@ -46,7 +48,9 @@ export class Query {
    * Elimina una entidad del resultado de la query.
    *
    * @param entity - La entidad a eliminar.
+   *
    * @postcondition Si la entidad estaba presente, marca {@link Query.needsUpdateArray} como `true`.
+   * @sideEffect Altera el `Set` interno de entidades.
    */
   public remove(entity: Entity): void {
     if (this.entities.delete(entity)) {

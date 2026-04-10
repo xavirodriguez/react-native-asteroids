@@ -186,3 +186,38 @@ export const scrollingBackgroundEffect: EffectDrawer<CanvasRenderingContext2D> =
     ctx.fill();
   }
 };
+
+/**
+ * Draw speed lines during fast descent.
+ */
+export const drawSpeedLines: EffectDrawer<CanvasRenderingContext2D> = (ctx, world, width, height) => {
+  const birds = world.query("Bird", "Transform");
+  if (birds.length === 0) return;
+
+  const birdEntity = birds[0];
+  const bird = world.getComponent<any>(birdEntity, "Bird");
+  if (!bird || bird.velocityY < FLAPPY_CONFIG.GRAVITY * 0.7) return;
+
+  const maxFallSpeed = 600;
+  const velocityY = bird.velocityY;
+  const intensity = Math.min(velocityY / maxFallSpeed, 1);
+  const lineCount = 8;
+  const opacity = intensity * 0.6;
+
+  ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+  ctx.lineWidth = 2;
+
+  const frameCount = (world as any)._frameCount || 0; // Assuming frameCount exists or use Date
+
+  for (let i = 0; i < lineCount; i++) {
+    // Semi-random but consistent positions
+    const side = i % 2 === 0 ? 20 : width - 20;
+    const y = ((i * 137 + frameCount * 10) % height);
+    const length = intensity * 60;
+
+    ctx.beginPath();
+    ctx.moveTo(side, y);
+    ctx.lineTo(side, y + length);
+    ctx.stroke();
+  }
+};

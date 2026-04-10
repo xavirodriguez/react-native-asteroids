@@ -13,6 +13,7 @@ export { Entity, Component };
  * por los sistemas principales (Rendering, Physics, Input).
  *
  * @responsibility Definir la estructura de datos para el estado del mundo.
+ * @packageDocumentation
  */
 
 /**

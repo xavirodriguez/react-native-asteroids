@@ -104,6 +104,11 @@ export class AsteroidCollisionSystem extends CollisionSystem {
   private handleAsteroidDestructionLogic(world: World, asteroid: Entity, bullet: Entity): void {
     const asteroidComp = world.getComponent<AsteroidComponent>(asteroid, "Asteroid");
     const size = asteroidComp?.size || "small";
+    const position = world.getComponent<TransformComponent>(asteroid, "Transform");
+
+    if (size === "large" && position && RandomService.getInstance("gameplay").next() < 0.3) {
+      this.spawnWeaponPickup(world, position.x, position.y);
+    }
 
     const gameState = world.getSingleton<GameStateComponent>("GameState");
     if (gameState) {
@@ -118,6 +123,19 @@ export class AsteroidCollisionSystem extends CollisionSystem {
 
     const eventBus = world.getResource<EventBus>("EventBus");
     if (eventBus) eventBus.emit("asteroid:destroyed", { size });
+  }
+
+  private spawnWeaponPickup(world: World, x: number, y: number): void {
+    const types: ("triple_shot" | "plasma_rail" | "seeker_missile")[] = ["triple_shot", "plasma_rail", "seeker_missile"];
+    const type = types[RandomService.getInstance("gameplay").nextInt(0, types.length)];
+    const colors = { triple_shot: "#FF00FF", plasma_rail: "#00FFFF", seeker_missile: "#FFFF00" };
+
+    const pickup = world.createEntity();
+    world.addComponent(pickup, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+    world.addComponent(pickup, { type: "Render", shape: "rect", size: 15, color: colors[type], rotation: 0 } as RenderComponent);
+    world.addComponent(pickup, { type: "WeaponPickup", weaponType: type } as any);
+    world.addComponent(pickup, { type: "Collider", radius: 12 } as any);
+    world.addComponent(pickup, { type: "TTL", remaining: 8000, total: 8000 } as any);
   }
 
   private spawnExplosion(world: World, position: TransformComponent, count: number): void {
