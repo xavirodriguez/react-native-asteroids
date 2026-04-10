@@ -21,7 +21,8 @@ import {
   drawFlappyBird,
   drawFlappyPipe,
   drawFlappyGround,
-  scrollingBackgroundEffect
+  scrollingBackgroundEffect,
+  drawSpeedLines
 } from "./rendering/FlappyBirdCanvasVisuals";
 import { MutatorService } from "../../services/MutatorService";
 
@@ -122,6 +123,7 @@ export class FlappyBirdGame
       renderer.registerShape("pipe", drawFlappyPipe);
       renderer.registerShape("ground", drawFlappyGround);
       renderer.registerBackgroundEffect("scrollingSky", scrollingBackgroundEffect);
+      renderer.registerBackgroundEffect("speedLines", drawSpeedLines);
     }
   }
 

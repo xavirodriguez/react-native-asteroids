@@ -13,6 +13,7 @@ import { InputStateComponent } from "./CoreComponents";
 import type { IGame, UpdateListener } from "./IGame";
 import { XPSystem } from "../systems/XPSystem";
 import { PaletteSystem } from "../systems/PaletteSystem";
+import { ImpactFeedbackSystem } from "../systems/ImpactFeedbackSystem";
 import { MutatorSystem } from "../systems/MutatorSystem";
 import { PlayerProfileService } from "../../services/PlayerProfileService";
 import { MutatorService } from "../../services/MutatorService";
@@ -316,6 +317,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   protected async registerEngineSystems(): Promise<void> {
     this.world.addSystem(new XPSystem(this.eventBus));
+    this.world.addSystem(new ImpactFeedbackSystem(this.eventBus));
 
     const profile = await PlayerProfileService.getProfile();
     this.world.addSystem(new PaletteSystem(profile.activePalette));
