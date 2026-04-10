@@ -3,7 +3,7 @@ import { World } from "../core/World";
 import { BaseGame } from "../core/BaseGame";
 
 /**
- * Interface for components that represent a generic game state.
+ * Interfaz para componentes que representan un estado de juego genérico.
  */
 export interface IGameState {
   isGameOver: boolean;
@@ -11,10 +11,17 @@ export interface IGameState {
 }
 
 /**
- * Abstract base system for managing game state.
- * Standardizes how Game Over is detected and reported.
+ * Sistema base abstracto para gestionar el estado global del juego.
+ * Estandariza cómo se detecta, registra y comunica la condición de "Game Over".
  *
- * @template TState - The type of the game state component.
+ * @template TState - El tipo del componente de estado de juego (debe implementar IGameState).
+ *
+ * @responsibility Monitorizar condiciones de victoria/derrota.
+ * @responsibility Pausar la instancia del juego cuando el estado de Game Over es detectado.
+ * @executionOrder Fase: GameRules.
+ *
+ * @conceptualRisk [SINGLETON_STATE][MEDIUM] Si existen múltiples entidades con componentes
+ * de estado, el sistema solo procesará la primera retornada por `getGameState`.
  */
 export abstract class BaseGameStateSystem<TState extends IGameState> extends System {
   protected gameOverLogged = false;
@@ -27,7 +34,10 @@ export abstract class BaseGameStateSystem<TState extends IGameState> extends Sys
   }
 
   /**
-   * Updates the game state by checking the game over condition.
+   * Actualiza el estado del juego comprobando la condición de fin de partida.
+   *
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo transcurrido en milisegundos.
    */
   public update(world: World, deltaTime: number): void {
     this._world = world;
@@ -39,20 +49,23 @@ export abstract class BaseGameStateSystem<TState extends IGameState> extends Sys
   }
 
   /**
-   * Implement specific game logic to update the state.
+   * Implementar la lógica específica del juego para actualizar las propiedades del estado.
    */
   protected abstract updateGameState(world: World, state: TState, deltaTime: number): void;
 
   /**
-   * Retrieves the current game state component from the world.
+   * Recupera el componente de estado de juego desde el mundo ECS.
    */
   protected abstract getGameState(world: World): TState | undefined;
 
   /**
-   * Evaluates if the game over condition is met.
+   * Evalúa si se cumplen las condiciones para finalizar la partida.
    */
   protected abstract evaluateGameOverCondition(state: TState): boolean;
 
+  /**
+   * Gestiona la transición al estado de Game Over, incluyendo el log y la pausa del motor.
+   */
   private handleGameOverStatus(state: TState): void {
     const isGameOver = this.evaluateGameOverCondition(state);
     state.isGameOver = isGameOver;
@@ -67,6 +80,9 @@ export abstract class BaseGameStateSystem<TState extends IGameState> extends Sys
     }
   }
 
+  /**
+   * Comprueba si la partida ha finalizado.
+   */
   public isGameOver(world?: World): boolean {
     const w = world || this._world;
     if (w) {
@@ -76,6 +92,9 @@ export abstract class BaseGameStateSystem<TState extends IGameState> extends Sys
     return false;
   }
 
+  /**
+   * Reinicia los flags de Game Over en el estado y en la instancia del sistema.
+   */
   public resetGameOverState(world?: World): void {
     const w = world || this._world;
     if (w) {

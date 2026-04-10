@@ -37,7 +37,7 @@
 
 ## [1.2.0] - 2025-05-24
 ### Added
-- Full Level 5 TSDoc audit for 10 engine systems, renderers, and utilities:
+- Full Level 5 TSDoc audit for 20 engine files (systems, renderers, input, and utilities):
   - `src/engine/systems/MovementSystem.ts`
   - `src/engine/systems/CollisionSystem.ts`
   - `src/engine/systems/BoundarySystem.ts`
@@ -48,6 +48,16 @@
   - `src/engine/rendering/CanvasRenderer.ts`
   - `src/engine/rendering/SkiaRenderer.ts`
   - `src/engine/utils/PhysicsUtils.ts`
+  - `src/engine/systems/FrictionSystem.ts`
+  - `src/engine/systems/TTLSystem.ts`
+  - `src/engine/systems/RenderUpdateSystem.ts`
+  - `src/engine/input/InputManager.ts`
+  - `src/engine/input/KeyboardController.ts`
+  - `src/engine/utils/Juice.ts`
+  - `src/engine/utils/PrefabPool.ts`
+  - `src/engine/utils/ObjectPool.ts`
+  - `src/engine/systems/BaseGameStateSystem.ts`
+  - `src/engine/systems/AnimationSystem.ts`
 
 ### Detected Conceptual Risks
 - `MovementSystem.ts`: Euler integration precision issues at high speeds (tunneling).
@@ -57,3 +67,7 @@
 - `ParticleSystem.ts`: Silent failure risk on pool exhaustion; visual-only particles should avoid global RNG.
 - `CanvasRenderer.ts`: Garbage Collector pressure from rebuilding render command arrays every frame.
 - `SkiaRenderer.ts`: Performance bottleneck risk due to JS-Native bridge overhead in entity-heavy scenes.
+- `TTLSystem.ts`: Mutation safety risks from side effects within the `onComplete` callback.
+- `RenderUpdateSystem.ts`: Manual version bumping causing unnecessary re-renders (version bloat).
+- `ObjectPool.ts`: Memory corruption risks due to mutable references returned by `acquire()`.
+- `BaseGameStateSystem.ts`: Singleton state assumption risk (masks multi-state entity scenarios).

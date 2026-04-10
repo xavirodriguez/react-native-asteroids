@@ -1,21 +1,29 @@
 import { InputController } from "./InputController";
 
 /**
- * Centralized manager for handling multiple input sources.
+ * Gestor centralizado para manejar múltiples fuentes de entrada.
+ * Agrega el estado de varios controladores en un único estado semántico.
  *
- * @deprecated Use UnifiedInputSystem instead for semantic action-based input.
+ * @deprecated Utilizar `UnifiedInputSystem` para nuevos desarrollos basado en acciones semánticas.
+ *
+ * @responsibility Mantener una lista de controladores de entrada.
+ * @responsibility Consolidar el estado de entrada de todos los controladores registrados.
  *
  * @remarks
- * The InputManager maintains a list of {@link InputController}s and aggregates
- * their states into a single, unified input state.
+ * El InputManager permite que múltiples periféricos (teclado, touch, red) controlen
+ * el mismo estado lógico del juego simultáneamente.
+ *
+ * @packageDocumentation
  */
 export class InputManager<TInputState extends Record<string, boolean>> {
   private controllers: InputController<TInputState>[] = [];
 
   /**
-   * Registers an input controller with the manager.
+   * Registra un controlador de entrada en el gestor.
    *
-   * @param controller - The {@link InputController} to add.
+   * @param controller - El controlador a añadir (e.g., KeyboardController).
+   *
+   * @sideEffect Llama al método `setup()` del controlador.
    */
   public addController(controller: InputController<TInputState>): void {
     controller.setup();
@@ -23,7 +31,7 @@ export class InputManager<TInputState extends Record<string, boolean>> {
   }
 
   /**
-   * Removes all controllers and cleans up their resources.
+   * Elimina todos los controladores y limpia sus recursos (listeners, buffers).
    */
   public cleanup(): void {
     this.controllers.forEach((c) => c.cleanup());
@@ -31,26 +39,28 @@ export class InputManager<TInputState extends Record<string, boolean>> {
   }
 
   /**
-   * Clears all registered controllers without calling cleanup on them.
-   * Useful when the controllers themselves are managed elsewhere.
+   * Limpia los controladores registrados sin invocar su método cleanup.
+   * Útil cuando el ciclo de vida de los controladores se gestiona externamente.
    */
   public clearControllers(): void {
     this.controllers = [];
   }
 
   /**
-   * Distributes manual input updates to all registered controllers.
-   * Useful for touch or network-driven inputs.
+   * Distribuye actualizaciones manuales de estado a todos los controladores.
    *
-   * @param inputs - Partial set of input state to update.
+   * @param inputs - Estado parcial a inyectar (e.g., desde red o UI táctil).
    */
   public setInputs(inputs: Partial<TInputState>): void {
     this.controllers.forEach((c) => c.setInputs(inputs));
   }
 
   /**
-   * Updates all registered controllers.
-   * Useful for controllers that need to perceive the world or handle timing.
+   * Actualiza todos los controladores registrados.
+   *
+   * @param world - El mundo ECS (para controladores reactivos).
+   * @param currentTime - Tiempo actual del sistema.
+   * @param tick - (Opcional) Número de tick actual para controladores deterministas.
    */
   public update(world: any, currentTime: number, tick?: number): void {
     this.controllers.forEach((c: any) => {
@@ -64,13 +74,13 @@ export class InputManager<TInputState extends Record<string, boolean>> {
   }
 
   /**
-   * Aggregates input states from all registered controllers.
+   * Consolida los estados de todos los controladores en uno solo.
+   * Una acción se considera activa si está activa en AL MENOS un controlador (OR lógico).
    *
-   * @returns The unified input state.
+   * @returns El estado de entrada unificado.
    *
-   * @remarks
-   * If multiple controllers provide a state for the same action,
-   * the action is considered active if it is active in AT LEAST one controller.
+   * @conceptualRisk [INPUT_CONFLICT][LOW] No hay prioridad entre controladores;
+   * cualquier controlador puede activar una acción.
    */
   public getCombinedInputs(): TInputState {
     return this.controllers.reduce(

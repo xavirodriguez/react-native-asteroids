@@ -3,7 +3,17 @@ import { World } from "../core/World";
 import { RenderComponent, TransformComponent } from "../core/CoreComponents";
 
 /**
- * Generic rendering-related updates (rotation, trails, flashes).
+ * Sistema que gestiona actualizaciones visuales que no afectan a la simulación física (rotación visual, estelas, flashes).
+ *
+ * @responsibility Mantener el historial de posiciones para efectos de estela (trails).
+ * @responsibility Actualizar la rotación visual basada en la velocidad angular.
+ * @responsibility Decrementar los temporizadores de efectos de daño (hit flashes).
+ * @queries Transform, Render
+ * @mutates Render, World (version)
+ * @executionOrder Fase: Presentation.
+ *
+ * @conceptualRisk [VERSION_BLOAT][LOW] Incrementa `world.version` manualmente en cada frame, lo que
+ * fuerza a los renderizadores a redibujar todo incluso si no hay cambios estructurales.
  */
 export class RenderUpdateSystem extends System {
   protected trailMaxLength: number;
@@ -13,6 +23,9 @@ export class RenderUpdateSystem extends System {
     this.trailMaxLength = trailMaxLength;
   }
 
+  /**
+   * Ejecuta todas las actualizaciones de componentes visuales.
+   */
   public update(world: World, deltaTime: number): void {
     this.updateTrails(world);
     this.updateRotation(world, deltaTime);
@@ -20,6 +33,10 @@ export class RenderUpdateSystem extends System {
     world.version++;
   }
 
+  /**
+   * Actualiza las estelas (trails) de las entidades.
+   * Soporta tanto el componente genérico Render como el componente específico de Ship.
+   */
   protected updateTrails(world: World): void {
     const entities = world.query("Transform", "Render");
     entities.forEach((entity) => {
@@ -49,6 +66,9 @@ export class RenderUpdateSystem extends System {
     });
   }
 
+  /**
+   * Actualiza la rotación visual basándose en la velocidad angular definida en RenderComponent.
+   */
   private updateRotation(world: World, deltaTime: number): void {
     const entities = world.query("Render");
     entities.forEach((entity) => {
@@ -59,6 +79,9 @@ export class RenderUpdateSystem extends System {
     });
   }
 
+  /**
+   * Gestiona la duración de los efectos de destello cuando una entidad recibe daño.
+   */
   private updateHitFlashes(world: World): void {
     const entities = world.query("Render");
     entities.forEach((entity) => {

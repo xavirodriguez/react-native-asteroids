@@ -20,7 +20,17 @@
     "src/engine/systems/ScreenShakeSystem.ts": { "level": 5, "status": "completed" },
     "src/engine/rendering/CanvasRenderer.ts": { "level": 5, "status": "completed" },
     "src/engine/rendering/SkiaRenderer.ts": { "level": 5, "status": "completed" },
-    "src/engine/utils/PhysicsUtils.ts": { "level": 5, "status": "completed" }
+    "src/engine/utils/PhysicsUtils.ts": { "level": 5, "status": "completed" },
+    "src/engine/systems/FrictionSystem.ts": { "level": 5, "status": "completed" },
+    "src/engine/systems/TTLSystem.ts": { "level": 5, "status": "completed" },
+    "src/engine/systems/RenderUpdateSystem.ts": { "level": 5, "status": "completed" },
+    "src/engine/input/InputManager.ts": { "level": 5, "status": "completed" },
+    "src/engine/input/KeyboardController.ts": { "level": 5, "status": "completed" },
+    "src/engine/utils/Juice.ts": { "level": 5, "status": "completed" },
+    "src/engine/utils/PrefabPool.ts": { "level": 5, "status": "completed" },
+    "src/engine/utils/ObjectPool.ts": { "level": 5, "status": "completed" },
+    "src/engine/systems/BaseGameStateSystem.ts": { "level": 5, "status": "completed" },
+    "src/engine/systems/AnimationSystem.ts": { "level": 5, "status": "completed" }
   },
-  "lastUpdated": "2025-05-24T12:00:00Z"
+  "lastUpdated": "2025-05-24T18:00:00Z"
 }

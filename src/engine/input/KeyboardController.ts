@@ -1,19 +1,25 @@
 import { InputController } from "./InputController";
 
 /**
- * Mapping between keyboard event codes and input actions.
+ * Mapeo entre códigos de eventos de teclado y acciones de entrada.
  */
 export interface KeyMap<TInputState extends Record<string, boolean>> {
   [keyCode: string]: keyof TInputState;
 }
 
 /**
- * Controller implementation that uses browser keyboard events.
+ * Implementación de controlador que utiliza eventos de teclado del navegador.
+ *
+ * @responsibility Escuchar eventos nativos de teclado y mapearlos a acciones lógicas del juego.
+ * @executionOrder Fase: Entrada (Input).
+ *
+ * @conceptualRisk [KEYBOARD_MISMATCH][LOW] Depende de `e.code`, que es independiente del layout físico (QWERTY vs DVORAK),
+ * pero puede variar entre navegadores o sistemas operativos antiguos.
  */
 export class KeyboardController<TInputState extends Record<string, boolean>>
   extends InputController<TInputState> {
 
-  /** Set of currently pressed keyboard keys by their `code`. */
+  /** Conjunto de teclas actualmente presionadas (códigos e.code). */
   private keys = new Set<string>();
   private keyMap: KeyMap<TInputState>;
   private defaultState: TInputState;
@@ -26,7 +32,7 @@ export class KeyboardController<TInputState extends Record<string, boolean>>
   }
 
   /**
-   * Attaches keydown and keyup listeners to the global window object.
+   * Conecta los listeners de `keydown` y `keyup` al objeto global window.
    */
   setup(): void {
     if (typeof window === "undefined" || typeof window.addEventListener !== "function") return;
@@ -36,7 +42,7 @@ export class KeyboardController<TInputState extends Record<string, boolean>>
   }
 
   /**
-   * Removes keyboard event listeners from the global window object.
+   * Elimina los listeners de teclado del objeto window.
    */
   cleanup(): void {
     if (typeof window === "undefined" || typeof window.removeEventListener !== "function") return;
@@ -46,7 +52,7 @@ export class KeyboardController<TInputState extends Record<string, boolean>>
   }
 
   /**
-   * Internal handler for keydown events.
+   * Manejador interno para eventos de pulsación de tecla.
    */
   private handleKeyDown = (e: KeyboardEvent): void => {
     this.keys.add(e.code);
@@ -54,7 +60,7 @@ export class KeyboardController<TInputState extends Record<string, boolean>>
   };
 
   /**
-   * Internal handler for keyup events.
+   * Manejador interno para eventos de liberación de tecla.
    */
   private handleKeyUp = (e: KeyboardEvent): void => {
     this.keys.delete(e.code);
@@ -62,7 +68,9 @@ export class KeyboardController<TInputState extends Record<string, boolean>>
   };
 
   /**
-   * Maps current key states to TInputState.
+   * Sincroniza el estado de las teclas pulsadas con el objeto de entrada TInputState.
+   *
+   * @invariant Las acciones no mapeadas mantienen su valor por defecto definido en `defaultState`.
    */
   private updateInputs(): void {
     const next = { ...this.defaultState };
