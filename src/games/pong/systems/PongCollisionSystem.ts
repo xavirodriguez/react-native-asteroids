@@ -59,9 +59,6 @@ export class PongCollisionSystem extends CollisionSystem {
           ballPos.x = paddlePos.x - PONG_CONFIG.PADDLE_WIDTH / 2 - PONG_CONFIG.BALL_SIZE - 1;
         }
 
-        // Juice: Squash de la bola
-        Juice.squash(world, ballEntity, 0.6, 1.4, 50);
-
         // Juice: Recoil de la pala
         const recoilDir = paddleSide === "left" ? -1 : 1;
         const originalPaddleX = paddlePos.x;
