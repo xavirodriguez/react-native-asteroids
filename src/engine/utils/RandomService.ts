@@ -1,7 +1,14 @@
 /**
- * Seedable pseudo-random number generator.
- * Provides deterministic randomness for game logic.
- * Supports multiple instances to prevent state contamination between systems (e.g., rendering vs. logic).
+ * Servicio de aleatoriedad determinista (PRNG).
+ * Proporciona instancias segregadas para simulación y efectos visuales para prevenir
+ * la deriva de la semilla (seed drift).
+ *
+ * @remarks
+ * Es imperativo utilizar `getInstance("gameplay")` para cualquier lógica que afecte
+ * el estado del juego (IA, spawn, daño) para garantizar determinismo y soporte de replay.
+ * Para efectos puramente estéticos (partículas, flashes), se debe usar `getInstance("render")`.
+ *
+ * @packageDocumentation
  */
 export class RandomService {
   private static globalInstance: RandomService = new RandomService(12345);

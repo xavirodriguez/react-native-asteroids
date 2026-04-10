@@ -31,3 +31,12 @@ Esta sección documenta las fragilidades arquitectónicas y de diseño detectada
 |-----------|-------------|---------------------|
 | **MEDIUM** | El hook `useGame` utiliza `@ts-ignore` para instanciar juegos con configuraciones específicas, rompiendo la seguridad de tipos. | `useGame.ts` |
 | **LOW** | Componentes de renderizado específicos de Asteroids inyectados directamente en el gestor de renderizado core. | `AsteroidsRendererManager.ts` |
+
+## [AUDIT_BATCH_2] - Nuevos Riesgos Identificados
+
+| Categoría | Severidad | Descripción | Ubicación |
+|-----------|-----------|-------------|-----------|
+| **DETERMINISM** | **CRITICAL** | `currentTick` (number) puede desbordarse tras ~285,000 años, pero los límites de lockstep/buffer podrían verse afectados por la precisión mucho antes. | `BaseGame.ts` |
+| **DETERMINISM** | **HIGH** | `getInputState()` ignora los `overrides`. Esto significa que el input enviado por red no incluirá acciones de la UI táctil. | `UnifiedInputSystem.ts` |
+| **MEMORY** | **CRITICAL** | `EntityPool.release()` no previene el "double-release", lo que puede corromper la identidad de entidades en el `World`. | `EntityPool.ts` |
+| **PERFORMANCE**| **MEDIUM** | El loop de `GameLoop` puede disparar el "Spiral of Death" si la simulación es más lenta que el tiempo real, a pesar del límite `maxDeltaMs`. | `GameLoop.ts` |

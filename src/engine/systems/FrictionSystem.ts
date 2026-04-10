@@ -4,8 +4,13 @@ import { VelocityComponent, FrictionComponent } from "../types/EngineTypes";
 import { PhysicsUtils } from "../utils/PhysicsUtils";
 
 /**
- * Generic Friction System for the TinyAsterEngine.
- * Applies velocity damping based on a friction coefficient.
+ * Sistema genérico de fricción.
+ * Aplica una amortiguación a la velocidad lineal basada en un coeficiente.
+ *
+ * @responsibility Reducir gradualmente la velocidad de las entidades.
+ * @queries Velocity, Friction
+ * @mutates Velocity
+ * @executionOrder Fase: Simulation.
  */
 export class FrictionSystem extends System {
   /**

@@ -8,8 +8,17 @@ import { RandomService } from "../utils/RandomService";
 export type SkiaShapeDrawer = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => void;
 
 /**
- * Procedural Skia Renderer implementation.
- * Generic and extensible via shape drawers.
+ * Implementación de Renderer basada en la API de Skia para React Native.
+ * Proporciona renderizado acelerado por hardware óptimo para dispositivos móviles.
+ *
+ * @responsibility Dibujar el estado del mundo ECS utilizando el backend nativo de Skia.
+ * @responsibility Gestionar la interpolación visual entre ticks físicos.
+ * @queries Transform, Render, GameState
+ * @executionOrder Fase: Renderizado (Sincronizado con VSync).
+ *
+ * @remarks
+ * Al igual que el {@link CanvasRenderer}, es extensible mediante el registro de shape drawers.
+ * Es el renderizador preferido para iOS y Android por su rendimiento superior.
  */
 export class SkiaRenderer implements Renderer {
   public readonly type = 'skia';

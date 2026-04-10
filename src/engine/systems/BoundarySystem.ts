@@ -10,8 +10,13 @@ import {
 import { PhysicsUtils } from "../utils/PhysicsUtils";
 
 /**
- * Universal Boundary System that handles wrapping, bouncing, or destruction
- * of entities when they leave the defined screen boundaries.
+ * Sistema universal de límites que gestiona el teletransporte (wrap), rebote (bounce)
+ * o destrucción de entidades cuando salen de los límites de pantalla definidos.
+ *
+ * @responsibility Mantener las entidades dentro del área de juego o destruirlas si salen.
+ * @queries Transform, Boundary
+ * @mutates Transform, Velocity, World (Entity removal)
+ * @executionOrder Fase: Simulation. Debe ejecutarse después de MovementSystem.
  */
 export class BoundarySystem extends System {
   public update(world: World, deltaTime: number): void {
