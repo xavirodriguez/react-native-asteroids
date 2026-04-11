@@ -15,29 +15,11 @@ export interface SceneNode {
 /**
  * Manages the hierarchy of entities and their transformations.
  * Ensures that child entities' transforms are relative to their parents.
- *
- * @responsibility Administrar relaciones padre-hijo entre entidades fuera del flujo ECS principal.
- * @responsibility Calcular matrices de transformación del mundo (world transforms) de forma recursiva.
- *
- * @deprecated Use `HierarchySystem` instead for ECS-integrated transform calculations.
- *
- * @remarks
- * Esta clase se mantiene por compatibilidad con sistemas legados. En el nuevo flujo ECS,
- * la jerarquía se gestiona mediante componentes `ParentComponent` y el `HierarchySystem`.
- *
- * @invariant Un nodo no puede ser su propio padre (no circularidad, aunque no se valida explícitamente).
- * @conceptualRisk [STALE_TRANSFORMS] Si no se llama a `updateTransforms()` tras cambios en la
- * jerarquía, las world transforms estarán desincronizadas.
- * @conceptualRisk [MEMORY_LEAK] Las entidades eliminadas del World deben eliminarse manualmente
- * del SceneGraph para evitar fugas de memoria en el mapa `nodes`.
  */
 export class SceneGraph {
   private nodes = new Map<Entity, SceneNode>();
   private roots = new Set<Entity>();
 
-  /**
-   * Adds a new node to the scene graph.
-   */
   public addNode(entityId: Entity, parentId: Entity | null = null): SceneNode {
     const node: SceneNode = {
       entityId,
@@ -57,7 +39,6 @@ export class SceneGraph {
       }
     }
 
-    // Always attempt to add to roots if parent is null or missing
     if (parentId === null || !this.nodes.has(parentId)) {
       this.roots.add(entityId);
     }
@@ -65,9 +46,6 @@ export class SceneGraph {
     return node;
   }
 
-  /**
-   * Removes a node from the scene graph.
-   */
   public removeNode(entityId: Entity, reparentChildren: boolean = true): void {
     const node = this.nodes.get(entityId);
     if (!node) return;
@@ -79,8 +57,6 @@ export class SceneGraph {
       }
     }
 
-    // Always attempt to remove from roots, covering cases where parentId
-    // was set but the parent didn't exist in the graph.
     this.roots.delete(entityId);
 
     if (reparentChildren) {
@@ -96,14 +72,10 @@ export class SceneGraph {
     this.nodes.delete(entityId);
   }
 
-  /**
-   * Sets or changes the parent of a node.
-   */
   public setParent(childId: Entity, parentId: Entity | null): void {
     const child = this.nodes.get(childId);
     if (!child) return;
 
-    // Remove from old parent
     if (child.parentId !== null) {
       const oldParent = this.nodes.get(child.parentId);
       if (oldParent) {
@@ -114,9 +86,8 @@ export class SceneGraph {
     this.roots.delete(childId);
 
     child.parentId = parentId;
-    child.dirty = true;
+    this.markDirty(childId);
 
-    // Add to new parent
     if (parentId !== null) {
       const newParent = this.nodes.get(parentId);
       if (newParent) {
@@ -129,31 +100,29 @@ export class SceneGraph {
     }
   }
 
-  /**
-   * Updates all world transforms in the hierarchy.
-   * Uses a Depth-First Search with dirty flag propagation.
-   */
+  public markDirty(entityId: Entity): void {
+    const node = this.nodes.get(entityId);
+    if (node && !node.dirty) {
+      node.dirty = true;
+      // Propagation is handled during updateTransforms to avoid redundant work
+    }
+  }
+
   public updateTransforms(): void {
     for (const rootId of this.roots) {
       this.updateNodeTransform(rootId, null, false);
     }
   }
 
-  /**
-   * Gets the world transform of an entity.
-   */
   public getWorldTransform(entityId: Entity): Transform | undefined {
     return this.nodes.get(entityId)?.worldTransform;
   }
 
-  /**
-   * Sets the local transform for a node and marks it as dirty.
-   */
   public setLocalTransform(entityId: Entity, transform: Partial<Transform>): void {
     const node = this.nodes.get(entityId);
     if (node) {
       Object.assign(node.localTransform, transform);
-      node.dirty = true;
+      this.markDirty(entityId);
     }
   }
 
@@ -182,8 +151,6 @@ export class SceneGraph {
 
     if (!t.matrix) t.matrix = [1, 0, 0, 1, 0, 0];
 
-    // [ a, b, c, d, tx, ty ]
-    // [ sX*cos, sX*sin, -sY*sin, sY*cos, x, y ]
     t.matrix[0] = t.scaleX * cos;
     t.matrix[1] = t.scaleX * sin;
     t.matrix[2] = -t.scaleY * sin;
@@ -199,11 +166,6 @@ export class SceneGraph {
     if (!out.matrix) out.matrix = [1, 0, 0, 1, 0, 0];
     const mo = out.matrix;
 
-    // Standard 2x3 matrix multiplication (mo = m1 * m2)
-    // | a1 c1 tx1 |   | a2 c2 tx2 |
-    // | b1 d1 ty1 | * | b2 d2 ty2 |
-    // | 0  0  1   |   | 0  0  1   |
-
     const a1 = m1[0], b1 = m1[1], c1 = m1[2], d1 = m1[3], tx1 = m1[4], ty1 = m1[5];
     const a2 = m2[0], b2 = m2[1], c2 = m2[2], d2 = m2[3], tx2 = m2[4], ty2 = m2[5];
 
@@ -214,7 +176,6 @@ export class SceneGraph {
     mo[4] = a1 * tx2 + c1 * ty2 + tx1;
     mo[5] = b1 * tx2 + d1 * ty2 + ty1;
 
-    // Update decomposed properties for backward compatibility
     out.x = mo[4];
     out.y = mo[5];
     out.rotation = parent.rotation + local.rotation;
