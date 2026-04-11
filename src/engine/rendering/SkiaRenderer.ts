@@ -20,6 +20,10 @@ export type SkiaShapeDrawer = (canvas: SkCanvas, entity: Entity, world: World, r
  * Al igual que el {@link CanvasRenderer}, es extensible mediante el registro de shape drawers.
  * Es el renderizador preferido para iOS y Android por su rendimiento superior.
  * Contrato de consistencia: Debe mantener paridad visual con {@link CanvasRenderer}.
+ *
+ * @contract Interpolación: Usa el valor `alpha` del loop para interpolar entre `PreviousTransform` y `Transform`.
+ * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia puede perderse
+ * si la app pasa a segundo plano de forma prolongada.
  */
 export class SkiaRenderer implements Renderer {
   public readonly type = 'skia';

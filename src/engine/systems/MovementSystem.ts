@@ -10,7 +10,12 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * @responsibility Integrar la velocidad en la posición para el tick actual.
  * @queries Transform, Velocity
  * @mutates Transform.x, Transform.y
+ * @dependsOn {@link PhysicsUtils.integrateMovement}
  * @executionOrder Fase: Simulation. Debe ejecutarse antes de Collision y Boundary.
+ *
+ * @remarks
+ * Este sistema es el motor de movimiento principal para todas las entidades físicas no estáticas.
+ * Utiliza {@link PhysicsUtils} para asegurar consistencia con el código de predicción.
  *
  * @conceptualRisk [DETERMINISM][CRITICAL] Existe lógica de integración duplicada entre este sistema
  * y los helpers de predicción (ej. `predictLocalPlayer` en Asteroids). Cualquier cambio en `PhysicsUtils`

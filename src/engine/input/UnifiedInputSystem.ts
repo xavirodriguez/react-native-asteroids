@@ -89,6 +89,8 @@ export class UnifiedInputSystem extends System {
    * @param world - El mundo donde reside el componente de entrada.
    * @param _deltaTime - Tiempo transcurrido (no utilizado actualmente para input).
    *
+   * @precondition El `world` debe ser válido.
+   * @postcondition El componente singleton {@link InputStateComponent} está actualizado.
    * @mutates world - Crea o actualiza el componente `InputState`.
    */
   public update(world: World, _deltaTime: number): void {
@@ -152,12 +154,11 @@ export class UnifiedInputSystem extends System {
    * Utilizado principalmente para enviar el estado de entrada a través de la red
    * en juegos multijugador.
    *
+   * @returns Un objeto con la lista de acciones activas y el valor de los ejes.
+   * @queries activeKeys, activeTouches - Lee el estado de los acumuladores de eventos.
    * @conceptualRisk [INPUT_DRIFT] `getInputState()` actualmente ignora `overrides` y solo considera
    * entradas crudas de hardware. Esto puede causar desincronización si un sistema externo
    * (como un joystick virtual UI) usa `setOverride`.
-   *
-   * @returns Un objeto con la lista de acciones activas y el valor de los ejes.
-   * @queries activeKeys, activeTouches - Lee el estado de los acumuladores de eventos.
    */
   public getInputState(): { actions: string[], axes: Record<string, number> } {
     const actions: string[] = [];
