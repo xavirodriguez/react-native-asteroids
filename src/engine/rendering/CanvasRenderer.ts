@@ -54,11 +54,11 @@ export class CanvasRenderer implements Renderer {
     this.shapeDrawers.set(name, drawer);
   }
 
-  public registerBackgroundEffect(drawer: any): void {
+  public registerBackgroundEffect(name: string, drawer: any): void {
     this.backgroundEffects.push(drawer);
   }
 
-  public registerForegroundEffect(drawer: any): void {
+  public registerForegroundEffect(name: string, drawer: any): void {
     this.foregroundEffects.push(drawer);
   }
 

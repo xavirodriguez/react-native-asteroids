@@ -15,46 +15,55 @@ type Mat3 = [number, number, number, number, number, number];
  * @responsibility Implementar propagación de flags 'dirty' para evitar cálculos redundantes.
  */
 export class HierarchySystem extends System {
+  private wasDirty = new Set<Entity>();
+
   public update(world: World, _deltaTime: number): void {
     const transforms = world.query("Transform");
     const processed = new Set<Entity>();
+    this.wasDirty.clear();
 
     for (let i = 0; i < transforms.length; i++) {
       this.updateTransform(world, transforms[i], processed, false);
     }
   }
 
-  private updateTransform(world: World, entity: Entity, processed: Set<Entity>, parentDirty: boolean): void {
-    if (processed.has(entity)) return;
+  /**
+   * Actualiza recursivamente la transformación de una entidad.
+   */
+  private updateTransform(world: World, entity: Entity, processed: Set<Entity>, forcedDirty: boolean): boolean {
+    if (processed.has(entity)) {
+      return this.wasDirty.has(entity);
+    }
 
     const transform = world.getComponent<TransformComponent>(entity, "Transform");
-    if (!transform) return;
+    if (!transform) return false;
 
-    // A transform is dirty if it was explicitly marked or if its parent is dirty
-    const isDirty = (transform as any).dirty || parentDirty;
+    let isDirty = (transform as any).dirty || forcedDirty;
 
     if (transform.parent !== undefined) {
-      // Ensure parent is updated first
-      this.updateTransform(world, transform.parent, processed, false);
-      const parentTransform = world.getComponent<TransformComponent>(transform.parent, "Transform");
+      // Propagation: parent's dirty state forces child to be dirty
+      const parentChanged = this.updateTransform(world, transform.parent, processed, forcedDirty);
+      isDirty = isDirty || parentChanged;
 
-      if (isDirty && parentTransform) {
+      if (isDirty) {
+        const parentTransform = world.getComponent<TransformComponent>(transform.parent, "Transform")!;
         const parentMat = this.getMatrixFromTransform(parentTransform, true);
         const localMat = this.getMatrixFromTransform(transform, false);
         const worldMat = this.multiplyMat3(parentMat, localMat);
         this.applyMatrixToWorldTransform(transform, worldMat);
-        (transform as any).dirty = false;
       }
     } else if (isDirty) {
       // Root entity
       this.setToLocal(transform);
+    }
+
+    if (isDirty) {
       (transform as any).dirty = false;
+      this.wasDirty.add(entity);
     }
 
     processed.add(entity);
-
-    // Propagate to children (this is handled naturally by the query loop but
-    // we could also do it explicitly if we had a children cache)
+    return isDirty;
   }
 
   private setToLocal(t: TransformComponent): void {

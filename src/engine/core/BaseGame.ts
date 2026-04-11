@@ -138,6 +138,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
       this.initializeEntities();
     }
     if (this._isPaused) this.resume();
+    this._notifyListeners();
   }
 
   public destroy(): void {
@@ -191,6 +192,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   private _handleGlobalKey(e: KeyboardEvent): void {
     if (e.code === this._config.pauseKey) this._isPaused ? this.resume() : this.pause();
-    if (e.code === this._config.restartKey) this.restart();
+    if (e.code === this._config.restartKey) {
+      this.restart().catch(console.error);
+    }
   }
 }
