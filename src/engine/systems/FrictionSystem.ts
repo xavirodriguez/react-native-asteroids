@@ -10,7 +10,12 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * @responsibility Reducir gradualmente la velocidad de las entidades.
  * @queries Velocity, Friction
  * @mutates Velocity.dx, Velocity.dy
+ * @dependsOn {@link PhysicsUtils.applyFriction}
  * @executionOrder Fase: Simulation.
+ *
+ * @remarks
+ * La fricción se aplica de forma multiplicativa cada frame. Es ideal para simular resistencia
+ * al aire o rozamiento con el suelo en entornos arcade.
  *
  * @contract Amortiguación: La velocidad se reduce según `v = v * (1 - friction * dt)`.
  * @invariant No modifica la posición de la entidad.

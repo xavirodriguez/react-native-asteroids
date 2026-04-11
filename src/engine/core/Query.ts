@@ -7,6 +7,8 @@ import { Entity } from "../types/EngineTypes";
  * @remarks
  * Las queries son gestionadas por el {@link World} y se actualizan de forma incremental
  * cuando se añaden o eliminan entidades o componentes, evitando el escaneo total del mundo.
+ *
+ * @packageDocumentation
  */
 export class Query {
   private entities: Set<Entity> = new Set();
@@ -15,6 +17,7 @@ export class Query {
 
   /**
    * Crea una nueva Query para un conjunto específico de componentes.
+   *
    * @param componentTypes - Los tipos de componentes requeridos (firma de la query).
    */
   constructor(public readonly componentTypes: string[]) {}
@@ -58,11 +61,12 @@ export class Query {
    * Devuelve la lista de entidades que coinciden con la query.
    * Devuelve un array cacheado para minimizar la presión del GC.
    *
-   * @returns Un array de IDs de {@link Entity}.
-   *
    * @remarks
-   * El array devuelto es una referencia a un caché interno.
+   * El array devuelto es una referencia a un caché interno. No debe ser modificado por el
+   * consumidor (e.g. mediante `.sort()` o `.push()`).
    *
+   * @returns Un array de IDs de {@link Entity}.
+   * @postcondition El array devuelto refleja el estado actual del {@link World} para esta firma.
    * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] Si un consumidor modifica el array devuelto
    * (e.g., mediante `.push()` o `.sort()` in-place), corromperá el estado interno de la Query.
    */
