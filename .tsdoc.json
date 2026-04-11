@@ -1,0 +1,47 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/tsdoc/v0/tsdoc.schema.json",
+  "extends": [],
+  "tagDefinitions": [
+    {
+      "tagName": "@event",
+      "syntaxKind": "modifier"
+    },
+    {
+      "tagName": "@payload",
+      "syntaxKind": "modifier"
+    },
+    {
+      "tagName": "@responsibility",
+      "syntaxKind": "block"
+    },
+    {
+      "tagName": "@queries",
+      "syntaxKind": "block"
+    },
+    {
+      "tagName": "@mutates",
+      "syntaxKind": "block"
+    },
+    {
+      "tagName": "@executionOrder",
+      "syntaxKind": "block"
+    },
+    {
+      "tagName": "@conceptualRisk",
+      "syntaxKind": "block"
+    }
+  ],
+  "supportForTags": {
+    "@public": true,
+    "@internal": true,
+    "@remarks": true,
+    "@example": true,
+    "@event": true,
+    "@payload": true,
+    "@responsibility": true,
+    "@queries": true,
+    "@mutates": true,
+    "@executionOrder": true,
+    "@conceptualRisk": true
+  }
+}

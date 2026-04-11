@@ -4,6 +4,9 @@
     "strict": true,
     "strictPropertyInitialization": true,
     "noImplicitAny": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
     "paths": {
       "@/*": [
         "./*",

@@ -1,0 +1,31 @@
+name: Documentation Audit
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  docs-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build and Extract API
+        run: npm run docs:extract
+      - name: Verify API Integrity
+        run: |
+          if [ -n "$(git status --porcelain docs/reports)" ]; then
+            echo "Error: API report has changed. Please run 'npm run docs:extract' locally and commit the changes in docs/reports."
+            git diff docs/reports
+            exit 1
+          fi
+      - name: Generate Documentation
+        run: npm run docs:generate

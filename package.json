@@ -14,7 +14,11 @@
     "build:prod": "eas build --profile production --platform all",
     "deploy:preview": "eas update --branch preview --message 'Preview deploy'",
     "deploy:prod": "eas update --branch production --message 'Production deploy'",
-    "deploy:dev": "eas update --branch development --message 'Dev deploy'"
+    "deploy:dev": "eas update --branch development --message 'Dev deploy'",
+    "build:types": "tsc",
+    "docs:extract": "npm run build:types && api-extractor run --local",
+    "docs:generate": "api-documenter markdown -i docs -o docs/api",
+    "docs": "npm run docs:extract && npm run docs:generate"
   },
   "jest": {
     "preset": "jest-expo"
