@@ -20,6 +20,9 @@ export class CanvasRenderer implements Renderer {
   protected height: number = 0;
 
   private shapeDrawers = new Map<string, ShapeDrawer>();
+  private postEntityDrawers = new Map<string, ShapeDrawer>();
+  private preRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
+  private postRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
   private backgroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
   private foregroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
 
@@ -52,6 +55,22 @@ export class CanvasRenderer implements Renderer {
 
   public registerShape(name: string, drawer: ShapeDrawer): void {
     this.shapeDrawers.set(name, drawer);
+  }
+
+  public registerShapeDrawer(name: string, drawer: ShapeDrawer): void {
+    this.registerShape(name, drawer);
+  }
+
+  public registerPostEntityDrawer(name: string, drawer: ShapeDrawer): void {
+    this.postEntityDrawers.set(name, drawer);
+  }
+
+  public addPreRenderHook(hook: (ctx: CanvasRenderingContext2D, world: World) => void): void {
+    this.preRenderHooks.push(hook);
+  }
+
+  public addPostRenderHook(hook: (ctx: CanvasRenderingContext2D, world: World) => void): void {
+    this.postRenderHooks.push(hook);
   }
 
   public registerBackgroundEffect(name: string, drawer: any): void {
@@ -212,6 +231,10 @@ export class CanvasRenderer implements Renderer {
       this.backgroundEffects[i](ctx, world, this.width, this.height);
     }
 
+    for (let i = 0; i < this.preRenderHooks.length; i++) {
+      this.preRenderHooks[i](ctx, world);
+    }
+
     // Render sorted entities from the pool
     for (let i = 0; i < snapshot.entityCount; i++) {
       this.drawEntitySnapshot(ctx, snapshot.entities[i], world);
@@ -219,6 +242,10 @@ export class CanvasRenderer implements Renderer {
 
     for (let i = 0; i < this.foregroundEffects.length; i++) {
       this.foregroundEffects[i](ctx, world, this.width, this.height);
+    }
+
+    for (let i = 0; i < this.postRenderHooks.length; i++) {
+      this.postRenderHooks[i](ctx, world);
     }
 
     ctx.restore();
@@ -242,6 +269,11 @@ export class CanvasRenderer implements Renderer {
     }
 
     ctx.restore();
+
+    const postDrawer = this.postEntityDrawers.get(ent.shape);
+    if (postDrawer) {
+      postDrawer(ctx, ent.id, world, ent);
+    }
   }
 
   public render(world: World, alpha: number = 1): void {
