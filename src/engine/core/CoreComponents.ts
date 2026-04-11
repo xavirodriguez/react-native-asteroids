@@ -51,6 +51,8 @@ export interface TransformComponent extends Component {
   scaleY: number;
   /** ID de la entidad padre para transformaciones jerárquicas. */
   parent?: Entity;
+  /** Flag to indicate if the transform needs recomputation. */
+  dirty?: boolean;
 
   /** Coordenada X absoluta en el mundo (calculada por HierarchySystem). */
   worldX?: number;

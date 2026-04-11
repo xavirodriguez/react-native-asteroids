@@ -5,17 +5,7 @@ import { AssetDescriptor, AssetHandle, AssetType } from "./AssetTypes";
  *
  * @responsibility Cargar y cachear recursos externos (imágenes, sonidos, JSON).
  * @responsibility Gestionar el ciclo de vida de los recursos mediante conteo de referencias.
- * @responsibility Proveer información sobre el progreso de carga.
- *
- * @remarks
- * El sistema de referencia (`refCounts`) permite que múltiples escenas usen el mismo recurso,
- * descargándolo de memoria solo cuando la última escena lo libera.
- *
- * @invariant Un recurso con estado 'ready' debe tener datos no nulos en `data`.
- * @conceptualRisk [IO_LATENCY] No hay timeout implementado para cargas lentas, lo que puede
- * bloquear transiciones de escena indefinidamente.
- * @conceptualRisk [MEMORY_PRESSURE] Si no se llama a `unloadGroup` correctamente, la memoria
- * no se liberará nunca (fuga de recursos).
+ * @responsibility Garantizar la simetría en la carga/descarga de recursos.
  */
 export class AssetLoader {
   private cache = new Map<string, AssetHandle>();
@@ -23,19 +13,21 @@ export class AssetLoader {
   private refCounts = new Map<string, number>();
 
   /**
-   * Registers assets to be loaded.
+   * Encola recursos para ser cargados.
    */
   public queueAssets(assets: AssetDescriptor[]): void {
     this.queue.push(...assets);
   }
 
   /**
-   * Loads all queued assets asynchronously.
+   * Carga todos los recursos encolados de forma asíncrona.
+   * Incrementa el conteo de referencias para recursos ya cargados.
    */
   public async loadAll(): Promise<void> {
     const promises = this.queue.map(async (desc) => {
+      // Si ya está en caché, solo incrementamos referencia
       if (this.cache.has(desc.id)) {
-        this.refCounts.set(desc.id, (this.refCounts.get(desc.id) || 0) + 1);
+        this.incrementRef(desc.id);
         return;
       }
 
@@ -54,6 +46,7 @@ export class AssetLoader {
       } catch (error) {
         handle.status = 'error';
         handle.error = error as Error;
+        console.error(`Error loading asset ${desc.id}:`, error);
       }
     });
 
@@ -62,7 +55,7 @@ export class AssetLoader {
   }
 
   /**
-   * Retrieves an asset handle from the cache.
+   * Obtiene un handle de recurso del caché.
    */
   public get<T>(id: string): AssetHandle<T> {
     const handle = this.cache.get(id);
@@ -73,19 +66,25 @@ export class AssetLoader {
   }
 
   /**
-   * Checks if an asset is ready.
+   * Incrementa manualmente el conteo de referencias.
    */
-  public isReady(id: string): boolean {
-    return this.cache.get(id)?.status === 'ready';
+  public incrementRef(id: string): void {
+    const count = this.refCounts.get(id) || 0;
+    this.refCounts.set(id, count + 1);
   }
 
   /**
-   * Unloads a group of assets, decrementing their reference count.
+   * Descarga un grupo de recursos, decrementando su conteo de referencias.
+   * Libera la memoria si el conteo llega a cero.
    */
   public unloadGroup(ids: string[]): void {
     for (const id of ids) {
       const count = (this.refCounts.get(id) || 0) - 1;
+
       if (count <= 0) {
+        if (count < 0) {
+          console.warn(`Asset ${id} reference count underflow. Possible leak or double unload.`);
+        }
         this.cache.delete(id);
         this.refCounts.delete(id);
       } else {
@@ -95,7 +94,7 @@ export class AssetLoader {
   }
 
   /**
-   * Returns current loading progress.
+   * Devuelve el progreso actual de carga.
    */
   public progress(): { loaded: number; total: number; percent: number } {
     let loaded = 0;
@@ -115,23 +114,35 @@ export class AssetLoader {
   }
 
   private async performLoad(desc: AssetDescriptor): Promise<any> {
-    // In a real RN environment, we would use fetch() or platform-specific APIs.
-    // For now, we simulate the async loading.
+    // Simulación de carga para el entorno de engine puro
     if (desc.type === 'json') {
-      // simulate fetch
       return Promise.resolve({ success: true });
     }
     return Promise.resolve(desc.uri);
   }
 
-  // Backward compatibility
+  /**
+   * Helper para precarga compatible con sistemas legados.
+   */
   public async preload(assets: Record<string, string>): Promise<void> {
     const descriptors: AssetDescriptor[] = Object.entries(assets).map(([id, uri]) => ({
       id,
       uri,
-      type: 'texture' // default for backward compat
+      type: 'texture'
     }));
     this.queueAssets(descriptors);
     await this.loadAll();
+  }
+
+  /**
+   * Debug helper para detectar fugas de memoria.
+   */
+  public assertNoLeaks(): void {
+    if (this.cache.size > 0) {
+      console.warn(`AssetLoader leak detected: ${this.cache.size} assets still in memory.`);
+      for (const [id, count] of this.refCounts.entries()) {
+        console.warn(` - Asset ${id}: ${count} references remaining.`);
+      }
+    }
   }
 }
