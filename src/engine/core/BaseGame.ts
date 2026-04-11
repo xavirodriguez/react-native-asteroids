@@ -126,8 +126,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   public start(): void { this.gameLoop.start(); }
   public stop(): void { this.gameLoop.stop(); }
-  public pause(): void { this._isPaused = true; this.sceneManager.pause(); this._notifyListeners(); }
-  public resume(): void { this._isPaused = false; this.sceneManager.resume(); this._notifyListeners(); }
+  public pause(): void { if (this._isPaused) return; this._isPaused = true; this.sceneManager.pause(); this._notifyListeners(); }
+  public resume(): void { if (!this._isPaused) return; this._isPaused = false; this.sceneManager.resume(); this._notifyListeners(); }
 
   public async restart(): Promise<void> {
     await runLifecycleAsync(() => this._onBeforeRestart());
