@@ -16,7 +16,12 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * @responsibility Mantener las entidades dentro del área de juego o destruirlas si salen.
  * @queries Transform, Boundary
  * @mutates Transform, Velocity, World (Entity removal)
+ * @dependsOn {@link PhysicsUtils.wrapBoundary}
  * @executionOrder Fase: Simulation. Debe ejecutarse después de MovementSystem.
+ *
+ * @remarks
+ * Este sistema garantiza que ninguna entidad con {@link BoundaryComponent} se pierda fuera del área de
+ * juego. Es esencial para proyectiles con TTL y para el movimiento cíclico en Asteroids.
  *
  * @contract Wrap: Si `x > width`, `x = 0` y viceversa. Mismo comportamiento para `y` y `height`.
  * @contract Bounce: Invierte el componente de velocidad correspondiente y mantiene la entidad en el borde.

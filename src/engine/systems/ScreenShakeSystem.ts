@@ -9,6 +9,7 @@ import { ScreenShakeComponent } from "../types/EngineTypes";
  * @responsibility Eliminar el componente una vez que el efecto ha expirado.
  * @queries ScreenShake
  * @mutates ScreenShake.remaining, World (component removal)
+ * @dependsOn {@link RandomService} (vía Renderer)
  * @executionOrder Fase: Presentation. Se ejecuta antes del renderizado para que el renderer
  * lea el estado actualizado.
  *

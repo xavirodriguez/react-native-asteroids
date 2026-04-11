@@ -12,6 +12,7 @@ import { TTLComponent, ReclaimableComponent } from "../types/EngineTypes";
  *
  * @queries TTL
  * @mutates TTL.remaining, World (entity removal)
+ * @emits onComplete
  * @executionOrder Fase: Simulation. Normalmente al final de la fase física.
  *
  * @remarks

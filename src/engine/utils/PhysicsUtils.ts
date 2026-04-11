@@ -20,8 +20,11 @@ export class PhysicsUtils {
    * @param vel - Objeto de velocidad (debe tener dx,dy o velocityX,velocityY).
    * @param deltaTimeInSeconds - Tiempo transcurrido en SEGUNDOS.
    *
+   * @precondition `deltaTimeInSeconds` debe ser un valor finito positivo.
+   * @postcondition Las coordenadas `x`/`y` (o `worldX`/`worldY`) de `pos` son actualizadas.
    * @invariant No debe modificar el objeto `vel`.
-   * @conceptualRisk [PRECISION_LOSS] La acumulación de errores de punto flotante en integraciones
+   * @sideEffect Muta el objeto `pos` directamente por referencia.
+   * @conceptualRisk [PRECISION_LOSS][LOW] La acumulación de errores de punto flotante en integraciones
    * largas puede causar divergencias mínimas entre clientes.
    */
   public static integrateMovement(pos: any, vel: any, deltaTimeInSeconds: number): void {
@@ -35,11 +38,20 @@ export class PhysicsUtils {
   }
 
   /**
-   * Applies friction damping to velocity.
-   * Supports both standard ECS components and proxy objects.
-   * @param vel - Velocity object (standard or proxy)
-   * @param friction - The friction coefficient (e.g., 0.99)
-   * @param deltaTimeMs - Elapsed time in milliseconds.
+   * Aplica amortiguación por fricción a la velocidad.
+   * Soporta tanto componentes ECS estándar como objetos proxy.
+   *
+   * @remarks
+   * Utiliza una función exponencial basada en el tiempo para garantizar que la fricción
+   * se aplique de forma consistente independientemente del framerate.
+   *
+   * @param vel - Objeto de velocidad (estándar o proxy).
+   * @param friction - Coeficiente de fricción (ej: 0.99).
+   * @param deltaTimeMs - Tiempo transcurrido en milisegundos.
+   *
+   * @precondition `friction` debe estar en el rango [0, 1].
+   * @postcondition Los componentes `dx`/`dy` de `vel` son reducidos.
+   * @sideEffect Muta el objeto `vel` directamente por referencia.
    */
   public static applyFriction(vel: any, friction: number, deltaTimeMs: number): void {
     const dx = vel.dx !== undefined ? "dx" : "velocityX";

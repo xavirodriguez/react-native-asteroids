@@ -15,7 +15,8 @@ import { RenderComponent, TransformComponent } from "../core/CoreComponents";
  *
  * @remarks
  * Incrementa {@link World.version} en cada actualización para forzar el re-renderizado
- * de componentes reactivos en la UI.
+ * de componentes reactivos en la UI. Este sistema actúa como un puente de datos final antes de la fase
+ * de dibujo.
  *
  * @conceptualRisk [PERFORMANCE][MEDIUM] La acumulación de estelas para múltiples entidades
  * incrementa el uso de memoria y puede degradar el rendimiento del renderer si `trailMaxLength`

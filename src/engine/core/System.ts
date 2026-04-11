@@ -47,6 +47,9 @@ export abstract class System {
    * @param world - El mundo ECS que contiene las entidades y componentes.
    * @param deltaTime - El tiempo transcurrido desde el último tick en milisegundos.
    *
+   * @precondition El `world` debe estar inicializado y contener los componentes requeridos.
+   * @postcondition El estado del mundo puede haber sido mutado por la lógica del sistema.
+   * @sideEffect Puede emitir eventos al `EventBus` o modificar entidades.
    * @conceptualRisk [UNIT_CONSISTENCY][LOW] `deltaTime` se entrega en milisegundos. Algunos
    * cálculos físicos (como integraciones de velocidad) pueden esperar segundos, lo que
    * requiere una división manual por 1000.

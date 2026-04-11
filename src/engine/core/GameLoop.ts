@@ -43,6 +43,9 @@ export class GameLoop {
    * @remarks
    * Utiliza `requestAnimationFrame` para sincronizarse con la tasa de refresco del monitor.
    * Inicializa el acumulador y el tiempo de referencia.
+   *
+   * @postcondition {@link GameLoop.isRunning} es `true`.
+   * @sideEffect Inicia una cadena de llamadas a `requestAnimationFrame`.
    */
   public start(): void {
     if (this.isRunning) return;
@@ -54,6 +57,9 @@ export class GameLoop {
 
   /**
    * Detiene el bucle de juego y cancela el siguiente frame programado.
+   *
+   * @postcondition {@link GameLoop.isRunning} es `false`.
+   * @sideEffect Cancela el frame pendiente mediante `cancelAnimationFrame`.
    */
   public stop(): void {
     if (this.gameLoopId !== undefined) {
@@ -115,10 +121,11 @@ export class GameLoop {
    * Calcula el tiempo transcurrido, limita el delta para evitar el "espiral de la muerte"
    * (donde demasiados ticks de física causan más retraso), y despacha eventos a los listeners.
    *
+   * @param currentTime - Tiempo actual proporcionado por `requestAnimationFrame`.
+   *
+   * @invariant El `fixedDeltaTime` es constante durante toda la vida del bucle.
    * @conceptualRisk [PERFORMANCE][MEDIUM] Si el tiempo de proceso de un tick es mayor que
    * `fixedDeltaTime`, el bucle entrará en una espiral de muerte a menos que `maxDeltaTime` lo limite.
-   *
-   * @param currentTime - Tiempo actual proporcionado por `requestAnimationFrame`.
    */
   private loop = (currentTime: number): void => {
     if (!this.isRunning) return;

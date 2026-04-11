@@ -3,8 +3,16 @@ import { World } from "../core/World";
 import { TransformComponent, PreviousTransformComponent } from "../core/CoreComponents";
 
 /**
- * System that captures the current transform state before it is modified by simulation.
- * Should run at the very beginning of the update cycle.
+ * Sistema que captura el estado de transformación actual antes de que sea modificado por la simulación.
+ *
+ * @responsibility Almacenar la posición y rotación del tick anterior en {@link PreviousTransformComponent}.
+ * @queries Transform
+ * @mutates PreviousTransform
+ * @executionOrder Fase: Input o Simulation (al inicio). Debe ejecutarse antes de cualquier sistema que mueva entidades.
+ *
+ * @remarks
+ * Este sistema es fundamental para el renderizado suave. Los datos capturados aquí son utilizados
+ * por los renderizadores (Canvas/Skia) para interpolar posiciones entre ticks físicos fijos.
  */
 export class InterpolationPrepSystem extends System {
   public update(world: World, _deltaTime: number): void {

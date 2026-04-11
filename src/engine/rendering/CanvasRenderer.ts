@@ -23,6 +23,10 @@ export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world:
  * Este renderer es óptimo para despliegues web y como backend de referencia.
  * Contrato de consistencia: Debe mantener paridad visual con {@link SkiaRenderer}.
  *
+ * @contract Interpolación: Usa el valor `alpha` del loop para interpolar entre `PreviousTransform` y `Transform`.
+ * @conceptualRisk [GC_PRESSURE][MEDIUM] Reconstruye el array `renderCommands` en cada frame, lo que genera
+ * presión en el recolector de basura si el número de entidades es muy elevado.
+ *
  * @packageDocumentation
  */
 export class CanvasRenderer implements Renderer {
