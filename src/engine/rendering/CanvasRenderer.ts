@@ -15,16 +15,13 @@ export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world:
  * Implementación de Renderer basada en la API de Canvas 2D.
  * Es genérica y extensible mediante el registro de shape drawers y hooks de renderizado.
  *
+ * @responsibility Renderizar el estado del mundo ECS en un elemento HTMLCanvasElement.
+ * @responsibility Gestionar la interpolación visual entre estados de simulación (Fixed Timestep).
+ * @responsibility Proveer un pipeline de renderizado ordenado (Background -> Entities -> Foreground -> UI).
+ *
  * @remarks
  * Este renderer es óptimo para despliegues web y como backend de referencia.
- * Implementa un pipeline completo que incluye:
- * 1. Limpieza de pantalla.
- * 2. Cálculo de Screen Shake basado en el estado del juego.
- * 3. Ejecución de efectos de fondo.
- * 4. Dibujo de entidades ordenadas por `zIndex`.
- * 5. Ejecución de efectos de primer plano.
- * 6. Renderizado de UI de motor.
- * 7. Información de depuración.
+ * Contrato de consistencia: Debe mantener paridad visual con {@link SkiaRenderer}.
  *
  * @packageDocumentation
  */
@@ -179,11 +176,15 @@ export class CanvasRenderer implements Renderer {
 
   /**
    * Ejecuta el pipeline completo de renderizado para el mundo ECS dado.
+   * Implementa interpolación lineal para suavizar el movimiento entre ticks de física.
    *
    * @param world - El mundo ECS que contiene las entidades a dibujar.
    *
+   * @invariant El estado de las entidades en el World no debe ser modificado durante esta llamada.
    * @conceptualRisk [GC_PRESSURE][MEDIUM] Reconstruye el array `renderCommands` en cada frame,
    * lo que genera presión en el recolector de basura si el número de entidades es muy elevado.
+   * @conceptualRisk [RENDER_DRIFT] Las diferencias en la precisión de punto flotante entre Canvas y Skia
+   * pueden causar micro-desincronizaciones visuales.
    */
   public render(world: World): void {
     if (!this.ctx) return;

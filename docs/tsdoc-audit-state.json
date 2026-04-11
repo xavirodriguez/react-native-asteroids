@@ -23,7 +23,17 @@
     "src/engine/systems/TTLSystem.ts": { "level": 9, "status": "completed" },
     "src/engine/core/EventBus.ts": { "level": 9, "status": "completed" },
     "src/engine/core/StateMachine.ts": { "level": 9, "status": "completed" },
-    "src/engine/rendering/Renderer.ts": { "level": 9, "status": "completed" }
+    "src/engine/rendering/Renderer.ts": { "level": 9, "status": "completed" },
+    "src/engine/rendering/SkiaRenderer.ts": { "level": 5, "status": "completed" },
+    "src/engine/rendering/CanvasRenderer.ts": { "level": 5, "status": "completed" },
+    "src/engine/scenes/SceneManager.ts": { "level": 5, "status": "completed" },
+    "src/engine/camera/Camera2D.ts": { "level": 5, "status": "completed" },
+    "src/engine/utils/PhysicsUtils.ts": { "level": 5, "status": "completed" },
+    "src/engine/utils/RandomService.ts": { "level": 5, "status": "completed" },
+    "src/engine/utils/LifecycleUtils.ts": { "level": 5, "status": "completed" },
+    "src/engine/core/SceneGraph.ts": { "level": 5, "status": "completed" },
+    "src/engine/assets/AssetLoader.ts": { "level": 5, "status": "completed" },
+    "src/engine/systems/PaletteSystem.ts": { "level": 5, "status": "completed" }
   },
-  "lastUpdated": "2025-05-25T01:00:00Z"
+  "lastUpdated": "2025-05-25T02:00:00Z"
 }

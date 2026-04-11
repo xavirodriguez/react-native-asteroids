@@ -69,3 +69,26 @@
 - `RenderUpdateSystem.ts`: [DETERMINISM][LOW] Update of `Render.rotation` vs `Transform.rotation` can cause drift if used in physics.
 - `EventBus.ts`: [ORDER][MEDIUM] Non-guaranteed execution order of handlers.
 - `StateMachine.ts`: [CONTEXT_MUTATION][LOW] Shared context is mutable by reference, risk of side effects.
+
+## [1.4.0] - 2025-05-25 (Nightly Update)
+### Added
+- Level 5 TSDoc audit for 10 core files: Renderers, SceneManager, Utilities (Physics/Random), and Asset Management.
+  - `src/engine/rendering/SkiaRenderer.ts`
+  - `src/engine/rendering/CanvasRenderer.ts`
+  - `src/engine/scenes/SceneManager.ts`
+  - `src/engine/camera/Camera2D.ts`
+  - `src/engine/utils/PhysicsUtils.ts`
+  - `src/engine/utils/RandomService.ts`
+  - `src/engine/utils/LifecycleUtils.ts`
+  - `src/engine/core/SceneGraph.ts`
+  - `src/engine/assets/AssetLoader.ts`
+  - `src/engine/systems/PaletteSystem.ts`
+
+### Detected Conceptual Risks
+- `CanvasRenderer.ts`: [GC_PRESSURE][MEDIUM] Reconstrucción de comandos cada frame.
+- `CanvasRenderer.ts`: [RENDER_DRIFT] Desincronización visual potencial entre Canvas y Skia.
+- `Camera2D.ts`: [FPS_DEPENDENCE] Suavizado lerp dependiente del framerate (no compensado por dt).
+- `SceneManager.ts`: [ASYNC_RACE] Riesgo de estados inconsistentes si se ejecutan transiciones paralelas.
+- `LifecycleUtils.ts`: [ZALGO] Uso de `async` introduce microtask delay incluso para llamadas síncronas.
+- `SceneGraph.ts`: [STALE_TRANSFORMS] World transforms desincronizadas si no se llama a `updateTransforms()`.
+- `AssetLoader.ts`: [MEMORY_PRESSURE] Riesgo de fuga de memoria si `unloadGroup` no se llama simétricamente.

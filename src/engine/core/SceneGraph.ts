@@ -16,7 +16,20 @@ export interface SceneNode {
  * Manages the hierarchy of entities and their transformations.
  * Ensures that child entities' transforms are relative to their parents.
  *
- * @deprecated Use HierarchySystem instead for ECS-integrated transform calculations.
+ * @responsibility Administrar relaciones padre-hijo entre entidades fuera del flujo ECS principal.
+ * @responsibility Calcular matrices de transformación del mundo (world transforms) de forma recursiva.
+ *
+ * @deprecated Use `HierarchySystem` instead for ECS-integrated transform calculations.
+ *
+ * @remarks
+ * Esta clase se mantiene por compatibilidad con sistemas legados. En el nuevo flujo ECS,
+ * la jerarquía se gestiona mediante componentes `ParentComponent` y el `HierarchySystem`.
+ *
+ * @invariant Un nodo no puede ser su propio padre (no circularidad, aunque no se valida explícitamente).
+ * @conceptualRisk [STALE_TRANSFORMS] Si no se llama a `updateTransforms()` tras cambios en la
+ * jerarquía, las world transforms estarán desincronizadas.
+ * @conceptualRisk [MEMORY_LEAK] Las entidades eliminadas del World deben eliminarse manualmente
+ * del SceneGraph para evitar fugas de memoria en el mapa `nodes`.
  */
 export class SceneGraph {
   private nodes = new Map<Entity, SceneNode>();
