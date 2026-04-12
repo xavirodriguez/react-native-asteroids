@@ -1,0 +1,5 @@
+
+> asteroides@1.0.0 web
+> expo start --web --port 8081
+
+sh: 1: expo: not found
