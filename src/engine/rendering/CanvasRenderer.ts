@@ -10,10 +10,22 @@ import { CommandBuffer, DrawCommand } from "./CommandBuffer";
 export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: any) => void;
 
 /**
- * CanvasRenderer optimizado para CERO asignaciones por frame.
+ * Motor de renderizado basado en la API de Canvas 2D.
  *
- * @responsibility Renderizar snapshots de forma pura y eficiente sin generar basura (GC).
- * @responsibility Utilizar un CommandBuffer para desacoplar la generación de comandos del dibujado.
+ * @remarks
+ * Implementa una arquitectura de renderizado basada en snapshots para garantizar
+ * una visualización consistente y desacoplada de la simulación. El renderer es
+ * "allocation-free" en su hot loop, utilizando pools pre-asignados para los comandos
+ * y snapshots para evitar la presión del Garbage Collector.
+ *
+ * @responsibility Transformar el estado del {@link World} en representaciones visuales.
+ * @responsibility Gestionar efectos de pantalla global (Screen Shake).
+ * @responsibility Proveer hooks para extensiones pre y post renderizado.
+ *
+ * @conceptualRisk [GC_PRESSURE][LOW] Aunque el hot loop es libre de asignaciones, la
+ * inicialización crea un array de 2000 entidades.
+ * @conceptualRisk [CANVAS_CONTEXT_LOST][MEDIUM] En entornos móviles/Expo, el contexto de
+ * canvas puede perderse, lo que requiere una gestión de reinicio no implementada aquí.
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
@@ -134,7 +146,19 @@ export class CanvasRenderer implements Renderer {
   }
 
   /**
-   * Genera un snapshot inmutable del estado del mundo sin asignaciones de memoria.
+   * Captura una instantánea visual del estado actual del mundo ECS.
+   *
+   * @remarks
+   * Realiza la interpolación lineal de las transformaciones basándose en el valor `alpha`
+   * para suavizar el movimiento entre ticks de simulación fijos.
+   * Procesa el Screen Shake si el componente `GameState` lo indica.
+   *
+   * @param world - El mundo ECS a capturar.
+   * @param alpha - Factor de interpolación entre 0 y 1.
+   * @returns Una referencia al objeto {@link RenderSnapshot} interno (reutilizado).
+   *
+   * @precondition Las entidades deben poseer componentes `Transform` y `Render`.
+   * @postcondition El snapshot está ordenado por `zIndex` listo para ser renderizado.
    */
   public createSnapshot(world: World, alpha: number): RenderSnapshot {
     const entities = world.query("Transform", "Render");

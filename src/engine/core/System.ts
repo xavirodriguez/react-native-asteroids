@@ -30,26 +30,27 @@ export interface SystemConfig {
 }
 
 /**
- * Clase base para todos los sistemas de juego en la arquitectura ECS.
- * Los sistemas implementan la lógica del juego procesando entidades que poseen conjuntos
- * específicos de componentes.
+ * Clase base abstracta para todos los sistemas en la arquitectura ECS.
  *
  * @remarks
- * Los sistemas deben ser, en la medida de lo posible, sin estado (stateless), confiando
- * en los componentes del {@link World} o en sus recursos para almacenar datos.
+ * Los sistemas son los poseedores de la lógica y el comportamiento del juego. A diferencia de
+ * las entidades y componentes, los sistemas no almacenan estado propio (stateless), sino que
+ * actúan sobre conjuntos de componentes filtrados mediante queries en el {@link World}.
+ *
+ * El orden de ejecución es crítico y se gestiona mediante {@link SystemPhase} y prioridades.
  *
  * @packageDocumentation
  */
 export abstract class System {
   /**
-   * Actualiza la lógica del sistema para un solo frame.
+   * Ejecuta la lógica del sistema para el tick de simulación actual.
    *
-   * @param world - El mundo ECS que contiene las entidades y componentes.
-   * @param deltaTime - El tiempo transcurrido desde el último tick en milisegundos.
+   * @param world - La instancia del {@link World} sobre la que opera el sistema.
+   * @param deltaTime - Tiempo transcurrido desde el último tick en milisegundos.
    *
-   * @precondition El `world` debe estar inicializado y contener los componentes requeridos.
-   * @postcondition El estado del mundo puede haber sido mutado por la lógica del sistema.
-   * @sideEffect Puede emitir eventos al `EventBus` o modificar entidades.
+   * @precondition El `world` debe estar en un estado consistente.
+   * @postcondition Las mutaciones realizadas deben mantener los invariantes de los componentes.
+   * @sideEffect Puede crear/eliminar entidades, añadir/quitar componentes o emitir eventos.
    * @conceptualRisk [UNIT_CONSISTENCY][LOW] `deltaTime` se entrega en milisegundos. Algunos
    * cálculos físicos (como integraciones de velocidad) pueden esperar segundos, lo que
    * requiere una división manual por 1000.

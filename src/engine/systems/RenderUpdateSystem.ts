@@ -3,26 +3,24 @@ import { World } from "../core/World";
 import { RenderComponent, TransformComponent } from "../core/CoreComponents";
 
 /**
- * Sistema encargado de las actualizaciones de estado visual que no afectan la física.
- * Gestiona rotaciones automáticas, acumulación de estelas (trails) y destellos de impacto (hit flashes).
+ * Sistema de preparación visual y efectos cosméticos.
  *
- * @responsibility Mantener el historial de posiciones para efectos de estela.
- * @responsibility Actualizar la rotación visual basada en velocidad angular.
- * @responsibility Gestionar el temporizador de los destellos de impacto.
+ * @responsibility Gestionar efectos visuales temporales como estelas (trails) y destellos (flashes).
+ * @responsibility Actualizar la rotación cosmética basada en la velocidad angular.
+ * @responsibility Sincronizar la versión del mundo para disparar re-renders en la UI.
  * @queries Transform, Render, Ship
  * @mutates Render.trailPositions, Render.rotation, Render.hitFlashFrames, World.version
- * @executionOrder Fase: Presentation.
+ * @executionOrder Fase: Presentation. Ejecutar al final del pipeline de simulación.
  *
  * @remarks
- * Incrementa {@link World.version} en cada actualización para forzar el re-renderizado
- * de componentes reactivos en la UI. Este sistema actúa como un puente de datos final antes de la fase
- * de dibujo.
+ * Este sistema actúa como un puente entre la simulación física y la presentación visual.
+ * Incrementa {@link World.version} para asegurar que los componentes de React/UI se
+ * actualicen con el estado más reciente del motor.
  *
- * @conceptualRisk [PERFORMANCE][MEDIUM] La acumulación de estelas para múltiples entidades
- * incrementa el uso de memoria y puede degradar el rendimiento del renderer si `trailMaxLength`
- * es muy elevado.
- * @conceptualRisk [DETERMINISM][LOW] Este sistema muta `Render.rotation`. Si un sistema de
- * colisiones lee la rotación del componente `Render` en lugar del `Transform`, habrá drift.
+ * @conceptualRisk [PERFORMANCE][MEDIUM] El crecimiento de arrays en `trailPositions` genera
+ * presión sobre el GC si hay muchas entidades con estela activa.
+ * @conceptualRisk [DETERMINISM][LOW] Mutar `Render.rotation` puede causar desincronización
+ * si la lógica de colisiones u otra lógica de simulación depende accidentalmente de este valor.
  */
 export class RenderUpdateSystem extends System {
   protected trailMaxLength: number;
