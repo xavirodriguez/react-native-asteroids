@@ -38,11 +38,11 @@ export class GameLoop {
   }
 
   public stop(): void {
+    this.isRunning = false;
     if (this.gameLoopId !== undefined) {
       cancelAnimationFrame(this.gameLoopId);
       this.gameLoopId = undefined;
     }
-    this.isRunning = false;
   }
 
   public subscribeUpdate(listener: (deltaTime: number) => void): () => void {
@@ -61,22 +61,25 @@ export class GameLoop {
     let deltaTime = currentTime - this.lastTime;
     this.lastTime = currentTime;
 
+    // Cap deltaTime to avoid "Spiral of Death"
     if (deltaTime > this.maxDeltaTime) {
       deltaTime = this.maxDeltaTime;
     }
 
     this.accumulator += deltaTime;
 
-    // 1. Input & Update Phase (Fixed Step)
+    // 1. Fixed Step Update Phase
     while (this.accumulator >= this.fixedDeltaTime) {
       this.updateListeners.forEach((listener) => listener(this.fixedDeltaTime));
       this.accumulator -= this.fixedDeltaTime;
     }
 
-    // 2. Render Phase (Alpha Interpolation)
+    // 2. Variable Step Render Phase (Alpha Interpolation)
     const alpha = this.accumulator / this.fixedDeltaTime;
     this.renderListeners.forEach((listener) => listener(alpha, deltaTime));
 
-    this.gameLoopId = requestAnimationFrame(this.loop);
+    if (this.isRunning) {
+      this.gameLoopId = requestAnimationFrame(this.loop);
+    }
   };
 }

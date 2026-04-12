@@ -24,7 +24,10 @@ export class AssetLoader {
    * Incrementa el conteo de referencias para recursos ya cargados.
    */
   public async loadAll(): Promise<void> {
-    const promises = this.queue.map(async (desc) => {
+    const assetsToLoad = [...this.queue];
+    this.queue = [];
+
+    const promises = assetsToLoad.map(async (desc) => {
       // Si ya está en caché, solo incrementamos referencia
       if (this.cache.has(desc.id)) {
         this.incrementRef(desc.id);
@@ -50,7 +53,6 @@ export class AssetLoader {
       }
     });
 
-    this.queue = [];
     await Promise.all(promises);
   }
 
@@ -79,16 +81,24 @@ export class AssetLoader {
    */
   public unloadGroup(ids: string[]): void {
     for (const id of ids) {
-      const count = (this.refCounts.get(id) || 0) - 1;
+      const currentCount = this.refCounts.get(id);
 
-      if (count <= 0) {
-        if (count < 0) {
-          console.warn(`Asset ${id} reference count underflow. Possible leak or double unload.`);
+      if (currentCount === undefined) {
+          console.warn(`AssetLoader: Attempted to unload asset ${id} which is not tracked.`);
+          continue;
+      }
+
+      const newCount = currentCount - 1;
+
+      if (newCount <= 0) {
+        if (newCount < 0) {
+          console.error(`AssetLoader: Asset ${id} reference count underflow (${newCount}). Critical leak or double unload.`);
         }
         this.cache.delete(id);
         this.refCounts.delete(id);
+        // En un entorno real, aquí llamaríamos a la liberación de recursos (ej: GL.deleteTexture)
       } else {
-        this.refCounts.set(id, count);
+        this.refCounts.set(id, newCount);
       }
     }
   }
@@ -139,10 +149,10 @@ export class AssetLoader {
    */
   public assertNoLeaks(): void {
     if (this.cache.size > 0) {
-      console.warn(`AssetLoader leak detected: ${this.cache.size} assets still in memory.`);
-      for (const [id, count] of this.refCounts.entries()) {
-        console.warn(` - Asset ${id}: ${count} references remaining.`);
-      }
+      const leaks = Array.from(this.refCounts.entries())
+        .map(([id, count]) => `${id} (${count})`)
+        .join(", ");
+      console.warn(`AssetLoader leak detected: ${this.cache.size} assets still in memory: ${leaks}`);
     }
   }
 }
