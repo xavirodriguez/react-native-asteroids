@@ -5,7 +5,7 @@ export const BENEFICIAL_MUTATORS = {
     id: "faster_bullets",
     description: "Balas 10% más rápidas en todos los juegos",
     xpCost: 500,
-    apply: (world: World) => {
+    apply: (_world: World) => {
       // implementation would depend on game config modification or systemic override
     }
   },
@@ -13,7 +13,7 @@ export const BENEFICIAL_MUTATORS = {
     id: "extra_life",
     description: "Empezar con 1 vida extra",
     xpCost: 800,
-    apply: (world: World) => {
+    apply: (_world: World) => {
       // increase player health
     }
   },
@@ -21,7 +21,7 @@ export const BENEFICIAL_MUTATORS = {
     id: "combo_head_start",
     description: "Empezar con combo x2",
     xpCost: 300,
-    apply: (world: World) => {
+    apply: (_world: World) => {
       // set multiplier in gamestate
     }
   },
@@ -29,7 +29,7 @@ export const BENEFICIAL_MUTATORS = {
     id: "shield_pulse",
     description: "Escudo de 3 segundos al inicio de cada partida",
     xpCost: 1000,
-    apply: (world: World) => {
+    apply: (_world: World) => {
       // set invulnerability frames
     }
   },

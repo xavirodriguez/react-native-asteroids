@@ -47,7 +47,7 @@ export const SeedWidget: React.FC<SeedWidgetProps> = ({ seed, onSeedEnter, style
               try {
                 onSeedEnter(stringToSeed(inputText));
                 setInputText("");
-              } catch (e) {
+              } catch (_err) {
                 // Invalid seed, could show error
               }
             }}

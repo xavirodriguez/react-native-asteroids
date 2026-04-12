@@ -13,7 +13,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private replayFrames: ReplayFrame[] = [];
   private random: RandomService;
 
-  onCreate(options: any) {
+  onCreate(__unused: any) {
     this.state = new AsteroidsState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
     this.random = new RandomService(this.state.seed);
@@ -93,7 +93,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     });
   }
 
-  onJoin(client: Client, options: any) {
+  onJoin(client: Client, _options: any) {
     const player = new Player();
     player.sessionId = client.sessionId;
     player.name = options.name || `Player ${this.clients.length}`;
@@ -106,11 +106,11 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.state.players.set(client.sessionId, player);
   }
 
-  async onLeave(client: Client, code: number) {
+  async onLeave(client: Client, _code: number) {
     try {
       if (code === CloseCode.CONSENTED) throw new Error("consented leave");
       await this.allowReconnection(client, 10);
-    } catch (e) {
+    } catch (_err) {
       this.state.players.delete(client.sessionId);
       this.inputBuffers.delete(client.sessionId);
     }

@@ -1,4 +1,4 @@
-import { AssetDescriptor, AssetHandle, AssetType } from "./AssetTypes";
+import { AssetDescriptor, AssetHandle } from "./AssetTypes";
 
 /**
  * AssetLoader for managing game assets with caching and reference counting.

@@ -2,18 +2,11 @@ import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import {
   type InputComponent,
-  type VelocityComponent,
-  type RenderComponent,
-  type TransformComponent,
   type InputState,
   type InputStateComponent,
   GAME_CONFIG,
 } from "../../../engine/types/EngineTypes";
-import { createBullet, createParticle } from "../EntityFactory";
-import { hapticShoot } from "../../../utils/haptics";
 import { BulletPool, ParticlePool } from "../EntityPool";
-import { RandomService } from "../../../engine/utils/RandomService";
-import { PhysicsUtils } from "../../../engine/utils/PhysicsUtils";
 import { InputUtils } from "../../../engine/utils/ComponentUtils";
 
 /**

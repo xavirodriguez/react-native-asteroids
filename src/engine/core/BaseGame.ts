@@ -8,13 +8,11 @@ import { ReplayRecorder } from "../debug/ReplayRecorder";
 import { SceneManager } from "../scenes/SceneManager";
 import { runLifecycleAsync } from "../utils/LifecycleUtils";
 import { RandomService } from "../utils/RandomService";
-import { InputStateComponent, PreviousTransformComponent, TransformComponent } from "./CoreComponents";
+import { PreviousTransformComponent, TransformComponent } from "./CoreComponents";
 import type { IGame, UpdateListener } from "./IGame";
 import { XPSystem } from "../systems/XPSystem";
 import { PaletteSystem } from "../systems/PaletteSystem";
-import { MutatorSystem } from "../systems/MutatorSystem";
 import { PlayerProfileService } from "../../services/PlayerProfileService";
-import { MutatorService } from "../../services/MutatorService";
 import { HierarchySystem } from "../systems/HierarchySystem";
 
 export interface BaseGameConfig {
@@ -270,7 +268,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   }
 
   private _handleGlobalKey(e: KeyboardEvent): void {
-    if (e.code === this._config.pauseKey) this._isPaused ? this.resume() : this.pause();
+    if (e.code === this._config.pauseKey) { if (this._isPaused) this.resume(); else this.pause(); };
     if (e.code === this._config.restartKey) {
       this.restart().catch(console.error);
     }

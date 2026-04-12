@@ -1,7 +1,7 @@
 import { InputController } from "../../../engine/input/InputController";
 import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
-import { PongInput, PONG_CONFIG } from "../types";
+import { TransformComponent } from "../../../engine/types/EngineTypes";
+import { PongInput } from "../types";
 
 export type AIDifficulty = "easy" | "medium" | "hard";
 

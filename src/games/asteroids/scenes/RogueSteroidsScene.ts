@@ -1,5 +1,4 @@
 import { AsteroidsGameScene } from "./AsteroidsGameScene";
-import { World } from "../../../engine/core/World";
 import { GameStateComponent } from "../types/AsteroidTypes";
 
 /**

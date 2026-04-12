@@ -2,7 +2,7 @@ import { Skia, SkCanvas, SkPaint, PaintStyle } from "@shopify/react-native-skia"
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TTLComponent, TransformComponent, PreviousTransformComponent, Component } from "../core/CoreComponents";
+import { RenderComponent, TransformComponent, PreviousTransformComponent, Component } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
 
 export type SkiaShapeDrawer = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => void;
