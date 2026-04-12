@@ -4,6 +4,9 @@ import { InputFrame, EntitySnapshot, ReplayFrame } from "./NetTypes";
 import { RandomService } from "./RandomService";
 import { PhysicsUtils } from "./PhysicsUtils";
 import { ShipPhysics } from "./ShipPhysics";
+import { World } from "../../src/engine/core/World";
+import { DeterministicSimulation } from "../../src/simulation/DeterministicSimulation";
+import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, ColliderComponent, TagComponent } from "../../src/engine/core/CoreComponents";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
@@ -12,11 +15,15 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private stateHistory = new Map<number, Map<string, EntitySnapshot>>();
   private replayFrames: ReplayFrame[] = [];
   private random: RandomService;
+  private world: World;
+  private playerEntities = new Map<string, number>();
 
-  onCreate(__unused: any) {
+  onCreate(options: any) {
     this.state = new AsteroidsState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
     this.random = new RandomService(this.state.seed);
+    // Sync the global gameplay random service for the server
+    RandomService.getInstance("gameplay").setSeed(this.state.seed);
 
     this.state.gameWidth = 800;
     this.state.gameHeight = 600;
@@ -36,7 +43,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.onMessage("sync_tick", (client) => {
       client.send("sync_tick", {
         serverTick: this.state.serverTick,
-        timestamp: Date.now()
+        timestamp: 0 // Date.now() removed for determinism, if needed use tick
       });
     });
 
@@ -45,65 +52,34 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       this.spawnAsteroids(6);
     });
 
-    this.onMessage("shoot", (client, data: { tick: number }) => {
-      const player = this.state.players.get(client.sessionId);
-      if (!player || !player.alive) return;
-
-      // Lag compensation: check hit against historical state
-      const historicState = this.stateHistory.get(data.tick);
-      if (historicState) {
-          // Calculate bullet trajectory (simplified: instant hitscan for validation)
-          const originX = player.x;
-          const originY = player.y;
-          const angle = player.angle;
-          const dirX = Math.cos(angle);
-          const dirY = Math.sin(angle);
-
-          let hitDetected = false;
-          historicState.forEach((target, targetId) => {
-              if (targetId === client.sessionId) return;
-
-              // Simple circle collision check for lag compensation
-              const dx = target.x - originX;
-              const dy = target.y - originY;
-              const distSq = dx * dx + dy * dy;
-              const radius = 30; // Asteroid radius
-
-              // This is a very basic "is it roughly in front of me" check
-              // for a real hitscan we'd use ray-circle intersection
-              if (distSq < radius * radius * 4) {
-                  const dot = (dx * dirX + dy * dirY) / Math.sqrt(distSq);
-                  if (dot > 0.95) { // Roughly facing the target
-                      const asteroid = this.state.asteroids.get(targetId);
-                      if (asteroid) {
-                          this.state.asteroids.delete(targetId);
-                          player.score += 100;
-                          hitDetected = true;
-                      }
-                  }
-              }
-          });
-
-          if (!hitDetected) {
-              this.spawnBullet(client.sessionId, player);
-          }
-      } else {
-          this.spawnBullet(client.sessionId, player);
-      }
-    });
+    // Initialized ECS world
+    this.world = new World();
+    this.world.addComponent(this.world.createEntity(), { type: "GameState", score: 0 } as any);
   }
 
-  onJoin(client: Client, _options: any) {
+  onJoin(client: Client, options: any) {
     const player = new Player();
     player.sessionId = client.sessionId;
     player.name = options.name || `Player ${this.clients.length}`;
-    player.x = this.random.nextRange(0, this.state.gameWidth);
-    player.y = this.random.nextRange(0, this.state.gameHeight);
+    player.x = this.random.nextRange(100, 700);
+    player.y = this.random.nextRange(100, 500);
     player.angle = 0;
     player.score = 0;
     player.lives = 3;
     player.alive = true;
     this.state.players.set(client.sessionId, player);
+
+    // Create ECS entity for player
+    const entity = this.world.createEntity();
+    this.playerEntities.set(client.sessionId, entity);
+    this.world.addComponent(entity, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+    this.world.addComponent(entity, { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent);
+    this.world.addComponent(entity, { type: "Render", shape: "triangle", size: 10, color: "white", rotation: 0 } as RenderComponent);
+    this.world.addComponent(entity, { type: "Collider", radius: 10 } as ColliderComponent);
+    this.world.addComponent(entity, { type: "Health", current: 3, max: 3, invulnerableRemaining: 0 } as HealthComponent);
+    this.world.addComponent(entity, { type: "Ship" } as any);
+    this.world.addComponent(entity, { type: "Tag", tags: ["Ship"] } as TagComponent);
+    this.world.addComponent(entity, { type: "Input", rotateLeft: false, rotateRight: false, thrust: false, shoot: false, shootCooldownRemaining: 0 } as any);
   }
 
   async onLeave(client: Client, _code: number) {
@@ -121,45 +97,32 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.state.serverTick++;
     this.state.lastProcessedTick = this.state.serverTick;
 
-    const dtSec = dt / 1000;
+    // 1. Update Inputs in ECS from buffers
+    this.state.players.forEach((_player: Player, sessionId: string) => {
+      const entity = this.playerEntities.get(sessionId);
+      if (entity === undefined) return;
 
-    // 1. Process Inputs
-    this.state.players.forEach((player: Player, sessionId: string) => {
-      if (!player.alive) return;
-
+      const input = this.world.getComponent<any>(entity, "Input");
       const buffer = this.inputBuffers.get(sessionId);
-      if (buffer) {
-        // Process frames that match current server tick or older (late frames)
-        const framesToProcess = buffer.filter(f => f.tick <= this.state.serverTick);
-        framesToProcess.forEach(frame => {
-          this.applyPlayerInput(player, frame, dtSec);
-        });
-        // Keep only future frames
-        this.inputBuffers.set(sessionId, buffer.filter(f => f.tick > this.state.serverTick));
-      }
 
-      // Global physics integration (Friction and movement outside of input block)
-      PhysicsUtils.applyFriction(player as any, 0.99, dt);
-      this.integratePosition(player, dtSec);
-      this.applyWrapping(player);
-    });
-
-    // 2. Move asteroids
-    this.state.asteroids.forEach((asteroid: Asteroid) => {
-      PhysicsUtils.integrateMovement(asteroid, asteroid, dtSec);
-      this.applyWrapping(asteroid);
-    });
-
-    // 3. Move bullets
-    this.state.bullets.forEach((bullet: Bullet, id: string) => {
-      PhysicsUtils.integrateMovement(bullet, bullet, dtSec);
-      if (bullet.x < 0 || bullet.x > this.state.gameWidth || bullet.y < 0 || bullet.y > this.state.gameHeight) {
-        this.state.bullets.delete(id);
+      if (buffer && input) {
+        const frame = buffer.find(f => f.tick === this.state.serverTick);
+        if (frame) {
+            input.rotateLeft = frame.actions.includes("rotateLeft") || (frame.axes?.rotate_left ?? 0) > 0;
+            input.rotateRight = frame.actions.includes("rotateRight") || (frame.axes?.rotate_right ?? 0) > 0;
+            input.thrust = frame.actions.includes("thrust") || (frame.axes?.thrust ?? 0) > 0;
+            input.shoot = frame.actions.includes("shoot");
+        }
+        // Cleanup old frames
+        this.inputBuffers.set(sessionId, buffer.filter(f => f.tick >= this.state.serverTick));
       }
     });
 
-    // 4. Collision detection (Authoritative)
-    this.checkCollisions();
+    // 2. Run Shared Deterministic Simulation
+    DeterministicSimulation.update(this.world, this.fixedTimeStep, { isResimulating: false });
+
+    // 3. Sync ECS World back to Colyseus Schema
+    this.syncWorldToSchema();
 
     // 5. Record for Replay
     const currentInputs: Record<string, InputFrame[]> = {};
@@ -184,10 +147,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     // 6. Store history for lag compensation
     const snapshot = new Map<string, EntitySnapshot>();
     this.state.players.forEach((p: Player, id: string) => {
-        snapshot.set(id, { tick: this.state.serverTick, x: p.x, y: p.y, angle: p.angle, timestamp: Date.now() });
+        snapshot.set(id, { tick: this.state.serverTick, x: p.x, y: p.y, angle: p.angle, timestamp: 0 });
     });
     this.state.asteroids.forEach((a: Asteroid, id: string) => {
-        snapshot.set(id, { tick: this.state.serverTick, x: a.x, y: a.y, timestamp: Date.now() });
+        snapshot.set(id, { tick: this.state.serverTick, x: a.x, y: a.y, timestamp: 0 });
     });
     this.stateHistory.set(this.state.serverTick, snapshot);
     if (this.stateHistory.size > 60) {
@@ -208,97 +171,86 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     }
   }
 
-  private applyPlayerInput(player: Player, frame: InputFrame, dtSec: number) {
-    const rotateLeft = frame.actions.includes("rotateLeft") || frame.axes.rotate_left > 0;
-    const rotateRight = frame.actions.includes("rotateRight") || frame.axes.rotate_right > 0;
-    const thrust = frame.actions.includes("thrust") || frame.axes.thrust > 0;
-    const shoot = frame.actions.includes("shoot");
+  private syncWorldToSchema() {
+    // Sync Players
+    this.playerEntities.forEach((entity, sessionId) => {
+        const player = this.state.players.get(sessionId);
+        if (!player) return;
 
-    const intent = { rotateLeft, rotateRight, thrust };
-    const renderProxy = { rotation: player.angle };
-    const velocityProxy = { dx: player.velocityX, dy: player.velocityY };
+        const pos = this.world.getComponent<TransformComponent>(entity, "Transform");
+        const vel = this.world.getComponent<VelocityComponent>(entity, "Velocity");
+        const render = this.world.getComponent<RenderComponent>(entity, "Render");
+        const health = this.world.getComponent<HealthComponent>(entity, "Health");
 
-    ShipPhysics.applyRotation(renderProxy, intent, dtSec);
-    ShipPhysics.applyThrust(null, null, velocityProxy, renderProxy, intent, dtSec);
-
-    player.angle = renderProxy.rotation;
-    player.velocityX = velocityProxy.dx;
-    player.velocityY = velocityProxy.dy;
-
-    if (shoot) {
-      this.spawnBullet(player.sessionId, player);
-    }
-  }
-
-
-  private applyWrapping(entity: any) {
-    if (entity.x < 0) entity.x = this.state.gameWidth;
-    if (entity.x > this.state.gameWidth) entity.x = 0;
-    if (entity.y < 0) entity.y = this.state.gameHeight;
-    if (entity.y > this.state.gameHeight) entity.y = 0;
-  }
-
-  private checkCollisions() {
-    // Bullet vs Asteroid
-    this.state.bullets.forEach((bullet: Bullet, bulletId: string) => {
-      this.state.asteroids.forEach((asteroid: Asteroid, asteroidId: string) => {
-        const dx = bullet.x - asteroid.x;
-        const dy = bullet.y - asteroid.y;
-        if (Math.sqrt(dx*dx + dy*dy) < 30) {
-          this.state.bullets.delete(bulletId);
-          this.state.asteroids.delete(asteroidId);
-          const owner = this.state.players.get(bullet.ownerId);
-          if (owner) owner.score += 100;
+        if (pos) {
+            player.x = pos.x;
+            player.y = pos.y;
+            player.angle = pos.rotation;
         }
-      });
+        if (render) {
+            // Priority to render rotation if it's the one being mutated by physics
+            if (render.rotation !== undefined) player.angle = render.rotation;
+        }
+        if (vel) {
+            player.velocityX = vel.dx;
+            player.velocityY = vel.dy;
+        }
+        if (health) {
+            player.lives = health.current;
+            player.alive = health.current > 0;
+        }
     });
 
-    // Player vs Asteroid
-    this.state.players.forEach((player: Player) => {
-      if (!player.alive) return;
-      this.state.asteroids.forEach((asteroid: Asteroid) => {
-        const dx = player.x - asteroid.x;
-        const dy = player.y - asteroid.y;
-        if (Math.sqrt(dx*dx + dy*dy) < 25) {
-          player.lives--;
-          player.x = this.state.gameWidth / 2;
-          player.y = this.state.gameHeight / 2;
-          player.velocityX = 0;
-          player.velocityY = 0;
-          if (player.lives <= 0) player.alive = false;
+    // Sync Asteroids
+    const asteroidEntities = this.world.query("Asteroid", "Transform");
+    const currentAsteroidIds = new Set<string>();
+    asteroidEntities.forEach(entity => {
+        const id = entity.toString();
+        currentAsteroidIds.add(id);
+        const pos = this.world.getComponent<TransformComponent>(entity, "Transform")!;
+        const asteroidComp = this.world.getComponent<any>(entity, "Asteroid")!;
+
+        let asteroid = this.state.asteroids.get(id);
+        if (!asteroid) {
+            asteroid = new Asteroid();
+            asteroid.id = id;
+            this.state.asteroids.set(id, asteroid);
         }
-      });
+        asteroid.x = pos.x;
+        asteroid.y = pos.y;
+        asteroid.size = asteroidComp.size === "large" ? 3 : asteroidComp.size === "medium" ? 2 : 1;
+    });
+    // Cleanup removed asteroids
+    this.state.asteroids.forEach((_, id) => {
+        if (!currentAsteroidIds.has(id)) this.state.asteroids.delete(id);
     });
 
-    if (this.state.asteroids.size === 0 && this.state.gameStarted) {
-      this.spawnAsteroids(6);
-    }
-  }
+    // Sync Bullets
+    const bulletEntities = this.world.query("Bullet", "Transform");
+    const currentBulletIds = new Set<string>();
+    bulletEntities.forEach(entity => {
+        const id = entity.toString();
+        currentBulletIds.add(id);
+        const pos = this.world.getComponent<TransformComponent>(entity, "Transform")!;
 
-  private generateId(): string {
-    return Math.floor(this.random.next() * 0xFFFFFFFFFF).toString(36);
-  }
+        let bullet = this.state.bullets.get(id);
+        if (!bullet) {
+            bullet = new Bullet();
+            this.state.bullets.set(id, bullet);
+        }
+        bullet.x = pos.x;
+        bullet.y = pos.y;
+    });
+    this.state.bullets.forEach((_, id) => {
+        if (!currentBulletIds.has(id)) this.state.bullets.delete(id);
+    });
 
-  spawnBullet(ownerId: string, player: Player) {
-    const bullet = new Bullet();
-    bullet.ownerId = ownerId;
-    bullet.x = player.x;
-    bullet.y = player.y;
-    bullet.velocityX = Math.cos(player.angle) * 400;
-    bullet.velocityY = Math.sin(player.angle) * 400;
-    this.state.bullets.set(this.generateId(), bullet);
-  }
-
-  spawnAsteroids(count: number) {
-    for(let i=0; i<count; i++) {
-      const asteroid = new Asteroid();
-      asteroid.id = this.generateId();
-      asteroid.x = this.random.nextRange(0, this.state.gameWidth);
-      asteroid.y = this.random.nextRange(0, this.state.gameHeight);
-      asteroid.velocityX = this.random.nextRange(-75, 75);
-      asteroid.velocityY = this.random.nextRange(-75, 75);
-      asteroid.size = 3;
-      this.state.asteroids.set(asteroid.id, asteroid);
+    const gameState = this.world.getSingleton<any>("GameState");
+    if (gameState && this.state.players.size > 0) {
+        // Simple game over check
+        let anyAlive = false;
+        this.state.players.forEach(p => { if (p.alive) anyAlive = true; });
+        if (!anyAlive && this.state.gameStarted) this.state.gameOver = true;
     }
   }
 }

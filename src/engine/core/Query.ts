@@ -73,7 +73,7 @@ export class Query {
    */
   public getEntities(): Entity[] {
     if (this.needsUpdateArray) {
-      this.entityArray = Array.from(this.entities);
+      this.entityArray = Array.from(this.entities).sort((a, b) => a - b);
       this.needsUpdateArray = false;
     }
     return this.entityArray;
@@ -88,5 +88,20 @@ export class Query {
    */
   public get key(): string {
     return [...this.componentTypes].sort().join(",");
+  }
+
+  /**
+   * Rebuilds the query results from scratch.
+   * Used during world restoration to ensure consistency without breaking references.
+   */
+  public rebuild(allEntities: Set<Entity>, entityComponentSets: Map<Entity, Set<string>>): void {
+    this.entities.clear();
+    allEntities.forEach(entity => {
+      const components = entityComponentSets.get(entity);
+      if (components && this.matches(components)) {
+        this.entities.add(entity);
+      }
+    });
+    this.needsUpdateArray = true;
   }
 }
