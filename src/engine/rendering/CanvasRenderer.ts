@@ -164,8 +164,8 @@ export class CanvasRenderer implements Renderer {
       let x = trans.worldX ?? trans.x;
       let y = trans.worldY ?? trans.y;
       let rotation = trans.worldRotation ?? trans.rotation;
-      let scaleX = trans.worldScaleX ?? (trans.scaleX ?? 1);
-      let scaleY = trans.worldScaleY ?? (trans.scaleY ?? 1);
+      const scaleX = trans.worldScaleX ?? (trans.scaleX ?? 1);
+      const scaleY = trans.worldScaleY ?? (trans.scaleY ?? 1);
 
       if (prevTrans && alpha < 1) {
         x = prevTrans.x + (x - prevTrans.x) * alpha;

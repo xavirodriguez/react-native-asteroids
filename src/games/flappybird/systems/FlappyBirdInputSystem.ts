@@ -1,7 +1,7 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { InputManager } from "../../../engine/input/InputManager";
-import { VelocityComponent, TransformComponent } from "../../../engine/types/EngineTypes";
+import { VelocityComponent } from "../../../engine/types/EngineTypes";
 import { FlappyBirdInput, FlappyBirdInputComponent, BirdComponent, FLAPPY_CONFIG } from "../types/FlappyBirdTypes";
 import { Juice } from "../../../engine/utils/Juice";
 import { hapticShoot } from "../../../utils/haptics";

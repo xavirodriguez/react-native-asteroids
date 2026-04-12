@@ -1,5 +1,4 @@
 import { Entity } from "../core/Entity";
-import { RenderComponent } from "../core/CoreComponents";
 
 /**
  * Snapshot de una entidad para renderizado.

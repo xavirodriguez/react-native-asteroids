@@ -18,11 +18,12 @@ import type { GameStateComponent } from "../src/types/GameTypes";
 let Canvas: any, BackdropBlur: any, Fill: any;
 if (Platform.OS !== "web") {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const SkiaModule = require("@shopify/react-native-skia");
     Canvas = SkiaModule.Canvas;
     BackdropBlur = SkiaModule.BackdropBlur;
     Fill = SkiaModule.Fill;
-  } catch (e) {
+  } catch (_err) {
     // Skia not available
   }
 }

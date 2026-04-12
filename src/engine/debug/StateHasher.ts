@@ -1,5 +1,4 @@
 import { World } from "../core/World";
-import { Entity, Component } from "../types/EngineTypes";
 
 /**
  * Generates a deterministic hash of the world state for desync detection.

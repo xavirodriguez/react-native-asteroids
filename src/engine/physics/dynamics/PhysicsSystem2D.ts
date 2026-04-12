@@ -1,6 +1,6 @@
 import { System } from "../../core/System";
 import { World } from "../../core/World";
-import { Entity, TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent } from "../../types/EngineTypes";
+import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent } from "../../types/EngineTypes";
 
 /**
  * Built-in 2D Physics System for stable rigid body dynamics.

@@ -1,5 +1,4 @@
 import { Scene } from "./Scene";
-import { World } from "../core/World";
 import { runLifecycleAsync, runLifecycleSync } from "../utils/LifecycleUtils";
 
 export type TransitionType = 'instant' | 'fade' | 'slide';

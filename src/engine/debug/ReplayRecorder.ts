@@ -1,5 +1,4 @@
 import { ReplayData, ReplayFrame, InputFrame } from "../../multiplayer/NetTypes";
-import { World } from "../core/World";
 
 /**
  * Records input frames for replay purposes.
