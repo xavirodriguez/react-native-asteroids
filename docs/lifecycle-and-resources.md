@@ -4,19 +4,21 @@
 
 El motor sigue un ciclo de vida estricto orquestado por la clase `BaseGame`:
 
-1.  **Instanciación**: Creación del `World`, `GameLoop` y sistemas de infraestructura.
+1.  **Constructor**: Inicialización de subsistemas (`World`, `GameLoop`, `UnifiedInput`, `SceneManager`) y registro de `EventBus` como recurso global.
 2.  **`init()`**:
-    - Carga de recursos externos (assets).
-    - Registro de sistemas core (XP, Palette, Mutators).
-    - Registro de sistemas específicos del juego.
-    - Inicialización de entidades iniciales.
+    - Registro de sistemas de motor (XP, Palette).
+    - Ejecución de `registerSystems()` (específico del juego).
+    - Ejecución de `initializeEntities()`.
 3.  **`start()`**: Inicia el latido del `GameLoop`.
-4.  **`pause()` / `resume()`**: Detiene o reanuda el procesamiento de ticks, manteniendo el estado intacto.
+4.  **`pause()` / `resume()`**: Detiene o reanuda la simulación lógica. Notifica a la escena y a los listeners de la UI.
 5.  **`restart()`**:
-    - Ejecuta el hook opcional `_onBeforeRestart`.
-    - Delega el reinicio a la escena actual o limpia el `World` global.
-    - Re-inicializa entidades.
-6.  **`destroy()`**: Detiene el loop, limpia listeners y libera referencias para el GC.
+    - Limpieza asíncrona vía `runLifecycleAsync`.
+    - Reseteo del `World` o de la escena activa.
+    - Re-inicialización completa de entidades.
+6.  **`destroy()`**:
+    - `stop()` del loop.
+    - `cleanup()` del sistema de entrada (eliminación de listeners de `window`).
+    - Limpieza de suscriptores de UI.
 
 ## Gestión de Recursos (Resources API)
 

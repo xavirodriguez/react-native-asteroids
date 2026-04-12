@@ -44,3 +44,6 @@ Esta sección documenta las fragilidades arquitectónicas y de diseño detectada
 | **DETERMINISM** | **MEDIUM** | `RandomService.getInstance("render")` puede ser usado erróneamente en lógica de gameplay, rompiendo el determinismo silenciosamente. | `RandomService.ts` |
 | **HIERARCHY**   | **MEDIUM** | `HierarchySystem` utiliza recursión para resolver transformaciones, riesgo de Stack Overflow en jerarquías profundas. | `HierarchySystem.ts` |
 | **DETERMINISM** | **MEDIUM** | `JuiceSystem` muta componentes `Transform` core. Si se usa para lógica de colisiones, causará desincronización en red. | `JuiceSystem.ts` |
+| **HIERARCHY**   | **LOW**    | `World.addComponent` normaliza jerarquías rompiendo silenciosamente el parentesco si el padre no existe. Evita crashes pero oculta errores de orden de creación. | `World.ts` |
+| **DETERMINISM** | **LOW**    | `RenderUpdateSystem` muta `Render.rotation`. Si un sistema de colisiones depende de esta rotación en lugar de la del `Transform`, habrá drift visual vs físico. | `RenderUpdateSystem.ts` |
+| **GC_PRESSURE** | **LOW**    | Generación frecuente de arrays en `World.query` y `Query.getEntities`. Aunque se cachean, la exposición de la referencia mutable es peligrosa. | `World.ts`, `Query.ts` |

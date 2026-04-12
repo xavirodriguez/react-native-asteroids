@@ -8,6 +8,7 @@ Los **Componentes** son POJOs (Plain Old JavaScript Objects) que contienen exclu
 - Deben implementar la interfaz `Component` con un discriminador `type`.
 - Son procesados por referencia para máximo rendimiento.
 - **Principio 6 (Object Pool Ownership)**: El `World` garantiza que los componentes recuperados vía `getSingleton` sean mutables (descongelándolos si es necesario).
+- **Invariantes Estructurales**: Componentes como `Transform` incluyen validaciones (ej: no auto-parentesco) durante el `addComponent`.
 
 ## Sistemas
 Los **Sistemas** encapsulan toda la lógica del juego.
@@ -18,8 +19,9 @@ Los **Sistemas** encapsulan toda la lógica del juego.
 ## World
 El **World** es el orquestador central:
 - Mantiene el índice de entidades y componentes (`componentMaps`).
+- **Almacenamiento**: Utiliza `Map<Entity, Component>` por tipo para acceso O(1) y `Set<Entity>` por tipo para indexación de queries.
 - Gestiona el **versionado estructural** (`world.version`): se incrementa en cada cambio estructural (añadir/quitar entidad o componente), permitiendo invalidar cachés de forma eficiente.
-- Proporciona acceso a **Recursos**: Singletons globales que no pertenecen a ninguna entidad (e.g., configuración de red).
+- Proporciona acceso a **Recursos**: Singletons globales que no pertenecen a ninguna entidad (e.g., configuración de red, EventBus).
 
 ## Queries Reactivas
 Las consultas a entidades están altamente optimizadas mediante la clase `Query`:
@@ -30,3 +32,4 @@ Las consultas a entidades están altamente optimizadas mediante la clase `Query`
 - **[MUTABLE_CACHE_LEAK]**: `Query.getEntities()` devuelve una referencia al array interno. Si un sistema modifica este array (e.g. `.sort()` o `.pop()`), corromperá la query para todos los demás sistemas.
 - **[ENTITY_DOUBLE_RELEASE]**: `EntityPool` no valida si un ID ya ha sido liberado, lo que puede causar que dos entidades activas compartan el mismo ID tras ser adquiridas.
 - **[STRUCTURAL_CHANGE_COST]**: Añadir o quitar componentes en hot-loops incrementa `world.version` y notifica a todas las queries interesadas, lo que puede ser costoso (O(Q) donde Q es el número de queries suscritas al tipo de componente).
+- **[ID_REUSE_STALE_REFS]**: Si un sistema externo guarda un ID de entidad y esta es eliminada y reciclada, la referencia apuntará a una nueva entidad accidentalmente.

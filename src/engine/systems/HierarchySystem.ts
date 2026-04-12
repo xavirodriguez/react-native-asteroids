@@ -9,10 +9,25 @@ import { Entity, TransformComponent } from "../types/EngineTypes";
 type Mat3 = [number, number, number, number, number, number];
 
 /**
- * Sistema que calcula las transformaciones en el espacio del mundo.
+ * Sistema responsable de resolver las transformaciones espaciales jerárquicas.
  *
- * @responsibility Resolver la posición, rotación y escala absoluta de las entidades.
- * @responsibility Implementar propagación de flags 'dirty' para evitar cálculos redundantes.
+ * @responsibility Calcular coordenadas de mundo (worldX, worldY, worldRotation, worldScale)
+ * a partir de coordenadas locales y la relación con el padre.
+ * @responsibility Propagar cambios de transformación mediante un sistema de flags 'dirty'
+ * para optimizar el rendimiento.
+ * @queries Transform
+ * @mutates Transform (worldX, worldY, worldRotation, worldScaleX, worldScaleY, dirty)
+ * @executionOrder Fase: Simulation/Presentation. Debe ejecutarse tras los sistemas que mutan
+ * la posición local y antes del renderizado.
+ *
+ * @remarks
+ * Implementa una propagación top-down para asegurar que los hijos siempre se calculen
+ * después de sus padres. Utiliza matrices 3x3 para composición de transformaciones.
+ *
+ * @conceptualRisk [LAYOUT_CASCADE][MEDIUM] Una jerarquía muy profunda puede causar un
+ * coste de cálculo elevado si la raíz cambia frecuentemente.
+ * @conceptualRisk [WORLD_SYNC][HIGH] Si un sistema lee `worldX/Y` antes de que `HierarchySystem`
+ * se ejecute en el frame actual, obtendrá datos del frame anterior (lag visual o de física).
  */
 export class HierarchySystem extends System {
   private wasDirty = new Set<Entity>();

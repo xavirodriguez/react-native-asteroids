@@ -4,7 +4,20 @@ import { Renderer, RenderCommand } from "./RenderTypes";
 import { RenderableComponent, Transform } from "../types/EngineTypes";
 
 /**
- * System that generates render commands for all renderable entities.
+ * Sistema puente entre el mundo ECS y los backends de renderizado.
+ *
+ * @remarks
+ * RenderSystem es responsable de traducir los componentes `Renderable` en comandos de dibujo
+ * genéricos que cualquier implementación de `Renderer` (Canvas, Skia, SVG) pueda procesar.
+ * Gestiona el orden de dibujado (Z-order) y la visibilidad.
+ *
+ * @responsibility Consultar entidades renderizables y generar la lista de comandos.
+ * @responsibility Aplicar transformaciones de mundo obtenidas del `SceneGraph`.
+ * @responsibility Orquestar el ciclo de vida del frame en el renderer (begin/submit/end).
+ *
+ * @conceptualRisk [Z_ORDER_STABILITY][LOW] El algoritmo de ordenación utilizado (Array.sort)
+ * puede no ser estable en todos los motores JS, lo que podría causar parpadeo visual
+ * si dos entidades comparten el mismo `zOrder`.
  */
 export class RenderSystem {
   private commandPool: RenderCommand[] = [];
@@ -14,8 +27,16 @@ export class RenderSystem {
   constructor(private renderer: Renderer, private sceneGraph: SceneGraph) {}
 
   /**
-   * Iterates over entities with RenderableComponent and submits commands to the renderer.
-   * Commands are pooled and sorted by zOrder.
+   * Genera y despacha comandos de renderizado para el frame actual.
+   *
+   * @remarks
+   * Utiliza un pool interno de comandos para evitar asignaciones de memoria en cada frame.
+   * Las transformaciones se extraen del `SceneGraph` para soportar jerarquías.
+   *
+   * @param world - El mundo ECS de donde extraer los componentes `Renderable`.
+   * @param alpha - Factor de interpolación para la suavización visual.
+   *
+   * @postcondition El `renderer` asociado recibe una secuencia ordenada de comandos.
    */
   public update(world: World, alpha: number): void {
     const renderables = world.getEntitiesWith("Renderable");
