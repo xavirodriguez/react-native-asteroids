@@ -46,7 +46,7 @@ export class FlappyBirdRoom extends Room<FlappyBirdState> {
     this.state.players.set(client.sessionId, bird);
   }
 
-  onLeave(client: Client, code: number) {
+  onLeave(client: Client, _code: number) {
     this.state.players.delete(client.sessionId);
   }
 

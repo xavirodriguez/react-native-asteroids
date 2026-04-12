@@ -9,10 +9,10 @@ import { GAME_CONFIG, type GameStateComponent } from "../../types/AsteroidTypes"
 describe("Asteroids Gameplay Integration", () => {
   let world: World;
   let particlePool: ParticlePool;
-  let bulletPool: BulletPool;
+  let _bulletPool: BulletPool;
   let collisionSystem: AsteroidCollisionSystem;
   let gameStateSystem: AsteroidGameStateSystem;
-  let movementSystem: MovementSystem;
+  let _movementSystem: MovementSystem;
 
   beforeEach(() => {
     world = new World();

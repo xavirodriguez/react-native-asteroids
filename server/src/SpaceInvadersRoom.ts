@@ -6,7 +6,7 @@ export class SpaceInvadersRoom extends Room<SpaceInvadersState> {
   direction = 1;
   lastMove = 0;
 
-  onCreate(options: any) {
+  onCreate(_options: any) {
     this.state = new SpaceInvadersState();
     this.state.gameStarted = false;
     this.state.gameOver = false;
@@ -46,7 +46,7 @@ export class SpaceInvadersRoom extends Room<SpaceInvadersState> {
     this.state.players.set(client.sessionId, player);
   }
 
-  async onLeave(client: Client, code: number) {
+  async onLeave(client: Client, _code: number) {
     this.state.players.delete(client.sessionId);
   }
 

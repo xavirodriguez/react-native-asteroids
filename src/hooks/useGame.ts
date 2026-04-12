@@ -35,9 +35,9 @@ export function useGame<
   const [, forceUpdate] = useState(0);
 
   // Optimization: Throttle React state updates to 15 FPS to prevent bridge saturation
-  const lastUpdateTimeRef = useRef<number>(0);
-  const lastPausedRef = useRef<boolean>(false);
-  const THROTTLE_MS = 1000 / 15;
+  const _lastUpdateTimeRef = useRef<number>(0);
+  const _lastPausedRef = useRef<boolean>(false);
+  const _THROTTLE_MS = 1000 / 15;
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Principle 4: Use encapsulated hook for symmetric resource management

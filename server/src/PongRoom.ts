@@ -59,7 +59,7 @@ export class PongRoom extends Room<PongStateSchema> {
     });
   }
 
-  onJoin(client: Client, options: any) {
+  onJoin(client: Client, _options: any) {
     const player = new PongPlayer();
     player.sessionId = client.sessionId;
 
@@ -70,7 +70,7 @@ export class PongRoom extends Room<PongStateSchema> {
     this.state.players.set(client.sessionId, player);
   }
 
-  onLeave(client: Client, consented: boolean) {
+  onLeave(client: Client, _consented: boolean) {
     this.state.players.delete(client.sessionId);
   }
 }

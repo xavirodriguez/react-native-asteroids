@@ -4,7 +4,7 @@ import {
     UIStyleComponent,
     UITextComponent,
     UIProgressBarComponent,
-    UIImageComponent,
+    _UIImageComponent,
     UIButtonStateComponent
 } from "./UITypes";
 import { TextRenderer } from "./text/TextRenderer";
@@ -140,7 +140,7 @@ function renderProgressBar(ctx: CanvasRenderingContext2D, entity: any, world: Wo
     }
 }
 
-function renderImage(ctx: CanvasRenderingContext2D, entity: any, world: World, element: UIElementComponent): void {
+function renderImage(_ctx: CanvasRenderingContext2D, _entity: any, _world: World, _element: UIElementComponent): void {
     // Placeholder for image rendering
 }
 

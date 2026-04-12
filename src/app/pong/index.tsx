@@ -8,7 +8,7 @@ import { usePongGame } from "@/hooks/usePongGame";
 
 export default function PongScreen() {
   const [started, setStarted] = useState(false);
-  const { game, gameState, handleInput, isPaused, togglePause } = usePongGame();
+  const { game, gameState, handleInput, _isPaused, _togglePause } = usePongGame();
 
   if (!game) return null;
 

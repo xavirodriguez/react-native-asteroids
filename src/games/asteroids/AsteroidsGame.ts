@@ -84,7 +84,7 @@ export class AsteroidsGame
         const pos = this.world.getComponent<TransformComponent>(entity, "Transform");
         const vel = this.world.getComponent<VelocityComponent>(entity, "Velocity");
         const render = this.world.getComponent<RenderComponent>(entity, "Render");
-        const frictionComp = this.world.getComponent<FrictionComponent>(entity, "Friction");
+        const _frictionComp = this.world.getComponent<FrictionComponent>(entity, "Friction");
 
         if (pos && vel && render) {
           // 1. Apply Input-driven Acceleration (Matching AsteroidInputSystem)

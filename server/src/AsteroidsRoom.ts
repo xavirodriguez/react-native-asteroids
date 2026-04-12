@@ -110,7 +110,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     try {
       if (code === CloseCode.CONSENTED) throw new Error("consented leave");
       await this.allowReconnection(client, 10);
-    } catch (e) {
+    } catch (_e) {
       this.state.players.delete(client.sessionId);
       this.inputBuffers.delete(client.sessionId);
     }

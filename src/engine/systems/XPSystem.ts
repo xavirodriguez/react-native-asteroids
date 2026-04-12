@@ -113,7 +113,7 @@ export class XPSystem extends System {
    *
    * @conceptualRisk [REDUNDANCY] Verificar la existencia del recurso en cada frame tiene un coste O(1) despreciable pero innecesario.
    */
-  public update(world: World, deltaTime: number): void {
+  public update(world: World, _deltaTime: number): void {
     // Singleton registration if not present
     if (!world.getResource("XPAccumulator")) {
       world.setResource("XPAccumulator", this.accumulator);

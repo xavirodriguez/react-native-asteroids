@@ -15,7 +15,7 @@ if (Platform.OS !== 'web') {
     Group = SkiaModule.Group;
     Circle = SkiaModule.Circle;
     Rect = SkiaModule.Rect;
-  } catch (e) {
+  } catch (_e) {
     console.warn("Skia not available");
   }
 }

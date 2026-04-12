@@ -8,7 +8,7 @@ export class DebugSystem extends System {
   private frameCount: number = 0;
   private lastTime: number = 0;
 
-  public update(world: World, deltaTime: number): void {
+  public update(world: World, _deltaTime: number): void {
     const config = world.getSingleton<DebugConfigComponent>("DebugConfig");
     if (!config) return;
 

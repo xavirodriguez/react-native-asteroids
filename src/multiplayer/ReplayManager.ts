@@ -23,7 +23,7 @@ export class ReplayManager {
     const frame = this.replayData.frames[this.currentFrameIndex];
 
     // Process all recorded inputs for this tick
-    Object.entries(frame.inputs).forEach(([sessionId, frames]) => {
+    Object.entries(frame.inputs).forEach(([_sessionId, frames]) => {
         frames.forEach((inputFrame: InputFrame) => {
             // We use predictLocalPlayer because it's the logic that applies inputs
             // to a specific ship. We need to tell the game which ship to apply it to.

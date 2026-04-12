@@ -26,7 +26,7 @@ export class UIInputSystem extends System {
     }
   }
 
-  public update(world: World, deltaTime: number): void {
+  public update(world: World, _deltaTime: number): void {
     const buttons = world.query("UIElement", "UIButtonState");
 
     for (const entity of buttons) {

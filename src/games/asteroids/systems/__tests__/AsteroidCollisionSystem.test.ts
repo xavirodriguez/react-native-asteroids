@@ -30,7 +30,7 @@ describe("AsteroidCollisionSystem", () => {
   });
 
   it("should split a large asteroid into two medium ones on bullet collision", () => {
-    const asteroid = createAsteroid({ world, x: 100, y: 100, size: "large" });
+    const _asteroid = createAsteroid({ world, x: 100, y: 100, size: "large" });
     createBullet({ world, x: 100, y: 100, angle: 0 });
 
     system.update(world, 16.66);

@@ -6,7 +6,7 @@ import { RandomService } from "../utils/RandomService";
 import {
   type TransformComponent,
   type RenderComponent,
-  type HealthComponent,
+  type _HealthComponent,
   type TTLComponent,
 } from "../types/EngineTypes";
 

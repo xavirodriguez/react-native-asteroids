@@ -47,7 +47,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
   }
 
   protected registerSystems(): void {
-    const mode = this._config.gameOptions?.mode || "local";
+    const _mode = this._config.gameOptions?.mode || "local";
 
     // Bind inputs for UnifiedInputSystem
     this.unifiedInput.bind("p1Up", ["KeyW"]);

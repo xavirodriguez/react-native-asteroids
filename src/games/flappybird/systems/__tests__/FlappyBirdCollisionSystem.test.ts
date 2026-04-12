@@ -20,7 +20,7 @@ describe("FlappyBirdCollisionSystem", () => {
 
   it("should trigger game over when bird hits top pipe", () => {
     createGameState(world);
-    const bird = createBird({ world, x: 100, y: 100 });
+    const _bird = createBird({ world, x: 100, y: 100 });
     // Pipe at x=100, gap at y=300, gapSize=140.
     // Top pipe ends at 300 - 70 = 230.
     // Bird at y=100 (radius 15) is definitely hitting the top pipe (0 to 230).

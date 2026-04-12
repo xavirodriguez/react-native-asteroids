@@ -18,7 +18,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
     if (!active || !playerName) return;
 
     cancelledRef.current = false;
-    let currentRoom: Room | null = null;
+    const _currentRoom: Room | null = null;
 
     async function setup() {
       try {
@@ -55,7 +55,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
 
         joinedRoom.send("sync_tick");
 
-        joinedRoom.onLeave((code) => {
+        joinedRoom.onLeave((_code) => {
           setConnected(false);
           setRoom(null);
         });

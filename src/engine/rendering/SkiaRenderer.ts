@@ -254,15 +254,15 @@ export class SkiaRenderer implements Renderer {
     this.shapeDrawers.set(name, drawer);
   }
 
-  public registerBackgroundEffect(name: string, drawer: any): void {
+  public registerBackgroundEffect(_name: string, _drawer: any): void {
       // Basic implementation to satisfy Renderer interface
   }
 
-  public registerForegroundEffect(name: string, drawer: any): void {
+  public registerForegroundEffect(_name: string, _drawer: any): void {
       // Basic implementation to satisfy Renderer interface
   }
 
-  public drawParticles(world: World): void {
+  public drawParticles(_world: World): void {
     // Basic implementation for now to satisfy call in render()
   }
 }

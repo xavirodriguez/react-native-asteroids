@@ -2,9 +2,9 @@ import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import {
   type InputComponent,
-  type VelocityComponent,
-  type RenderComponent,
-  type TransformComponent,
+  type _VelocityComponent,
+  type _RenderComponent,
+  type _TransformComponent,
   type InputState,
   type InputStateComponent,
   GAME_CONFIG,
@@ -60,7 +60,7 @@ export class AsteroidInputSystem extends System {
     this.isMultiplayer = active;
   }
 
-  public update(world: World, deltaTime: number): void {
+  public update(world: World, _deltaTime: number): void {
     if (this.isMultiplayer) return; // Inputs handled by React hook in multiplayer
     const ships = world.query("Ship", "Input");
     ships.forEach((entity) => {

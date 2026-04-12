@@ -15,17 +15,21 @@ import Animated, {
 import type { GameStateComponent } from "../src/types/GameTypes";
 
 // Conditionally import Skia components
-let Canvas: any, BackdropBlur: any, Fill: any;
+/* eslint-disable @typescript-eslint/no-require-imports */
+let Canvas: any = null;
+let BackdropBlur: any = null;
+let Fill: any = null;
 if (Platform.OS !== "web") {
   try {
     const SkiaModule = require("@shopify/react-native-skia");
     Canvas = SkiaModule.Canvas;
     BackdropBlur = SkiaModule.BackdropBlur;
     Fill = SkiaModule.Fill;
-  } catch (e) {
+  } catch (_e) {
     // Skia not available
   }
 }
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 /**
  * Properties for the {@link GameUI} component.

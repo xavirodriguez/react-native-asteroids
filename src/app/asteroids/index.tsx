@@ -59,7 +59,7 @@ export default function AsteroidsScreen() {
   useEffect(() => {
     if (isMulti && serverState && game) {
         const sessionId = room?.sessionId;
-        const lastTick = lastProcessedTickRef.current;
+        const _lastTick = lastProcessedTickRef.current;
         const pendingInputs = inputBufferRef.current;
 
         (game as any).updateFromServer(serverState, sessionId);
