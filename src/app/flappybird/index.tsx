@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "r
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
+import { GameRenderer } from "@/components/GameRenderer";
 import { ComboDisplay } from "@/components/ComboDisplay";
 import { FlappyBirdUI } from "@/components/FlappyBirdUI";
 import { FlappyBirdControls } from "@/components/FlappyBirdControls";
@@ -126,11 +127,18 @@ export default function FlappyBirdScreen() {
           seed={seed}
           onSetSeed={restartWithSeed}
         />
-        <CanvasRenderer
-          world={game.getWorld()}
-          gameLoop={game.getGameLoop()}
-          onInitialize={(renderer) => game.initializeRenderer(renderer)}
-        />
+        {Platform.OS === "web" ? (
+          <CanvasRenderer
+            world={game.getWorld()}
+            gameLoop={game.getGameLoop()}
+            onInitialize={(renderer) => game.initializeRenderer(renderer)}
+          />
+        ) : (
+          <GameRenderer
+            world={game.getWorld()}
+            onInitialize={(renderer) => game.initializeRenderer(renderer)}
+          />
+        )}
         <FlappyBirdControls
           onFlap={(pressed) => handleMultiplayerInput({ flap: pressed })}
         />

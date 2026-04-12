@@ -59,23 +59,15 @@ export class FlappyBirdGame
   }
 
   protected registerSystems(): void {
-    const DEFAULT_INPUT: FlappyBirdInput = { flap: false };
-    const FLAPPY_KEYMAP = {
-      [FLAPPY_CONFIG.KEYS.FLAP]: "flap" as const,
-    };
-
-    // Fix initialization order: Create if not exists since super() calls this
-    this._localInputManager = this._localInputManager || new InputManager<FlappyBirdInput>();
-
-    this._localInputManager.cleanup();
-    this._localInputManager.addController(new KeyboardController<FlappyBirdInput>(FLAPPY_KEYMAP, DEFAULT_INPUT));
-    this._localInputManager.addController(new TouchController<FlappyBirdInput>());
+    // Bind inputs for UnifiedInputSystem
+    this.unifiedInput.bind("flap", [FLAPPY_CONFIG.KEYS.FLAP]);
 
     this.gameStateSystem = new FlappyBirdGameStateSystem(this, this.config);
 
-    const inputSys = new FlappyBirdInputSystem(this._localInputManager, this.config);
+    const inputSys = new FlappyBirdInputSystem(this.config);
     if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
 
+    this.world.addSystem(this.unifiedInput);
     this.world.addSystem(new InputBufferSystem());
     this.world.addSystem(inputSys);
     this.world.addSystem(new FlappyBirdGlideSystem());

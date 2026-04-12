@@ -283,7 +283,18 @@ export class AsteroidsGame
     this.world.addSystem(new AsteroidRenderSystem()); // Handle trails
   }
 
-  protected initializeEntities(): void {}
+  protected initializeEntities(): void {
+    createGameState({ world: this.world });
+    createShip({
+      world: this.world,
+      x: GAME_CONFIG.SCREEN_CENTER_X,
+      y: GAME_CONFIG.SCREEN_CENTER_Y
+    });
+    spawnAsteroidWave({
+      world: this.world,
+      count: GAME_CONFIG.INITIAL_ASTEROID_COUNT
+    });
+  }
 
   /**
    * Registers game-specific rendering logic to the provided renderer.

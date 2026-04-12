@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "r
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
+import { GameRenderer } from "@/components/GameRenderer";
 import { ComboDisplay } from "@/components/ComboDisplay";
 import { GameUI } from "@/components/GameUI";
 import { GameControls } from "@/components/GameControls";
@@ -140,11 +141,18 @@ export default function AsteroidsScreen() {
           seed={seed}
           onSetSeed={restartWithSeed}
         />
-        <CanvasRenderer
-          world={game.getWorld()}
-          gameLoop={game.getGameLoop()}
-          onInitialize={(renderer) => game.initializeRenderer(renderer)}
-        />
+        {Platform.OS === "web" ? (
+          <CanvasRenderer
+            world={game.getWorld()}
+            gameLoop={game.getGameLoop()}
+            onInitialize={(renderer) => game.initializeRenderer(renderer)}
+          />
+        ) : (
+          <GameRenderer
+            world={game.getWorld()}
+            onInitialize={(renderer) => game.initializeRenderer(renderer)}
+          />
+        )}
         <GameControls
           onThrust={(pressed) => handleMultiplayerInput({ thrust: pressed })}
           onRotateLeft={(pressed) => handleMultiplayerInput({ rotateLeft: pressed })}

@@ -90,7 +90,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
         const t = activeWorld.getComponent<TransformComponent>(entity, "Transform")!;
         let prev = activeWorld.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
         if (!prev) {
-          prev = activeWorld.addComponent(entity, { type: "PreviousTransform", x: t.x, y: t.y, rotation: t.rotation });
+          activeWorld.addComponent(entity, { type: "PreviousTransform", x: t.x, y: t.y, rotation: t.rotation });
+          prev = activeWorld.getComponent<PreviousTransformComponent>(entity, "PreviousTransform")!;
         }
         prev.x = t.x;
         prev.y = t.y;
@@ -151,6 +152,18 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   public getWorld(): World {
     const scene = this.sceneManager.getCurrentScene();
     return scene ? scene.getWorld() : this.world;
+  }
+
+  public getSeed(): number {
+    return this.currentSeed;
+  }
+
+  public getGameLoop(): GameLoop {
+    return this.gameLoop;
+  }
+
+  public isPausedState(): boolean {
+    return this._isPaused;
   }
 
   public async init(): Promise<void> {

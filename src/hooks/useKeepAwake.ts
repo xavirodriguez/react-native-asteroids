@@ -22,9 +22,13 @@ export function useKeepAwake(enabled: boolean = true): void {
     return () => {
       // Symmetric deactivation
       try {
+        // deactivateKeepAwake can throw if not active, especially on web/fast-refresh
         deactivateKeepAwake();
-      } catch (error) {
-        // Wrap in try-catch to prevent errors on web during rapid transitions
+      } catch (error: any) {
+        // Silence "not activated" errors which are common during HMR/fast-transitions
+        if (error?.message?.includes("has not activated yet")) {
+          return;
+        }
         console.warn("Error deactivating keep-awake:", error);
       }
     };

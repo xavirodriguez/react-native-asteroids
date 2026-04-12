@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, Platform } from "react-native
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
+import { GameRenderer } from "@/components/GameRenderer";
 import { PongControls } from "@/components/PongControls";
 import { usePongGame } from "@/hooks/usePongGame";
 
@@ -48,11 +49,18 @@ export default function PongScreen() {
             <Text style={styles.scoreText}>{gameState?.scoreP2 ?? 0}</Text>
         </View>
 
-        <CanvasRenderer
-          world={game.getWorld()}
-          gameLoop={game.getGameLoop()}
-          onInitialize={(renderer) => game.initializeRenderer(renderer)}
-        />
+        {Platform.OS === "web" ? (
+          <CanvasRenderer
+            world={game.getWorld()}
+            gameLoop={game.getGameLoop()}
+            onInitialize={(renderer) => game.initializeRenderer(renderer)}
+          />
+        ) : (
+          <GameRenderer
+            world={game.getWorld()}
+            onInitialize={(renderer) => game.initializeRenderer(renderer)}
+          />
+        )}
 
         <PongControls
           onP1Up={(pressed) => handleInput({ p1Up: pressed })}

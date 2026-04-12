@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "r
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
+import { GameRenderer } from "@/components/GameRenderer";
 import { ComboDisplay } from "@/components/ComboDisplay";
 import { SpaceInvadersUI } from "@/components/SpaceInvadersUI";
 import { SpaceInvadersControls } from "@/components/SpaceInvadersControls";
@@ -126,11 +127,18 @@ export default function SpaceInvadersScreen() {
           seed={seed}
           onSetSeed={restartWithSeed}
         />
-        <CanvasRenderer
-          world={game.getWorld()}
-          gameLoop={game.getGameLoop()}
-          onInitialize={(renderer) => game.initializeRenderer(renderer)}
-        />
+        {Platform.OS === "web" ? (
+          <CanvasRenderer
+            world={game.getWorld()}
+            gameLoop={game.getGameLoop()}
+            onInitialize={(renderer) => game.initializeRenderer(renderer)}
+          />
+        ) : (
+          <GameRenderer
+            world={game.getWorld()}
+            onInitialize={(renderer) => game.initializeRenderer(renderer)}
+          />
+        )}
         <SpaceInvadersControls
           onMoveLeft={(pressed) => handleMultiplayerInput({ moveLeft: pressed })}
           onMoveRight={(pressed) => handleMultiplayerInput({ moveRight: pressed })}
