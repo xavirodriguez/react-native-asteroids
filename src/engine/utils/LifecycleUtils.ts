@@ -26,10 +26,3 @@ export async function runLifecycleAsync(fn: () => void | Promise<void>): Promise
     await result;
   }
 }
-
-/**
- * @deprecated Use runLifecycleSync or runLifecycleAsync explicitly to avoid Zalgo.
- */
-export async function runLifecycle(fn: () => void | Promise<void>): Promise<void> {
-  return runLifecycleAsync(fn);
-}
