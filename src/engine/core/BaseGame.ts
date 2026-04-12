@@ -90,20 +90,21 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   private setupLoop(): void {
     /**
-     * Pipeline Determinista:
-     * 1. Captura de Input
-     * 2. Aplicación de Input
-     * 3. Update (Sistemas / Escena)
-     * 4. Transform Propagation
+     * Pipeline Determinista (Update Phase):
+     * 1. Capture/Snapshot Previous State
+     * 2. Input Handling
+     * 3. Simulation Update (ECS Systems)
+     * 4. Transform Propagation (Mandatory)
      */
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (this._isPaused) return;
 
       const activeWorld = this.getWorld();
 
-      // 1. Snapshot Transforms for Interpolation
+      // 1. Snapshot Transforms for Interpolation (Prevents render drift)
       const entities = activeWorld.query("Transform");
-      for (const entity of entities) {
+      for (let i = 0; i < entities.length; i++) {
+        const entity = entities[i];
         const t = activeWorld.getComponent<TransformComponent>(entity, "Transform")!;
         let prev = activeWorld.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
         if (!prev) {
@@ -128,7 +129,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
         this.world.update(deltaTime);
       }
 
-      // 4. Transform Propagation (Mandatory Phase)
+      // 4. Transform Propagation Phase
       this.hierarchySystem.update(activeWorld, deltaTime);
 
       this.currentTick++;
@@ -176,7 +177,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
    * @sideEffect Llama a {@link BaseGame._onBeforeRestart} para limpieza específica de la subclase.
    */
   public async restart(): Promise<void> {
-    await runLifecycleAsync(() => this._onBeforeRestart());
+    await runLifecycleAsync(async () => {
+        await this._onBeforeRestart();
+    });
+
     if (this.sceneManager.getCurrentScene()) {
       await this.sceneManager.restartCurrentScene();
     } else {

@@ -51,8 +51,8 @@ export class Camera2D extends System {
           const targetY = targetPos.y - this.viewport.height / (2 * cam.zoom) + cam.offset.y;
 
           // Apply exponential smoothing: t = 1 - exp(-lambda * dt)
-          // Default lambda to a reasonable value if not provided (e.g., 10 for quick smoothing)
-          const lambda = cam.smoothing * 60; // Scaling smoothing factor
+          // Consistent behavior across 30/60/120 FPS
+          const lambda = (cam.smoothing ?? 0.1) * 60;
           const t = 1 - Math.exp(-lambda * dtSeconds);
 
           cam.x += (targetX - cam.x) * t;
@@ -72,8 +72,11 @@ export class Camera2D extends System {
         cam.shakeOffsetX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
         cam.shakeOffsetY = (renderRandom.next() - 0.5) * cam.shakeIntensity;
 
-        cam.shakeIntensity -= deltaTime * 0.05; // Decay rate (ms based)
-        if (cam.shakeIntensity < 0) {
+        // Exponential decay for shake intensity: I = I0 * exp(-decay * dt)
+        const decayLambda = 5; // Fixed decay rate
+        cam.shakeIntensity *= Math.exp(-decayLambda * dtSeconds);
+
+        if (cam.shakeIntensity < 0.1) {
             cam.shakeIntensity = 0;
             cam.shakeOffsetX = 0;
             cam.shakeOffsetY = 0;

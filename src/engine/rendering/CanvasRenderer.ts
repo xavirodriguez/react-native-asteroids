@@ -5,6 +5,7 @@ import { RenderComponent, TransformComponent, PreviousTransformComponent } from 
 import { renderUI } from "../ui/UIRenderer";
 import { RandomService } from "../utils/RandomService";
 import { RenderSnapshot, RenderEntitySnapshot } from "./RenderSnapshot";
+import { CommandBuffer, DrawCommand } from "./CommandBuffer";
 
 export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: any) => void;
 
@@ -38,6 +39,8 @@ export class CanvasRenderer implements Renderer {
   private postRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
   private backgroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
   private foregroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
+
+  private commandBuffer = new CommandBuffer();
 
   // persistent buffer de snapshots para evitar allocs en el hot loop
   private readonly MAX_ENTITIES = 2000;
@@ -220,25 +223,9 @@ export class CanvasRenderer implements Renderer {
     }
 
     this.currentSnapshot.entityCount = count;
-    this.sortSnapshotEntities(count);
+    // We don't sort here anymore, we sort in the CommandBuffer
 
     return this.currentSnapshot;
-  }
-
-  /**
-   * In-place insertion sort para evitar allocs de array.
-   */
-  private sortSnapshotEntities(count: number): void {
-    for (let i = 1; i < count; i++) {
-      const key = this.snapshotEntities[i];
-      const keyZ = key.zIndex;
-      let j = i - 1;
-      while (j >= 0 && this.snapshotEntities[j].zIndex > keyZ) {
-        this.snapshotEntities[j + 1] = this.snapshotEntities[j];
-        j = j - 1;
-      }
-      this.snapshotEntities[j + 1] = key;
-    }
   }
 
   /**
@@ -248,6 +235,34 @@ export class CanvasRenderer implements Renderer {
     if (!this.ctx) return;
     const ctx = this.ctx;
 
+    // 1. Clear Command Buffer
+    this.commandBuffer.clear();
+
+    // 2. Populate Command Buffer from Snapshot
+    for (let i = 0; i < snapshot.entityCount; i++) {
+      const ent = snapshot.entities[i];
+      this.commandBuffer.addCommand(
+        ent.shape as any,
+        ent.x,
+        ent.y,
+        ent.rotation,
+        ent.scaleX,
+        ent.scaleY,
+        ent.opacity,
+        ent.color,
+        ent.size,
+        ent.zIndex,
+        ent.id,
+        ent.vertices,
+        ent.hitFlashFrames,
+        ent.data
+      );
+    }
+
+    // 3. Sort Commands
+    this.commandBuffer.sort();
+
+    // 4. Execute Commands
     this.clear();
     ctx.save();
     ctx.translate(snapshot.shakeX, snapshot.shakeY);
@@ -260,9 +275,10 @@ export class CanvasRenderer implements Renderer {
       this.preRenderHooks[i](ctx, world);
     }
 
-    // Render sorted entities from the pool
-    for (let i = 0; i < snapshot.entityCount; i++) {
-      this.drawEntitySnapshot(ctx, snapshot.entities[i], world);
+    const commands = this.commandBuffer.getCommands();
+    const cmdCount = this.commandBuffer.getCount();
+    for (let i = 0; i < cmdCount; i++) {
+      this.executeCommand(ctx, commands[i], world);
     }
 
     for (let i = 0; i < this.foregroundEffects.length; i++) {
@@ -277,27 +293,27 @@ export class CanvasRenderer implements Renderer {
     renderUI(ctx, world);
   }
 
-  private drawEntitySnapshot(ctx: CanvasRenderingContext2D, ent: RenderEntitySnapshot, world: World): void {
+  private executeCommand(ctx: CanvasRenderingContext2D, cmd: DrawCommand, world: World): void {
     ctx.save();
-    ctx.translate(ent.x, ent.y);
-    ctx.rotate(ent.rotation);
-    ctx.scale(ent.scaleX, ent.scaleY);
-    ctx.globalAlpha = ent.opacity;
+    ctx.translate(cmd.x, cmd.y);
+    ctx.rotate(cmd.rotation);
+    ctx.scale(cmd.scaleX, cmd.scaleY);
+    ctx.globalAlpha = cmd.opacity;
 
-    if (ent.hitFlashFrames > 0) {
+    if (cmd.hitFlashFrames > 0) {
       ctx.globalCompositeOperation = "lighter";
     }
 
-    const drawer = this.shapeDrawers.get(ent.shape);
+    const drawer = this.shapeDrawers.get(cmd.type);
     if (drawer) {
-      drawer(ctx, ent.id, world, ent);
+      drawer(ctx, cmd.entityId, world, cmd);
     }
 
     ctx.restore();
 
-    const postDrawer = this.postEntityDrawers.get(ent.shape);
+    const postDrawer = this.postEntityDrawers.get(cmd.type);
     if (postDrawer) {
-      postDrawer(ctx, ent.id, world, ent);
+      postDrawer(ctx, cmd.entityId, world, cmd);
     }
   }
 

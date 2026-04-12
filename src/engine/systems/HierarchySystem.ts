@@ -53,6 +53,7 @@ export class HierarchySystem extends System {
     const transform = world.getComponent<TransformComponent>(entity, "Transform");
     if (!transform) return false;
 
+    // A transformation is dirty if it's explicitly marked OR its parent was updated this frame
     let isDirty = (transform as any).dirty || forcedDirty;
 
     if (transform.parent !== undefined) {
