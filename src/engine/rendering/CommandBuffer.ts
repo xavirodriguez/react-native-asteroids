@@ -21,7 +21,20 @@ export interface DrawCommand {
 }
 
 /**
- * CommandBuffer pooled to avoid per-frame allocations.
+ * Buffer de comandos poolificado para evitar asignaciones de memoria por frame.
+ *
+ * @remarks
+ * Esta clase pre-asigna un número máximo de comandos de dibujo para mitigar
+ * la presión sobre el recolector de basura (GC).
+ *
+ * @responsibility Almacenar comandos de dibujo de forma contigua y eficiente.
+ * @responsibility Proveer un mecanismo de ordenación (z-index) in-place.
+ * @responsibility Garantizar cero asignaciones durante el ciclo de renderizado.
+ *
+ * @conceptualRisk [POOL_EXHAUSTION][MEDIUM] Si el número de comandos supera `MAX_COMMANDS`,
+ * los elementos adicionales serán ignorados silenciosamente.
+ * @conceptualRisk [Z_ORDER_STABILITY][LOW] El algoritmo de inserción es estable,
+ * pero depende de que el pool se limpie correctamente cada frame.
  */
 export class CommandBuffer {
   private pool: DrawCommand[] = [];
@@ -98,6 +111,15 @@ export class CommandBuffer {
     return this.activeCount;
   }
 
+  /**
+   * Ordena los comandos activos por su Z-index utilizando un algoritmo de inserción in-place.
+   *
+   * @remarks
+   * Se utiliza insertion sort porque es eficiente para arrays pequeños o casi ordenados,
+   * es estable y garantiza cero asignaciones adicionales de memoria.
+   *
+   * @postcondition Los primeros `activeCount` elementos del pool están ordenados por `zIndex` ASC.
+   */
   public sort(): void {
     // In-place insertion sort for z-index stability and zero allocation
     for (let i = 1; i < this.activeCount; i++) {
