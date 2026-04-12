@@ -92,3 +92,20 @@
 - `LifecycleUtils.ts`: [ZALGO] Uso de `async` introduce microtask delay incluso para llamadas síncronas.
 - `SceneGraph.ts`: [STALE_TRANSFORMS] World transforms desincronizadas si no se llama a `updateTransforms()`.
 - `AssetLoader.ts`: [MEMORY_PRESSURE] Riesgo de fuga de memoria si `unloadGroup` no se llama simétricamente.
+
+## [1.5.0] - 2025-06-01
+### Added
+- Auditoría TSDoc Nivel 5 para sistemas de XP, Mutadores, UI y Debug:
+  - `src/engine/systems/XPSystem.ts`
+  - `src/engine/systems/MutatorSystem.ts`
+  - `src/engine/ui/UILayoutSystem.ts`
+  - `src/engine/ui/UITweenSystem.ts`
+  - `src/engine/debug/StateHasher.ts`
+
+### Detected Conceptual Risks
+- `XPSystem.ts`: [ASYNC_RACE] Riesgo de emisión de `level:up` en contexto inválido por persistencia asíncrona tras `game:over`.
+- `MutatorSystem.ts`: [STUB] El sistema carece de implementación funcional para mutadores dinámicos.
+- `UILayoutSystem.ts`: [WORLD_SYNC] Lag visual en elementos adjuntos al mundo si el layout ocurre antes que la actualización de cámara/transform.
+- `UITweenSystem.ts`: [DT_UNIT_MISMATCH] Riesgo de animaciones extremadamente lentas si `deltaTime` no coincide con la unidad de `duration` (ms).
+- `StateHasher.ts`: [JSON_DETERMINISM] `JSON.stringify` no garantiza orden de propiedades, arriesgando falsos positivos de desync.
+- `StateHasher.ts`: [FLOAT_PRECISION] Diferencias de precisión entre arquitecturas invalidando hashes de estado.
