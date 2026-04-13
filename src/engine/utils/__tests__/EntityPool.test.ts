@@ -87,7 +87,8 @@ describe("EntityPool", () => {
       () => {}
     );
 
-    const { entity, _components } = pool.acquire(world);
+    const { entity } = pool.acquire(world);
+
     const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
 
     expect(reclaimable?.onReclaim).toBeDefined();
