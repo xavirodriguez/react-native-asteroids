@@ -31,8 +31,8 @@ export class MovementSystem extends System {
    * @param deltaTime - Tiempo transcurrido desde el último tick en milisegundos.
    *
    * @precondition Las entidades deben tener componentes `Transform` y `Velocity`.
-   * @postcondition Las coordenadas `x`, `y` y `rotation` del `Transform` se actualizan.
-   * @postcondition El componente `Transform` se marca como `dirty` para el {@link HierarchySystem}.
+   * @postcondition Las coordenadas `x` e `y` del `Transform` se actualizan.
+
    *
    * @contract La posición resultante es `p_new = p_old + (v * dt_seconds)`.
    * @invariant No modifica la velocidad de la entidad.
