@@ -1,5 +1,5 @@
-import { Room, type Client, CloseCode } from "@colyseus/core";
-import { FlappyBirdState, Player, Pipe, Bird } from "./schema/GameState";
+import { Room, type Client } from "@colyseus/core";
+import { FlappyBirdState, Player, Pipe } from "./schema/GameState";
 import { RandomService } from "./RandomService";
 
 export class FlappyBirdRoom extends Room<FlappyBirdState> {
@@ -7,7 +7,7 @@ export class FlappyBirdRoom extends Room<FlappyBirdState> {
   pipeTimer = 0;
   private random: RandomService;
 
-  onCreate(options: any) {
+  onCreate(options: { seed?: number }) {
     this.state = new FlappyBirdState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
     this.random = new RandomService(this.state.seed);
@@ -35,7 +35,7 @@ export class FlappyBirdRoom extends Room<FlappyBirdState> {
     });
   }
 
-  onJoin(client: Client, options: any) {
+  onJoin(client: Client, options: { name?: string }) {
     const bird = new Player();
     bird.x = 100;
     bird.y = 300;
@@ -46,7 +46,7 @@ export class FlappyBirdRoom extends Room<FlappyBirdState> {
     this.state.players.set(client.sessionId, bird);
   }
 
-  onLeave(client: Client, code: number) {
+  onLeave(client: Client, _code: number) {
     this.state.players.delete(client.sessionId);
   }
 

@@ -2,10 +2,16 @@ import { Skia, SkCanvas, SkPaint, PaintStyle } from "@shopify/react-native-skia"
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TTLComponent, TransformComponent, PreviousTransformComponent, Component } from "../core/CoreComponents";
+import { RenderComponent, TransformComponent, PreviousTransformComponent, Component } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
 
-export type SkiaShapeDrawer = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => void;
+export type SkiaShapeDrawer = (
+  canvas: SkCanvas,
+  entity: Entity,
+  pos: TransformComponent,
+  render: RenderComponent,
+  world: World
+) => void;
 
 /**
  * Implementación de Renderer basada en la API de Skia para React Native.
@@ -61,23 +67,23 @@ export class SkiaRenderer implements Renderer {
   }
 
   private registerDefaultDrawers(): void {
-    this.registerShapeDrawer("circle", (canvas, _, __, render, paint) => {
+    this.registerShapeDrawer("circle", (canvas, _entity, _pos, render) => {
       const color = Skia.Color(render.color);
-      color[3] *= paint.getAlphaf();
-      paint.setColor(color);
-      paint.setStyle(PaintStyle.Fill);
-      canvas.drawCircle(0, 0, render.size, paint);
+      color[3] *= this.paint.getAlphaf();
+      this.paint.setColor(color);
+      this.paint.setStyle(PaintStyle.Fill);
+      canvas.drawCircle(0, 0, render.size, this.paint);
     });
 
-    this.registerShapeDrawer("rect", (canvas, _, __, render, paint) => {
+    this.registerShapeDrawer("rect", (canvas, _entity, _pos, render) => {
       const color = Skia.Color(render.color);
-      color[3] *= paint.getAlphaf();
-      paint.setColor(color);
-      paint.setStyle(PaintStyle.Fill);
-      canvas.drawRect(Skia.XYWHRect(-render.size / 2, -render.size / 2, render.size, render.size), paint);
+      color[3] *= this.paint.getAlphaf();
+      this.paint.setColor(color);
+      this.paint.setStyle(PaintStyle.Fill);
+      canvas.drawRect(Skia.XYWHRect(-render.size / 2, -render.size / 2, render.size, render.size), this.paint);
     });
 
-    this.registerShapeDrawer("polygon", (canvas, _, __, render, paint) => {
+    this.registerShapeDrawer("polygon", (canvas, _entity, _pos, render) => {
       if (!render.vertices || render.vertices.length === 0) return;
 
       const path = Skia.Path.Make();
@@ -89,35 +95,35 @@ export class SkiaRenderer implements Renderer {
 
       const isHitFlash = render.data?.hitFlashFrames && render.data.hitFlashFrames > 0;
       const fillColor = Skia.Color(isHitFlash ? "rgba(255, 255, 255, 0.5)" : "#333");
-      fillColor[3] *= paint.getAlphaf();
-      paint.setColor(fillColor);
-      paint.setStyle(PaintStyle.Fill);
-      canvas.drawPath(path, paint);
+      fillColor[3] *= this.paint.getAlphaf();
+      this.paint.setColor(fillColor);
+      this.paint.setStyle(PaintStyle.Fill);
+      canvas.drawPath(path, this.paint);
 
       const strokeColor = Skia.Color(isHitFlash ? "white" : render.color);
-      strokeColor[3] *= paint.getAlphaf();
-      paint.setColor(strokeColor);
-      paint.setStyle(PaintStyle.Stroke);
-      paint.setStrokeWidth(2);
-      canvas.drawPath(path, paint);
+      strokeColor[3] *= this.paint.getAlphaf();
+      this.paint.setColor(strokeColor);
+      this.paint.setStyle(PaintStyle.Stroke);
+      this.paint.setStrokeWidth(2);
+      canvas.drawPath(path, this.paint);
 
       if (render.data?.internalLines) {
           const lineColor = Skia.Color("#222");
-          lineColor[3] *= paint.getAlphaf();
-          paint.setColor(lineColor);
-          paint.setStrokeWidth(1);
+          lineColor[3] *= this.paint.getAlphaf();
+          this.paint.setColor(lineColor);
+          this.paint.setStrokeWidth(1);
           render.data.internalLines.forEach((line: any) => {
-              canvas.drawLine(line.x1, line.y1, line.x2, line.y2, paint);
+              canvas.drawLine(line.x1, line.y1, line.x2, line.y2, this.paint);
           });
       }
     });
 
-    this.registerShapeDrawer("line", (canvas, _, __, render, paint) => {
+    this.registerShapeDrawer("line", (canvas, _entity, _pos, render) => {
       const color = Skia.Color(render.color);
-      color[3] *= paint.getAlphaf();
-      paint.setColor(color);
-      paint.setStrokeWidth(2);
-      canvas.drawLine(-render.size / 2, 0, render.size / 2, 0, paint);
+      color[3] *= this.paint.getAlphaf();
+      this.paint.setColor(color);
+      this.paint.setStrokeWidth(2);
+      canvas.drawLine(-render.size / 2, 0, render.size / 2, 0, this.paint);
     });
   }
 
@@ -146,9 +152,12 @@ export class SkiaRenderer implements Renderer {
    *
    * @param world - El mundo ECS que contiene las entidades a dibujar.
    *
+   * @precondition El lienzo (SkCanvas) debe estar listo para recibir comandos.
+   * @postcondition Se genera la imagen del frame actual con interpolación aplicada.
    * @invariant No debe mutar componentes de simulación (Transform, Velocity).
-   * @conceptualRisk [SKIA_CONTEXT_LOST] En dispositivos móviles, el contexto de Skia puede perderse
-   * si la app pasa a segundo plano de forma prolongada.
+   * @sideEffect Limpia el lienzo con el color negro.
+   * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia
+   * puede perderse si la app pasa a segundo plano de forma prolongada.
    */
   public render(world: World): void {
     if (!this.canvas) return;
@@ -239,14 +248,14 @@ export class SkiaRenderer implements Renderer {
 
     const drawer = this.shapeDrawers.get(render.shape);
     if (drawer) {
-        drawer(canvas, entity, world, render, this.paint);
+        drawer(canvas, entity, pos, render, world);
     }
 
     canvas.restore();
 
     const postDrawer = this.postEntityDrawers.get(render.shape);
     if (postDrawer) {
-        postDrawer(canvas, entity, world, render, this.paint);
+        postDrawer(canvas, entity, pos, render, world);
     }
   }
 

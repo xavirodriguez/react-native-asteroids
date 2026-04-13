@@ -1,5 +1,5 @@
 import { Renderer } from "../../../engine/rendering/Renderer";
-import { drawAsteroidsShip, drawAsteroidsUfo, asteroidsStarfieldEffect, asteroidsCRTEffect, drawAsteroidsBullet, drawAsteroidsParticle, drawAsteroidsAsteroid } from "./AsteroidsCanvasVisuals";
+import { drawAsteroidsBullet, drawAsteroidsParticle, drawAsteroidsAsteroid } from "./AsteroidsCanvasVisuals";
 import { drawShip, drawUfo, drawFlash, drawAsteroidStarField, drawAsteroidCRTEffect, drawAsteroidShipTrailDrawer } from "./AsteroidShapeDrawers";
 import { GAME_CONFIG } from "../../../types/GameTypes";
 
@@ -43,6 +43,7 @@ export function initializeAsteroidsRenderer(renderer: Renderer): void {
     // renderer.registerForegroundEffect("crt", asteroidsCRTEffect);
   } else if (renderer.type === "skia") {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { drawSkiaShip, drawSkiaUfo, skiaStarfieldEffect, skiaScreenShakeEffect, drawSkiaBullet, drawSkiaParticle } = require("./AsteroidsSkiaVisuals");
       renderer.registerShape("triangle", drawSkiaShip);
       renderer.registerShape("ufo", drawSkiaUfo);

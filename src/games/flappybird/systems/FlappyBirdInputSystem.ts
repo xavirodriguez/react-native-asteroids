@@ -1,10 +1,11 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
-import { VelocityComponent, TransformComponent, InputStateComponent } from "../../../engine/types/EngineTypes";
+import { VelocityComponent, InputStateComponent } from "../../../engine/types/EngineTypes";
 import { FlappyBirdInputComponent, BirdComponent, FLAPPY_CONFIG } from "../types/FlappyBirdTypes";
 import { Juice } from "../../../engine/utils/Juice";
 import { hapticShoot } from "../../../utils/haptics";
 import { InputBufferSystem } from "../../../engine/systems/InputBufferSystem";
+import { InputUtils } from "../../../engine/utils/ComponentUtils";
 
 /**
  * System that handles player input and bird flap mechanics.
@@ -23,7 +24,10 @@ export class FlappyBirdInputSystem extends System {
 
   public update(world: World, deltaTime: number): void {
     if (this.isMultiplayer) return;
+
     const inputState = world.getSingleton<InputStateComponent>("InputState");
+    const flapRequested = inputState ? InputUtils.isPressed(inputState, "flap") : false;
+
     const entities = world.query("Bird", "FlappyInput", "Velocity");
 
     entities.forEach((entity) => {
@@ -33,10 +37,8 @@ export class FlappyBirdInputSystem extends System {
 
       if (input && vel && bird && bird.isAlive) {
         // Sync input state
-        if (inputState) {
-          input.flap = inputState.actions.get("flap") === true;
-          input.glide = input.flap; // Using same button for now as per design
-        }
+        input.flap = flapRequested;
+        input.glide = flapRequested; // Using same button for now as per design
 
         if (input.flapCooldownRemaining > 0) {
           input.flapCooldownRemaining -= deltaTime;

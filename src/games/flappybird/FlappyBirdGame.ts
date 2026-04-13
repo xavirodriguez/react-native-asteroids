@@ -1,7 +1,5 @@
 import { World } from "../../engine/core/World";
 import { BaseGame } from "../../engine/core/BaseGame";
-import { KeyboardController } from "../../engine/input/KeyboardController";
-import { TouchController } from "../../engine/input/TouchController";
 import { FlappyBirdState, FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE } from "./types/FlappyBirdTypes";
 import { IFlappyBirdGame } from "./types/GameInterfaces";
 import { FlappyBirdInputSystem } from "./systems/FlappyBirdInputSystem";
@@ -13,7 +11,6 @@ import { InputBufferSystem } from "../../engine/systems/InputBufferSystem";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
 import { JuiceSystem } from "../../engine/systems/JuiceSystem";
 import { Renderer } from "../../engine/rendering/Renderer";
-import { InputManager } from "../../engine/input/InputManager";
 import {
   createBird,
   createGameState,
@@ -35,7 +32,6 @@ export class FlappyBirdGame
   implements IFlappyBirdGame {
 
   private gameStateSystem: FlappyBirdGameStateSystem;
-  private _localInputManager: InputManager<FlappyBirdInput> | null = null;
   public readonly gameId = "flappybird";
   private config: typeof FLAPPY_CONFIG;
 

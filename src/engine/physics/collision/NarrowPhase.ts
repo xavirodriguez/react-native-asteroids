@@ -1,12 +1,7 @@
 import { Shape, CircleShape, AABBShape, CapsuleShape, PolygonShape } from "../shapes/ShapeTypes";
 
-export interface CollisionManifold {
-  colliding: boolean;
-  normalX: number;
-  normalY: number;
-  depth: number;
-  contactPoints: Array<{ x: number; y: number }>;
-}
+import { CollisionManifold } from "../../core/CoreComponents";
+export { CollisionManifold };
 
 const sharedManifold: CollisionManifold = {
   colliding: false,

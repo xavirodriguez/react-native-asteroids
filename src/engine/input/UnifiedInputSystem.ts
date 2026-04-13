@@ -87,10 +87,12 @@ export class UnifiedInputSystem extends System {
    * Si no existe un componente `InputState`, lo crea como un singleton.
    *
    * @param world - El mundo donde reside el componente de entrada.
-   * @param _deltaTime - Tiempo transcurrido (no utilizado actualmente para input).
+   * @param _deltaTime - Tiempo transcurrido (en ms).
    *
    * @precondition El `world` debe ser válido.
-   * @postcondition El componente singleton {@link InputStateComponent} está actualizado.
+   * @postcondition El componente singleton {@link InputStateComponent} está actualizado
+   * con las acciones activas en el hardware o mediante overrides.
+   * @sideEffect Puede crear una nueva entidad si el singleton `InputState` no existe.
    * @mutates world - Crea o actualiza el componente `InputState`.
    */
   public update(world: World, _deltaTime: number): void {

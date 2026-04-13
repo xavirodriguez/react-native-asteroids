@@ -1,12 +1,13 @@
 import { Entity } from "../types/EngineTypes";
 
 /**
- * Representa una consulta reactiva que mantiene una lista actualizada de entidades
- * que coinciden con una firma de componentes específica.
+ * Consulta reactiva que mantiene un índice actualizado de entidades con una firma de
+ * componentes específica.
  *
  * @remarks
- * Las queries son gestionadas por el {@link World} y se actualizan de forma incremental
- * cuando se añaden o eliminan entidades o componentes, evitando el escaneo total del mundo.
+ * Las queries eliminan la necesidad de iterar sobre todas las entidades del mundo en cada frame.
+ * El {@link World} notifica a las queries relevantes solo cuando hay cambios estructurales
+ * (add/remove componente), permitiendo una complejidad O(1) para obtener entidades activas.
  *
  * @packageDocumentation
  */
@@ -16,9 +17,9 @@ export class Query {
   private needsUpdateArray = false;
 
   /**
-   * Crea una nueva Query para un conjunto específico de componentes.
+   * Inicializa una query para una firma de componentes determinada.
    *
-   * @param componentTypes - Los tipos de componentes requeridos (firma de la query).
+   * @param componentTypes - Lista de tipos de componentes que definen la firma.
    */
   constructor(public readonly componentTypes: string[]) {}
 
@@ -72,7 +73,7 @@ export class Query {
    */
   public getEntities(): Entity[] {
     if (this.needsUpdateArray) {
-      this.entityArray = Array.from(this.entities);
+      this.entityArray = Array.from(this.entities).sort((a, b) => a - b);
       this.needsUpdateArray = false;
     }
     return this.entityArray;
@@ -87,5 +88,20 @@ export class Query {
    */
   public get key(): string {
     return [...this.componentTypes].sort().join(",");
+  }
+
+  /**
+   * Rebuilds the query results from scratch.
+   * Used during world restoration to ensure consistency without breaking references.
+   */
+  public rebuild(allEntities: Set<Entity>, entityComponentSets: Map<Entity, Set<string>>): void {
+    this.entities.clear();
+    allEntities.forEach(entity => {
+      const components = entityComponentSets.get(entity);
+      if (components && this.matches(components)) {
+        this.entities.add(entity);
+      }
+    });
+    this.needsUpdateArray = true;
   }
 }

@@ -1,13 +1,31 @@
 import { World } from "../core/World";
-import { Entity, Component } from "../types/EngineTypes";
 
 /**
- * Generates a deterministic hash of the world state for desync detection.
+ * Utilidad para generar hashes deterministas del estado completo del mundo ECS.
+ * Fundamental para la detección de desincronización (desync) en entornos multijugador o replay.
+ *
+ * @responsibility Serializar y hashear el estado de todas las entidades y componentes activos.
+ * @conceptualRisk [JSON_DETERMINISM] `JSON.stringify` no garantiza el orden de las propiedades de los objetos.
+ * Si dos clientes tienen los mismos datos pero las propiedades del objeto se insertaron en orden distinto,
+ * los hashes diferirán (falso positivo de desync).
+ * @conceptualRisk [FLOAT_PRECISION] Diferencias minúsculas en cálculos de punto flotante entre arquitecturas
+ * (ej. x86 vs ARM) pueden causar que el string serializado difiera y el hash falle.
  */
 export class StateHasher {
   /**
-   * Generates a hash representing the current state of all entities and components.
-   * PERFORMANCE WARNING: This is a heavy operation. Use only for debugging or desync detection.
+   * Genera un hash que representa el estado actual de todas las entidades y sus componentes.
+   *
+   * @param world - El mundo ECS a hashear.
+   * @returns Un string hexadecimal representando el hash del estado.
+   *
+   * @remarks
+   * PERFORMANCE WARNING: Esta es una operación costosa O(E * C) donde E es el número de entidades
+   * y C el promedio de componentes. Debe usarse con moderación, preferiblemente fuera del hot path de renderizado.
+   *
+   * @precondition El mundo no debe estar en proceso de modificación (mitad de un update).
+   *
+   * @conceptualRisk [PERFORMANCE] La concatenación masiva de strings y el uso de `JSON.stringify` genera
+   * mucha presión sobre el recolector de basura (GC).
    */
   public static calculateHash(world: World): string {
     const entities = world.getAllEntities().sort((a, b) => a - b);

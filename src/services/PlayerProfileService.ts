@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { z } from "zod";
-import { XP_TABLE, LEVEL_THRESHOLDS } from "../config/PassportConfig";
+import { LEVEL_THRESHOLDS, PALETTE_UNLOCKS, TRAIL_UNLOCKS } from "../config/PassportConfig";
 
 /**
  * Schema for the global player profile.
@@ -42,8 +42,8 @@ export class PlayerProfileService {
       try {
         this.profile = PlayerProfileSchema.parse(JSON.parse(data));
         return this.profile!;
-      } catch (e) {
-        console.error("Failed to parse player profile", e);
+      } catch (_err) {
+        console.error("Failed to parse player profile", _err);
       }
     }
 
@@ -90,7 +90,6 @@ export class PlayerProfileService {
   }
 
   private static checkUnlocks(level: number) {
-    const { PALETTE_UNLOCKS, TRAIL_UNLOCKS } = require("../config/PassportConfig");
     if (PALETTE_UNLOCKS[level]) {
       PALETTE_UNLOCKS[level].forEach((p: string) => {
         if (!this.profile!.unlockedPalettes.includes(p)) {
@@ -107,10 +106,12 @@ export class PlayerProfileService {
     }
   }
 
-  public static async updateStats(gameId: string, stats: Partial<PlayerProfile["stats"]>): Promise<void> {
+  public static async updateStats(_gameId: string, stats: Partial<PlayerProfile["stats"]>): Promise<void> {
     const profile = await this.getProfile();
     Object.entries(stats).forEach(([key, value]) => {
-      (profile.stats as any)[key] += value;
+      if (value !== undefined) {
+        (profile.stats as any)[key] += value;
+      }
     });
     await this.saveProfile();
   }

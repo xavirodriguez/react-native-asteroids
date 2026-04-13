@@ -3,7 +3,6 @@ import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "r
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
-import { GameRenderer } from "@/components/GameRenderer";
 import { ComboDisplay } from "@/components/ComboDisplay";
 import { GameUI } from "@/components/GameUI";
 import { GameControls } from "@/components/GameControls";
@@ -27,7 +26,7 @@ export default function AsteroidsScreen() {
   const [showDailyResults, setShowDailyResults] = useState(false);
   const [activeMutators, setActiveMutators] = useState<any[]>([]);
 
-  const { room, connected, serverState, sendInput, inputBufferRef, lastProcessedTickRef } = useMultiplayer("asteroids", playerName, isMulti && started);
+  const { room, connected, serverState, sendInput, inputBufferRef } = useMultiplayer("asteroids", playerName, isMulti && started);
 
   useEffect(() => {
     MutatorService.isMutatorModeEnabled().then(enabled => {
@@ -60,7 +59,6 @@ export default function AsteroidsScreen() {
   useEffect(() => {
     if (isMulti && serverState && game) {
         const sessionId = room?.sessionId;
-        const lastTick = lastProcessedTickRef.current;
         const pendingInputs = inputBufferRef.current;
 
         (game as any).updateFromServer(serverState, sessionId);
@@ -141,18 +139,11 @@ export default function AsteroidsScreen() {
           seed={seed}
           onSetSeed={restartWithSeed}
         />
-        {Platform.OS === "web" ? (
-          <CanvasRenderer
-            world={game.getWorld()}
-            gameLoop={game.getGameLoop()}
-            onInitialize={(renderer) => game.initializeRenderer(renderer)}
-          />
-        ) : (
-          <GameRenderer
-            world={game.getWorld()}
-            onInitialize={(renderer) => game.initializeRenderer(renderer)}
-          />
-        )}
+        <CanvasRenderer
+          world={game.getWorld()}
+          gameLoop={game.getGameLoop()}
+          onInitialize={(renderer) => game.initializeRenderer(renderer)}
+        />
         <GameControls
           onThrust={(pressed) => handleMultiplayerInput({ thrust: pressed })}
           onRotateLeft={(pressed) => handleMultiplayerInput({ rotateLeft: pressed })}

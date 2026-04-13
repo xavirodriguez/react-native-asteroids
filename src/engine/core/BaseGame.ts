@@ -6,15 +6,12 @@ import { InputBuffer } from "../network/InputBuffer";
 import { NetworkTransport } from "../network/NetworkTransport";
 import { ReplayRecorder } from "../debug/ReplayRecorder";
 import { SceneManager } from "../scenes/SceneManager";
-import { runLifecycleAsync } from "../utils/LifecycleUtils";
 import { RandomService } from "../utils/RandomService";
-import { InputStateComponent, PreviousTransformComponent, TransformComponent } from "./CoreComponents";
+import { PreviousTransformComponent, TransformComponent } from "./CoreComponents";
 import type { IGame, UpdateListener } from "./IGame";
 import { XPSystem } from "../systems/XPSystem";
 import { PaletteSystem } from "../systems/PaletteSystem";
-import { MutatorSystem } from "../systems/MutatorSystem";
 import { PlayerProfileService } from "../../services/PlayerProfileService";
-import { MutatorService } from "../../services/MutatorService";
 import { HierarchySystem } from "../systems/HierarchySystem";
 
 export interface BaseGameConfig {
@@ -25,7 +22,7 @@ export interface BaseGameConfig {
 }
 
 /**
- * BaseGame refactorizada para asegurar un pipeline determinista y libre de efectos secundarios.
+ * Main orchestrator for game lifecycle and state.
  */
 export abstract class BaseGame<TState, TInput extends Record<string, any>>
   implements IGame<BaseGame<TState, TInput>> {
@@ -39,14 +36,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   protected networkTransport?: NetworkTransport;
   protected replayRecorder: ReplayRecorder;
   protected currentTick: number = 0;
-  protected hierarchySystem: HierarchySystem;
+  protected currentSeed: number = 0;
   public isMultiplayer: boolean;
 
   private _isPaused = false;
   private _listeners = new Set<UpdateListener<BaseGame<TState, TInput>>>();
   private _globalKeyHandler = (e: KeyboardEvent) => this._handleGlobalKey(e);
   protected _config: BaseGameConfig;
-  protected currentSeed: number;
+  protected hierarchySystem: HierarchySystem;
 
   constructor(config: BaseGameConfig = {}) {
     const { isMultiplayer = false } = config;
@@ -73,11 +70,11 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   private setupLoop(): void {
     /**
-     * Pipeline Determinista:
-     * 1. Captura de Input
-     * 2. Aplicación de Input
-     * 3. Update (Sistemas / Escena)
-     * 4. Transform Propagation
+     * Deterministic Pipeline (Update Phase):
+     * 1. Interpolation Prep (Snapshot previous state)
+     * 2. Input Handling
+     * 3. Simulation Update (ECS Systems/Scenes)
+     * 4. Transform Propagation (Hierarchy)
      */
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (this._isPaused) return;
@@ -86,16 +83,18 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
       // 1. Snapshot Transforms for Interpolation
       const entities = activeWorld.query("Transform");
-      for (const entity of entities) {
+      for (let i = 0; i < entities.length; i++) {
+        const entity = entities[i];
         const t = activeWorld.getComponent<TransformComponent>(entity, "Transform")!;
         let prev = activeWorld.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
         if (!prev) {
-          activeWorld.addComponent(entity, { type: "PreviousTransform", x: t.x, y: t.y, rotation: t.rotation });
-          prev = activeWorld.getComponent<PreviousTransformComponent>(entity, "PreviousTransform")!;
+          prev = activeWorld.addComponent(entity, { type: "PreviousTransform", x: t.x, y: t.y, rotation: t.rotation } as PreviousTransformComponent);
         }
-        prev.x = t.x;
-        prev.y = t.y;
-        prev.rotation = t.rotation;
+        if (prev) {
+          prev.x = t.x;
+          prev.y = t.y;
+          prev.rotation = t.rotation;
+        }
       }
 
       // 2. Input Handling
@@ -112,7 +111,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
         this.world.update(deltaTime);
       }
 
-      // 4. Transform Propagation (Mandatory Phase)
+      // 4. Transform Propagation Phase (Mandatory)
       this.hierarchySystem.update(activeWorld, deltaTime);
 
       this.currentTick++;
@@ -129,9 +128,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   public stop(): void { this.gameLoop.stop(); }
   public pause(): void { this._isPaused = true; this.sceneManager.pause(); this._notifyListeners(); }
   public resume(): void { this._isPaused = false; this.sceneManager.resume(); this._notifyListeners(); }
+  public isPausedState(): boolean { return this._isPaused; }
+  public getGameLoop(): GameLoop { return this.gameLoop; }
 
   public async restart(): Promise<void> {
-    await runLifecycleAsync(() => this._onBeforeRestart());
+    await this._onBeforeRestart();
+
     if (this.sceneManager.getCurrentScene()) {
       await this.sceneManager.restartCurrentScene();
     } else {
@@ -154,18 +156,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     return scene ? scene.getWorld() : this.world;
   }
 
-  public getSeed(): number {
-    return this.currentSeed;
-  }
-
-  public getGameLoop(): GameLoop {
-    return this.gameLoop;
-  }
-
-  public isPausedState(): boolean {
-    return this._isPaused;
-  }
-
   public async init(): Promise<void> {
     await this.registerEngineSystems();
     this.registerSystems();
@@ -178,12 +168,31 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this.world.addSystem(new PaletteSystem(profile.activePalette));
   }
 
-  public setInput(input: Partial<TInput>): void {
-    Object.entries(input).forEach(([action, val]) => {
-      this.unifiedInput.setOverride(action, val as boolean);
+  /**
+   * Inyecta estados de entrada de forma programática utilizando el sistema de overrides.
+   *
+   * @remarks
+   * Utilizado principalmente para controles táctiles de React Native o telemetría de red.
+   *
+   * @param input - Un objeto parcial con las acciones y su estado booleano.
+   * @sideEffect Llama a `unifiedInput.setOverride` para cada acción proporcionada.
+   */
+  protected shouldStallSimulation(): boolean {
+    return false;
+  }
+
+  public setInput(input: Record<string, boolean>): void {
+    Object.entries(input).forEach(([action, pressed]) => {
+      this.unifiedInput.setOverride(action, pressed);
     });
   }
 
+  /**
+   * Registra un listener para recibir notificaciones tras cada ciclo de actualización.
+   *
+   * @param listener - Función callback que recibe la instancia del juego.
+   * @returns Función para cancelar la suscripción.
+   */
   public subscribe(listener: UpdateListener<BaseGame<TState, TInput>>): () => void {
     this._listeners.add(listener);
     return () => this._listeners.delete(listener);
@@ -196,15 +205,19 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   }
 
   private _registerKeyboardListeners(): void {
-    if (typeof window !== "undefined") window.addEventListener("keydown", this._globalKeyHandler);
+    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+      window.addEventListener("keydown", this._globalKeyHandler);
+    }
   }
 
   private _unregisterKeyboardListeners(): void {
-    if (typeof window !== "undefined") window.removeEventListener("keydown", this._globalKeyHandler);
+    if (typeof window !== "undefined" && typeof window.removeEventListener === "function") {
+      window.removeEventListener("keydown", this._globalKeyHandler);
+    }
   }
 
   private _handleGlobalKey(e: KeyboardEvent): void {
-    if (e.code === this._config.pauseKey) this._isPaused ? this.resume() : this.pause();
+    if (e.code === this._config.pauseKey) { if (this._isPaused) this.resume(); else this.pause(); };
     if (e.code === this._config.restartKey) {
       this.restart().catch(console.error);
     }

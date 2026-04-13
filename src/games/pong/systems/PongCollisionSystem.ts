@@ -1,6 +1,6 @@
 import { World } from "../../../engine/core/World";
 import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
-import { Entity, TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
+import { Entity, TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
 import { PONG_CONFIG } from "../types";
 import { Juice } from "../../../engine/utils/Juice";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";

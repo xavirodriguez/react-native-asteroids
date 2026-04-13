@@ -1,4 +1,4 @@
-import { useSharedValue, withSpring, withTiming } from "react-native-reanimated";
+import { useSharedValue } from "react-native-reanimated";
 import { CameraState, SharedCamera } from "../core/types/SystemTypes";
 
 /**

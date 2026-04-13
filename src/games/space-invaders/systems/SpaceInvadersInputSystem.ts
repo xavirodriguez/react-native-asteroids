@@ -36,9 +36,9 @@ export class SpaceInvadersInputSystem extends System {
       if (input && pos && vel) {
         // Sync input component with manager
         if (inputState) {
-          input.moveLeft = inputState.actions.get("moveLeft") === true;
-          input.moveRight = inputState.actions.get("moveRight") === true;
-          input.shoot = inputState.actions.get("shoot") === true;
+          input.moveLeft = InputUtils.isPressed(inputState, "moveLeft");
+          input.moveRight = InputUtils.isPressed(inputState, "moveRight");
+          input.shoot = InputUtils.isPressed(inputState, "shoot");
         }
 
         // Apply movement

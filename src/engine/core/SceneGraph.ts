@@ -14,7 +14,6 @@ export interface SceneNode {
 
 /**
  * Manages the hierarchy of entities and their transformations.
- * Ensures that child entities' transforms are relative to their parents.
  */
 export class SceneGraph {
   private nodes = new Map<Entity, SceneNode>();
@@ -64,7 +63,8 @@ export class SceneGraph {
         this.setParent(childId, node.parentId);
       }
     } else {
-      for (const childId of node.childIds) {
+      const children = [...node.childIds];
+      for (const childId of children) {
         this.removeNode(childId, false);
       }
     }
@@ -104,7 +104,9 @@ export class SceneGraph {
     const node = this.nodes.get(entityId);
     if (node && !node.dirty) {
       node.dirty = true;
-      // Propagation is handled during updateTransforms to avoid redundant work
+      for (let i = 0; i < node.childIds.length; i++) {
+          this.markDirty(node.childIds[i]);
+      }
     }
   }
 

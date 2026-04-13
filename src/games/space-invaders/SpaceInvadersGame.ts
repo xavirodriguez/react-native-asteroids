@@ -44,30 +44,12 @@ export class SpaceInvadersGame
       ? mutators.reduce((cfg, m) => m.apply(cfg), { ...GAME_CONFIG })
       : { ...GAME_CONFIG };
 
-    // Register systems synchronously to avoid race conditions during start()
-    this.registerSystems();
     await super.init();
+    await this.registerSystemsAsync();
   }
 
   protected registerSystems(): void {
-    if (!this.playerBulletPool) this.playerBulletPool = new PlayerBulletPool();
-    if (!this.enemyBulletPool) this.enemyBulletPool = new EnemyBulletPool();
-    if (!this.particlePool) this.particlePool = new ParticlePool();
-
-    // Bind inputs for UnifiedInputSystem
-    this.unifiedInput.bind("moveLeft", [GAME_CONFIG.KEYS.LEFT]);
-    this.unifiedInput.bind("moveRight", [GAME_CONFIG.KEYS.RIGHT]);
-    this.unifiedInput.bind("shoot", [GAME_CONFIG.KEYS.SHOOT]);
-
-    const gameScene = new SpaceInvadersGameScene(
-      this,
-      this.playerBulletPool,
-      this.enemyBulletPool,
-      this.particlePool,
-      this.config
-    );
-
-    this.sceneManager.transitionTo(gameScene).catch(console.error);
+    // Systems are registered asynchronously in init() via registerSystemsAsync()
   }
 
   protected initializeEntities(): void {
@@ -93,8 +75,7 @@ export class SpaceInvadersGame
 
   public getWorld(): World {
     // Override to ensure we get the world from the scene
-    const scene = this.sceneManager.getCurrentScene();
-    return scene ? scene.getWorld() : this.world;
+    return this.sceneManager.getCurrentScene()?.getWorld() || this.world;
   }
 
   public setMultiplayerMode(active: boolean) {
@@ -132,6 +113,13 @@ export class SpaceInvadersGame
 
   protected async _onBeforeRestart(): Promise<void> {
     // During restart, we DO want to await the full transition
+    await this.registerSystemsAsync();
+  }
+
+  /**
+   * Async version of registerSystems for use in restart()
+   */
+  private async registerSystemsAsync(): Promise<void> {
     if (!this.playerBulletPool) this.playerBulletPool = new PlayerBulletPool();
     if (!this.enemyBulletPool) this.enemyBulletPool = new EnemyBulletPool();
     if (!this.particlePool) this.particlePool = new ParticlePool();

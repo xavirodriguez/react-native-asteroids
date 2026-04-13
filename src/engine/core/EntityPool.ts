@@ -1,15 +1,12 @@
 import { Entity } from "../types/EngineTypes";
 
 /**
- * Gestiona un pool de IDs de entidades para garantizar cero asignaciones de memoria durante
- * la creación y destrucción frecuente de entidades.
- *
- * @responsibility Administrar el ciclo de vida de los identificadores numéricos de entidades.
- * @responsibility Reutilizar IDs liberados para evitar el crecimiento indefinido del contador.
+ * Gestor de reciclaje de identificadores de entidades.
  *
  * @remarks
- * El uso de un pool es crítico en juegos con muchos proyectiles o partículas para evitar la
- * presión sobre el Garbage Collector (GC).
+ * Proporciona una estrategia de "Zero Allocation" para la creación y destrucción de entidades.
+ * Al reutilizar IDs numéricos, se minimiza la fragmentación de memoria y se reduce el trabajo
+ * del recolector de basura (GC) en juegos con alta tasa de spawn (balas, partículas).
  *
  * @packageDocumentation
  */

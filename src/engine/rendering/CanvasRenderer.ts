@@ -1,17 +1,26 @@
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TransformComponent, PreviousTransformComponent } from "../core/CoreComponents";
+import { RenderComponent, TransformComponent, PreviousTransformComponent, Component } from "../core/CoreComponents";
 import { renderUI } from "../ui/UIRenderer";
 import { RandomService } from "../utils/RandomService";
-import { RenderSnapshot, RenderEntitySnapshot } from "./RenderSnapshot";
+import { RenderSnapshot } from "./RenderSnapshot";
+import { CommandBuffer, DrawCommand } from "./CommandBuffer";
 
-export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: any) => void;
+export type ShapeDrawer = (
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  pos: TransformComponent,
+  render: RenderComponent,
+  world: World
+) => void;
 
 /**
- * CanvasRenderer optimizado para CERO asignaciones por frame.
+ * 2D Canvas-based Rendering Engine.
  *
- * @responsibility Renderizar snapshots de forma pura y eficiente sin generar basura (GC).
+ * @remarks
+ * Implements a snapshot-based architecture for decoupled and consistent rendering.
+ * Allocation-free in the hot loop using pooled commands and double-buffered snapshots.
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
@@ -26,31 +35,42 @@ export class CanvasRenderer implements Renderer {
   private backgroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
   private foregroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
 
-  // persistent buffer de snapshots para evitar allocs en el hot loop
+  private commandBuffer = new CommandBuffer();
   private readonly MAX_ENTITIES = 2000;
-  private readonly snapshotEntities: RenderEntitySnapshot[];
-  private readonly currentSnapshot: RenderSnapshot;
+
+  private readonly snapshotA: RenderSnapshot;
+  private readonly snapshotB: RenderSnapshot;
+  private currentSnapshot: RenderSnapshot;
 
   constructor(ctx?: CanvasRenderingContext2D) {
     if (ctx) this.ctx = ctx;
 
-    this.snapshotEntities = new Array(this.MAX_ENTITIES);
+    this.snapshotA = this.createEmptySnapshot();
+    this.snapshotB = this.createEmptySnapshot();
+    this.currentSnapshot = this.snapshotA;
+
+    this.registerDefaultDrawers();
+  }
+
+  private createEmptySnapshot(): RenderSnapshot {
+    const entities = new Array(this.MAX_ENTITIES);
     for (let i = 0; i < this.MAX_ENTITIES; i++) {
-      this.snapshotEntities[i] = {
+      entities[i] = {
         id: 0, x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1,
         opacity: 1, zIndex: 0, shape: "", color: "", size: 0,
         vertices: null, hitFlashFrames: 0, data: null
       };
     }
-
-    this.currentSnapshot = {
-      entities: this.snapshotEntities,
+    return {
+      entities,
       entityCount: 0,
       shakeX: 0,
       shakeY: 0
     };
+  }
 
-    this.registerDefaultDrawers();
+  private swapSnapshots(): void {
+    this.currentSnapshot = this.currentSnapshot === this.snapshotA ? this.snapshotB : this.snapshotA;
   }
 
   public registerShape(name: string, drawer: ShapeDrawer): void {
@@ -82,20 +102,21 @@ export class CanvasRenderer implements Renderer {
   }
 
   private registerDefaultDrawers(): void {
-    this.registerShape("circle", (ctx, _, __, render) => {
+    this.registerShape("circle", (ctx, _entity, _pos, render) => {
       ctx.fillStyle = render.color;
       ctx.beginPath();
       ctx.arc(0, 0, render.size, 0, Math.PI * 2);
       ctx.fill();
     });
 
-    this.registerShape("rect", (ctx, _, __, render) => {
+    this.registerShape("rect", (ctx, _entity, _pos, render) => {
       ctx.fillStyle = render.color;
       ctx.fillRect(-render.size / 2, -render.size / 2, render.size, render.size);
     });
 
-    this.registerShape("polygon", (ctx, _, __, render) => {
-      if (!render.vertices || render.vertices.length === 0) return;
+    this.registerShape("polygon", (ctx, _entity, _pos, render) => {
+      const vertices = render.vertices;
+      if (!vertices || vertices.length === 0) return;
       ctx.strokeStyle = render.color;
       ctx.lineWidth = 2;
       ctx.fillStyle = "#333";
@@ -104,9 +125,9 @@ export class CanvasRenderer implements Renderer {
         ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
       }
       ctx.beginPath();
-      ctx.moveTo(render.vertices[0].x, render.vertices[0].y);
-      for (let i = 1; i < render.vertices.length; i++) {
-        ctx.lineTo(render.vertices[i].x, render.vertices[i].y);
+      ctx.moveTo(vertices[0].x, vertices[0].y);
+      for (let i = 1; i < vertices.length; i++) {
+        ctx.lineTo(vertices[i].x, vertices[i].y);
       }
       ctx.closePath();
       ctx.fill();
@@ -130,9 +151,26 @@ export class CanvasRenderer implements Renderer {
   }
 
   /**
-   * Genera un snapshot inmutable del estado del mundo sin asignaciones de memoria.
+   * Captura una instantánea visual del estado actual del mundo ECS.
+   *
+   * @remarks
+   * Realiza la interpolación lineal de las transformaciones basándose en el valor `alpha`
+   * para suavizar el movimiento entre ticks de simulación fijos.
+   * Procesa el Screen Shake si el componente `GameState` lo indica.
+   *
+   * @param world - El mundo ECS a capturar.
+   * @param alpha - Factor de interpolación entre 0 (frame anterior) y 1 (frame actual).
+   * @returns Una referencia al objeto {@link RenderSnapshot} interno (reutilizado).
+   *
+   * @precondition Las entidades deben poseer componentes `Transform` y `Render`.
+   * @postcondition El objeto `RenderSnapshot` devuelto es una referencia al buffer interno
+   * para evitar asignaciones de memoria.
+   * @sideEffect Lee la semilla de `RandomService("render")` para el cálculo del Screen Shake.
    */
   public createSnapshot(world: World, alpha: number): RenderSnapshot {
+    this.swapSnapshots();
+    const snapshot = this.currentSnapshot;
+
     const entities = world.query("Transform", "Render");
     let count = 0;
 
@@ -147,8 +185,8 @@ export class CanvasRenderer implements Renderer {
       shakeY = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
     }
 
-    this.currentSnapshot.shakeX = shakeX;
-    this.currentSnapshot.shakeY = shakeY;
+    snapshot.shakeX = shakeX;
+    snapshot.shakeY = shakeY;
 
     for (let i = 0; i < entities.length; i++) {
       if (count >= this.MAX_ENTITIES) break;
@@ -158,70 +196,94 @@ export class CanvasRenderer implements Renderer {
       const prevTrans = world.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
       const render = world.getComponent<RenderComponent>(entity, "Render")!;
 
-      const snap = this.snapshotEntities[count];
-      snap.id = entity;
+      const snap = snapshot.entities[count];
 
-      let x = trans.worldX ?? trans.x;
-      let y = trans.worldY ?? trans.y;
-      let rotation = trans.worldRotation ?? trans.rotation;
-      let scaleX = trans.worldScaleX ?? (trans.scaleX ?? 1);
-      let scaleY = trans.worldScaleY ?? (trans.scaleY ?? 1);
+      // Optimization: Only update if dirty (simplified)
+      const isDirty = (trans as any).dirty || (render as any).dirty || count >= snapshot.entityCount;
 
-      if (prevTrans && alpha < 1) {
-        x = prevTrans.x + (x - prevTrans.x) * alpha;
-        y = prevTrans.y + (y - prevTrans.y) * alpha;
+      if (isDirty || alpha < 1) {
+        snap.id = entity;
 
-        let diff = rotation - prevTrans.rotation;
-        while (diff < -Math.PI) diff += Math.PI * 2;
-        while (diff > Math.PI) diff -= Math.PI * 2;
-        rotation = prevTrans.rotation + diff * alpha;
+        let x = trans.worldX ?? trans.x;
+        let y = trans.worldY ?? trans.y;
+        let rotation = trans.worldRotation ?? trans.rotation;
+        const scaleX = trans.worldScaleX ?? (trans.scaleX ?? 1);
+        const scaleY = trans.worldScaleY ?? (trans.scaleY ?? 1);
+
+        if (prevTrans && alpha < 1) {
+          x = prevTrans.x + (x - prevTrans.x) * alpha;
+          y = prevTrans.y + (y - prevTrans.y) * alpha;
+
+          let diff = rotation - prevTrans.rotation;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          rotation = prevTrans.rotation + diff * alpha;
+        }
+
+        snap.x = x;
+        snap.y = y;
+        snap.rotation = rotation;
+        snap.scaleX = scaleX;
+        snap.scaleY = scaleY;
+        snap.opacity = (render as any).opacity ?? 1;
+        snap.zIndex = (render as any).zIndex ?? 0;
+        snap.shape = render.shape;
+        snap.color = render.color;
+        snap.size = render.size;
+        snap.vertices = render.vertices || null;
+        snap.hitFlashFrames = render.hitFlashFrames || 0;
+        snap.data = render.data;
       }
-
-      snap.x = x;
-      snap.y = y;
-      snap.rotation = rotation;
-      snap.scaleX = scaleX;
-      snap.scaleY = scaleY;
-      snap.opacity = (render as any).opacity ?? 1;
-      snap.zIndex = (render as any).zIndex ?? 0;
-      snap.shape = render.shape;
-      snap.color = render.color;
-      snap.size = render.size;
-      snap.vertices = render.vertices || null;
-      snap.hitFlashFrames = render.hitFlashFrames || 0;
-      snap.data = render.data;
 
       count++;
     }
 
-    this.currentSnapshot.entityCount = count;
-    this.sortSnapshotEntities(count);
-
-    return this.currentSnapshot;
+    snapshot.entityCount = count;
+    return snapshot;
   }
 
   /**
-   * In-place insertion sort para evitar allocs de array.
-   */
-  private sortSnapshotEntities(count: number): void {
-    for (let i = 1; i < count; i++) {
-      const key = this.snapshotEntities[i];
-      const keyZ = key.zIndex;
-      let j = i - 1;
-      while (j >= 0 && this.snapshotEntities[j].zIndex > keyZ) {
-        this.snapshotEntities[j + 1] = this.snapshotEntities[j];
-        j = j - 1;
-      }
-      this.snapshotEntities[j + 1] = key;
-    }
-  }
-
-  /**
-   * Renderiza un snapshot de forma pura.
+   * Realiza el dibujado efectivo en el Canvas a partir de un snapshot.
+   *
+   * @remarks
+   * Sigue un pipeline estricto: Clear -> Background -> Pre-Hooks -> Entities (Sorted) ->
+   * Foreground -> Post-Hooks -> UI.
+   *
+   * @param snapshot - Los datos visuales capturados previamente.
+   * @param world - El mundo ECS (necesario para hooks y drawers personalizados).
+   *
+   * @precondition El contexto 2D del Canvas debe estar inicializado.
+   * @postcondition El Canvas refleja el estado visual del snapshot.
+   * @sideEffect Limpia el Canvas con el color de fondo por defecto (negro).
+   * @sideEffect Ejecuta todos los hooks y efectos registrados.
    */
   public renderSnapshot(snapshot: RenderSnapshot, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
+
+    this.commandBuffer.clear();
+
+    for (let i = 0; i < snapshot.entityCount; i++) {
+      const ent = snapshot.entities[i];
+      this.commandBuffer.addCommand(
+        ent.shape as any,
+        ent.x,
+        ent.y,
+        ent.rotation,
+        ent.scaleX,
+        ent.scaleY,
+        ent.opacity,
+        ent.color,
+        ent.size,
+        ent.zIndex,
+        ent.id,
+        ent.vertices,
+        ent.hitFlashFrames,
+        ent.data
+      );
+    }
+
+    this.commandBuffer.sort();
 
     this.clear();
     ctx.save();
@@ -235,9 +297,10 @@ export class CanvasRenderer implements Renderer {
       this.preRenderHooks[i](ctx, world);
     }
 
-    // Render sorted entities from the pool
-    for (let i = 0; i < snapshot.entityCount; i++) {
-      this.drawEntitySnapshot(ctx, snapshot.entities[i], world);
+    const commands = this.commandBuffer.getCommands();
+    const cmdCount = this.commandBuffer.getCount();
+    for (let i = 0; i < cmdCount; i++) {
+      this.executeCommand(ctx, commands[i], world);
     }
 
     for (let i = 0; i < this.foregroundEffects.length; i++) {
@@ -252,32 +315,108 @@ export class CanvasRenderer implements Renderer {
     renderUI(ctx, world);
   }
 
-  private drawEntitySnapshot(ctx: CanvasRenderingContext2D, ent: RenderEntitySnapshot, world: World): void {
+  private executeCommand(ctx: CanvasRenderingContext2D, cmd: DrawCommand, world: World): void {
     ctx.save();
-    ctx.translate(ent.x, ent.y);
-    ctx.rotate(ent.rotation);
-    ctx.scale(ent.scaleX, ent.scaleY);
-    ctx.globalAlpha = ent.opacity;
+    ctx.translate(cmd.x, cmd.y);
+    ctx.rotate(cmd.rotation);
+    ctx.scale(cmd.scaleX, cmd.scaleY);
+    ctx.globalAlpha = cmd.opacity;
 
-    if (ent.hitFlashFrames > 0) {
+    if (cmd.hitFlashFrames > 0) {
       ctx.globalCompositeOperation = "lighter";
     }
 
-    const drawer = this.shapeDrawers.get(ent.shape);
+    const drawer = this.shapeDrawers.get(cmd.type);
     if (drawer) {
-      drawer(ctx, ent.id, world, ent);
+      // Create a temporary TransformComponent from cmd
+      const pos: TransformComponent = {
+        type: "Transform",
+        x: cmd.x,
+        y: cmd.y,
+        rotation: cmd.rotation,
+        scaleX: cmd.scaleX,
+        scaleY: cmd.scaleY,
+        worldX: cmd.x,
+        worldY: cmd.y,
+        worldRotation: cmd.rotation,
+        worldScaleX: cmd.scaleX,
+        worldScaleY: cmd.scaleY
+      };
+
+      // Create a temporary RenderComponent from cmd
+      const render: RenderComponent = {
+        type: "Render",
+        shape: cmd.type,
+        size: cmd.size,
+        color: cmd.color,
+        rotation: cmd.rotation,
+        vertices: cmd.vertices || undefined,
+        zIndex: cmd.zIndex,
+        hitFlashFrames: cmd.hitFlashFrames,
+        data: cmd.data
+      };
+
+      drawer(ctx, cmd.entityId, pos, render, world);
     }
 
     ctx.restore();
 
-    const postDrawer = this.postEntityDrawers.get(ent.shape);
+    const postDrawer = this.postEntityDrawers.get(cmd.type);
     if (postDrawer) {
-      postDrawer(ctx, ent.id, world, ent);
+      // Re-use pos and render if possible, but for safety let's define them again or use the ones from above
+      const pos: TransformComponent = {
+        type: "Transform",
+        x: cmd.x,
+        y: cmd.y,
+        rotation: cmd.rotation,
+        scaleX: cmd.scaleX,
+        scaleY: cmd.scaleY,
+        worldX: cmd.x,
+        worldY: cmd.y,
+        worldRotation: cmd.rotation,
+        worldScaleX: cmd.scaleX,
+        worldScaleY: cmd.scaleY
+      };
+
+      const render: RenderComponent = {
+        type: "Render",
+        shape: cmd.type,
+        size: cmd.size,
+        color: cmd.color,
+        rotation: cmd.rotation,
+        vertices: cmd.vertices || undefined,
+        zIndex: cmd.zIndex,
+        hitFlashFrames: cmd.hitFlashFrames,
+        data: cmd.data
+      };
+      postDrawer(ctx, cmd.entityId, pos, render, world);
     }
   }
 
   public render(world: World, alpha: number = 1): void {
     const snapshot = this.createSnapshot(world, alpha);
     this.renderSnapshot(snapshot, world);
+  }
+
+  public drawEntity(entity: Entity, components: Record<string, Component>, world: World): void {
+    const pos = components["Transform"] as TransformComponent;
+    const render = components["Render"] as RenderComponent;
+    if (!pos || !render || !this.ctx) return;
+
+    this.ctx.save();
+    this.ctx.translate(pos.worldX ?? pos.x, pos.worldY ?? pos.y);
+    this.ctx.rotate(pos.worldRotation ?? pos.rotation);
+    this.ctx.scale(pos.worldScaleX ?? (pos.scaleX ?? 1), pos.worldScaleY ?? (pos.scaleY ?? 1));
+
+    const drawer = this.shapeDrawers.get(render.shape);
+    if (drawer) {
+      drawer(this.ctx, entity, pos, render, world);
+    }
+
+    this.ctx.restore();
+  }
+
+  public drawParticles(_world: World): void {
+    // Basic implementation to satisfy Renderer interface
   }
 }

@@ -4,7 +4,6 @@ import {
     UIStyleComponent,
     UITextComponent,
     UIProgressBarComponent,
-    UIImageComponent,
     UIButtonStateComponent
 } from "./UITypes";
 import { TextRenderer } from "./text/TextRenderer";
