@@ -37,7 +37,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   protected networkTransport?: NetworkTransport;
   protected replayRecorder: ReplayRecorder;
   protected currentTick: number = 0;
-  protected hierarchySystem: HierarchySystem;
+  protected currentSeed: number = 0;
   public isMultiplayer: boolean;
 
   private _isPaused = false;
@@ -174,9 +174,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
    * @param input - Un objeto parcial con las acciones y su estado booleano.
    * @sideEffect Llama a `unifiedInput.setOverride` para cada acción proporcionada.
    */
-  public setInput(input: Partial<TInput>): void {
-    Object.entries(input).forEach(([action, val]) => {
-      this.unifiedInput.setOverride(action, val as boolean);
+  protected shouldStallSimulation(): boolean {
+    return false;
+  }
+
+  public setInput(input: Record<string, boolean>): void {
+    Object.entries(input).forEach(([action, pressed]) => {
+      this.unifiedInput.setOverride(action, pressed);
     });
   }
 

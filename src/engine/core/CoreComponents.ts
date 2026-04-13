@@ -175,6 +175,73 @@ export interface TTLComponent extends Component {
   onComplete?: () => void;
 }
 
+import { Shape } from "../physics/shapes/ShapeTypes";
+
+/**
+ * Modern collider component supporting multiple shapes and collision layers.
+ */
+export interface Collider2DComponent extends Component {
+  type: "Collider2D";
+  shape: Shape;
+  offsetX: number;
+  offsetY: number;
+  layer: number;
+  mask: number;
+  isTrigger: boolean;
+  enabled: boolean;
+}
+
+/**
+ * Component that tracks collision events for an entity in a single frame.
+ */
+export interface CollisionEvent {
+  otherEntity: Entity;
+  manifold?: CollisionManifold;
+  normalX?: number;
+  normalY?: number;
+  depth?: number;
+  contactPoints?: Array<{ x: number; y: number }>;
+}
+
+export interface CollisionEventsComponent extends Component {
+  type: "CollisionEvents";
+  collisions: CollisionEvent[];
+  activeTriggers: Entity[];
+  triggersEntered: Entity[];
+  triggersExited: Entity[];
+}
+
+/**
+ * Enables Continuous Collision Detection (CCD) for fast-moving entities.
+ */
+export interface ContinuousColliderComponent extends Component {
+  type: "ContinuousCollider";
+  enabled: boolean;
+}
+
+/**
+ * Rigid body component for the built-in physics engine.
+ */
+export interface PhysicsBody2DComponent extends Component {
+  type: "PhysicsBody2D";
+  bodyType: "static" | "dynamic" | "kinematic";
+  velocityX: number;
+  velocityY: number;
+  angularVelocity: number;
+  forceX: number;
+  forceY: number;
+  torque: number;
+  mass: number;
+  inverseMass: number;
+  inertia: number;
+  inverseInertia: number;
+  restitution: number;
+  staticFriction: number;
+  dynamicFriction: number;
+  gravityScale: number;
+  fixedRotation: boolean;
+}
+
 /**
  * @deprecated Use Collider2DComponent instead for multi-shape support
  */
@@ -378,12 +445,6 @@ export interface Camera2DComponent extends Component {
 /**
  * Common data structures.
  */
-export interface AABB {
-  minX: number;
-  minY: number;
-  maxX: number;
-  maxY: number;
-}
 
 export interface ScreenShakeComponent extends Component {
   type: "ScreenShake";
@@ -434,5 +495,18 @@ export interface Star extends Component {
   y: number;
   size: number;
   alpha: number;
+  brightness: number;
+  twinklePhase: number;
   twinkleSpeed: number;
+  layer: number;
+}
+
+export interface CollisionManifold {
+  colliding: boolean;
+  normalX: number;
+  normalY: number;
+  depth: number;
+  contactPoints: Array<{ x: number; y: number }>;
+  entityA?: Entity;
+  entityB?: Entity;
 }

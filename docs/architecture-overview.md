@@ -30,8 +30,10 @@ El motor proporciona las primitivas necesarias para la simulación, mientras que
 ## Principios Arquitectónicos
 1. **Composición sobre Herencia**: El comportamiento se define por qué componentes tiene una entidad, no por su clase.
 2. **Simulación Determinista**: Uso de `RandomService` y timesteps fijos para garantizar resultados reproducibles.
-3. **Unificación de Loop**: Los renderizadores son pasivos y sincronizados con el latido del motor mediante un pipeline de snapshots.
-4. **Local-First / Server-Authoritative**: Soporte nativo para predicción en cliente con validación en servidor (rollback & reconcile).
-5. **Zero Allocation Rendering**: Los renderizadores utilizan pools de comandos y snapshots para evitar la presión del GC en el hot-path.
-6. **Integridad de Singletons**: El motor garantiza que los componentes singleton sean mutables al recuperarlos (Principio 6), clonando automáticamente si están congelados.
-7. **Pipeline de Jerarquía Dirty-First**: Las transformaciones de mundo solo se recalculan si un nodo o su padre cambian.
+3. **Unificación de Loop**: Los renderizadores son pasivos y sincronizados con el latido del motor.
+4. **Local-First / Server-Authoritative**: Soporte nativo para predicción en cliente con validación en servidor.
+
+## API Reference
+La documentación técnica detallada de cada clase, interfaz y sistema se genera automáticamente a partir del código fuente.
+
+- [**Referencia de API Completa**](./api-reference/index.md)
