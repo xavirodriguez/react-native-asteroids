@@ -15,7 +15,10 @@ import Animated, {
 import type { GameStateComponent } from "../src/types/GameTypes";
 
 // Conditionally import Skia components
-let Canvas: any, BackdropBlur: any, Fill: any;
+let Canvas: React.ComponentType<Record<string, unknown>> | null = null;
+let BackdropBlur: React.ComponentType<Record<string, unknown>> | null = null;
+let Fill: React.ComponentType<{ color: string }> | null = null;
+
 if (Platform.OS !== "web") {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports

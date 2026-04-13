@@ -1,5 +1,5 @@
 import { World } from "../engine/core/World";
-import { TransformComponent, VelocityComponent, RenderComponent, FrictionComponent, TagComponent, HealthComponent, ColliderComponent, TTLComponent, InputStateComponent } from "../engine/types/EngineTypes";
+import { TransformComponent, VelocityComponent, RenderComponent, HealthComponent, ColliderComponent, TTLComponent } from "../engine/types/EngineTypes";
 import { PhysicsUtils } from "../engine/utils/PhysicsUtils";
 import { ShipPhysics } from "../games/asteroids/utils/ShipPhysics";
 import { GAME_CONFIG, type AsteroidComponent } from "../games/asteroids/types/AsteroidTypes";

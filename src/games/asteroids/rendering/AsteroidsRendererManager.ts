@@ -43,6 +43,7 @@ export function initializeAsteroidsRenderer(renderer: Renderer): void {
     // renderer.registerForegroundEffect("crt", asteroidsCRTEffect);
   } else if (renderer.type === "skia") {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { drawSkiaShip, drawSkiaUfo, skiaStarfieldEffect, skiaScreenShakeEffect, drawSkiaBullet, drawSkiaParticle } = require("./AsteroidsSkiaVisuals");
       renderer.registerShape("triangle", drawSkiaShip);
       renderer.registerShape("ufo", drawSkiaUfo);
