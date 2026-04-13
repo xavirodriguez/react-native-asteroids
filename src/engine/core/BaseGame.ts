@@ -201,11 +201,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   }
 
   private _registerKeyboardListeners(): void {
-    if (typeof window !== "undefined") window.addEventListener("keydown", this._globalKeyHandler);
+    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+      window.addEventListener("keydown", this._globalKeyHandler);
+    }
   }
 
   private _unregisterKeyboardListeners(): void {
-    if (typeof window !== "undefined") window.removeEventListener("keydown", this._globalKeyHandler);
+    if (typeof window !== "undefined" && typeof window.removeEventListener === "function") {
+      window.removeEventListener("keydown", this._globalKeyHandler);
+    }
   }
 
   private _handleGlobalKey(e: KeyboardEvent): void {

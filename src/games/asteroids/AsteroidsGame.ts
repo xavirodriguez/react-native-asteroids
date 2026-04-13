@@ -182,7 +182,23 @@ export class AsteroidsGame
     this.world.addSystem(new AsteroidRenderSystem()); // Handle trails
   }
 
-  protected initializeEntities(): void {}
+  protected initializeEntities(): void {
+    if (this.isMultiplayer) return;
+
+    const { world, config } = this;
+    const { createGameState, createShip, spawnAsteroidWave } = require("./EntityFactory");
+
+    createGameState({ world });
+    createShip({
+      world,
+      x: config.SCREEN_CENTER_X,
+      y: config.SCREEN_CENTER_Y,
+    });
+    spawnAsteroidWave({
+      world,
+      count: config.INITIAL_ASTEROID_COUNT,
+    });
+  }
 
   /**
    * Registers game-specific rendering logic to the provided renderer.
