@@ -43,7 +43,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   private _listeners = new Set<UpdateListener<BaseGame<TState, TInput>>>();
   private _globalKeyHandler = (e: KeyboardEvent) => this._handleGlobalKey(e);
   protected _config: BaseGameConfig;
-  protected currentSeed: number;
+  protected hierarchySystem: HierarchySystem;
 
   constructor(config: BaseGameConfig = {}) {
     const { isMultiplayer = false } = config;
@@ -88,11 +88,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
         const t = activeWorld.getComponent<TransformComponent>(entity, "Transform")!;
         let prev = activeWorld.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
         if (!prev) {
-          prev = activeWorld.addComponent(entity, { type: "PreviousTransform", x: t.x, y: t.y, rotation: t.rotation });
+          prev = activeWorld.addComponent(entity, { type: "PreviousTransform", x: t.x, y: t.y, rotation: t.rotation } as PreviousTransformComponent);
         }
-        prev.x = t.x;
-        prev.y = t.y;
-        prev.rotation = t.rotation;
+        if (prev) {
+          prev.x = t.x;
+          prev.y = t.y;
+          prev.rotation = t.rotation;
+        }
       }
 
       // 2. Input Handling
@@ -126,6 +128,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   public stop(): void { this.gameLoop.stop(); }
   public pause(): void { this._isPaused = true; this.sceneManager.pause(); this._notifyListeners(); }
   public resume(): void { this._isPaused = false; this.sceneManager.resume(); this._notifyListeners(); }
+  public isPausedState(): boolean { return this._isPaused; }
+  public getGameLoop(): GameLoop { return this.gameLoop; }
 
   public async restart(): Promise<void> {
     await this._onBeforeRestart();
