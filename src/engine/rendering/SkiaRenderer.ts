@@ -2,7 +2,7 @@ import { Skia, SkCanvas, SkPaint, PaintStyle } from "@shopify/react-native-skia"
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TTLComponent, TransformComponent, PreviousTransformComponent, Component } from "../core/CoreComponents";
+import { RenderComponent, TransformComponent, PreviousTransformComponent, Component } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
 
 export type SkiaShapeDrawer = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => void;
@@ -146,9 +146,12 @@ export class SkiaRenderer implements Renderer {
    *
    * @param world - El mundo ECS que contiene las entidades a dibujar.
    *
+   * @precondition El lienzo (SkCanvas) debe estar listo para recibir comandos.
+   * @postcondition Se genera la imagen del frame actual con interpolación aplicada.
    * @invariant No debe mutar componentes de simulación (Transform, Velocity).
-   * @conceptualRisk [SKIA_CONTEXT_LOST] En dispositivos móviles, el contexto de Skia puede perderse
-   * si la app pasa a segundo plano de forma prolongada.
+   * @sideEffect Limpia el lienzo con el color negro.
+   * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia
+   * puede perderse si la app pasa a segundo plano de forma prolongada.
    */
   public render(world: World): void {
     if (!this.canvas) return;

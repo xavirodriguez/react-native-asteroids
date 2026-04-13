@@ -3,6 +3,8 @@
 ## Propósito del Motor
 TinyAsterEngine es un framework de videojuegos arcade 2D de alto rendimiento construido sobre una arquitectura **ECS (Entity-Component-System)** pura. Está diseñado para ser multiplataforma (iOS, Android, Web) utilizando **React Native y Expo**, permitiendo un desarrollo ágil con TypeScript.
 
+Su filosofía se basa en el desacoplamiento total de la simulación y la representación visual, garantizando determinismo para aplicaciones multijugador y una alta tasa de fotogramas mediante optimizaciones de memoria (pooling y zero-allocation).
+
 ## Límites Engine vs. Game
 El motor proporciona las primitivas necesarias para la simulación, mientras que el juego define la lógica específica.
 

@@ -1,4 +1,4 @@
-import { TransformComponent, VelocityComponent } from "../types/EngineTypes";
+import { TransformComponent } from "../types/EngineTypes";
 
 /**
  * Utilidades de integración física compartidas.

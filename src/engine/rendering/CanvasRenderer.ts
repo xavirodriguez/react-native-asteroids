@@ -1,79 +1,82 @@
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TTLComponent, TransformComponent, PreviousTransformComponent, Component, TilemapComponent } from "../core/CoreComponents";
+import { RenderComponent, TransformComponent, PreviousTransformComponent } from "../core/CoreComponents";
 import { renderUI } from "../ui/UIRenderer";
-import { UITextComponent, UIStyleComponent } from "../ui/UITypes";
-import { FontRegistry } from "../ui/text/FontRegistry";
-import { TextRenderer } from "../ui/text/TextRenderer";
-import { DebugSystem } from "../ui/debug/DebugSystem";
 import { RandomService } from "../utils/RandomService";
+import { RenderSnapshot } from "./RenderSnapshot";
+import { CommandBuffer, DrawCommand } from "./CommandBuffer";
 
-export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => void;
+export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: any) => void;
 
 /**
- * Implementación de Renderer basada en la API de Canvas 2D.
- * Es genérica y extensible mediante el registro de shape drawers y hooks de renderizado.
- *
- * @responsibility Renderizar el estado del mundo ECS en un elemento HTMLCanvasElement.
- * @responsibility Gestionar la interpolación visual entre estados de simulación (Fixed Timestep).
- * @responsibility Proveer un pipeline de renderizado ordenado (Background -> Entities -> Foreground -> UI).
+ * 2D Canvas-based Rendering Engine.
  *
  * @remarks
- * Este renderer es óptimo para despliegues web y como backend de referencia.
- * Contrato de consistencia: Debe mantener paridad visual con {@link SkiaRenderer}.
- *
- * @contract Interpolación: Usa el valor `alpha` del loop para interpolar entre `PreviousTransform` y `Transform`.
- * @conceptualRisk [GC_PRESSURE][MEDIUM] Reconstruye el array `renderCommands` en cada frame, lo que genera
- * presión en el recolector de basura si el número de entidades es muy elevado.
- *
- * @packageDocumentation
+ * Implements a snapshot-based architecture for decoupled and consistent rendering.
+ * Allocation-free in the hot loop using pooled commands and double-buffered snapshots.
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
   protected ctx: CanvasRenderingContext2D | null = null;
-  private alpha: number = 1;
   protected width: number = 0;
   protected height: number = 0;
+
   private shapeDrawers = new Map<string, ShapeDrawer>();
   private postEntityDrawers = new Map<string, ShapeDrawer>();
   private preRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
   private postRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
   private backgroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
   private foregroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
-  private debugSystem: DebugSystem = new DebugSystem();
+
+  private commandBuffer = new CommandBuffer();
+  private readonly MAX_ENTITIES = 2000;
+
+  private readonly snapshotA: RenderSnapshot;
+  private readonly snapshotB: RenderSnapshot;
+  private currentSnapshot: RenderSnapshot;
 
   constructor(ctx?: CanvasRenderingContext2D) {
-    if (ctx) {
-      this.ctx = ctx;
-    }
+    if (ctx) this.ctx = ctx;
+
+    this.snapshotA = this.createEmptySnapshot();
+    this.snapshotB = this.createEmptySnapshot();
+    this.currentSnapshot = this.snapshotA;
+
     this.registerDefaultDrawers();
   }
 
-  public registerShapeDrawer(shape: string, drawer: ShapeDrawer): void {
-    this.shapeDrawers.set(shape, drawer);
+  private createEmptySnapshot(): RenderSnapshot {
+    const entities = new Array(this.MAX_ENTITIES);
+    for (let i = 0; i < this.MAX_ENTITIES; i++) {
+      entities[i] = {
+        id: 0, x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1,
+        opacity: 1, zIndex: 0, shape: "", color: "", size: 0,
+        vertices: null, hitFlashFrames: 0, data: null
+      };
+    }
+    return {
+      entities,
+      entityCount: 0,
+      shakeX: 0,
+      shakeY: 0
+    };
   }
 
-  public registerPostEntityDrawer(shape: string, drawer: ShapeDrawer): void {
-    this.postEntityDrawers.set(shape, drawer);
+  private swapSnapshots(): void {
+    this.currentSnapshot = this.currentSnapshot === this.snapshotA ? this.snapshotB : this.snapshotA;
   }
 
-  /**
-   * Registra un dibujador de formas personalizado.
-   *
-   * @param name - Identificador de la forma (e.g., "ship").
-   * @param drawer - Función que implementa la lógica de dibujo.
-   */
-  public registerShape(name: string, drawer: any): void {
-      this.registerShapeDrawer(name, drawer);
+  public registerShape(name: string, drawer: ShapeDrawer): void {
+    this.shapeDrawers.set(name, drawer);
   }
 
-  public registerBackgroundEffect(name: string, drawer: any): void {
-      this.backgroundEffects.push(drawer);
+  public registerShapeDrawer(name: string, drawer: ShapeDrawer): void {
+    this.registerShape(name, drawer);
   }
 
-  public registerForegroundEffect(name: string, drawer: any): void {
-      this.foregroundEffects.push(drawer);
+  public registerPostEntityDrawer(name: string, drawer: ShapeDrawer): void {
+    this.postEntityDrawers.set(name, drawer);
   }
 
   public addPreRenderHook(hook: (ctx: CanvasRenderingContext2D, world: World) => void): void {
@@ -84,21 +87,30 @@ export class CanvasRenderer implements Renderer {
     this.postRenderHooks.push(hook);
   }
 
+  public registerBackgroundEffect(name: string, drawer: any): void {
+    this.backgroundEffects.push(drawer);
+  }
+
+  public registerForegroundEffect(name: string, drawer: any): void {
+    this.foregroundEffects.push(drawer);
+  }
+
   private registerDefaultDrawers(): void {
-    this.registerShapeDrawer("circle", (ctx, _, __, render) => {
+    this.registerShape("circle", (ctx, _, __, render) => {
       ctx.fillStyle = render.color;
       ctx.beginPath();
       ctx.arc(0, 0, render.size, 0, Math.PI * 2);
       ctx.fill();
     });
 
-    this.registerShapeDrawer("rect", (ctx, _, __, render) => {
+    this.registerShape("rect", (ctx, _, __, render) => {
       ctx.fillStyle = render.color;
       ctx.fillRect(-render.size / 2, -render.size / 2, render.size, render.size);
     });
 
-    this.registerShapeDrawer("polygon", (ctx, _, __, render) => {
-      if (!render.vertices || render.vertices.length === 0) return;
+    this.registerShape("polygon", (ctx, _, __, render) => {
+      const vertices = render.vertices;
+      if (!vertices || vertices.length === 0) return;
       ctx.strokeStyle = render.color;
       ctx.lineWidth = 2;
       ctx.fillStyle = "#333";
@@ -107,52 +119,13 @@ export class CanvasRenderer implements Renderer {
         ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
       }
       ctx.beginPath();
-      ctx.moveTo(render.vertices[0].x, render.vertices[0].y);
-      for (let i = 1; i < render.vertices.length; i++) {
-        ctx.lineTo(render.vertices[i].x, render.vertices[i].y);
+      ctx.moveTo(vertices[0].x, vertices[0].y);
+      for (let i = 1; i < vertices.length; i++) {
+        ctx.lineTo(vertices[i].x, vertices[i].y);
       }
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
-
-      if (render.data?.internalLines) {
-        ctx.strokeStyle = "#222";
-        ctx.lineWidth = 1;
-        render.data.internalLines.forEach((line: any) => {
-          ctx.beginPath();
-          ctx.moveTo(line.x1, line.y1);
-          ctx.lineTo(line.x2, line.y2);
-          ctx.stroke();
-        });
-      }
-    });
-
-    this.registerShapeDrawer("line", (ctx, _, __, render) => {
-      ctx.strokeStyle = render.color;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-render.size / 2, 0);
-      ctx.lineTo(render.size / 2, 0);
-      ctx.stroke();
-    });
-
-    this.registerShapeDrawer("text", (ctx, entity, world, render) => {
-      const uiText = world.getComponent<UITextComponent>(entity, "UIText");
-      const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
-      if (!uiText) return;
-
-      const registry = FontRegistry.getInstance();
-      const fontName = style?.fontFamily || registry.getDefaultName();
-
-      TextRenderer.drawSystemText(
-          ctx,
-          uiText.content,
-          0, 0,
-          style?.fontSize ?? 16,
-          style?.textColor ?? render.color ?? "white",
-          fontName,
-          style?.textAlign ?? "left"
-      );
     });
   }
 
@@ -165,13 +138,6 @@ export class CanvasRenderer implements Renderer {
     this.height = height;
   }
 
-  public setAlpha(alpha: number): void {
-    this.alpha = alpha;
-  }
-
-  /**
-   * Limpia la superficie del canvas rellenándola con un color negro sólido.
-   */
   public clear(): void {
     if (!this.ctx) return;
     this.ctx.fillStyle = "black";
@@ -179,27 +145,31 @@ export class CanvasRenderer implements Renderer {
   }
 
   /**
-   * Ejecuta el pipeline completo de renderizado para el mundo ECS dado.
-   * Implementa interpolación lineal para suavizar el movimiento entre ticks de física.
+   * Captura una instantánea visual del estado actual del mundo ECS.
    *
-   * @param world - El mundo ECS que contiene las entidades a dibujar.
+   * @remarks
+   * Realiza la interpolación lineal de las transformaciones basándose en el valor `alpha`
+   * para suavizar el movimiento entre ticks de simulación fijos.
+   * Procesa el Screen Shake si el componente `GameState` lo indica.
    *
-   * @invariant El estado de las entidades en el World no debe ser modificado durante esta llamada.
-   * @conceptualRisk [GC_PRESSURE][MEDIUM] Reconstruye el array `renderCommands` en cada frame,
-   * lo que genera presión en el recolector de basura si el número de entidades es muy elevado.
-   * @conceptualRisk [RENDER_DRIFT] Las diferencias en la precisión de punto flotante entre Canvas y Skia
-   * pueden causar micro-desincronizaciones visuales.
+   * @param world - El mundo ECS a capturar.
+   * @param alpha - Factor de interpolación entre 0 (frame anterior) y 1 (frame actual).
+   * @returns Una referencia al objeto {@link RenderSnapshot} interno (reutilizado).
+   *
+   * @precondition Las entidades deben poseer componentes `Transform` y `Render`.
+   * @postcondition El objeto `RenderSnapshot` devuelto es una referencia al buffer interno
+   * para evitar asignaciones de memoria.
+   * @sideEffect Lee la semilla de `RandomService("render")` para el cálculo del Screen Shake.
    */
-  public render(world: World): void {
-    if (!this.ctx) return;
-    const ctx = this.ctx;
+  public createSnapshot(world: World, alpha: number): RenderSnapshot {
+    this.swapSnapshots();
+    const snapshot = this.currentSnapshot;
 
-    this.clear();
+    const entities = world.query("Transform", "Render");
+    let count = 0;
 
     const gameStateEntity = world.query("GameState")[0];
-    const gameState = gameStateEntity
-      ? (world.getComponent<any>(gameStateEntity, "GameState"))
-      : null;
+    const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
 
     let shakeX = 0;
     let shakeY = 0;
@@ -209,206 +179,162 @@ export class CanvasRenderer implements Renderer {
       shakeY = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
     }
 
-    ctx.save();
-    ctx.translate(shakeX, shakeY);
+    snapshot.shakeX = shakeX;
+    snapshot.shakeY = shakeY;
 
-    this.backgroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
+    for (let i = 0; i < entities.length; i++) {
+      if (count >= this.MAX_ENTITIES) break;
+      const entity = entities[i];
 
-    const entities = world.query("Transform", "Render");
-
-    const renderCommands = entities.map(entity => {
-      const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
-      const prevPos = world.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
+      const trans = world.getComponent<TransformComponent>(entity, "Transform")!;
+      const prevTrans = world.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
       const render = world.getComponent<RenderComponent>(entity, "Render")!;
 
-      // Interpolate position and rotation
-      const interpolatedPos = { ...pos };
-      if (prevPos && this.alpha < 1) {
-        interpolatedPos.x = prevPos.x + (pos.x - prevPos.x) * this.alpha;
-        interpolatedPos.y = prevPos.y + (pos.y - prevPos.y) * this.alpha;
+      const snap = snapshot.entities[count];
 
-        // Shortest path rotation interpolation
-        let diff = pos.rotation - prevPos.rotation;
-        while (diff < -Math.PI) diff += Math.PI * 2;
-        while (diff > Math.PI) diff -= Math.PI * 2;
-        interpolatedPos.rotation = prevPos.rotation + diff * this.alpha;
+      // Optimization: Only update if dirty (simplified)
+      const isDirty = (trans as any).dirty || (render as any).dirty || count >= snapshot.entityCount;
+
+      if (isDirty || alpha < 1) {
+        snap.id = entity;
+
+        let x = trans.worldX ?? trans.x;
+        let y = trans.worldY ?? trans.y;
+        let rotation = trans.worldRotation ?? trans.rotation;
+        const scaleX = trans.worldScaleX ?? (trans.scaleX ?? 1);
+        const scaleY = trans.worldScaleY ?? (trans.scaleY ?? 1);
+
+        if (prevTrans && alpha < 1) {
+          x = prevTrans.x + (x - prevTrans.x) * alpha;
+          y = prevTrans.y + (y - prevTrans.y) * alpha;
+
+          let diff = rotation - prevTrans.rotation;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          rotation = prevTrans.rotation + diff * alpha;
+        }
+
+        snap.x = x;
+        snap.y = y;
+        snap.rotation = rotation;
+        snap.scaleX = scaleX;
+        snap.scaleY = scaleY;
+        snap.opacity = (render as any).opacity ?? 1;
+        snap.zIndex = (render as any).zIndex ?? 0;
+        snap.shape = render.shape;
+        snap.color = render.color;
+        snap.size = render.size;
+        snap.vertices = render.vertices || null;
+        snap.hitFlashFrames = render.hitFlashFrames || 0;
+        snap.data = render.data;
       }
 
-      return {
-        entity,
-        pos: interpolatedPos,
-        render,
-        zIndex: (render as any).zIndex ?? 0
-      };
-    });
-
-    this.preRenderHooks.forEach(hook => hook(ctx, world));
-
-    renderCommands.sort((a, b) => a.zIndex - b.zIndex);
-    renderCommands.forEach((cmd) => {
-      this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render }, world);
-    });
-
-    ctx.save();
-    this.foregroundEffects.forEach((drawer) => drawer(ctx, world, this.width, this.height));
-    ctx.restore();
-
-    ctx.restore(); // Balanced restore for shake - UI should NOT shake usually
-
-    renderUI(ctx, world);
-
-    const debugConfigEntity = world.query("DebugConfig")[0];
-    if (debugConfigEntity !== undefined) {
-        this.renderDebugInfo(ctx, world);
+      count++;
     }
 
-    this.postRenderHooks.forEach(hook => hook(ctx, world));
+    snapshot.entityCount = count;
+    return snapshot;
   }
 
   /**
-   * Dibuja una única entidad aplicando transformaciones de posición y rotación.
+   * Realiza el dibujado efectivo en el Canvas a partir de un snapshot.
    *
    * @remarks
-   * Utiliza las coordenadas del mundo calculadas por el `HierarchySystem` si están disponibles,
-   * garantizando la correcta representación de jerarquías de entidades.
+   * Sigue un pipeline estricto: Clear -> Background -> Pre-Hooks -> Entities (Sorted) ->
+   * Foreground -> Post-Hooks -> UI.
    *
-   * @param entity - ID de la entidad.
-   * @param components - Componentes de la entidad (Transform y Render requeridos).
-   * @param world - Contexto del mundo.
+   * @param snapshot - Los datos visuales capturados previamente.
+   * @param world - El mundo ECS (necesario para hooks y drawers personalizados).
+   *
+   * @precondition El contexto 2D del Canvas debe estar inicializado.
+   * @postcondition El Canvas refleja el estado visual del snapshot.
+   * @sideEffect Limpia el Canvas con el color de fondo por defecto (negro).
+   * @sideEffect Ejecuta todos los hooks y efectos registrados.
    */
-  public drawEntity(entity: Entity, components: Record<string, Component>, world: World): void {
+  public renderSnapshot(snapshot: RenderSnapshot, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
-    const pos = components["Transform"] as TransformComponent;
-    const render = components["Render"] as RenderComponent;
 
-    if (!pos || !render) return;
+    this.commandBuffer.clear();
 
-    // Use world coordinates from HierarchySystem (single source of truth)
-    const x = pos.worldX !== undefined ? pos.worldX : pos.x;
-    const y = pos.worldY !== undefined ? pos.worldY : pos.y;
-    const rotation = pos.worldRotation !== undefined ? pos.worldRotation : render.rotation;
-    const scaleX = pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1);
-    const scaleY = pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1);
+    for (let i = 0; i < snapshot.entityCount; i++) {
+      const ent = snapshot.entities[i];
+      this.commandBuffer.addCommand(
+        ent.shape as any,
+        ent.x,
+        ent.y,
+        ent.rotation,
+        ent.scaleX,
+        ent.scaleY,
+        ent.opacity,
+        ent.color,
+        ent.size,
+        ent.zIndex,
+        ent.id,
+        ent.vertices,
+        ent.hitFlashFrames,
+        ent.data
+      );
+    }
 
+    this.commandBuffer.sort();
+
+    this.clear();
     ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(rotation);
-    ctx.scale(scaleX, scaleY);
+    ctx.translate(snapshot.shakeX, snapshot.shakeY);
 
-    const opacity = (render as any).opacity !== undefined ? (render as any).opacity : 1;
-    ctx.globalAlpha = opacity;
+    for (let i = 0; i < this.backgroundEffects.length; i++) {
+      this.backgroundEffects[i](ctx, world, this.width, this.height);
+    }
 
-    if (render.hitFlashFrames && render.hitFlashFrames > 0) {
+    for (let i = 0; i < this.preRenderHooks.length; i++) {
+      this.preRenderHooks[i](ctx, world);
+    }
+
+    const commands = this.commandBuffer.getCommands();
+    const cmdCount = this.commandBuffer.getCount();
+    for (let i = 0; i < cmdCount; i++) {
+      this.executeCommand(ctx, commands[i], world);
+    }
+
+    for (let i = 0; i < this.foregroundEffects.length; i++) {
+      this.foregroundEffects[i](ctx, world, this.width, this.height);
+    }
+
+    for (let i = 0; i < this.postRenderHooks.length; i++) {
+      this.postRenderHooks[i](ctx, world);
+    }
+
+    ctx.restore();
+    renderUI(ctx, world);
+  }
+
+  private executeCommand(ctx: CanvasRenderingContext2D, cmd: DrawCommand, world: World): void {
+    ctx.save();
+    ctx.translate(cmd.x, cmd.y);
+    ctx.rotate(cmd.rotation);
+    ctx.scale(cmd.scaleX, cmd.scaleY);
+    ctx.globalAlpha = cmd.opacity;
+
+    if (cmd.hitFlashFrames > 0) {
       ctx.globalCompositeOperation = "lighter";
     }
 
-    const drawer = this.shapeDrawers.get(render.shape);
+    const drawer = this.shapeDrawers.get(cmd.type);
     if (drawer) {
-        drawer(ctx, entity, world, render);
+      drawer(ctx, cmd.entityId, world, cmd);
     }
 
     ctx.restore();
-    ctx.globalCompositeOperation = "source-over";
 
-    const postDrawer = this.postEntityDrawers.get(render.shape);
+    const postDrawer = this.postEntityDrawers.get(cmd.type);
     if (postDrawer) {
-        postDrawer(ctx, entity, world, render);
+      postDrawer(ctx, cmd.entityId, world, cmd);
     }
   }
 
-  /**
-   * Dibuja partículas de forma optimizada.
-   *
-   * @remarks
-   * Implementa una lógica específica para partículas que incluye variación de color (HSL),
-   * degradado de opacidad basado en el TTL y efectos de brillo (shadowBlur) en el nacimiento.
-   */
-  public drawParticles(world: World): void {
-    if (!this.ctx) return;
-    const ctx = this.ctx;
-    const entities = world.query("Transform", "Render").filter(e => {
-        const r = world.getComponent<RenderComponent>(e, "Render");
-        return r?.shape === "particle";
-    });
-
-    entities.forEach(entity => {
-        const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
-        const render = world.getComponent<RenderComponent>(entity, "Render")!;
-        const ttl = world.getComponent<TTLComponent>(entity, "TTL");
-        if (!ttl) return;
-
-        const lifeRatio = ttl.remaining / ttl.total;
-        ctx.save();
-        ctx.translate(pos.x, pos.y);
-        ctx.globalAlpha = lifeRatio;
-
-        let hue = 20;
-        let saturation = 100;
-        let lightness = 50;
-
-        if (lifeRatio > 0.8) {
-            lightness = 100;
-        } else if (lifeRatio > 0.4) {
-            hue = 30;
-            lightness = 50 + (0.8 - lifeRatio) * 50;
-        } else {
-            hue = 0;
-            lightness = 25 + lifeRatio * 60;
-        }
-
-        const hueVariation = (entity % 10) - 5;
-        ctx.fillStyle = `hsl(${hue + hueVariation}, ${saturation}%, ${lightness}%)`;
-
-        if (lifeRatio > 0.8) {
-            ctx.shadowColor = "#ffffaa";
-            ctx.shadowBlur = 10;
-        }
-
-        const size = render.size * lifeRatio;
-        ctx.beginPath();
-        ctx.arc(0, 0, size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-    });
-  }
-
-  public drawTilemaps(world: World): void {
-    if (!this.ctx) return;
-    const ctx = this.ctx;
-    const tilemaps = world.query("Tilemap");
-
-    tilemaps.forEach(entity => {
-        const tilemap = world.getComponent<TilemapComponent>(entity, "Tilemap")!;
-        const range = (tilemap as any)._visibleRange || {
-            startX: 0, startY: 0, endX: tilemap.data.width, endY: tilemap.data.height
-        };
-
-        for (const layer of tilemap.data.layers) {
-            for (let y = range.startY; y < range.endY; y++) {
-                for (let x = range.startX; x < range.endX; x++) {
-                    const tileId = layer.tiles[y * tilemap.data.width + x];
-                    if (tileId === 0) continue;
-
-                    const tileset = tilemap.data.tilesets.find(ts => ts.id === tileId);
-                    if (tileset) {
-                        // Drawing logic for tile (using simple color for now as textures require loading)
-                        ctx.fillStyle = tileset.solid ? "#555" : "#333";
-                        ctx.fillRect(
-                            x * tilemap.data.tileSize,
-                            y * tilemap.data.tileSize,
-                            tilemap.data.tileSize,
-                            tilemap.data.tileSize
-                        );
-                    }
-                }
-            }
-        }
-    });
-  }
-
-  private renderDebugInfo(ctx: CanvasRenderingContext2D, world: World): void {
-      this.debugSystem.update(world, 0);
-      this.debugSystem.renderDebug(ctx, world);
+  public render(world: World, alpha: number = 1): void {
+    const snapshot = this.createSnapshot(world, alpha);
+    this.renderSnapshot(snapshot, world);
   }
 }

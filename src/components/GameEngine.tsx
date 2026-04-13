@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { World } from "../engine/core/World";
 import { GameLoop } from "../engine/core/GameLoop";
 

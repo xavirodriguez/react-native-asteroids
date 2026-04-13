@@ -1,21 +1,11 @@
-import { AssetDescriptor, AssetHandle, AssetType } from "./AssetTypes";
+import { AssetDescriptor, AssetHandle } from "./AssetTypes";
 
 /**
  * AssetLoader for managing game assets with caching and reference counting.
  *
- * @responsibility Cargar y cachear recursos externos (imágenes, sonidos, JSON).
- * @responsibility Gestionar el ciclo de vida de los recursos mediante conteo de referencias.
- * @responsibility Proveer información sobre el progreso de carga.
- *
- * @remarks
- * El sistema de referencia (`refCounts`) permite que múltiples escenas usen el mismo recurso,
- * descargándolo de memoria solo cuando la última escena lo libera.
- *
- * @invariant Un recurso con estado 'ready' debe tener datos no nulos en `data`.
- * @conceptualRisk [IO_LATENCY] No hay timeout implementado para cargas lentas, lo que puede
- * bloquear transiciones de escena indefinidamente.
- * @conceptualRisk [MEMORY_PRESSURE] Si no se llama a `unloadGroup` correctamente, la memoria
- * no se liberará nunca (fuga de recursos).
+ * @responsibility Load and cache external resources (images, sounds, JSON).
+ * @responsibility Manage resource lifecycle through reference counting.
+ * @responsibility Ensure symmetry in asset loading/unloading.
  */
 export class AssetLoader {
   private cache = new Map<string, AssetHandle>();
@@ -23,19 +13,23 @@ export class AssetLoader {
   private refCounts = new Map<string, number>();
 
   /**
-   * Registers assets to be loaded.
+   * Enqueues assets for loading.
    */
   public queueAssets(assets: AssetDescriptor[]): void {
     this.queue.push(...assets);
   }
 
   /**
-   * Loads all queued assets asynchronously.
+   * Loads all enqueued assets asynchronously.
+   * Increments reference counts for already loaded assets.
    */
   public async loadAll(): Promise<void> {
-    const promises = this.queue.map(async (desc) => {
+    const assetsToLoad = [...this.queue];
+    this.queue = [];
+
+    const promises = assetsToLoad.map(async (desc) => {
       if (this.cache.has(desc.id)) {
-        this.refCounts.set(desc.id, (this.refCounts.get(desc.id) || 0) + 1);
+        this.incrementRef(desc.id);
         return;
       }
 
@@ -54,15 +48,15 @@ export class AssetLoader {
       } catch (error) {
         handle.status = 'error';
         handle.error = error as Error;
+        console.error(`Error loading asset ${desc.id}:`, error);
       }
     });
 
-    this.queue = [];
     await Promise.all(promises);
   }
 
   /**
-   * Retrieves an asset handle from the cache.
+   * Gets an asset handle from the cache.
    */
   public get<T>(id: string): AssetHandle<T> {
     const handle = this.cache.get(id);
@@ -73,25 +67,58 @@ export class AssetLoader {
   }
 
   /**
-   * Checks if an asset is ready.
+   * Manually increments the reference count.
    */
-  public isReady(id: string): boolean {
-    return this.cache.get(id)?.status === 'ready';
+  public incrementRef(id: string): void {
+    const count = this.refCounts.get(id) || 0;
+    this.refCounts.set(id, count + 1);
   }
 
   /**
-   * Unloads a group of assets, decrementing their reference count.
+   * Unloads a group of assets, decrementing their reference counts.
+   * Frees memory if the count reaches zero.
    */
   public unloadGroup(ids: string[]): void {
     for (const id of ids) {
-      const count = (this.refCounts.get(id) || 0) - 1;
-      if (count <= 0) {
+      const currentCount = this.refCounts.get(id);
+
+      if (currentCount === undefined) {
+          console.warn(`AssetLoader: Attempted to unload asset ${id} which is not tracked.`);
+          continue;
+      }
+
+      const newCount = currentCount - 1;
+
+      if (newCount <= 0) {
+        if (newCount < 0) {
+          console.error(`AssetLoader: Asset ${id} reference count underflow (${newCount}). Critical leak or double unload.`);
+        }
+
+        // Resource disposal hook (placeholder for platform-specific cleanup)
+        this.disposeAsset(id);
+
         this.cache.delete(id);
         this.refCounts.delete(id);
       } else {
-        this.refCounts.set(id, count);
+        this.refCounts.set(id, newCount);
       }
     }
+  }
+
+  /**
+   * Performs platform-specific resource disposal.
+   */
+  private disposeAsset(id: string): void {
+    const handle = this.cache.get(id);
+    if (!handle || !handle.data) return;
+
+    // Example: If data has a dispose method, call it.
+    if (typeof (handle.data as any).dispose === 'function') {
+        (handle.data as any).dispose();
+    }
+
+    // In a real environment, we'd add logic for specific types:
+    // e.g., if (handle.type === 'texture') WebGL.deleteTexture(handle.data);
   }
 
   /**
@@ -115,23 +142,35 @@ export class AssetLoader {
   }
 
   private async performLoad(desc: AssetDescriptor): Promise<any> {
-    // In a real RN environment, we would use fetch() or platform-specific APIs.
-    // For now, we simulate the async loading.
+    // Simulated load for engine environment
     if (desc.type === 'json') {
-      // simulate fetch
       return Promise.resolve({ success: true });
     }
     return Promise.resolve(desc.uri);
   }
 
-  // Backward compatibility
+  /**
+   * Helper for preloading compatible with legacy systems.
+   */
   public async preload(assets: Record<string, string>): Promise<void> {
     const descriptors: AssetDescriptor[] = Object.entries(assets).map(([id, uri]) => ({
       id,
       uri,
-      type: 'texture' // default for backward compat
+      type: 'texture'
     }));
     this.queueAssets(descriptors);
     await this.loadAll();
+  }
+
+  /**
+   * Debug helper to detect memory leaks.
+   */
+  public assertNoLeaks(): void {
+    if (this.cache.size > 0) {
+      const leaks = Array.from(this.refCounts.entries())
+        .map(([id, count]) => `${id} (${count})`)
+        .join(", ");
+      console.warn(`AssetLoader leak detected: ${this.cache.size} assets still in memory: ${leaks}`);
+    }
   }
 }

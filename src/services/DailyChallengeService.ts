@@ -84,7 +84,7 @@ export class DailyChallengeService {
     try {
       const attempt = JSON.parse(data);
       return attempt.score;
-    } catch (e) {
+    } catch (_err) {
       return null;
     }
   }

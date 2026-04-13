@@ -7,10 +7,11 @@ import { GAME_CONFIG } from "../src/types/GameTypes";
 let Canvas: any, Drawing: any;
 if (Platform.OS !== 'web') {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const SkiaModule = require("@shopify/react-native-skia");
     Canvas = SkiaModule.Canvas;
     Drawing = SkiaModule.Drawing;
-  } catch (e) {
+  } catch (_err) {
     console.warn("Skia not available");
   }
 }
@@ -35,11 +36,12 @@ export const GameRenderer = React.memo(function GameRenderer({ world, onInitiali
         // We only use EngineSkiaRenderer on non-web or if explicitly needed
         // but here we are in a Skia-specific component.
         try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             const { SkiaRenderer: EngineSkiaRenderer } = require("../src/engine/rendering/SkiaRenderer");
             const renderer = new EngineSkiaRenderer(canvas);
             if (onInitialize) onInitialize(renderer);
             rendererRef.current = renderer;
-        } catch (e) {
+        } catch (_err) {
             console.error("Failed to initialize Skia renderer", e);
         }
     } else {

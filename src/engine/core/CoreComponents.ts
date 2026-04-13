@@ -27,40 +27,41 @@ export interface PositionComponent extends Component {
 }
 
 /**
- * Componente principal para posicionamiento y jerarquía espacial.
+ * Almacena la posición, rotación y escala de una entidad, gestionando jerarquías espaciales.
  *
- * @remarks
- * Sustituye al antiguo PositionComponent añadiendo rotación, escala y soporte para
- * jerarquías mediante el campo `parent`.
+ * @responsibility Definir la ubicación y orientación de la entidad en el espacio 2D.
+ * @remarks Las propiedades `world*` son calculadas y actualizadas por el `HierarchySystem`.
  *
- * @conceptualRisk [TRANSFORM] La mezcla de coordenadas locales (x, y) y calculadas (worldX, worldY)
- * en el mismo componente puede llevar a errores si un sistema lee las globales antes de que el
- * `HierarchySystem` las actualice en el frame actual.
+ * @conceptualRisk [STALE_WORLD_DATA][HIGH] Leer `worldX/Y` antes de que el `HierarchySystem`
+ * se ejecute en el frame actual resultará en datos del frame anterior.
  */
 export interface TransformComponent extends Component {
   type: "Transform";
-  /** Coordenada X local al padre (o global si no hay padre) en píxeles. */
+  /** Coordenada X local en píxeles. Rango esperado: [-10000, 10000]. */
   x: number;
-  /** Coordenada Y local al padre (o global si no hay padre) en píxeles. */
+  /** Coordenada Y local en píxeles. Rango esperado: [-10000, 10000]. */
   y: number;
-  /** Rotación en radianes. */
+  /** Rotación local en radianes. Rango: [0, 2π]. */
   rotation: number;
-  /** Factor de escala horizontal. */
+  /** Escala X local. Default: 1.0. */
   scaleX: number;
-  /** Factor de escala vertical. */
+  /** Escala Y local. Default: 1.0. */
   scaleY: number;
-  /** ID de la entidad padre para transformaciones jerárquicas. */
-  parent?: Entity;
 
-  /** Coordenada X absoluta en el mundo (calculada por HierarchySystem). */
+  /** ID de la entidad {@link Entity} padre. Si es undefined, la entidad es raíz. */
+  parent?: Entity;
+  /** Flag de optimización; si es true, las coordenadas de mundo deben recalcularse. */
+  dirty?: boolean;
+
+  /** Coordenada X absoluta en el mundo. Calculada por {@link HierarchySystem}. */
   worldX?: number;
-  /** Coordenada Y absoluta en el mundo (calculada por HierarchySystem). */
+  /** Coordenada Y absoluta en el mundo. Calculada por {@link HierarchySystem}. */
   worldY?: number;
-  /** Rotación absoluta en el mundo (calculada por HierarchySystem). */
+  /** Rotación absoluta en el mundo. Calculada por {@link HierarchySystem}. */
   worldRotation?: number;
-  /** Escala X absoluta en el mundo (calculada por HierarchySystem). */
+  /** Escala X absoluta en el mundo. Calculada por {@link HierarchySystem}. */
   worldScaleX?: number;
-  /** Escala Y absoluta en el mundo (calculada por HierarchySystem). */
+  /** Escala Y absoluta en el mundo. Calculada por {@link HierarchySystem}. */
   worldScaleY?: number;
 }
 
@@ -79,14 +80,19 @@ export interface PreviousTransformComponent extends Component {
 }
 
 /**
- * Define la velocidad lineal de una entidad.
+ * Define el vector de movimiento y la velocidad angular de una entidad.
+ *
+ * @responsibility Proveer datos para la integración física de movimiento.
+ * @remarks Las unidades son píxeles por segundo (px/s) y radianes por segundo (rad/s).
  */
 export interface VelocityComponent extends Component {
   type: "Velocity";
-  /** Variación de píxeles en el eje X por tick de simulación (si se integra con deltaTime). */
+  /** Velocidad lineal en el eje X en px/s. */
   dx: number;
-  /** Variación de píxeles en el eje Y por tick de simulación. */
+  /** Velocidad lineal en el eje Y en px/s. */
   dy: number;
+  /** Velocidad angular en radianes/s (opcional). */
+  vAngle?: number;
 }
 
 /**
@@ -245,36 +251,31 @@ export interface ColliderComponent extends Component {
 }
 
 /**
- * Contiene los datos necesarios para que el motor de renderizado dibuje la entidad.
+ * Define la apariencia y propiedades de visualización de una entidad.
  *
- * @remarks
- * Actúa como una interfaz de datos entre la simulación y el pipeline de renderizado
- * (CanvasRenderer, SkiaRenderer).
- *
- * @conceptualRisk [RENDERING] `trailPositions` crece sin un límite explícito en la definición
- * del componente, lo que podría impactar el rendimiento de memoria si no se gestiona por un sistema.
+ * @responsibility Proveer la información necesaria para el {@link RenderSystem}.
  */
 export interface RenderComponent extends Component {
   type: "Render";
-  /** Nombre del dibujador de forma registrado (e.g., "triangle", "circle"). */
+  /** Identificador del drawer registrado en el renderer (e.g., 'ship', 'circle'). */
   shape: string;
-  /** Tamaño base de la forma (e.g., radio para círculos). */
+  /** Dimensión base (radio para círculos, lado para rectángulos). En píxeles. */
   size: number;
-  /** Color en formato CSS o hexadecimal. */
+  /** Color en formato CSS. Default: 'white'. */
   color: string;
-  /** Rotación visual (puede diferir de la rotación física). */
+  /** Rotación puramente visual en radianes. Suele sincronizarse con {@link TransformComponent}. */
   rotation: number;
-  /** Velocidad de rotación automática. */
+  /** Velocidad de rotación automática aplicada por el `RenderUpdateSystem`. */
   angularVelocity?: number;
-  /** Lista de vértices si la forma es un polígono. */
+  /** Lista de puntos locales para formas poligonales. */
   vertices?: { x: number; y: number }[];
-  /** Orden de dibujo (capas). Valores más altos se dibujan encima. */
+  /** Prioridad de profundidad. Valores mayores se renderizan al final. Default: 0. */
   zIndex?: number;
   /** Historial de posiciones para efectos de estela (trail). */
   trailPositions?: { x: number; y: number }[];
-  /** Número de frames restantes para el efecto de destello (hit flash). */
+  /** Número de frames que la entidad permanecerá en blanco tras un impacto. */
   hitFlashFrames?: number;
-  /** Datos personalizados consumidos por shape drawers específicos del juego. */
+  /** Contenedor de metadatos para drawers personalizados. */
   data?: Record<string, any>;
 }
 
@@ -318,19 +319,16 @@ export interface Transform {
 export type InputAction = string;
 
 /**
- * Singleton que almacena el estado unificado de las entradas del usuario.
+ * Componente singleton que consolida el estado actual de todas las entradas del usuario.
  *
- * @remarks
- * Las acciones son booleanas (presionado o no), mientras que los ejes son valores
- * normalizados (típicamente entre -1.0 y 1.0).
- *
- * @responsibility Proporcionar una vista desacoplada del estado de entrada para los sistemas.
+ * @responsibility Exponer las intenciones del jugador a los sistemas de juego.
+ * @remarks Actualizado por el {@link UnifiedInputSystem}.
  */
 export interface InputStateComponent extends Component {
   type: "InputState";
-  /** Mapa de acciones activas (e.g., "shoot" -> true). */
+  /** Estado de presión de acciones semánticas (e.g., "jump", "fire"). */
   actions: Map<InputAction, boolean>;
-  /** Mapa de valores de ejes (e.g., "horizontal" -> -1.0 a 1.0). */
+  /** Valores normalizados [-1, 1] para ejes (e.g., "horizontal", "vertical"). */
   axes: Map<string, number>;
   /** @deprecated Use InputUtils.isPressed instead */
   isPressed?: (action: InputAction) => boolean;

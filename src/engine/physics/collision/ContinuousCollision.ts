@@ -68,11 +68,11 @@ export class ContinuousCollision {
     const dx = posBX - posAX; const dy = posBY - posAY;
     let tmin = -Infinity; let tmax = Infinity;
     if (vx !== 0) {
-      let t1 = (-expandedHalfW + dx) / vx; let t2 = (expandedHalfW + dx) / vx;
+      const t1 = (-expandedHalfW + dx) / vx; const t2 = (expandedHalfW + dx) / vx;
       tmin = Math.max(tmin, Math.min(t1, t2)); tmax = Math.min(tmax, Math.max(t1, t2));
     } else if (Math.abs(dx) > expandedHalfW) return result;
     if (vy !== 0) {
-      let t1 = (-expandedHalfH + dy) / vy; let t2 = (expandedHalfH + dy) / vy;
+      const t1 = (-expandedHalfH + dy) / vy; const t2 = (expandedHalfH + dy) / vy;
       tmin = Math.max(tmin, Math.min(t1, t2)); tmax = Math.min(tmax, Math.max(t1, t2));
     } else if (Math.abs(dy) > expandedHalfH) return result;
     if (tmax >= tmin && tmax >= 0 && tmin <= 1) {
@@ -98,11 +98,11 @@ export class ContinuousCollision {
 
       let tmin = -Infinity; let tmax = Infinity;
       if (vx !== 0) {
-          let t1 = (-combinedHalfW + dx) / vx; let t2 = (combinedHalfW + dx) / vx;
+          const t1 = (-combinedHalfW + dx) / vx; const t2 = (combinedHalfW + dx) / vx;
           tmin = Math.max(tmin, Math.min(t1, t2)); tmax = Math.min(tmax, Math.max(t1, t2));
       } else if (Math.abs(dx) > combinedHalfW) return result;
       if (vy !== 0) {
-          let t1 = (-combinedHalfH + dy) / vy; let t2 = (combinedHalfH + dy) / vy;
+          const t1 = (-combinedHalfH + dy) / vy; const t2 = (combinedHalfH + dy) / vy;
           tmin = Math.max(tmin, Math.min(t1, t2)); tmax = Math.min(tmax, Math.max(t1, t2));
       } else if (Math.abs(dy) > combinedHalfH) return result;
 

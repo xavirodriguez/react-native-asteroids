@@ -8,15 +8,14 @@
 export type EventHandler<T = any> = (payload: T) => void;
 
 /**
- * Gestor central de eventos del motor.
+ * Sistema de mensajería síncrona basado en el patrón Pub/Sub.
  *
- * @responsibility Registrar subscritores para eventos específicos o patrones.
- * @responsibility Despachar notificaciones de forma síncrona a todos los interesados.
- * @responsibility Gestionar el ciclo de vida de las subscripciones (on, once, off).
+ * @remarks
+ * El EventBus facilita el desacoplamiento entre sistemas que no necesitan conocerse
+ * directamente. Soporta nombres de eventos jerárquicos y comodines.
  *
- * @contract Subscripción: Un handler registrado con `once` se elimina automáticamente tras su ejecución.
- * @contract Notificación: Los handlers se ejecutan en bloques `try-catch` individuales para evitar
- * que un fallo en un listener rompa la cadena de ejecución.
+ * @responsibility Despachar notificaciones síncronas a subscriptores registrados.
+ * @responsibility Aislar errores de listeners individuales mediante bloques try-catch.
  *
  * @conceptualRisk [ORDER][MEDIUM] El orden de ejecución de los handlers para un mismo evento
  * no está garantizado. No se debe depender del orden de registro.
@@ -60,8 +59,14 @@ export class EventBus {
   }
 
   /**
-   * Emits an event with a payload.
-   * Notifies exact match listeners and matching wildcard listeners.
+   * Emite un evento y notifica a todos los subscriptores relevantes.
+   *
+   * @remarks
+   * La notificación es síncrona. Primero se notifican los subscriptores exactos,
+   * luego los de espacio de nombres (ej: "game:*") y finalmente el comodín global ("*").
+   *
+   * @param event - Nombre del evento.
+   * @param payload - Datos asociados al evento.
    */
   public emit<T = any>(event: string, payload: T): void {
     // Notify exact matches

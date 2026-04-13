@@ -12,16 +12,10 @@ export interface CameraConfig {
 
 /**
  * Lógica de Cámara 2D agnóstica a la plataforma.
- * Gestiona el seguimiento de objetivos, suavizado (lerping) y efectos de sacudida (screen shake).
+ * Gestiona el seguimiento de objetivos, suavizado y efectos de sacudida.
  *
  * @responsibility Transformar coordenadas del mundo a coordenadas de pantalla y viceversa.
- * @responsibility Implementar suavizado de movimiento de cámara mediante interpolación.
- * @responsibility Gestionar el ciclo de vida y decaimiento del Screen Shake.
- *
- * @remarks
- * Esta clase opera sobre componentes `Camera2DComponent` y `TransformComponent`.
- * El Screen Shake utiliza `RandomService.getInstance("render")` para garantizar que
- * efectos visuales no afecten el determinismo de la simulación del juego.
+ * @responsibility Implementar suavizado de movimiento de cámara mediante interpolación exponencial.
  */
 export class Camera2D extends System {
   private viewport = { width: 800, height: 600 };
@@ -42,14 +36,10 @@ export class Camera2D extends System {
    *
    * @param world - El mundo ECS que contiene las cámaras.
    * @param deltaTime - Tiempo transcurrido en milisegundos.
-   *
-   * @invariant El Screen Shake debe decaer linealmente hasta llegar a cero.
-   * @invariant El seguimiento del objetivo (follow) debe aplicar suavizado basado en `cam.smoothing`.
-   * @conceptualRisk [FPS_DEPENDENCE] El suavizado actual `cam.smoothing` no está compensado
-   * por deltaTime, lo que causa comportamientos diferentes a distintos framerates.
    */
   public update(world: World, deltaTime: number): void {
     const cameras = world.query("Camera2D");
+    const dtSeconds = deltaTime / 1000;
 
     cameras.forEach((camEntity) => {
       const cam = world.getComponent<Camera2DComponent>(camEntity, "Camera2D")!;
@@ -60,9 +50,13 @@ export class Camera2D extends System {
           const targetX = targetPos.x - this.viewport.width / (2 * cam.zoom) + cam.offset.x;
           const targetY = targetPos.y - this.viewport.height / (2 * cam.zoom) + cam.offset.y;
 
-          // Apply smoothing (lerp)
-          cam.x += (targetX - cam.x) * cam.smoothing;
-          cam.y += (targetY - cam.y) * cam.smoothing;
+          // Apply exponential smoothing: t = 1 - exp(-lambda * dt)
+          // Consistent behavior across 30/60/120 FPS
+          const lambda = (cam.smoothing ?? 0.1) * 60;
+          const t = 1 - Math.exp(-lambda * dtSeconds);
+
+          cam.x += (targetX - cam.x) * t;
+          cam.y += (targetY - cam.y) * t;
         }
       }
 
@@ -78,8 +72,11 @@ export class Camera2D extends System {
         cam.shakeOffsetX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
         cam.shakeOffsetY = (renderRandom.next() - 0.5) * cam.shakeIntensity;
 
-        cam.shakeIntensity -= deltaTime * 0.05; // Decay rate
-        if (cam.shakeIntensity < 0) {
+        // Exponential decay for shake intensity: I = I0 * exp(-decay * dt)
+        const decayLambda = 5; // Fixed decay rate
+        cam.shakeIntensity *= Math.exp(-decayLambda * dtSeconds);
+
+        if (cam.shakeIntensity < 0.1) {
             cam.shakeIntensity = 0;
             cam.shakeOffsetX = 0;
             cam.shakeOffsetY = 0;
@@ -91,19 +88,13 @@ export class Camera2D extends System {
     });
   }
 
-  /**
-   * Helper to set camera target.
-   */
-  public follow(world: World, target: Entity): void {
+  public static follow(world: World, target: Entity): void {
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
     if (cam) {
       cam.target = target;
     }
   }
 
-  /**
-   * Shakes the camera with the given intensity.
-   */
   public static shake(world: World, intensity: number): void {
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
     if (cam) {
@@ -111,9 +102,6 @@ export class Camera2D extends System {
     }
   }
 
-  /**
-   * Transforms world coordinates to screen coordinates.
-   */
   public static worldToScreen(worldPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
     const shakeX = cam.shakeOffsetX || 0;
     const shakeY = cam.shakeOffsetY || 0;
@@ -123,9 +111,6 @@ export class Camera2D extends System {
     };
   }
 
-  /**
-   * Transforms screen coordinates to world coordinates.
-   */
   public static screenToWorld(screenPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
     const shakeX = cam.shakeOffsetX || 0;
     const shakeY = cam.shakeOffsetY || 0;
