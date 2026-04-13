@@ -9,12 +9,14 @@ export default tseslint.config(
   {
     ignores: [
       "**/node_modules/**",
-      "**/dist/**",
-      "**/.expo/**",
-      "**/web-build/**",
-      "**/build/**",
-      "**/coverage/**",
-      "**/.git/**",
+      "dist/**",
+      ".expo/**",
+      "web-build/**",
+      "build/**",
+      "coverage/**",
+      ".git/**",
+      "temp/**",
+      "etc/**",
     ],
   },
   js.configs.recommended,
@@ -58,8 +60,22 @@ export default tseslint.config(
     },
   },
   {
-    files: ["*.config.js", "*.config.mjs", "metro.config.js", "babel.config.js"],
+    files: ["**/*.config.{js,cjs}", "metro.config.js", "babel.config.js"],
     languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-var-requires": "off",
+    },
+  },
+  {
+    files: ["**/*.config.mjs", "eslint.config.mjs", "postcss.config.mjs"],
+    languageOptions: {
+      sourceType: "module",
       globals: {
         ...globals.node,
       },

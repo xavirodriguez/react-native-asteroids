@@ -7,7 +7,7 @@ export class FlappyBirdRoom extends Room<FlappyBirdState> {
   pipeTimer = 0;
   private random: RandomService;
 
-  onCreate(__unused: any) {
+  onCreate(options: { seed?: number }) {
     this.state = new FlappyBirdState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
     this.random = new RandomService(this.state.seed);
@@ -35,7 +35,7 @@ export class FlappyBirdRoom extends Room<FlappyBirdState> {
     });
   }
 
-  onJoin(client: Client, _options: any) {
+  onJoin(client: Client, options: { name?: string }) {
     const bird = new Player();
     bird.x = 100;
     bird.y = 300;

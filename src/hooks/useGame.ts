@@ -34,17 +34,13 @@ export function useGame<
   const [isPaused, setIsPaused] = useState(false);
   const [, forceUpdate] = useState(0);
 
-  // Optimization: Throttle React state updates to 15 FPS to prevent bridge saturation
-  const lastUpdateTimeRef = useRef<number>(0);
-  const lastPausedRef = useRef<boolean>(false);
-  const THROTTLE_MS = 1000 / 15;
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Principle 4: Use encapsulated hook for symmetric resource management
   useKeepAwake(!isPaused);
 
   useEffect(() => {
-    // @ts-ignore - Constructor argument handling
+    // @ts-expect-error - Constructor argument handling
     const game = new GameClass({ isMultiplayer });
     gameRef.current = game;
 

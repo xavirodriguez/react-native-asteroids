@@ -2,9 +2,14 @@ import React, { useMemo, useRef } from "react";
 import { View, StyleSheet, Platform } from "react-native";
 import type { World } from "../src/engine/core/World";
 import { GAME_CONFIG } from "../src/types/GameTypes";
+import type { SkCanvas } from "@shopify/react-native-skia";
+import type { SkiaRenderer } from "../src/engine/rendering/SkiaRenderer";
+import type { Renderer } from "../src/engine/rendering/Renderer";
 
 // Conditionally import Skia components for non-web platforms
-let Canvas: any, Drawing: any;
+let Canvas: React.ComponentType<Record<string, unknown>> | null = null;
+let Drawing: React.ComponentType<{ onDraw: (canvas: SkCanvas) => void }> | null = null;
+
 if (Platform.OS !== 'web') {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -22,16 +27,16 @@ if (Platform.OS !== 'web') {
 interface GameRendererProps {
   /** The ECS world containing the entities to be rendered. */
   world: World;
-  onInitialize?: (renderer: any) => void;
+  onInitialize?: (renderer: Renderer) => void;
 }
 
 /**
  * Component responsible for rendering the game world using @shopify/react-native-skia.
  */
 export const GameRenderer = React.memo(function GameRenderer({ world, onInitialize }: GameRendererProps) {
-  const rendererRef = useRef<any>(null);
+  const rendererRef = useRef<SkiaRenderer | null>(null);
 
-  const onDraw = useMemo(() => (canvas: any) => {
+  const onDraw = useMemo(() => (canvas: SkCanvas) => {
     if (!rendererRef.current) {
         // We only use EngineSkiaRenderer on non-web or if explicitly needed
         // but here we are in a Skia-specific component.
@@ -42,7 +47,7 @@ export const GameRenderer = React.memo(function GameRenderer({ world, onInitiali
             if (onInitialize) onInitialize(renderer);
             rendererRef.current = renderer;
         } catch (_err) {
-            console.error("Failed to initialize Skia renderer", e);
+            console.error("Failed to initialize Skia renderer", _err);
         }
     } else {
       rendererRef.current.setCanvas(canvas);
@@ -51,7 +56,7 @@ export const GameRenderer = React.memo(function GameRenderer({ world, onInitiali
         rendererRef.current.setSize(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
         rendererRef.current.render(world);
     }
-  }, [world, world.version]);
+  }, [world, world.version, onInitialize]);
 
   if (Platform.OS === 'web' || !Canvas || !Drawing) {
     return <View style={[styles.container, { width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT, backgroundColor: 'black' }]} />;

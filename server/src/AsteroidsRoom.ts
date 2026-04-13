@@ -4,7 +4,7 @@ import { InputFrame, EntitySnapshot, ReplayFrame } from "./NetTypes";
 import { RandomService } from "./RandomService";
 import { World } from "../../src/engine/core/World";
 import { DeterministicSimulation } from "../../src/simulation/DeterministicSimulation";
-import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, ColliderComponent, TagComponent } from "../../src/engine/core/CoreComponents";
+import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, ColliderComponent, TagComponent, Component } from "../../src/engine/core/CoreComponents";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
@@ -16,7 +16,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private world: World;
   private playerEntities = new Map<string, number>();
 
-  onCreate(options: any) {
+  onCreate(options: { seed?: number }) {
     this.state = new AsteroidsState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
     this.random = new RandomService(this.state.seed);
@@ -52,10 +52,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
 
     // Initialized ECS world
     this.world = new World();
-    this.world.addComponent(this.world.createEntity(), { type: "GameState", score: 0 } as any);
+    this.world.addComponent(this.world.createEntity(), { type: "GameState", score: 0 } as Component);
   }
 
-  onJoin(client: Client, options: any) {
+  onJoin(client: Client, options: { name?: string }) {
     const player = new Player();
     player.sessionId = client.sessionId;
     player.name = options.name || `Player ${this.clients.length}`;
@@ -75,9 +75,9 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.world.addComponent(entity, { type: "Render", shape: "triangle", size: 10, color: "white", rotation: 0 } as RenderComponent);
     this.world.addComponent(entity, { type: "Collider", radius: 10 } as ColliderComponent);
     this.world.addComponent(entity, { type: "Health", current: 3, max: 3, invulnerableRemaining: 0 } as HealthComponent);
-    this.world.addComponent(entity, { type: "Ship" } as any);
+    this.world.addComponent(entity, { type: "Ship" } as Component);
     this.world.addComponent(entity, { type: "Tag", tags: ["Ship"] } as TagComponent);
-    this.world.addComponent(entity, { type: "Input", rotateLeft: false, rotateRight: false, thrust: false, shoot: false, shootCooldownRemaining: 0 } as any);
+    this.world.addComponent(entity, { type: "Input", rotateLeft: false, rotateRight: false, thrust: false, shoot: false, shootCooldownRemaining: 0 } as Component);
   }
 
   async onLeave(client: Client, _code: number) {
@@ -90,7 +90,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     }
   }
 
-  update(dt: number) {
+  update(_dt: number) {
     if (!this.state.gameStarted) return;
     this.state.serverTick++;
     this.state.lastProcessedTick = this.state.serverTick;
@@ -100,7 +100,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       const entity = this.playerEntities.get(sessionId);
       if (entity === undefined) return;
 
-      const input = this.world.getComponent<any>(entity, "Input");
+      const input = this.world.getComponent<Component & { rotateLeft: boolean; rotateRight: boolean; thrust: boolean; shoot: boolean }>(entity, "Input");
       const buffer = this.inputBuffers.get(sessionId);
 
       if (buffer && input) {
@@ -206,7 +206,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         const id = entity.toString();
         currentAsteroidIds.add(id);
         const pos = this.world.getComponent<TransformComponent>(entity, "Transform")!;
-        const asteroidComp = this.world.getComponent<any>(entity, "Asteroid")!;
+        const asteroidComp = this.world.getComponent<Component & { size: string }>(entity, "Asteroid")!;
 
         let asteroid = this.state.asteroids.get(id);
         if (!asteroid) {
@@ -243,7 +243,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         if (!currentBulletIds.has(id)) this.state.bullets.delete(id);
     });
 
-    const gameState = this.world.getSingleton<any>("GameState");
+    const gameState = this.world.getSingleton<Component>("GameState");
     if (gameState && this.state.players.size > 0) {
         // Simple game over check
         let anyAlive = false;

@@ -8,11 +8,12 @@ let paint: any = null;
 const getPaint = () => {
     if (Platform.OS === "web") return null;
     try {
-        const { Skia } = require("@shopify/react-native-skia");
+        const { Skia } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require("@shopify/react-native-skia");
         if (!paint && typeof Skia !== "undefined") {
             paint = Skia.Paint();
         }
-    } catch (e) {
+    } catch (_e) {
         // Skia not available
     }
     return paint;
@@ -21,7 +22,8 @@ const getPaint = () => {
 export const drawSkiaShip: ShapeDrawer<any> = (canvas, entity, _pos, render, world) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, BlurStyle } = require("@shopify/react-native-skia");
+        const { Skia, BlurStyle } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Path || !Skia.Paint) return;
         const p = getPaint();
         if (!p) return;
@@ -75,13 +77,16 @@ export const drawSkiaShip: ShapeDrawer<any> = (canvas, entity, _pos, render, wor
         p.setStyle(Skia.PaintStyle.Fill);
         canvas.drawRect(Skia.XYWHRect(-size / 2, size / 6, size / 6, size / 8), p);
         canvas.drawRect(Skia.XYWHRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8), p);
-    } catch (e) {}
+    } catch (_e) {
+        // Skia not available or failed to load
+    }
 };
 
 export const drawSkiaUfo: ShapeDrawer<any> = (canvas, _entity, _pos, render) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, BlurStyle } = require("@shopify/react-native-skia");
+        const { Skia, BlurStyle } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
         const p = getPaint();
         if (!p) return;
@@ -114,13 +119,14 @@ export const drawSkiaUfo: ShapeDrawer<any> = (canvas, _entity, _pos, render) => 
         canvas.drawCircle(-size / 2, 0, 1.5, p);
         canvas.drawCircle(0, size / 6, 1.5, p);
         canvas.drawCircle(size / 2, 0, 1.5, p);
-    } catch (e) {}
+    } catch (_e) { /* ignore */ }
 };
 
 export const skiaStarfieldEffect: EffectDrawer<any> = (canvas, world, width, height) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia } = require("@shopify/react-native-skia");
+        const { Skia } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
         const p = getPaint();
         if (!p) return;
@@ -147,13 +153,14 @@ export const skiaStarfieldEffect: EffectDrawer<any> = (canvas, world, width, hei
               canvas.drawRect(Skia.XYWHRect(parallaxX, parallaxY, star.size, star.size), p);
             });
         }
-    } catch (e) {}
+    } catch (_e) { /* ignore */ }
 };
 
 export const skiaScreenShakeEffect: EffectDrawer<any> = (canvas, world) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia } = require("@shopify/react-native-skia");
+        const { Skia } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require("@shopify/react-native-skia");
         if (typeof Skia === "undefined") return;
         const gameStateEntity = world.query("GameState")[0];
         const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
@@ -164,13 +171,14 @@ export const skiaScreenShakeEffect: EffectDrawer<any> = (canvas, world) => {
       const shakeY = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
           canvas.translate(shakeX, shakeY);
         }
-    } catch (e) {}
+    } catch (_e) { /* ignore */ }
 };
 
 export const drawSkiaParticle: ShapeDrawer<any> = (canvas, entity, _pos, render, world) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia } = require("@shopify/react-native-skia");
+        const { Skia } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
         const p = getPaint();
         if (!p) return;
@@ -189,13 +197,14 @@ export const drawSkiaParticle: ShapeDrawer<any> = (canvas, entity, _pos, render,
 
         const size = render.size * lifeRatio;
         canvas.drawCircle(0, 0, size, p);
-    } catch (e) {}
+    } catch (_e) { /* ignore */ }
 };
 
 export const drawSkiaBullet: ShapeDrawer<any> = (canvas, _entity, _pos, render) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, BlurStyle } = require("@shopify/react-native-skia");
+        const { Skia, BlurStyle } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
         const p = getPaint();
         if (!p) return;
@@ -214,5 +223,5 @@ export const drawSkiaBullet: ShapeDrawer<any> = (canvas, _entity, _pos, render) 
         p.setStyle(Skia.PaintStyle.Fill);
         canvas.drawCircle(0, 0, size, p);
         canvas.restore();
-    } catch (e) {}
+    } catch (_e) { /* ignore */ }
 };
