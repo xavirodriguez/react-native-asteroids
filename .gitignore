@@ -3,6 +3,7 @@
 # dependencies
 node_modules/
 
+*.log
 # Expo
 .expo/
 dist/
@@ -11,7 +12,7 @@ expo-env.d.ts
 *.swp
 
 # Native
-.kotlin/
+.kotlin/s
 *.orig.*
 *.jks
 *.p8
