@@ -191,6 +191,8 @@ export interface ColliderComponent extends Component {
  */
 export interface RenderComponent extends Component {
   type: "Render";
+  /** Flag to indicate if the render properties need re-syncing. */
+  dirty?: boolean;
   /** Nombre del dibujador de forma registrado (e.g., "triangle", "circle"). */
   shape: string;
   /** Tamaño base de la forma (e.g., radio para círculos). */

@@ -17,10 +17,6 @@ export enum SceneState {
 
 /**
  * Manages a stack of game scenes and their lifecycle transitions.
- *
- * @responsibility Administrar el ciclo de vida de las escenas (Enter, Exit, Pause, Resume).
- * @responsibility Garantizar la atomicidad de las transiciones para evitar estados inconsistentes en el World.
- * @responsibility Mantener una pila (stack) de escenas para soportar menús y sub-estados.
  */
 export class SceneManager {
   private currentScene: Scene | null = null;
@@ -29,20 +25,11 @@ export class SceneManager {
   private state: SceneState = SceneState.IDLE;
   private transitionLock: boolean = false;
 
-  /**
-   * Registers a scene by name.
-   */
   public register(scene: Scene): void {
     const name = (scene as any).name || "Unnamed Scene";
-    if (name === "Unnamed Scene") {
-      console.warn("Scene registered without a unique name. This may cause collisions.");
-    }
     this.scenes.set(name, scene);
   }
 
-  /**
-   * Transiciona a una nueva escena, limpiando el stack actual.
-   */
   public async transitionTo(scene: Scene): Promise<void> {
     if (this.transitionLock) {
         console.warn("SceneManager: Transition already in progress. Ignoring transitionTo.");
@@ -50,6 +37,7 @@ export class SceneManager {
     }
 
     this.transitionLock = true;
+    const previousState = this.state;
     this.state = SceneState.UNLOADING;
 
     try {
@@ -69,21 +57,17 @@ export class SceneManager {
           }
       });
 
-      // Atomic synchronous mutation
       this.sceneStack = [scene];
       this.currentScene = scene;
       this.state = SceneState.ACTIVE;
     } catch (error) {
-      this.state = SceneState.IDLE;
+      this.state = previousState;
       throw error;
     } finally {
       this.transitionLock = false;
     }
   }
 
-  /**
-   * Pushes a new scene onto the stack.
-   */
   public async push(scene: Scene): Promise<void> {
     if (this.transitionLock) {
         console.warn("SceneManager: Transition already in progress. Ignoring push.");
@@ -91,6 +75,7 @@ export class SceneManager {
     }
 
     this.transitionLock = true;
+    const previousState = this.state;
 
     try {
       if (this.currentScene) {
@@ -104,27 +89,24 @@ export class SceneManager {
           }
       });
 
-      // Atomic synchronous mutation
       this.sceneStack.push(scene);
       this.currentScene = scene;
       this.state = SceneState.ACTIVE;
     } catch (error) {
-      this.state = SceneState.ACTIVE; // Return to active state of previous scene if possible
+      this.state = previousState;
       throw error;
     } finally {
       this.transitionLock = false;
     }
   }
 
-  /**
-   * Elimina la escena actual del stack y retoma la escena anterior.
-   */
   public async pop(): Promise<void> {
     if (this.transitionLock || this.sceneStack.length <= 1) {
         return;
     }
 
     this.transitionLock = true;
+    const previousState = this.state;
     this.state = SceneState.UNLOADING;
 
     try {
@@ -137,7 +119,6 @@ export class SceneManager {
         });
       }
 
-      // Atomic synchronous mutation
       this.sceneStack.pop();
       this.currentScene = this.sceneStack[this.sceneStack.length - 1];
 
@@ -146,22 +127,20 @@ export class SceneManager {
       }
       this.state = SceneState.ACTIVE;
     } catch (error) {
-      this.state = SceneState.ACTIVE;
+      this.state = previousState;
       throw error;
     } finally {
       this.transitionLock = false;
     }
   }
 
-  /**
-   * Restarts the current scene.
-   */
   public async restartCurrentScene(): Promise<void> {
     if (this.transitionLock || !this.currentScene) {
         return;
     }
 
     this.transitionLock = true;
+    const previousState = this.state;
     this.state = SceneState.UNLOADING;
 
     try {
@@ -174,7 +153,6 @@ export class SceneManager {
           }
       });
 
-      // Synchronous mutations
       world.clear();
       world.clearSystems();
 
@@ -187,7 +165,7 @@ export class SceneManager {
 
       this.state = SceneState.ACTIVE;
     } catch (error) {
-      this.state = SceneState.IDLE;
+      this.state = previousState;
       throw error;
     } finally {
       this.transitionLock = false;
