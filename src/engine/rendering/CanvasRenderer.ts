@@ -154,11 +154,13 @@ export class CanvasRenderer implements Renderer {
    * Procesa el Screen Shake si el componente `GameState` lo indica.
    *
    * @param world - El mundo ECS a capturar.
-   * @param alpha - Factor de interpolación entre 0 y 1.
+   * @param alpha - Factor de interpolación entre 0 (frame anterior) y 1 (frame actual).
    * @returns Una referencia al objeto {@link RenderSnapshot} interno (reutilizado).
    *
    * @precondition Las entidades deben poseer componentes `Transform` y `Render`.
-   * @postcondition El snapshot está ordenado por `zIndex` listo para ser renderizado.
+   * @postcondition El objeto `RenderSnapshot` devuelto es una referencia al buffer interno
+   * para evitar asignaciones de memoria.
+   * @sideEffect Lee la semilla de `RandomService("render")` para el cálculo del Screen Shake.
    */
   public createSnapshot(world: World, alpha: number): RenderSnapshot {
     const entities = world.query("Transform", "Render");
@@ -229,7 +231,19 @@ export class CanvasRenderer implements Renderer {
   }
 
   /**
-   * Renderiza un snapshot de forma pura.
+   * Realiza el dibujado efectivo en el Canvas a partir de un snapshot.
+   *
+   * @remarks
+   * Sigue un pipeline estricto: Clear -> Background -> Pre-Hooks -> Entities (Sorted) ->
+   * Foreground -> Post-Hooks -> UI.
+   *
+   * @param snapshot - Los datos visuales capturados previamente.
+   * @param world - El mundo ECS (necesario para hooks y drawers personalizados).
+   *
+   * @precondition El contexto 2D del Canvas debe estar inicializado.
+   * @postcondition El Canvas refleja el estado visual del snapshot.
+   * @sideEffect Limpia el Canvas con el color de fondo por defecto (negro).
+   * @sideEffect Ejecuta todos los hooks y efectos registrados.
    */
   public renderSnapshot(snapshot: RenderSnapshot, world: World): void {
     if (!this.ctx) return;

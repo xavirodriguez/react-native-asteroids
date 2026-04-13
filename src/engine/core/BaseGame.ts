@@ -242,12 +242,27 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this.world.addSystem(new PaletteSystem(profile.activePalette));
   }
 
+  /**
+   * Inyecta estados de entrada de forma programática utilizando el sistema de overrides.
+   *
+   * @remarks
+   * Utilizado principalmente para controles táctiles de React Native o telemetría de red.
+   *
+   * @param input - Un objeto parcial con las acciones y su estado booleano.
+   * @sideEffect Llama a `unifiedInput.setOverride` para cada acción proporcionada.
+   */
   public setInput(input: Partial<TInput>): void {
     Object.entries(input).forEach(([action, val]) => {
       this.unifiedInput.setOverride(action, val as boolean);
     });
   }
 
+  /**
+   * Registra un listener para recibir notificaciones tras cada ciclo de actualización.
+   *
+   * @param listener - Función callback que recibe la instancia del juego.
+   * @returns Función para cancelar la suscripción.
+   */
   public subscribe(listener: UpdateListener<BaseGame<TState, TInput>>): () => void {
     this._listeners.add(listener);
     return () => this._listeners.delete(listener);

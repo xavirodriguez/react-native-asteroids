@@ -92,8 +92,15 @@ export class RandomService {
   }
 
   /**
-   * Generates a random float between 0 and 1.
-   * Mulberry32 algorithm.
+   * Genera un número aleatorio de punto flotante en el rango [0, 1).
+   * Utiliza el algoritmo Mulberry32 para garantizar determinismo.
+   *
+   * @remarks
+   * Cada llamada muta la semilla interna de la instancia.
+   *
+   * @returns Un valor aleatorio entre 0 (inclusive) y 1 (exclusive).
+   * @sideEffect Muta `this.seed`.
+   * @invariant El mismo estado inicial (semilla) produce siempre la misma secuencia.
    */
   public next(): number {
     let t = (this.seed = (this.seed + 0x6d2b79f5) | 0);
