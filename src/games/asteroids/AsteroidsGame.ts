@@ -72,6 +72,11 @@ export class AsteroidsGame
    */
   public predictLocalPlayer(input: InputFrame, deltaTime: number) {
     this.inputHistory.push(input);
+
+    // Store predicted state BEFORE update for this tick
+    // In rollback netcode, predictedState[tick] usually represents the state AT that tick.
+    // If we receive server state for tick T, we compare it with our predictedState[T].
+
     const localPlayer = this.world.query("LocalPlayer")[0];
     if (localPlayer !== undefined) {
         const inputComp = this.world.getComponent<any>(localPlayer, "Input");
@@ -80,71 +85,80 @@ export class AsteroidsGame
             inputComp.rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;
             inputComp.thrust = input.actions.includes("thrust") || (input.axes?.thrust ?? 0) > 0;
             inputComp.shoot = input.actions.includes("shoot");
+            inputComp.hyperspace = input.actions.includes("hyperspace");
         }
     }
 
     DeterministicSimulation.update(this.world, deltaTime, { isResimulating: false });
+
+    // Save state after simulation of this tick
     this.stateHistory.set(input.tick, this.world.snapshot());
 
-    // Keep history manageable
+    // Keep history manageable (approx 2 seconds at 60fps)
     if (this.inputHistory.length > 120) this.inputHistory.shift();
     const oldestTick = input.tick - 120;
     if (this.stateHistory.has(oldestTick)) this.stateHistory.delete(oldestTick);
   }
 
   public updateFromServer(serverState: any, localSessionId?: string) {
-    if (!this.isMultiplayer || !serverState) return;
+    if (!this.isMultiplayer || !serverState || !serverState.fullWorldState) return;
     const serverTick = serverState.serverTick;
     if (serverTick <= this.lastAuthoritativeTick) return;
     this.lastAuthoritativeTick = serverTick;
 
-    // 1. Comparison & Rollback
+    const authoritativeSnapshot = JSON.parse(serverState.fullWorldState);
     const predicted = this.stateHistory.get(serverTick);
-    if (predicted && localSessionId) {
-        const localPlayerState = serverState.players?.[localSessionId];
-        if (localPlayerState) {
-            const localPlayerEntity = this.world.query("LocalPlayer")[0];
-            if (localPlayerEntity !== undefined) {
-                const predictedPos = predicted.componentData["Transform"]?.[localPlayerEntity];
 
-                const THRESHOLD = 0.1;
-                const dx = Math.abs(predictedPos.x - localPlayerState.x);
-                const dy = Math.abs(predictedPos.y - localPlayerState.y);
-
-                if (dx > THRESHOLD || dy > THRESHOLD) {
-                    console.log(`Rollback detected at tick ${serverTick}. Mismatch: ${dx.toFixed(2)}, ${dy.toFixed(2)}`);
-
-                    // Build a temporary snapshot from server state
-                    // (Simplified: we use the predicted one but update the local player)
-                    // In a full implementation, we'd rebuild the entire state from server schema
-                    predicted.componentData["Transform"][localPlayerEntity].x = localPlayerState.x;
-                    predicted.componentData["Transform"][localPlayerEntity].y = localPlayerState.y;
-                    if (predicted.componentData["Velocity"]?.[localPlayerEntity]) {
-                        predicted.componentData["Velocity"][localPlayerEntity].dx = localPlayerState.velocityX;
-                        predicted.componentData["Velocity"][localPlayerEntity].dy = localPlayerState.velocityY;
-                    }
-
-                    this.world.restore(predicted);
-
-                    // Re-simulate forward
-                    const lastInputTick = this.inputHistory[this.inputHistory.length - 1]?.tick || serverTick;
-                    this.inputHistory.filter(i => i.tick > serverTick).forEach(input => {
-                        // Apply input to LocalPlayer
-                        const inputComp = this.world.getComponent<any>(localPlayerEntity, "Input");
-                        if (inputComp) {
-                            inputComp.rotateLeft = input.actions.includes("rotateLeft") || (input.axes?.rotate_left ?? 0) > 0;
-                            inputComp.rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;
-                            inputComp.thrust = input.actions.includes("thrust") || (input.axes?.thrust ?? 0) > 0;
-                            inputComp.shoot = input.actions.includes("shoot");
-                        }
-                        DeterministicSimulation.update(this.world, 16.66, { isResimulating: true });
-                        this.stateHistory.set(input.tick, this.world.snapshot());
-                    });
-                }
-            }
+    let needsRollback = false;
+    if (!predicted) {
+      needsRollback = true;
+    } else {
+      // Deep compare predicted state vs authoritative state
+      // We focus on critical gameplay state: entity counts and positions
+      if (predicted.entities.length !== authoritativeSnapshot.entities.length) {
+        needsRollback = true;
+      } else {
+        // Sample check of local player if exists
+        if (localSessionId) {
+           const localPlayerEntity = this.world.query("LocalPlayer")[0];
+           if (localPlayerEntity !== undefined) {
+               const pPos = predicted.componentData["Transform"]?.[localPlayerEntity];
+               const aPos = authoritativeSnapshot.componentData["Transform"]?.[localPlayerEntity];
+               if (!pPos || !aPos || Math.abs(pPos.x - aPos.x) > 0.01 || Math.abs(pPos.y - aPos.y) > 0.01) {
+                   needsRollback = true;
+               }
+           }
         }
+      }
     }
-    // Cleanup old input history
+
+    if (needsRollback) {
+      console.log(`[Rollback] Divergence at tick ${serverTick}. Re-simulating...`);
+      this.world.restore(authoritativeSnapshot);
+
+      // Re-simulate from serverTick + 1 to current prediction head
+      const currentTick = this.inputHistory.length > 0 ? this.inputHistory[this.inputHistory.length - 1].tick : serverTick;
+
+      this.inputHistory
+        .filter(input => input.tick > serverTick)
+        .forEach(input => {
+          const localPlayer = this.world.query("LocalPlayer")[0];
+          if (localPlayer !== undefined) {
+            const inputComp = this.world.getComponent<any>(localPlayer, "Input");
+            if (inputComp) {
+              inputComp.rotateLeft = input.actions.includes("rotateLeft") || (input.axes?.rotate_left ?? 0) > 0;
+              inputComp.rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;
+              inputComp.thrust = input.actions.includes("thrust") || (input.axes?.thrust ?? 0) > 0;
+              inputComp.shoot = input.actions.includes("shoot");
+              inputComp.hyperspace = input.actions.includes("hyperspace");
+            }
+          }
+          DeterministicSimulation.update(this.world, 16.66, { isResimulating: true });
+          this.stateHistory.set(input.tick, this.world.snapshot());
+        });
+    }
+
+    // Cleanup history
     this.inputHistory = this.inputHistory.filter(i => i.tick >= serverTick);
   }
 

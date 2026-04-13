@@ -100,7 +100,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       const entity = this.playerEntities.get(sessionId);
       if (entity === undefined) return;
 
-      const input = this.world.getComponent<Component & { rotateLeft: boolean; rotateRight: boolean; thrust: boolean; shoot: boolean }>(entity, "Input");
+      const input = this.world.getComponent<any>(entity, "Input");
       const buffer = this.inputBuffers.get(sessionId);
 
       if (buffer && input) {
@@ -110,6 +110,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
             input.rotateRight = frame.actions.includes("rotateRight") || (frame.axes?.rotate_right ?? 0) > 0;
             input.thrust = frame.actions.includes("thrust") || (frame.axes?.thrust ?? 0) > 0;
             input.shoot = frame.actions.includes("shoot");
+            input.hyperspace = frame.actions.includes("hyperspace");
         }
         // Cleanup old frames
         this.inputBuffers.set(sessionId, buffer.filter(f => f.tick >= this.state.serverTick));
@@ -121,6 +122,12 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
 
     // 3. Sync ECS World back to Colyseus Schema
     this.syncWorldToSchema();
+
+    // 4. Update full world state for clients (for rollback)
+    // Only send full snapshot every 3 ticks to reduce bandwidth,
+    // but in a strict rollback system we might need it every tick if we don't have delta-sync.
+    // For now, we update it every tick as required for the current implementation.
+    this.state.fullWorldState = JSON.stringify(this.world.snapshot());
 
     // 5. Record for Replay
     const currentInputs: Record<string, InputFrame[]> = {};
@@ -134,10 +141,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.replayFrames.push({
         tick: this.state.serverTick,
         inputs: currentInputs,
-        events: [] // We could add events here (e.g. game start, collisions)
+        events: []
     });
 
-    // Limit replay to 5 minutes (5 * 60 * 60 = 18000 ticks)
+    // Limit replay to 5 minutes (18000 ticks)
     if (this.replayFrames.length > 18000) {
         this.replayFrames.shift();
     }

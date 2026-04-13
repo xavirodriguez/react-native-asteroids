@@ -37,6 +37,7 @@ export class AsteroidsState extends Schema {
   @type("number") gameWidth: number = 800;
   @type("number") gameHeight: number = 600;
   @type("uint32") seed: number = 12345;
+  @type("string") fullWorldState: string = "";
 }
 
 export class Invader extends Schema {

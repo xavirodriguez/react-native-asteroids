@@ -3,7 +3,7 @@ import { TransformComponent, VelocityComponent, RenderComponent, HealthComponent
 import { PhysicsUtils } from "../engine/utils/PhysicsUtils";
 import { ShipPhysics } from "../games/asteroids/utils/ShipPhysics";
 import { GAME_CONFIG, type AsteroidComponent } from "../games/asteroids/types/AsteroidTypes";
-import { createAsteroid, createBullet, createParticle } from "../games/asteroids/EntityFactory";
+import { createAsteroid, createBullet, createParticle, createUfo } from "../games/asteroids/EntityFactory";
 import { RandomService } from "../engine/utils/RandomService";
 import { EventBus } from "../engine/core/EventBus";
 import { ScreenShakeComponent } from "../engine/types/EngineTypes";
@@ -37,8 +37,32 @@ export class DeterministicSimulation {
         // 4. Collision Detection & Resolution
         this.updateCollisions(world, ctx);
 
-        // 5. Spawn Logic (UFO, Asteroid Waves)
+        // 5. UFO logic
+        this.updateUfos(world, dtSeconds);
+
+        // 6. Spawn Logic (UFO, Asteroid Waves)
         this.updateSpawning(world, ctx);
+    }
+
+    private static updateUfos(world: World, dtSeconds: number) {
+        const ufos = world.query("Ufo", "Transform", "Velocity");
+        ufos.forEach((entity) => {
+          const pos = world.getComponent<TransformComponent>(entity, "Transform");
+          const ufo = world.getComponent<any>(entity, "Ufo");
+
+          if (pos && ufo) {
+            ufo.time += dtSeconds;
+
+            // Update vertical position with sine wave oscillation
+            // Oscillation amplitude: 30, frequency: 2 rad/s
+            pos.y = ufo.baseY + Math.sin(ufo.time * 2) * 30;
+
+            // UFOs that go off-screen horizontally are removed
+            if (pos.x < -50 || pos.x > GAME_CONFIG.SCREEN_WIDTH + 50) {
+              world.removeEntity(entity);
+            }
+          }
+        });
     }
 
     private static updateShips(world: World, deltaTime: number, dtSeconds: number, _ctx: SimulationContext) {
@@ -226,9 +250,10 @@ export class DeterministicSimulation {
 
     private static updateSpawning(world: World, _ctx: SimulationContext) {
         const asteroids = world.query("Asteroid");
+        const gameplayRandom = RandomService.getInstance("gameplay");
+
         if (asteroids.length === 0) {
             // Spawn next wave
-            const gameplayRandom = RandomService.getInstance("gameplay");
             for (let i = 0; i < 6; i++) {
                 createAsteroid({
                     world,
@@ -237,6 +262,11 @@ export class DeterministicSimulation {
                     size: "large"
                 });
             }
+        }
+
+        // Random UFO spawn
+        if (world.query("Ufo").length === 0 && gameplayRandom.chance(GAME_CONFIG.UFO_SPAWN_CHANCE)) {
+          createUfo({ world });
         }
     }
 }

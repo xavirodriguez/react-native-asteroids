@@ -10,7 +10,10 @@ export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: Tr
     const health = world.getComponent<any>(entity, "Health");
 
     if (health && health.invulnerableRemaining > 0) {
-      if (Math.floor(Date.now() / 150) % 2 === 0) ctx.globalAlpha = 0.3;
+      // Flash effect for invulnerability/hits
+      const gameState = world.getSingleton<any>("GameState");
+      const tick = (gameState as any)?.serverTick ?? 0;
+      if (Math.floor(tick / 10) % 2 === 0) ctx.globalAlpha = 0.3;
     }
 
     // Improvement 8: Thrust Propulsion Flame
