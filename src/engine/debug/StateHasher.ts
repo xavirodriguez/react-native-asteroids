@@ -1,5 +1,4 @@
 import { World } from "../core/World";
-import { Entity, Component } from "../types/EngineTypes";
 
 /**
  * Utilidad para generar hashes deterministas del estado completo del mundo ECS.

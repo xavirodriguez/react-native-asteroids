@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Clipboard } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Clipboard,
+} from "react-native";
 import { seedToString, stringToSeed } from "../src/utils/SeedUtils";
 
 interface SeedWidgetProps {
@@ -11,7 +18,11 @@ interface SeedWidgetProps {
 /**
  * Shared widget for displaying and entering game seeds.
  */
-export const SeedWidget: React.FC<SeedWidgetProps> = ({ seed, onSeedEnter, style }) => {
+export const SeedWidget: React.FC<SeedWidgetProps> = ({
+  seed,
+  onSeedEnter,
+  style,
+}) => {
   const [inputText, setInputText] = useState("");
   const [copyText, setCopyText] = useState("Copy Seed");
 

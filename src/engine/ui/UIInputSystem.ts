@@ -4,7 +4,6 @@ import {
   UIElementComponent,
   UIButtonStateComponent
 } from "./UITypes";
-import { Entity } from "../core/Entity";
 
 export class UIInputSystem extends System {
   private pointerX: number = 0;

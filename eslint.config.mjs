@@ -2,16 +2,19 @@ import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
+import unusedImports from "eslint-plugin-unused-imports";
 
+/** @type {import('eslint').Linter.Config[]} */
 export default tseslint.config(
   {
     ignores: [
+      "**/node_modules/**",
       "**/dist/**",
       "**/.expo/**",
       "**/web-build/**",
       "**/build/**",
       "**/coverage/**",
-      "**/node_modules/**",
+      "**/.git/**",
     ],
   },
   js.configs.recommended,
@@ -19,10 +22,14 @@ export default tseslint.config(
   pluginReact.configs.flat.recommended,
   pluginReact.configs.flat["jsx-runtime"],
   {
+    files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    plugins: {
+      "unused-imports": unusedImports,
+    },
     languageOptions: {
       globals: {
         ...globals.browser,
-        ...globals.jest,
+        ...globals.reactNative,
       },
     },
     settings: {
@@ -35,35 +42,31 @@ export default tseslint.config(
       "react/prop-types": "off",
       "react/display-name": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": [
+      "@typescript-eslint/no-unused-vars": "off",
+      "unused-imports/no-unused-imports": "error",
+      "unused-imports/no-unused-vars": [
         "error",
         {
-          "argsIgnorePattern": "^_",
-          "varsIgnorePattern": "^_",
-          "caughtErrorsIgnorePattern": "^_"
+          vars: "all",
+          varsIgnorePattern: "^_",
+          args: "after-used",
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_"
         }
       ],
+      "@typescript-eslint/no-require-imports": "error",
     },
   },
   {
-    files: [
-      "**/*.js",
-      "**/*.cjs",
-      "babel.config.js",
-      "metro.config.js",
-      "src/engine/rendering/skia/GameCanvas.tsx",
-      "src/games/asteroids/rendering/AsteroidsSkiaVisuals.ts",
-      "src/services/PlayerProfileService.ts"
-    ],
+    files: ["*.config.js", "*.config.mjs", "metro.config.js", "babel.config.js"],
     languageOptions: {
-      sourceType: "commonjs",
       globals: {
         ...globals.node,
       },
     },
     rules: {
       "@typescript-eslint/no-require-imports": "off",
-      "no-undef": "off",
-    }
+      "@typescript-eslint/no-var-requires": "off",
+    },
   }
 );

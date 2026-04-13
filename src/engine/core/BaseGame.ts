@@ -6,15 +6,12 @@ import { InputBuffer } from "../network/InputBuffer";
 import { NetworkTransport } from "../network/NetworkTransport";
 import { ReplayRecorder } from "../debug/ReplayRecorder";
 import { SceneManager } from "../scenes/SceneManager";
-import { runLifecycleAsync } from "../utils/LifecycleUtils";
 import { RandomService } from "../utils/RandomService";
-import { InputStateComponent, PreviousTransformComponent, TransformComponent } from "./CoreComponents";
+import { PreviousTransformComponent, TransformComponent } from "./CoreComponents";
 import type { IGame, UpdateListener } from "./IGame";
 import { XPSystem } from "../systems/XPSystem";
 import { PaletteSystem } from "../systems/PaletteSystem";
-import { MutatorSystem } from "../systems/MutatorSystem";
 import { PlayerProfileService } from "../../services/PlayerProfileService";
-import { MutatorService } from "../../services/MutatorService";
 import { HierarchySystem } from "../systems/HierarchySystem";
 
 export interface BaseGameConfig {
@@ -25,24 +22,7 @@ export interface BaseGameConfig {
 }
 
 /**
- * Orquestador principal del ciclo de vida y estado de un videojuego.
- *
- * @remarks
- * BaseGame proporciona la infraestructura necesaria para gestionar el mundo ECS,
- * el loop de juego, la entrada de usuario, la persistencia y el determinismo.
- * Actúa como el punto de entrada para cada juego específico (Asteroids, Pong, etc.).
- *
- * El pipeline de actualización sigue un orden estricto:
- * 1. Preparación de interpolación (Snapshot de transformaciones).
- * 2. Procesamiento de Input.
- * 3. Actualización de Sistemas y Escena.
- * 4. Propagación de Jerarquías.
- *
- * @conceptualRisk [SINGLETON_DRIFT][MEDIUM] El uso de `RandomService.setSeed` a nivel global
- * puede afectar a otros componentes si no se maneja con cuidado en entornos con múltiples
- * instancias de juego.
- *
- * @packageDocumentation
+ * Main orchestrator for game lifecycle and state.
  */
 export abstract class BaseGame<TState, TInput extends Record<string, any>>
   implements IGame<BaseGame<TState, TInput>> {
@@ -56,7 +36,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   protected networkTransport?: NetworkTransport;
   protected replayRecorder: ReplayRecorder;
   protected currentTick: number = 0;
-  protected hierarchySystem: HierarchySystem;
+  protected currentSeed: number = 0;
   public isMultiplayer: boolean;
 
   private _isPaused = false;
@@ -90,18 +70,18 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   private setupLoop(): void {
     /**
-     * Pipeline Determinista (Update Phase):
-     * 1. Capture/Snapshot Previous State
+     * Deterministic Pipeline (Update Phase):
+     * 1. Interpolation Prep (Snapshot previous state)
      * 2. Input Handling
-     * 3. Simulation Update (ECS Systems)
-     * 4. Transform Propagation (Mandatory)
+     * 3. Simulation Update (ECS Systems/Scenes)
+     * 4. Transform Propagation (Hierarchy)
      */
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (this._isPaused) return;
 
       const activeWorld = this.getWorld();
 
-      // 1. Snapshot Transforms for Interpolation (Prevents render drift)
+      // 1. Snapshot Transforms for Interpolation
       const entities = activeWorld.query("Transform");
       for (let i = 0; i < entities.length; i++) {
         const entity = entities[i];
@@ -129,7 +109,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
         this.world.update(deltaTime);
       }
 
-      // 4. Transform Propagation Phase
+      // 4. Transform Propagation Phase (Mandatory)
       this.hierarchySystem.update(activeWorld, deltaTime);
 
       this.currentTick++;
@@ -142,44 +122,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   public abstract getGameState(): TState;
   public abstract isGameOver(): boolean;
 
-  /**
-   * Inicia el loop de juego.
-   */
   public start(): void { this.gameLoop.start(); }
-
-  /**
-   * Detiene el loop de juego.
-   */
   public stop(): void { this.gameLoop.stop(); }
-
-  /**
-   * Pausa la simulación.
-   *
-   * @remarks
-   * Los sistemas de la escena actual también son pausados. Se notifica a los suscriptores
-   * de la UI para reflejar el estado de pausa.
-   */
   public pause(): void { this._isPaused = true; this.sceneManager.pause(); this._notifyListeners(); }
-
-  /**
-   * Reanuda la simulación.
-   */
   public resume(): void { this._isPaused = false; this.sceneManager.resume(); this._notifyListeners(); }
 
-  /**
-   * Reinicia el estado del juego de forma asíncrona.
-   *
-   * @remarks
-   * Realiza una limpieza completa del mundo ECS o de la escena actual y vuelve a
-   * invocar {@link BaseGame.initializeEntities}.
-   *
-   * @postcondition El juego se reanuda automáticamente si estaba pausado.
-   * @sideEffect Llama a {@link BaseGame._onBeforeRestart} para limpieza específica de la subclase.
-   */
   public async restart(): Promise<void> {
-    await runLifecycleAsync(async () => {
-        await this._onBeforeRestart();
-    });
+    await this._onBeforeRestart();
 
     if (this.sceneManager.getCurrentScene()) {
       await this.sceneManager.restartCurrentScene();
@@ -191,16 +140,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this._notifyListeners();
   }
 
-  /**
-   * Libera todos los recursos y detiene los procesos del juego.
-   *
-   * @remarks
-   * Es fundamental llamar a este método al desmontar el componente de React para
-   * evitar fugas de memoria por listeners globales (teclado, puntero) y timers.
-   *
-   * @postcondition {@link BaseGame.gameLoop} se detiene.
-   * @postcondition Los listeners de entrada se eliminan.
-   */
   public destroy(): void {
     this.stop();
     this.unifiedInput.cleanup();
@@ -208,30 +147,11 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this._listeners.clear();
   }
 
-  /**
-   * Obtiene el mundo ECS activo.
-   *
-   * @remarks
-   * Si hay una escena activa, devuelve el mundo de la escena; de lo contrario,
-   * devuelve el mundo global del juego.
-   *
-   * @returns La instancia de {@link World} actual.
-   */
   public getWorld(): World {
     const scene = this.sceneManager.getCurrentScene();
     return scene ? scene.getWorld() : this.world;
   }
 
-  /**
-   * Inicializa el motor y el contenido del juego.
-   *
-   * @remarks
-   * Debe llamarse antes de {@link BaseGame.start}. Registra los sistemas base del motor,
-   * los sistemas específicos del juego y crea las entidades iniciales.
-   *
-   * @precondition Los servicios externos (como PlayerProfileService) deben estar disponibles.
-   * @postcondition El juego está listo para comenzar la simulación.
-   */
   public async init(): Promise<void> {
     await this.registerEngineSystems();
     this.registerSystems();
@@ -244,12 +164,31 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this.world.addSystem(new PaletteSystem(profile.activePalette));
   }
 
-  public setInput(input: Partial<TInput>): void {
-    Object.entries(input).forEach(([action, val]) => {
-      this.unifiedInput.setOverride(action, val as boolean);
+  /**
+   * Inyecta estados de entrada de forma programática utilizando el sistema de overrides.
+   *
+   * @remarks
+   * Utilizado principalmente para controles táctiles de React Native o telemetría de red.
+   *
+   * @param input - Un objeto parcial con las acciones y su estado booleano.
+   * @sideEffect Llama a `unifiedInput.setOverride` para cada acción proporcionada.
+   */
+  protected shouldStallSimulation(): boolean {
+    return false;
+  }
+
+  public setInput(input: Record<string, boolean>): void {
+    Object.entries(input).forEach(([action, pressed]) => {
+      this.unifiedInput.setOverride(action, pressed);
     });
   }
 
+  /**
+   * Registra un listener para recibir notificaciones tras cada ciclo de actualización.
+   *
+   * @param listener - Función callback que recibe la instancia del juego.
+   * @returns Función para cancelar la suscripción.
+   */
   public subscribe(listener: UpdateListener<BaseGame<TState, TInput>>): () => void {
     this._listeners.add(listener);
     return () => this._listeners.delete(listener);
@@ -262,11 +201,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   }
 
   private _registerKeyboardListeners(): void {
-    if (typeof window !== "undefined") window.addEventListener("keydown", this._globalKeyHandler);
+    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+      window.addEventListener("keydown", this._globalKeyHandler);
+    }
   }
 
   private _unregisterKeyboardListeners(): void {
-    if (typeof window !== "undefined") window.removeEventListener("keydown", this._globalKeyHandler);
+    if (typeof window !== "undefined" && typeof window.removeEventListener === "function") {
+      window.removeEventListener("keydown", this._globalKeyHandler);
+    }
   }
 
   private _handleGlobalKey(e: KeyboardEvent): void {

@@ -1,6 +1,21 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import Svg, { Polygon, Circle, Line, Rect, G, Ellipse, Polyline, Defs, Filter, FeGaussianBlur, FeMerge, FeMergeNode, LinearGradient, Stop, RadialGradient, Pattern } from "react-native-svg";
+import Svg, {
+  Polygon,
+  Circle,
+  Line,
+  G,
+  Polyline,
+  Defs,
+  Filter,
+  FeGaussianBlur,
+  FeMerge,
+  FeMergeNode,
+  LinearGradient,
+  Stop,
+  RadialGradient,
+  Pattern,
+} from "react-native-svg";
 import { World } from "../core/World";
 import { RandomService } from "../utils/RandomService";
 import {
@@ -27,7 +42,14 @@ interface SvgRendererProps {
  * Component responsible for rendering the game world using react-native-svg.
  * Refactored to be generic and support custom shape renderers.
  */
-export const SvgRenderer: React.FC<SvgRendererProps> = ({ world, width, height, customRenderers, backgroundEffects, foregroundEffects }) => {
+export const SvgRenderer: React.FC<SvgRendererProps> = ({
+  world,
+  width,
+  height,
+  customRenderers,
+  backgroundEffects,
+  foregroundEffects,
+}) => {
   const renderables = useMemo(
     () => world.query("Transform", "Render"),
     [world.version]
@@ -58,13 +80,26 @@ interface WorldViewProps {
   foregroundEffects?: React.ReactNode;
 }
 
-const WorldView: React.FC<WorldViewProps> = ({ world, width, height, renderables, customRenderers, backgroundEffects, foregroundEffects }) => {
+const WorldView: React.FC<WorldViewProps> = ({
+  world,
+  width,
+  height,
+  renderables,
+  customRenderers,
+  backgroundEffects,
+  foregroundEffects,
+}) => {
   // Generic screen shake detection if GameState exists
   const gameStateEntity = world.query("GameState")[0];
-  const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
+  const gameState = gameStateEntity
+    ? world.getComponent<any>(gameStateEntity, "GameState")
+    : null;
 
   let transform = "";
-  if (gameState?.screenShake && (gameState.screenShake.duration > 0 || gameState.screenShake.framesLeft > 0)) {
+  if (
+    gameState?.screenShake &&
+    (gameState.screenShake.duration > 0 || gameState.screenShake.framesLeft > 0)
+  ) {
     const intensity = gameState.screenShake.intensity || 5;
     const dx = (RandomService.next() - 0.5) * intensity;
     const dy = (RandomService.next() - 0.5) * intensity;
@@ -95,15 +130,37 @@ const WorldView: React.FC<WorldViewProps> = ({ world, width, height, renderables
           <Stop offset="90%" stopColor="black" stopOpacity="0.1" />
           <Stop offset="100%" stopColor="black" stopOpacity="0.4" />
         </RadialGradient>
-        <Pattern id="scanlines" x="0" y="0" width="1" height="4" patternUnits="userSpaceOnUse">
-          <Line x1="0" y1="0" x2={width} y2="0" stroke="black" strokeWidth="2" opacity="0.2" />
+        <Pattern
+          id="scanlines"
+          x="0"
+          y="0"
+          width="1"
+          height="4"
+          patternUnits="userSpaceOnUse"
+        >
+          <Line
+            x1="0"
+            y1="0"
+            x2={width}
+            y2="0"
+            stroke="black"
+            strokeWidth="2"
+            opacity="0.2"
+          />
         </Pattern>
       </Defs>
       <G transform={transform}>
         {backgroundEffects}
 
         {renderables.map((entity) => (
-          <EntityRenderer key={entity} entity={entity} world={world} width={width} height={height} customRenderers={customRenderers} />
+          <EntityRenderer
+            key={entity}
+            entity={entity}
+            world={world}
+            width={width}
+            height={height}
+            customRenderers={customRenderers}
+          />
         ))}
       </G>
 
@@ -120,7 +177,13 @@ interface EntityRendererProps {
   customRenderers?: Record<string, (params: any) => React.ReactElement>;
 }
 
-const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world, width, height, customRenderers }) => {
+const EntityRenderer: React.FC<EntityRendererProps> = ({
+  entity,
+  world,
+  width,
+  height,
+  customRenderers,
+}) => {
   const pos = world.getComponent<TransformComponent>(entity, "Transform");
   const render = world.getComponent<RenderComponent>(entity, "Render");
 
@@ -133,22 +196,43 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world, width, h
     <>
       {motionBlurGhosts.map((mbPos, index) => (
         <G key={`mb-${index}`} opacity={0.3 - index * 0.1}>
-          {renderByShape({ entity, world, pos: mbPos, render, customRenderers })}
+          {renderByShape({
+            entity,
+            world,
+            pos: mbPos,
+            render,
+            customRenderers,
+          })}
         </G>
       ))}
       {renderByShape({ entity, world, pos, render, customRenderers })}
       {ghosts.map((ghostPos, index) => (
         <G key={`ghost-${index}`} opacity={0.4}>
-          {renderByShape({ entity, world, pos: ghostPos, render, customRenderers })}
+          {renderByShape({
+            entity,
+            world,
+            pos: ghostPos,
+            render,
+            customRenderers,
+          })}
         </G>
       ))}
     </>
   );
 };
 
-const calculateMotionBlur = (world: World, entity: number, pos: TransformComponent, render: RenderComponent) => {
-  const vel = world.getComponent<{type: string, dx: number, dy: number}>(entity, "Velocity");
-  if (!vel || !render.trailPositions || render.trailPositions.length < 3) return [];
+const calculateMotionBlur = (
+  world: World,
+  entity: number,
+  pos: TransformComponent,
+  render: RenderComponent
+) => {
+  const vel = world.getComponent<{ type: string; dx: number; dy: number }>(
+    entity,
+    "Velocity"
+  );
+  if (!vel || !render.trailPositions || render.trailPositions.length < 3)
+    return [];
 
   const speed = Math.sqrt(vel.dx * vel.dx + vel.dy * vel.dy);
   if (speed < 150) return [];
@@ -159,7 +243,12 @@ const calculateMotionBlur = (world: World, entity: number, pos: TransformCompone
     .map((p) => ({ ...pos, x: p.x, y: p.y } as TransformComponent));
 };
 
-const calculateGhosts = (pos: TransformComponent, size: number, w: number, h: number) => {
+const calculateGhosts = (
+  pos: TransformComponent,
+  size: number,
+  w: number,
+  h: number
+) => {
   const ghosts: TransformComponent[] = [];
   const margin = size * 2;
 
@@ -174,9 +263,11 @@ const calculateGhosts = (pos: TransformComponent, size: number, w: number, h: nu
   if (nearBottom) ghosts.push({ ...pos, y: pos.y - h });
 
   if (nearLeft && nearTop) ghosts.push({ ...pos, x: pos.x + w, y: pos.y + h });
-  if (nearLeft && nearBottom) ghosts.push({ ...pos, x: pos.x + w, y: pos.y - h });
+  if (nearLeft && nearBottom)
+    ghosts.push({ ...pos, x: pos.x + w, y: pos.y - h });
   if (nearRight && nearTop) ghosts.push({ ...pos, x: pos.x - w, y: pos.y + h });
-  if (nearRight && nearBottom) ghosts.push({ ...pos, x: pos.x - w, y: pos.y - h });
+  if (nearRight && nearBottom)
+    ghosts.push({ ...pos, x: pos.x - w, y: pos.y - h });
 
   return ghosts;
 };
@@ -194,10 +285,7 @@ const renderByShape = (params: {
     return customRenderers[render.shape](params);
   }
 
-  const rendererMap: Record<
-    string,
-    (p: any) => React.ReactElement
-  > = {
+  const rendererMap: Record<string, (p: any) => React.ReactElement> = {
     circle: renderCircleShape,
     polygon: renderPolygonShape,
     line: renderLineShape,
@@ -283,32 +371,39 @@ const PolygonRenderer: React.FC<{
   rotation: number;
   internalLines?: { x1: number; y1: number; x2: number; y2: number }[];
   hitFlashFrames?: number;
-}> = React.memo(({ x, y, vertices, color, rotation, internalLines, hitFlashFrames }) => {
-  const rotationDegrees = (rotation * 180) / Math.PI;
-  const transform = `translate(${x}, ${y}) rotate(${rotationDegrees})`;
-  const points = vertices.map((v) => `${v.x},${v.y}`).join(" ");
+}> = React.memo(
+  ({ x, y, vertices, color, rotation, internalLines, hitFlashFrames }) => {
+    const rotationDegrees = (rotation * 180) / Math.PI;
+    const transform = `translate(${x}, ${y}) rotate(${rotationDegrees})`;
+    const points = vertices.map((v) => `${v.x},${v.y}`).join(" ");
 
-  const isFlashing = hitFlashFrames && hitFlashFrames > 0;
-  const fillColor = isFlashing ? "rgba(255, 255, 255, 0.5)" : "#333";
-  const strokeColor = isFlashing ? "white" : color;
+    const isFlashing = hitFlashFrames && hitFlashFrames > 0;
+    const fillColor = isFlashing ? "rgba(255, 255, 255, 0.5)" : "#333";
+    const strokeColor = isFlashing ? "white" : color;
 
-  return (
-    <G transform={transform}>
-      <Polygon points={points} fill={fillColor} stroke={strokeColor} strokeWidth="2" />
-      {internalLines?.map((line, i) => (
-        <Line
-          key={i}
-          x1={line.x1}
-          y1={line.y1}
-          x2={line.x2}
-          y2={line.y2}
-          stroke="#222"
-          strokeWidth="1"
+    return (
+      <G transform={transform}>
+        <Polygon
+          points={points}
+          fill={fillColor}
+          stroke={strokeColor}
+          strokeWidth="2"
         />
-      ))}
-    </G>
-  );
-});
+        {internalLines?.map((line, i) => (
+          <Line
+            key={i}
+            x1={line.x1}
+            y1={line.y1}
+            x2={line.x2}
+            y2={line.y2}
+            stroke="#222"
+            strokeWidth="1"
+          />
+        ))}
+      </G>
+    );
+  }
+);
 
 const BulletRenderer: React.FC<{
   x: number;
@@ -327,7 +422,15 @@ const BulletRenderer: React.FC<{
         opacity={0.6}
       />
     )}
-    <Circle cx={x} cy={y} r={size} fill={color} stroke={color} strokeWidth="1" filter="url(#glow)" />
+    <Circle
+      cx={x}
+      cy={y}
+      r={size}
+      fill={color}
+      stroke={color}
+      strokeWidth="1"
+      filter="url(#glow)"
+    />
   </>
 ));
 
@@ -342,7 +445,7 @@ const ParticleRenderer: React.FC<{
   const alpha = Math.max(0, Math.min(1, remaining / total));
 
   // Dynamic color transition (White -> Orange -> Red)
-  const variation = (seed * 13) % 20 - 10;
+  const variation = ((seed * 13) % 20) - 10;
   const hue = 20 + variation;
   const lightness = 50 + (1 - alpha) * 50;
 
@@ -351,12 +454,12 @@ const ParticleRenderer: React.FC<{
 
   return (
     <Circle
-        cx={x}
-        cy={y}
-        r={currentSize}
-        fill={fill}
-        opacity={alpha}
-        filter={alpha > 0.8 ? "url(#glow)" : undefined}
+      cx={x}
+      cy={y}
+      r={currentSize}
+      fill={fill}
+      opacity={alpha}
+      filter={alpha > 0.8 ? "url(#glow)" : undefined}
     />
   );
 });
@@ -371,7 +474,15 @@ const LineRenderer: React.FC<{
   const rotationDegrees = (rotation * 180) / Math.PI;
   const transform = `translate(${x}, ${y}) rotate(${rotationDegrees})`;
   return (
-    <Line x1={-size / 2} y1={0} x2={size / 2} y2={0} stroke={color} strokeWidth="2" transform={transform} />
+    <Line
+      x1={-size / 2}
+      y1={0}
+      x2={size / 2}
+      y2={0}
+      stroke={color}
+      strokeWidth="2"
+      transform={transform}
+    />
   );
 });
 
