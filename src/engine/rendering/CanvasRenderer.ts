@@ -1,13 +1,19 @@
 import { World } from "../core/World";
 import { Renderer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TransformComponent, PreviousTransformComponent } from "../core/CoreComponents";
+import { RenderComponent, TransformComponent, PreviousTransformComponent, Component } from "../core/CoreComponents";
 import { renderUI } from "../ui/UIRenderer";
 import { RandomService } from "../utils/RandomService";
 import { RenderSnapshot } from "./RenderSnapshot";
 import { CommandBuffer, DrawCommand } from "./CommandBuffer";
 
-export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: any) => void;
+export type ShapeDrawer = (
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  pos: TransformComponent,
+  render: RenderComponent,
+  world: World
+) => void;
 
 /**
  * 2D Canvas-based Rendering Engine.
@@ -96,19 +102,19 @@ export class CanvasRenderer implements Renderer {
   }
 
   private registerDefaultDrawers(): void {
-    this.registerShape("circle", (ctx, _, __, render) => {
+    this.registerShape("circle", (ctx, _entity, _pos, render) => {
       ctx.fillStyle = render.color;
       ctx.beginPath();
       ctx.arc(0, 0, render.size, 0, Math.PI * 2);
       ctx.fill();
     });
 
-    this.registerShape("rect", (ctx, _, __, render) => {
+    this.registerShape("rect", (ctx, _entity, _pos, render) => {
       ctx.fillStyle = render.color;
       ctx.fillRect(-render.size / 2, -render.size / 2, render.size, render.size);
     });
 
-    this.registerShape("polygon", (ctx, _, __, render) => {
+    this.registerShape("polygon", (ctx, _entity, _pos, render) => {
       const vertices = render.vertices;
       if (!vertices || vertices.length === 0) return;
       ctx.strokeStyle = render.color;
@@ -322,19 +328,95 @@ export class CanvasRenderer implements Renderer {
 
     const drawer = this.shapeDrawers.get(cmd.type);
     if (drawer) {
-      drawer(ctx, cmd.entityId, world, cmd);
+      // Create a temporary TransformComponent from cmd
+      const pos: TransformComponent = {
+        type: "Transform",
+        x: cmd.x,
+        y: cmd.y,
+        rotation: cmd.rotation,
+        scaleX: cmd.scaleX,
+        scaleY: cmd.scaleY,
+        worldX: cmd.x,
+        worldY: cmd.y,
+        worldRotation: cmd.rotation,
+        worldScaleX: cmd.scaleX,
+        worldScaleY: cmd.scaleY
+      };
+
+      // Create a temporary RenderComponent from cmd
+      const render: RenderComponent = {
+        type: "Render",
+        shape: cmd.type,
+        size: cmd.size,
+        color: cmd.color,
+        rotation: cmd.rotation,
+        vertices: cmd.vertices || undefined,
+        zIndex: cmd.zIndex,
+        hitFlashFrames: cmd.hitFlashFrames,
+        data: cmd.data
+      };
+
+      drawer(ctx, cmd.entityId, pos, render, world);
     }
 
     ctx.restore();
 
     const postDrawer = this.postEntityDrawers.get(cmd.type);
     if (postDrawer) {
-      postDrawer(ctx, cmd.entityId, world, cmd);
+      // Re-use pos and render if possible, but for safety let's define them again or use the ones from above
+      const pos: TransformComponent = {
+        type: "Transform",
+        x: cmd.x,
+        y: cmd.y,
+        rotation: cmd.rotation,
+        scaleX: cmd.scaleX,
+        scaleY: cmd.scaleY,
+        worldX: cmd.x,
+        worldY: cmd.y,
+        worldRotation: cmd.rotation,
+        worldScaleX: cmd.scaleX,
+        worldScaleY: cmd.scaleY
+      };
+
+      const render: RenderComponent = {
+        type: "Render",
+        shape: cmd.type,
+        size: cmd.size,
+        color: cmd.color,
+        rotation: cmd.rotation,
+        vertices: cmd.vertices || undefined,
+        zIndex: cmd.zIndex,
+        hitFlashFrames: cmd.hitFlashFrames,
+        data: cmd.data
+      };
+      postDrawer(ctx, cmd.entityId, pos, render, world);
     }
   }
 
   public render(world: World, alpha: number = 1): void {
     const snapshot = this.createSnapshot(world, alpha);
     this.renderSnapshot(snapshot, world);
+  }
+
+  public drawEntity(entity: Entity, components: Record<string, Component>, world: World): void {
+    const pos = components["Transform"] as TransformComponent;
+    const render = components["Render"] as RenderComponent;
+    if (!pos || !render || !this.ctx) return;
+
+    this.ctx.save();
+    this.ctx.translate(pos.worldX ?? pos.x, pos.worldY ?? pos.y);
+    this.ctx.rotate(pos.worldRotation ?? pos.rotation);
+    this.ctx.scale(pos.worldScaleX ?? (pos.scaleX ?? 1), pos.worldScaleY ?? (pos.scaleY ?? 1));
+
+    const drawer = this.shapeDrawers.get(render.shape);
+    if (drawer) {
+      drawer(this.ctx, entity, pos, render, world);
+    }
+
+    this.ctx.restore();
+  }
+
+  public drawParticles(_world: World): void {
+    // Basic implementation to satisfy Renderer interface
   }
 }

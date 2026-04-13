@@ -4,7 +4,7 @@ import { TransformComponent, RenderComponent, TTLComponent } from "../../../engi
 import { drawStarField } from "../../../engine/rendering/StarField";
 import { RandomService } from "../../../engine/utils/RandomService";
 
-export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => {
+export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: TransformComponent, render: RenderComponent, world: World) => {
     const size = render.size;
     const input = world.getComponent<any>(entity, "Input");
     const health = world.getComponent<any>(entity, "Health");
@@ -49,14 +49,14 @@ export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, world: W
     ctx.fillRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8);
 };
 
-export const drawAsteroidShipTrailDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => {
+export const drawAsteroidShipTrailDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: TransformComponent, render: RenderComponent, world: World) => {
     const shipComp = world.getComponent<any>(entity, "Ship");
     if (shipComp && shipComp.trail) {
         drawAsteroidShipTrail(ctx, shipComp.trail, render.size);
     }
 };
 
-export const drawUfo = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => {
+export const drawUfo = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: TransformComponent, render: RenderComponent, world: World) => {
     const size = render.size;
     const color = render.color;
     ctx.strokeStyle = color;
@@ -78,7 +78,7 @@ export const drawUfo = (ctx: CanvasRenderingContext2D, entity: Entity, world: Wo
     ctx.beginPath(); ctx.arc(size / 2, 0, 1.5, 0, Math.PI * 2); ctx.fill();
 };
 
-export const drawFlash = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: RenderComponent) => {
+export const drawFlash = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: TransformComponent, render: RenderComponent, world: World) => {
     const ttl = world.getComponent<TTLComponent>(entity, "TTL");
     if (!ttl) return;
     const size = render.size;

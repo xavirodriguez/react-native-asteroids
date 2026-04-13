@@ -1,5 +1,6 @@
 import { Component, Entity } from "../types/EngineTypes";
 import { System, SystemConfig, SystemPhase } from "./System";
+import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
 
@@ -224,7 +225,7 @@ export class World {
    * @postcondition Notifica a las queries reactivas para actualizar sus resultados cacheados.
    * @sideEffect Actualiza los mapas de componentes e índices de tipos por entidad.
    */
-  addComponent<T extends Component>(entity: Entity, component: T): void {
+  addComponent<T extends Component>(entity: Entity, component: T): T {
     const type = component.type;
 
     // Principle 2: Strong Invariants - Normalizar en addNode (addComponent en ECS)
@@ -259,6 +260,7 @@ export class World {
     }
 
     this.version++;
+    return component;
   }
 
   /**

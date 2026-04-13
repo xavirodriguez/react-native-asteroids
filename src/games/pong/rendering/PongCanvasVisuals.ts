@@ -7,7 +7,7 @@ import { BallComponent } from "../systems/PongSpinSystem";
  * @responsibility Renderizar la pelota y su indicador visual de efecto físico.
  * @queries BallComponent - Para obtener el factor de rotación actual.
  */
-export const drawPongBall: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, world, render) => {
+export const drawPongBall: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
   const { size, color } = render;
   const ballComp = world.getComponent<BallComponent>(entity, "Ball");
 
