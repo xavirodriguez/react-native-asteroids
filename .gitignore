@@ -3,7 +3,6 @@
 # dependencies
 node_modules/
 
-*.log
 # Expo
 .expo/
 dist/
@@ -12,7 +11,7 @@ expo-env.d.ts
 *.swp
 
 # Native
-.kotlin/s
+.kotlin/
 *.orig.*
 *.jks
 *.p8
@@ -44,8 +43,3 @@ coverage/
 server.log
 web_server.log
 npm_output.log
-
-# Documentation artifacts
-temp/
-etc/
-docs/api-reference/

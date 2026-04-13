@@ -1,4 +1,5 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
+import { RenderComponent } from "../../../engine/types/EngineTypes";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
 
@@ -6,7 +7,7 @@ import { GameStateComponent } from "../types/SpaceInvadersTypes";
  * Visuals for the player ship.
  */
 export const drawSpaceInvadersPlayer: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
-  const { size, color } = render;
+  let { size, color } = render;
 
   if (render.hitFlashFrames && render.hitFlashFrames > 0) {
     if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) {
@@ -26,7 +27,7 @@ export const drawSpaceInvadersPlayer: ShapeDrawer<CanvasRenderingContext2D> = (c
  * Visuals for an invader.
  */
 export const drawSpaceInvadersInvader: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
-  const { size, color } = render;
+  let { size, color } = render;
 
   if (render.hitFlashFrames && render.hitFlashFrames > 0) {
     if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) {
@@ -65,7 +66,7 @@ export const drawSpaceInvadersBullet: ShapeDrawer<CanvasRenderingContext2D> = (c
  * Visuals for shield blocks.
  */
 export const drawSpaceInvadersShield: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
-  const { size, color } = render;
+  let { size, color } = render;
 
   if (render.hitFlashFrames && render.hitFlashFrames > 0) {
     if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) {
@@ -92,7 +93,7 @@ export const drawSpaceInvadersParticle: ShapeDrawer<CanvasRenderingContext2D> = 
 /**
  * Screen shake background effect.
  */
-export const spaceInvadersScreenShakeEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, _world) => {
+export const spaceInvadersScreenShakeEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world) => {
   const entities = world.query("GameState");
   if (entities.length === 0) return;
 

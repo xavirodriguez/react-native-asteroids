@@ -3,7 +3,6 @@ import { GameLoop } from "../GameLoop";
 describe("GameLoop", () => {
   let requestAnimationFrameSpy: jest.SpyInstance;
   let _cancelAnimationFrameSpy: jest.SpyInstance;
-
   let performanceNowSpy: jest.SpyInstance;
 
   beforeEach(() => {

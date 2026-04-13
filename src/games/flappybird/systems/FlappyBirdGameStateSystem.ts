@@ -1,3 +1,4 @@
+import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { TransformComponent } from "../../../engine/types/EngineTypes";
 import {

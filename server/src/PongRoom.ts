@@ -24,7 +24,7 @@ export class PongRoom extends Room<PongStateSchema> {
   maxClients = 2;
   private inputBuffer = new Map<number, Map<string, PongInput>>();
 
-  onCreate(__unused: any) {
+  onCreate(options: any) {
     this.setState(new PongStateSchema());
     this.state.seed = options.seed || Math.floor(Math.random() * 100000);
 

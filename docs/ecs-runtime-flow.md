@@ -21,7 +21,6 @@ El **World** es el orquestador central:
 - Mantiene el índice de entidades y componentes (`componentMaps`).
 - **Almacenamiento**: Utiliza `Map<Entity, Component>` por tipo para acceso O(1) y `Set<Entity>` por tipo para indexación de queries.
 - Gestiona el **versionado estructural** (`world.version`): se incrementa en cada cambio estructural (añadir/quitar entidad o componente), permitiendo invalidar cachés de forma eficiente.
-- **Rollback y Persistencia**: Soporta `snapshot()` y `restore(state)` nativamente. Durante la restauración, reconstruye los índices y queries sin romper las referencias externas.
 - Proporciona acceso a **Recursos**: Singletons globales que no pertenecen a ninguna entidad (e.g., configuración de red, EventBus).
 
 ## Queries Reactivas

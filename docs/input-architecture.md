@@ -30,5 +30,5 @@ El sistema permite forzar el estado de una acción mediante `setOverride(action,
 Para los controles táctiles complejos (como joysticks virtuales), se recomienda utilizar `BaseGame.setInput(partialInput)` desde los componentes de React, lo que utiliza internamente el mecanismo de overrides para inyectar el estado en el motor ECS.
 
 ## Riesgos y Limitaciones
-- **[INPUT_DRIFT][HIGH]**: `getInputState()` (usado para red) actualmente ignora los `overrides`, lo que puede causar que un jugador remoto no vea las acciones realizadas a través de botones táctiles de la UI.
-- **[LIFECYCLE][HIGH]**: Los listeners se registran globalmente y deben ser limpiados explícitamente mediante `unifiedInput.cleanup()` al destruir el juego para evitar fugas de memoria y efectos fantasma en otras partes de la app de Expo.
+- **[INPUT_DRIFT]**: `getInputState()` (usado para red) actualmente ignora los `overrides`, lo que puede causar que un jugador remoto no vea las acciones realizadas a través de botones táctiles de la UI.
+- **[LIFECYCLE]**: Los listeners se registran globalmente y deben ser limpiados explícitamente mediante `unifiedInput.cleanup()` al destruir el juego.

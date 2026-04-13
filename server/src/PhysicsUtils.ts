@@ -1,4 +1,4 @@
-import { TransformComponent } from "../types/EngineTypes";
+import { TransformComponent, VelocityComponent } from "../types/EngineTypes";
 
 /**
  * Shared physics integration utilities to ensure consistency between

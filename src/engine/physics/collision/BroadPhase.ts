@@ -1,4 +1,11 @@
-import { TransformComponent, Collider2DComponent, Entity, AABB } from "../../types/EngineTypes";
+import { TransformComponent, Collider2DComponent, Entity } from "../../types/EngineTypes";
+
+export interface AABB {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
 
 export class BroadPhase {
   static getShapeBounds(transform: TransformComponent, collider: Collider2DComponent): AABB {

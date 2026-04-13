@@ -28,17 +28,14 @@ export abstract class CollisionSystem extends System {
   private processedPairs = new Set<string>();
 
   /**
-   * Ejecuta el ciclo de detección de colisiones utilizando Spatial Hashing.
+   * Ejecuta el ciclo de detección de colisiones.
    *
    * @param world - El mundo ECS.
-   * @param deltaTime - Tiempo transcurrido (ignorado para la detección).
+   * @param deltaTime - Tiempo transcurrido (ignorado por este sistema, ya que las colisiones son discretas).
    *
-   * @precondition Las entidades deben poseer `Transform` y `Collider`.
-   * @postcondition El {@link SpatialHash} interno se actualiza con las posiciones actuales.
-   * @sideEffect Invoca el método protegido {@link onCollision} de forma inmediata al detectar
-   * un par válido.
-   * @conceptualRisk [MUTATION][HIGH] Si `onCollision` elimina entidades del mundo, el iterador
-   * actual en `update` podría procesar referencias inválidas o saltarse entidades.
+   * @sideEffect Invoca `onCollision` de forma inmediata al detectar un par válido.
+   * @conceptualRisk [MUTATION][HIGH] Si `onCollision` elimina entidades del mundo, el iterador actual
+   * en `update` podría procesar referencias inválidas o saltarse entidades.
    */
   public update(world: World, deltaTime: number): void {
     void deltaTime;

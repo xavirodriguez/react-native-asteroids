@@ -1,7 +1,7 @@
 import { World } from "../../../../engine/core/World";
 import { FlappyBirdCollisionSystem } from "../FlappyBirdCollisionSystem";
 import { createBird, createPipe, createGameState } from "../../EntityFactory";
-import { FlappyBirdState } from "../../types/FlappyBirdTypes";
+import { FLAPPY_CONFIG, FlappyBirdState } from "../../types/FlappyBirdTypes";
 import { IFlappyBirdGame } from "../../types/GameInterfaces";
 
 describe("FlappyBirdCollisionSystem", () => {

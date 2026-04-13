@@ -1,0 +1,59 @@
+
+> asteroides@1.0.0 web
+> expo start --web
+
+Starting project at /app
+Using src/app as the root directory for Expo Router.
+Starting Metro Bundler
+
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/expo-router/entry.js ▓▓▓▓░░░░░░░░░░░░ 26.8% ( 79/182)
+λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ▓▓▓▓▓░░░░░░░░░░░ 33.5% ( 66/114)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 49.4% (228/375)
+λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ▓▓▓▓▓░░░░░░░░░░░ 33.5% (213/411)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 49.4% (321/489)
+λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ▓▓▓▓▓░░░░░░░░░░░ 35.0% (377/637)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 54.8% (450/608)
+λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ▓▓▓▓▓▓▓░░░░░░░░░ 45.2% (637/950)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 66.8% (578/707)
+λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ▓▓▓▓▓▓▓▓░░░░░░░░ 53.3% ( 913/1250)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 72.8% (714/887)
+λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 68.2% (1177/1425)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 72.8% ( 924/1150)
+λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 88.4% (1425/1516)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 74.5% (1215/1408)
+λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 92.4% (1507/1568)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 86.9% (1506/1622)
+λ node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 93.7% (1641/1698)
+λ Bundled 33926ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1717 modules)
+"textShadow*" style props are deprecated. Use "textShadow".
+"shadow*" style props are deprecated. Use "boxShadow".
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.5% (1725/1729)
+Web Bundled 37871ms node_modules/expo-router/entry.js (1729 modules)
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 61ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1 module)
+"textShadow*" style props are deprecated. Use "textShadow".
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 542ms node_modules/expo-router/entry.js (1 module)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 46.5% (401/588)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 66.6% ( 861/1109)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 79.3% (1299/1459)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.2% (1597/1628)
+Web Bundled 15410ms node_modules/expo-router/entry.js (1730 modules)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 84ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1 module)
+"textShadow*" style props are deprecated. Use "textShadow".
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 604ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 126ms node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 402ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 519ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1 module)
+"textShadow*" style props are deprecated. Use "textShadow".
+"shadow*" style props are deprecated. Use "boxShadow".
+Web Bundled 254ms node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console

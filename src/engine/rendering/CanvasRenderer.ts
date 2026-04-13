@@ -4,17 +4,28 @@ import { Entity } from "../core/Entity";
 import { RenderComponent, TransformComponent, PreviousTransformComponent } from "../core/CoreComponents";
 import { renderUI } from "../ui/UIRenderer";
 import { RandomService } from "../utils/RandomService";
-import { RenderSnapshot } from "./RenderSnapshot";
+import { RenderSnapshot, RenderEntitySnapshot } from "./RenderSnapshot";
 import { CommandBuffer, DrawCommand } from "./CommandBuffer";
 
 export type ShapeDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, world: World, render: any) => void;
 
 /**
- * 2D Canvas-based Rendering Engine.
+ * Motor de renderizado basado en la API de Canvas 2D.
  *
  * @remarks
- * Implements a snapshot-based architecture for decoupled and consistent rendering.
- * Allocation-free in the hot loop using pooled commands and double-buffered snapshots.
+ * Implementa una arquitectura de renderizado basada en snapshots para garantizar
+ * una visualización consistente y desacoplada de la simulación. El renderer es
+ * "allocation-free" en su hot loop, utilizando pools pre-asignados para los comandos
+ * y snapshots para evitar la presión del Garbage Collector.
+ *
+ * @responsibility Transformar el estado del {@link World} en representaciones visuales.
+ * @responsibility Gestionar efectos de pantalla global (Screen Shake).
+ * @responsibility Proveer hooks para extensiones pre y post renderizado.
+ *
+ * @conceptualRisk [GC_PRESSURE][LOW] Aunque el hot loop es libre de asignaciones, la
+ * inicialización crea un array de 2000 entidades.
+ * @conceptualRisk [CANVAS_CONTEXT_LOST][MEDIUM] En entornos móviles/Expo, el contexto de
+ * canvas puede perderse, lo que requiere una gestión de reinicio no implementada aquí.
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
@@ -30,41 +41,32 @@ export class CanvasRenderer implements Renderer {
   private foregroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
 
   private commandBuffer = new CommandBuffer();
-  private readonly MAX_ENTITIES = 2000;
 
-  private readonly snapshotA: RenderSnapshot;
-  private readonly snapshotB: RenderSnapshot;
-  private currentSnapshot: RenderSnapshot;
+  // persistent buffer de snapshots para evitar allocs en el hot loop
+  private readonly MAX_ENTITIES = 2000;
+  private readonly snapshotEntities: RenderEntitySnapshot[];
+  private readonly currentSnapshot: RenderSnapshot;
 
   constructor(ctx?: CanvasRenderingContext2D) {
     if (ctx) this.ctx = ctx;
 
-    this.snapshotA = this.createEmptySnapshot();
-    this.snapshotB = this.createEmptySnapshot();
-    this.currentSnapshot = this.snapshotA;
-
-    this.registerDefaultDrawers();
-  }
-
-  private createEmptySnapshot(): RenderSnapshot {
-    const entities = new Array(this.MAX_ENTITIES);
+    this.snapshotEntities = new Array(this.MAX_ENTITIES);
     for (let i = 0; i < this.MAX_ENTITIES; i++) {
-      entities[i] = {
+      this.snapshotEntities[i] = {
         id: 0, x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1,
         opacity: 1, zIndex: 0, shape: "", color: "", size: 0,
         vertices: null, hitFlashFrames: 0, data: null
       };
     }
-    return {
-      entities,
+
+    this.currentSnapshot = {
+      entities: this.snapshotEntities,
       entityCount: 0,
       shakeX: 0,
       shakeY: 0
     };
-  }
 
-  private swapSnapshots(): void {
-    this.currentSnapshot = this.currentSnapshot === this.snapshotA ? this.snapshotB : this.snapshotA;
+    this.registerDefaultDrawers();
   }
 
   public registerShape(name: string, drawer: ShapeDrawer): void {
@@ -109,8 +111,7 @@ export class CanvasRenderer implements Renderer {
     });
 
     this.registerShape("polygon", (ctx, _, __, render) => {
-      const vertices = render.vertices;
-      if (!vertices || vertices.length === 0) return;
+      if (!render.vertices || render.vertices.length === 0) return;
       ctx.strokeStyle = render.color;
       ctx.lineWidth = 2;
       ctx.fillStyle = "#333";
@@ -119,9 +120,9 @@ export class CanvasRenderer implements Renderer {
         ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
       }
       ctx.beginPath();
-      ctx.moveTo(vertices[0].x, vertices[0].y);
-      for (let i = 1; i < vertices.length; i++) {
-        ctx.lineTo(vertices[i].x, vertices[i].y);
+      ctx.moveTo(render.vertices[0].x, render.vertices[0].y);
+      for (let i = 1; i < render.vertices.length; i++) {
+        ctx.lineTo(render.vertices[i].x, render.vertices[i].y);
       }
       ctx.closePath();
       ctx.fill();
@@ -153,18 +154,13 @@ export class CanvasRenderer implements Renderer {
    * Procesa el Screen Shake si el componente `GameState` lo indica.
    *
    * @param world - El mundo ECS a capturar.
-   * @param alpha - Factor de interpolación entre 0 (frame anterior) y 1 (frame actual).
+   * @param alpha - Factor de interpolación entre 0 y 1.
    * @returns Una referencia al objeto {@link RenderSnapshot} interno (reutilizado).
    *
    * @precondition Las entidades deben poseer componentes `Transform` y `Render`.
-   * @postcondition El objeto `RenderSnapshot` devuelto es una referencia al buffer interno
-   * para evitar asignaciones de memoria.
-   * @sideEffect Lee la semilla de `RandomService("render")` para el cálculo del Screen Shake.
+   * @postcondition El snapshot está ordenado por `zIndex` listo para ser renderizado.
    */
   public createSnapshot(world: World, alpha: number): RenderSnapshot {
-    this.swapSnapshots();
-    const snapshot = this.currentSnapshot;
-
     const entities = world.query("Transform", "Render");
     let count = 0;
 
@@ -179,8 +175,8 @@ export class CanvasRenderer implements Renderer {
       shakeY = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
     }
 
-    snapshot.shakeX = shakeX;
-    snapshot.shakeY = shakeY;
+    this.currentSnapshot.shakeX = shakeX;
+    this.currentSnapshot.shakeY = shakeY;
 
     for (let i = 0; i < entities.length; i++) {
       if (count >= this.MAX_ENTITIES) break;
@@ -209,34 +205,40 @@ export class CanvasRenderer implements Renderer {
         rotation = prevTrans.rotation + diff * alpha;
       }
 
+      snap.x = x;
+      snap.y = y;
+      snap.rotation = rotation;
+      snap.scaleX = scaleX;
+      snap.scaleY = scaleY;
+      snap.opacity = (render as any).opacity ?? 1;
+      snap.zIndex = (render as any).zIndex ?? 0;
+      snap.shape = render.shape;
+      snap.color = render.color;
+      snap.size = render.size;
+      snap.vertices = render.vertices || null;
+      snap.hitFlashFrames = render.hitFlashFrames || 0;
+      snap.data = render.data;
+
       count++;
     }
 
-    snapshot.entityCount = count;
-    return snapshot;
+    this.currentSnapshot.entityCount = count;
+    // We don't sort here anymore, we sort in the CommandBuffer
+
+    return this.currentSnapshot;
   }
 
   /**
-   * Realiza el dibujado efectivo en el Canvas a partir de un snapshot.
-   *
-   * @remarks
-   * Sigue un pipeline estricto: Clear -> Background -> Pre-Hooks -> Entities (Sorted) ->
-   * Foreground -> Post-Hooks -> UI.
-   *
-   * @param snapshot - Los datos visuales capturados previamente.
-   * @param world - El mundo ECS (necesario para hooks y drawers personalizados).
-   *
-   * @precondition El contexto 2D del Canvas debe estar inicializado.
-   * @postcondition El Canvas refleja el estado visual del snapshot.
-   * @sideEffect Limpia el Canvas con el color de fondo por defecto (negro).
-   * @sideEffect Ejecuta todos los hooks y efectos registrados.
+   * Renderiza un snapshot de forma pura.
    */
   public renderSnapshot(snapshot: RenderSnapshot, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
 
+    // 1. Clear Command Buffer
     this.commandBuffer.clear();
 
+    // 2. Populate Command Buffer from Snapshot
     for (let i = 0; i < snapshot.entityCount; i++) {
       const ent = snapshot.entities[i];
       this.commandBuffer.addCommand(
@@ -257,8 +259,10 @@ export class CanvasRenderer implements Renderer {
       );
     }
 
+    // 3. Sort Commands
     this.commandBuffer.sort();
 
+    // 4. Execute Commands
     this.clear();
     ctx.save();
     ctx.translate(snapshot.shakeX, snapshot.shakeY);

@@ -1,4 +1,4 @@
-import { Component } from "./EngineTypes";
+import { Component, Entity } from "./EngineTypes";
 
 export interface InputBufferComponent extends Component {
   type: "InputBuffer";

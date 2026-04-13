@@ -15,16 +15,9 @@ import { RenderableComponent, Transform } from "../types/EngineTypes";
  * @responsibility Aplicar transformaciones de mundo obtenidas del `SceneGraph`.
  * @responsibility Orquestar el ciclo de vida del frame en el renderer (begin/submit/end).
  *
- * @queries Renderable, Transform
- * @mutates Renderer (indirecto vía comandos), CommandPool
- * @dependsOn SceneGraph, Renderer, World
- * @executionOrder Fase: Presentation. Ejecutar después de la simulación y antes del fin del frame.
- *
  * @conceptualRisk [Z_ORDER_STABILITY][LOW] El algoritmo de ordenación utilizado (Array.sort)
  * puede no ser estable en todos los motores JS, lo que podría causar parpadeo visual
  * si dos entidades comparten el mismo `zOrder`.
- * @conceptualRisk [SCENE_GRAPH_DEPENDENCY][MEDIUM] Si el `SceneGraph` no se actualiza
- * antes que el `RenderSystem`, se renderizarán posiciones de frames anteriores.
  */
 export class RenderSystem {
   private commandPool: RenderCommand[] = [];
@@ -43,9 +36,7 @@ export class RenderSystem {
    * @param world - El mundo ECS de donde extraer los componentes `Renderable`.
    * @param alpha - Factor de interpolación para la suavización visual.
    *
-   * @precondition El `SceneGraph` debe haber resuelto las transformaciones de mundo antes de esta llamada.
    * @postcondition El `renderer` asociado recibe una secuencia ordenada de comandos.
-   * @sideEffect Llama a `renderer.beginFrame`, `renderer.submit` y `renderer.endFrame`.
    */
   public update(world: World, alpha: number): void {
     const renderables = world.getEntitiesWith("Renderable");

@@ -1,3 +1,4 @@
+import { World } from "../../../engine/core/World";
 import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
 import {
   GAME_CONFIG,

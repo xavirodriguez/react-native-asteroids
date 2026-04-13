@@ -20,7 +20,7 @@ import {
   spawnInvaderWave,
   spawnShields
 } from "../EntityFactory";
-import { GAME_CONFIG } from "../types/SpaceInvadersTypes";
+import { InputState, GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";
 
 /**

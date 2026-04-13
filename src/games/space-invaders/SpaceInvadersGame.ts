@@ -45,11 +45,10 @@ export class SpaceInvadersGame
       : { ...GAME_CONFIG };
 
     await super.init();
-    await this.registerSystemsAsync();
   }
 
   protected registerSystems(): void {
-    // Systems are registered asynchronously in init() via registerSystemsAsync()
+    this.registerSystemsAsync().catch(console.error);
   }
 
   protected initializeEntities(): void {

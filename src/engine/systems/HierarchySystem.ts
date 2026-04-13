@@ -32,18 +32,6 @@ type Mat3 = [number, number, number, number, number, number];
 export class HierarchySystem extends System {
   private wasDirty = new Set<Entity>();
 
-  /**
-   * Resuelve recursivamente las transformaciones de mundo para todas las entidades.
-   *
-   * @param world - El mundo ECS.
-   * @param _deltaTime - Tiempo transcurrido (ignorado).
-   *
-   * @precondition El orden de ejecución debe ser posterior a los sistemas que mutan
-   * la posición local.
-   * @postcondition Todas las entidades con `Transform` tienen sus coordenadas `world*`
-   * actualizadas si ellas o sus padres estaban marcados como `dirty`.
-   * @sideEffect Resetea el flag `dirty` de los componentes `Transform`.
-   */
   public update(world: World, _deltaTime: number): void {
     const transforms = world.query("Transform");
     const processed = new Set<Entity>();

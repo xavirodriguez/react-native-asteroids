@@ -1,4 +1,5 @@
 import { World } from "../../engine/core/World";
+import { AsteroidsGame } from "./AsteroidsGame";
 import { GAME_CONFIG, INITIAL_GAME_STATE } from "../../types/GameTypes";
 import { TransformComponent, VelocityComponent, RenderComponent, ColliderComponent, TTLComponent } from "../../engine/core/CoreComponents";
 import { createEmitter } from "../../engine/systems/ParticleSystem";

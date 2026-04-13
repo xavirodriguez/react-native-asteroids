@@ -18,7 +18,6 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
     if (!active || !playerName) return;
 
     cancelledRef.current = false;
-    const _currentRoom: Room | null = null;
 
     async function setup() {
       try {
@@ -28,7 +27,6 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
           return;
         }
 
-        currentRoom = joinedRoom;
         setRoom(joinedRoom);
         setConnected(true);
         setServerState(joinedRoom.state);

@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Platform,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   FadeIn,
@@ -27,7 +21,6 @@ let BackdropBlur: any = null;
 let Fill: any = null;
 if (Platform.OS !== "web") {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const SkiaModule = require("@shopify/react-native-skia");
     Canvas = SkiaModule.Canvas;
     BackdropBlur = SkiaModule.BackdropBlur;
@@ -118,7 +111,7 @@ const HUD: React.FC<{
     {Platform.OS !== "web" && Canvas && BackdropBlur && Fill && (
       <Canvas style={StyleSheet.absoluteFill}>
         <BackdropBlur blur={10} clip={{ x: 0, y: 0, width: 2000, height: 100 }}>
-          <Fill color="rgba(0, 0, 0, 0.4)" />
+            <Fill color="rgba(0, 0, 0, 0.4)" />
         </BackdropBlur>
       </Canvas>
     )}
@@ -142,7 +135,7 @@ const Score: React.FC<{ score: number }> = ({ score }) => {
   }, [score]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.value }]
   }));
 
   return (
@@ -181,11 +174,14 @@ const GameOverOverlay: React.FC<{
   highScore: number;
   onRestart?: () => void;
 }> = ({ score, highScore, onRestart }) => (
-  <Animated.View entering={FadeIn.duration(500)} style={styles.gameOverOverlay}>
+  <Animated.View
+    entering={FadeIn.duration(500)}
+    style={styles.gameOverOverlay}
+  >
     {Platform.OS !== "web" && Canvas && BackdropBlur && Fill && (
       <Canvas style={StyleSheet.absoluteFill}>
         <BackdropBlur blur={20}>
-          <Fill color="rgba(0, 0, 0, 0.6)" />
+            <Fill color="rgba(0, 0, 0, 0.6)" />
         </BackdropBlur>
       </Canvas>
     )}
@@ -197,10 +193,7 @@ const GameOverOverlay: React.FC<{
       GAME OVER
     </Animated.Text>
 
-    <Animated.View
-      entering={SlideInDown.delay(600).duration(800)}
-      style={{ alignItems: "center" }}
-    >
+    <Animated.View entering={SlideInDown.delay(600).duration(800)} style={{ alignItems: "center" }}>
       <Text style={styles.finalScoreText}>Final Score: {score}</Text>
       <Text style={styles.highScoreText}>
         {score >= highScore ? "¡NUEVO RÉCORD!" : `Récord actual: ${highScore}`}

@@ -38,12 +38,7 @@
     "src/engine/systems/MutatorSystem.ts": { "level": 5, "status": "completed" },
     "src/engine/ui/UILayoutSystem.ts": { "level": 5, "status": "completed" },
     "src/engine/ui/UITweenSystem.ts": { "level": 5, "status": "completed" },
-    "src/engine/debug/StateHasher.ts": { "level": 5, "status": "completed" },
-    "src/engine/rendering/RenderSystem.ts": { "level": 5, "status": "completed" },
-    "src/engine/rendering/RenderTypes.ts": { "level": 5, "status": "completed" },
-    "src/engine/rendering/CommandBuffer.ts": { "level": 5, "status": "completed" },
-    "src/engine/rendering/RenderSnapshot.ts": { "level": 5, "status": "completed" },
-    "src/engine/debug/ReplayRecorder.ts": { "level": 5, "status": "completed" }
+    "src/engine/debug/StateHasher.ts": { "level": 5, "status": "completed" }
   },
-  "lastUpdated": "2025-06-02T10:00:00Z"
+  "lastUpdated": "2025-06-01T10:00:00Z"
 }

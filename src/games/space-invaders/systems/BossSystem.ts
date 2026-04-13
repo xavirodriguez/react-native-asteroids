@@ -1,6 +1,6 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
-import { TransformComponent, RenderComponent, Component } from "../../../engine/types/EngineTypes";
+import { TransformComponent, VelocityComponent, RenderComponent, Component, HealthComponent } from "../../../engine/types/EngineTypes";
 import { GameStateComponent, GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
 import { Juice } from "../../../engine/utils/Juice";

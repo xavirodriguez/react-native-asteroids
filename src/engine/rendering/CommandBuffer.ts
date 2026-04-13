@@ -1,4 +1,5 @@
 import { Entity } from "../core/Entity";
+import { World } from "../core/World";
 
 export type CommandType = 'circle' | 'rect' | 'polygon' | 'custom';
 
@@ -20,7 +21,7 @@ export interface DrawCommand {
 }
 
 /**
- * Buffer de comandos poolificado para evitar asignaciones de memoria por frame.
+ * CommandBuffer pooled to avoid per-frame allocations.
  */
 export class CommandBuffer {
   private pool: DrawCommand[] = [];
@@ -97,19 +98,21 @@ export class CommandBuffer {
     return this.activeCount;
   }
 
-  /**
-   * Ordena los comandos activos por su Z-index utilizando un algoritmo de inserción in-place.
-   */
   public sort(): void {
+    // In-place insertion sort for z-index stability and zero allocation
     for (let i = 1; i < this.activeCount; i++) {
       const key = this.pool[i];
+      const keyZ = key.zIndex;
       let j = i - 1;
 
-      while (j >= 0 && this.pool[j].zIndex > key.zIndex) {
+      // We need to swap the actual objects or their content?
+      // Swapping objects in the pool array is fine as long as we don't lose references.
+      while (j >= 0 && this.pool[j].zIndex > keyZ) {
+        const temp = this.pool[j+1];
         this.pool[j + 1] = this.pool[j];
+        this.pool[j] = temp;
         j = j - 1;
       }
-      this.pool[j + 1] = key;
     }
   }
 }

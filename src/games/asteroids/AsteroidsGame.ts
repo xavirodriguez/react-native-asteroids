@@ -7,6 +7,7 @@ import { AsteroidComboSystem } from "./systems/AsteroidComboSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { UfoSystem } from "./systems/UfoSystem";
 import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
+import { InputStateComponent } from "../../engine/types/EngineTypes";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
 import { BoundarySystem } from "../../engine/systems/BoundarySystem";
 import { FrictionSystem } from "../../engine/systems/FrictionSystem";
@@ -14,10 +15,15 @@ import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { ShipControlSystem } from "./systems/ShipControlSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
-import { DeterministicSimulation } from "../../simulation/DeterministicSimulation";
+import { TransformComponent, VelocityComponent, RenderComponent, FrictionComponent, ScreenShakeComponent, TagComponent, HealthComponent } from "../../engine/types/EngineTypes";
+import { PhysicsUtils } from "../../engine/utils/PhysicsUtils";
+import { ShipPhysics } from "./utils/ShipPhysics";
+import { createShip, spawnAsteroidWave, createGameState } from "./EntityFactory";
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { MutatorService } from "../../services/MutatorService";
-import { InputFrame } from "../../multiplayer/NetTypes";
+import { KeyboardController } from "../../engine/input/KeyboardController";
+import { TouchController } from "../../engine/input/TouchController";
+import { InputFrame, EntitySnapshot } from "../../multiplayer/NetTypes";
 import { InterpolationBuffer } from "../../multiplayer/InterpolationSystem";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
@@ -38,9 +44,6 @@ export class AsteroidsGame
   private particlePool: ParticlePool;
   private entityInterpolationBuffers = new Map<string, InterpolationBuffer>();
   private serverEntities = new Map<string, number>();
-  private inputHistory: InputFrame[] = [];
-  private stateHistory = new Map<number, any>();
-  private lastAuthoritativeTick = 0;
   public readonly gameId = "asteroids";
   private config: typeof GAME_CONFIG;
 
@@ -68,7 +71,8 @@ export class AsteroidsGame
   }
 
   /**
-   * Predicts local player movement using the shared deterministic simulation.
+   * Predicts local player movement for lag compensation.
+   * Utilizes the same logical steps as the engine's movement systems.
    */
   public predictLocalPlayer(input: InputFrame, deltaTime: number) {
     const dtSeconds = deltaTime / 1000;
@@ -102,71 +106,147 @@ export class AsteroidsGame
           // 4. Boundary Wrapping (Unified via PhysicsUtils)
           PhysicsUtils.wrapBoundary(pos, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
         }
-    }
-
-    DeterministicSimulation.update(this.world, deltaTime, { isResimulating: false });
-    this.stateHistory.set(input.tick, this.world.snapshot());
-
-    // Keep history manageable
-    if (this.inputHistory.length > 120) this.inputHistory.shift();
-    const oldestTick = input.tick - 120;
-    if (this.stateHistory.has(oldestTick)) this.stateHistory.delete(oldestTick);
+      }
+    });
   }
 
-  public updateFromServer(serverState: any, localSessionId?: string) {
-    if (!this.isMultiplayer || !serverState) return;
-    const serverTick = serverState.serverTick;
-    if (serverTick <= this.lastAuthoritativeTick) return;
-    this.lastAuthoritativeTick = serverTick;
+  public updateFromServer(state: any, localSessionId?: string) {
+    if (!this.isMultiplayer || !state) return;
 
-    // 1. Comparison & Rollback
-    const predicted = this.stateHistory.get(serverTick);
-    if (predicted && localSessionId) {
-        const localPlayerState = serverState.players?.[localSessionId];
-        if (localPlayerState) {
-            const localPlayerEntity = this.world.query("LocalPlayer")[0];
-            if (localPlayerEntity !== undefined) {
-                const predictedPos = predicted.componentData["Transform"]?.[localPlayerEntity];
+    const currentServerIds = new Set<string>();
 
-                const THRESHOLD = 0.1;
-                const dx = Math.abs(predictedPos.x - localPlayerState.x);
-                const dy = Math.abs(predictedPos.y - localPlayerState.y);
+    // 1. Buffering snapshots for remote entities
+    if (state.players) {
+        state.players.forEach((player: any, sessionId: string) => {
+            currentServerIds.add(sessionId);
+            if (sessionId !== localSessionId) {
+                let buffer = this.entityInterpolationBuffers.get(sessionId);
+                if (!buffer) {
+                    buffer = new InterpolationBuffer(10);
+                    this.entityInterpolationBuffers.set(sessionId, buffer);
+                }
+                buffer.push({
+                    tick: state.serverTick,
+                    x: player.x,
+                    y: player.y,
+                    angle: player.angle,
+                    timestamp: Date.now()
+                });
+            }
 
-                if (dx > THRESHOLD || dy > THRESHOLD) {
-                    console.log(`Rollback detected at tick ${serverTick}. Mismatch: ${dx.toFixed(2)}, ${dy.toFixed(2)}`);
-
-                    // Build a temporary snapshot from server state
-                    // (Simplified: we use the predicted one but update the local player)
-                    // In a full implementation, we'd rebuild the entire state from server schema
-                    predicted.componentData["Transform"][localPlayerEntity].x = localPlayerState.x;
-                    predicted.componentData["Transform"][localPlayerEntity].y = localPlayerState.y;
-                    if (predicted.componentData["Velocity"]?.[localPlayerEntity]) {
-                        predicted.componentData["Velocity"][localPlayerEntity].dx = localPlayerState.velocityX;
-                        predicted.componentData["Velocity"][localPlayerEntity].dy = localPlayerState.velocityY;
-                    }
-
-                    this.world.restore(predicted);
-
-                    // Re-simulate forward
-                    const lastInputTick = this.inputHistory[this.inputHistory.length - 1]?.tick || serverTick;
-                    this.inputHistory.filter(i => i.tick > serverTick).forEach(input => {
-                        // Apply input to LocalPlayer
-                        const inputComp = this.world.getComponent<any>(localPlayerEntity, "Input");
-                        if (inputComp) {
-                            inputComp.rotateLeft = input.actions.includes("rotateLeft") || (input.axes?.rotate_left ?? 0) > 0;
-                            inputComp.rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;
-                            inputComp.thrust = input.actions.includes("thrust") || (input.axes?.thrust ?? 0) > 0;
-                            inputComp.shoot = input.actions.includes("shoot");
-                        }
-                        DeterministicSimulation.update(this.world, 16.66, { isResimulating: true });
-                        this.stateHistory.set(input.tick, this.world.snapshot());
-                    });
+            let entity = this.serverEntities.get(sessionId);
+            if (entity === undefined) {
+                entity = this.world.createEntity();
+                this.serverEntities.set(sessionId, entity);
+                this.world.addComponent(entity, { type: "Transform", x: player.x, y: player.y, rotation: player.angle, scaleX: 1, scaleY: 1 } as TransformComponent);
+                this.world.addComponent(entity, {
+                    type: "Render",
+                    shape: "triangle",
+                    size: 10,
+                    color: "white",
+                    rotation: player.angle,
+                    trailPositions: []
+                } as RenderComponent);
+                this.world.addComponent(entity, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0 } as any);
+                const tags = ["Ship"];
+                if (sessionId === localSessionId) tags.push("LocalPlayer");
+                this.world.addComponent(entity, { type: "Tag", tags } as TagComponent);
+                this.world.addComponent(entity, { type: "Health", current: player.lives, max: 3, invulnerableRemaining: 0 } as HealthComponent);
+                if (sessionId === localSessionId) {
+                    this.world.addComponent(entity, { type: "Velocity", dx: player.velocityX, dy: player.velocityY } as VelocityComponent);
                 }
             }
-        }
+
+            const pos = this.world.getComponent<any>(entity, "Transform");
+            const render = this.world.getComponent<any>(entity, "Render");
+            const health = this.world.getComponent<any>(entity, "Health");
+            const vel = this.world.getComponent<any>(entity, "Velocity");
+
+            if (sessionId === localSessionId) {
+                // Reconciliation logic
+                const dx = Math.abs(pos.x - player.x);
+                const dy = Math.abs(pos.y - player.y);
+                const THRESHOLD = 5;
+
+                if (dx > THRESHOLD || dy > THRESHOLD) {
+                    pos.x = player.x;
+                    pos.y = player.y;
+                }
+                if (vel) {
+                    vel.dx = player.velocityX;
+                    vel.dy = player.velocityY;
+                }
+                render.rotation = player.angle;
+            } else {
+                // Interpolation logic
+                const buffer = this.entityInterpolationBuffers.get(sessionId);
+                const snapshot = buffer?.getAt(Date.now() - 100);
+                if (snapshot) {
+                    pos.x = snapshot.prev.x + (snapshot.next.x - snapshot.prev.x) * snapshot.alpha;
+                    pos.y = snapshot.prev.y + (snapshot.next.y - snapshot.prev.y) * snapshot.alpha;
+                    render.rotation = snapshot.prev.angle !== undefined && snapshot.next.angle !== undefined ?
+                        snapshot.prev.angle + (snapshot.next.angle - snapshot.prev.angle) * snapshot.alpha : player.angle;
+                } else {
+                    pos.x = player.x;
+                    pos.y = player.y;
+                    render.rotation = player.angle;
+                }
+            }
+            if (health) health.current = player.lives;
+            render.color = player.alive ? "white" : "rgba(255,0,0,0.5)";
+        });
     }
-    // Cleanup old input history
-    this.inputHistory = this.inputHistory.filter(i => i.tick >= serverTick);
+
+    // 2. Asteroids
+    if (state.asteroids) {
+        state.asteroids.forEach((asteroid: any, id: string) => {
+            currentServerIds.add(id);
+            let entity = this.serverEntities.get(id);
+            if (entity === undefined) {
+                entity = this.world.createEntity();
+                this.serverEntities.set(id, entity);
+                this.world.addComponent(entity, { type: "Transform", x: asteroid.x, y: asteroid.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+                this.world.addComponent(entity, { type: "Render", shape: "polygon", size: 30, color: "white", rotation: 0 } as RenderComponent);
+                this.world.addComponent(entity, { type: "Asteroid", size: "large" } as any);
+                this.world.addComponent(entity, { type: "Tag", tags: ["Asteroid"] } as TagComponent);
+            }
+            const pos = this.world.getComponent<TransformComponent>(entity, "Transform");
+            if (pos) {
+                pos.x = asteroid.x;
+                pos.y = asteroid.y;
+            }
+        });
+    }
+
+    // 3. Bullets
+    if (state.bullets) {
+        state.bullets.forEach((bullet: any, id: string) => {
+            currentServerIds.add(id);
+            let entity = this.serverEntities.get(id);
+            if (entity === undefined) {
+                entity = this.world.createEntity();
+                this.serverEntities.set(id, entity);
+                this.world.addComponent(entity, { type: "Transform", x: bullet.x, y: bullet.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+                this.world.addComponent(entity, { type: "Render", shape: "bullet_shape", size: 2, color: "white", rotation: 0 } as RenderComponent);
+                this.world.addComponent(entity, { type: "Bullet" } as any);
+                this.world.addComponent(entity, { type: "Tag", tags: ["Bullet"] } as TagComponent);
+            }
+            const pos = this.world.getComponent<TransformComponent>(entity, "Transform");
+            if (pos) {
+                pos.x = bullet.x;
+                pos.y = bullet.y;
+            }
+        });
+    }
+
+    // 4. Cleanup stale entities
+    this.serverEntities.forEach((entity, id) => {
+        if (!currentServerIds.has(id)) {
+            this.world.removeEntity(entity);
+            this.serverEntities.delete(id);
+            this.entityInterpolationBuffers.delete(id);
+        }
+    });
   }
 
   protected registerSystems(): void {
@@ -203,23 +283,7 @@ export class AsteroidsGame
     this.world.addSystem(new AsteroidRenderSystem()); // Handle trails
   }
 
-  protected initializeEntities(): void {
-    if (this.isMultiplayer) return;
-
-    const { world, config } = this;
-    const { createGameState, createShip, spawnAsteroidWave } = require("./EntityFactory");
-
-    createGameState({ world });
-    createShip({
-      world,
-      x: config.SCREEN_CENTER_X,
-      y: config.SCREEN_CENTER_Y,
-    });
-    spawnAsteroidWave({
-      world,
-      count: config.INITIAL_ASTEROID_COUNT,
-    });
-  }
+  protected initializeEntities(): void {}
 
   /**
    * Registers game-specific rendering logic to the provided renderer.

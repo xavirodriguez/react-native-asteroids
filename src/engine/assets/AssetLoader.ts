@@ -1,11 +1,11 @@
-import { AssetDescriptor, AssetHandle } from "./AssetTypes";
+import { AssetDescriptor, AssetHandle, AssetType } from "./AssetTypes";
 
 /**
  * AssetLoader for managing game assets with caching and reference counting.
  *
- * @responsibility Load and cache external resources (images, sounds, JSON).
- * @responsibility Manage resource lifecycle through reference counting.
- * @responsibility Ensure symmetry in asset loading/unloading.
+ * @responsibility Cargar y cachear recursos externos (imágenes, sonidos, JSON).
+ * @responsibility Gestionar el ciclo de vida de los recursos mediante conteo de referencias.
+ * @responsibility Garantizar la simetría en la carga/descarga de recursos.
  */
 export class AssetLoader {
   private cache = new Map<string, AssetHandle>();
@@ -13,21 +13,22 @@ export class AssetLoader {
   private refCounts = new Map<string, number>();
 
   /**
-   * Enqueues assets for loading.
+   * Encola recursos para ser cargados.
    */
   public queueAssets(assets: AssetDescriptor[]): void {
     this.queue.push(...assets);
   }
 
   /**
-   * Loads all enqueued assets asynchronously.
-   * Increments reference counts for already loaded assets.
+   * Carga todos los recursos encolados de forma asíncrona.
+   * Incrementa el conteo de referencias para recursos ya cargados.
    */
   public async loadAll(): Promise<void> {
     const assetsToLoad = [...this.queue];
     this.queue = [];
 
     const promises = assetsToLoad.map(async (desc) => {
+      // Si ya está en caché, solo incrementamos referencia
       if (this.cache.has(desc.id)) {
         this.incrementRef(desc.id);
         return;
@@ -56,7 +57,7 @@ export class AssetLoader {
   }
 
   /**
-   * Gets an asset handle from the cache.
+   * Obtiene un handle de recurso del caché.
    */
   public get<T>(id: string): AssetHandle<T> {
     const handle = this.cache.get(id);
@@ -67,7 +68,7 @@ export class AssetLoader {
   }
 
   /**
-   * Manually increments the reference count.
+   * Incrementa manualmente el conteo de referencias.
    */
   public incrementRef(id: string): void {
     const count = this.refCounts.get(id) || 0;
@@ -75,8 +76,8 @@ export class AssetLoader {
   }
 
   /**
-   * Unloads a group of assets, decrementing their reference counts.
-   * Frees memory if the count reaches zero.
+   * Descarga un grupo de recursos, decrementando su conteo de referencias.
+   * Libera la memoria si el conteo llega a cero.
    */
   public unloadGroup(ids: string[]): void {
     for (const id of ids) {
@@ -93,12 +94,9 @@ export class AssetLoader {
         if (newCount < 0) {
           console.error(`AssetLoader: Asset ${id} reference count underflow (${newCount}). Critical leak or double unload.`);
         }
-
-        // Resource disposal hook (placeholder for platform-specific cleanup)
-        this.disposeAsset(id);
-
         this.cache.delete(id);
         this.refCounts.delete(id);
+        // En un entorno real, aquí llamaríamos a la liberación de recursos (ej: GL.deleteTexture)
       } else {
         this.refCounts.set(id, newCount);
       }
@@ -106,23 +104,7 @@ export class AssetLoader {
   }
 
   /**
-   * Performs platform-specific resource disposal.
-   */
-  private disposeAsset(id: string): void {
-    const handle = this.cache.get(id);
-    if (!handle || !handle.data) return;
-
-    // Example: If data has a dispose method, call it.
-    if (typeof (handle.data as any).dispose === 'function') {
-        (handle.data as any).dispose();
-    }
-
-    // In a real environment, we'd add logic for specific types:
-    // e.g., if (handle.type === 'texture') WebGL.deleteTexture(handle.data);
-  }
-
-  /**
-   * Returns current loading progress.
+   * Devuelve el progreso actual de carga.
    */
   public progress(): { loaded: number; total: number; percent: number } {
     let loaded = 0;
@@ -142,7 +124,7 @@ export class AssetLoader {
   }
 
   private async performLoad(desc: AssetDescriptor): Promise<any> {
-    // Simulated load for engine environment
+    // Simulación de carga para el entorno de engine puro
     if (desc.type === 'json') {
       return Promise.resolve({ success: true });
     }
@@ -150,7 +132,7 @@ export class AssetLoader {
   }
 
   /**
-   * Helper for preloading compatible with legacy systems.
+   * Helper para precarga compatible con sistemas legados.
    */
   public async preload(assets: Record<string, string>): Promise<void> {
     const descriptors: AssetDescriptor[] = Object.entries(assets).map(([id, uri]) => ({
@@ -163,7 +145,7 @@ export class AssetLoader {
   }
 
   /**
-   * Debug helper to detect memory leaks.
+   * Debug helper para detectar fugas de memoria.
    */
   public assertNoLeaks(): void {
     if (this.cache.size > 0) {

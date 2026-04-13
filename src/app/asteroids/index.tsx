@@ -26,7 +26,7 @@ export default function AsteroidsScreen() {
   const [showDailyResults, setShowDailyResults] = useState(false);
   const [activeMutators, setActiveMutators] = useState<any[]>([]);
 
-  const { room, connected, serverState, sendInput, inputBufferRef } = useMultiplayer("asteroids", playerName, isMulti && started);
+  const { room, connected, serverState, sendInput, inputBufferRef, lastProcessedTickRef } = useMultiplayer("asteroids", playerName, isMulti && started);
 
   useEffect(() => {
     MutatorService.isMutatorModeEnabled().then(enabled => {
@@ -59,10 +59,7 @@ export default function AsteroidsScreen() {
   useEffect(() => {
     if (isMulti && serverState && game) {
         const sessionId = room?.sessionId;
-<<<<<<< HEAD
         const _lastTick = lastProcessedTickRef.current;
-=======
->>>>>>> master
         const pendingInputs = inputBufferRef.current;
 
         (game as any).updateFromServer(serverState, sessionId);
