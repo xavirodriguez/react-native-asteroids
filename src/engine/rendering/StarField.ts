@@ -1,4 +1,4 @@
-import { Star } from "../types/GameTypes";
+import { Star } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
 
 /**
@@ -11,9 +11,11 @@ import { RandomService } from "../utils/RandomService";
 export function generateStarField(count: number, width: number, height: number): Star[] {
   const renderRandom = RandomService.getInstance("render");
   return Array.from({ length: count }, () => ({
+    type: "Star",
     x: RandomService.next() * width,
     y: RandomService.next() * height,
     size: RandomService.next() * 1.5 + 0.5,
+    alpha: 1,
     brightness: RandomService.next() * 0.7 + 0.3,
     twinklePhase: 0,
     twinkleSpeed: 0,

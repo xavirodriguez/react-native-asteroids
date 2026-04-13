@@ -30,3 +30,8 @@ El motor proporciona las primitivas necesarias para la simulación, mientras que
 2. **Simulación Determinista**: Uso de `RandomService` y timesteps fijos para garantizar resultados reproducibles.
 3. **Unificación de Loop**: Los renderizadores son pasivos y sincronizados con el latido del motor.
 4. **Local-First / Server-Authoritative**: Soporte nativo para predicción en cliente con validación en servidor.
+
+## API Reference
+La documentación técnica detallada de cada clase, interfaz y sistema se genera automáticamente a partir del código fuente.
+
+- [**Referencia de API Completa**](./api-reference/index.md)

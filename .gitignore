@@ -43,3 +43,8 @@ coverage/
 server.log
 web_server.log
 npm_output.log
+
+# Documentation artifacts
+temp/
+etc/
+docs/api-reference/

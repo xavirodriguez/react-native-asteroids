@@ -10,17 +10,26 @@ interface RegisteredSystem {
 }
 
 /**
- * Registro central del motor ECS que gestiona el ciclo de vida de entidades, componentes y sistemas.
+ * Mundo ECS - Registro central que gestiona el ciclo de vida de entidades, componentes y sistemas.
+ *
+ * @responsibility Gestionar el ciclo de vida de las entidades (creación, destrucción).
+ * @responsibility Almacenar y proporcionar acceso eficiente a los componentes.
+ * @responsibility Orquestar la ejecución de sistemas en fases específicas.
+ * @responsibility Mantener recursos compartidos globales del juego.
  *
  * @remarks
- * El World actúa como el núcleo de la arquitectura ECS. Mantiene la identidad de las entidades,
- * el almacenamiento de componentes y garantiza el orden de ejecución de los sistemas basado en
- * fases y prioridades.
+ * El `World` actúa como el núcleo de la arquitectura ECS. Utiliza un pool de entidades para minimizar
+ * la presión sobre el GC y emplea queries reactivas cacheadas para optimizar las consultas de sistemas.
  *
  * Invariantes:
- * - Principio 2: Las estructuras jerárquicas (Transforms) deben ser válidas (sin auto-parentesco).
- * - Principio 6: Los componentes singleton recuperados mediante {@link World.getSingleton} están
- * garantizados como mutables.
+ * - **Principio 2**: Las estructuras jerárquicas (Transforms) deben ser válidas; no se permite el auto-parentesco.
+ * - **Principio 6**: Los componentes singleton recuperados mediante {@link World.getSingleton} están
+ * garantizados como mutables (se realiza una copia si están congelados).
+ *
+ * @conceptualRisk [PERFORMANCE] Las consultas (queries) sin caché pueden volverse costosas
+ * si se realizan múltiples veces por frame en mundos con miles de entidades.
+ * @conceptualRisk [CONSISTENCY] La eliminación de componentes durante una iteración
+ * de sistema puede invalidar el estado de los iteradores si no se maneja mediante buffers.
  *
  * @packageDocumentation
  */

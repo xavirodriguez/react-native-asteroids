@@ -55,6 +55,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   protected networkTransport?: NetworkTransport;
   protected replayRecorder: ReplayRecorder;
   protected currentTick: number = 0;
+  protected currentSeed: number = 0;
   public isMultiplayer: boolean;
 
   private _isPaused = false;
@@ -338,9 +339,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     return false;
   }
 
-  public setInput(input: Partial<TInput>): void {
+  public setInput(input: Record<string, boolean>): void {
     Object.entries(input).forEach(([action, pressed]) => {
-      this.unifiedInput.setOverride(action, pressed as boolean);
+      this.unifiedInput.setOverride(action, pressed);
     });
   }
 
