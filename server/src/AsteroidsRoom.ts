@@ -2,8 +2,6 @@ import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, EntitySnapshot, ReplayFrame } from "./NetTypes";
 import { RandomService } from "./RandomService";
-import { PhysicsUtils } from "./PhysicsUtils";
-import { ShipPhysics } from "./ShipPhysics";
 import { World } from "../../src/engine/core/World";
 import { DeterministicSimulation } from "../../src/simulation/DeterministicSimulation";
 import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, ColliderComponent, TagComponent } from "../../src/engine/core/CoreComponents";

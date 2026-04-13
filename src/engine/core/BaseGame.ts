@@ -6,7 +6,6 @@ import { InputBuffer } from "../network/InputBuffer";
 import { NetworkTransport } from "../network/NetworkTransport";
 import { ReplayRecorder } from "../debug/ReplayRecorder";
 import { SceneManager } from "../scenes/SceneManager";
-import { runLifecycleAsync } from "../utils/LifecycleUtils";
 import { RandomService } from "../utils/RandomService";
 import { PreviousTransformComponent, TransformComponent } from "./CoreComponents";
 import type { IGame, UpdateListener } from "./IGame";
