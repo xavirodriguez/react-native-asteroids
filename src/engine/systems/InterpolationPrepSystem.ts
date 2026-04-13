@@ -15,6 +15,17 @@ import { TransformComponent, PreviousTransformComponent } from "../core/CoreComp
  * por los renderizadores (Canvas/Skia) para interpolar posiciones entre ticks físicos fijos.
  */
 export class InterpolationPrepSystem extends System {
+  /**
+   * Captura el estado actual del Transform en PreviousTransform.
+   *
+   * @param world - El mundo ECS.
+   * @param _deltaTime - Tiempo transcurrido (ignorado).
+   *
+   * @precondition Debe ejecutarse al inicio del frame, antes de cualquier mutación de simulación.
+   * @postcondition El componente `PreviousTransform` de cada entidad contiene los datos de la
+   * posición previa a la simulación del frame actual.
+   * @sideEffect Crea el componente `PreviousTransform` si no existía previamente.
+   */
   public update(world: World, _deltaTime: number): void {
     const entities = world.query("Transform");
 

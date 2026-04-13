@@ -32,11 +32,13 @@ Toma el snapshot pre-calculado y lo vuelca al backend (Canvas/Skia).
 
 ## Extensibilidad: Shape Drawers
 Para añadir una nueva forma visual (e.g., un nuevo tipo de nave):
-1. Crear una función `ShapeDrawer` que reciba el contexto de dibujo.
+1. Crear una función `ShapeDrawer` que reciba el contexto de dibujo (`CanvasRenderingContext2D` o `SkCanvas`).
 2. Registrarla en el renderer mediante `renderer.registerShape("mi_forma", miDrawer)`.
 3. Asignar `shape: "mi_forma"` al `RenderComponent` de la entidad.
+4. **Nota**: Los drawers deben ser puramente visuales y no mutar el estado del World ni de los componentes.
 
 ## Rendimiento y GC
 - **Zero Allocation**: El `CanvasRenderer` utiliza un pool persistente de `RenderEntitySnapshot` (máximo 2000 por defecto). No se crean objetos nuevos durante el ciclo `createSnapshot` -> `renderSnapshot`.
+- **Command Buffer Pooling**: Los comandos de dibujo se gestionan mediante el `CommandBuffer`, que utiliza un algoritmo de ordenación por inserción (Insertion Sort) in-place para el Z-order, garantizando estabilidad y cero asignaciones de memoria adicionales.
 - **[GC_PRESSURE][LOW]**: Aunque el hot loop es limpio, la inicialización del pool es costosa.
 - **[CANVAS_CONTEXT_LOST][MEDIUM]**: En entornos móviles, el contexto puede perderse, invalidando los buffers de dibujo.

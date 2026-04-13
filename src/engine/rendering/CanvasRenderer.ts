@@ -144,6 +144,23 @@ export class CanvasRenderer implements Renderer {
     this.ctx.fillRect(0, 0, this.width, this.height);
   }
 
+  /**
+   * Captura una instantánea visual del estado actual del mundo ECS.
+   *
+   * @remarks
+   * Realiza la interpolación lineal de las transformaciones basándose en el valor `alpha`
+   * para suavizar el movimiento entre ticks de simulación fijos.
+   * Procesa el Screen Shake si el componente `GameState` lo indica.
+   *
+   * @param world - El mundo ECS a capturar.
+   * @param alpha - Factor de interpolación entre 0 (frame anterior) y 1 (frame actual).
+   * @returns Una referencia al objeto {@link RenderSnapshot} interno (reutilizado).
+   *
+   * @precondition Las entidades deben poseer componentes `Transform` y `Render`.
+   * @postcondition El objeto `RenderSnapshot` devuelto es una referencia al buffer interno
+   * para evitar asignaciones de memoria.
+   * @sideEffect Lee la semilla de `RandomService("render")` para el cálculo del Screen Shake.
+   */
   public createSnapshot(world: World, alpha: number): RenderSnapshot {
     this.swapSnapshots();
     const snapshot = this.currentSnapshot;
@@ -219,6 +236,21 @@ export class CanvasRenderer implements Renderer {
     return snapshot;
   }
 
+  /**
+   * Realiza el dibujado efectivo en el Canvas a partir de un snapshot.
+   *
+   * @remarks
+   * Sigue un pipeline estricto: Clear -> Background -> Pre-Hooks -> Entities (Sorted) ->
+   * Foreground -> Post-Hooks -> UI.
+   *
+   * @param snapshot - Los datos visuales capturados previamente.
+   * @param world - El mundo ECS (necesario para hooks y drawers personalizados).
+   *
+   * @precondition El contexto 2D del Canvas debe estar inicializado.
+   * @postcondition El Canvas refleja el estado visual del snapshot.
+   * @sideEffect Limpia el Canvas con el color de fondo por defecto (negro).
+   * @sideEffect Ejecuta todos los hooks y efectos registrados.
+   */
   public renderSnapshot(snapshot: RenderSnapshot, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;

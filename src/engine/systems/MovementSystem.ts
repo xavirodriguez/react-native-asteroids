@@ -25,10 +25,14 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  */
 export class MovementSystem extends System {
   /**
-   * Actualiza la posición de todas las entidades que poseen Transform y Velocity.
+   * Actualiza la posición y rotación de todas las entidades que poseen Transform y Velocity.
    *
    * @param world - El mundo ECS que contiene las entidades.
    * @param deltaTime - Tiempo transcurrido desde el último tick en milisegundos.
+   *
+   * @precondition Las entidades deben tener componentes `Transform` y `Velocity`.
+   * @postcondition Las coordenadas `x` e `y` del `Transform` se actualizan.
+
    *
    * @contract La posición resultante es `p_new = p_old + (v * dt_seconds)`.
    * @invariant No modifica la velocidad de la entidad.

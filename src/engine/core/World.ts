@@ -42,7 +42,15 @@ export class World {
   private resources = new Map<string, any>();
 
   /**
-   * Interface for serializable world state used for snapshots and rollback.
+   * Genera una instantánea serializable del estado completo del mundo para rollback o persistencia.
+   *
+   * @remarks
+   * Captura entidades activas, datos de componentes, contadores de IDs, versión del mundo
+   * y la semilla actual del generador de números aleatorios de gameplay.
+   *
+   * @returns Un objeto plano que contiene el estado reconstruible del mundo.
+   * @conceptualRisk [JSON_DETERMINISM][MEDIUM] La serialización no garantiza el orden de las
+   * propiedades, lo que puede afectar a la generación de hashes de estado.
    */
   public snapshot(): any {
     const gameplayRandom = RandomService.getInstance("gameplay");
@@ -71,8 +79,20 @@ export class World {
   }
 
   /**
-   * Restores the world state from a snapshot.
-   * @param state The state to restore.
+   * Restaura el estado del mundo a partir de una instantánea previamente capturada.
+   *
+   * @remarks
+   * Este método reconstruye todos los mapas de componentes e índices. También garantiza
+   * que las queries existentes se invaliden y reconstruyan para mantener la consistencia
+   * de los resultados sin romper las referencias a los objetos Query.
+   *
+   * @param state - El objeto de estado obtenido de {@link World.snapshot}.
+   *
+   * @precondition El estado proporcionado debe ser una estructura válida generada por el motor.
+   * @postcondition El mundo refleja exactamente el estado contenido en la instantánea.
+   * @postcondition {@link World.version} se sincroniza con el valor del estado restaurado.
+   * @sideEffect Limpia todos los datos actuales del mundo antes de la restauración.
+   * @sideEffect Re-inicializa la semilla de `RandomService("gameplay")`.
    */
   public restore(state: any): void {
     this.activeEntities = new Set(state.entities);
@@ -436,12 +456,20 @@ export class World {
   }
 
   /**
-   * Actualiza todos los sistemas registrados ordenados por fase y prioridad.
-   *
-   * @param deltaTime - Tiempo transcurrido desde la última actualización en milisegundos.
+   * Ejecuta un ciclo de actualización sobre todos los sistemas registrados.
    *
    * @remarks
-   * Si la lista de sistemas ha cambiado, se realiza una re-ordenación antes de la actualización.
+   * Los sistemas se ejecutan siguiendo estrictamente el orden de fases y prioridades.
+   * Si se ha añadido o eliminado algún sistema desde la última llamada, el motor
+   * realiza una re-ordenación automática.
+   *
+   * @param deltaTime - Tiempo transcurrido desde el último tick en milisegundos.
+   *
+   * @precondition El mundo debe estar en un estado consistente.
+   * @postcondition La versión del mundo puede haber incrementado si los sistemas realizaron
+   * cambios estructurales.
+   * @sideEffect Invoca el método `update` de cada sistema registrado.
+   * @sideEffect Si {@link World.debugMode} es true, actualiza los perfiles de rendimiento.
    */
   update(deltaTime: number): void {
     if (this.systemsNeedSorting) {
@@ -462,16 +490,21 @@ export class World {
   }
 
   /**
-   * Returns the average execution time for a system if profiling is enabled.
+   * Obtiene el tiempo promedio de ejecución de un sistema en milisegundos.
    *
-   * @param system - Registered system to profile.
+   * @param system - La instancia del sistema a consultar.
+   * @returns Tiempo promedio en ms, o 0 si el profiling no está activo para ese sistema.
+   * @remarks Solo disponible si {@link World.debugMode} estaba activo durante el update.
    */
   getSystemTiming(system: System): number {
     return this.profilers.get(system)?.getAverageTime() ?? 0;
   }
 
   /**
-   * Returns all system timings.
+   * Obtiene un mapa con los tiempos de ejecución de todos los sistemas registrados.
+   *
+   * @returns Un objeto donde las llaves son los nombres de clase de los sistemas y los
+   * valores son los tiempos promedio en ms.
    */
   getAllSystemTimings(): Record<string, number> {
     const timings: Record<string, number> = {};
@@ -517,9 +550,10 @@ export class World {
   }
 
   /**
-   * Returns all component types attached to an entity.
+   * Recupera la lista de todos los tipos de componentes asociados a una entidad.
    *
-   * @param entity - Target entity.
+   * @param entity - El ID de la entidad a consultar.
+   * @returns Un array con los nombres de los tipos de componentes.
    */
   getEntityComponentTypes(entity: Entity): string[] {
     const set = this.entityComponentSets.get(entity);
