@@ -48,7 +48,12 @@
     "src/engine/physics/collision/CollisionSystem2D.ts": { "level": 5, "status": "completed" },
     "src/engine/systems/AnimationSystem.ts": { "level": 5, "status": "completed" },
     "src/engine/systems/StateMachineSystem.ts": { "level": 5, "status": "completed" },
-    "src/engine/core/AudioSystem.ts": { "level": 5, "status": "completed" }
+    "src/engine/core/AudioSystem.ts": { "level": 5, "status": "completed" },
+    "src/engine/core/IGame.ts": { "level": 5, "status": "completed" },
+    "src/engine/scenes/Scene.ts": { "level": 5, "status": "completed" },
+    "src/engine/collision/SpatialHash.ts": { "level": 5, "status": "completed" },
+    "src/engine/camera/CameraSystem.ts": { "level": 5, "status": "completed" },
+    "src/engine/input/InputManager.ts": { "level": 5, "status": "completed" }
   },
-  "lastUpdated": "2025-06-03T10:00:00Z"
+  "lastUpdated": "2025-06-04T10:00:00Z"
 }
