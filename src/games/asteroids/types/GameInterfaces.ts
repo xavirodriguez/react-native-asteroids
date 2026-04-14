@@ -1,5 +1,6 @@
 import type { IGame, UpdateListener } from "../../../engine/core/IGame";
-import type { GameStateComponent, InputState } from "../../../types/GameTypes";
+import type { World } from "../../../engine/core/World";
+import type { GameStateComponent, InputState } from "./AsteroidTypes";
 
 // Re-export with strong typing for Asteroids
 export type { UpdateListener };
@@ -15,5 +16,5 @@ export interface IAsteroidsGame extends IGame<IAsteroidsGame> {
 
 export interface IGameStateSystem {
   isGameOver(): boolean;
-  resetGameOverState(): void;
+  resetGameOverState(world?: World): void;
 }

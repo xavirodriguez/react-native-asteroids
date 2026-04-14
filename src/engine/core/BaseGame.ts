@@ -163,6 +163,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     return scene ? scene.getWorld() : this.world;
   }
 
+  public getSeed(): number {
+    return this.currentSeed;
+  }
+
   /**
    * Inicializa el juego y todos sus subsistemas.
    *
