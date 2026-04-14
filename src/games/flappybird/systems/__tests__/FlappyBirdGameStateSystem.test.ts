@@ -18,7 +18,7 @@ describe("FlappyBirdGameStateSystem", () => {
 
   it("should initialize with score 0", () => {
     createGameState(world);
-    const state = world.getSingleton<FlappyBirdState>("FlappyState")!;
+    const _state = world.getSingleton<FlappyBirdState>("FlappyState")!;
     expect(state.score).toBe(0);
     expect(state.isGameOver).toBe(false);
   });
@@ -26,7 +26,7 @@ describe("FlappyBirdGameStateSystem", () => {
   it("should update score when bird passes pipe", () => {
     // In FlappyBirdGameStateSystem, score is updated when pos.x < BIRD_X
     // BIRD_X is 100.
-    const state = createGameState(world);
+    const _state = createGameState(world);
     const pipe = world.createEntity();
     world.addComponent(pipe, { type: "Transform", x: 150, y: 300 });
     world.addComponent(pipe, { type: "Pipe", gapY: 300, gapSize: 140, scored: false });

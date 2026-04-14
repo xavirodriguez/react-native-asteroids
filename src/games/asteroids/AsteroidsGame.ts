@@ -160,7 +160,7 @@ export class AsteroidsGame
       }
 
       // Re-simulate from serverTick + 1 to current prediction head
-      const currentTick = this.inputHistory.length > 0 ? this.inputHistory[this.inputHistory.length - 1].tick : serverTick;
+      const _currentTick = this.inputHistory.length > 0 ? this.inputHistory[this.inputHistory.length - 1].tick : serverTick;
 
       this.inputHistory
         .filter(input => input.tick > serverTick)
@@ -223,6 +223,7 @@ export class AsteroidsGame
     if (this.isMultiplayer) return;
 
     const { world, config } = this;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createGameState, createShip, spawnAsteroidWave } = require("./EntityFactory");
 
     createGameState({ world });

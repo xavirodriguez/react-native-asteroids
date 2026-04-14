@@ -1,4 +1,4 @@
-import { Component, Entity } from "../types/EngineTypes";
+import { Component, Entity, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../types/EngineTypes";
 import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
@@ -49,7 +49,7 @@ export class World {
   public debugMode = false;
   private nextEntityId = 1;
   private freeEntities: Entity[] = [];
-  private resources = new Map<string, any>();
+  private resources = new Map<string, unknown>();
 
   /**
    * Genera una instantánea serializable del estado completo del mundo para rollback o persistencia.
@@ -69,25 +69,26 @@ export class World {
    * @conceptualRisk [GC_PRESSURE][MEDIUM] Las snapshots frecuentes en juegos con miles de entidades
    * generarán una presión significativa en el recolector de basura.
    */
-  public snapshot(): any {
+  public snapshot(): WorldSnapshot {
     const gameplayRandom = RandomService.getInstance("gameplay");
-    const componentData: Record<string, Record<number, any>> = {};
+    const componentData: ComponentDataSnapshot = {};
     this.componentMaps.forEach((map, type) => {
       componentData[type] = {};
       map.forEach((component, entity) => {
         // Serialización: omitir funciones y referencias circulares
         // Usar structuredClone para asegurar que los datos sean planos y serializables
-        const serializedComp: any = {};
-        for (const key in component) {
-          if (typeof (component as any)[key] !== "function") {
-            serializedComp[key] = (component as any)[key];
+        const serializedComp: SerializedComponent = {};
+        const compAsRecord = component as unknown as Record<string, unknown>;
+        for (const key in compAsRecord) {
+          if (typeof compAsRecord[key] !== "function") {
+            serializedComp[key] = compAsRecord[key];
           }
         }
 
         if (type === "Reclaimable") {
-            delete (serializedComp as any).onReclaim;
+            delete serializedComp.onReclaim;
         }
-        componentData[type][entity] = JSON.parse(JSON.stringify(serializedComp));
+        componentData[type][entity] = JSON.parse(JSON.stringify(serializedComp)) as SerializedComponent;
       });
     });
 
@@ -97,7 +98,7 @@ export class World {
       nextEntityId: this.nextEntityId,
       freeEntities: [...this.freeEntities].sort((a, b) => a - b),
       version: this.version,
-      seed: (gameplayRandom as any).seed // Accessing internal seed for snapshot
+      seed: (gameplayRandom as unknown as { seed: number }).seed // Accessing internal seed for snapshot
     };
   }
 
@@ -119,7 +120,7 @@ export class World {
    * @conceptualRisk [TYPE_SAFETY][MEDIUM] No se valida la estructura del estado de entrada;
    * un objeto corrupto o con propiedades faltantes corromperá silenciosamente el World.
    */
-  public restore(state: any): void {
+  public restore(state: WorldSnapshot): void {
     this.activeEntities = new Set(state.entities);
     this.nextEntityId = state.nextEntityId;
     this.freeEntities = [...state.freeEntities];
@@ -142,7 +143,7 @@ export class World {
 
       for (const entityIdStr in state.componentData[type]) {
         const entityId = parseInt(entityIdStr);
-        const component = state.componentData[type][entityIdStr];
+        const component = state.componentData[type][entityId] as unknown as Component;
         storage.set(entityId, component);
         index.add(entityId);
 
@@ -164,9 +165,9 @@ export class World {
     const reclaimableMap = this.componentMaps.get("Reclaimable");
     if (reclaimableMap) {
         this.resources.forEach(resource => {
-            if (resource && typeof resource.release === "function") {
-                reclaimableMap.forEach((comp: any, _entity) => {
-                    comp.onReclaim = (w: World, e: Entity) => resource.release(w, e);
+            if (resource && typeof (resource as Record<string, unknown>).release === "function") {
+                reclaimableMap.forEach((comp: Component, _entity) => {
+                    (comp as unknown as Record<string, unknown>).onReclaim = (w: World, e: Entity) => (resource as { release: (w: World, e: Entity) => void }).release(w, e);
                 });
             }
         });
@@ -245,7 +246,7 @@ export class World {
 
     // Principle 2: Strong Invariants - Normalizar en addNode (addComponent en ECS)
     if (type === "Transform") {
-      const transform = component as any;
+      const transform = component as unknown as { parent?: Entity };
       if (transform.parent !== undefined) {
         if (!this.activeEntities.has(transform.parent)) {
           if (__DEV__) {

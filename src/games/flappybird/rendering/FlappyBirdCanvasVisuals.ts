@@ -6,7 +6,7 @@ import { FLAPPY_CONFIG, FlappyBirdState } from "../types/FlappyBirdTypes";
  * Visuals for the bird.
  */
 export const drawFlappyBird: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
-  let { size, color } = render;
+  const { size, color } = render;
 
   if (render.hitFlashFrames && render.hitFlashFrames > 0) {
     if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) {

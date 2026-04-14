@@ -2,14 +2,14 @@ import { GameLoop } from "../GameLoop";
 
 describe("GameLoop", () => {
   let requestAnimationFrameSpy: jest.SpyInstance;
-  let cancelAnimationFrameSpy: jest.SpyInstance;
+  let _cancelAnimationFrameSpy: jest.SpyInstance;
   let performanceNowSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    requestAnimationFrameSpy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+    requestAnimationFrameSpy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation((_cb) => {
       return 1;
     });
-    cancelAnimationFrameSpy = jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+    _cancelAnimationFrameSpy = jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
     performanceNowSpy = jest.spyOn(performance, 'now').mockReturnValue(0);
   });
 

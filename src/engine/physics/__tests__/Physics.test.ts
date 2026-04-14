@@ -16,7 +16,7 @@ describe("Physics and Collision Engine", () => {
   describe("Narrow Phase - All Shapes", () => {
     it("should detect circle-circle collision", () => {
       const e1 = createEntity(world, 0, 0, ShapeFactory.circle(10));
-      const e2 = createEntity(world, 15, 0, ShapeFactory.circle(10));
+      const _e2 = createEntity(world, 15, 0, ShapeFactory.circle(10));
       collisionSystem.update(world, 16);
       const events = world.getComponent<CollisionEventsComponent>(e1, "CollisionEvents");
       expect(events?.collisions.length).toBe(1);
@@ -24,7 +24,7 @@ describe("Physics and Collision Engine", () => {
 
     it("should detect aabb-aabb collision", () => {
       const e1 = createEntity(world, 0, 0, ShapeFactory.aabb(20, 20));
-      const e2 = createEntity(world, 15, 0, ShapeFactory.aabb(20, 20));
+      const _e2 = createEntity(world, 15, 0, ShapeFactory.aabb(20, 20));
       collisionSystem.update(world, 16);
       const events = world.getComponent<CollisionEventsComponent>(e1, "CollisionEvents");
       expect(events?.collisions.length).toBe(1);
@@ -32,7 +32,7 @@ describe("Physics and Collision Engine", () => {
 
     it("should detect circle-aabb collision", () => {
         const e1 = createEntity(world, 0, 0, ShapeFactory.circle(10));
-        const e2 = createEntity(world, 15, 0, ShapeFactory.aabb(20, 20));
+        const _e2 = createEntity(world, 15, 0, ShapeFactory.aabb(20, 20));
         collisionSystem.update(world, 16);
         const events = world.getComponent<CollisionEventsComponent>(e1, "CollisionEvents");
         expect(events?.collisions.length).toBe(1);
@@ -41,7 +41,7 @@ describe("Physics and Collision Engine", () => {
     it("should detect polygon-polygon collision (SAT)", () => {
         const poly = ShapeFactory.regularPolygon(3, 10);
         const e1 = createEntity(world, 0, 0, poly);
-        const e2 = createEntity(world, 5, 0, poly);
+        const _e2 = createEntity(world, 5, 0, poly);
         collisionSystem.update(world, 16);
         const events = world.getComponent<CollisionEventsComponent>(e1, "CollisionEvents");
         expect(events?.collisions.length).toBe(1);
@@ -50,7 +50,7 @@ describe("Physics and Collision Engine", () => {
     it("should detect capsule-circle collision", () => {
         const cap = ShapeFactory.capsule(5, 10);
         const e1 = createEntity(world, 0, 0, cap);
-        const e2 = createEntity(world, 0, 8, ShapeFactory.circle(5));
+        const _e2 = createEntity(world, 0, 8, ShapeFactory.circle(5));
         collisionSystem.update(world, 16);
         const events = world.getComponent<CollisionEventsComponent>(e1, "CollisionEvents");
         expect(events?.collisions.length).toBe(1);
@@ -59,7 +59,7 @@ describe("Physics and Collision Engine", () => {
 
   describe("Continuous Collision Detection (CCD)", () => {
     it("should prevent fast bullet from tunneling through thin wall", () => {
-        const wall = createEntity(world, 100, 0, ShapeFactory.aabb(10, 200));
+        const _wall = createEntity(world, 100, 0, ShapeFactory.aabb(10, 200));
         const bullet = createEntity(world, 0, 0, ShapeFactory.circle(2));
         world.addComponent(bullet, { type: "ContinuousCollider", enabled: true, velocityThreshold: 0 } as ContinuousColliderComponent);
         world.addComponent(bullet, { type: "Velocity", dx: 10000, dy: 0 } as VelocityComponent); // Super fast
@@ -75,7 +75,7 @@ describe("Physics and Collision Engine", () => {
   describe("Layer Filtering", () => {
     it("should not collide if masks don't match", () => {
         const e1 = createEntity(world, 0, 0, ShapeFactory.circle(10), 1, 2); // Layer 1, Mask 2
-        const e2 = createEntity(world, 5, 0, ShapeFactory.circle(10), 4, 8); // Layer 4, Mask 8
+        const _e2 = createEntity(world, 5, 0, ShapeFactory.circle(10), 4, 8); // Layer 4, Mask 8
         collisionSystem.update(world, 16);
         const events = world.getComponent<CollisionEventsComponent>(e1, "CollisionEvents");
         expect(events?.collisions.length).toBe(0);

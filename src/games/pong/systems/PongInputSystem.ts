@@ -14,7 +14,7 @@ export class PongInputSystem extends System {
 
   private currentTick = 0;
 
-  public update(world: World, deltaTime: number): void {
+  public update(world: World, _deltaTime: number): void {
     this.currentTick++;
 
     const inputState = world.getSingleton<InputStateComponent>("InputState");

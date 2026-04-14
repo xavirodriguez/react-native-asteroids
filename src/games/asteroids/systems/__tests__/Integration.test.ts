@@ -9,18 +9,18 @@ import { GAME_CONFIG, type GameStateComponent } from "../../types/AsteroidTypes"
 describe("Asteroids Gameplay Integration", () => {
   let world: World;
   let particlePool: ParticlePool;
-  let bulletPool: BulletPool;
+  let _bulletPool: BulletPool;
   let collisionSystem: AsteroidCollisionSystem;
   let gameStateSystem: AsteroidGameStateSystem;
-  let movementSystem: MovementSystem;
+  let _movementSystem: MovementSystem;
 
   beforeEach(() => {
     world = new World();
     particlePool = new ParticlePool();
-    bulletPool = new BulletPool();
+    _bulletPool = new BulletPool();
     collisionSystem = new AsteroidCollisionSystem(particlePool);
     gameStateSystem = new AsteroidGameStateSystem();
-    movementSystem = new MovementSystem();
+    _movementSystem = new MovementSystem();
 
     const gameStateEntity = createGameState({ world });
     // Ensure asteroidsRemaining starts at 0 to trigger initial wave

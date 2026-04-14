@@ -56,7 +56,7 @@ export class UILayoutSystem extends System {
    *
    * @sideEffect Actualiza las propiedades `computed*` de los componentes `UIElement`.
    */
-  public update(world: World, deltaTime: number): void {
+  public update(world: World, _deltaTime: number): void {
     const uiEntities = world.query("UIElement");
     if (uiEntities.length === 0) return;
 

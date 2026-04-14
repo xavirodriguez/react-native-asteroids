@@ -22,7 +22,7 @@ export class BossSystem extends System {
     bosses.forEach(entity => {
       const boss = world.getComponent<BossComponent>(entity, "Boss")!;
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
-      const render = world.getComponent<RenderComponent>(entity, "Render")!;
+      const _render = world.getComponent<RenderComponent>(entity, "Render")!;
 
       boss.timer += deltaTime;
 

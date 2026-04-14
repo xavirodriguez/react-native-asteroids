@@ -59,7 +59,7 @@ export const drawAsteroidShipTrailDrawer = (ctx: CanvasRenderingContext2D, entit
     }
 };
 
-export const drawUfo = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: TransformComponent, render: RenderComponent, world: World) => {
+export const drawUfo = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: TransformComponent, render: RenderComponent,  _world: World) => {
     const size = render.size;
     const color = render.color;
     ctx.strokeStyle = color;

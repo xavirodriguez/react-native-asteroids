@@ -6,7 +6,7 @@ import { EventBus } from "../../../engine/core/EventBus";
 export class AsteroidComboSystem extends System {
   private eventBus: EventBus | null = null;
 
-  public update(world: World, deltaTime: number): void {
+  public update(world: World, _deltaTime: number): void {
     if (!this.eventBus) {
         this.eventBus = world.getResource<EventBus>("EventBus");
         if (this.eventBus) {
