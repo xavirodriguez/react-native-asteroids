@@ -1,4 +1,5 @@
 import { World } from "../../engine/core/World";
+import { GameLoop } from "../../engine/core/GameLoop";
 import { BaseGame } from "../../engine/core/BaseGame";
 import { GameStateComponent, InputState, GAME_CONFIG, INITIAL_GAME_STATE } from "./types/SpaceInvadersTypes";
 import { ISpaceInvadersGame } from "./types/GameInterfaces";
@@ -143,12 +144,15 @@ export class SpaceInvadersGame
 
 export class NullSpaceInvadersGame implements ISpaceInvadersGame {
   private _world = new World();
+  private _loop = new GameLoop();
   public start() {} public stop() {} public pause() {} public resume() {}
   public async restart() {} public destroy() {}
   public getWorld() { return this._world; }
+  public getGameLoop() { return this._loop; }
   public isPausedState() { return false; }
   public isGameOver() { return false; }
   public getGameState() { return INITIAL_GAME_STATE; }
+  public getSeed() { return 0; }
   public setInput() {}
   public subscribe() { return () => {}; }
   public initializeRenderer() {}

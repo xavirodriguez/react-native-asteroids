@@ -13,7 +13,7 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
     ctx.fillStyle = "white";
     ctx.strokeStyle = "white";
   } else {
-    ctx.strokeStyle = color;
+    ctx.strokeStyle = render.color;
   }
   const input = world.getComponent<InputComponent>(entity, "Input");
   const health = world.getComponent<HealthComponent>(entity, "Health");

@@ -55,4 +55,9 @@ export interface IGame<TGame = unknown> {
    * Cada implementación debe sobrescribir el tipo de retorno con su estado específico.
    */
   getGameState(): unknown;
+
+  /**
+   * Returns the current gameplay seed.
+   */
+  getSeed(): number;
 }

@@ -1,4 +1,5 @@
 import { World } from "../../engine/core/World";
+import { GameLoop } from "../../engine/core/GameLoop";
 import { BaseGame } from "../../engine/core/BaseGame";
 import { FlappyBirdState, FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE } from "./types/FlappyBirdTypes";
 import { IFlappyBirdGame } from "./types/GameInterfaces";
@@ -132,12 +133,15 @@ export class FlappyBirdGame
 
 export class NullFlappyBirdGame implements IFlappyBirdGame {
   private _world = new World();
+  private _loop = new GameLoop();
   public start() {} public stop() {} public pause() {} public resume() {}
   public async restart() {} public destroy() {}
   public getWorld() { return this._world; }
+  public getGameLoop() { return this._loop; }
   public isPausedState() { return false; }
   public isGameOver() { return false; }
   public getGameState() { return INITIAL_FLAPPY_STATE; }
+  public getSeed() { return 0; }
   public setInput() {}
   public subscribe() { return () => {}; }
   public initializeRenderer() {}

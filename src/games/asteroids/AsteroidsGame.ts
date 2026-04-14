@@ -1,4 +1,5 @@
 import { World } from "../../engine/core/World";
+import { GameLoop } from "../../engine/core/GameLoop";
 import { BaseGame } from "../../engine/core/BaseGame";
 import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
@@ -269,6 +270,7 @@ export class NullAsteroidsGame implements IAsteroidsGame {
   public isPausedState() { return false; }
   public isGameOver() { return false; }
   public getGameState() { return INITIAL_GAME_STATE; }
+  public getSeed() { return 0; }
   public setInput() {}
   public subscribe() { return () => {}; }
   public initializeRenderer() {}
