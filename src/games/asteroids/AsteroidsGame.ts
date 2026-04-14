@@ -74,10 +74,6 @@ export class AsteroidsGame
   public predictLocalPlayer(input: InputFrame, deltaTime: number) {
     this.inputHistory.push(input);
 
-    // Store predicted state BEFORE update for this tick
-    // In rollback netcode, predictedState[tick] usually represents the state AT that tick.
-    // If we receive server state for tick T, we compare it with our predictedState[T].
-
     const localPlayer = this.world.query("LocalPlayer")[0];
     if (localPlayer !== undefined) {
         const inputComp = this.world.getComponent<any>(localPlayer, "Input");
@@ -95,7 +91,7 @@ export class AsteroidsGame
     // Save state after simulation of this tick
     this.stateHistory.set(input.tick, this.world.snapshot());
 
-    // Keep history manageable (approx 2 seconds at 60fps)
+    // Keep history manageable
     if (this.inputHistory.length > 120) this.inputHistory.shift();
     const oldestTick = input.tick - 120;
     if (this.stateHistory.has(oldestTick)) this.stateHistory.delete(oldestTick);
@@ -136,7 +132,11 @@ export class AsteroidsGame
            if (localPlayerId !== undefined) {
                const pPos = predicted.componentData["Transform"]?.[localPlayerId];
                const aPos = authoritativeSnapshot.componentData["Transform"]?.[localPlayerId];
-               if (!pPos || !aPos || Math.abs(pPos.x - aPos.x) > 0.01 || Math.abs(pPos.y - aPos.y) > 0.01) {
+               const pVel = predicted.componentData["Velocity"]?.[localPlayerId];
+               const aVel = authoritativeSnapshot.componentData["Velocity"]?.[localPlayerId];
+
+               if (!pPos || !aPos || Math.abs(pPos.x - aPos.x) > 0.01 || Math.abs(pPos.y - aPos.y) > 0.01 ||
+                   !pVel || !aVel || Math.abs(pVel.dx - aVel.dx) > 0.01 || Math.abs(pVel.dy - aVel.dy) > 0.01) {
                    needsRollback = true;
                }
            }
@@ -161,8 +161,6 @@ export class AsteroidsGame
       }
 
       // Re-simulate from serverTick + 1 to current prediction head
-      const _currentTick = this.inputHistory.length > 0 ? this.inputHistory[this.inputHistory.length - 1].tick : serverTick;
-
       this.inputHistory
         .filter(input => input.tick > serverTick)
         .forEach(input => {

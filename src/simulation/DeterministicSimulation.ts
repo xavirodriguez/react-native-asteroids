@@ -71,7 +71,7 @@ export class DeterministicSimulation {
         });
     }
 
-    private static updateShips(world: World, deltaTime: number, dtSeconds: number, _ctx: SimulationContext) {
+    private static updateShips(world: World, deltaTime: number, dtSeconds: number, ctx: SimulationContext) {
         const ships = world.query("Ship", "Transform", "Velocity", "Render");
         ships.forEach(entity => {
             const pos = world.getComponent<TransformComponent>(entity, "Transform");
@@ -91,7 +91,7 @@ export class DeterministicSimulation {
                 };
 
                 ShipPhysics.applyRotation(render, intent, dtSeconds);
-                ShipPhysics.applyThrust(world, pos, vel, render, intent, dtSeconds);
+                ShipPhysics.applyThrust(world, pos, vel, render, intent, dtSeconds, ctx);
                 ShipPhysics.applyFriction(vel, deltaTime);
 
                 // Shooting logic
@@ -258,12 +258,17 @@ export class DeterministicSimulation {
         }
     }
 
-    private static updateSpawning(world: World, _ctx: SimulationContext) {
+    private static updateSpawning(world: World, ctx: SimulationContext) {
         const asteroids = world.query("Asteroid");
         const gameplayRandom = RandomService.getInstance("gameplay");
 
         if (asteroids.length === 0) {
             // Spawn next wave
+            if (!ctx.isResimulating) {
+                const eventBus = world.getResource<EventBus>("EventBus");
+                if (eventBus) eventBus.emit("wave:complete");
+            }
+
             for (let i = 0; i < 6; i++) {
                 createAsteroid({
                     world,
