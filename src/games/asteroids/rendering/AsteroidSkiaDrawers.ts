@@ -9,8 +9,10 @@ export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, ren
     const health = world.getComponent<any>(entity, "Health");
 
     const isInvulnerable = health && health.invulnerableRemaining > 0;
+      const gameState = world.getSingleton<any>("GameState");
+      const tick = (gameState as any)?.serverTick ?? 0;
     const blinkOpacity = isInvulnerable
-        ? Math.floor(Date.now() / 150) % 2 === 0 ? 0.3 : 1.0
+        ? Math.floor(tick / 10) % 2 === 0 ? 0.3 : 1.0
         : 1.0;
 
     paint.setAlphaf(blinkOpacity);
@@ -118,7 +120,9 @@ export function drawSkiaAsteroidStarField(canvas: SkCanvas, stars: any[], width:
       const parallaxX = (star.x - shipPos.x * (0.05 * (star.layer + 1)) + width) % width;
       const parallaxY = (star.y - shipPos.y * (0.05 * (star.layer + 1)) + height) % height;
 
-      const twinkle = 0.8 + Math.sin(star.twinklePhase + Date.now() * 0.005 * star.twinkleSpeed) * 0.2;
+      const gameState = world.getSingleton<any>("GameState");
+      const tick = (gameState as any)?.serverTick ?? 0;
+      const twinkle = 0.8 + Math.sin(star.twinklePhase + tick * 0.1 * star.twinkleSpeed) * 0.2;
       paint.setAlphaf(star.brightness * twinkle);
       canvas.drawRect(Skia.XYWHRect(parallaxX, parallaxY, star.size, star.size), paint);
     });

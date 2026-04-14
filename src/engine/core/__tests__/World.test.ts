@@ -171,6 +171,37 @@ describe("World", () => {
       expect(system.updateCalled).toBe(true);
     });
 
+    it("should snapshot and restore correctly", () => {
+      const e1 = world.createEntity();
+      const e2 = world.createEntity();
+      world.addComponent(e1, { type: "Transform", x: 10, y: 20 } as TransformComponent);
+      world.addComponent(e2, { type: "Velocity", dx: 5, dy: 5 } as VelocityComponent);
+
+      const snapshot = world.snapshot();
+
+      const newWorld = new World();
+      newWorld.restore(snapshot);
+
+      expect(newWorld.getAllEntities()).toEqual([e1, e2].sort((a, b) => a - b));
+      expect(newWorld.getComponent(e1, "Transform")).toEqual({ type: "Transform", x: 10, y: 20 });
+      expect(newWorld.getComponent(e2, "Velocity")).toEqual({ type: "Velocity", dx: 5, dy: 5 });
+      expect(newWorld.query("Transform")).toContain(e1);
+      expect(newWorld.query("Velocity")).toContain(e2);
+    });
+
+    it("should return entities in deterministic order from query", () => {
+      const e3 = world.createEntity();
+      const e1 = world.createEntity();
+      const e2 = world.createEntity();
+
+      world.addComponent(e1, { type: "Transform", x: 1, y: 1 } as TransformComponent);
+      world.addComponent(e2, { type: "Transform", x: 2, y: 2 } as TransformComponent);
+      world.addComponent(e3, { type: "Transform", x: 3, y: 3 } as TransformComponent);
+
+      const entities = world.query("Transform");
+      expect(entities).toEqual([e1, e2, e3].sort((a, b) => a - b));
+    });
+
     it("should increment version on clear", () => {
       const initialVersion = world.version;
       world.clear();

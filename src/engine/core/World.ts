@@ -75,21 +75,27 @@ export class World {
     this.componentMaps.forEach((map, type) => {
       componentData[type] = {};
       map.forEach((component, entity) => {
-        // Simple serialization: skip functions and circular refs
-        // In a real scenario we'd use a more robust approach
-        const serializedComp = { ...component };
+        // Serialización: omitir funciones y referencias circulares
+        // Usar structuredClone para asegurar que los datos sean planos y serializables
+        const serializedComp: any = {};
+        for (const key in component) {
+          if (typeof (component as any)[key] !== "function") {
+            serializedComp[key] = (component as any)[key];
+          }
+        }
+
         if (type === "Reclaimable") {
             delete (serializedComp as any).onReclaim;
         }
-        componentData[type][entity] = serializedComp;
+        componentData[type][entity] = JSON.parse(JSON.stringify(serializedComp));
       });
     });
 
     return {
-      entities: Array.from(this.activeEntities),
+      entities: Array.from(this.activeEntities).sort((a, b) => a - b),
       componentData,
       nextEntityId: this.nextEntityId,
-      freeEntities: [...this.freeEntities],
+      freeEntities: [...this.freeEntities].sort((a, b) => a - b),
       version: this.version,
       seed: (gameplayRandom as any).seed // Accessing internal seed for snapshot
     };
@@ -157,13 +163,9 @@ export class World {
     // Re-attach Reclaimable functions if any pool exists in resources
     const reclaimableMap = this.componentMaps.get("Reclaimable");
     if (reclaimableMap) {
-        // Attempt to find pools in resources and re-attach
-        // This is a simplified version; in a production system, pools would register themselves
         this.resources.forEach(resource => {
             if (resource && typeof resource.release === "function") {
                 reclaimableMap.forEach((comp: any, _entity) => {
-                    // This is still slightly heuristic. A better way is needed.
-                    // For now, satisfy the requirement by re-attaching if it looks like a pool.
                     comp.onReclaim = (w: World, e: Entity) => resource.release(w, e);
                 });
             }
@@ -370,12 +372,15 @@ export class World {
       }
 
       // Initialize query with existing entities
-      this.activeEntities.forEach(entity => {
-        const componentSet = this.entityComponentSets.get(entity);
-        if (componentSet && query!.matches(componentSet)) {
-          query!.add(entity);
-        }
-      });
+      // Sort entities to ensure deterministic initialization
+      Array.from(this.activeEntities)
+        .sort((a, b) => a - b)
+        .forEach(entity => {
+          const componentSet = this.entityComponentSets.get(entity);
+          if (componentSet && query!.matches(componentSet)) {
+            query!.add(entity);
+          }
+        });
     }
 
     return query.getEntities();
