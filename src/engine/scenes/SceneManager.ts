@@ -8,6 +8,9 @@ export interface SceneTransition {
   durationMs: number;
 }
 
+/**
+ * Finite State Machine for Scene Transitions.
+ */
 export enum SceneState {
   IDLE = 'IDLE',
   LOADING = 'LOADING',
@@ -17,6 +20,10 @@ export enum SceneState {
 
 /**
  * Manages a stack of game scenes and their lifecycle transitions.
+ *
+ * @remarks
+ * Implements a formal FSM and atomic transition locking to prevent concurrent
+ * scene state corruption.
  */
 export class SceneManager {
   private currentScene: Scene | null = null;
@@ -30,6 +37,10 @@ export class SceneManager {
     this.scenes.set(name, scene);
   }
 
+  /**
+   * Atomic transition to a new scene.
+   * Clears the current stack and replaces it with the new scene.
+   */
   public async transitionTo(scene: Scene): Promise<void> {
     if (this.transitionLock) {
         console.warn("SceneManager: Transition already in progress. Ignoring transitionTo.");
@@ -38,11 +49,12 @@ export class SceneManager {
 
     this.transitionLock = true;
     const previousState = this.state;
-    this.state = SceneState.UNLOADING;
 
     try {
+      // Phase 1: UNLOADING
       const prev = this.currentScene;
       if (prev) {
+        this.state = SceneState.UNLOADING;
         await runLifecycleAsync(async () => {
            if ((prev as any).onExit) {
              await (prev as any).onExit(prev.getWorld());
@@ -50,6 +62,7 @@ export class SceneManager {
         });
       }
 
+      // Phase 2: LOADING
       this.state = SceneState.LOADING;
       await runLifecycleAsync(async () => {
           if ((scene as any).onEnter) {
@@ -57,10 +70,12 @@ export class SceneManager {
           }
       });
 
+      // Phase 3: ACTIVE
       this.sceneStack = [scene];
       this.currentScene = scene;
       this.state = SceneState.ACTIVE;
     } catch (error) {
+      console.error("SceneManager: Transition failed", error);
       this.state = previousState;
       throw error;
     } finally {
@@ -68,6 +83,9 @@ export class SceneManager {
     }
   }
 
+  /**
+   * Pushes a new scene onto the stack.
+   */
   public async push(scene: Scene): Promise<void> {
     if (this.transitionLock) {
         console.warn("SceneManager: Transition already in progress. Ignoring push.");
@@ -100,6 +118,9 @@ export class SceneManager {
     }
   }
 
+  /**
+   * Pops the top scene from the stack.
+   */
   public async pop(): Promise<void> {
     if (this.transitionLock || this.sceneStack.length <= 1) {
         return;
@@ -107,11 +128,11 @@ export class SceneManager {
 
     this.transitionLock = true;
     const previousState = this.state;
-    this.state = SceneState.UNLOADING;
 
     try {
       const poppedScene = this.sceneStack[this.sceneStack.length - 1];
       if (poppedScene) {
+        this.state = SceneState.UNLOADING;
         await runLifecycleAsync(async () => {
             if ((poppedScene as any).onExit) {
                 await (poppedScene as any).onExit(poppedScene.getWorld());
@@ -134,6 +155,9 @@ export class SceneManager {
     }
   }
 
+  /**
+   * Restarts the current scene.
+   */
   public async restartCurrentScene(): Promise<void> {
     if (this.transitionLock || !this.currentScene) {
         return;
@@ -141,12 +165,12 @@ export class SceneManager {
 
     this.transitionLock = true;
     const previousState = this.state;
-    this.state = SceneState.UNLOADING;
 
     try {
       const scene = this.currentScene;
       const world = scene.getWorld();
 
+      this.state = SceneState.UNLOADING;
       await runLifecycleAsync(async () => {
           if ((scene as any).onExit) {
               await (scene as any).onExit(world);

@@ -11,11 +11,11 @@ export interface CameraConfig {
 }
 
 /**
- * Lógica de Cámara 2D agnóstica a la plataforma.
- * Gestiona el seguimiento de objetivos, suavizado y efectos de sacudida.
+ * Platform-agnostic 2D Camera logic.
  *
- * @responsibility Transformar coordenadas del mundo a coordenadas de pantalla y viceversa.
- * @responsibility Implementar suavizado de movimiento de cámara mediante interpolación exponencial.
+ * @remarks
+ * Implements frame-rate independent interpolation and shake effects using
+ * delta-time based exponential smoothing.
  */
 export class Camera2D extends System {
   private viewport = { width: 800, height: 600 };
@@ -32,10 +32,10 @@ export class Camera2D extends System {
   }
 
   /**
-   * Actualiza el estado de todas las cámaras activas en el mundo.
+   * Updates all active cameras in the world.
    *
-   * @param world - El mundo ECS que contiene las cámaras.
-   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   * @param world - The ECS world.
+   * @param deltaTime - Elapsed time in milliseconds.
    */
   public update(world: World, deltaTime: number): void {
     const cameras = world.query("Camera2D");
@@ -51,7 +51,7 @@ export class Camera2D extends System {
           const targetY = targetPos.y - this.viewport.height / (2 * cam.zoom) + cam.offset.y;
 
           // Apply exponential smoothing: t = 1 - exp(-lambda * dt)
-          // Consistent behavior across 30/60/120 FPS
+          // Ensures identical behavior across 30/60/120 FPS
           const lambda = (cam.smoothing ?? 0.1) * 60;
           const t = 1 - Math.exp(-lambda * dtSeconds);
 
@@ -66,14 +66,14 @@ export class Camera2D extends System {
         cam.y = Math.max(cam.bounds.minY, Math.min(cam.bounds.maxY - this.viewport.height / cam.zoom, cam.y));
       }
 
-      // Handle shake decay and offset computation
+      // Handle shake decay with exponential decay for FPS independence
       if (cam.shakeIntensity > 0) {
         const renderRandom = RandomService.getInstance("render");
         cam.shakeOffsetX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
         cam.shakeOffsetY = (renderRandom.next() - 0.5) * cam.shakeIntensity;
 
-        // Exponential decay for shake intensity: I = I0 * exp(-decay * dt)
-        const decayLambda = 5; // Fixed decay rate
+        // I = I0 * exp(-decay * dt)
+        const decayLambda = 5.0;
         cam.shakeIntensity *= Math.exp(-decayLambda * dtSeconds);
 
         if (cam.shakeIntensity < 0.1) {

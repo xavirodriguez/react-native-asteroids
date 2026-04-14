@@ -23,6 +23,11 @@ export interface BaseGameConfig {
 
 /**
  * Main orchestrator for game lifecycle and state.
+ *
+ * @remarks
+ * Enforces a strict deterministic pipeline:
+ * 1. Input -> 2. Simulation Update -> 3. Transform Propagation.
+ * Render phase is decoupled and handles interpolation.
  */
 export abstract class BaseGame<TState, TInput extends Record<string, any>>
   implements IGame<BaseGame<TState, TInput>> {
@@ -70,18 +75,19 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
 
   private setupLoop(): void {
     /**
-     * Deterministic Pipeline (Update Phase):
-     * 1. Interpolation Prep (Snapshot previous state)
-     * 2. Input Handling
-     * 3. Simulation Update (ECS Systems/Scenes)
-     * 4. Transform Propagation (Hierarchy)
+     * Deterministic Pipeline (Fixed Update Phase):
+     *
+     * 1. PRE-UPDATE: Snapshot Transforms for Interpolation.
+     * 2. INPUT: Process raw inputs into semantic actions.
+     * 3. SIMULATION: Execute game logic and physics systems.
+     * 4. POST-UPDATE: Propagate transforms through hierarchy.
      */
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (this._isPaused) return;
 
       const activeWorld = this.getWorld();
 
-      // 1. Snapshot Transforms for Interpolation
+      // 1. PRE-UPDATE: Snapshot
       const entities = activeWorld.query("Transform");
       for (let i = 0; i < entities.length; i++) {
         const entity = entities[i];
@@ -97,21 +103,22 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
         }
       }
 
-      // 2. Input Handling
+      // 2. INPUT
       if (this.isMultiplayer) {
-        // Multiplayer input logic...
+        // Multiplayer input handling logic (if any)
       } else {
         this.unifiedInput.update(activeWorld, deltaTime);
       }
 
-      // 3. Simulation Update
+      // 3. SIMULATION
       if (this.sceneManager.getCurrentScene()) {
         this.sceneManager.update(deltaTime);
       } else {
         this.world.update(deltaTime);
       }
 
-      // 4. Transform Propagation Phase (Mandatory)
+      // 4. POST-UPDATE: Transform Propagation (Hierarchy)
+      // Must happen AFTER simulation but BEFORE rendering.
       this.hierarchySystem.update(activeWorld, deltaTime);
 
       this.currentTick++;
@@ -168,15 +175,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this.world.addSystem(new PaletteSystem(profile.activePalette));
   }
 
-  /**
-   * Inyecta estados de entrada de forma programática utilizando el sistema de overrides.
-   *
-   * @remarks
-   * Utilizado principalmente para controles táctiles de React Native o telemetría de red.
-   *
-   * @param input - Un objeto parcial con las acciones y su estado booleano.
-   * @sideEffect Llama a `unifiedInput.setOverride` para cada acción proporcionada.
-   */
   protected shouldStallSimulation(): boolean {
     return false;
   }
@@ -187,12 +185,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     });
   }
 
-  /**
-   * Registra un listener para recibir notificaciones tras cada ciclo de actualización.
-   *
-   * @param listener - Función callback que recibe la instancia del juego.
-   * @returns Función para cancelar la suscripción.
-   */
   public subscribe(listener: UpdateListener<BaseGame<TState, TInput>>): () => void {
     this._listeners.add(listener);
     return () => this._listeners.delete(listener);
