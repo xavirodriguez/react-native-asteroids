@@ -4,6 +4,10 @@ import { Entity } from "../types/EngineTypes";
  * Consulta reactiva que mantiene un índice actualizado de entidades con una firma de
  * componentes específica.
  *
+ * @responsibility Mantener una lista filtrada y cacheada de entidades que cumplen una firma.
+ * @responsibility Responder de forma reactiva a cambios estructurales en el World.
+ * @responsibility Proporcionar acceso de alto rendimiento O(1) a grupos de entidades.
+ *
  * @remarks
  * Las queries eliminan la necesidad de iterar sobre todas las entidades del mundo en cada frame.
  * El {@link World} notifica a las queries relevantes solo cuando hay cambios estructurales
@@ -67,7 +71,10 @@ export class Query {
    * consumidor (e.g. mediante `.sort()` o `.push()`).
    *
    * @returns Un array de IDs de {@link Entity}.
+   *
    * @postcondition El array devuelto refleja el estado actual del {@link World} para esta firma.
+   * @postcondition Las entidades en el array están ordenadas por ID de forma ascendente.
+   *
    * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] Si un consumidor modifica el array devuelto
    * (e.g., mediante `.push()` o `.sort()` in-place), corromperá el estado interno de la Query.
    */

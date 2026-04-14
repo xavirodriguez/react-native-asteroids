@@ -1,34 +1,39 @@
 # Arquitectura de Entrada (Input Architecture)
 
 ## Propósito
-La capa de entrada de TinyAsterEngine abstrae los eventos de hardware (teclado, gestos táctiles) en **Acciones Semánticas** y **Ejes**. Esto permite que los sistemas de juego reaccionen a intenciones (e.g., "saltar", "disparar") en lugar de teclas específicas.
+El sistema de entrada de TinyAsterEngine abstrae el hardware físico (teclado, touch, gamepad) en **acciones semánticas** (ej: "jump", "fire", "thrust"). Esto permite que la lógica del juego sea agnóstica al dispositivo de entrada.
 
-## Flujo de Datos de Entrada
+## El Componente InputState
+Toda la entrada del usuario se consolida en un único componente singleton `InputStateComponent` en el `World`.
+- `actions`: Un mapa de acciones booleanas (`Map<string, boolean>`).
+- `axes`: Un mapa de valores numéricos de precisión (`Map<string, number>`), normalmente entre -1 y 1.
 
-1.  **Hardware Listeners**: `UnifiedInputSystem` registra listeners globales en `window` para eventos de `keydown`, `keyup`, `pointerdown` y `pointerup`.
-2.  **Raw Input State**: El sistema mantiene un conjunto (`Set`) de teclas y gestos actualmente activos.
-3.  **Binding Mapping**: El sistema traduce las entradas crudas a acciones semánticas utilizando un mapa de configuración definido por el juego.
-4.  **InputState Singleton**: El estado traducido se inyecta en un componente singleton `InputStateComponent` en el `World`.
-5.  **System Consumption**: Los sistemas (e.g., `ShipControlSystem`) consultan el singleton para tomar decisiones de lógica.
+## UnifiedInputSystem
+Es el sistema encargado de actualizar el `InputState` en cada frame.
 
-## Conceptos Clave
+### 1. Bindings
+Permite mapear múltiples teclas o gestos a una misma acción:
+```typescript
+inputSystem.bind("shoot", ["Space", "TouchTap", "GamepadButton1"]);
+```
 
-### Acciones Semánticas
-Son banderas booleanas que indican si una acción está activa.
-- Ejemplo: `bind("shoot", ["Space", "TouchTap"])`.
+### 2. Overrides (Puente con React/UI)
+Es la característica más potente para la integración con React Native. Los botones de la UI (JSX) no necesitan acceso al `World` directamente; simplemente llaman a `setOverride`:
+```typescript
+<Button onPressIn={() => game.setInput({ thrust: true })} />
+```
+El sistema combina los overrides con la entrada física real: `isPressed = hardwarePressed || overridePressed`.
 
-### Ejes (Axes)
-Son valores normalizados (típicamente entre -1.0 y 1.0) para movimiento continuo.
-- Ejemplo: `bindAxis("horizontal", ["ArrowRight"], ["ArrowLeft"])`.
+## Flujo de Datos
+1. **Hardware Events**: Los listeners de `window` (Keydown/Pointer) capturan el estado crudo.
+2. **System Update**: En la fase `Input`, el `UnifiedInputSystem` consulta los bindings y los overrides.
+3. **World State**: Se actualiza el componente `InputState`.
+4. **Gameplay Systems**: Los sistemas de movimiento o combate consultan el `InputState` para decidir qué hacer.
 
-### Overrides Programáticos
-El sistema permite forzar el estado de una acción mediante `setOverride(action, isPressed)`.
-- **Casos de Uso**: Controles en pantalla (botones de la UI de React), comandos recibidos por red en modo multijugador, o tutoriales guiados.
-- **Prioridad**: Los overrides tienen prioridad sobre la entrada de hardware o se combinan con ella (OR lógico).
+## Multijugador y Predicción
+Para juegos en red, el estado de entrada se captura en cada tick y se envía al servidor como un `InputFrame`.
+- **Determinismo**: Solo las acciones en el `InputState` deben afectar la simulación física.
+- **Riesgo [INPUT_DRIFT]**: Actualmente, `getInputState()` (usado para red) solo lee entradas de hardware e ignora los overrides de la UI. Esto significa que si un jugador usa botones táctiles en pantalla, el servidor no recibirá esas acciones.
 
-## Integración con React Native
-Para los controles táctiles complejos (como joysticks virtuales), se recomienda utilizar `BaseGame.setInput(partialInput)` desde los componentes de React, lo que utiliza internamente el mecanismo de overrides para inyectar el estado en el motor ECS.
-
-## Riesgos y Limitaciones
-- **[INPUT_DRIFT][HIGH]**: `getInputState()` (usado para red) actualmente ignora los `overrides`, lo que puede causar que un jugador remoto no vea las acciones realizadas a través de botones táctiles de la UI.
-- **[LIFECYCLE][HIGH]**: Los listeners se registran globalmente y deben ser limpiados explícitamente mediante `unifiedInput.cleanup()` al destruir el juego para evitar fugas de memoria y efectos fantasma en otras partes de la app de Expo.
+## Lifecycle
+El `UnifiedInputSystem` gestiona listeners globales en `window`. Es **crítico** llamar a `cleanup()` al destruir el juego para evitar fugas de memoria y que eventos de un juego afecten al siguiente.
