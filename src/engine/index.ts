@@ -23,7 +23,6 @@ export * from './physics/debug/PhysicsDebugSystem';
 
 // Rendering
 export * from './rendering/RenderTypes';
-export * from './rendering/RenderSystem';
 
 // Input
 export * from './input/InputTypes';
