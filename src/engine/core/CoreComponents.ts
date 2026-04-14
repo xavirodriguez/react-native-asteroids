@@ -276,7 +276,7 @@ export interface RenderComponent extends Component {
   /** Número de frames que la entidad permanecerá en blanco tras un impacto. */
   hitFlashFrames?: number;
   /** Contenedor de metadatos para drawers personalizados. */
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 /**
@@ -297,7 +297,7 @@ export interface HealthComponent extends Component {
  */
 export interface ReclaimableComponent extends Component {
   type: "Reclaimable";
-  onReclaim: (world: any, entity: any) => void;
+  onReclaim: (world: any, entity: Entity) => void;
 }
 
 /**
@@ -369,7 +369,7 @@ export interface AnimatorComponent extends Component {
  */
 export interface StateMachineComponent extends Component {
   type: "StateMachine";
-  fsm: StateMachine<any, any>;
+  fsm: StateMachine<unknown, unknown>;
 }
 
 /**
@@ -479,10 +479,11 @@ export interface RenderableComponent extends Component {
   width: number;
   height: number;
   color: string;
+  /** @deprecated Use zIndex in RenderComponent instead */
   zOrder: number;
   opacity?: number;
   renderType?: string;
-  size?: any;
+  size?: number | { width: number; height: number };
   radius?: number;
 }
 

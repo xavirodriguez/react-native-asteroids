@@ -3,14 +3,12 @@ export * from './core/World';
 export * from './core/EntityPool';
 export * from './core/GameLoop';
 export * from './core/System';
-export * from './core/SceneGraph';
 
 // Types
 export * from './types/EngineTypes';
 
 // Collision & Physics
 export * from './collision/SpatialHash';
-export * from './systems/CollisionSystem';
 export * from './physics/shapes/ShapeTypes';
 export * from './physics/shapes/ShapeFactory';
 export * from './physics/collision/CollisionSystem2D';
@@ -29,7 +27,6 @@ export * from './rendering/RenderSystem';
 
 // Input
 export * from './input/InputTypes';
-export * from './input/InputSystem';
 export * from './input/UnifiedInputSystem';
 
 // Scenes
