@@ -110,7 +110,8 @@ export class World {
    * @postcondition {@link World.version} se sincroniza con el valor del estado restaurado.
    * @sideEffect Limpia todos los datos actuales del mundo antes de la restauración.
    * @sideEffect Re-inicializa la semilla de `RandomService("gameplay")`.
-   * @throws {Error} Si el estado está corrupto o le faltan propiedades críticas.
+   * @conceptualRisk [TYPE_SAFETY][MEDIUM] No se valida la estructura del estado de entrada;
+   * un objeto corrupto o con propiedades faltantes corromperá silenciosamente el World.
    */
   public restore(state: any): void {
     this.activeEntities = new Set(state.entities);
