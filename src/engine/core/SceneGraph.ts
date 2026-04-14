@@ -1,7 +1,7 @@
 import { Entity, Transform } from "../types/EngineTypes";
 
 /**
- * Represents a node in the scene graph hierarchy.
+ * Node in the scene graph hierarchy.
  */
 export interface SceneNode {
   entityId: Entity;
@@ -13,7 +13,11 @@ export interface SceneNode {
 }
 
 /**
- * Manages the hierarchy of entities and their transformations.
+ * Manages the hierarchy of entities and their transformations with dirty flag propagation.
+ *
+ * @remarks
+ * Ensures world transforms are updated top-down to prevent stale data.
+ * The `updateTransforms()` method must be called during the Presentation phase.
  */
 export class SceneGraph {
   private nodes = new Map<Entity, SceneNode>();
@@ -100,6 +104,9 @@ export class SceneGraph {
     }
   }
 
+  /**
+   * Marks a node and all its descendants as dirty.
+   */
   public markDirty(entityId: Entity): void {
     const node = this.nodes.get(entityId);
     if (node && !node.dirty) {
@@ -110,6 +117,9 @@ export class SceneGraph {
     }
   }
 
+  /**
+   * Mandatory update phase to resolve all dirty transforms.
+   */
   public updateTransforms(): void {
     for (const rootId of this.roots) {
       this.updateNodeTransform(rootId, null, false);
@@ -129,7 +139,9 @@ export class SceneGraph {
   }
 
   private updateNodeTransform(entityId: Entity, parentTransform: Transform | null, parentDirty: boolean): void {
-    const node = this.nodes.get(entityId)!;
+    const node = this.nodes.get(entityId);
+    if (!node) return;
+
     const isDirty = node.dirty || parentDirty;
 
     if (isDirty) {
@@ -137,7 +149,18 @@ export class SceneGraph {
       if (parentTransform) {
         this.combineTransforms(node.worldTransform, parentTransform, node.localTransform);
       } else {
-        Object.assign(node.worldTransform, node.localTransform);
+        // Root node
+        // Root node: copy scalar properties, then clone the matrix array
+        const { matrix: _srcMatrix, ...scalarProps } = node.localTransform;
+        Object.assign(node.worldTransform, scalarProps);
+        if (!node.worldTransform.matrix) {
+            node.worldTransform.matrix = [1, 0, 0, 1, 0, 0];
+        }
+        if (node.localTransform.matrix) {
+            for (let i = 0; i < 6; i++) {
+                node.worldTransform.matrix[i] = node.localTransform.matrix[i];
+            }
+        }
       }
       node.dirty = false;
     }

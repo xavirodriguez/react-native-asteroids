@@ -42,6 +42,16 @@ export class CanvasRenderer implements Renderer {
   private readonly snapshotB: RenderSnapshot;
   private currentSnapshot: RenderSnapshot;
 
+  // Reusable component objects to avoid GC pressure
+  private readonly tempPos: TransformComponent = {
+    type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1,
+    worldX: 0, worldY: 0, worldRotation: 0, worldScaleX: 1, worldScaleY: 1
+  };
+
+  private readonly tempRender: RenderComponent = {
+    type: "Render", shape: "", size: 0, color: "", rotation: 0, zIndex: 0
+  };
+
   constructor(ctx?: CanvasRenderingContext2D) {
     if (ctx) this.ctx = ctx;
 
@@ -150,23 +160,6 @@ export class CanvasRenderer implements Renderer {
     this.ctx.fillRect(0, 0, this.width, this.height);
   }
 
-  /**
-   * Captura una instantánea visual del estado actual del mundo ECS.
-   *
-   * @remarks
-   * Realiza la interpolación lineal de las transformaciones basándose en el valor `alpha`
-   * para suavizar el movimiento entre ticks de simulación fijos.
-   * Procesa el Screen Shake si el componente `GameState` lo indica.
-   *
-   * @param world - El mundo ECS a capturar.
-   * @param alpha - Factor de interpolación entre 0 (frame anterior) y 1 (frame actual).
-   * @returns Una referencia al objeto {@link RenderSnapshot} interno (reutilizado).
-   *
-   * @precondition Las entidades deben poseer componentes `Transform` y `Render`.
-   * @postcondition El objeto `RenderSnapshot` devuelto es una referencia al buffer interno
-   * para evitar asignaciones de memoria.
-   * @sideEffect Lee la semilla de `RandomService("render")` para el cálculo del Screen Shake.
-   */
   public createSnapshot(world: World, alpha: number): RenderSnapshot {
     this.swapSnapshots();
     const snapshot = this.currentSnapshot;
@@ -198,7 +191,7 @@ export class CanvasRenderer implements Renderer {
 
       const snap = snapshot.entities[count];
 
-      // Optimization: Only update if dirty (simplified)
+      // Introduce dirty flags to avoid unnecessary recomputation
       const isDirty = (trans as any).dirty || (render as any).dirty || count >= snapshot.entityCount;
 
       if (isDirty || alpha < 1) {
@@ -242,21 +235,6 @@ export class CanvasRenderer implements Renderer {
     return snapshot;
   }
 
-  /**
-   * Realiza el dibujado efectivo en el Canvas a partir de un snapshot.
-   *
-   * @remarks
-   * Sigue un pipeline estricto: Clear -> Background -> Pre-Hooks -> Entities (Sorted) ->
-   * Foreground -> Post-Hooks -> UI.
-   *
-   * @param snapshot - Los datos visuales capturados previamente.
-   * @param world - El mundo ECS (necesario para hooks y drawers personalizados).
-   *
-   * @precondition El contexto 2D del Canvas debe estar inicializado.
-   * @postcondition El Canvas refleja el estado visual del snapshot.
-   * @sideEffect Limpia el Canvas con el color de fondo por defecto (negro).
-   * @sideEffect Ejecuta todos los hooks y efectos registrados.
-   */
   public renderSnapshot(snapshot: RenderSnapshot, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
@@ -328,33 +306,28 @@ export class CanvasRenderer implements Renderer {
 
     const drawer = this.shapeDrawers.get(cmd.type);
     if (drawer) {
-      // Create a temporary TransformComponent from cmd
-      const pos: TransformComponent = {
-        type: "Transform",
-        x: cmd.x,
-        y: cmd.y,
-        rotation: cmd.rotation,
-        scaleX: cmd.scaleX,
-        scaleY: cmd.scaleY,
-        worldX: cmd.x,
-        worldY: cmd.y,
-        worldRotation: cmd.rotation,
-        worldScaleX: cmd.scaleX,
-        worldScaleY: cmd.scaleY
-      };
+      // Use reusable objects to avoid per-frame allocations
+      const pos = this.tempPos;
+      pos.x = cmd.x;
+      pos.y = cmd.y;
+      pos.rotation = cmd.rotation;
+      pos.scaleX = cmd.scaleX;
+      pos.scaleY = cmd.scaleY;
+      pos.worldX = cmd.x;
+      pos.worldY = cmd.y;
+      pos.worldRotation = cmd.rotation;
+      pos.worldScaleX = cmd.scaleX;
+      pos.worldScaleY = cmd.scaleY;
 
-      // Create a temporary RenderComponent from cmd
-      const render: RenderComponent = {
-        type: "Render",
-        shape: cmd.type,
-        size: cmd.size,
-        color: cmd.color,
-        rotation: cmd.rotation,
-        vertices: cmd.vertices || undefined,
-        zIndex: cmd.zIndex,
-        hitFlashFrames: cmd.hitFlashFrames,
-        data: cmd.data
-      };
+      const render = this.tempRender;
+      render.shape = cmd.type;
+      render.size = cmd.size;
+      render.color = cmd.color;
+      render.rotation = cmd.rotation;
+      render.vertices = cmd.vertices || undefined;
+      render.zIndex = cmd.zIndex;
+      render.hitFlashFrames = cmd.hitFlashFrames;
+      render.data = cmd.data;
 
       drawer(ctx, cmd.entityId, pos, render, world);
     }
@@ -363,32 +336,28 @@ export class CanvasRenderer implements Renderer {
 
     const postDrawer = this.postEntityDrawers.get(cmd.type);
     if (postDrawer) {
-      // Re-use pos and render if possible, but for safety let's define them again or use the ones from above
-      const pos: TransformComponent = {
-        type: "Transform",
-        x: cmd.x,
-        y: cmd.y,
-        rotation: cmd.rotation,
-        scaleX: cmd.scaleX,
-        scaleY: cmd.scaleY,
-        worldX: cmd.x,
-        worldY: cmd.y,
-        worldRotation: cmd.rotation,
-        worldScaleX: cmd.scaleX,
-        worldScaleY: cmd.scaleY
-      };
+      const pos = this.tempPos;
+      pos.x = cmd.x;
+      pos.y = cmd.y;
+      pos.rotation = cmd.rotation;
+      pos.scaleX = cmd.scaleX;
+      pos.scaleY = cmd.scaleY;
+      pos.worldX = cmd.x;
+      pos.worldY = cmd.y;
+      pos.worldRotation = cmd.rotation;
+      pos.worldScaleX = cmd.scaleX;
+      pos.worldScaleY = cmd.scaleY;
 
-      const render: RenderComponent = {
-        type: "Render",
-        shape: cmd.type,
-        size: cmd.size,
-        color: cmd.color,
-        rotation: cmd.rotation,
-        vertices: cmd.vertices || undefined,
-        zIndex: cmd.zIndex,
-        hitFlashFrames: cmd.hitFlashFrames,
-        data: cmd.data
-      };
+      const render = this.tempRender;
+      render.shape = cmd.type;
+      render.size = cmd.size;
+      render.color = cmd.color;
+      render.rotation = cmd.rotation;
+      render.vertices = cmd.vertices || undefined;
+      render.zIndex = cmd.zIndex;
+      render.hitFlashFrames = cmd.hitFlashFrames;
+      render.data = cmd.data;
+
       postDrawer(ctx, cmd.entityId, pos, render, world);
     }
   }
@@ -417,6 +386,5 @@ export class CanvasRenderer implements Renderer {
   }
 
   public drawParticles(_world: World): void {
-    // Basic implementation to satisfy Renderer interface
   }
 }
