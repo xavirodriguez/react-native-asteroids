@@ -48,6 +48,11 @@
       "tagName": "@sideEffect",
       "syntaxKind": "block",
       "allowMultiple": true
+    },
+    {
+      "tagName": "@contract",
+      "syntaxKind": "block",
+      "allowMultiple": true
     }
   ],
   "supportForTags": {
@@ -62,6 +67,7 @@
     "@postcondition": true,
     "@invariant": true,
     "@sideEffect": true,
+    "@contract": true,
     "@remarks": true,
     "@param": true,
     "@returns": true,

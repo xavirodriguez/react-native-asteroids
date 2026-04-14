@@ -38,8 +38,6 @@ export interface SystemConfig {
  * actúan sobre conjuntos de componentes filtrados mediante queries en el {@link World}.
  *
  * El orden de ejecución es crítico y se gestiona mediante {@link SystemPhase} y prioridades.
- *
- * @packageDocumentation
  */
 export abstract class System {
   /**

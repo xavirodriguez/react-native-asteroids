@@ -12,8 +12,6 @@ import { Entity } from "../types/EngineTypes";
  * Las queries eliminan la necesidad de iterar sobre todas las entidades del mundo en cada frame.
  * El {@link World} notifica a las queries relevantes solo cuando hay cambios estructurales
  * (add/remove componente), permitiendo una complejidad O(1) para obtener entidades activas.
- *
- * @packageDocumentation
  */
 export class Query {
   private entities: Set<Entity> = new Set();

@@ -31,8 +31,6 @@ interface RegisteredSystem {
  * si se realizan múltiples veces por frame en mundos con miles de entidades.
  * @conceptualRisk [CONSISTENCY] La eliminación de componentes durante una iteración
  * de sistema puede invalidar el estado de los iteradores si no se maneja mediante buffers.
- *
- * @packageDocumentation
  */
 export class World {
   private activeEntities = new Set<Entity>();
@@ -68,6 +66,7 @@ export class World {
    * propiedades, lo que puede afectar a la generación de hashes de estado.
    * @conceptualRisk [GC_PRESSURE][MEDIUM] Las snapshots frecuentes en juegos con miles de entidades
    * generarán una presión significativa en el recolector de basura.
+   * @returns El estado serializado del mundo.
    */
   public snapshot(): WorldSnapshot {
     const gameplayRandom = RandomService.getInstance("gameplay");
@@ -86,7 +85,7 @@ export class World {
         }
 
         if (type === "Reclaimable") {
-            delete serializedComp.onReclaim;
+            delete (serializedComp as any).onReclaim;
         }
         componentData[type][entity] = JSON.parse(JSON.stringify(serializedComp)) as SerializedComponent;
       });
@@ -158,7 +157,7 @@ export class World {
 
     // Rebuild all existing queries to maintain consistency without breaking references
     this.queries.forEach(query => {
-        query.rebuild(this.activeEntities, this.entityComponentSets);
+        (query as any).rebuild(this.activeEntities, this.entityComponentSets);
     });
 
     // Re-attach Reclaimable functions if any pool exists in resources
@@ -194,7 +193,7 @@ export class World {
    * @postcondition Incrementa {@link World.version}.
    * @sideEffect Altera la lista interna de entidades activas y el pool de entidades libres.
    */
-  createEntity(): Entity {
+  public createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
     this.activeEntities.add(id);
     this.version++;
@@ -232,7 +231,7 @@ export class World {
    * @postcondition Incrementa {@link World.version}.
    * @postcondition Notifica a las queries reactivas para actualizar sus resultados cacheados.
    *
-   * @throws {Error} Si se viola el invariante de jerarquía (auto-parentesco).
+   * @throws Error - Si se viola el invariante de jerarquía (auto-parentesco).
    * @sideEffect Actualiza los mapas de componentes e índices de tipos por entidad.
    *
    * @conceptualRisk [HIERARCHY_NORMALIZATION][LOW] Resetea silenciosamente el parent a undefined
@@ -308,7 +307,7 @@ export class World {
    * @param componentTypes - Tipos de componentes por los que filtrar.
    * @returns Array de IDs de entidades que cumplen la query.
    */
-  getEntitiesWith(...componentTypes: string[]): Entity[] {
+  public getEntitiesWith(...componentTypes: string[]): Entity[] {
     return this.query(...componentTypes);
   }
 
@@ -346,12 +345,14 @@ export class World {
    * @param componentTypes - Uno o más tipos de componentes por los que filtrar.
    * @returns Un array de IDs de {@link Entity} que poseen todos los componentes requeridos.
    *
+   * @see {@link World.getEntitiesWith}
+   *
    * @conceptualRisk [GC_PRESSURE][LOW] La generación frecuente de arrays de resultados puede
    * presionar el recolector de basura si se abusa de queries efímeras en hot paths.
    * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] {@link Query.getEntities} devuelve una referencia
    * al array interno; no debe ser modificado por el consumidor.
    */
-  query(...componentTypes: string[]): Entity[] {
+  public query(...componentTypes: string[]): Entity[] {
     if (componentTypes.length === 0) return [];
 
     // Optimization: avoid sort/join for single component queries
@@ -398,9 +399,8 @@ export class World {
    *
    * @postcondition La entidad se añade a {@link World.freeEntities} para su posterior
    * reutilización e incrementa {@link World.version}.
-   * @sideEffect Notifica a todas las {@link Query} registradas.
    */
-  removeEntity(entity: Entity): void {
+  public removeEntity(entity: Entity): void {
     this.removeEntityFromComponentMaps(entity);
     this.entityComponentSets.delete(entity);
     this.queries.forEach(query => query.remove(entity));
@@ -417,7 +417,7 @@ export class World {
    *
    * @postcondition {@link World.version} se incrementa significativamente.
    */
-  clear(): void {
+  public clear(): void {
     this.activeEntities.clear();
     this.componentMaps.clear();
     this.componentIndex.clear();

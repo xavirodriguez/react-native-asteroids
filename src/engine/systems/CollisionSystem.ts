@@ -7,7 +7,7 @@ import { SpatialHash } from "../collision/SpatialHash";
  * Sistema de colisiones genérico para TinyAsterEngine.
  * Gestiona la detección de colisiones círculo-círculo optimizada mediante Spatial Hashing.
  *
- * @responsibility Detectar pares de entidades en colisión y disparar el callback {@link onCollision}.
+ * @responsibility Detectar pares de entidades en colisión y disparar el callback {@link CollisionSystem.onCollision}.
  * @responsibility Mantener la eficiencia O(N) en la fase ancha (broadphase) usando {@link SpatialHash}.
  * @queries Transform, Collider
  * @mutates Entidades (vía onCollision)
@@ -15,7 +15,7 @@ import { SpatialHash } from "../collision/SpatialHash";
  *
  * @contract Broadphase: Todas las entidades con Collider son insertadas en el {@link SpatialHash} cada tick.
  * @contract Narrowphase: Se realizan comprobaciones de distancia euclidiana solo para entidades en celdas adyacentes.
- * @invariant El sistema no modifica la posición de las entidades; la respuesta física es responsabilidad de {@link onCollision}.
+ * @invariant El sistema no modifica la posición de las entidades; la respuesta física es responsabilidad de {@link CollisionSystem.onCollision}.
  *
  * @conceptualRisk [PERFORMANCE][MEDIUM] Re-inserción masiva en el hash espacial cada frame genera presión en el GC.
  * @conceptualRisk [TYPE_SAFETY][MEDIUM] Uso frecuente de `as any` para acceder a propiedades extendidas de `ColliderComponent`
@@ -35,7 +35,7 @@ export abstract class CollisionSystem extends System {
    *
    * @precondition Las entidades deben poseer `Transform` y `Collider`.
    * @postcondition El {@link SpatialHash} interno se actualiza con las posiciones actuales.
-   * @sideEffect Invoca el método protegido {@link onCollision} de forma inmediata al detectar
+   * @sideEffect Invoca el método protegido {@link CollisionSystem.onCollision} de forma inmediata al detectar
    * un par válido.
    * @conceptualRisk [MUTATION][HIGH] Si `onCollision` elimina entidades del mundo, el iterador
    * actual en `update` podría procesar referencias inválidas o saltarse entidades.
