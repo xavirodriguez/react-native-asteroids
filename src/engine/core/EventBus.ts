@@ -26,9 +26,12 @@ export class EventBus {
   private handlers = new Map<string, Set<EventHandler>>();
 
   /**
-   * Subscribes to an event.
-   * @param event The event name or pattern (e.g., "game:score_changed", "entity:*")
-   * @param handler The callback function
+   * Suscribe un controlador a un evento específico o patrón.
+   *
+   * @param event - Nombre del evento o patrón (ej: "game:score_changed", "entity:*").
+   * @param handler - Función callback que recibirá los datos del evento.
+   *
+   * @postcondition El handler se añadirá al conjunto de subscriptores del evento.
    */
   public on<T = any>(event: string, handler: EventHandler<T>): void {
     if (!this.handlers.has(event)) {
@@ -38,7 +41,12 @@ export class EventBus {
   }
 
   /**
-   * Subscribes to an event once.
+   * Suscribe un controlador que se ejecutará una sola vez.
+   *
+   * @param event - Nombre del evento.
+   * @param handler - Función callback.
+   *
+   * @postcondition El handler se eliminará automáticamente tras la primera ejecución exitosa.
    */
   public once<T = any>(event: string, handler: EventHandler<T>): void {
     const onceHandler: EventHandler<T> = (payload) => {

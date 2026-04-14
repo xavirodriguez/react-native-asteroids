@@ -4,6 +4,15 @@ import { StateMachineComponent } from "../types/EngineTypes";
 
 /**
  * System that updates state machines for all entities with a StateMachineComponent.
+ *
+ * @responsibility Orchestrates the update cycle for entity-bound Finite State Machines.
+ *
+ * @conceptualRisk [OPAQUE_STATE] Internal FSM state is not stored directly in the ECS component,
+ * which may break deterministic rollback or perfect world snapshots if the FSM is not externally serializable.
+ *
+ * @mutates {@link StateMachineComponent} - Delegates updates to the internal `fsm` instance.
+ *
+ * @dependsOn {@link StateMachineComponent}
  */
 export class StateMachineSystem extends System {
   public update(world: World, deltaTime: number): void {

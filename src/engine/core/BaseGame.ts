@@ -163,6 +163,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     return scene ? scene.getWorld() : this.world;
   }
 
+  /**
+   * Inicializa el juego y todos sus subsistemas.
+   *
+   * @remarks
+   * Debe llamarse antes de {@link BaseGame.start}. Registra sistemas base del motor,
+   * sistemas específicos del juego y crea las entidades iniciales.
+   *
+   * @postcondition El {@link World} está poblado y listo para la simulación.
+   */
   public async init(): Promise<void> {
     await this.registerEngineSystems();
     this.registerSystems();

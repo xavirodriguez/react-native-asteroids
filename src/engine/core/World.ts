@@ -57,10 +57,17 @@ export class World {
    * @remarks
    * Captura entidades activas, datos de componentes, contadores de IDs, versión del mundo
    * y la semilla actual del generador de números aleatorios de gameplay.
+   * Las entidades se devuelven en orden de inserción del Set (no necesariamente ordenadas por ID).
    *
    * @returns Un objeto plano que contiene el estado reconstruible del mundo.
+   *
+   * @precondition El estado actual debe ser consistente; no se recomienda llamar durante un update de sistema.
+   * @postcondition Devuelve una copia superficial (shallow spread) de cada componente, omitiendo funciones explícitamente listadas.
+   *
    * @conceptualRisk [JSON_DETERMINISM][MEDIUM] La serialización no garantiza el orden de las
    * propiedades, lo que puede afectar a la generación de hashes de estado.
+   * @conceptualRisk [GC_PRESSURE][MEDIUM] Las snapshots frecuentes en juegos con miles de entidades
+   * generarán una presión significativa en el recolector de basura.
    */
   public snapshot(): any {
     const gameplayRandom = RandomService.getInstance("gameplay");
@@ -103,6 +110,8 @@ export class World {
    * @postcondition {@link World.version} se sincroniza con el valor del estado restaurado.
    * @sideEffect Limpia todos los datos actuales del mundo antes de la restauración.
    * @sideEffect Re-inicializa la semilla de `RandomService("gameplay")`.
+   * @conceptualRisk [TYPE_SAFETY][MEDIUM] No se valida la estructura del estado de entrada;
+   * un objeto corrupto o con propiedades faltantes corromperá silenciosamente el World.
    */
   public restore(state: any): void {
     this.activeEntities = new Set(state.entities);
@@ -210,20 +219,24 @@ export class World {
    *
    * @remarks
    * Este método gestiona la indexación reactiva para las queries y valida invariantes críticos
-   * como las jerarquías de transformación.
+   * como las jerarquías de transformación (Principio 2).
    *
    * @param entity - La entidad a la que se adjunta el componente.
    * @param component - La instancia del componente a adjuntar.
    *
-   * @precondition La entidad debe existir (haber sido creada previamente con {@link World.createEntity}).
+   * @precondition La entidad debe haber sido creada previamente con {@link World.createEntity}.
+   * @postcondition El componente es recuperable mediante {@link World.getComponent}.
+   * @postcondition Incrementa {@link World.version}.
+   * @postcondition Notifica a las queries reactivas para actualizar sus resultados cacheados.
+   *
    * @throws {Error} Si se viola el invariante de jerarquía (auto-parentesco).
+   * @sideEffect Actualiza los mapas de componentes e índices de tipos por entidad.
+   *
    * @conceptualRisk [HIERARCHY_NORMALIZATION][LOW] Resetea silenciosamente el parent a undefined
    * si el parent no existe. Previene crashes pero puede ocultar errores de lógica en el orden
    * de creación de entidades.
    *
-   * @postcondition Incrementa {@link World.version}.
-   * @postcondition Notifica a las queries reactivas para actualizar sus resultados cacheados.
-   * @sideEffect Actualiza los mapas de componentes e índices de tipos por entidad.
+   * @returns La instancia del componente adjuntado (permite encadenamiento).
    */
   addComponent<T extends Component>(entity: Entity, component: T): T {
     const type = component.type;
