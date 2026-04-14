@@ -103,11 +103,11 @@ export class CanvasRenderer implements Renderer {
     this.postRenderHooks.push(hook);
   }
 
-  public registerBackgroundEffect(name: string, drawer: any): void {
+  public registerBackgroundEffect(name: string, drawer: (ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void): void {
     this.backgroundEffects.push(drawer);
   }
 
-  public registerForegroundEffect(name: string, drawer: any): void {
+  public registerForegroundEffect(name: string, drawer: (ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void): void {
     this.foregroundEffects.push(drawer);
   }
 
@@ -168,7 +168,7 @@ export class CanvasRenderer implements Renderer {
     let count = 0;
 
     const gameStateEntity = world.query("GameState")[0];
-    const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
+    const gameState = gameStateEntity ? world.getComponent<import("../../types/GameTypes").GameStateComponent>(gameStateEntity, "GameState") : null;
 
     let shakeX = 0;
     let shakeY = 0;
@@ -215,8 +215,8 @@ export class CanvasRenderer implements Renderer {
       snap.rotation = rotation;
       snap.scaleX = scaleX;
       snap.scaleY = scaleY;
-      snap.opacity = (render as any).opacity ?? 1;
-      snap.zIndex = (render as any).zIndex ?? 0;
+      snap.opacity = render.data?.opacity !== undefined ? (render.data.opacity as number) : 1;
+      snap.zIndex = render.zIndex ?? 0;
       snap.shape = render.shape;
       snap.color = render.color;
       snap.size = render.size;
@@ -240,7 +240,7 @@ export class CanvasRenderer implements Renderer {
     for (let i = 0; i < snapshot.entityCount; i++) {
       const ent = snapshot.entities[i];
       this.commandBuffer.addCommand(
-        ent.shape as any,
+        ent.shape,
         ent.x,
         ent.y,
         ent.rotation,

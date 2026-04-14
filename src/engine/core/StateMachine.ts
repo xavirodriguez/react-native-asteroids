@@ -1,10 +1,10 @@
 /**
  * Interfaz que define un estado individual dentro de la máquina de estados.
  *
- * @typeParam TState - Unión de strings que definen las claves de estado posibles.
+ * @typeParam _TState - Unión de strings que definen las claves de estado posibles.
  * @typeParam TContext - Tipo del objeto de contexto compartido entre estados.
  */
-export interface State<TState extends string, TContext> {
+export interface State<_TState extends string, TContext> {
   /** Hook invocado al entrar en el estado. */
   onEnter?: (ctx: TContext) => void;
   /** Hook invocado en cada actualización del motor mientras el estado está activo. */

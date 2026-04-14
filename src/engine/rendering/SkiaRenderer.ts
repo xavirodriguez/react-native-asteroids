@@ -42,7 +42,7 @@ export class SkiaRenderer implements Renderer {
   private preRenderHooks: ((canvas: SkCanvas, world: World) => void)[] = [];
   private postRenderHooks: ((canvas: SkCanvas, world: World) => void)[] = [];
 
-  constructor(canvas?: any) {
+  constructor(canvas?: SkCanvas) {
     if (canvas) {
       this.canvas = canvas;
     }
@@ -112,7 +112,8 @@ export class SkiaRenderer implements Renderer {
           lineColor[3] *= this.paint.getAlphaf();
           this.paint.setColor(lineColor);
           this.paint.setStrokeWidth(1);
-          render.data.internalLines.forEach((line: any) => {
+          const internalLines = render.data.internalLines as Array<{ x1: number; y1: number; x2: number; y2: number }>;
+          internalLines.forEach((line) => {
               canvas.drawLine(line.x1, line.y1, line.x2, line.y2, this.paint);
           });
       }
@@ -167,7 +168,7 @@ export class SkiaRenderer implements Renderer {
 
     const gameStateEntity = world.query("GameState")[0];
     const gameState = gameStateEntity
-      ? (world.getComponent<any>(gameStateEntity, "GameState"))
+      ? (world.getComponent<import("../../types/GameTypes").GameStateComponent>(gameStateEntity, "GameState"))
       : null;
 
     let shakeX = 0;
@@ -207,7 +208,7 @@ export class SkiaRenderer implements Renderer {
         entity,
         pos: interpolatedPos,
         render,
-        zIndex: (render as any).zIndex ?? 0
+        zIndex: render.zIndex ?? 0
       };
     });
 
@@ -243,7 +244,7 @@ export class SkiaRenderer implements Renderer {
     canvas.rotate((rotation * 180) / Math.PI, 0, 0);
     canvas.scale(scaleX, scaleY);
 
-    const opacity = (render as any).opacity !== undefined ? (render as any).opacity : 1;
+    const opacity = render.data?.opacity !== undefined ? (render.data.opacity as number) : 1;
     this.paint.setAlphaf(opacity);
 
     const drawer = this.shapeDrawers.get(render.shape);
@@ -259,15 +260,15 @@ export class SkiaRenderer implements Renderer {
     }
   }
 
-  public registerShape(name: string, drawer: any): void {
+  public registerShape(name: string, drawer: SkiaShapeDrawer): void {
     this.shapeDrawers.set(name, drawer);
   }
 
-  public registerBackgroundEffect( _name: string,  _drawer: any): void {
+  public registerBackgroundEffect( _name: string,  _drawer: import("./Renderer").EffectDrawer<SkCanvas>): void {
       // Basic implementation to satisfy Renderer interface
   }
 
-  public registerForegroundEffect( _name: string,  _drawer: any): void {
+  public registerForegroundEffect( _name: string,  _drawer: import("./Renderer").EffectDrawer<SkCanvas>): void {
       // Basic implementation to satisfy Renderer interface
   }
 

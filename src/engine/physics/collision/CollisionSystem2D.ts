@@ -64,7 +64,7 @@ export class CollisionSystem2D extends System {
     let candidates: Array<[Entity, Entity]>;
     if (this.spatialHash && entities.length > 50) {
       this.spatialHash.clear();
-      const entityBoundsMap = new Map<Entity, any>();
+      const entityBoundsMap = new Map<Entity, import("../../types/EngineTypes").AABB>();
       entities.forEach(entity => {
         const bounds = BroadPhase.getShapeBounds(world.getComponent<TransformComponent>(entity, "Transform")!, world.getComponent<Collider2DComponent>(entity, "Collider2D")!);
         entityBoundsMap.set(entity, bounds);

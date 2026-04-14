@@ -11,12 +11,14 @@ import { GameLoop } from "../src/engine/core/GameLoop";
 let Canvas: React.ComponentType<Record<string, unknown>> | null = null;
 let Drawing: React.ComponentType<{ onDraw: (canvas: SkCanvas) => void }> | null = null;
 
-if (Platform.OS !== 'web') {
+if (Platform.OS !== "web") {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const SkiaModule = require("@shopify/react-native-skia");
-    Canvas = SkiaModule.Canvas;
-    Drawing = SkiaModule.Drawing;
+    const SkiaModule = require("@shopify/react-native-skia") as typeof import("@shopify/react-native-skia");
+    Canvas = SkiaModule.Canvas as unknown as React.ComponentType<Record<string, unknown>>;
+    Drawing = SkiaModule.Drawing as unknown as React.ComponentType<{
+      onDraw: (canvas: SkCanvas) => void;
+    }>;
   } catch (_err) {
     console.warn("Skia not available");
   }
@@ -56,12 +58,12 @@ export const GameRenderer = React.memo(function GameRenderer({ world, onInitiali
         // but here we are in a Skia-specific component.
         try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const { SkiaRenderer: EngineSkiaRenderer } = require("../src/engine/rendering/SkiaRenderer");
+            const { SkiaRenderer: EngineSkiaRenderer } = require("../src/engine/rendering/SkiaRenderer") as typeof import("../src/engine/rendering/SkiaRenderer");
             const renderer = new EngineSkiaRenderer(canvas);
             if (onInitialize) onInitialize(renderer);
             rendererRef.current = renderer;
-        } catch (_err) {
-            console.error("Failed to initialize Skia renderer", _err);
+        } catch (err) {
+            console.error("Failed to initialize Skia renderer", err);
         }
     } else {
       rendererRef.current.setCanvas(canvas);
