@@ -7,6 +7,7 @@ import { CanvasRenderer as EngineCanvasRenderer } from "../src/engine/rendering/
 import type { World } from "../src/engine/core/World";
 import { Renderer } from "../src/engine/rendering/Renderer";
 import { GameLoop } from "../src/engine/core/GameLoop";
+import { GameRenderer } from "./GameRenderer";
 
 interface CanvasRendererProps {
   world: World;
@@ -37,12 +38,12 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, gameLoop,
     rendererRef.current.setSize(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
 
     // Initial render
-    rendererRef.current.render(world);
+    rendererRef.current.render(world, 1);
 
     if (gameLoop) {
-      const unsubscribe = gameLoop.subscribeRender(() => {
+      const unsubscribe = gameLoop.subscribeRender((alpha) => {
         if (rendererRef.current) {
-          rendererRef.current.render(world);
+          rendererRef.current.render(world, alpha);
         }
       });
       return unsubscribe;
@@ -62,7 +63,7 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, gameLoop,
         }}
       />
       ) : (
-        <View style={{ width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT, backgroundColor: 'black' }} />
+        <GameRenderer world={world} onInitialize={onInitialize} gameLoop={gameLoop} />
       )}
     </View>
   );

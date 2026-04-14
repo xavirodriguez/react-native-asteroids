@@ -36,17 +36,20 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
     const birds = world.query("Bird", "Transform", "Collider");
     const grounds = world.query("Ground", "Transform", "Collider");
 
-    if (birds.length === 0 || grounds.length === 0) return;
-
-    const birdPos = world.getComponent<TransformComponent>(birds[0], "Transform")!;
-    const birdCol = world.getComponent<ColliderComponent>(birds[0], "Collider")!;
+    if (grounds.length === 0) return;
     const groundPos = world.getComponent<TransformComponent>(grounds[0], "Transform")!;
     const groundCol = world.getComponent<ColliderComponent>(grounds[0], "Collider")!;
-
-    // If bird center Y + radius exceeds ground top edge Y
     const groundTop = groundPos.y - groundCol.radius;
-    if (birdPos.y + birdCol.radius >= groundTop) {
-      this.triggerGameOver(world);
+
+    for (const bird of birds) {
+      const birdPos = world.getComponent<TransformComponent>(bird, "Transform")!;
+      const birdCol = world.getComponent<ColliderComponent>(bird, "Collider")!;
+
+      // If bird center Y + radius exceeds ground top edge Y
+      if (birdPos.y + birdCol.radius >= groundTop) {
+        this.triggerGameOver(world);
+        break;
+      }
     }
   }
 
@@ -151,7 +154,8 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
         const bird = world.getComponent<BirdComponent>(birdEntity, "Bird");
         if (bird) bird.isAlive = false;
 
-        const render = world.getComponent<RenderComponent>(birdEntity, "Render");
+        // Apply visual feedback
+        const render = world.getComponent<any>(birdEntity, "Render");
         if (render) render.hitFlashFrames = 8;
 
         JuiceSystem.add(world, birdEntity, {
@@ -184,8 +188,8 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
         });
       });
 
-      // Pausar tras un pequeño delay para dejar ver el impacto (opcional, por ahora directo)
-      this.game.pause();
+      // We don't pause immediately to let the game-over UI handle the state
+      // and allow the player to see the impact.
     }
   }
 }
