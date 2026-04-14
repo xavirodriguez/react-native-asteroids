@@ -22,7 +22,26 @@ export interface BaseGameConfig {
 }
 
 /**
- * Main orchestrator for game lifecycle and state.
+ * Orquestador principal del ciclo de vida, estado y ejecución de un juego.
+ *
+ * @responsibility Coordinar la inicialización del motor (World, Loop, Input).
+ * @responsibility Gestionar las fases del pipeline determinista por tick.
+ * @responsibility Proveer un punto de entrada para la integración con React Native.
+ * @responsibility Administrar el cambio de escenas y el reinicio de estado.
+ *
+ * @remarks
+ * `BaseGame` implementa el patrón de diseño Template Method; las clases derivadas deben
+ * implementar {@link BaseGame.registerSystems} e {@link BaseGame.initializeEntities}.
+ * El loop de actualización garantiza un pipeline estricto:
+ * 1. Preparación de interpolación (Snapshot de transforms previos).
+ * 2. Procesamiento de entrada unificada.
+ * 3. Actualización de simulación (World o Scene actual).
+ * 4. Propagación de jerarquías (Transform updates).
+ *
+ * @typeParam TState - Representación del estado consolidado del juego.
+ * @typeParam TInput - Mapa de acciones de entrada soportadas.
+ *
+ * @packageDocumentation
  */
 export abstract class BaseGame<TState, TInput extends Record<string, any>>
   implements IGame<BaseGame<TState, TInput>> {
@@ -156,6 +175,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     return scene ? scene.getWorld() : this.world;
   }
 
+  /**
+   * Inicializa el juego y todos sus subsistemas.
+   *
+   * @remarks
+   * Debe llamarse antes de {@link BaseGame.start}. Registra sistemas base del motor,
+   * sistemas específicos del juego y crea las entidades iniciales.
+   *
+   * @postcondition El {@link World} está poblado y listo para la simulación.
+   */
   public async init(): Promise<void> {
     await this.registerEngineSystems();
     this.registerSystems();
