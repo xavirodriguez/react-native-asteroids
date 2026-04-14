@@ -120,10 +120,21 @@ export class AsteroidsGame
       } else {
         // Sample check of local player if exists
         if (localSessionId) {
-           const localPlayerEntity = this.world.query("LocalPlayer")[0];
-           if (localPlayerEntity !== undefined) {
-               const pPos = predicted.componentData["Transform"]?.[localPlayerEntity];
-               const aPos = authoritativeSnapshot.componentData["Transform"]?.[localPlayerEntity];
+           // Find local player ID by checking Ship components in predicted state
+           const shipMap = predicted.componentData["Ship"];
+           let localPlayerId: number | undefined;
+           if (shipMap) {
+               for (const id in shipMap) {
+                   if (shipMap[id].sessionId === localSessionId) {
+                       localPlayerId = parseInt(id);
+                       break;
+                   }
+               }
+           }
+
+           if (localPlayerId !== undefined) {
+               const pPos = predicted.componentData["Transform"]?.[localPlayerId];
+               const aPos = authoritativeSnapshot.componentData["Transform"]?.[localPlayerId];
                if (!pPos || !aPos || Math.abs(pPos.x - aPos.x) > 0.01 || Math.abs(pPos.y - aPos.y) > 0.01) {
                    needsRollback = true;
                }
@@ -135,6 +146,18 @@ export class AsteroidsGame
     if (needsRollback) {
       console.log(`[Rollback] Divergence at tick ${serverTick}. Re-simulating...`);
       this.world.restore(authoritativeSnapshot);
+
+      // Re-apply LocalPlayer tag if it was on a ship
+      if (localSessionId) {
+          const ships = this.world.query("Ship");
+          const localPlayerEntity = ships.find(e => {
+              const ship = this.world.getComponent<any>(e, "Ship");
+              return ship && ship.sessionId === localSessionId;
+          });
+          if (localPlayerEntity !== undefined) {
+              this.world.addComponent(localPlayerEntity, { type: "LocalPlayer" } as any);
+          }
+      }
 
       // Re-simulate from serverTick + 1 to current prediction head
       const currentTick = this.inputHistory.length > 0 ? this.inputHistory[this.inputHistory.length - 1].tick : serverTick;

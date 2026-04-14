@@ -31,6 +31,7 @@ export interface BulletComponent extends Component {
  */
 export interface ShipComponent extends Component {
   type: "Ship";
+  sessionId?: string;
   hyperspaceTimer: number;
   hyperspaceCooldownRemaining: number;
   trailPositions?: { x: number; y: number }[];
@@ -68,6 +69,7 @@ export interface GameStateComponent extends Component {
   comboCount: number;
   comboMultiplier: number;
   lastBulletHit: boolean;
+  serverTick: number;
   stars?: Star[];
   screenShake?: ScreenShake | null;
   debugCRT?: boolean;
@@ -86,6 +88,7 @@ export const INITIAL_GAME_STATE: GameStateComponent = Object.freeze({
   comboCount: 0,
   comboMultiplier: 1,
   lastBulletHit: false,
+  serverTick: 0,
 });
 
 /**

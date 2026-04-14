@@ -75,7 +75,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.world.addComponent(entity, { type: "Render", shape: "triangle", size: 10, color: "white", rotation: 0 } as RenderComponent);
     this.world.addComponent(entity, { type: "Collider", radius: 10 } as ColliderComponent);
     this.world.addComponent(entity, { type: "Health", current: 3, max: 3, invulnerableRemaining: 0 } as HealthComponent);
-    this.world.addComponent(entity, { type: "Ship" } as Component);
+    this.world.addComponent(entity, { type: "Ship", sessionId: client.sessionId } as any);
     this.world.addComponent(entity, { type: "Tag", tags: ["Ship"] } as TagComponent);
     this.world.addComponent(entity, { type: "Input", rotateLeft: false, rotateRight: false, thrust: false, shoot: false, shootCooldownRemaining: 0 } as Component);
   }

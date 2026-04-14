@@ -150,6 +150,7 @@ export const skiaStarfieldEffect: EffectDrawer<any> = (canvas, world, width, hei
               const parallaxX = (star.x - shipPos.x * (0.05 * (star.layer + 1)) + width) % width;
               const parallaxY = (star.y - shipPos.y * (0.05 * (star.layer + 1)) + height) % height;
 
+              const gameState = world.getSingleton<any>("GameState");
               const tick = (gameState as any)?.serverTick ?? 0;
               const twinkle = 0.8 + Math.sin(star.twinklePhase + tick * 0.1 * star.twinkleSpeed) * 0.2;
               p.setAlphaf(star.brightness * twinkle);

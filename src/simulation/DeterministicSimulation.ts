@@ -25,6 +25,12 @@ export class DeterministicSimulation {
     public static update(world: World, deltaTime: number, ctx: SimulationContext) {
         const dtSeconds = deltaTime / 1000;
 
+        // 0. Update server tick in GameState
+        const gameState = world.getSingleton<any>("GameState");
+        if (gameState) {
+            gameState.serverTick++;
+        }
+
         // 1. Process Inputs & Ship Physics
         this.updateShips(world, deltaTime, dtSeconds, ctx);
 
