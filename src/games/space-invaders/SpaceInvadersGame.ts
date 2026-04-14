@@ -75,8 +75,13 @@ export class SpaceInvadersGame
   }
 
   public getWorld(): World {
-    // Override to ensure we get the world from the scene
-    return this.sceneManager.getCurrentScene()?.getWorld() || this.world;
+    // Priority 1: Scene-specific world (active gameplay)
+    const scene = this.sceneManager.getCurrentScene();
+    if (scene) {
+      return scene.getWorld();
+    }
+    // Priority 2: Base world (loading/initialization)
+    return this.world;
   }
 
   public setMultiplayerMode(active: boolean) {

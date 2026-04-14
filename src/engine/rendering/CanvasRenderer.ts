@@ -191,42 +191,38 @@ export class CanvasRenderer implements Renderer {
 
       const snap = snapshot.entities[count];
 
-      // Introduce dirty flags to avoid unnecessary recomputation
-      const isDirty = (trans as any).dirty || (render as any).dirty || count >= snapshot.entityCount;
+      // Always update snap to avoid stale data in double-buffer snapshots
+      snap.id = entity;
 
-      if (isDirty || alpha < 1) {
-        snap.id = entity;
+      let x = trans.worldX ?? trans.x;
+      let y = trans.worldY ?? trans.y;
+      let rotation = trans.worldRotation ?? trans.rotation;
+      const scaleX = trans.worldScaleX ?? (trans.scaleX ?? 1);
+      const scaleY = trans.worldScaleY ?? (trans.scaleY ?? 1);
 
-        let x = trans.worldX ?? trans.x;
-        let y = trans.worldY ?? trans.y;
-        let rotation = trans.worldRotation ?? trans.rotation;
-        const scaleX = trans.worldScaleX ?? (trans.scaleX ?? 1);
-        const scaleY = trans.worldScaleY ?? (trans.scaleY ?? 1);
+      if (prevTrans && alpha < 1) {
+        x = prevTrans.x + (x - prevTrans.x) * alpha;
+        y = prevTrans.y + (y - prevTrans.y) * alpha;
 
-        if (prevTrans && alpha < 1) {
-          x = prevTrans.x + (x - prevTrans.x) * alpha;
-          y = prevTrans.y + (y - prevTrans.y) * alpha;
-
-          let diff = rotation - prevTrans.rotation;
-          while (diff < -Math.PI) diff += Math.PI * 2;
-          while (diff > Math.PI) diff -= Math.PI * 2;
-          rotation = prevTrans.rotation + diff * alpha;
-        }
-
-        snap.x = x;
-        snap.y = y;
-        snap.rotation = rotation;
-        snap.scaleX = scaleX;
-        snap.scaleY = scaleY;
-        snap.opacity = (render as any).opacity ?? 1;
-        snap.zIndex = (render as any).zIndex ?? 0;
-        snap.shape = render.shape;
-        snap.color = render.color;
-        snap.size = render.size;
-        snap.vertices = render.vertices || null;
-        snap.hitFlashFrames = render.hitFlashFrames || 0;
-        snap.data = render.data;
+        let diff = rotation - prevTrans.rotation;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        rotation = prevTrans.rotation + diff * alpha;
       }
+
+      snap.x = x;
+      snap.y = y;
+      snap.rotation = rotation;
+      snap.scaleX = scaleX;
+      snap.scaleY = scaleY;
+      snap.opacity = (render as any).opacity ?? 1;
+      snap.zIndex = (render as any).zIndex ?? 0;
+      snap.shape = render.shape;
+      snap.color = render.color;
+      snap.size = render.size;
+      snap.vertices = render.vertices || null;
+      snap.hitFlashFrames = render.hitFlashFrames || 0;
+      snap.data = render.data;
 
       count++;
     }

@@ -1,10 +1,11 @@
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useEffect, useState } from "react";
 import { View, StyleSheet, Platform } from "react-native";
 import type { World } from "../src/engine/core/World";
 import { GAME_CONFIG } from "../src/types/GameTypes";
 import type { SkCanvas } from "@shopify/react-native-skia";
 import type { SkiaRenderer } from "../src/engine/rendering/SkiaRenderer";
 import type { Renderer } from "../src/engine/rendering/Renderer";
+import { GameLoop } from "../src/engine/core/GameLoop";
 
 // Conditionally import Skia components for non-web platforms
 let Canvas: React.ComponentType<Record<string, unknown>> | null = null;
@@ -28,13 +29,26 @@ interface GameRendererProps {
   /** The ECS world containing the entities to be rendered. */
   world: World;
   onInitialize?: (renderer: Renderer) => void;
+  gameLoop?: GameLoop;
 }
 
 /**
  * Component responsible for rendering the game world using @shopify/react-native-skia.
  */
-export const GameRenderer = React.memo(function GameRenderer({ world, onInitialize }: GameRendererProps) {
+export const GameRenderer = React.memo(function GameRenderer({ world, onInitialize, gameLoop }: GameRendererProps) {
   const rendererRef = useRef<SkiaRenderer | null>(null);
+  const [, setTick] = useState(0);
+  const alphaRef = useRef(1);
+
+  useEffect(() => {
+    if (gameLoop) {
+      const unsubscribe = gameLoop.subscribeRender((alpha) => {
+        alphaRef.current = alpha;
+        setTick(t => t + 1);
+      });
+      return unsubscribe;
+    }
+  }, [gameLoop]);
 
   const onDraw = useMemo(() => (canvas: SkCanvas) => {
     if (!rendererRef.current) {
@@ -54,9 +68,10 @@ export const GameRenderer = React.memo(function GameRenderer({ world, onInitiali
     }
     if (rendererRef.current) {
         rendererRef.current.setSize(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
+        rendererRef.current.setAlpha(alphaRef.current);
         rendererRef.current.render(world);
     }
-  }, [world, world.version, onInitialize]);
+  }, [world, onInitialize]);
 
   if (Platform.OS === 'web' || !Canvas || !Drawing) {
     return <View style={[styles.container, { width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT, backgroundColor: 'black' }]} />;
