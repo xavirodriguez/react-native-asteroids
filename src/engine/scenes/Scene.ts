@@ -1,68 +1,88 @@
 import { World } from "../core/World";
 
 /**
- * Abstract base class for all game scenes.
- * A scene represents a specific state of the game (e.g., Menu, Playing, Game Over).
- * It manages its own ECS world and provides lifecycle hooks.
+ * Clase base abstracta para todas las escenas del juego.
+ * Una escena representa un estado específico (e.g., Menú, Jugando, Game Over).
+ * Gestiona su propio mundo ECS y proporciona ganchos de ciclo de vida.
+ *
+ * @responsibility Orquestar la inicialización y limpieza de entidades/sistemas para un estado de juego específico.
+ * @responsibility Proveer un contexto aislado (World) para evitar fugas de estado entre escenas.
  */
 export abstract class Scene {
-  /** The ECS world associated with this scene. */
+  /**
+   * El mundo ECS asociado a esta escena.
+   * @invariant Cada escena posee una instancia única de World a menos que se comparta explícitamente.
+   */
   protected world: World;
 
   constructor(world: World) {
     this.world = world;
   }
 
+  /** Nombre identificador de la escena para debugging y transiciones. */
   public name: string = "Unnamed Scene";
 
   /**
-   * Called when the scene becomes the active scene.
-   * Useful for initializing entities and systems.
+   * Llamado cuando la escena se convierte en la escena activa.
+   * @param _world - Referencia al mundo de la escena.
+   * @contract Debe inicializar los sistemas y entidades necesarios.
+   * @conceptualRisk [ASYNC_INIT] Si es asíncrono, la lógica de actualización debe esperar a que se resuelva
+   * para evitar referencias nulas o sistemas incompletos.
    */
   public onEnter(_world: World): void | Promise<void> {}
 
   /**
-   * Called when the scene is no longer the active scene.
-   * Useful for cleanup.
+   * Llamado cuando la escena deja de ser la escena activa.
+   * @param _world - Referencia al mundo de la escena.
+   * @contract Debe liberar recursos pesados o cancelar suscripciones pendientes.
    */
   public onExit(_world: World): void | Promise<void> {}
 
   /**
-   * Called when the game is paused while this scene is active.
+   * Llamado cuando el juego se pausa mientras esta escena está activa.
    */
   public onPause(): void {}
 
   /**
-   * Called when the game is resumed while this scene is active.
+   * Llamado cuando el juego se reanuda mientras esta escena está activa.
    */
   public onResume(): void {}
 
   /**
-   * Called when the game is being updated.
+   * Llamado durante el tick de actualización de la simulación.
+   * @param dt - Tiempo transcurrido en segundos.
+   * @param world - El mundo a actualizar.
+   * @executionOrder Típicamente llamado por el {@link SceneManager} dentro del GameLoop.
    */
   public onUpdate(dt: number, world: World): void {
     world.update(dt);
   }
 
   /**
-   * Called when the game is being rendered.
+   * Llamado durante el paso de renderizado.
+   * @param _alpha - Factor de interpolación para renderizado suave.
    */
   public onRender(_alpha: number): void {}
 
   /**
-   * Gets the ECS world for this scene.
+   * Obtiene el mundo ECS de esta escena.
+   * @queries world
    */
   public getWorld(): World {
     return this.world;
   }
 
   /**
-   * Public forwarding methods for backward compatibility.
+   * Métodos de reenvío públicos para compatibilidad con versiones anteriores.
+   * @deprecated Usar el flujo de SceneManager u onUpdate directamente.
    */
   public update(dt: number): void {
     this.onUpdate(dt, this.world);
   }
 
+  /**
+   * @deprecated Delegar renderizado al RenderSystem o SceneManager.
+   */
   public render(renderer: any): void {
     renderer.render(this.world);
   }

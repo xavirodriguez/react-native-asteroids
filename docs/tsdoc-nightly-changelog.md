@@ -145,3 +145,21 @@
 - `StateMachineSystem.ts`: [OPAQUE_STATE] El estado interno de las FSM no reside en componentes ECS estándar, arriesgando snapshots incompletos.
 - `AudioSystem.ts`: [AUTOPLAY] Bloqueo por políticas de navegador si no se llama a `resume()` tras gesto de usuario.
 - `AudioSystem.ts`: [LATENCY_MISMATCH] Diferencias de latencia notables al usar fallback de HTML Audio para SFX.
+
+## [1.8.0] - 2025-06-04
+### Added
+- Auditoría TSDoc Nivel 5 para interfaces de juego, escenas, colisiones y sistemas heredados:
+  - `src/engine/core/IGame.ts`
+  - `src/engine/scenes/Scene.ts`
+  - `src/engine/collision/SpatialHash.ts`
+  - `src/engine/camera/CameraSystem.ts`
+  - `src/engine/input/InputManager.ts`
+
+### Detected Conceptual Risks
+- `IGame.ts`: [SERIALIZATION] El estado del juego devuelto por `getGameState` no garantiza ser serializable, arriesgando fallos en rollback/networking.
+- `Scene.ts`: [ASYNC_INIT] El uso de `Promise` en `onEnter` puede causar estados inconsistentes si la simulación comienza antes de resolverse.
+- `SpatialHash.ts`: [GRID_SIZE_TUNING] Rendimiento extremadamente sensible al tamaño de celda; riesgo de O(N²) si es muy grande o alto coste de inserción si es muy pequeño.
+- `CameraSystem.ts`: [ASYNC_SHAKE] El decaimiento del shake mediante `setTimeout` es no determinista y rompe la consistencia de grabaciones.
+- `CameraSystem.ts`: [FRAME_RATE_DEPENDENCE] El suavizado de cámara (lerp) no compensa el `deltaTime`, variando según los FPS.
+- `InputManager.ts`: [STATE_CLOBBERING] La agregación mediante OR lógico puede ocultar conflictos entre controladores de entrada.
+- `InputManager.ts`: [LIFECYCLE_MISMATCH] Riesgo de fugas de memoria si los controladores registrados no se limpian explícitamente al destruir el manager.

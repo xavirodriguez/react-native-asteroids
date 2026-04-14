@@ -1,21 +1,31 @@
 import { InputController } from "./InputController";
 
 /**
- * Centralized manager for handling multiple input sources.
+ * Gestor centralizado para manejar múltiples fuentes de entrada.
  *
- * @deprecated Use UnifiedInputSystem instead for semantic action-based input.
+ * @deprecated Usar {@link UnifiedInputSystem} para una gestión de entradas basada en acciones semánticas
+ * y desacoplada de controladores específicos.
  *
  * @remarks
- * The InputManager maintains a list of {@link InputController}s and aggregates
- * their states into a single, unified input state.
+ * El InputManager mantiene una lista de {@link InputController} y agrega sus estados
+ * en un único estado de entrada unificado mediante una operación OR lógica.
+ *
+ * @responsibility Agregar múltiples fuentes de entrada (Teclado, Touch, Red).
+ * @responsibility Proporcionar un estado de entrada consolidado para los sistemas de juego.
+ *
+ * @conceptualRisk [STATE_CLOBBERING] Si dos controladores intentan escribir en la misma clave,
+ * domina el que devuelva `true` (OR lógico).
+ * @conceptualRisk [LIFECYCLE_MISMATCH] Si no se llama a `cleanup()`, los event listeners de los controladores
+ * pueden causar fugas de memoria al cambiar de escena.
  */
 export class InputManager<TInputState extends Record<string, boolean>> {
   private controllers: InputController<TInputState>[] = [];
 
   /**
-   * Registers an input controller with the manager.
-   *
-   * @param controller - The {@link InputController} to add.
+   * Registra un controlador de entrada en el gestor e invoca su inicialización.
+   * @param controller - El {@link InputController} a añadir.
+   * @contract Llama a `controller.setup()` inmediatamente.
+   * @mutates controllers
    */
   public addController(controller: InputController<TInputState>): void {
     controller.setup();
@@ -23,7 +33,9 @@ export class InputManager<TInputState extends Record<string, boolean>> {
   }
 
   /**
-   * Removes all controllers and cleans up their resources.
+   * Elimina todos los controladores y libera sus recursos.
+   * @contract Debe llamarse al destruir el juego o cambiar de contexto para evitar fugas de memoria.
+   * @mutates controllers
    */
   public cleanup(): void {
     this.controllers.forEach((c) => c.cleanup());
@@ -64,13 +76,12 @@ export class InputManager<TInputState extends Record<string, boolean>> {
   }
 
   /**
-   * Aggregates input states from all registered controllers.
-   *
-   * @returns The unified input state.
-   *
+   * Agrega los estados de entrada de todos los controladores registrados.
+   * @returns El estado de entrada unificado.
+   * @queries controllers
    * @remarks
-   * If multiple controllers provide a state for the same action,
-   * the action is considered active if it is active in AT LEAST one controller.
+   * Si múltiples controladores proporcionan un estado para la misma acción,
+   * la acción se considera activa si es activa en AL MENOS un controlador (OR lógico).
    */
   public getCombinedInputs(): TInputState {
     return this.controllers.reduce(

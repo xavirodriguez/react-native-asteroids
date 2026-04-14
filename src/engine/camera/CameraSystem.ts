@@ -14,9 +14,19 @@ export const useSharedCamera = (initialState: Partial<CameraState> = {}): Shared
 };
 
 /**
- * CameraSystem: Manages camera logic like follow, lerp, shake, and bounds.
+ * CameraSystem: Gestiona la lógica de la cámara (seguimiento, lerp, sacudida y límites).
  *
- * @deprecated Use Camera2D instead for a platform-agnostic implementation.
+ * @deprecated Este sistema depende de `react-native-reanimated` (SharedValue).
+ * Usar {@link Camera2D} para una implementación agnóstica de la plataforma y determinista.
+ *
+ * @responsibility Calcular la posición de la cámara basada en un objetivo.
+ * @responsibility Aplicar límites (clamping) a la vista.
+ * @responsibility Gestionar efectos cosméticos como `shake`.
+ *
+ * @conceptualRisk [Z-INDEX_FLICKER] Este sistema no maneja planos de profundidad, solo posición 2D.
+ * @conceptualRisk [ASYNC_SHAKE] El uso de `setTimeout` para el decaimiento del shake es NO DETERMINISTA
+ * y puede causar desincronización en grabaciones/replays.
+ * @conceptualRisk [FRAME_RATE_DEPENDENCE] El lerp de posición es dependiente del framerate (no compensa dt).
  */
 export class CameraSystem {
   private targetEntityId: number | null = null;
@@ -25,6 +35,10 @@ export class CameraSystem {
 
   constructor(private sharedCamera: SharedCamera) {}
 
+  /**
+   * Configura una entidad para ser seguida por la cámara.
+   * @param entityId - ID de la entidad objetivo o null para dejar de seguir.
+   */
   follow(entityId: number | null, options: { lerp?: number } = {}): void {
     this.targetEntityId = entityId;
     if (options.lerp !== undefined) this.lerpFactor = options.lerp;
@@ -34,6 +48,12 @@ export class CameraSystem {
     this.bounds = bounds;
   }
 
+  /**
+   * Activa un efecto de sacudida de pantalla.
+   * @param intensity - Magnitud de la sacudida.
+   * @param duration - Duración en milisegundos.
+   * @sideEffect Inicia un temporizador `setTimeout` que muta `sharedCamera.value` fuera del bucle de juego.
+   */
   shake(intensity: number, duration: number = 500): void {
     this.sharedCamera.value = {
       ...this.sharedCamera.value,
@@ -49,6 +69,13 @@ export class CameraSystem {
     }, duration);
   }
 
+  /**
+   * Actualiza la posición de la cámara.
+   * @param world - El mundo ECS para buscar el Transform del objetivo.
+   * @param deltaTime - Tiempo transcurrido (actualmente no se usa para el lerp, riesgo de drift).
+   * @param viewportSize - Dimensiones del área visible.
+   * @mutates sharedCamera
+   */
   update(world: any, deltaTime: number, viewportSize: { width: number; height: number }): void {
     if (this.targetEntityId !== null) {
       const transform = world.getComponent(this.targetEntityId, "Transform");
