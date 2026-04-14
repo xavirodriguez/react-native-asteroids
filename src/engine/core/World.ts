@@ -57,7 +57,7 @@ export class World {
    * @remarks
    * Captura entidades activas, datos de componentes, contadores de IDs, versión del mundo
    * y la semilla actual del generador de números aleatorios de gameplay.
-   * Las entidades se devuelven ordenadas para garantizar estabilidad.
+   * Las entidades se devuelven en orden de inserción del Set (no necesariamente ordenadas por ID).
    *
    * @returns Un objeto plano que contiene el estado reconstruible del mundo.
    *
