@@ -15,8 +15,6 @@
  * retornar exactamente la misma secuencia de valores.
  * @conceptualRisk [SEED_COLLISION] El uso de la misma semilla en múltiples instancias "named"
  * no coordinadas puede resultar en patrones de aleatoriedad idénticos.
- *
- * @packageDocumentation
  */
 export class RandomService {
   private static globalInstance: RandomService = new RandomService(12345);

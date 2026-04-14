@@ -7,8 +7,6 @@ import { Entity } from "../types/EngineTypes";
  * Proporciona una estrategia de "Zero Allocation" para la creación y destrucción de entidades.
  * Al reutilizar IDs numéricos, se minimiza la fragmentación de memoria y se reduce el trabajo
  * del recolector de basura (GC) en juegos con alta tasa de spawn (balas, partículas).
- *
- * @packageDocumentation
  */
 export class EntityPool {
   private pool: Entity[] = [];

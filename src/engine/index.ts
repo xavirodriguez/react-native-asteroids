@@ -1,5 +1,6 @@
 // Core
 export * from './core/World';
+export * from './core/Query';
 export * from './core/EntityPool';
 export * from './core/GameLoop';
 export * from './core/System';
@@ -39,3 +40,18 @@ export * from './scenes/SceneManager';
 // Assets
 export * from './assets/AssetTypes';
 export * from './assets/AssetLoader';
+
+// Utils
+export * from './utils/PhysicsUtils';
+export * from './utils/RandomService';
+export * from './utils/PrefabPool';
+
+// Systems
+export * from './systems/HierarchySystem';
+export * from './systems/MovementSystem';
+export * from './systems/FrictionSystem';
+export * from './systems/BoundarySystem';
+export * from './systems/TTLSystem';
+export * from './systems/JuiceSystem';
+export * from './systems/ParticleSystem';
+export * from './systems/ScreenShakeSystem';

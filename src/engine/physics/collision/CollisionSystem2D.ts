@@ -40,9 +40,13 @@ export class CollisionSystem2D extends System {
    *
    * @remarks
    * 1. Resets per-frame collision/trigger events.
-   * 2. Selects Broad-phase (Spatial Hash for >50 entities, otherwise Sweep and Prune).
+   *
+   * 2. Selects Broad-phase (Spatial Hash for \>50 entities, otherwise Sweep and Prune).
+   *
    * 3. Performs Continuous Collision Detection (CCD) for enabled entities.
+   *
    * 4. Executes Narrow-phase tests to generate collision manifolds.
+   *
    * 5. Notifies callbacks and populates event components.
    *
    * @param world - The ECS world instance.
