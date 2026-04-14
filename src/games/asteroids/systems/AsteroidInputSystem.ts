@@ -53,7 +53,7 @@ export class AsteroidInputSystem extends System {
     this.isMultiplayer = active;
   }
 
-  public update(world: World, deltaTime: number): void {
+  public update(world: World, _deltaTime: number): void {
     if (this.isMultiplayer) return; // Inputs handled by React hook in multiplayer
     const ships = world.query("Ship", "Input");
     ships.forEach((entity) => {

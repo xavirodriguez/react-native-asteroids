@@ -25,7 +25,7 @@ export class PaletteSystem extends System {
     super();
   }
 
-  public update(world: World, deltaTime: number): void {
+  public update(world: World, _deltaTime: number): void {
     const palette = PALETTES[this.activePaletteId] || PALETTES.palette_default;
     const entities = world.query("Render", "Tag");
 

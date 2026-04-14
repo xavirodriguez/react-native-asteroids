@@ -28,7 +28,7 @@ describe("EntityPool", () => {
       }
     );
 
-    const { entity, components } = pool.acquire(world);
+    const { entity: _entity, components: _components } = pool.acquire(world);
 
     expect(entity).toBeDefined();
     expect(world.hasComponent(entity, "Transform")).toBe(true);
@@ -66,7 +66,7 @@ describe("EntityPool", () => {
     // Caller is responsible for removing it from world
     world.removeEntity(e1);
 
-    const { entity: e2, components: c2 } = pool.acquire(world);
+    const { _entity: _e2, _components: _c2 } = pool.acquire(world);
 
     // Should NOT trigger 2nd factory call
     expect(factoryCount).toBe(1);
@@ -87,7 +87,7 @@ describe("EntityPool", () => {
       () => {}
     );
 
-    const { entity, components } = pool.acquire(world);
+    const { entity: _entity, components: _components } = pool.acquire(world);
     const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
 
     expect(reclaimable?.onReclaim).toBeDefined();

@@ -19,13 +19,13 @@ export abstract class Scene {
    * Called when the scene becomes the active scene.
    * Useful for initializing entities and systems.
    */
-  public onEnter(world: World): void | Promise<void> {}
+  public onEnter(_world: World): void | Promise<void> {}
 
   /**
    * Called when the scene is no longer the active scene.
    * Useful for cleanup.
    */
-  public onExit(world: World): void | Promise<void> {}
+  public onExit(_world: World): void | Promise<void> {}
 
   /**
    * Called when the game is paused while this scene is active.
@@ -47,7 +47,7 @@ export abstract class Scene {
   /**
    * Called when the game is being rendered.
    */
-  public onRender(alpha: number): void {}
+  public onRender(_alpha: number): void {}
 
   /**
    * Gets the ECS world for this scene.

@@ -1,8 +1,8 @@
 import { World } from "../engine/core/World";
-import { TransformComponent, VelocityComponent, RenderComponent, HealthComponent, ColliderComponent, TTLComponent } from "../engine/types/EngineTypes";
+import { Entity, TransformComponent, VelocityComponent, RenderComponent, HealthComponent, ColliderComponent, TTLComponent, BoundaryComponent } from "../engine/types/EngineTypes";
 import { PhysicsUtils } from "../engine/utils/PhysicsUtils";
 import { ShipPhysics } from "../games/asteroids/utils/ShipPhysics";
-import { GAME_CONFIG, type AsteroidComponent } from "../games/asteroids/types/AsteroidTypes";
+import { GAME_CONFIG, type AsteroidComponent, type GameStateComponent, type UfoComponent, type InputComponent } from "../games/asteroids/types/AsteroidTypes";
 import { createAsteroid, createBullet, createParticle, createUfo } from "../games/asteroids/EntityFactory";
 import { RandomService } from "../engine/utils/RandomService";
 import { EventBus } from "../engine/core/EventBus";
@@ -26,7 +26,7 @@ export class DeterministicSimulation {
         const dtSeconds = deltaTime / 1000;
 
         // 0. Update server tick in GameState
-        const gameState = world.getSingleton<any>("GameState");
+        const gameState = world.getSingleton<GameStateComponent>("GameState");
         if (gameState) {
             gameState.serverTick++;
         }
@@ -41,7 +41,7 @@ export class DeterministicSimulation {
         this.updateTTL(world, deltaTime);
 
         // 4. Collision Detection & Resolution
-        this.updateCollisions(world, ctx);
+        this.updateCollisions(world, ctx, deltaTime);
 
         // 5. UFO logic
         this.updateUfos(world, dtSeconds);
@@ -54,7 +54,7 @@ export class DeterministicSimulation {
         const ufos = world.query("Ufo", "Transform", "Velocity");
         ufos.forEach((entity) => {
           const pos = world.getComponent<TransformComponent>(entity, "Transform");
-          const ufo = world.getComponent<any>(entity, "Ufo");
+          const ufo = world.getComponent<UfoComponent>(entity, "Ufo");
 
           if (pos && ufo) {
             ufo.time += dtSeconds;
@@ -77,13 +77,17 @@ export class DeterministicSimulation {
             const pos = world.getComponent<TransformComponent>(entity, "Transform");
             const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
             const render = world.getComponent<RenderComponent>(entity, "Render");
-            const input = world.getComponent<any>(entity, "Input");
+            const input = world.getComponent<InputComponent>(entity, "Input");
 
             if (pos && vel && render && input) {
-                const intent = {
+                const intent: InputComponent = {
+                    type: "Input",
                     rotateLeft: input.rotateLeft,
                     rotateRight: input.rotateRight,
-                    thrust: input.thrust
+                    thrust: input.thrust,
+                    shoot: input.shoot,
+                    hyperspace: input.hyperspace,
+                    shootCooldownRemaining: input.shootCooldownRemaining
                 };
 
                 ShipPhysics.applyRotation(render, intent, dtSeconds);
@@ -94,7 +98,7 @@ export class DeterministicSimulation {
                 if (input.shoot) {
                     if (input.shootCooldownRemaining <= 0) {
                         createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
-                        input.shootCooldownRemaining = GAME_CONFIG.BULLET_COOLDOWN;
+                        input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN;
                     }
                 }
                 if (input.shootCooldownRemaining > 0) {
@@ -112,7 +116,7 @@ export class DeterministicSimulation {
             if (pos && vel) {
                 PhysicsUtils.integrateMovement(pos, vel, dtSeconds);
 
-                const boundary = world.getComponent<any>(entity, "Boundary");
+                const boundary = world.getComponent<BoundaryComponent>(entity, "Boundary");
                 if (boundary) {
                     PhysicsUtils.wrapBoundary(pos, boundary.width, boundary.height);
                 } else {
@@ -135,7 +139,7 @@ export class DeterministicSimulation {
         });
     }
 
-    private static updateCollisions(world: World, ctx: SimulationContext) {
+    private static updateCollisions(world: World, ctx: SimulationContext, deltaTime: number) {
         const bullets = world.query("Bullet", "Transform", "Collider");
         const asteroids = world.query("Asteroid", "Transform", "Collider");
         const ships = world.query("Ship", "Transform", "Collider", "Health");
@@ -202,7 +206,7 @@ export class DeterministicSimulation {
         this.splitAsteroid(world, asteroid);
         world.removeEntity(bullet);
 
-        const gameState = world.getSingleton<any>("GameState");
+        const gameState = world.getSingleton<GameStateComponent>("GameState");
         if (gameState) {
             gameState.score += GAME_CONFIG.ASTEROID_SCORE;
         }

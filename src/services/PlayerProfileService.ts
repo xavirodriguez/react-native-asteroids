@@ -110,7 +110,8 @@ export class PlayerProfileService {
     const profile = await this.getProfile();
     Object.entries(stats).forEach(([key, value]) => {
       if (value !== undefined) {
-        (profile.stats as any)[key] += value;
+        const k = key as keyof PlayerProfile["stats"];
+        profile.stats[k] += value;
       }
     });
     await this.saveProfile();

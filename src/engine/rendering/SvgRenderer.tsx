@@ -17,7 +17,7 @@ interface SvgRendererProps {
   world: World;
   width: number;
   height: number;
-  customRenderers?: Record<string, (params: any) => React.ReactElement>;
+  customRenderers?: Record<string, (params: unknown) => React.ReactElement>;
   backgroundEffects?: React.ReactNode;
   foregroundEffects?: React.ReactNode;
 }
@@ -52,7 +52,7 @@ interface WorldViewProps {
   width: number;
   height: number;
   renderables: number[];
-  customRenderers?: Record<string, (params: any) => React.ReactElement>;
+  customRenderers?: Record<string, (params: unknown) => React.ReactElement>;
   backgroundEffects?: React.ReactNode;
   foregroundEffects?: React.ReactNode;
 }
@@ -60,11 +60,11 @@ interface WorldViewProps {
 const WorldView: React.FC<WorldViewProps> = ({ world, width, height, renderables, customRenderers, backgroundEffects, foregroundEffects }) => {
   // Generic screen shake detection if GameState exists
   const gameStateEntity = world.query("GameState")[0];
-  const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
+  const gameState = gameStateEntity ? world.getComponent<Record<string, unknown>>(gameStateEntity, "GameState") : null;
 
   let transform = "";
-  if (gameState?.screenShake && (gameState.screenShake.duration > 0 || gameState.screenShake.framesLeft > 0)) {
-    const intensity = gameState.screenShake.intensity || 5;
+  if (gameState?.screenShake && ((gameState.screenShake as { duration?: number, framesLeft?: number, intensity?: number, internalLines?: unknown }).duration > 0 || (gameState.screenShake as { duration?: number, framesLeft?: number, intensity?: number, internalLines?: unknown }).framesLeft > 0)) {
+    const intensity = (gameState.screenShake as { duration?: number, framesLeft?: number, intensity?: number, internalLines?: unknown }).intensity || 5;
     const dx = (RandomService.next() - 0.5) * intensity;
     const dy = (RandomService.next() - 0.5) * intensity;
     transform = `translate(${dx}, ${dy})`;
@@ -110,13 +110,14 @@ const WorldView: React.FC<WorldViewProps> = ({ world, width, height, renderables
     </Svg>
   );
 };
+WorldView.displayName = "WorldView";
 
 interface EntityRendererProps {
   entity: number;
   world: World;
   width: number;
   height: number;
-  customRenderers?: Record<string, (params: any) => React.ReactElement>;
+  customRenderers?: Record<string, (params: unknown) => React.ReactElement>;
 }
 
 const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world, width, height, customRenderers }) => {
@@ -144,6 +145,7 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({ entity, world, width, h
     </>
   );
 };
+EntityRenderer.displayName = "EntityRenderer";
 
 const calculateMotionBlur = (world: World, entity: number, pos: TransformComponent, render: RenderComponent) => {
   const vel = world.getComponent<{type: string, dx: number, dy: number}>(entity, "Velocity");
@@ -185,7 +187,7 @@ const renderByShape = (params: {
   world: World;
   pos: TransformComponent;
   render: RenderComponent;
-  customRenderers?: Record<string, (params: any) => React.ReactElement>;
+  customRenderers?: Record<string, (params: unknown) => React.ReactElement>;
 }) => {
   const { render, customRenderers } = params;
 
@@ -195,7 +197,7 @@ const renderByShape = (params: {
 
   const rendererMap: Record<
     string,
-    (p: any) => React.ReactElement
+    (p: unknown) => React.ReactElement
   > = {
     circle: renderCircleShape,
     polygon: renderPolygonShape,
@@ -249,7 +251,7 @@ const renderPolygonShape = (params: {
     vertices={params.render.vertices || []}
     color={params.render.color}
     rotation={params.render.rotation}
-    internalLines={(params.render as any).internalLines}
+    internalLines={(params.render as { duration?: number, framesLeft?: number, intensity?: number, internalLines?: unknown }).internalLines}
     hitFlashFrames={params.render.hitFlashFrames}
   />
 );
@@ -308,6 +310,7 @@ const PolygonRenderer: React.FC<{
     </G>
   );
 });
+PolygonRenderer.displayName = "PolygonRenderer";
 
 const BulletRenderer: React.FC<{
   x: number;
@@ -329,6 +332,7 @@ const BulletRenderer: React.FC<{
     <Circle cx={x} cy={y} r={size} fill={color} stroke={color} strokeWidth="1" filter="url(#glow)" />
   </>
 ));
+BulletRenderer.displayName = "BulletRenderer";
 
 const ParticleRenderer: React.FC<{
   seed: number;
@@ -359,6 +363,7 @@ const ParticleRenderer: React.FC<{
     />
   );
 });
+ParticleRenderer.displayName = "ParticleRenderer";
 
 const LineRenderer: React.FC<{
   x: number;
@@ -373,6 +378,7 @@ const LineRenderer: React.FC<{
     <Line x1={-size / 2} y1={0} x2={size / 2} y2={0} stroke={color} strokeWidth="2" transform={transform} />
   );
 });
+LineRenderer.displayName = "LineRenderer";
 
 const styles = StyleSheet.create({
   container: { backgroundColor: "black" },

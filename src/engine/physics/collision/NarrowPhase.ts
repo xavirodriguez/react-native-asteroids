@@ -12,7 +12,7 @@ const sharedManifold: CollisionManifold = {
 };
 
 const vertexPool: Array<{x: number, y: number}> = [];
-function getVertex(x: number, y: number) {
+function _getVertex(x: number, y: number) {
     let v = vertexPool.pop();
     if (!v) v = {x: 0, y: 0};
     v.x = x; v.y = y;
@@ -255,8 +255,8 @@ export class NarrowPhase {
 
   static capsuleVsCapsule(a: CapsuleShape, ax: number, ay: number, ar: number, b: CapsuleShape, bx: number, by: number, br: number): CollisionManifold {
       // Find closest points between two line segments
-      const lineA = this.getCapsuleLine(a, ax, ay, ar);
-      const lineB = this.getCapsuleLine(b, bx, by, br);
+      const _lineA = this.getCapsuleLine(a, ax, ay, ar);
+      const _lineB = this.getCapsuleLine(b, bx, by, br);
       // Simplified: check endpoints distance
       return this.circleVsCapsule({type: "circle", radius: a.radius}, ax, ay, b, bx, by, br);
   }

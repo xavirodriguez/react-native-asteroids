@@ -34,7 +34,7 @@ export class LeaderboardService {
   public static async fetchDailyLeaderboard(
     gameId: string,
     dateKey: string
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     try {
       const response = await fetch(`${this.BASE_URL}/daily-leaderboard?gameId=${gameId}&dateKey=${dateKey}`);
       if (!response.ok) return [];

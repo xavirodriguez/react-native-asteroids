@@ -17,20 +17,20 @@ describe("AsteroidCollisionSystem", () => {
   });
 
   it("should increase score and destroy both bullet and asteroid on collision", () => {
-    const asteroid = createAsteroid({ world, x: 100, y: 100, size: "small" });
+    const _asteroid = createAsteroid({ world, x: 100, y: 100, size: "small" });
     const bullet = createBullet({ world, x: 100, y: 100, angle: 0 });
 
     const initialScore = world.getSingleton<GameStateComponent>("GameState")!.score;
 
     system.update(world, 16.66);
 
-    expect(world.getAllEntities()).not.toContain(asteroid);
+    expect(world.getAllEntities()).not.toContain(_asteroid);
     expect(world.getAllEntities()).not.toContain(bullet);
     expect(world.getSingleton<GameStateComponent>("GameState")!.score).toBe(initialScore + GAME_CONFIG.ASTEROID_SCORE);
   });
 
   it("should split a large asteroid into two medium ones on bullet collision", () => {
-    const asteroid = createAsteroid({ world, x: 100, y: 100, size: "large" });
+    const _asteroid = createAsteroid({ world, x: 100, y: 100, size: "large" });
     createBullet({ world, x: 100, y: 100, angle: 0 });
 
     system.update(world, 16.66);

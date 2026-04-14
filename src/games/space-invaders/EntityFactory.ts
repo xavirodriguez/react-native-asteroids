@@ -169,7 +169,7 @@ export function createFormationController(world: World): Entity {
 /**
  * Spawns a full wave of invaders.
  */
-export function spawnInvaderWave(world: World, level: number): void {
+export function spawnInvaderWave(world: World, _level: number): void {
   const startX = GAME_CONFIG.INVADER_START_X;
   const startY = GAME_CONFIG.INVADER_START_Y;
   const spacingX = GAME_CONFIG.INVADER_SPACING_X;

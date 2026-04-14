@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export class PersistenceService {
-  static async save(key: string, data: any): Promise<void> {
+  static async save(key: string, data: unknown): Promise<void> {
     try {
       await AsyncStorage.setItem(key, JSON.stringify(data));
     } catch (e) {

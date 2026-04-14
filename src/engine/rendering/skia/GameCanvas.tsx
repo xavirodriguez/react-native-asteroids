@@ -10,12 +10,13 @@ import { Entity } from "../../types/EngineTypes";
 let Canvas: any, Group: any, Circle: any, Rect: any;
 if (Platform.OS !== 'web') {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const SkiaModule = require("@shopify/react-native-skia");
     Canvas = SkiaModule.Canvas;
     Group = SkiaModule.Group;
     Circle = SkiaModule.Circle;
     Rect = SkiaModule.Rect;
-  } catch (e) {
+  } catch (_e) {
     console.warn("Skia not available");
   }
 }
