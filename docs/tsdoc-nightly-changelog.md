@@ -126,3 +126,22 @@
 - `RenderSnapshot.ts`: [ARRAY_MUTATION] Riesgo de corrupción visual por mutación externa de arrays compartidos.
 - `ReplayRecorder.ts`: [MEMORY_LEAK] Grabación sin límites en sesiones largas.
 - `ReplayRecorder.ts`: [DETERMINISM] El replay puede fallar si no se captura el estado inicial del mundo junto con los inputs.
+
+## [1.7.0] - 2025-06-03
+### Added
+- Auditoría TSDoc Nivel 5 para sistemas de física avanzados, animación y audio:
+  - `src/engine/physics/dynamics/PhysicsSystem2D.ts`
+  - `src/engine/physics/collision/CollisionSystem2D.ts`
+  - `src/engine/systems/AnimationSystem.ts`
+  - `src/engine/systems/StateMachineSystem.ts`
+  - `src/engine/core/AudioSystem.ts`
+
+### Detected Conceptual Risks
+- `PhysicsSystem2D.ts`: [FPS_DEPENDENCE] Riesgo de túnel o variaciones en gravedad por integración Euler lineal.
+- `PhysicsSystem2D.ts`: [STABILITY] Posible jitter en contactos de reposo por resolución secuencial de impulsos.
+- `CollisionSystem2D.ts`: [MUTATION_SAFETY] Riesgo de estados inconsistentes si los callbacks modifican el mundo durante la iteración de pares.
+- `CollisionSystem2D.ts`: [SPATIAL_HASH_TUNING] Rendimiento crítico dependiente del tamaño de celda vs densidad de entidades.
+- `AnimationSystem.ts`: [PRECISION_DRIFT] Acumulación de tiempo transcurrido sensible a precisión de coma flotante en sesiones largas.
+- `StateMachineSystem.ts`: [OPAQUE_STATE] El estado interno de las FSM no reside en componentes ECS estándar, arriesgando snapshots incompletos.
+- `AudioSystem.ts`: [AUTOPLAY] Bloqueo por políticas de navegador si no se llama a `resume()` tras gesto de usuario.
+- `AudioSystem.ts`: [LATENCY_MISMATCH] Diferencias de latencia notables al usar fallback de HTML Audio para SFX.

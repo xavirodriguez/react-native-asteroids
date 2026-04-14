@@ -4,7 +4,16 @@ import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent } 
 
 /**
  * Built-in 2D Physics System for stable rigid body dynamics.
- * Handles integration and collision response (impulse-based).
+ *
+ * @responsibility Rigid body dynamics integration using linear Euler and impulse-based collision response.
+ *
+ * @conceptualRisk [FPS_DEPENDENCE] Uses linear Euler integration which can lead to tunneling at high speeds or low framerates.
+ * @conceptualRisk [STABILITY] Sequential impulse solver may jitter in complex resting contacts or deep stacks.
+ *
+ * @mutates {@link PhysicsBody2DComponent} - Updates velocities, resets accumulated forces/torque.
+ * @mutates {@link TransformComponent} - Updates world positions and rotations.
+ *
+ * @executionOrder Simulation phase; must execute after {@link CollisionSystem2D} and before {@link HierarchySystem}.
  */
 export class PhysicsSystem2D extends System {
   private gravityX = 0;
@@ -15,6 +24,14 @@ export class PhysicsSystem2D extends System {
     this.gravityY = y;
   }
 
+  /**
+   * Updates the physics simulation for one frame.
+   *
+   * @param world - The ECS world instance.
+   * @param deltaTime - Time elapsed since last update in milliseconds.
+   *
+   * @invariant Forces and torque are always reset to zero at the end of each entity update.
+   */
   update(world: World, deltaTime: number): void {
     const dt = deltaTime / 1000;
     if (dt <= 0) return;
@@ -74,6 +91,19 @@ export class PhysicsSystem2D extends System {
     });
   }
 
+  /**
+   * Resolves a single collision manifold between two rigid bodies using impulses.
+   *
+   * @remarks
+   * Handles linear and angular impulses, static/dynamic Coulomb friction,
+   * and positional correction to prevent sinking.
+   *
+   * @param transformA - Transform of first entity.
+   * @param bodyA - Physics body of first entity.
+   * @param transformB - Transform of second entity.
+   * @param bodyB - Physics body of second entity.
+   * @param collision - Collision manifold data (normal, depth, contact points).
+   */
   private resolveCollision(
     transformA: TransformComponent,
     bodyA: PhysicsBody2DComponent,

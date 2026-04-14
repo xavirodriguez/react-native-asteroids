@@ -9,6 +9,20 @@ import { SpatialHash } from "../../collision/SpatialHash";
 export type CollisionCallback = (world: World, entityA: Entity, entityB: Entity, manifold: CollisionManifold) => void;
 export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) => void;
 
+/**
+ * Comprehensive 2D collision detection system.
+ *
+ * @responsibility Hybrid broad-phase selection, Narrow-phase detection (AABB/Circle), and Continuous Collision Detection (CCD).
+ *
+ * @conceptualRisk [MUTATION_SAFETY] Collision/trigger callbacks are executed during world iteration.
+ * Handlers that add/remove entities or components may lead to inconsistent world states or iteration errors.
+ * @conceptualRisk [SPATIAL_HASH_TUNING] Broad-phase performance is highly sensitive to cell size versus entity density.
+ *
+ * @mutates {@link CollisionEventsComponent} - Clears and repopulates per-frame event buffers.
+ * @mutates {@link TransformComponent} - May adjust positions when CCD triggers early time-of-impact (TOI) steps.
+ *
+ * @emits Collision manifold data and Trigger lifecycle events (Enter, Stay, Exit).
+ */
 export class CollisionSystem2D extends System {
   private onCollisionCallbacks: CollisionCallback[] = [];
   private onTriggerEnterCallbacks: TriggerCallback[] = [];
@@ -21,6 +35,19 @@ export class CollisionSystem2D extends System {
   onTriggerEnter(callback: TriggerCallback): void { this.onTriggerEnterCallbacks.push(callback); }
   onTriggerExit(callback: TriggerCallback): void { this.onTriggerExitCallbacks.push(callback); }
 
+  /**
+   * Orchestrates the collision detection pipeline.
+   *
+   * @remarks
+   * 1. Resets per-frame collision/trigger events.
+   * 2. Selects Broad-phase (Spatial Hash for >50 entities, otherwise Sweep and Prune).
+   * 3. Performs Continuous Collision Detection (CCD) for enabled entities.
+   * 4. Executes Narrow-phase tests to generate collision manifolds.
+   * 5. Notifies callbacks and populates event components.
+   *
+   * @param world - The ECS world instance.
+   * @param _deltaTime - Time elapsed in milliseconds.
+   */
   update(world: World, _deltaTime: number): void {
     const entities = world.query("Transform", "Collider2D");
     const currentFramePairs = new Set<string>();

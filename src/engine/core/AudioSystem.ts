@@ -1,6 +1,13 @@
 /**
  * Simple Audio System for web and mobile using the Web Audio API.
- * Supports SFX, Music, volume control, and looping.
+ *
+ * @responsibility High-level management of SFX and Music playback, volume control, and preloading.
+ *
+ * @conceptualRisk [AUTOPLAY] Browser policies typically suspend the `AudioContext` until a user interaction occurs.
+ * @conceptualRisk [LATENCY_MISMATCH] Fallback to HTML Audio for SFX may exhibit significantly higher latency than Web Audio.
+ *
+ * @sideEffect Modifies global browser audio state via `AudioContext`.
+ * @sideEffect Creates and manages DOM `Audio` elements when fallbacks are triggered.
  */
 export class AudioSystem {
   private ctx: AudioContext | null = null;
@@ -21,6 +28,8 @@ export class AudioSystem {
 
   /**
    * Resumes the audio context (required by browsers after user interaction).
+   *
+   * @precondition Must be called as a direct result of a user gesture (e.g., click, touch) to comply with browser policies.
    */
   public resume(): void {
     this.ctx?.resume();
