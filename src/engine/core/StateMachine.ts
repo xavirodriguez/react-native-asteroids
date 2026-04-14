@@ -4,7 +4,7 @@
  * @typeParam TState - Unión de strings que definen las claves de estado posibles.
  * @typeParam TContext - Tipo del objeto de contexto compartido entre estados.
  */
-export interface State< _TState extends string, TContext> {
+export interface State<TState extends string, TContext> {
   /** Hook invocado al entrar en el estado. */
   onEnter?: (ctx: TContext) => void;
   /** Hook invocado en cada actualización del motor mientras el estado está activo. */
@@ -16,7 +16,7 @@ export interface State< _TState extends string, TContext> {
 /**
  * Configuración necesaria para inicializar una máquina de estados.
  */
-export interface StateMachineConfig< _TState extends string, TContext> {
+export interface StateMachineConfig<TState extends string, TContext> {
   /** Clave del estado inicial. */
   initial: TState;
   /** Diccionario de definiciones de estado. */
@@ -40,7 +40,7 @@ export interface StateMachineConfig< _TState extends string, TContext> {
  * @conceptualRisk [CONTEXT_MUTATION][LOW] El contexto es mutable por referencia; los estados
  * deben ser cuidadosos al modificar propiedades compartidas para evitar efectos secundarios imprevistos.
  */
-export class StateMachine< _TState extends string, TContext> {
+export class StateMachine<TState extends string, TContext> {
   private currentStateKey: TState;
   private config: StateMachineConfig<TState, TContext>;
   private context: TContext;
