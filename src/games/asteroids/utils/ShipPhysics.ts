@@ -4,6 +4,7 @@ import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 import { PhysicsUtils } from "../../../engine/utils/PhysicsUtils";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { createParticle } from "../EntityFactory";
+import { SimulationContext } from "../../../simulation/DeterministicSimulation";
 
 /**
  * Shared logic for ship movement and physics application.
@@ -15,10 +16,12 @@ export const ShipPhysics = {
     if (input.rotateRight) render.rotation += config.SHIP_ROTATION_SPEED * dtSeconds;
   },
 
-  applyThrust(world: World, position: TransformComponent, velocity: VelocityComponent, render: RenderComponent, input: InputComponent, dtSeconds: number, config: typeof GAME_CONFIG = GAME_CONFIG): void {
+  applyThrust(world: World, position: TransformComponent, velocity: VelocityComponent, render: RenderComponent, input: InputComponent, dtSeconds: number, ctx?: SimulationContext, config: typeof GAME_CONFIG = GAME_CONFIG): void {
     if (input.thrust) {
       velocity.dx += Math.cos(render.rotation) * config.SHIP_THRUST * dtSeconds;
       velocity.dy += Math.sin(render.rotation) * config.SHIP_THRUST * dtSeconds;
+
+      if (ctx?.isResimulating) return;
 
       // Particles are visual only, use render random
       const renderRandom = RandomService.getInstance("render");

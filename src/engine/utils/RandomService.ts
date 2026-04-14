@@ -55,6 +55,13 @@ export class RandomService {
   }
 
   /**
+   * Gets the current seed of this instance.
+   */
+  public getSeed(): number {
+    return this.seed;
+  }
+
+  /**
    * Static helper for the global instance.
    */
   public static next(): number {

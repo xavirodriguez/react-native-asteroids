@@ -1,10 +1,11 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, EntitySnapshot, ReplayFrame } from "./NetTypes";
-import { RandomService } from "./RandomService";
+import { RandomService } from "../../src/engine/utils/RandomService";
 import { World } from "../../src/engine/core/World";
 import { DeterministicSimulation } from "../../src/simulation/DeterministicSimulation";
 import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, ColliderComponent, TagComponent, Component } from "../../src/engine/core/CoreComponents";
+import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
@@ -12,14 +13,21 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private inputBuffers = new Map<string, InputFrame[]>();
   private stateHistory = new Map<number, Map<string, EntitySnapshot>>();
   private replayFrames: ReplayFrame[] = [];
-  private random: RandomService;
   private world: World;
   private playerEntities = new Map<string, number>();
+
+  private spawnAsteroids(count: number) {
+    const gameplayRandom = RandomService.getInstance("gameplay");
+    for (let i = 0; i < count; i++) {
+        const x = gameplayRandom.nextRange(0, 800);
+        const y = gameplayRandom.nextRange(0, 600);
+        createAsteroid({ world: this.world, x, y, size: "large" });
+    }
+  }
 
   onCreate(options: { seed?: number }) {
     this.state = new AsteroidsState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
-    this.random = new RandomService(this.state.seed);
     // Sync the global gameplay random service for the server
     RandomService.getInstance("gameplay").setSeed(this.state.seed);
 
@@ -56,11 +64,12 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   }
 
   onJoin(client: Client, options: { name?: string }) {
+    const gameplayRandom = RandomService.getInstance("gameplay");
     const player = new Player();
     player.sessionId = client.sessionId;
     player.name = options.name || `Player ${this.clients.length}`;
-    player.x = this.random.nextRange(100, 700);
-    player.y = this.random.nextRange(100, 500);
+    player.x = gameplayRandom.nextRange(100, 700);
+    player.y = gameplayRandom.nextRange(100, 500);
     player.angle = 0;
     player.score = 0;
     player.lives = 3;
@@ -68,16 +77,11 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.state.players.set(client.sessionId, player);
 
     // Create ECS entity for player
-    const entity = this.world.createEntity();
+    const entity = createShip({ world: this.world, x: player.x, y: player.y });
     this.playerEntities.set(client.sessionId, entity);
-    this.world.addComponent(entity, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-    this.world.addComponent(entity, { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent);
-    this.world.addComponent(entity, { type: "Render", shape: "triangle", size: 10, color: "white", rotation: 0 } as RenderComponent);
-    this.world.addComponent(entity, { type: "Collider", radius: 10 } as ColliderComponent);
-    this.world.addComponent(entity, { type: "Health", current: 3, max: 3, invulnerableRemaining: 0 } as HealthComponent);
+
+    // Add necessary multiplayer components
     this.world.addComponent(entity, { type: "Ship", sessionId: client.sessionId } as any);
-    this.world.addComponent(entity, { type: "Tag", tags: ["Ship"] } as TagComponent);
-    this.world.addComponent(entity, { type: "Input", rotateLeft: false, rotateRight: false, thrust: false, shoot: false, shootCooldownRemaining: 0 } as Component);
   }
 
   async onLeave(client: Client, _code: number) {
