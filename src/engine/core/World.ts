@@ -62,7 +62,7 @@ export class World {
    * @returns Un objeto plano que contiene el estado reconstruible del mundo.
    *
    * @precondition El estado actual debe ser consistente; no se recomienda llamar durante un update de sistema.
-   * @postcondition Devuelve una copia profunda parcial (omitiendo funciones y referencias circulares).
+   * @postcondition Devuelve una copia superficial (shallow spread) de cada componente, omitiendo funciones explícitamente listadas.
    *
    * @conceptualRisk [JSON_DETERMINISM][MEDIUM] La serialización no garantiza el orden de las
    * propiedades, lo que puede afectar a la generación de hashes de estado.
