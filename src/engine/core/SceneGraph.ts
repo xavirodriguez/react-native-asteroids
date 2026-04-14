@@ -150,7 +150,9 @@ export class SceneGraph {
         this.combineTransforms(node.worldTransform, parentTransform, node.localTransform);
       } else {
         // Root node
-        Object.assign(node.worldTransform, node.localTransform);
+        // Root node: copy scalar properties, then clone the matrix array
+        const { matrix: _srcMatrix, ...scalarProps } = node.localTransform;
+        Object.assign(node.worldTransform, scalarProps);
         if (!node.worldTransform.matrix) {
             node.worldTransform.matrix = [1, 0, 0, 1, 0, 0];
         }
