@@ -15,6 +15,8 @@ export interface SceneNode {
 /**
  * Manages the hierarchy of entities and their transformations with dirty flag propagation.
  *
+ * @deprecated Use {@link HierarchySystem} and {@link TransformComponent} instead.
+ *
  * @remarks
  * Ensures world transforms are updated top-down to prevent stale data.
  * The `updateTransforms()` method must be called during the Presentation phase.
