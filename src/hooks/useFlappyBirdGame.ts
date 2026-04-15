@@ -9,7 +9,7 @@ import type { FlappyBirdState, FlappyBirdInput } from "../games/flappybird/types
  * Custom hook to manage the lifecycle of the Flappy Bird game engine.
  */
 export function useFlappyBirdGame(isMultiplayer: boolean = false) {
-  const { game, gameState, isPaused, handleInput, togglePause, restartWithSeed } =
+  const { game, gameState, isPaused, handleInput, togglePause, restart } =
     useGame<FlappyBirdGame, FlappyBirdState, FlappyBirdInput>(FlappyBirdGame, INITIAL_FLAPPY_STATE, isMultiplayer);
 
   const { highScore, updateHighScore } = useHighScore("flappy-high-score");
@@ -29,6 +29,6 @@ export function useFlappyBirdGame(isMultiplayer: boolean = false) {
     togglePause,
     highScore,
     seed: game?.getSeed(),
-    restartWithSeed
+    restartWithSeed: restart
   };
 }

@@ -18,7 +18,7 @@ export interface BaseGameConfig {
   pauseKey?: string;
   restartKey?: string;
   isMultiplayer?: boolean;
-  gameOptions?: any;
+  gameOptions?: Record<string, unknown>;
 }
 
 /**
@@ -29,7 +29,7 @@ export interface BaseGameConfig {
  * 1. Input -> 2. Simulation Update -> 3. Transform Propagation.
  * Render phase is decoupled and handles interpolation.
  */
-export abstract class BaseGame<TState, TInput extends Record<string, any>>
+export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   implements IGame<BaseGame<TState, TInput>> {
 
   protected world: World;
@@ -57,13 +57,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this.gameLoop = new GameLoop();
     this.unifiedInput = new UnifiedInputSystem();
     this.eventBus = new EventBus();
-    this.sceneManager = new SceneManager(this.world);
+    this.sceneManager = new SceneManager();
     this.inputBuffer = new InputBuffer();
     this.replayRecorder = new ReplayRecorder();
     this.hierarchySystem = new HierarchySystem();
 
     this.world.setResource("EventBus", this.eventBus);
-    this.world.setResource("UnifiedInputSystem", this.unifiedInput);
 
     this._config = config;
     this.currentSeed = config.gameOptions?.seed ?? RandomService.getInstance("gameplay").nextInt(0, 0xFFFFFFFF);
@@ -139,8 +138,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
   public isPausedState(): boolean { return this._isPaused; }
   public getGameLoop(): GameLoop { return this.gameLoop; }
 
-  public async restart(): Promise<void> {
+  public async restart(seed?: number): Promise<void> {
     await this._onBeforeRestart();
+
+    if (seed !== undefined) {
+      this.currentSeed = seed;
+      RandomService.setSeed(seed);
+      RandomService.getInstance("gameplay").setSeed(seed);
+    }
 
     if (this.sceneManager.getCurrentScene()) {
       await this.sceneManager.restartCurrentScene();

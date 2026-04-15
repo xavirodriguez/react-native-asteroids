@@ -51,9 +51,10 @@ export interface IGame<TGame = unknown> {
 
   /**
    * Reinicia el juego a su estado inicial. Puede ser una operación asíncrona si carga recursos.
+   * @param seed - Semilla opcional para inicializar el generador de números aleatorios.
    * @contract Debe garantizar la limpieza del {@link World} anterior antes de re-inicializar.
    */
-  restart(): void | Promise<void>;
+  restart(seed?: number): void | Promise<void>;
 
   /**
    * Libera recursos y desconecta listeners; debe llamarse al desmontar el juego.

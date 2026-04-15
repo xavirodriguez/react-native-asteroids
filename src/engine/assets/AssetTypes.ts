@@ -9,7 +9,7 @@ export interface AssetDescriptor {
 
 export type AssetStatus = 'loading' | 'ready' | 'error';
 
-export interface AssetHandle<T = any> {
+export interface AssetHandle<T = unknown> {
   id: string;
   status: AssetStatus;
   data: T | null;

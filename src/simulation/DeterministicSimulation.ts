@@ -1,5 +1,5 @@
 import { World } from "../engine/core/World";
-import { Entity, TransformComponent, VelocityComponent, RenderComponent, HealthComponent, Collider2DComponent, TTLComponent, BoundaryComponent, CollisionEventsComponent } from "../engine/types/EngineTypes";
+import { Entity, TransformComponent, VelocityComponent, RenderComponent, HealthComponent, Collider2DComponent, TTLComponent, BoundaryComponent } from "../engine/types/EngineTypes";
 import { PhysicsUtils } from "../engine/utils/PhysicsUtils";
 import { ShipPhysics } from "../games/asteroids/utils/ShipPhysics";
 import { GAME_CONFIG, type AsteroidComponent, type GameStateComponent, type UfoComponent, type InputComponent } from "../games/asteroids/types/AsteroidTypes";
@@ -146,7 +146,6 @@ export class DeterministicSimulation {
             const sHealth = world.getComponent<HealthComponent>(ship, "Health")!;
             if (sHealth.invulnerableRemaining > 0) {
                 sHealth.invulnerableRemaining -= deltaTime;
-                if (sHealth.invulnerableRemaining < 0) sHealth.invulnerableRemaining = 0;
             }
         });
 

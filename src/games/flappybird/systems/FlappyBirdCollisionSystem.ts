@@ -2,7 +2,7 @@ import { World } from "../../../engine/core/World";
 import { System } from "../../../engine/core/System";
 import { Entity, TransformComponent, CollisionEventsComponent } from "../../../engine/types/EngineTypes";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
-import { FLAPPY_CONFIG, FlappyBirdState, BirdComponent } from "../types/FlappyBirdTypes";
+import { FlappyBirdState, BirdComponent } from "../types/FlappyBirdTypes";
 import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
 import { Juice } from "../../../engine/utils/Juice";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";

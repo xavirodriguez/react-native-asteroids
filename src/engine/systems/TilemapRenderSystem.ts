@@ -31,7 +31,7 @@ export class TilemapRenderSystem extends System {
       }
 
       // Store visible range in the component for the renderer to use
-      (tilemap as any)._visibleRange = { startX, startY, endX, endY };
+      tilemap._visibleRange = { startX, startY, endX, endY };
     });
   }
 }
@@ -39,7 +39,7 @@ export class TilemapRenderSystem extends System {
 /**
  * Factory function to create a TilemapComponent.
  */
-export function createTilemapComponent(data: any): TilemapComponent {
+export function createTilemapComponent(data: import("../core/CoreComponents").TilemapData): TilemapComponent {
   return {
     type: "Tilemap",
     data

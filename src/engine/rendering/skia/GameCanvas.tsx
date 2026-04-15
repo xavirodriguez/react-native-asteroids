@@ -7,15 +7,19 @@ import { RenderableComponent, TransformComponent } from "../../types/EngineTypes
 import { Entity } from "../../types/EngineTypes";
 
 // Conditionally import Skia components for non-web platforms
-let Canvas: any, Group: any, Circle: any, Rect: any;
+type SkiaComponent = React.ComponentType<Record<string, unknown>>;
+let Canvas: SkiaComponent | null = null;
+let Group: SkiaComponent | null = null;
+let Circle: SkiaComponent | null = null;
+let Rect: SkiaComponent | null = null;
+
 if (Platform.OS !== 'web') {
   try {
-
-    const SkiaModule = require("@shopify/react-native-skia");
-    Canvas = SkiaModule.Canvas;
-    Group = SkiaModule.Group;
-    Circle = SkiaModule.Circle;
-    Rect = SkiaModule.Rect;
+    const SkiaModule = require("@shopify/react-native-skia") as typeof import("@shopify/react-native-skia");
+    Canvas = SkiaModule.Canvas as unknown as SkiaComponent;
+    Group = SkiaModule.Group as unknown as SkiaComponent;
+    Circle = SkiaModule.Circle as unknown as SkiaComponent;
+    Rect = SkiaModule.Rect as unknown as SkiaComponent;
   } catch (_e) {
     console.warn("Skia not available");
   }

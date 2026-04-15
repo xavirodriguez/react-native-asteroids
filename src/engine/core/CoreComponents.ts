@@ -5,7 +5,6 @@ import { StateMachine } from "./StateMachine";
 import type { World } from "./World";
 import type { CollisionManifold } from "../physics/collision/CollisionTypes";
 export { Entity, Component };
-export { PositionComponent, ColliderComponent } from "../legacy/LegacyComponents";
 
 /**
  * Componentes base proporcionados por el motor como primitivas reutilizables.
@@ -202,8 +201,6 @@ export interface CollisionEventsComponent extends Component {
   triggersExited: Entity[];
 }
 
-export { CollisionManifold };
-
 /**
  * Enables Continuous Collision Detection (CCD) for fast-moving entities.
  */
@@ -302,10 +299,6 @@ export interface InputStateComponent extends Component {
   actions: Map<InputAction, boolean>;
   /** Valores normalizados [-1, 1] para ejes (e.g., "horizontal", "vertical"). */
   axes: Map<string, number>;
-  /** @deprecated Use {@link InputUtils.isPressed} instead. Esta propiedad será eliminada en la v2.0 para mantener los componentes como datos puros. */
-  isPressed?: (action: InputAction) => boolean;
-  /** @deprecated Use {@link InputUtils.getAxis} instead. Esta propiedad será eliminada en la v2.0 para mantener los componentes como datos puros. */
-  getAxis?: (axis: string) => number;
 }
 
 /**
@@ -393,8 +386,12 @@ export interface TilemapData {
 export interface TilemapComponent extends Component {
   type: "Tilemap";
   data: TilemapData;
-  /** @deprecated Use {@link TilemapUtils.isSolid} instead. Esta propiedad será eliminada en la v2.0 para mantener los componentes como datos puros. */
-  isSolid?: (tileX: number, tileY: number) => boolean;
+  _visibleRange?: {
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+  };
 }
 
 /**

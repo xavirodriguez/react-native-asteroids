@@ -115,8 +115,9 @@ export class AssetLoader {
     const handle = this.cache.get(id);
     if (!handle || !handle.data) return;
 
-    if (typeof (handle.data as any).dispose === 'function') {
-        (handle.data as any).dispose();
+    const data = handle.data as Record<string, unknown>;
+    if (typeof data.dispose === 'function') {
+        (data.dispose as () => void)();
     }
   }
 
@@ -140,7 +141,7 @@ export class AssetLoader {
     };
   }
 
-  private async performLoad(desc: AssetDescriptor): Promise<any> {
+  private async performLoad(desc: AssetDescriptor): Promise<unknown> {
     if (desc.type === 'json') {
       return Promise.resolve({ success: true });
     }

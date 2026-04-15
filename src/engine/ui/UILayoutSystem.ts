@@ -242,10 +242,11 @@ export class UILayoutSystem extends System {
       let screenY = targetTransform.worldY !== undefined ? targetTransform.worldY : targetTransform.y;
 
       if (attach.useCamera) {
-          const gameState = world.getSingleton<any>("GameState");
-          if (gameState?.camera) {
-              screenX -= (gameState.camera as any).x || 0;
-              screenY -= (gameState.camera as any).y || 0;
+          const gameState = world.getSingleton<Record<string, unknown>>("GameState");
+          const camera = gameState?.camera as Record<string, number> | undefined;
+          if (camera) {
+              screenX -= camera.x || 0;
+              screenY -= camera.y || 0;
           }
       }
 
