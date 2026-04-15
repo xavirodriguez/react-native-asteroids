@@ -1,5 +1,5 @@
 import { World } from "../../../engine/core/World";
-import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
+import { CollisionSystem } from "../../../engine/legacy/CollisionSystem";
 import { Entity, TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
 import { PONG_CONFIG } from "../types";
 import { Juice } from "../../../engine/utils/Juice";

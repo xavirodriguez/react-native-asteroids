@@ -1,6 +1,7 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { TransformComponent, ColliderComponent, Entity, ReclaimableComponent, AABB } from "../types/EngineTypes";
+import { TransformComponent, Entity, ReclaimableComponent, AABB } from "../types/EngineTypes";
+import { ColliderComponent } from "./LegacyComponents";
 import { SpatialHash } from "../collision/SpatialHash";
 
 /**

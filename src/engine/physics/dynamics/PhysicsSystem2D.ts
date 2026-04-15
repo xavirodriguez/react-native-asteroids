@@ -109,11 +109,7 @@ export class PhysicsSystem2D extends System {
     bodyA: PhysicsBody2DComponent,
     transformB: TransformComponent,
     bodyB: PhysicsBody2DComponent,
-<<<<<<< HEAD
     collision: CollisionEvent
-=======
-    collision: import("../../core/CoreComponents").CollisionEvent
->>>>>>> origin/master
   ): void {
     if (collision.normalX === undefined || collision.normalY === undefined || collision.depth === undefined) return;
 

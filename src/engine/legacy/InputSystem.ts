@@ -1,4 +1,4 @@
-import { TouchPoint, GestureEvent } from "./InputTypes";
+import { TouchPoint, GestureEvent } from "../input/InputTypes";
 
 /**
  * Abstraction layer to manage touch inputs and gesture detection.
