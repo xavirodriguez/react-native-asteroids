@@ -30,7 +30,7 @@ export class SpatialHash {
 
   /**
    * @param cellSize - El tamaño de cada celda cuadrada en unidades del mundo.
-   * @precondition cellSize > 0
+   * @precondition cellSize \> 0
    */
   constructor(public cellSize: number) {}
 
