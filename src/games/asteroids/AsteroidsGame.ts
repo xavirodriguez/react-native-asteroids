@@ -157,7 +157,7 @@ export class AsteroidsGame
               return ship && ship.sessionId === localSessionId;
           });
           if (localPlayerEntity !== undefined) {
-              this.world.addComponent(localPlayerEntity, { type: "Tag", tags: ["LocalPlayer"] } as import("../../engine/core/CoreComponents").TagComponent);
+              this.world.addComponent(localPlayerEntity, { type: "LocalPlayer" } as import("../../engine/core/Component").Component);
           }
       }
 
