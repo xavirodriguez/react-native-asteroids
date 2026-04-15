@@ -1,6 +1,7 @@
 import { World } from "../../engine/core/World";
 import { GAME_CONFIG, INITIAL_GAME_STATE } from "../../types/GameTypes";
-import { TransformComponent, VelocityComponent, RenderComponent, ColliderComponent, TTLComponent } from "../../engine/core/CoreComponents";
+import { TransformComponent, VelocityComponent, RenderComponent, TTLComponent } from "../../engine/core/CoreComponents";
+import type { ColliderComponent } from "../../engine/legacy/LegacyComponents";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
 import { generateStarField } from "../../engine/rendering/StarField";
 import { RandomService } from "../../engine/utils/RandomService";

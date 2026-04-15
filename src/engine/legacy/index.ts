@@ -10,9 +10,9 @@ export {
   RenderableComponent,
   Transform,
   ScreenShake,
-} from "../core/CoreComponents";
+} from "./LegacyComponents";
 
-export { SceneGraph, type SceneNode } from "../core/SceneGraph";
-export { CollisionSystem } from "../systems/CollisionSystem";
-export { InputSystem } from "../input/InputSystem";
+export { SceneGraph, type SceneNode } from "./SceneGraph";
+export { CollisionSystem } from "./CollisionSystem";
+export { InputSystem } from "./InputSystem";
 export { RenderSystem } from "./RenderSystem";

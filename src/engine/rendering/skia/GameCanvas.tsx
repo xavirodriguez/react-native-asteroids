@@ -3,7 +3,8 @@ import { Platform, View } from "react-native";
 import { SharedValue, useDerivedValue } from "react-native-reanimated";
 import { SharedCamera } from "../../core/types/SystemTypes";
 import { RandomService } from "../../utils/RandomService";
-import { RenderableComponent, TransformComponent } from "../../types/EngineTypes";
+import { TransformComponent } from "../../types/EngineTypes";
+import type { RenderableComponent } from "../../legacy/LegacyComponents";
 import { Entity } from "../../types/EngineTypes";
 
 // Conditionally import Skia components for non-web platforms

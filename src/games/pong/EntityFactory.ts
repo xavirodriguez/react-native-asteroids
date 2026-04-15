@@ -1,6 +1,7 @@
 import { World } from "../../engine/core/World";
 import { PONG_CONFIG } from "./types";
-import { TransformComponent, VelocityComponent, RenderComponent, ColliderComponent, BoundaryComponent, TagComponent } from "../../engine/types/EngineTypes";
+import { TransformComponent, VelocityComponent, RenderComponent, BoundaryComponent, TagComponent } from "../../engine/types/EngineTypes";
+import type { ColliderComponent } from "../../engine/legacy/LegacyComponents";
 import { RandomService } from "../../engine/utils/RandomService";
 
 export const PongEntityFactory = {

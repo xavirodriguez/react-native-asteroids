@@ -235,7 +235,7 @@ export class UILayoutSystem extends System {
    */
   private resolveWorldPosition(world: World, element: UIElementComponent, attach: UIWorldAttachComponent): void {
       const targetTransform = world.getComponent<import("../core/CoreComponents").TransformComponent>(attach.targetEntity, "Transform") ||
-                              (world.getComponent<import("../core/CoreComponents").PositionComponent>(attach.targetEntity, "Position") as unknown as import("../core/CoreComponents").TransformComponent);
+                              (world.getComponent<import("../legacy/LegacyComponents").PositionComponent>(attach.targetEntity, "Position") as unknown as import("../core/CoreComponents").TransformComponent);
 
       if (!targetTransform) return;
 

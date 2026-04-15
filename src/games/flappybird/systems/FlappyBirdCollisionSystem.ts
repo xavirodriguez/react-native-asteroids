@@ -1,6 +1,7 @@
 import { World } from "../../../engine/core/World";
-import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
-import { Entity, TransformComponent, ColliderComponent } from "../../../engine/types/EngineTypes";
+import { Entity, TransformComponent } from "../../../engine/types/EngineTypes";
+import { CollisionSystem } from "../../../engine/legacy/CollisionSystem";
+import type { ColliderComponent } from "../../../engine/legacy/LegacyComponents";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
 import { FLAPPY_CONFIG, FlappyBirdState, BirdComponent } from "../types/FlappyBirdTypes";
 import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
