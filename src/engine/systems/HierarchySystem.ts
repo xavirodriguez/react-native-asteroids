@@ -66,7 +66,7 @@ export class HierarchySystem extends System {
     if (!transform) return false;
 
     // A transformation is dirty if it's explicitly marked OR its parent was updated this frame
-    let isDirty = (transform as any).dirty || forcedDirty;
+    let isDirty = transform.dirty || forcedDirty;
 
     if (transform.parent !== undefined) {
       // Propagation: parent's dirty state forces child to be dirty
@@ -86,7 +86,7 @@ export class HierarchySystem extends System {
     }
 
     if (isDirty) {
-      (transform as any).dirty = false;
+      transform.dirty = false;
       this.wasDirty.add(entity);
     }
 
