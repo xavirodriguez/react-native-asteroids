@@ -1,9 +1,7 @@
 import { System } from "../../core/System";
 import { World } from "../../core/World";
 import { DebugConfigComponent } from "./DebugTypes";
-import { TransformComponent, VelocityComponent } from "../../core/CoreComponents";
-import { Legacy } from "../../index";
-type ColliderComponent = import("../../legacy/LegacyComponents").ColliderComponent;
+import { TransformComponent, ColliderComponent, VelocityComponent } from "../../core/CoreComponents";
 
 export class DebugSystem extends System {
   private fps: number = 0;

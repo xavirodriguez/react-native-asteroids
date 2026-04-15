@@ -1,29 +1,28 @@
-# Contrato de Colisiones y Eventos
+# Contrato del Sistema de Colisiones y Física
 
-El sistema de física y colisiones (`PhysicsSystem2D` + `CollisionSystem2D`) gestiona la detección y resolución de contactos entre entidades.
+## Propósito
+Define el comportamiento del motor de colisiones 2D, la gestión de eventos y la integración con la dinámica de cuerpos rígidos.
 
-## Ciclo de Vida de los Eventos
+## Ciclo de Vida de Colisiones
+El `CollisionSystem2D` procesa las colisiones en cada frame siguiendo este orden:
+1. **Reset**: Se limpian los buffers de eventos del frame anterior.
+2. **Broad-phase**: Se identifican pares potenciales de colisión (Spatial Hash o Sweep & Prune).
+3. **CCD (Continuous Collision Detection)**: Para entidades con `ContinuousColliderComponent`, se calcula el TOI (Time of Impact) para evitar túneles.
+4. **Narrow-phase**: Test geométrico exacto entre formas (AABB, Círculo).
+5. **Notificación**: Se pueblan los `CollisionEventsComponent` y se disparan callbacks.
 
-Los eventos de colisión se gestionan mediante el `CollisionEventsComponent`.
+## Capas y Máscaras
+El filtrado de colisiones utiliza operaciones bitwise:
+- **Layer**: Categoría a la que pertenece la entidad (potencia de 2).
+- **Mask**: Con qué capas puede colisionar.
+- **Regla**: Dos entidades A y B colisionan si `(A.layer & B.mask) !== 0` Y `(B.layer & A.mask) !== 0`.
 
-1.  **Detección**: Ocurre en la fase de `Collision`.
-2.  **Escritura**: El sistema limpia el `CollisionEventsComponent` del frame anterior y escribe los nuevos contactos.
-3.  **Consumo**: Los sistemas de gameplay (GameRules) deben leer estos eventos en el mismo frame.
-4.  **Limpieza**: Al inicio del siguiente ciclo de colisión, los arrays `collisions`, `triggersEntered` y `triggersExited` se vacían.
+## Triggers vs Colliders
+- **Colliders**: Generan manifolds y son procesados por el `PhysicsSystem2D` para respuesta de impulsos.
+- **Triggers**: Solo generan eventos de entrada (`enter`), estancia (`stay`) y salida (`exit`). No afectan al movimiento físico.
 
-## Tipos de Contacto
-
-*   **Collision**: Contacto físico entre cuerpos sólidos. Genera un `manifold` con normal y profundidad de penetración.
-*   **Trigger**: Solapamiento con un collider marcado como `isTrigger: true`. No genera resolución física, solo notificaciones de entrada/salida.
-
-## Capas y Máscaras (Filtering)
-
-El motor utiliza un sistema de bits para filtrar colisiones:
-*   `layer`: Bit representativo de la entidad.
-*   `mask`: Máscara de bits con los que esta entidad puede colisionar.
-
-La colisión ocurre si: `(A.layer & B.mask) !== 0 && (B.layer & A.mask) !== 0`.
-
-## Continuous Collision Detection (CCD)
-
-Entidades de alta velocidad (balas, proyectiles) deben usar el componente `ContinuousColliderComponent`. Esto activa un ray-casting o barrido entre la posición anterior y la actual para evitar el "tunneling" (atravesar paredes).
+## Manejo de Eventos
+Los eventos se almacenan en el componente `CollisionEvents` de la propia entidad:
+- `collisions`: Lista de colisiones activas con datos de manifold (normal, profundidad).
+- `triggersEntered / triggersExited`: Listas de entidades que cambiaron de estado en el frame actual.
+- **Limpieza**: Los eventos son efímeros y se limpian automáticamente al inicio de cada frame de física.

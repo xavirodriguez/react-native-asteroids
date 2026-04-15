@@ -3,6 +3,7 @@ import { Entity } from "./Entity";
 import { EventBus } from "./EventBus";
 import { StateMachine } from "./StateMachine";
 import type { World } from "./World";
+import type { CollisionManifold } from "../legacy/LegacyComponents";
 
 export { Entity, Component };
 
@@ -439,14 +440,4 @@ export interface Star extends Component {
   twinklePhase: number;
   twinkleSpeed: number;
   layer: number;
-}
-
-export interface CollisionManifold {
-  colliding: boolean;
-  normalX: number;
-  normalY: number;
-  depth: number;
-  contactPoints: Array<{ x: number; y: number }>;
-  entityA?: Entity;
-  entityB?: Entity;
 }

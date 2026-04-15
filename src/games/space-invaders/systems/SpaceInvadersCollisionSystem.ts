@@ -1,5 +1,5 @@
 import { World } from "../../../engine/core/World";
-import { CollisionSystem } from "../../../engine/legacy/CollisionSystem";
+import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
 import { Entity } from "../../../engine/types/EngineTypes";
 import { EventBus } from "../../../engine/core/EventBus";
 import {

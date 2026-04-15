@@ -1,4 +1,5 @@
 import { Component } from "../core/Component";
+import { Entity } from "../core/Entity";
 
 /**
  * @deprecated Utilizar {@link TransformComponent} en su lugar para soporte de jerarquía y rotación.
@@ -17,6 +18,26 @@ export interface PositionComponent extends Component {
 export interface ColliderComponent extends Component {
   type: "Collider";
   radius: number;
+}
+
+/**
+ * Renderable component for compatibility.
+ * @deprecated Use RenderComponent instead.
+ */
+export interface RenderableComponent extends Component {
+  type: "Renderable";
+  shape: string;
+  visible: boolean;
+  textureId?: string;
+  width: number;
+  height: number;
+  color: string;
+  /** @deprecated Use zIndex in RenderComponent instead */
+  zOrder: number;
+  opacity?: number;
+  renderType?: string;
+  size?: number | { width: number; height: number };
+  radius?: number;
 }
 
 /**
@@ -42,22 +63,12 @@ export interface ScreenShake {
   remaining: number;
 }
 
-/**
- * Renderable component for compatibility.
- * @deprecated Use RenderComponent instead.
- */
-export interface RenderableComponent extends Component {
-  type: "Renderable";
-  shape: string;
-  visible: boolean;
-  textureId?: string;
-  width: number;
-  height: number;
-  color: string;
-  /** @deprecated Use zIndex in RenderComponent instead */
-  zOrder: number;
-  opacity?: number;
-  renderType?: string;
-  size?: number | { width: number; height: number };
-  radius?: number;
+export interface CollisionManifold {
+  colliding: boolean;
+  normalX: number;
+  normalY: number;
+  depth: number;
+  contactPoints: Array<{ x: number; y: number }>;
+  entityA?: Entity;
+  entityB?: Entity;
 }

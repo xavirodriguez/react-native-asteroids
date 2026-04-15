@@ -13,7 +13,6 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  *
  * @remarks
  * Implements a snapshot-based architecture for decoupled and consistent rendering.
- * Pure rendering pipeline: renderSnapshot and its hooks/drawers no longer receive the World instance.
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
@@ -22,8 +21,9 @@ export class CanvasRenderer implements Renderer {
   protected height: number = 0;
 
   private shapeDrawers = new Map<string, ShapeDrawer<CanvasRenderingContext2D>>();
-  private preRenderHooks: ((ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot) => void)[] = [];
-  private postRenderHooks: ((ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot) => void)[] = [];
+  private postEntityDrawers = new Map<string, ShapeDrawer<CanvasRenderingContext2D>>();
+  private preRenderHooks: ((ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot, world: World) => void)[] = [];
+  private postRenderHooks: ((ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot, world: World) => void)[] = [];
   private backgroundEffects: { name: string, drawer: EffectDrawer<CanvasRenderingContext2D> }[] = [];
   private foregroundEffects: { name: string, drawer: EffectDrawer<CanvasRenderingContext2D> }[] = [];
 
@@ -88,11 +88,15 @@ export class CanvasRenderer implements Renderer {
     this.registerShape(name, drawer);
   }
 
-  public addPreRenderHook(hook: (ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot) => void): void {
+  public registerPostEntityDrawer(name: string, drawer: ShapeDrawer<CanvasRenderingContext2D>): void {
+    this.postEntityDrawers.set(name, drawer);
+  }
+
+  public addPreRenderHook(hook: (ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot, world: World) => void): void {
     this.preRenderHooks.push(hook);
   }
 
-  public addPostRenderHook(hook: (ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot) => void): void {
+  public addPostRenderHook(hook: (ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot, world: World) => void): void {
     this.postRenderHooks.push(hook);
   }
 
@@ -275,7 +279,7 @@ export class CanvasRenderer implements Renderer {
     return snapshot;
   }
 
-  public renderSnapshot(snapshot: RenderSnapshot): void {
+  public renderSnapshot(snapshot: RenderSnapshot, world: World): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
 
@@ -297,25 +301,25 @@ export class CanvasRenderer implements Renderer {
     ctx.translate(snapshot.shakeX, snapshot.shakeY);
 
     for (let i = 0; i < this.backgroundEffects.length; i++) {
-        this.backgroundEffects[i].drawer(ctx, snapshot, this.width, this.height, null as any);
+        this.backgroundEffects[i].drawer(ctx, snapshot, this.width, this.height, world);
     }
 
     for (let i = 0; i < this.preRenderHooks.length; i++) {
-      this.preRenderHooks[i](ctx, snapshot);
+      this.preRenderHooks[i](ctx, snapshot, world);
     }
 
     const commands = this.commandBuffer.getCommands();
     const cmdCount = this.commandBuffer.getCount();
     for (let i = 0; i < cmdCount; i++) {
-      this.executeCommand(ctx, commands[i]);
+      this.executeCommand(ctx, commands[i], world);
     }
 
     for (let i = 0; i < this.foregroundEffects.length; i++) {
-        this.foregroundEffects[i].drawer(ctx, snapshot, this.width, this.height, null as any);
+        this.foregroundEffects[i].drawer(ctx, snapshot, this.width, this.height, world);
     }
 
     for (let i = 0; i < this.postRenderHooks.length; i++) {
-      this.postRenderHooks[i](ctx, snapshot);
+      this.postRenderHooks[i](ctx, snapshot, world);
     }
 
     ctx.restore();
@@ -323,7 +327,7 @@ export class CanvasRenderer implements Renderer {
     this.renderUIFromSnapshot(ctx, snapshot);
   }
 
-  private executeCommand(ctx: CanvasRenderingContext2D, cmd: DrawCommand): void {
+  private executeCommand(ctx: CanvasRenderingContext2D, cmd: DrawCommand, world: World): void {
     ctx.save();
     ctx.translate(cmd.x, cmd.y);
     ctx.rotate(cmd.rotation);
@@ -334,25 +338,30 @@ export class CanvasRenderer implements Renderer {
       ctx.globalCompositeOperation = "lighter";
     }
 
+    this.tempPos.x = cmd.x;
+    this.tempPos.y = cmd.y;
+    this.tempPos.rotation = cmd.rotation;
+    this.tempPos.scaleX = cmd.scaleX;
+    this.tempPos.scaleY = cmd.scaleY;
+
+    this.tempRender.shape = cmd.type;
+    this.tempRender.size = cmd.size;
+    this.tempRender.color = cmd.color;
+    this.tempRender.vertices = cmd.vertices || undefined;
+    this.tempRender.hitFlashFrames = cmd.hitFlashFrames;
+    this.tempRender.data = cmd.data;
+
     const drawer = this.shapeDrawers.get(cmd.type);
     if (drawer) {
-      this.tempPos.x = cmd.x;
-      this.tempPos.y = cmd.y;
-      this.tempPos.rotation = cmd.rotation;
-      this.tempPos.scaleX = cmd.scaleX;
-      this.tempPos.scaleY = cmd.scaleY;
-
-      this.tempRender.shape = cmd.type;
-      this.tempRender.size = cmd.size;
-      this.tempRender.color = cmd.color;
-      this.tempRender.vertices = cmd.vertices || undefined;
-      this.tempRender.hitFlashFrames = cmd.hitFlashFrames;
-      this.tempRender.data = cmd.data;
-
-      drawer(ctx, cmd.entityId, this.tempPos, this.tempRender, null as any);
+      drawer(ctx, cmd.entityId, this.tempPos, this.tempRender, world);
     }
 
     ctx.restore();
+
+    const postDrawer = this.postEntityDrawers.get(cmd.type);
+    if (postDrawer) {
+        postDrawer(ctx, cmd.entityId, this.tempPos, this.tempRender, world);
+    }
   }
 
   private renderUIFromSnapshot(ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot): void {
@@ -488,7 +497,7 @@ export class CanvasRenderer implements Renderer {
 
   public render(world: World, alpha: number = 1): void {
     const snapshot = this.createSnapshot(world, alpha);
-    this.renderSnapshot(snapshot);
+    this.renderSnapshot(snapshot, world);
   }
 
   public drawEntity(_entity: Entity, _components: Record<string, any>, _world: World): void {

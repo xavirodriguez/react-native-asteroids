@@ -4,15 +4,8 @@
  * Estos símbolos serán eliminados en futuras versiones mayores.
  */
 
-export {
-  PositionComponent,
-  ColliderComponent,
-  RenderableComponent,
-  Transform,
-  ScreenShake,
-} from "./LegacyComponents";
-
+export * from "./LegacyComponents";
 export { SceneGraph, type SceneNode } from "./SceneGraph";
-export { CollisionSystem } from "./CollisionSystem";
-export { InputSystem } from "./InputSystem";
+export { CollisionSystem } from "../systems/CollisionSystem";
+export { InputSystem } from "../input/InputSystem";
 export { RenderSystem } from "./RenderSystem";

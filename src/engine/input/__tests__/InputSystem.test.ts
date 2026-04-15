@@ -1,4 +1,4 @@
-import { InputSystem } from "../../legacy/InputSystem";
+import { InputSystem } from "../InputSystem";
 import { TouchPoint } from "../InputTypes";
 
 describe("InputSystem", () => {

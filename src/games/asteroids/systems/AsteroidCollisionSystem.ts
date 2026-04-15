@@ -1,5 +1,5 @@
 import { World } from "../../../engine/core/World";
-import { CollisionSystem } from "../../../engine/legacy/CollisionSystem";
+import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
 import {
   type AsteroidComponent,
   type HealthComponent,

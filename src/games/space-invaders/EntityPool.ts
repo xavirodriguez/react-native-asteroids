@@ -1,11 +1,11 @@
 import { EntityPool } from "../../engine/utils/EntityPool";
 import { World } from "../../engine/core/World";
-import type { ColliderComponent } from "../../engine/legacy/LegacyComponents";
 import {
   Entity,
   TransformComponent,
   VelocityComponent,
   RenderComponent,
+  ColliderComponent,
   TTLComponent,
   ReclaimableComponent,
   Component
