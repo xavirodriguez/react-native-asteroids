@@ -3,6 +3,7 @@ import { Entity } from "./Entity";
 import { EventBus } from "./EventBus";
 import { StateMachine } from "./StateMachine";
 import type { World } from "./World";
+import type { CollisionManifold } from "../legacy/LegacyComponents";
 
 export { Entity, Component };
 
@@ -186,7 +187,7 @@ export interface Collider2DComponent extends Component {
  */
 export interface CollisionEvent {
   otherEntity: Entity;
-  manifold?: import("../legacy/LegacyComponents").CollisionManifold;
+  manifold?: CollisionManifold;
   normalX?: number;
   normalY?: number;
   depth?: number;

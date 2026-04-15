@@ -20,6 +20,7 @@ export * from './core/CoreComponents';
 
 // --- TYPES ---
 export * from './types/EngineTypes';
+export type { AABB } from './types/CommonTypes';
 
 // --- PHYSICS & COLLISION ---
 export { PhysicsSystem2D } from './physics/dynamics/PhysicsSystem2D';
@@ -27,7 +28,9 @@ export { CollisionSystem2D } from './physics/collision/CollisionSystem2D';
 export { CollisionLayers } from './physics/collision/CollisionLayers';
 export { SpatialHash } from './collision/SpatialHash';
 export { PhysicsQuery } from './physics/query/PhysicsQuery';
-export type { AABB } from './types/CommonTypes';
+export { NarrowPhase } from './physics/collision/NarrowPhase';
+export { BroadPhase } from './physics/collision/BroadPhase';
+export { ContinuousCollision } from './physics/collision/ContinuousCollision';
 export * from './physics/shapes/ShapeTypes';
 export * from './physics/shapes/ShapeFactory';
 export * from './physics/query/QueryTypes';
@@ -39,7 +42,6 @@ export { CanvasRenderer } from './rendering/CanvasRenderer';
 export { SkiaRenderer } from './rendering/SkiaRenderer';
 export { RenderSnapshot } from './rendering/RenderSnapshot';
 export { CommandBuffer } from './rendering/CommandBuffer';
-export type { CollisionManifold } from './legacy/LegacyComponents';
 export { Camera2D } from './camera/Camera2D';
 export { CameraSystem } from './camera/CameraSystem';
 
@@ -49,7 +51,7 @@ export * from './input/InputTypes';
 
 // --- SCENES ---
 export { Scene } from './scenes/Scene';
-export { SceneManager } from './scenes/SceneManager';
+export { SceneManager, SceneState } from './scenes/SceneManager';
 
 // --- ASSETS ---
 export * from './assets/AssetTypes';
@@ -57,9 +59,9 @@ export { AssetLoader } from './assets/AssetLoader';
 
 // --- UTILS ---
 export * from './utils/PhysicsUtils';
-export { RandomService } from './utils/RandomService';
+export { RandomService } from './utils/RandomService";
 export { PrefabPool } from './utils/PrefabPool';
-export { LifecycleUtils } from './utils/LifecycleUtils';
+export { runLifecycleSync, runLifecycleAsync } from './utils/LifecycleUtils';
 
 // --- SYSTEMS ---
 export { HierarchySystem } from './systems/HierarchySystem';

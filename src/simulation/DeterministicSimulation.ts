@@ -1,6 +1,5 @@
 import { World } from "../engine/core/World";
-import { Entity, TransformComponent, VelocityComponent, RenderComponent, HealthComponent, TTLComponent, BoundaryComponent } from "../engine/types/EngineTypes";
-import type { ColliderComponent } from "../engine/legacy/LegacyComponents";
+import { Entity, TransformComponent, VelocityComponent, RenderComponent, HealthComponent, ColliderComponent, TTLComponent, BoundaryComponent } from "../engine/types/EngineTypes";
 import { PhysicsUtils } from "../engine/utils/PhysicsUtils";
 import { ShipPhysics } from "../games/asteroids/utils/ShipPhysics";
 import { GAME_CONFIG, type AsteroidComponent, type GameStateComponent, type UfoComponent, type InputComponent } from "../games/asteroids/types/AsteroidTypes";

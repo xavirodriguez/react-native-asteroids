@@ -9,7 +9,7 @@ export type ShapeDrawer<TContext> = (
   entity: Entity,
   pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number },
   render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null },
-  world: import("../core/World").World
+  world: World
 ) => void;
 
 /**
@@ -20,7 +20,7 @@ export type EffectDrawer<TContext> = (
   snapshot: import("./RenderSnapshot").RenderSnapshot,
   width: number,
   height: number,
-  world: import("../core/World").World
+  world: World
 ) => void;
 
 /**
@@ -40,6 +40,8 @@ export interface Renderer {
   setSize(width: number, height: number): void;
 
   registerShape(name: string, drawer: ShapeDrawer<unknown>): void;
+
+  registerPostEntityDrawer(name: string, drawer: ShapeDrawer<unknown>): void;
 
   registerBackgroundEffect(name: string, drawer: EffectDrawer<unknown>): void;
 

@@ -54,8 +54,7 @@ export interface AsteroidComponent extends Component {
   size: "large" | "medium" | "small";
 }
 
-import { Star } from "../../../engine/types/EngineTypes";
-import type { ScreenShake } from "../../../engine/legacy/LegacyComponents";
+import { Star, ScreenShake } from "../../../engine/types/EngineTypes";
 
 /**
  * Component to track global game progress and state.

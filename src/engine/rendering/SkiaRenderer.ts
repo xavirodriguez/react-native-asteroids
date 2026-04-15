@@ -1,17 +1,9 @@
 import { Skia, SkCanvas, SkPaint, PaintStyle } from "@shopify/react-native-skia";
 import { World } from "../core/World";
-import { Renderer } from "./Renderer";
+import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity } from "../core/Entity";
 import { RenderComponent, TransformComponent, PreviousTransformComponent, Component } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
-
-export type SkiaShapeDrawer = (
-  canvas: SkCanvas,
-  entity: Entity,
-  pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number },
-  render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: any },
-  world: World
-) => void;
 
 /**
  * Implementación de Renderer basada en la API de Skia para React Native.
@@ -37,8 +29,8 @@ export class SkiaRenderer implements Renderer {
   protected width: number = 0;
   protected height: number = 0;
   protected paint: SkPaint;
-  private shapeDrawers = new Map<string, SkiaShapeDrawer>();
-  private postEntityDrawers = new Map<string, SkiaShapeDrawer>();
+  private shapeDrawers = new Map<string, ShapeDrawer<SkCanvas>>();
+  private postEntityDrawers = new Map<string, ShapeDrawer<SkCanvas>>();
   private preRenderHooks: ((canvas: SkCanvas, world: World) => void)[] = [];
   private postRenderHooks: ((canvas: SkCanvas, world: World) => void)[] = [];
 
@@ -50,11 +42,11 @@ export class SkiaRenderer implements Renderer {
     this.registerDefaultDrawers();
   }
 
-  public registerShapeDrawer(shape: string, drawer: SkiaShapeDrawer): void {
+  public registerShapeDrawer(shape: string, drawer: ShapeDrawer<SkCanvas>): void {
     this.shapeDrawers.set(shape, drawer);
   }
 
-  public registerPostEntityDrawer(shape: string, drawer: SkiaShapeDrawer): void {
+  public registerPostEntityDrawer(shape: string, drawer: ShapeDrawer<SkCanvas>): void {
     this.postEntityDrawers.set(shape, drawer);
   }
 
@@ -160,9 +152,10 @@ export class SkiaRenderer implements Renderer {
    * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia
    * puede perderse si la app pasa a segundo plano de forma prolongada.
    */
-  public render(world: World): void {
+  public render(world: World, alpha: number = 1): void {
     if (!this.canvas) return;
     const canvas = this.canvas;
+    this.alpha = alpha;
 
     this.clear();
 
@@ -255,7 +248,7 @@ export class SkiaRenderer implements Renderer {
         color: render.color,
         vertices: render.vertices ?? null,
         hitFlashFrames: render.hitFlashFrames ?? 0,
-        data: render.data
+        data: render.data ?? null
       }, world);
     }
 
@@ -269,20 +262,20 @@ export class SkiaRenderer implements Renderer {
         color: render.color,
         vertices: render.vertices ?? null,
         hitFlashFrames: render.hitFlashFrames ?? 0,
-        data: render.data
+        data: render.data ?? null
       }, world);
     }
   }
 
-  public registerShape(name: string, drawer: import("./Renderer").ShapeDrawer<SkCanvas>): void {
-    this.shapeDrawers.set(name, drawer as SkiaShapeDrawer);
+  public registerShape(name: string, drawer: ShapeDrawer<SkCanvas>): void {
+    this.shapeDrawers.set(name, drawer);
   }
 
-  public registerBackgroundEffect( _name: string,  _drawer: import("./Renderer").EffectDrawer<SkCanvas>): void {
+  public registerBackgroundEffect(name: string, drawer: EffectDrawer<SkCanvas>): void {
       // Basic implementation to satisfy Renderer interface
   }
 
-  public registerForegroundEffect( _name: string,  _drawer: import("./Renderer").EffectDrawer<SkCanvas>): void {
+  public registerForegroundEffect(name: string, drawer: EffectDrawer<SkCanvas>): void {
       // Basic implementation to satisfy Renderer interface
   }
 

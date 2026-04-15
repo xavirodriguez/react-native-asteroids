@@ -1,6 +1,4 @@
-import { Entity } from "../types/EngineTypes";
-
-export type Transform = import("../legacy/LegacyComponents").Transform;
+import { Entity, Transform } from "../types/EngineTypes";
 
 /**
  * Comandos emitidos por el `RenderSystem` para ser consumidos por el adaptador.

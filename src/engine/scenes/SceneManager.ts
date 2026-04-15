@@ -1,50 +1,40 @@
+import { World } from "../core/World";
 import { Scene } from "./Scene";
-import { runLifecycleAsync, runLifecycleSync } from "../utils/LifecycleUtils";
+import { runLifecycleSync, runLifecycleAsync } from "../utils/LifecycleUtils";
 
-export type TransitionType = 'instant' | 'fade' | 'slide';
-
-export interface SceneTransition {
-  type: TransitionType;
-  durationMs: number;
-}
-
-/**
- * Finite State Machine for Scene Transitions.
- */
 export enum SceneState {
-  IDLE = 'IDLE',
-  LOADING = 'LOADING',
-  ACTIVE = 'ACTIVE',
-  UNLOADING = 'UNLOADING'
+  IDLE = "IDLE",
+  LOADING = "LOADING",
+  ACTIVE = "ACTIVE",
+  UNLOADING = "UNLOADING",
 }
 
-type TransitionTask = () => Promise<void>;
-
 /**
- * Manages a stack of game scenes and their lifecycle transitions.
- *
- * @remarks
- * Implements a formal FSM and an atomic transition queue (mutex) to prevent
- * concurrent scene state corruption and race conditions.
+ * Gestor central de transiciones entre escenas.
+ * Implementa una Máquina de Estados Finitos (FSM) y una cola atómica para
+ * garantizar que solo ocurra una transición a la vez, evitando estados corruptos.
  */
 export class SceneManager {
-  private currentScene: Scene | null = null;
   private sceneStack: Scene[] = [];
-  private scenes = new Map<string, Scene>();
+  private currentScene: Scene | null = null;
   private state: SceneState = SceneState.IDLE;
+  private transitionQueue: (() => Promise<void>)[] = [];
+  private isProcessingTransition = false;
 
-  private transitionQueue: TransitionTask[] = [];
-  private isProcessingTransition: boolean = false;
+  constructor(private world: World) {}
 
-  public register(scene: Scene): void {
-    const name = scene.name || "Unnamed Scene";
-    this.scenes.set(name, scene);
+  public getCurrentScene(): Scene | null {
+    return this.currentScene;
+  }
+
+  public getState(): SceneState {
+    return this.state;
   }
 
   /**
-   * Enqueues a transition task and starts processing if idle.
+   * Encola una tarea de transición para ejecución secuencial.
    */
-  private async enqueueTransition(task: TransitionTask): Promise<void> {
+  private enqueueTransition(task: () => Promise<void>): Promise<void> {
     return new Promise((resolve, reject) => {
       this.transitionQueue.push(async () => {
         try {
@@ -64,13 +54,16 @@ export class SceneManager {
     }
 
     this.isProcessingTransition = true;
-    while (this.transitionQueue.length > 0) {
-      const task = this.transitionQueue.shift();
-      if (task) {
-        await task();
+    try {
+      while (this.transitionQueue.length > 0) {
+        const task = this.transitionQueue.shift();
+        if (task) {
+          await task();
+        }
       }
+    } finally {
+      this.isProcessingTransition = false;
     }
-    this.isProcessingTransition = false;
   }
 
   /**
@@ -81,28 +74,29 @@ export class SceneManager {
     return this.enqueueTransition(async () => {
       const previousState = this.state;
       try {
-        // Phase 1: UNLOADING
+        // 1. Unload current scene if exists
         if (this.currentScene) {
           this.state = SceneState.UNLOADING;
-          const prev = this.currentScene;
+          const oldScene = this.currentScene;
           await runLifecycleAsync(async () => {
-            if ((prev as any).onExit) {
-              await (prev as any).onExit(prev.getWorld());
+            if ((oldScene as any).onExit) {
+              await (oldScene as any).onExit(oldScene.getWorld());
             }
           });
         }
 
-        // Phase 2: LOADING
+        // 2. Load new scene
         this.state = SceneState.LOADING;
+        this.currentScene = scene;
+        this.sceneStack = [scene];
+
         await runLifecycleAsync(async () => {
+          await scene.init(this.world);
           if ((scene as any).onEnter) {
             await (scene as any).onEnter(scene.getWorld());
           }
         });
 
-        // Phase 3: ACTIVE
-        this.sceneStack = [scene];
-        this.currentScene = scene;
         this.state = SceneState.ACTIVE;
       } catch (error) {
         console.error("SceneManager: Transition failed", error);
@@ -113,7 +107,7 @@ export class SceneManager {
   }
 
   /**
-   * Pushes a new scene onto the stack.
+   * Pushes a new scene onto the stack, pausing the current one.
    */
   public async push(scene: Scene): Promise<void> {
     return this.enqueueTransition(async () => {
@@ -124,14 +118,16 @@ export class SceneManager {
         }
 
         this.state = SceneState.LOADING;
+        this.sceneStack.push(scene);
+        this.currentScene = scene;
+
         await runLifecycleAsync(async () => {
+          await scene.init(this.world);
           if ((scene as any).onEnter) {
             await (scene as any).onEnter(scene.getWorld());
           }
         });
 
-        this.sceneStack.push(scene);
-        this.currentScene = scene;
         this.state = SceneState.ACTIVE;
       } catch (error) {
         console.error("SceneManager: Push failed", error);
@@ -142,15 +138,19 @@ export class SceneManager {
   }
 
   /**
-   * Pops the top scene from the stack.
+   * Pops the current scene from the stack, resuming the previous one.
    */
   public async pop(): Promise<void> {
     return this.enqueueTransition(async () => {
-      if (this.sceneStack.length <= 1) return;
+      if (this.sceneStack.length <= 1) {
+        console.warn("SceneManager: Cannot pop the last scene.");
+        return;
+      }
 
       const previousState = this.state;
+      const poppedScene = this.sceneStack[this.sceneStack.length - 1];
+
       try {
-        const poppedScene = this.sceneStack.pop()!;
         this.state = SceneState.UNLOADING;
 
         await runLifecycleAsync(async () => {
@@ -159,7 +159,9 @@ export class SceneManager {
           }
         });
 
+        this.sceneStack.pop();
         this.currentScene = this.sceneStack[this.sceneStack.length - 1];
+
         if (this.currentScene) {
           runLifecycleSync(() => this.currentScene!.onResume());
         }
@@ -173,72 +175,20 @@ export class SceneManager {
   }
 
   /**
-   * Restarts the current scene.
+   * Updates the current scene.
    */
-  public async restartCurrentScene(): Promise<void> {
-    return this.enqueueTransition(async () => {
-      if (!this.currentScene) return;
-
-      const previousState = this.state;
-      try {
-        const scene = this.currentScene;
-        const world = scene.getWorld();
-
-        this.state = SceneState.UNLOADING;
-        await runLifecycleAsync(async () => {
-          if ((scene as any).onExit) {
-            await (scene as any).onExit(world);
-          }
-        });
-
-        world.clear();
-        world.clearSystems();
-
-        this.state = SceneState.LOADING;
-        await runLifecycleAsync(async () => {
-          if ((scene as any).onEnter) {
-            await (scene as any).onEnter(world);
-          }
-        });
-
-        this.state = SceneState.ACTIVE;
-      } catch (error) {
-        console.error("SceneManager: Restart failed", error);
-        this.state = previousState;
-        throw error;
-      }
-    });
-  }
-
-  public pause(): void {
-    if (this.currentScene) {
-      runLifecycleSync(() => this.currentScene!.onPause());
-    }
-  }
-
-  public resume(): void {
-    if (this.currentScene) {
-      runLifecycleSync(() => this.currentScene!.onResume());
-    }
-  }
-
   public update(deltaTime: number): void {
     if (this.state === SceneState.ACTIVE && this.currentScene) {
       this.currentScene.update(deltaTime);
     }
   }
 
-  public render(renderer: import("../rendering/Renderer").Renderer): void {
+  /**
+   * Renders the current scene.
+   */
+  public render(alpha: number): void {
     if (this.state === SceneState.ACTIVE && this.currentScene) {
-      this.currentScene.render(renderer);
+      this.currentScene.render(alpha);
     }
-  }
-
-  public getCurrentScene(): Scene | null {
-    return this.currentScene;
-  }
-
-  public getSceneState(): SceneState {
-    return this.state;
   }
 }

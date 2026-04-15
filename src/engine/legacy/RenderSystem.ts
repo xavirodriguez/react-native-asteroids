@@ -1,8 +1,6 @@
 import { World } from "../core/World";
-import { Renderer, RenderCommand } from "./RenderTypes";
-import { RenderableComponent, Transform } from "./LegacyComponents";
-import { SceneGraph } from "./SceneGraph";
-
+import { Renderer, RenderCommand } from "../rendering/RenderTypes";
+import { RenderableComponent, Transform, TransformComponent } from "../types/EngineTypes";
 
 /**
  * Sistema puente entre el mundo ECS y los backends de renderizado.

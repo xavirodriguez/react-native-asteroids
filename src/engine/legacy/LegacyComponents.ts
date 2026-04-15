@@ -1,4 +1,5 @@
 import { Component } from "../core/Component";
+import { Entity } from "../core/Entity";
 
 /**
  * @deprecated Utilizar {@link TransformComponent} en su lugar para soporte de jerarquía y rotación.
@@ -68,6 +69,6 @@ export interface CollisionManifold {
   normalY: number;
   depth: number;
   contactPoints: Array<{ x: number; y: number }>;
-  entityA?: number; // Using number for Entity to avoid circular dep
-  entityB?: number;
+  entityA?: Entity;
+  entityB?: Entity;
 }
