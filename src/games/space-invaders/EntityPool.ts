@@ -38,7 +38,7 @@ export class PlayerBulletPool {
           type: "Collider2D",
           shape: { type: "circle", radius: 0 },
           layer: CollisionLayers.PROJECTILE,
-          mask: CollisionLayers.ENEMY,
+          mask: CollisionLayers.ENEMY | CollisionLayers.DEBRIS,
           offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
         },
         ttl: { type: "TTL", remaining: 0, total: 0 },
