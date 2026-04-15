@@ -33,7 +33,8 @@ export class SpaceInvadersCollisionSystem extends System {
 
     const entitiesWithEvents = world.query("CollisionEvents");
     for (const entity of entitiesWithEvents) {
-      const eventsComp = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents")!;
+      const eventsComp = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
+      if (!eventsComp) continue;
       for (const event of eventsComp.collisions) {
         // Ensure each collision pair is processed only once
         if (entity > event.otherEntity) continue;
