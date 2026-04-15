@@ -14,8 +14,6 @@ import Animated, {
 } from "react-native-reanimated";
 import type { GameStateComponent } from "../src/types/GameTypes";
 
-type SkiaModuleType = typeof import("@shopify/react-native-skia");
-
 // Conditionally import Skia components
 let Canvas: React.ComponentType<Record<string, unknown>> | null = null;
 let BackdropBlur: React.ComponentType<Record<string, unknown>> | null = null;
@@ -23,7 +21,8 @@ let Fill: React.ComponentType<{ color: string }> | null = null;
 
 if (Platform.OS !== "web") {
   try {
-    const SkiaModule = require("@shopify/react-native-skia") as SkiaModuleType;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const SkiaModule = require("@shopify/react-native-skia") as typeof import("@shopify/react-native-skia");
     Canvas = SkiaModule.Canvas as unknown as React.ComponentType<Record<string, unknown>>;
     BackdropBlur = SkiaModule.BackdropBlur as unknown as React.ComponentType<Record<string, unknown>>;
     Fill = SkiaModule.Fill as unknown as React.ComponentType<{ color: string }>;
