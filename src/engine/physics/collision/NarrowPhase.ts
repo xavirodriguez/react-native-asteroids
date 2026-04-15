@@ -1,6 +1,6 @@
 import { Shape, CircleShape, AABBShape, CapsuleShape, PolygonShape } from "../shapes/ShapeTypes";
 
-import { CollisionManifold } from "../../core/CoreComponents";
+import { CollisionManifold } from "./CollisionTypes";
 export { CollisionManifold };
 
 const sharedManifold: CollisionManifold = {

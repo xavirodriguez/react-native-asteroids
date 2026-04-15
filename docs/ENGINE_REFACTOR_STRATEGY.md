@@ -115,7 +115,8 @@ Se establecen los siguientes estándares oficiales y obligatorios para el motor:
 
 ## Bloque 10: Entregables finales
 
-*   [ ] `src/engine/legacy/index.ts` con componentes obsoletos.
-*   [ ] `CoreComponents.ts` sin tipos `any`.
+*   [x] `src/engine/legacy/index.ts` con componentes obsoletos.
+*   [x] `CoreComponents.ts` sin tipos `any` y con TSDoc endurecido.
+*   [x] Consolidación de tipos de física en `src/engine/physics/collision/CollisionTypes.ts`.
 *   [ ] Documentación de contratos en `docs/contracts/`.
-*   [ ] Entrypoint `src/engine/index.ts` saneado.
+*   [x] Entrypoint `src/engine/index.ts` saneado (syntax fixed).

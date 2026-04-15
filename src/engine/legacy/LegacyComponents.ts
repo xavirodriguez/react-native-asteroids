@@ -63,12 +63,5 @@ export interface ScreenShake {
   remaining: number;
 }
 
-export interface CollisionManifold {
-  colliding: boolean;
-  normalX: number;
-  normalY: number;
-  depth: number;
-  contactPoints: Array<{ x: number; y: number }>;
-  entityA?: Entity;
-  entityB?: Entity;
-}
+import { CollisionManifold } from "../physics/collision/CollisionTypes";
+export type { CollisionManifold };
