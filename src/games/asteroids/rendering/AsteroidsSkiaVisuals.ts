@@ -8,7 +8,7 @@ let paint: any = null;
 const getPaint = () => {
     if (Platform.OS === "web") return null;
     try {
-        const { Skia } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia } =
         require("@shopify/react-native-skia");
         if (!paint && typeof Skia !== "undefined") {
             paint = Skia.Paint();
@@ -22,7 +22,7 @@ const getPaint = () => {
 export const drawSkiaShip: ShapeDrawer<any> = (canvas, entity, _pos, render, world) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, BlurStyle } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia, BlurStyle } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Path || !Skia.Paint) return;
         const p = getPaint();
@@ -87,7 +87,7 @@ export const drawSkiaShip: ShapeDrawer<any> = (canvas, entity, _pos, render, wor
 export const drawSkiaUfo: ShapeDrawer<any> = (canvas, _entity, _pos, render) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, BlurStyle } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia, BlurStyle } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
         const p = getPaint();
@@ -127,7 +127,7 @@ export const drawSkiaUfo: ShapeDrawer<any> = (canvas, _entity, _pos, render) => 
 export const skiaStarfieldEffect: EffectDrawer<any> = (canvas, world, width, height) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
         const p = getPaint();
@@ -163,7 +163,7 @@ export const skiaStarfieldEffect: EffectDrawer<any> = (canvas, world, width, hei
 export const skiaScreenShakeEffect: EffectDrawer<any> = (canvas, world) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined") return;
         const gameStateEntity = world.query("GameState")[0];
@@ -181,7 +181,7 @@ export const skiaScreenShakeEffect: EffectDrawer<any> = (canvas, world) => {
 export const drawSkiaParticle: ShapeDrawer<any> = (canvas, entity, _pos, render, world) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
         const p = getPaint();
@@ -207,7 +207,7 @@ export const drawSkiaParticle: ShapeDrawer<any> = (canvas, entity, _pos, render,
 export const drawSkiaBullet: ShapeDrawer<any> = (canvas, _entity, _pos, render) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, BlurStyle } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia, BlurStyle } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
         const p = getPaint();

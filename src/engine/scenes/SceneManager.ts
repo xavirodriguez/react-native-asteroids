@@ -188,7 +188,25 @@ export class SceneManager {
    */
   public render(alpha: number): void {
     if (this.state === SceneState.ACTIVE && this.currentScene) {
-      this.currentScene.render(alpha);
+      this.currentScene.onRender(alpha);
+    }
+  }
+
+  public pause(): void {
+    if (this.currentScene) {
+      this.currentScene.onPause();
+    }
+  }
+
+  public resume(): void {
+    if (this.currentScene) {
+      this.currentScene.onResume();
+    }
+  }
+
+  public async restartCurrentScene(): Promise<void> {
+    if (this.currentScene) {
+      await this.currentScene.restart();
     }
   }
 }

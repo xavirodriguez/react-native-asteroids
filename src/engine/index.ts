@@ -59,7 +59,7 @@ export { AssetLoader } from './assets/AssetLoader';
 
 // --- UTILS ---
 export * from './utils/PhysicsUtils';
-export { RandomService } from './utils/RandomService";
+export { RandomService } from './utils/RandomService';
 export { PrefabPool } from './utils/PrefabPool';
 export { runLifecycleSync, runLifecycleAsync } from './utils/LifecycleUtils';
 
