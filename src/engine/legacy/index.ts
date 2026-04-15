@@ -15,4 +15,4 @@ export {
 export { SceneGraph, type SceneNode } from "../core/SceneGraph";
 export { CollisionSystem } from "../systems/CollisionSystem";
 export { InputSystem } from "../input/InputSystem";
-export { RenderSystem } from "../rendering/RenderSystem";
+export { RenderSystem } from "./RenderSystem";

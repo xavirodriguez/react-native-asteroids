@@ -1,6 +1,6 @@
 import { World } from "../core/World";
 import { SceneGraph } from "../core/SceneGraph";
-import { Renderer, RenderCommand } from "./RenderTypes";
+import { Renderer, RenderCommand } from "../rendering/RenderTypes";
 import { RenderableComponent, Transform } from "../types/EngineTypes";
 
 /**
