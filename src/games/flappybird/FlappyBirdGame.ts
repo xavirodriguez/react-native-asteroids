@@ -81,12 +81,12 @@ export class FlappyBirdGame
     this.isMultiplayer = active;
   }
 
-  public updateFromServer(state: any) {
+  public updateFromServer(state: Record<string, any>) {
     if (!this.isMultiplayer || !state) return;
     this.world.clear();
 
-    if (state.players) {
-        state.players.forEach((player: any) => {
+    if (state.players && Array.isArray(state.players)) {
+        state.players.forEach((player) => {
             const b = this.world.createEntity();
             this.world.addComponent(b, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 });
             this.world.addComponent(b, { type: "Render", shape: "bird", size: 15, color: player.alive ? "yellow" : "gray", rotation: 0 });
@@ -94,8 +94,8 @@ export class FlappyBirdGame
         });
     }
 
-    if (state.pipes) {
-        state.pipes.forEach((pipe: any) => {
+    if (state.pipes && Array.isArray(state.pipes)) {
+        state.pipes.forEach((pipe) => {
             const p = this.world.createEntity();
             this.world.addComponent(p, { type: "Transform", x: pipe.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 });
             this.world.addComponent(p, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 });

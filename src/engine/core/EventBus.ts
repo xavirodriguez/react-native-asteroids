@@ -5,7 +5,7 @@
  * @remarks
  * Los eventos pueden ser específicos (ej: `player:hit`) o genéricos mediante asterisco (ej: `player:*` o `*`).
  */
-export type EventHandler<T = any> = (payload: T) => void;
+export type EventHandler<T = unknown> = (payload: T) => void;
 
 /**
  * Sistema de mensajería síncrona basado en el patrón Pub/Sub.
@@ -34,7 +34,7 @@ export class EventBus {
    *
    * @postcondition El handler se añadirá al conjunto de subscriptores del evento.
    */
-  public on<T = any>(event: string, handler: EventHandler<T>): void {
+  public on<T = unknown>(event: string, handler: EventHandler<T>): void {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, new Set());
     }
@@ -50,7 +50,7 @@ export class EventBus {
    *
    * @postcondition El handler se eliminará automáticamente tras la primera ejecución exitosa.
    */
-  public once<T = any>(event: string, handler: EventHandler<T>): void {
+  public once<T = unknown>(event: string, handler: EventHandler<T>): void {
     const onceHandler: EventHandler<T> = (payload) => {
       this.off(event, onceHandler);
       handler(payload);
@@ -61,7 +61,7 @@ export class EventBus {
   /**
    * Unsubscribes from an event.
    */
-  public off<T = any>(event: string, handler: EventHandler<T>): void {
+  public off<T = unknown>(event: string, handler: EventHandler<T>): void {
     const set = this.handlers.get(event);
     if (set) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,7 +79,7 @@ export class EventBus {
    * @param event - Nombre del evento.
    * @param payload - Datos asociados al evento.
    */
-  public emit<T = any>(event: string, payload: T): void {
+  public emit<T = unknown>(event: string, payload: T): void {
     // Notify exact matches
     this.notify(event, payload);
 
@@ -113,7 +113,7 @@ export class EventBus {
     }
   }
 
-  private notify(event: string, payload: any): void {
+  private notify(event: string, payload: unknown): void {
     const set = this.handlers.get(event);
     if (set) {
       set.forEach(handler => {

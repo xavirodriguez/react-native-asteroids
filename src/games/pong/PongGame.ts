@@ -96,8 +96,8 @@ export class PongGame extends BaseGame<PongState, PongInput> {
       // Access the internal tick of PongInputSystem would be ideal,
       // but for simplicity we check if any future input is missing.
       // A more robust implementation would pass the current simulation tick.
-      const inputSystem = (this.world as any).systems?.find((s: any) => s instanceof PongInputSystem);
-      return !this.networkController.hasInputForTick(inputSystem?.currentTick + 1 || 0);
+      const inputSystem = (this.world as unknown as { systems: unknown[] }).systems?.find((s): s is PongInputSystem => s instanceof PongInputSystem);
+      return !this.networkController.hasInputForTick((inputSystem as any)?.currentTick + 1 || 0);
     }
     return false;
   }

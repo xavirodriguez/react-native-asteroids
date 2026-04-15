@@ -1,16 +1,17 @@
 import { Skia, BlurStyle, SkCanvas, SkPaint } from "@shopify/react-native-skia";
 import { World } from "../../../engine/core/World";
 import { Entity } from "../../../engine/core/Entity";
-import { TransformComponent, RenderComponent, TTLComponent } from "../../../engine/core/CoreComponents";
+import { TransformComponent, RenderComponent, TTLComponent, HealthComponent, Star } from "../../../engine/core/CoreComponents";
+import { InputComponent, GameStateComponent, ShipComponent } from "../types/AsteroidTypes";
 
 export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => {
     const size = render.size;
-    const input = world.getComponent<any>(entity, "Input");
-    const health = world.getComponent<any>(entity, "Health");
+    const input = world.getComponent<InputComponent>(entity, "Input");
+    const health = world.getComponent<HealthComponent>(entity, "Health");
 
     const isInvulnerable = health && health.invulnerableRemaining > 0;
-      const gameState = world.getSingleton<any>("GameState");
-      const tick = (gameState as any)?.serverTick ?? 0;
+      const gameState = world.getSingleton<GameStateComponent>("GameState");
+      const tick = gameState?.serverTick ?? 0;
     const blinkOpacity = isInvulnerable
         ? Math.floor(tick / 10) % 2 === 0 ? 0.3 : 1.0
         : 1.0;
@@ -56,10 +57,10 @@ export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, ren
     canvas.drawRect(Skia.XYWHRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8), paint);
 };
 
-export const drawSkiaAsteroidShipTrailDrawer = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => {
-    const shipComp = world.getComponent<any>(entity, "Ship");
-    if (shipComp && shipComp.trail) {
-        drawSkiaAsteroidShipTrail(canvas, shipComp.trail, paint);
+export const drawSkiaAsteroidShipTrailDrawer = (canvas: SkCanvas, entity: Entity, world: World, _render: RenderComponent, paint: SkPaint) => {
+    const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
+    if (shipComp && shipComp.trailPositions) {
+        drawSkiaAsteroidShipTrail(canvas, shipComp.trailPositions, paint);
     }
 };
 
@@ -105,11 +106,11 @@ export const drawSkiaFlash = (canvas: SkCanvas, entity: Entity, world: World, re
     paint.setMaskFilter(null);
 };
 
-export function drawSkiaAsteroidStarField(canvas: SkCanvas, stars: any[], width: number, height: number, world: World, paint: SkPaint): void {
+export function drawSkiaAsteroidStarField(canvas: SkCanvas, stars: Star[], width: number, height: number, world: World, paint: SkPaint): void {
     const shipEntity = world.query("Ship", "Transform")[0];
     const shipPos = shipEntity
       ? world.getComponent<TransformComponent>(shipEntity, "Transform")
-      : { x: width / 2, y: height / 2 };
+      : { x: width / 2, y: height / 2 } as TransformComponent;
 
     if (!shipPos) return;
 
@@ -117,11 +118,11 @@ export function drawSkiaAsteroidStarField(canvas: SkCanvas, stars: any[], width:
     paint.setStyle(Skia.PaintStyle.Fill);
 
     stars.forEach(star => {
-      const parallaxX = (star.x - shipPos.x * (0.05 * (star.layer + 1)) + width) % width;
-      const parallaxY = (star.y - shipPos.y * (0.05 * (star.layer + 1)) + height) % height;
+      const parallaxX = (star.x - (shipPos.worldX ?? shipPos.x) * (0.05 * (star.layer + 1)) + width) % width;
+      const parallaxY = (star.y - (shipPos.worldY ?? shipPos.y) * (0.05 * (star.layer + 1)) + height) % height;
 
-      const gameState = world.getSingleton<any>("GameState");
-      const tick = (gameState as any)?.serverTick ?? 0;
+      const gameState = world.getSingleton<GameStateComponent>("GameState");
+      const tick = gameState?.serverTick ?? 0;
       const twinkle = 0.8 + Math.sin(star.twinklePhase + tick * 0.1 * star.twinkleSpeed) * 0.2;
       paint.setAlphaf(star.brightness * twinkle);
       canvas.drawRect(Skia.XYWHRect(parallaxX, parallaxY, star.size, star.size), paint);

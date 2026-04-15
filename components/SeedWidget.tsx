@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Clipboard } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Clipboard, StyleProp, ViewStyle } from "react-native";
 import { seedToString, stringToSeed } from "../src/utils/SeedUtils";
 
 interface SeedWidgetProps {
   seed: number;
   onSeedEnter?: (seed: number) => void;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 /**

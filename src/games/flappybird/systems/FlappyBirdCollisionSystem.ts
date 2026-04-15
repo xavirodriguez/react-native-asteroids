@@ -1,8 +1,8 @@
 import { World } from "../../../engine/core/World";
 import { System } from "../../../engine/core/System";
-import { Entity, TransformComponent, CollisionEventsComponent } from "../../../engine/types/EngineTypes";
+import { Entity, TransformComponent, CollisionEventsComponent, Collider2DComponent, RenderComponent } from "../../../engine/types/EngineTypes";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
-import { FlappyBirdState, BirdComponent } from "../types/FlappyBirdTypes";
+import { FlappyBirdState, BirdComponent, PipeComponent } from "../types/FlappyBirdTypes";
 import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
 import { Juice } from "../../../engine/utils/Juice";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
@@ -59,16 +59,16 @@ export class FlappyBirdCollisionSystem extends System {
       if (!birdComp.isAlive) continue;
 
       const birdPos = world.getComponent<TransformComponent>(bird, "Transform")!;
-      const birdCol = world.getComponent<any>(bird, "Collider2D")!; // radius is in shape
-      const birdRadius = birdCol.shape.radius;
+      const birdCol = world.getComponent<Collider2DComponent>(bird, "Collider2D")!; // radius is in shape
+      const birdRadius = birdCol.shape.type === "circle" ? birdCol.shape.radius : 0;
 
       for (const pipe of pipes) {
         const pipePos = world.getComponent<TransformComponent>(pipe, "Transform")!;
-        const pipeComp = world.getComponent(pipe, "Pipe") as any;
-        const pipeCol = world.getComponent<any>(pipe, "Collider2D")!;
+        const pipeComp = world.getComponent<PipeComponent>(pipe, "Pipe")!;
+        const pipeCol = world.getComponent<Collider2DComponent>(pipe, "Collider2D")!;
 
-        const pipeWidth = pipeCol.shape.halfWidth * 2;
-        const halfPipeHeight = pipeCol.shape.halfHeight;
+        const pipeWidth = pipeCol.shape.type === "aabb" ? pipeCol.shape.halfWidth * 2 : 0;
+        const halfPipeHeight = pipeCol.shape.type === "aabb" ? pipeCol.shape.halfHeight : 0;
         const isTopPipe = pipePos.y < pipeComp.gapY;
 
         // Bird AABB
@@ -131,7 +131,7 @@ export class FlappyBirdCollisionSystem extends System {
         const bird = world.getComponent<BirdComponent>(birdEntity, "Bird");
         if (bird) bird.isAlive = false;
 
-        const render = world.getComponent<any>(birdEntity, "Render");
+        const render = world.getComponent<RenderComponent>(birdEntity, "Render");
         if (render) render.hitFlashFrames = 8;
 
         JuiceSystem.add(world, birdEntity, {

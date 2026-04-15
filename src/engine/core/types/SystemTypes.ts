@@ -35,12 +35,12 @@ export interface GameInputEvent {
  */
 export interface IPhysicsAdapter {
   update(dt: number): void;
-  createBody(entityId: number, config: any): any;
-  removeBody(bodyId: any): void;
-  applyForce(bodyId: any, position: { x: number; y: number }, force: { x: number; y: number }): void;
-  applyImpulse(bodyId: any, impulse: { x: number; y: number }): void;
-  setVelocity(bodyId: any, velocity: { x: number; y: number }): void;
-  setPosition(bodyId: any, position: { x: number; y: number }): void;
-  setRotation(bodyId: any, angle: number): void;
-  getBodyTransform(bodyId: any): { x: number; y: number; rotation: number };
+  createBody(entityId: number, config: unknown): unknown;
+  removeBody(bodyId: unknown): void;
+  applyForce(bodyId: unknown, position: { x: number; y: number }, force: { x: number; y: number }): void;
+  applyImpulse(bodyId: unknown, impulse: { x: number; y: number }): void;
+  setVelocity(bodyId: unknown, velocity: { x: number; y: number }): void;
+  setPosition(bodyId: unknown, position: { x: number; y: number }): void;
+  setRotation(bodyId: unknown, angle: number): void;
+  getBodyTransform(bodyId: unknown): { x: number; y: number; rotation: number };
 }

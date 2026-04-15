@@ -57,12 +57,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.gameLoop = new GameLoop();
     this.unifiedInput = new UnifiedInputSystem();
     this.eventBus = new EventBus();
-    this.sceneManager = new SceneManager();
+    this.sceneManager = new SceneManager(this.world);
     this.inputBuffer = new InputBuffer();
     this.replayRecorder = new ReplayRecorder();
     this.hierarchySystem = new HierarchySystem();
 
     this.world.setResource("EventBus", this.eventBus);
+    this.world.setResource("UnifiedInputSystem", this.unifiedInput);
 
     this._config = config;
     this.currentSeed = (config.gameOptions?.seed as number) ?? RandomService.getInstance("gameplay").nextInt(0, 0xFFFFFFFF);

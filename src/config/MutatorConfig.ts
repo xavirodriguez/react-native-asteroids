@@ -9,7 +9,7 @@ export interface Mutator {
   name: string;
   description: string;
   games: (GameId | 'all')[];
-  apply: (config: any) => any;
+  apply: (config: Record<string, unknown>) => Record<string, unknown>;
 }
 
 export const MUTATORS: Mutator[] = [
@@ -18,7 +18,7 @@ export const MUTATORS: Mutator[] = [
     name: 'Gravedad Doble',
     description: 'La gravedad es el doble de fuerte.',
     games: ['flappybird'],
-    apply: (cfg) => ({ ...cfg, GRAVITY: (cfg.GRAVITY || 0) * 2 })
+    apply: (cfg) => ({ ...cfg, GRAVITY: ((cfg.GRAVITY as number) || 0) * 2 })
   },
   {
     id: 'bouncing_bullets',
@@ -49,10 +49,10 @@ export const MUTATORS: Mutator[] = [
     apply: (cfg) => ({
       ...cfg,
       GLOBAL_SPEED_MULTIPLIER: 1.5,
-      SHIP_THRUST: (cfg.SHIP_THRUST || 0) * 1.5,
-      ASTEROID_SPEED: (cfg.ASTEROID_SPEED || 0) * 1.5,
-      PIPE_SPEED: (cfg.PIPE_SPEED || 0) * 1.5,
-      INVADER_SPEED: (cfg.INVADER_SPEED || 0) * 1.5
+      SHIP_THRUST: ((cfg.SHIP_THRUST as number) || 0) * 1.5,
+      ASTEROID_SPEED: ((cfg.ASTEROID_SPEED as number) || 0) * 1.5,
+      PIPE_SPEED: ((cfg.PIPE_SPEED as number) || 0) * 1.5,
+      INVADER_SPEED: ((cfg.INVADER_SPEED as number) || 0) * 1.5
     })
   },
   {
@@ -62,8 +62,8 @@ export const MUTATORS: Mutator[] = [
     games: ['asteroids'],
     apply: (cfg) => ({
       ...cfg,
-      SHIP_SIZE: (cfg.SHIP_SIZE || 10) * 0.5,
-      SHIP_ROTATION_SPEED: (cfg.SHIP_ROTATION_SPEED || 3) * 1.5
+      SHIP_SIZE: ((cfg.SHIP_SIZE as number) || 10) * 0.5,
+      SHIP_ROTATION_SPEED: ((cfg.SHIP_ROTATION_SPEED as number) || 3) * 1.5
     })
   },
 ];
