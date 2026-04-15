@@ -146,6 +146,7 @@ export class DeterministicSimulation {
             const sHealth = world.getComponent<HealthComponent>(ship, "Health")!;
             if (sHealth.invulnerableRemaining > 0) {
                 sHealth.invulnerableRemaining -= deltaTime;
+                if (sHealth.invulnerableRemaining < 0) sHealth.invulnerableRemaining = 0;
             }
         });
 
