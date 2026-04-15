@@ -389,6 +389,12 @@ export interface TilemapData {
 export interface TilemapComponent extends Component {
   type: "Tilemap";
   data: TilemapData;
+  _visibleRange?: {
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+  };
 }
 
 /**

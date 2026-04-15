@@ -46,7 +46,7 @@ export class PhysicsDebugSystem extends System {
       // Logic for drawing shapes (abstracted for the specific renderer)
   }
 
-  private drawContactPoints(_collision: any) {
+  private drawContactPoints(_collision: import("../../core/CoreComponents").CollisionEvent) {
       // Logic for drawing contact points and normals
   }
 }

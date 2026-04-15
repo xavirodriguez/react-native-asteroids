@@ -41,7 +41,7 @@ export class AsteroidsGame
   private entityInterpolationBuffers = new Map<string, InterpolationBuffer>();
   private serverEntities = new Map<string, number>();
   private inputHistory: InputFrame[] = [];
-  private stateHistory = new Map<number, any>();
+  private stateHistory = new Map<number, import("../../engine/types/EngineTypes").WorldSnapshot>();
   private lastAuthoritativeTick = 0;
   public readonly gameId = "asteroids";
   private config: typeof GAME_CONFIG;
@@ -77,7 +77,7 @@ export class AsteroidsGame
 
     const localPlayer = this.world.query("LocalPlayer")[0];
     if (localPlayer !== undefined) {
-        const inputComp = this.world.getComponent<any>(localPlayer, "Input");
+        const inputComp = this.world.getComponent<import("./types/AsteroidTypes").InputComponent>(localPlayer, "Input");
         if (inputComp) {
             inputComp.rotateLeft = input.actions.includes("rotateLeft") || (input.axes?.rotate_left ?? 0) > 0;
             inputComp.rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;
@@ -98,13 +98,13 @@ export class AsteroidsGame
     if (this.stateHistory.has(oldestTick)) this.stateHistory.delete(oldestTick);
   }
 
-  public updateFromServer(serverState: any, localSessionId?: string) {
+  public updateFromServer(serverState: Record<string, unknown>, localSessionId?: string) {
     if (!this.isMultiplayer || !serverState || !serverState.fullWorldState) return;
-    const serverTick = serverState.serverTick;
+    const serverTick = serverState.serverTick as number;
     if (serverTick <= this.lastAuthoritativeTick) return;
     this.lastAuthoritativeTick = serverTick;
 
-    const authoritativeSnapshot = JSON.parse(serverState.fullWorldState);
+    const authoritativeSnapshot = JSON.parse(serverState.fullWorldState as string) as import("../../engine/types/EngineTypes").WorldSnapshot;
     const predicted = this.stateHistory.get(serverTick);
 
     let needsRollback = false;
@@ -153,11 +153,11 @@ export class AsteroidsGame
       if (localSessionId) {
           const ships = this.world.query("Ship");
           const localPlayerEntity = ships.find(e => {
-              const ship = this.world.getComponent<any>(e, "Ship");
+              const ship = this.world.getComponent<import("./types/AsteroidTypes").ShipComponent>(e, "Ship");
               return ship && ship.sessionId === localSessionId;
           });
           if (localPlayerEntity !== undefined) {
-              this.world.addComponent(localPlayerEntity, { type: "LocalPlayer" } as any);
+              this.world.addComponent(localPlayerEntity, { type: "Tag", tags: ["LocalPlayer"] } as import("../../engine/core/CoreComponents").TagComponent);
           }
       }
 
@@ -167,7 +167,7 @@ export class AsteroidsGame
         .forEach(input => {
           const localPlayer = this.world.query("LocalPlayer")[0];
           if (localPlayer !== undefined) {
-            const inputComp = this.world.getComponent<any>(localPlayer, "Input");
+            const inputComp = this.world.getComponent<import("./types/AsteroidTypes").InputComponent>(localPlayer, "Input");
             if (inputComp) {
               inputComp.rotateLeft = input.actions.includes("rotateLeft") || (input.axes?.rotate_left ?? 0) > 0;
               inputComp.rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;

@@ -64,13 +64,14 @@ export class InputManager<TInputState extends Record<string, boolean>> {
    * Updates all registered controllers.
    * Useful for controllers that need to perceive the world or handle timing.
    */
-  public update(world: any, currentTime: number, tick?: number): void {
-    this.controllers.forEach((c: any) => {
-      if (typeof c.update === "function") {
-        c.update(world, currentTime);
+  public update(world: import("../core/World").World, currentTime: number, tick?: number): void {
+    this.controllers.forEach((c: unknown) => {
+      const controller = c as Record<string, unknown>;
+      if (typeof controller.update === "function") {
+        (controller.update as (w: import("../core/World").World, t: number) => void)(world, currentTime);
       }
-      if (tick !== undefined && typeof c.setTick === "function") {
-        c.setTick(tick);
+      if (tick !== undefined && typeof controller.setTick === "function") {
+        (controller.setTick as (t: number) => void)(tick);
       }
     });
   }

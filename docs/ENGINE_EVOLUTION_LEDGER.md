@@ -27,6 +27,37 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 
 ---
 
+## [2024-05-24] Saneamiento de Ciclo de Vida y Hardening de Tipos
+
+### Estado detectado
+- **Contratos de Reinicio Rotos**: El método `restart` no soportaba semillas, lo que impedía reinicios deterministas exigidos por la UI.
+- **Riesgos de Plataforma**: `useKeepAwake` lanzaba errores en la web en contextos no seguros debido a la ausencia de `navigator.wakeLock`.
+- **Proliferación de `any`**: Se detectaron más de 50 advertencias de lint por uso de `any` en archivos críticos del motor y de Asteroids, degradando la seguridad de tipos.
+
+### Decisiones tomadas
+1. **API de Reinicio Determinista**: Se actualizó `IGame` y `BaseGame` para aceptar una semilla opcional en `restart()`.
+2. **Hardening de useKeepAwake**: Se añadieron verificaciones de entorno para silenciar errores de `wakeLock` en navegadores no compatibles.
+3. **Erradicación Sistémica de `any`**: Se reemplazaron usos de `any` por `unknown`, `Record<string, unknown>` o tipos específicos en AssetLoader, Renderer, Physics, y EntityFactory. Se refinó el acceso a datos en `JuiceSystem` y `RenderUpdateSystem`.
+4. **Sincronización de Hooks**: Se actualizaron los hooks de dominio (`useAsteroidsGame`, etc.) para alinearlos con la nueva firma de `restart`.
+
+### Archivos afectados
+- `src/engine/core/IGame.ts`
+- `src/engine/core/BaseGame.ts`
+- `src/hooks/useGame.ts`
+- `src/hooks/useKeepAwake.ts`
+- +30 archivos de motor y gameplay (ver commit).
+
+### Impacto
+- **Robustez**: Se eliminaron errores de runtime en el ciclo de vida y en la web.
+- **Mantenibilidad**: El motor ahora es más estricto, facilitando refactors futuros sin romper contratos invisibles.
+- **Determinismo**: Los reinicios ahora garantizan el mismo estado inicial si se provee una semilla.
+
+### Deuda abierta / Siguientes pasos
+- Migrar `InputManager` (Legacy) a `UnifiedInputSystem` en juegos restantes.
+- Implementar un sistema de telemetría básico para detectar fallos de determinismo en producción.
+
+---
+
 ## [Plantilla para Futuras Entradas]
 
 ### [FECHA] Título de la Evolución

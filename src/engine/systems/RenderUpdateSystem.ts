@@ -55,12 +55,13 @@ export class RenderUpdateSystem extends System {
     const shipEntities = world.query("Transform", "Ship");
     shipEntities.forEach((entity) => {
         const pos = world.getComponent<TransformComponent>(entity, "Transform");
-        const ship = world.getComponent<any>(entity, "Ship");
+        const ship = world.getComponent<Record<string, unknown>>(entity, "Ship");
 
-        if (pos && ship && ship.trailPositions) {
-            ship.trailPositions.push({ x: pos.x, y: pos.y });
-            if (ship.trailPositions.length > this.trailMaxLength) {
-                ship.trailPositions.shift();
+        if (pos && ship && Array.isArray(ship.trailPositions)) {
+            const trails = ship.trailPositions as {x: number, y: number}[];
+            trails.push({ x: pos.x, y: pos.y });
+            if (trails.length > this.trailMaxLength) {
+                trails.shift();
             }
         }
     });

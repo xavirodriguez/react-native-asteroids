@@ -5,7 +5,7 @@
 export interface SaveConfig<T> {
   key: string;
   version: number;
-  migrate?: (oldData: any, oldVersion: number) => T;
+  migrate?: (oldData: unknown, oldVersion: number) => T;
 }
 
 export class SaveSystem<T> {

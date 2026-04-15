@@ -37,7 +37,7 @@ export class CanvasRenderer implements Renderer {
 
   // Reusable objects to avoid GC pressure
   private readonly tempPos = { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 };
-  private readonly tempRender: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: any } =
+  private readonly tempRender: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null } =
     { shape: "", size: 0, color: "", hitFlashFrames: 0, data: null };
 
   constructor(ctx?: CanvasRenderingContext2D) {
@@ -166,14 +166,15 @@ export class CanvasRenderer implements Renderer {
     let count = 0;
 
     const gameStateEntity = world.query("GameState")[0];
-    const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
+    const gameState = gameStateEntity ? world.getComponent<Record<string, unknown>>(gameStateEntity, "GameState") : null;
 
     let shakeX = 0;
     let shakeY = 0;
-    if (gameState?.screenShake && gameState.screenShake.remaining > 0) {
+    if (gameState?.screenShake && (gameState.screenShake as Record<string, number>).remaining > 0) {
       const renderRandom = RandomService.getInstance("render");
-      shakeX = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
-      shakeY = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
+      const screenShake = gameState.screenShake as Record<string, number>;
+      shakeX = (renderRandom.next() - 0.5) * screenShake.intensity;
+      shakeY = (renderRandom.next() - 0.5) * screenShake.intensity;
     }
 
     snapshot.shakeX = shakeX;
@@ -500,7 +501,7 @@ export class CanvasRenderer implements Renderer {
     this.renderSnapshot(snapshot, world);
   }
 
-  public drawEntity(_entity: Entity, _components: Record<string, any>, _world: World): void {
+  public drawEntity(_entity: Entity, _components: Record<string, unknown>, _world: World): void {
     // Deprecated for snapshot rendering
   }
 
