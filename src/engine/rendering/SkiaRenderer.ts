@@ -8,9 +8,8 @@ import { RandomService } from "../utils/RandomService";
 export type SkiaShapeDrawer = (
   canvas: SkCanvas,
   entity: Entity,
-  pos: TransformComponent,
-  render: RenderComponent,
-  world: World
+  pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number },
+  render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: any }
 ) => void;
 
 /**
@@ -93,7 +92,7 @@ export class SkiaRenderer implements Renderer {
       }
       path.close();
 
-      const isHitFlash = render.data?.hitFlashFrames && render.data.hitFlashFrames > 0;
+      const isHitFlash = (render.hitFlashFrames ?? 0) > 0;
       const fillColor = Skia.Color(isHitFlash ? "rgba(255, 255, 255, 0.5)" : "#333");
       fillColor[3] *= this.paint.getAlphaf();
       this.paint.setColor(fillColor);
@@ -173,7 +172,7 @@ export class SkiaRenderer implements Renderer {
 
     let shakeX = 0;
     let shakeY = 0;
-    if (gameState?.screenShake && gameState.screenShake.framesLeft > 0) {
+    if (gameState?.screenShake && gameState.screenShake.remaining > 0) {
       const renderRandom = RandomService.getInstance("render");
       shakeX = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
       shakeY = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
@@ -249,19 +248,33 @@ export class SkiaRenderer implements Renderer {
 
     const drawer = this.shapeDrawers.get(render.shape);
     if (drawer) {
-        drawer(canvas, entity, pos, render, world);
+      drawer(canvas, entity, { x, y, rotation, scaleX, scaleY }, {
+        shape: render.shape,
+        size: render.size,
+        color: render.color,
+        vertices: render.vertices ?? null,
+        hitFlashFrames: render.hitFlashFrames ?? 0,
+        data: render.data
+      });
     }
 
     canvas.restore();
 
     const postDrawer = this.postEntityDrawers.get(render.shape);
     if (postDrawer) {
-        postDrawer(canvas, entity, pos, render, world);
+      postDrawer(canvas, entity, { x, y, rotation, scaleX, scaleY }, {
+        shape: render.shape,
+        size: render.size,
+        color: render.color,
+        vertices: render.vertices ?? null,
+        hitFlashFrames: render.hitFlashFrames ?? 0,
+        data: render.data
+      });
     }
   }
 
-  public registerShape(name: string, drawer: SkiaShapeDrawer): void {
-    this.shapeDrawers.set(name, drawer);
+  public registerShape(name: string, drawer: import("./Renderer").ShapeDrawer<SkCanvas>): void {
+    this.shapeDrawers.set(name, drawer as SkiaShapeDrawer);
   }
 
   public registerBackgroundEffect( _name: string,  _drawer: import("./Renderer").EffectDrawer<SkCanvas>): void {

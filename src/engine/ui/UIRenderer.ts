@@ -51,7 +51,7 @@ export function renderUI(ctx: CanvasRenderingContext2D, world: World): void {
     }
 }
 
-function renderPanel(ctx: CanvasRenderingContext2D, entity: any, world: World, element: UIElementComponent): void {
+function renderPanel(ctx: CanvasRenderingContext2D, entity: import("../core/Entity").Entity, world: World, element: UIElementComponent): void {
     const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
     if (!style || !style.backgroundColor) return;
 
@@ -74,7 +74,7 @@ function renderPanel(ctx: CanvasRenderingContext2D, entity: any, world: World, e
     }
 }
 
-function renderLabel(ctx: CanvasRenderingContext2D, entity: any, world: World, element: UIElementComponent): void {
+function renderLabel(ctx: CanvasRenderingContext2D, entity: import("../core/Entity").Entity, world: World, element: UIElementComponent): void {
     const text = world.getComponent<UITextComponent>(entity, "UIText");
     const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
     if (!text || !style) return;
@@ -92,7 +92,7 @@ function renderLabel(ctx: CanvasRenderingContext2D, entity: any, world: World, e
     );
 }
 
-function renderButton(ctx: CanvasRenderingContext2D, entity: any, world: World, element: UIElementComponent): void {
+function renderButton(ctx: CanvasRenderingContext2D, entity: import("../core/Entity").Entity, world: World, element: UIElementComponent): void {
     const btnState = world.getComponent<UIButtonStateComponent>(entity, "UIButtonState");
     const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
 
@@ -121,7 +121,7 @@ function renderButton(ctx: CanvasRenderingContext2D, entity: any, world: World, 
     }
 }
 
-function renderProgressBar(ctx: CanvasRenderingContext2D, entity: any, world: World, element: UIElementComponent): void {
+function renderProgressBar(ctx: CanvasRenderingContext2D, entity: import("../core/Entity").Entity, world: World, element: UIElementComponent): void {
     const pb = world.getComponent<UIProgressBarComponent>(entity, "UIProgressBar")!;
     const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
 
@@ -139,7 +139,7 @@ function renderProgressBar(ctx: CanvasRenderingContext2D, entity: any, world: Wo
     }
 }
 
-function renderImage( _ctx: CanvasRenderingContext2D,  _entity: any,  _world: World,  _element: UIElementComponent): void {
+function renderImage( _ctx: CanvasRenderingContext2D,  _entity: import("../core/Entity").Entity,  _world: World,  _element: UIElementComponent): void {
     // Placeholder for image rendering
 }
 

@@ -369,7 +369,7 @@ export interface AnimatorComponent extends Component {
  */
 export interface StateMachineComponent extends Component {
   type: "StateMachine";
-  fsm: StateMachine<unknown, unknown>;
+  fsm: StateMachine<string, unknown>;
 }
 
 /**

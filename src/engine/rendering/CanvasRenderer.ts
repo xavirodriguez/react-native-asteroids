@@ -3,10 +3,10 @@ import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity } from "../core/Entity";
 import { RenderComponent, TransformComponent, PreviousTransformComponent } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
-import { RenderSnapshot, RenderEntitySnapshot, UISnapshot } from "./RenderSnapshot";
+import { RenderSnapshot, UISnapshot } from "./RenderSnapshot";
 import { CommandBuffer, DrawCommand } from "./CommandBuffer";
 import { UIElementComponent, UIStyleComponent, UITextComponent, UIProgressBarComponent, UIButtonStateComponent } from "../ui/UITypes";
-import { TextRenderer } from "./text/TextRenderer";
+import { TextRenderer } from "../ui/text/TextRenderer";
 
 /**
  * 2D Canvas-based Rendering Engine.
@@ -37,7 +37,7 @@ export class CanvasRenderer implements Renderer {
 
   // Reusable objects to avoid GC pressure
   private readonly tempPos = { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 };
-  private readonly tempRender: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[], hitFlashFrames: number, data: any } =
+  private readonly tempRender: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: any } =
     { shape: "", size: 0, color: "", hitFlashFrames: 0, data: null };
 
   constructor(ctx?: CanvasRenderingContext2D) {
@@ -214,7 +214,7 @@ export class CanvasRenderer implements Renderer {
       snap.size = render.size;
       snap.vertices = render.vertices || null;
       snap.hitFlashFrames = render.hitFlashFrames || 0;
-      snap.data = render.data;
+      snap.data = render.data ?? null;
 
       count++;
     }

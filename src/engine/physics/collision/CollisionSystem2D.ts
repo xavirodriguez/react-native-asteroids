@@ -73,6 +73,8 @@ export class CollisionSystem2D extends System {
       candidates = [];
       entities.forEach(entityA => {
         const boundsA = entityBoundsMap.get(entityA);
+        if (!boundsA) return;
+
         const potentials = new Set<Entity>();
         this.spatialHash!.query(boundsA, potentials);
         potentials.forEach(entityB => {

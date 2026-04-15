@@ -37,7 +37,7 @@ export class SceneManager {
   private isProcessingTransition: boolean = false;
 
   public register(scene: Scene): void {
-    const name = (scene as any).name || "Unnamed Scene";
+    const name = scene.name || "Unnamed Scene";
     this.scenes.set(name, scene);
   }
 
@@ -228,7 +228,7 @@ export class SceneManager {
     }
   }
 
-  public render(renderer: any): void {
+  public render(renderer: import("../rendering/Renderer").Renderer): void {
     if (this.state === SceneState.ACTIVE && this.currentScene) {
       this.currentScene.render(renderer);
     }

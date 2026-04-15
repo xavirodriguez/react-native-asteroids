@@ -12,7 +12,7 @@ export interface DrawCommand {
   opacity: number;
   render: RenderComponent;
   zIndex: number;
-  data?: any;
+  data?: Record<string, unknown> | null;
 }
 
 /**
@@ -33,7 +33,7 @@ export class CommandPool {
         scaleX: 1,
         scaleY: 1,
         opacity: 1,
-        render: {} as any,
+        render: { shape: 'circle', size: 10, color: 'white', rotation: 0, type: 'Render' } as RenderComponent,
         zIndex: 0
       });
     }

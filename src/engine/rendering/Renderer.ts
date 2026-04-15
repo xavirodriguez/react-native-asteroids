@@ -1,5 +1,5 @@
 import { World } from "../core/World";
-import { Entity, Component, TransformComponent, RenderComponent } from "../types/EngineTypes";
+import { Entity, Component } from "../types/EngineTypes";
 
 /**
  * Interface for custom shape drawing logic.
@@ -8,7 +8,7 @@ export type ShapeDrawer<TContext> = (
   ctx: TContext,
   entity: Entity,
   pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number },
-  render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[], hitFlashFrames: number, data: any }
+  render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null }
 ) => void;
 
 /**
@@ -16,7 +16,7 @@ export type ShapeDrawer<TContext> = (
  */
 export type EffectDrawer<TContext> = (
   ctx: TContext,
-  snapshot: any,
+  snapshot: import("./RenderSnapshot").RenderSnapshot,
   width: number,
   height: number
 ) => void;
@@ -37,9 +37,9 @@ export interface Renderer {
 
   setSize(width: number, height: number): void;
 
-  registerShape(name: string, drawer: ShapeDrawer<any>): void;
+  registerShape(name: string, drawer: ShapeDrawer<unknown>): void;
 
-  registerBackgroundEffect(name: string, drawer: EffectDrawer<any>): void;
+  registerBackgroundEffect(name: string, drawer: EffectDrawer<unknown>): void;
 
-  registerForegroundEffect(name: string, drawer: EffectDrawer<any>): void;
+  registerForegroundEffect(name: string, drawer: EffectDrawer<unknown>): void;
 }
