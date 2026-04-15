@@ -267,15 +267,15 @@ export class SkiaRenderer implements Renderer {
     }
   }
 
-  public registerShape(_name: string, _drawer: ShapeDrawer<SkCanvas>): void {
-    this.shapeDrawers.set(_name, _drawer);
+  public registerShape(name: string, drawer: ShapeDrawer<SkCanvas>): void {
+    this.shapeDrawers.set(name, drawer);
   }
 
-  public registerBackgroundEffect(_name: string, _drawer: EffectDrawer<SkCanvas>): void {
+  public registerBackgroundEffect(name: string, drawer: EffectDrawer<SkCanvas>): void {
       // Basic implementation to satisfy Renderer interface
   }
 
-  public registerForegroundEffect(_name: string, _drawer: EffectDrawer<SkCanvas>): void {
+  public registerForegroundEffect(name: string, drawer: EffectDrawer<SkCanvas>): void {
       // Basic implementation to satisfy Renderer interface
   }
 
