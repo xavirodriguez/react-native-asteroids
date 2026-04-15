@@ -9,6 +9,7 @@ import { BoundarySystem } from "../systems/BoundarySystem";
 import { SpaceInvadersFormationSystem } from "../systems/SpaceInvadersFormationSystem";
 import { SpaceInvadersCollisionSystem } from "../systems/SpaceInvadersCollisionSystem";
 import { SpaceInvadersGameStateSystem } from "../systems/SpaceInvadersGameStateSystem";
+import { CollisionSystem2D } from "../../../engine/physics/collision/CollisionSystem2D";
 import { SpaceInvadersRenderSystem } from "../systems/SpaceInvadersRenderSystem";
 import { KamikazeSystem } from "../systems/KamikazeSystem";
 import { BossSystem } from "../systems/BossSystem";
@@ -67,6 +68,7 @@ export class SpaceInvadersGameScene extends Scene {
     this.world.addSystem(new JuiceSystem());
     this.world.addSystem(new BoundarySystem());
     this.world.addSystem(new SpaceInvadersFormationSystem(this.enemyBulletPool));
+    this.world.addSystem(new CollisionSystem2D());
     this.world.addSystem(new SpaceInvadersCollisionSystem(this.particlePool));
     this.world.addSystem(new KamikazeSystem());
     this.world.addSystem(new BossSystem());

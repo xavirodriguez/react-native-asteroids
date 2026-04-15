@@ -1,7 +1,7 @@
 import { System } from "../../core/System";
 import { World } from "../../core/World";
 import { DebugConfigComponent } from "./DebugTypes";
-import { TransformComponent, ColliderComponent, VelocityComponent } from "../../core/CoreComponents";
+import { TransformComponent, Collider2DComponent, VelocityComponent } from "../../core/CoreComponents";
 
 export class DebugSystem extends System {
   private fps: number = 0;
@@ -38,12 +38,16 @@ export class DebugSystem extends System {
         if (!pos) continue;
 
         if (config.showColliders) {
-            const collider = world.getComponent<ColliderComponent>(entity, "Collider");
+            const collider = world.getComponent<Collider2DComponent>(entity, "Collider2D");
             if (collider) {
                 ctx.strokeStyle = "rgba(0, 255, 0, 0.5)";
                 ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.arc(pos.x, pos.y, collider.radius, 0, Math.PI * 2);
+                if (collider.shape.type === "circle") {
+                    ctx.arc(pos.x + collider.offsetX, pos.y + collider.offsetY, collider.shape.radius, 0, Math.PI * 2);
+                } else if (collider.shape.type === "aabb") {
+                    ctx.rect(pos.x + collider.offsetX - collider.shape.halfWidth, pos.y + collider.offsetY - collider.shape.halfHeight, collider.shape.halfWidth * 2, collider.shape.halfHeight * 2);
+                }
                 ctx.stroke();
             }
         }

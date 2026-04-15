@@ -1,4 +1,5 @@
 import { World } from "../../../../engine/core/World";
+import { CollisionSystem2D } from "../../../../engine/physics/collision/CollisionSystem2D";
 import { FlappyBirdCollisionSystem } from "../FlappyBirdCollisionSystem";
 import { createBird, createPipe, createGameState } from "../../EntityFactory";
 import { FlappyBirdState } from "../../types/FlappyBirdTypes";
@@ -6,11 +7,13 @@ import { IFlappyBirdGame } from "../../types/GameInterfaces";
 
 describe("FlappyBirdCollisionSystem", () => {
   let world: World;
+  let physicsSystem: CollisionSystem2D;
   let system: FlappyBirdCollisionSystem;
   let mockGame: IFlappyBirdGame;
 
   beforeEach(() => {
     world = new World();
+    physicsSystem = new CollisionSystem2D();
     mockGame = {
       getWorld: () => world,
       pause: jest.fn(),
@@ -26,6 +29,7 @@ describe("FlappyBirdCollisionSystem", () => {
     // Bird at y=100 (radius 15) is definitely hitting the top pipe (0 to 230).
     createPipe({ world, x: 100, gapY: 300 });
 
+    physicsSystem.update(world, 16.6);
     system.update(world, 16.6);
 
     const gameState = world.getSingleton<FlappyBirdState>("FlappyState")!;
@@ -39,6 +43,7 @@ describe("FlappyBirdCollisionSystem", () => {
     createBird({ world, x: 100, y: 300 });
     createPipe({ world, x: 100, gapY: 300 });
 
+    physicsSystem.update(world, 16.6);
     system.update(world, 16.6);
 
     const gameState = world.getSingleton<FlappyBirdState>("FlappyState")!;
@@ -52,6 +57,7 @@ describe("FlappyBirdCollisionSystem", () => {
     createBird({ world, x: 100, y: 400 });
     createPipe({ world, x: 100, gapY: 300 });
 
+    physicsSystem.update(world, 16.6);
     system.update(world, 16.6);
 
     const gameState = world.getSingleton<FlappyBirdState>("FlappyState")!;

@@ -1,4 +1,5 @@
 import { World } from "../../../../engine/core/World";
+import { CollisionSystem2D } from "../../../../engine/physics/collision/CollisionSystem2D";
 import { AsteroidCollisionSystem } from "../AsteroidCollisionSystem";
 import { AsteroidGameStateSystem } from "../AsteroidGameStateSystem";
 import { MovementSystem } from "../../../../engine/systems/MovementSystem";
@@ -8,6 +9,7 @@ import { GAME_CONFIG, type GameStateComponent } from "../../types/AsteroidTypes"
 
 describe("Asteroids Gameplay Integration", () => {
   let world: World;
+  let physicsSystem: CollisionSystem2D;
   let particlePool: ParticlePool;
   let _bulletPool: BulletPool;
   let collisionSystem: AsteroidCollisionSystem;
@@ -16,6 +18,7 @@ describe("Asteroids Gameplay Integration", () => {
 
   beforeEach(() => {
     world = new World();
+    physicsSystem = new CollisionSystem2D();
     particlePool = new ParticlePool();
     _bulletPool = new BulletPool();
     collisionSystem = new AsteroidCollisionSystem(particlePool);
@@ -59,7 +62,8 @@ describe("Asteroids Gameplay Integration", () => {
       angle: 0
     });
 
-    // 2. Run collision system
+    // 2. Run collision systems
+    physicsSystem.update(world, 16.66);
     collisionSystem.update(world, 16.66);
 
     // 3. Verify target asteroid is gone (or replaced by splits)
@@ -102,7 +106,13 @@ describe("Asteroids Gameplay Integration", () => {
     const largeAsteroid = world.createEntity();
     const largeRadius = 100;
     world.addComponent(largeAsteroid, { type: "Transform", x: 200, y: 200, rotation: 0, scaleX: 1, scaleY: 1 });
-    world.addComponent(largeAsteroid, { type: "Collider", radius: largeRadius });
+    world.addComponent(largeAsteroid, {
+      type: "Collider2D",
+      shape: { type: "circle", radius: largeRadius },
+      layer: 4, // ENEMY
+      mask: 8 | 2, // PROJECTILE | PLAYER
+      offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
+    });
     world.addComponent(largeAsteroid, { type: "Asteroid", size: "large" });
 
     // 2. Create a small bullet that should collide with the large asteroid
@@ -112,24 +122,27 @@ describe("Asteroids Gameplay Integration", () => {
     // Bullet is inside the X-range [100, 300].
     const bullet = world.createEntity();
     world.addComponent(bullet, { type: "Transform", x: 110, y: 200, rotation: 0, scaleX: 1, scaleY: 1 });
-    world.addComponent(bullet, { type: "Collider", radius: 2 });
+    world.addComponent(bullet, {
+      type: "Collider2D",
+      shape: { type: "circle", radius: 2 },
+      layer: 8, // PROJECTILE
+      mask: 4, // ENEMY
+      offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
+    });
     world.addComponent(bullet, { type: "Bullet" });
 
     // 3. Create another object that is "in between" in minX but further in X to test 'break' logic
-    // Object C: x=105, radius=1. minX=104.
-    // Asteroid A: x=200, radius=100. minX=100. maxX=300.
-    // Bullet B: x=110, radius=2. minX=108.
-    // Sorted by minX: Asteroid A (100), Object C (104), Bullet B (108).
-    // If we check A, its maxX=300.
-    // C's minX (104) < 300.
-    // B's minX (108) < 300.
-    // If our logic is correct, it should not break at C and should reach B.
     const filler = world.createEntity();
     world.addComponent(filler, { type: "Transform", x: 105, y: 500, rotation: 0, scaleX: 1, scaleY: 1 }); // Far away in Y
-    world.addComponent(filler, { type: "Collider", radius: 1 });
+    world.addComponent(filler, {
+      type: "Collider2D",
+      shape: { type: "circle", radius: 1 },
+      layer: 1, mask: 1, offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
+    });
 
     const initialScore = world.getSingleton<GameStateComponent>("GameState")!.score;
 
+    physicsSystem.update(world, 16.66);
     collisionSystem.update(world, 16.66);
 
     // If collision was detected, bullet and asteroid should be handled (destroyed/split)

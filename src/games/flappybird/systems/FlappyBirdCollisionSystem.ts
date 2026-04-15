@@ -1,124 +1,103 @@
 import { World } from "../../../engine/core/World";
-import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
-import { Entity, TransformComponent, ColliderComponent } from "../../../engine/types/EngineTypes";
+import { System } from "../../../engine/core/System";
+import { Entity, TransformComponent, CollisionEventsComponent } from "../../../engine/types/EngineTypes";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
 import { FLAPPY_CONFIG, FlappyBirdState, BirdComponent } from "../types/FlappyBirdTypes";
 import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
 import { Juice } from "../../../engine/utils/Juice";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
+import { EventBus } from "../../../engine/core/EventBus";
 
 /**
- * System that handles collisions between the bird and pipes or ground.
+ * System that reacts to collision events between the bird and pipes or ground.
  */
-export class FlappyBirdCollisionSystem extends CollisionSystem {
-  private game: IFlappyBirdGame;
+export class FlappyBirdCollisionSystem extends System {
+  private _game: IFlappyBirdGame;
 
   constructor(game: IFlappyBirdGame) {
     super();
-    this.game = game;
+    this._game = game;
   }
 
   public override update(world: World, _deltaTime: number): void {
-    const birds = world.query("Bird", "Transform", "Collider");
-    const pipes = world.query("Pipe", "Transform");
+    const entitiesWithEvents = world.query("CollisionEvents");
+
+    for (const entity of entitiesWithEvents) {
+      const eventsComp = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents")!;
+
+      for (const event of eventsComp.collisions) {
+        // Ensure each collision pair is processed only once
+        if (entity > event.otherEntity) continue;
+        this.resolveCollision(world, entity, event.otherEntity);
+      }
+    }
+
+    // Still need to handle near miss logic which is not a physical collision
+    this.handleNearMissLogic(world);
+  }
+
+  private resolveCollision(world: World, entityA: Entity, entityB: Entity): void {
+    const matchPipe = this.matchPair(world, entityA, entityB, "Bird", "Pipe");
+    if (matchPipe) {
+        this.triggerGameOver(world);
+        return;
+    }
+
+    const matchGround = this.matchPair(world, entityA, entityB, "Bird", "Ground");
+    if (matchGround) {
+        this.triggerGameOver(world);
+        return;
+    }
+  }
+
+  private handleNearMissLogic(world: World): void {
+    const birds = world.query("Bird", "Transform", "Collider2D");
+    const pipes = world.query("Pipe", "Transform", "Collider2D");
 
     for (const bird of birds) {
+      const birdComp = world.getComponent<BirdComponent>(bird, "Bird")!;
+      if (!birdComp.isAlive) continue;
+
+      const birdPos = world.getComponent<TransformComponent>(bird, "Transform")!;
+      const birdCol = world.getComponent<any>(bird, "Collider2D")!; // radius is in shape
+      const birdRadius = birdCol.shape.radius;
+
       for (const pipe of pipes) {
-        this.handleBirdPipeCollision({ world, pair: { entityA: bird, entityB: pipe } });
-      }
-    }
+        const pipePos = world.getComponent<TransformComponent>(pipe, "Transform")!;
+        const pipeComp = world.getComponent(pipe, "Pipe") as any;
+        const pipeCol = world.getComponent<any>(pipe, "Collider2D")!;
 
-    // Dedicated ground collision check (Y-axis only)
-    this.checkGroundCollision(world);
-  }
+        const pipeWidth = pipeCol.shape.halfWidth * 2;
+        const halfPipeHeight = pipeCol.shape.halfHeight;
+        const isTopPipe = pipePos.y < pipeComp.gapY;
 
-  private checkGroundCollision(world: World): void {
-    const birds = world.query("Bird", "Transform", "Collider");
-    const grounds = world.query("Ground", "Transform", "Collider");
+        // Bird AABB
+        const birdLeft = birdPos.x - birdRadius;
+        const birdRight = birdPos.x + birdRadius;
+        const birdTop = birdPos.y - birdRadius;
+        const birdBottom = birdPos.y + birdRadius;
 
-    if (grounds.length === 0) return;
-    const groundPos = world.getComponent<TransformComponent>(grounds[0], "Transform")!;
-    const groundCol = world.getComponent<ColliderComponent>(grounds[0], "Collider")!;
-    const groundTop = groundPos.y - groundCol.radius;
+        // Pipe AABB
+        const pipeLeft = pipePos.x - pipeWidth / 2;
+        const pipeRight = pipePos.x + pipeWidth / 2;
+        let pipeTop: number;
+        let pipeBottom: number;
 
-    for (const bird of birds) {
-      const birdPos = world.getComponent<TransformComponent>(bird, "Transform")!;
-      const birdCol = world.getComponent<ColliderComponent>(bird, "Collider")!;
+        if (isTopPipe) {
+          pipeTop = pipePos.y - halfPipeHeight;
+          pipeBottom = pipePos.y + halfPipeHeight;
+        } else {
+          pipeTop = pipePos.y - halfPipeHeight;
+          pipeBottom = pipePos.y + halfPipeHeight;
+        }
 
-      // If bird center Y + radius exceeds ground top edge Y
-      if (birdPos.y + birdCol.radius >= groundTop) {
-        this.triggerGameOver(world);
-        break;
-      }
-    }
-  }
-
-  protected onCollision(world: World, entityA: Entity, entityB: Entity): void {
-    const pair = { entityA, entityB };
-
-    this.handleBirdPipeCollision({ world, pair });
-    // handleBirdGroundCollision is now handled in checkGroundCollision
-  }
-
-  private handleBirdPipeCollision(context: {
-    world: World;
-    pair: { entityA: Entity; entityB: Entity };
-  }): boolean {
-    const { world, pair } = context;
-    const match = this.matchPair(world, pair.entityA, pair.entityB, "Bird", "Pipe");
-
-    if (match) {
-      const bird = match.Bird;
-      const pipe = match.Pipe;
-
-      const birdPos = world.getComponent<TransformComponent>(bird, "Transform")!;
-      const birdCol = world.getComponent<ColliderComponent>(bird, "Collider")!;
-      const pipePos = world.getComponent<TransformComponent>(pipe, "Transform")!;
-      const pipeComp = world.getComponent(pipe, "Pipe") as any;
-
-      const halfGap = pipeComp.gapSize / 2;
-      const pipeWidth = FLAPPY_CONFIG.PIPE_WIDTH;
-      const isTopPipe = pipePos.y < pipeComp.gapY;
-
-      // Bird AABB (approximate)
-      const birdLeft = birdPos.x - birdCol.radius;
-      const birdRight = birdPos.x + birdCol.radius;
-      const birdTop = birdPos.y - birdCol.radius;
-      const birdBottom = birdPos.y + birdCol.radius;
-
-      // Pipe AABB
-      const pipeLeft = pipePos.x - pipeWidth / 2;
-      const pipeRight = pipePos.x + pipeWidth / 2;
-      let pipeTop: number;
-      let pipeBottom: number;
-
-      if (isTopPipe) {
-        pipeTop = 0;
-        pipeBottom = pipeComp.gapY - halfGap;
-      } else {
-        pipeTop = pipeComp.gapY + halfGap;
-        pipeBottom = FLAPPY_CONFIG.SCREEN_HEIGHT;
-      }
-
-      // AABB Collision check
-      if (
-        birdRight > pipeLeft &&
-        birdLeft < pipeRight &&
-        birdBottom > pipeTop &&
-        birdTop < pipeBottom
-      ) {
-        this.triggerGameOver(world);
-        return true;
-      } else {
-        // Near Miss logic
         const horizontalDist = Math.max(0, pipeLeft - birdRight, birdLeft - pipeRight);
         const verticalDist = Math.max(0, pipeTop - birdBottom, birdTop - pipeBottom);
         const dist = horizontalDist + verticalDist;
 
-        if (dist > 0 && dist < 12 && birdComp.isAlive) {
-           const birdC = world.getComponent<BirdComponent>(bird, "Bird")!;
-           if (birdC.nearMissTimer <= 0) {
-             birdC.nearMissTimer = 300;
+        if (dist > 0 && dist < 12) {
+           if (birdComp.nearMissTimer <= 0) {
+             birdComp.nearMissTimer = 300;
              const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
              if (gameState) gameState.score += 50;
 
@@ -140,7 +119,6 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
         }
       }
     }
-    return false;
   }
 
   private triggerGameOver(world: World): void {
@@ -148,13 +126,11 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
     if (gameState && !gameState.isGameOver) {
       gameState.isGameOver = true;
 
-      // Juice: Squash de impacto en todos los pájaros vivos
       const birds = world.query("Bird");
       birds.forEach(birdEntity => {
         const bird = world.getComponent<BirdComponent>(birdEntity, "Bird");
         if (bird) bird.isAlive = false;
 
-        // Apply visual feedback
         const render = world.getComponent<any>(birdEntity, "Render");
         if (render) render.hitFlashFrames = 8;
 
@@ -187,9 +163,22 @@ export class FlappyBirdCollisionSystem extends CollisionSystem {
           }
         });
       });
-
-      // We don't pause immediately to let the game-over UI handle the state
-      // and allow the player to see the impact.
     }
+  }
+
+  private matchPair<T1 extends string, T2 extends string>(
+    world: World,
+    entityA: Entity,
+    entityB: Entity,
+    type1: T1,
+    type2: T2
+  ): Record<T1 | T2, Entity> | undefined {
+    if (world.hasComponent(entityA, type1) && world.hasComponent(entityB, type2)) {
+      return { [type1]: entityA, [type2]: entityB } as Record<T1 | T2, Entity>;
+    }
+    if (world.hasComponent(entityB, type1) && world.hasComponent(entityA, type2)) {
+      return { [type1]: entityB, [type2]: entityA } as Record<T1 | T2, Entity>;
+    }
+    return undefined;
   }
 }

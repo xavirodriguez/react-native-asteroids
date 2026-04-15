@@ -1,8 +1,9 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
-import { TransformComponent, RenderComponent, Component } from "../../../engine/types/EngineTypes";
+import { TransformComponent, RenderComponent, Component, Collider2DComponent } from "../../../engine/types/EngineTypes";
 import { GameStateComponent, GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
+import { CollisionLayers } from "../../../engine/physics/collision/CollisionLayers";
 import { Juice } from "../../../engine/utils/Juice";
 
 export interface BossComponent extends Component {
@@ -66,7 +67,16 @@ export class BossSystem extends System {
     const hp = 50 + (level / 5) * 50;
     world.addComponent(boss, { type: "Transform", x: GAME_CONFIG.SCREEN_WIDTH / 2, y: 100, rotation: 0, scaleX: 1, scaleY: 1 });
     world.addComponent(boss, { type: "Render", shape: "invader", size: 80, color: "#FF00FF", rotation: 0 });
-    world.addComponent(boss, { type: "Collider", radius: 40 });
+    world.addComponent(boss, {
+      type: "Collider2D",
+      shape: { type: "circle", radius: 40 },
+      layer: CollisionLayers.ENEMY,
+      mask: CollisionLayers.PLAYER | CollisionLayers.PROJECTILE,
+      offsetX: 0,
+      offsetY: 0,
+      isTrigger: false,
+      enabled: true
+    } as Collider2DComponent);
     world.addComponent(boss, { type: "Boss", hp, maxHp: hp, timer: 0, phase: 1 });
     world.addComponent(boss, { type: "Health", current: hp, max: hp, invulnerableRemaining: 0 });
   }

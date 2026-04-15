@@ -3,8 +3,7 @@ import { Entity } from "./Entity";
 import { EventBus } from "./EventBus";
 import { StateMachine } from "./StateMachine";
 import type { World } from "./World";
-import type { CollisionManifold } from "../legacy/LegacyComponents";
-
+import type { CollisionManifold } from "../physics/collision/CollisionTypes";
 export { Entity, Component };
 export { PositionComponent, ColliderComponent } from "../legacy/LegacyComponents";
 
@@ -116,7 +115,7 @@ export interface BoundaryComponent extends Component {
    * - `destroy`: elimina la entidad del mundo.
    */
   behavior: "wrap" | "bounce" | "destroy";
-  /** @deprecated Utilizar {@link BoundaryComponent.behavior} en su lugar. */
+  /** @deprecated Utilizar {@link BoundaryComponent.behavior} en su lugar. Esta propiedad será eliminada en la v2.0. */
   mode?: "wrap" | "bounce" | "destroy";
   /** Si debe rebotar específicamente en el eje X. */
   bounceX?: boolean;
@@ -129,7 +128,7 @@ export interface BoundaryComponent extends Component {
  */
 export interface TagComponent extends Component {
   type: "Tag";
-  /** @deprecated Utilizar {@link TagComponent.tags} en su lugar. */
+  /** @deprecated Utilizar {@link TagComponent.tags} en su lugar. Esta propiedad será eliminada en la v2.0. */
   tag?: string;
   /** Lista de etiquetas asociadas (e.g., ["Player", "LocalPlayer"]). */
   tags: string[];
@@ -303,9 +302,9 @@ export interface InputStateComponent extends Component {
   actions: Map<InputAction, boolean>;
   /** Valores normalizados [-1, 1] para ejes (e.g., "horizontal", "vertical"). */
   axes: Map<string, number>;
-  /** @deprecated Use InputUtils.isPressed instead */
+  /** @deprecated Use {@link InputUtils.isPressed} instead. Esta propiedad será eliminada en la v2.0 para mantener los componentes como datos puros. */
   isPressed?: (action: InputAction) => boolean;
-  /** @deprecated Use InputUtils.getAxis instead */
+  /** @deprecated Use {@link InputUtils.getAxis} instead. Esta propiedad será eliminada en la v2.0 para mantener los componentes como datos puros. */
   getAxis?: (axis: string) => number;
 }
 
@@ -394,7 +393,7 @@ export interface TilemapData {
 export interface TilemapComponent extends Component {
   type: "Tilemap";
   data: TilemapData;
-  /** @deprecated Use TilemapUtils.isSolid instead */
+  /** @deprecated Use {@link TilemapUtils.isSolid} instead. Esta propiedad será eliminada en la v2.0 para mantener los componentes como datos puros. */
   isSolid?: (tileX: number, tileY: number) => boolean;
 }
 

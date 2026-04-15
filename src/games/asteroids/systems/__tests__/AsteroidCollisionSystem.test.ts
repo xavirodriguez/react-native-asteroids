@@ -1,4 +1,5 @@
 import { World } from "../../../../engine/core/World";
+import { CollisionSystem2D } from "../../../../engine/physics/collision/CollisionSystem2D";
 import { AsteroidCollisionSystem } from "../AsteroidCollisionSystem";
 import { ParticlePool } from "../../EntityPool";
 import { createAsteroid, createShip, createBullet, createGameState } from "../../EntityFactory";
@@ -6,11 +7,13 @@ import { GAME_CONFIG, type GameStateComponent } from "../../types/AsteroidTypes"
 
 describe("AsteroidCollisionSystem", () => {
   let world: World;
+  let physicsSystem: CollisionSystem2D;
   let particlePool: ParticlePool;
   let system: AsteroidCollisionSystem;
 
   beforeEach(() => {
     world = new World();
+    physicsSystem = new CollisionSystem2D();
     particlePool = new ParticlePool();
     system = new AsteroidCollisionSystem(particlePool);
     createGameState({ world });
@@ -22,6 +25,7 @@ describe("AsteroidCollisionSystem", () => {
 
     const initialScore = world.getSingleton<GameStateComponent>("GameState")!.score;
 
+    physicsSystem.update(world, 16.66);
     system.update(world, 16.66);
 
     expect(world.getAllEntities()).not.toContain(_asteroid);
@@ -33,6 +37,7 @@ describe("AsteroidCollisionSystem", () => {
     const _asteroid = createAsteroid({ world, x: 100, y: 100, size: "large" });
     createBullet({ world, x: 100, y: 100, angle: 0 });
 
+    physicsSystem.update(world, 16.66);
     system.update(world, 16.66);
 
     const asteroids = world.query("Asteroid");
@@ -53,6 +58,7 @@ describe("AsteroidCollisionSystem", () => {
 
     const initialHealth = h.current;
 
+    physicsSystem.update(world, 16.66);
     system.update(world, 16.66);
 
     expect(h.current).toBe(initialHealth - 1);
@@ -67,6 +73,7 @@ describe("AsteroidCollisionSystem", () => {
 
     createAsteroid({ world, x: 100, y: 100, size: "small" });
 
+    physicsSystem.update(world, 16.66);
     system.update(world, 16.66);
 
     expect(health.current).toBe(initialHealth);

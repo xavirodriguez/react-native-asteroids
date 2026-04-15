@@ -10,6 +10,7 @@ import { FlappyBirdRenderSystem } from "./systems/FlappyBirdRenderSystem";
 import { FlappyBirdGlideSystem } from "./systems/FlappyBirdGlideSystem";
 import { InputBufferSystem } from "../../engine/systems/InputBufferSystem";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
+import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
 import { JuiceSystem } from "../../engine/systems/JuiceSystem";
 import { Renderer } from "../../engine/rendering/Renderer";
 import {
@@ -70,6 +71,7 @@ export class FlappyBirdGame
     this.world.addSystem(new FlappyBirdGlideSystem());
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new JuiceSystem());
+    this.world.addSystem(new CollisionSystem2D());
     this.world.addSystem(new FlappyBirdCollisionSystem(this));
     this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new FlappyBirdRenderSystem());

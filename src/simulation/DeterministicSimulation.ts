@@ -1,5 +1,5 @@
 import { World } from "../engine/core/World";
-import { Entity, TransformComponent, VelocityComponent, RenderComponent, HealthComponent, ColliderComponent, TTLComponent, BoundaryComponent } from "../engine/types/EngineTypes";
+import { Entity, TransformComponent, VelocityComponent, RenderComponent, HealthComponent, Collider2DComponent, TTLComponent, BoundaryComponent, CollisionEventsComponent } from "../engine/types/EngineTypes";
 import { PhysicsUtils } from "../engine/utils/PhysicsUtils";
 import { ShipPhysics } from "../games/asteroids/utils/ShipPhysics";
 import { GAME_CONFIG, type AsteroidComponent, type GameStateComponent, type UfoComponent, type InputComponent } from "../games/asteroids/types/AsteroidTypes";
@@ -140,24 +140,42 @@ export class DeterministicSimulation {
     }
 
     private static updateCollisions(world: World, ctx: SimulationContext, deltaTime: number) {
-        const bullets = world.query("Bullet", "Transform", "Collider");
-        const asteroids = world.query("Asteroid", "Transform", "Collider");
-        const ships = world.query("Ship", "Transform", "Collider", "Health");
+        // Handle invulnerability cooldown for ships
+        const ships = world.query("Ship", "Health");
+        ships.forEach(ship => {
+            const sHealth = world.getComponent<HealthComponent>(ship, "Health")!;
+            if (sHealth.invulnerableRemaining > 0) {
+                sHealth.invulnerableRemaining -= deltaTime;
+                if (sHealth.invulnerableRemaining < 0) sHealth.invulnerableRemaining = 0;
+            }
+        });
+
+        // In DeterministicSimulation, we don't have a System list like in AsteroidsGame.
+        // We simulate the collision detection and resolution manually for Asteroids gameplay.
+        // For strict determinism, we use the engine's NarrowPhase directly if we want to avoid event components
+        // or we can manually check circles as it was doing.
+        // Given this is a SHARED simulation used by server/client for Asteroids,
+        // we'll keep the logic but update it to use the new Collider2DComponent structure.
+
+        const bullets = world.query("Bullet", "Transform", "Collider2D");
+        const asteroids = world.query("Asteroid", "Transform", "Collider2D");
 
         // Bullet vs Asteroid
         bullets.forEach(bullet => {
             const bPos = world.getComponent<TransformComponent>(bullet, "Transform")!;
-            const bCol = world.getComponent<ColliderComponent>(bullet, "Collider")!;
+            const bCol = world.getComponent<Collider2DComponent>(bullet, "Collider2D")!;
+            const bRadius = (bCol.shape as any).radius;
 
             asteroids.forEach(asteroid => {
-                if (!world.hasComponent(asteroid, "Asteroid")) return; // Might have been destroyed in this loop
+                if (!world.hasComponent(asteroid, "Asteroid")) return;
                 const aPos = world.getComponent<TransformComponent>(asteroid, "Transform")!;
-                const aCol = world.getComponent<ColliderComponent>(asteroid, "Collider")!;
+                const aCol = world.getComponent<Collider2DComponent>(asteroid, "Collider2D")!;
+                const aRadius = (aCol.shape as any).radius;
 
                 const dx = bPos.x - aPos.x;
                 const dy = bPos.y - aPos.y;
                 const distSq = dx * dx + dy * dy;
-                const minDist = bCol.radius + aCol.radius;
+                const minDist = bRadius + aRadius;
 
                 if (distSq < minDist * minDist) {
                     this.handleBulletAsteroidCollision(world, bullet, asteroid, ctx);
@@ -168,22 +186,22 @@ export class DeterministicSimulation {
         // Ship vs Asteroid
         ships.forEach(ship => {
             const sPos = world.getComponent<TransformComponent>(ship, "Transform")!;
-            const sCol = world.getComponent<ColliderComponent>(ship, "Collider")!;
+            const sCol = world.getComponent<Collider2DComponent>(ship, "Collider2D");
             const sHealth = world.getComponent<HealthComponent>(ship, "Health")!;
+            if (!sCol || sHealth.invulnerableRemaining > 0) return;
 
-            if (sHealth.invulnerableRemaining > 0) {
-                sHealth.invulnerableRemaining -= deltaTime;
-                return;
-            }
+            const sRadius = (sCol.shape as any).radius;
 
             asteroids.forEach(asteroid => {
+                if (!world.hasComponent(asteroid, "Asteroid")) return;
                 const aPos = world.getComponent<TransformComponent>(asteroid, "Transform")!;
-                const aCol = world.getComponent<ColliderComponent>(asteroid, "Collider")!;
+                const aCol = world.getComponent<Collider2DComponent>(asteroid, "Collider2D")!;
+                const aRadius = (aCol.shape as any).radius;
 
                 const dx = sPos.x - aPos.x;
                 const dy = sPos.y - aPos.y;
                 const distSq = dx * dx + dy * dy;
-                const minDist = sCol.radius + aCol.radius;
+                const minDist = sRadius + aRadius;
 
                 if (distSq < minDist * minDist) {
                     this.handleShipAsteroidCollision(world, ship, asteroid, ctx);

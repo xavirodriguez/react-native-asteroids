@@ -1,11 +1,12 @@
 import { EntityPool } from "../../engine/utils/EntityPool";
 import { World } from "../../engine/core/World";
+import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import {
   Entity,
   TransformComponent,
   VelocityComponent,
   RenderComponent,
-  ColliderComponent,
+  Collider2DComponent,
   TTLComponent,
   ReclaimableComponent,
   Component
@@ -15,7 +16,7 @@ interface BulletComponents {
   position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
-  collider: ColliderComponent;
+  collider: Collider2DComponent;
   ttl: TTLComponent;
   reclaimable: ReclaimableComponent;
   bullet: Component;
@@ -33,7 +34,13 @@ export class PlayerBulletPool {
         position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "player_bullet", size: 0, color: "", rotation: 0 },
-        collider: { type: "Collider", radius: 0 },
+        collider: {
+          type: "Collider2D",
+          shape: { type: "circle", radius: 0 },
+          layer: CollisionLayers.PROJECTILE,
+          mask: CollisionLayers.ENEMY | CollisionLayers.DEBRIS,
+          offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
+        },
         ttl: { type: "TTL", remaining: 0, total: 0 },
         reclaimable: { type: "Reclaimable", onReclaim: () => {} },
         bullet: { type: "PlayerBullet" }
@@ -53,7 +60,7 @@ export class PlayerBulletPool {
     data.velocity.dy = dy;
     data.render.size = size;
     data.render.color = color;
-    data.collider.radius = size;
+    (data.collider.shape as any).radius = size;
     data.ttl.remaining = ttl;
     data.ttl.total = ttl;
     return entity;
@@ -76,7 +83,13 @@ export class EnemyBulletPool {
         position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "enemy_bullet", size: 0, color: "", rotation: 0 },
-        collider: { type: "Collider", radius: 0 },
+        collider: {
+          type: "Collider2D",
+          shape: { type: "circle", radius: 0 },
+          layer: CollisionLayers.ENEMY,
+          mask: CollisionLayers.PLAYER,
+          offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
+        },
         ttl: { type: "TTL", remaining: 0, total: 0 },
         reclaimable: { type: "Reclaimable", onReclaim: () => {} },
         bullet: { type: "EnemyBullet" }
@@ -96,7 +109,7 @@ export class EnemyBulletPool {
     data.velocity.dy = dy;
     data.render.size = size;
     data.render.color = color;
-    data.collider.radius = size;
+    (data.collider.shape as any).radius = size;
     data.ttl.remaining = ttl;
     data.ttl.total = ttl;
     return entity;

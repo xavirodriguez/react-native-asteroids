@@ -7,6 +7,7 @@ import { ScreenShakeSystem } from "../../../engine/systems/ScreenShakeSystem";
 import { TTLSystem } from "../../../engine/systems/TTLSystem";
 import { AsteroidCollisionSystem } from "../systems/AsteroidCollisionSystem";
 import { AsteroidInputSystem } from "../systems/AsteroidInputSystem";
+import { CollisionSystem2D } from "../../../engine/physics/collision/CollisionSystem2D";
 import { UfoSystem } from "../systems/UfoSystem";
 import { AsteroidRenderSystem } from "../systems/AsteroidRenderSystem";
 import { IGameStateSystem } from "../types/GameInterfaces";
@@ -67,6 +68,7 @@ export class AsteroidsGameScene extends Scene {
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new BoundarySystem());
     this.world.addSystem(new FrictionSystem());
+    this.world.addSystem(new CollisionSystem2D());
     this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
