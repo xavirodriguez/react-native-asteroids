@@ -45,6 +45,8 @@ export class AsteroidCollisionSystem extends System {
       if (!eventsComp) continue;
 
       for (const event of eventsComp.collisions) {
+        // Ensure each collision pair is processed only once
+        if (entity > event.otherEntity) continue;
         this.resolveCollision(world, entity, event.otherEntity);
       }
     }

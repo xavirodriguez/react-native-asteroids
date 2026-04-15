@@ -1,12 +1,13 @@
 import { PrefabPool } from "../../engine/utils/PrefabPool";
 import { World } from "../../engine/core/World";
+import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import {
   type Entity,
   type Component,
   type TransformComponent,
   type VelocityComponent,
   type RenderComponent,
-  type ColliderComponent,
+  type Collider2DComponent,
   type TTLComponent,
   type ReclaimableComponent
 } from "../../engine/types/EngineTypes";
@@ -18,7 +19,7 @@ interface BulletComponents {
   position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
-  collider: ColliderComponent;
+  collider: Collider2DComponent;
   ttl: TTLComponent;
   reclaimable: ReclaimableComponent;
   bullet: Component & { type: "Bullet" };
@@ -38,7 +39,13 @@ export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
         position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "bullet_shape", size: 0, color: "", rotation: 0 },
-        collider: { type: "Collider", radius: 0 },
+        collider: {
+          type: "Collider2D",
+          shape: { type: "circle", radius: 0 },
+          layer: CollisionLayers.PROJECTILE,
+          mask: CollisionLayers.ENEMY,
+          offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
+        },
         ttl: { type: "TTL", remaining: 0, total: 0 },
         reclaimable: { type: "Reclaimable", onReclaim: () => {} },
         bullet: { type: "Bullet" }
@@ -51,7 +58,7 @@ export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
         data.position.x = p.x; data.position.y = p.y;
         data.velocity.dx = p.dx; data.velocity.dy = p.dy;
         data.render.size = p.size; data.render.color = p.color;
-        data.collider.radius = p.size;
+        (data.collider.shape as any).radius = p.size;
         data.ttl.remaining = p.ttl; data.ttl.total = p.ttl;
       },
       initialSize
