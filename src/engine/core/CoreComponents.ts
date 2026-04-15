@@ -5,7 +5,6 @@ import { StateMachine } from "./StateMachine";
 import type { World } from "./World";
 import type { CollisionManifold } from "../physics/collision/CollisionTypes";
 export { Entity, Component };
-export { PositionComponent, ColliderComponent } from "../legacy/LegacyComponents";
 
 /**
  * Componentes base proporcionados por el motor como primitivas reutilizables.
@@ -201,8 +200,6 @@ export interface CollisionEventsComponent extends Component {
   triggersEntered: Entity[];
   triggersExited: Entity[];
 }
-
-export { CollisionManifold };
 
 /**
  * Enables Continuous Collision Detection (CCD) for fast-moving entities.
