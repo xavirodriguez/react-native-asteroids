@@ -18,7 +18,7 @@ export interface BaseGameConfig {
   pauseKey?: string;
   restartKey?: string;
   isMultiplayer?: boolean;
-  gameOptions?: any;
+  gameOptions?: Record<string, unknown>;
 }
 
 /**
@@ -29,7 +29,7 @@ export interface BaseGameConfig {
  * 1. Input -> 2. Simulation Update -> 3. Transform Propagation.
  * Render phase is decoupled and handles interpolation.
  */
-export abstract class BaseGame<TState, TInput extends Record<string, any>>
+export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   implements IGame<BaseGame<TState, TInput>> {
 
   protected world: World;
@@ -66,7 +66,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, any>>
     this.world.setResource("UnifiedInputSystem", this.unifiedInput);
 
     this._config = config;
-    this.currentSeed = config.gameOptions?.seed ?? RandomService.getInstance("gameplay").nextInt(0, 0xFFFFFFFF);
+    this.currentSeed = (config.gameOptions?.seed as number) ?? RandomService.getInstance("gameplay").nextInt(0, 0xFFFFFFFF);
     RandomService.setSeed(this.currentSeed);
     RandomService.getInstance("gameplay").setSeed(this.currentSeed);
 

@@ -23,6 +23,7 @@ export type EventHandler<T = unknown> = (payload: T) => void;
  * (ej: Evento A dispara Evento B, que dispara de nuevo Evento A).
  */
 export class EventBus {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private handlers = new Map<string, Set<EventHandler<any>>>();
 
   /**
@@ -37,6 +38,7 @@ export class EventBus {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, new Set());
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.handlers.get(event)!.add(handler as EventHandler<any>);
   }
 
@@ -62,6 +64,7 @@ export class EventBus {
   public off<T = unknown>(event: string, handler: EventHandler<T>): void {
     const set = this.handlers.get(event);
     if (set) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       set.delete(handler as EventHandler<any>);
     }
   }

@@ -27,14 +27,20 @@ export class PhysicsUtils {
    * @conceptualRisk [PRECISION_LOSS][LOW] La acumulación de errores de punto flotante en integraciones
    * largas puede causar divergencias mínimas entre clientes.
    */
-  public static integrateMovement(pos: any, vel: any, deltaTimeInSeconds: number): void {
-    const x = pos.x !== undefined ? "x" : "worldX";
-    const y = pos.y !== undefined ? "y" : "worldY";
-    const dx = vel.dx !== undefined ? "dx" : "velocityX";
-    const dy = vel.dy !== undefined ? "dy" : "velocityY";
+  public static integrateMovement(
+    pos: object,
+    vel: object,
+    deltaTimeInSeconds: number
+  ): void {
+    const p = pos as Record<string, unknown>;
+    const v = vel as Record<string, unknown>;
+    const x = p.x !== undefined ? "x" : "worldX";
+    const y = p.y !== undefined ? "y" : "worldY";
+    const dx = v.dx !== undefined ? "dx" : "velocityX";
+    const dy = v.dy !== undefined ? "dy" : "velocityY";
 
-    pos[x] += vel[dx] * deltaTimeInSeconds;
-    pos[y] += vel[dy] * deltaTimeInSeconds;
+    p[x] = ((p[x] as number) || 0) + ((v[dx] as number) || 0) * deltaTimeInSeconds;
+    p[y] = ((p[y] as number) || 0) + ((v[dy] as number) || 0) * deltaTimeInSeconds;
   }
 
   /**
@@ -53,14 +59,19 @@ export class PhysicsUtils {
    * @postcondition Los componentes `dx`/`dy` de `vel` son reducidos.
    * @sideEffect Muta el objeto `vel` directamente por referencia.
    */
-  public static applyFriction(vel: any, friction: number, deltaTimeMs: number): void {
-    const dx = vel.dx !== undefined ? "dx" : "velocityX";
-    const dy = vel.dy !== undefined ? "dy" : "velocityY";
+  public static applyFriction(
+    vel: object,
+    friction: number,
+    deltaTimeMs: number
+  ): void {
+    const v = vel as Record<string, unknown>;
+    const dx = v.dx !== undefined ? "dx" : "velocityX";
+    const dy = v.dy !== undefined ? "dy" : "velocityY";
 
     const dtFactor = deltaTimeMs / (1000 / 60);
     const frictionFactor = Math.pow(friction, dtFactor);
-    vel[dx] *= frictionFactor;
-    vel[dy] *= frictionFactor;
+    if (v[dx] !== undefined) v[dx] = (v[dx] as number) * frictionFactor;
+    if (v[dy] !== undefined) v[dy] = (v[dy] as number) * frictionFactor;
   }
 
   /**
