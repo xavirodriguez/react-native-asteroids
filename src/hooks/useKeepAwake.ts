@@ -12,12 +12,12 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 export function useKeepAwake(enabled: boolean = true): void {
   useEffect(() => {
     // Check if we are in a browser and if wakeLock is supported (non-secure contexts often lack it)
-    const isWeb = typeof window !== "undefined";
+    const isWeb = typeof document !== "undefined" && typeof document.createElement === "function";
     const supportsWakeLock = isWeb && "wakeLock" in navigator;
 
     if (!enabled) return;
 
-    // Only attempt activation if supported or if on native (Expo handles native)
+    // Only skip activation on web without WakeLock support; native is handled by Expo
     if (isWeb && !supportsWakeLock) {
       // Silently fail on web without support to avoid console noise in dev
       return;
