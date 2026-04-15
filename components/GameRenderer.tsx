@@ -3,9 +3,11 @@ import { View, StyleSheet, Platform } from "react-native";
 import type { World } from "../src/engine/core/World";
 import { GAME_CONFIG } from "../src/types/GameTypes";
 import type { SkCanvas } from "@shopify/react-native-skia";
-import type { SkiaRenderer } from "../src/engine/rendering/SkiaRenderer";
+import type { SkiaRenderer as SkiaRendererType } from "../src/engine/rendering/SkiaRenderer";
 import type { Renderer } from "../src/engine/rendering/Renderer";
 import { GameLoop } from "../src/engine/core/GameLoop";
+
+type SkiaModuleType = typeof import("@shopify/react-native-skia");
 
 // Conditionally import Skia components for non-web platforms
 let Canvas: React.ComponentType<Record<string, unknown>> | null = null;
@@ -13,8 +15,7 @@ let Drawing: React.ComponentType<{ onDraw: (canvas: SkCanvas) => void }> | null 
 
 if (Platform.OS !== "web") {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const SkiaModule = require("@shopify/react-native-skia") as typeof import("@shopify/react-native-skia");
+    const SkiaModule = require("@shopify/react-native-skia") as SkiaModuleType;
     Canvas = SkiaModule.Canvas as unknown as React.ComponentType<Record<string, unknown>>;
     Drawing = SkiaModule.Drawing as unknown as React.ComponentType<{
       onDraw: (canvas: SkCanvas) => void;
@@ -38,7 +39,7 @@ interface GameRendererProps {
  * Component responsible for rendering the game world using @shopify/react-native-skia.
  */
 export const GameRenderer = React.memo(function GameRenderer({ world, onInitialize, gameLoop }: GameRendererProps) {
-  const rendererRef = useRef<SkiaRenderer | null>(null);
+  const rendererRef = useRef<SkiaRendererType | null>(null);
   const [, setTick] = useState(0);
   const alphaRef = useRef(1);
 
@@ -54,10 +55,7 @@ export const GameRenderer = React.memo(function GameRenderer({ world, onInitiali
 
   const onDraw = useMemo(() => (canvas: SkCanvas) => {
     if (!rendererRef.current) {
-        // We only use EngineSkiaRenderer on non-web or if explicitly needed
-        // but here we are in a Skia-specific component.
         try {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
             const { SkiaRenderer: EngineSkiaRenderer } = require("../src/engine/rendering/SkiaRenderer") as typeof import("../src/engine/rendering/SkiaRenderer");
             const renderer = new EngineSkiaRenderer(canvas);
             if (onInitialize) onInitialize(renderer);
