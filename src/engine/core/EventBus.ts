@@ -23,7 +23,7 @@ export type EventHandler<T = any> = (payload: T) => void;
  * (ej: Evento A dispara Evento B, que dispara de nuevo Evento A).
  */
 export class EventBus {
-  private handlers = new Map<string, Set<EventHandler>>();
+  private handlers = new Map<string, Set<EventHandler<unknown>>>();
 
   /**
    * Suscribe un controlador a un evento específico o patrón.
@@ -37,7 +37,7 @@ export class EventBus {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, new Set());
     }
-    this.handlers.get(event)!.add(handler);
+    this.handlers.get(event)!.add(handler as EventHandler<unknown>);
   }
 
   /**
@@ -62,7 +62,7 @@ export class EventBus {
   public off<T = any>(event: string, handler: EventHandler<T>): void {
     const set = this.handlers.get(event);
     if (set) {
-      set.delete(handler);
+      set.delete(handler as EventHandler<unknown>);
     }
   }
 

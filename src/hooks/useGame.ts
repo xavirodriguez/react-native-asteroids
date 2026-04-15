@@ -12,6 +12,7 @@ export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, T
   isPaused: boolean;
   handleInput: (input: Partial<TInput>) => void;
   togglePause: () => void;
+  restart: (seed?: number) => void;
 }
 
 /**
@@ -94,11 +95,16 @@ export function useGame<
     }
   }, []);
 
+  const restart = useCallback((seed?: number) => {
+    gameRef.current?.restart(seed).catch(console.error);
+  }, []);
+
   return {
     game: gameRef.current as TGame,
     gameState,
     isPaused,
     handleInput,
     togglePause,
+    restart,
   };
 }

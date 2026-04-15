@@ -26,9 +26,9 @@ import { RandomService } from "../utils/RandomService";
  * de la partícula. Se debe asegurar que el servicio esté correctamente inicializado para replays.
  */
 export class ParticleSystem extends System {
-  private particlePool: PrefabPool<any, any>;
+  private particlePool: PrefabPool<unknown, unknown>;
 
-  constructor(particlePool: PrefabPool<any, any>) {
+  constructor(particlePool: PrefabPool<unknown, unknown>) {
     super();
     this.particlePool = particlePool;
   }

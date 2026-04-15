@@ -44,8 +44,8 @@ describe("JuiceSystem", () => {
     expect(transform.scaleX).toBe(2);
 
     // Animation should be removed
-    const juice = world.getComponent<any>(entity, "Juice");
-    expect(juice.animations.length).toBe(0);
+    const juice = world.getComponent<import("../JuiceSystem").JuiceComponent>(entity, "Juice");
+    expect(juice?.animations.length).toBe(0);
   });
 
   it("should trigger onComplete callback", () => {

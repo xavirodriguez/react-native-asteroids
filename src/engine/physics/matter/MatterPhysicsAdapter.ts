@@ -14,8 +14,18 @@ export class MatterPhysicsAdapter implements IPhysicsAdapter {
     Matter.Engine.update(this.engine, dt);
   }
 
-  createBody(entityId: number, config: any): Matter.Body {
-    const { x, y, width, height, radius, isStatic, isSensor, restitution, friction, density, collisionFilter } = config;
+  createBody(entityId: number, config: Record<string, unknown>): Matter.Body {
+    const x = config.x as number;
+    const y = config.y as number;
+    const width = config.width as number;
+    const height = config.height as number;
+    const radius = config.radius as number;
+    const isStatic = config.isStatic as boolean;
+    const isSensor = config.isSensor as boolean;
+    const restitution = config.restitution as number;
+    const friction = config.friction as number;
+    const density = config.density as number;
+    const collisionFilter = config.collisionFilter as Matter.ICollisionFilter;
 
     let body: Matter.Body;
     if (radius) {

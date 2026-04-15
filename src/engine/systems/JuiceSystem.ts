@@ -106,7 +106,7 @@ export class JuiceSystem extends System {
       case "rotation": return transform?.rotation ?? render?.rotation ?? 0;
       case "x": return transform?.x ?? 0;
       case "y": return transform?.y ?? 0;
-      case "opacity": return (render as any)?.opacity ?? 1;
+      case "opacity": return (render?.data?.opacity as number) ?? 1;
       default: return 0;
     }
   }
@@ -123,7 +123,12 @@ export class JuiceSystem extends System {
         break;
       case "x": if (transform) transform.x = value; break;
       case "y": if (transform) transform.y = value; break;
-      case "opacity": if (render) (render as any).opacity = value; break;
+      case "opacity":
+        if (render) {
+            if (!render.data) render.data = {};
+            render.data.opacity = value;
+        }
+        break;
     }
   }
 

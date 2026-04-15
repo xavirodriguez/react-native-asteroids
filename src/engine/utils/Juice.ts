@@ -73,7 +73,7 @@ export class Juice {
   /**
    * Helper estático para añadir una animación a una entidad.
    */
-  public static add(world: World, entity: Entity, anim: any): void {
+  public static add(world: World, entity: Entity, anim: Omit<import("../systems/JuiceSystem").JuiceAnimation, "elapsed">): void {
     JuiceSystem.add(world, entity, anim);
   }
 

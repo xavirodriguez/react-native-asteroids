@@ -57,12 +57,12 @@ export class BroadPhase {
     }
   }
 
-  static sweepAndPrune(entities: Entity[], world: any): Array<[Entity, Entity]> {
+  static sweepAndPrune(entities: Entity[], world: import("../../core/World").World): Array<[Entity, Entity]> {
     const bounds = entities.map(entity => ({
       entity,
       aabb: this.getShapeBounds(
-        world.getComponent(entity, "Transform"),
-        world.getComponent(entity, "Collider2D")
+        world.getComponent<TransformComponent>(entity, "Transform")!,
+        world.getComponent<Collider2DComponent>(entity, "Collider2D")!
       )
     }));
 

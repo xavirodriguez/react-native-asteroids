@@ -79,8 +79,9 @@ export class SceneManager {
           this.state = SceneState.UNLOADING;
           const oldScene = this.currentScene;
           await runLifecycleAsync(async () => {
-            if ((oldScene as any).onExit) {
-              await (oldScene as any).onExit(oldScene.getWorld());
+            const sceneAsAny = oldScene as unknown as Record<string, unknown>;
+            if (typeof sceneAsAny.onExit === "function") {
+              await (sceneAsAny.onExit as (w: World) => Promise<void>)(oldScene.getWorld());
             }
           });
         }
@@ -91,8 +92,9 @@ export class SceneManager {
         this.sceneStack = [scene];
 
         await runLifecycleAsync(async () => {
-          if ((scene as any).onEnter) {
-            await (scene as any).onEnter(scene.getWorld());
+          const sceneAsAny = scene as unknown as Record<string, unknown>;
+          if (typeof sceneAsAny.onEnter === "function") {
+            await (sceneAsAny.onEnter as (w: World) => Promise<void>)(scene.getWorld());
           }
         });
 
@@ -121,8 +123,9 @@ export class SceneManager {
         this.currentScene = scene;
 
         await runLifecycleAsync(async () => {
-          if ((scene as any).onEnter) {
-            await (scene as any).onEnter(scene.getWorld());
+          const sceneAsAny = scene as unknown as Record<string, unknown>;
+          if (typeof sceneAsAny.onEnter === "function") {
+            await (sceneAsAny.onEnter as (w: World) => Promise<void>)(scene.getWorld());
           }
         });
 
@@ -152,8 +155,9 @@ export class SceneManager {
         this.state = SceneState.UNLOADING;
 
         await runLifecycleAsync(async () => {
-          if ((poppedScene as any).onExit) {
-            await (poppedScene as any).onExit(poppedScene.getWorld());
+          const sceneAsAny = poppedScene as unknown as Record<string, unknown>;
+          if (typeof sceneAsAny.onExit === "function") {
+            await (sceneAsAny.onExit as (w: World) => Promise<void>)(poppedScene.getWorld());
           }
         });
 

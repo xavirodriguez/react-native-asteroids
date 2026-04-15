@@ -1,10 +1,27 @@
 import { World } from "../../engine/core/World";
-import { GAME_CONFIG, INITIAL_GAME_STATE } from "../../types/GameTypes";
-import { TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, TTLComponent } from "../../engine/core/CoreComponents";
+import { GAME_CONFIG, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
+import {
+    TransformComponent,
+    VelocityComponent,
+    RenderComponent,
+    Collider2DComponent,
+    TTLComponent,
+    FrictionComponent,
+    BoundaryComponent,
+    HealthComponent
+} from "../../engine/core/CoreComponents";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
 import { generateStarField } from "../../engine/rendering/StarField";
 import { RandomService } from "../../engine/utils/RandomService";
+import {
+    ShipComponent,
+    InputComponent,
+    BulletComponent,
+    AsteroidComponent,
+    UfoComponent,
+    GameStateComponent
+} from "./types/AsteroidTypes";
 
 /**
  * Factoría para la creación de entidades del juego Asteroids.
@@ -29,14 +46,14 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
   world.addComponent(ship, {
     type: "Friction",
     value: GAME_CONFIG.SHIP_FRICTION,
-  } as any);
+  } as FrictionComponent);
   world.addComponent(ship, {
     type: "Boundary",
     x: 0, y: 0,
     width: GAME_CONFIG.SCREEN_WIDTH,
     height: GAME_CONFIG.SCREEN_HEIGHT,
     behavior: "wrap",
-  } as any);
+  } as BoundaryComponent);
   world.addComponent(ship, {
     type: "Render",
     shape: "triangle",
@@ -54,9 +71,9 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
     isTrigger: false,
     enabled: true
   } as Collider2DComponent);
-  world.addComponent(ship, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0, trail: [] } as any);
-  world.addComponent(ship, { type: "Input", thrust: false, rotateLeft: false, rotateRight: false, shoot: false, hyperspace: false, shootCooldownRemaining: 0 } as any);
-  world.addComponent(ship, { type: "Health", current: 3, max: 3, invulnerableRemaining: GAME_CONFIG.INVULNERABILITY_DURATION } as any);
+  world.addComponent(ship, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0, trailPositions: [] } as ShipComponent);
+  world.addComponent(ship, { type: "Input", thrust: false, rotateLeft: false, rotateRight: false, shoot: false, hyperspace: false, shootCooldownRemaining: 0 } as InputComponent);
+  world.addComponent(ship, { type: "Health", current: 3, max: 3, invulnerableRemaining: GAME_CONFIG.INVULNERABILITY_DURATION } as HealthComponent);
 
   // Tutorialization particles
   createEmitter(world, {
@@ -96,7 +113,7 @@ export const createBullet = ({ world, x, y, angle }: { world: World; x: number; 
     enabled: true
   } as Collider2DComponent);
   world.addComponent(bullet, { type: "TTL", remaining: GAME_CONFIG.BULLET_TTL, total: GAME_CONFIG.BULLET_TTL } as TTLComponent);
-  world.addComponent(bullet, { type: "Bullet" } as any);
+  world.addComponent(bullet, { type: "Bullet" } as BulletComponent);
   return bullet;
 };
 
@@ -152,7 +169,7 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
     isTrigger: false,
     enabled: true
   } as Collider2DComponent);
-  world.addComponent(asteroid, { type: "Asteroid", size } as any);
+  world.addComponent(asteroid, { type: "Asteroid", size } as AsteroidComponent);
   return asteroid;
 };
 
@@ -195,7 +212,7 @@ export const createUfo = ({ world }: { world: World }) => {
     isTrigger: false,
     enabled: true
   } as Collider2DComponent);
-  world.addComponent(ufo, { type: "Ufo", baseY: y, time: 0 } as any);
+  world.addComponent(ufo, { type: "Ufo", baseY: y, time: 0 } as UfoComponent);
   return ufo;
 };
 
@@ -247,6 +264,6 @@ export const createGameState = ({ world }: { world: World }) => {
     screenShake: null,
     debugCRT: true,
     type: "GameState"
-  } as any);
+  } as GameStateComponent);
   return gameState;
 };

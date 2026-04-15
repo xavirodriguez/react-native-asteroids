@@ -27,7 +27,7 @@ export class PhysicsUtils {
    * @conceptualRisk [PRECISION_LOSS][LOW] La acumulación de errores de punto flotante en integraciones
    * largas puede causar divergencias mínimas entre clientes.
    */
-  public static integrateMovement(pos: any, vel: any, deltaTimeInSeconds: number): void {
+  public static integrateMovement(pos: Record<string, any>, vel: Record<string, any>, deltaTimeInSeconds: number): void {
     const x = pos.x !== undefined ? "x" : "worldX";
     const y = pos.y !== undefined ? "y" : "worldY";
     const dx = vel.dx !== undefined ? "dx" : "velocityX";
@@ -53,7 +53,7 @@ export class PhysicsUtils {
    * @postcondition Los componentes `dx`/`dy` de `vel` son reducidos.
    * @sideEffect Muta el objeto `vel` directamente por referencia.
    */
-  public static applyFriction(vel: any, friction: number, deltaTimeMs: number): void {
+  public static applyFriction(vel: Record<string, any>, friction: number, deltaTimeMs: number): void {
     const dx = vel.dx !== undefined ? "dx" : "velocityX";
     const dy = vel.dy !== undefined ? "dy" : "velocityY";
 
