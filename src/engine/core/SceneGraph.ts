@@ -15,10 +15,9 @@ export interface SceneNode {
 /**
  * Manages the hierarchy of entities and their transformations with dirty flag propagation.
  *
- * @deprecated Use {@link HierarchySystem} and {@link TransformComponent} instead.
- *
  * @remarks
- * Ensures world transforms are updated top-down to prevent stale data.
+ * Implements an optimized dirty flag propagation system.
+ * World transforms are updated top-down to ensure consistency.
  * The `updateTransforms()` method must be called during the Presentation phase.
  */
 export class SceneGraph {
@@ -65,13 +64,13 @@ export class SceneGraph {
     this.roots.delete(entityId);
 
     if (reparentChildren) {
-      for (const childId of node.childIds) {
-        this.setParent(childId, node.parentId);
+      for (let i = 0; i < node.childIds.length; i++) {
+        this.setParent(node.childIds[i], node.parentId);
       }
     } else {
       const children = [...node.childIds];
-      for (const childId of children) {
-        this.removeNode(childId, false);
+      for (let i = 0; i < children.length; i++) {
+        this.removeNode(children[i], false);
       }
     }
 
@@ -113,8 +112,9 @@ export class SceneGraph {
     const node = this.nodes.get(entityId);
     if (node && !node.dirty) {
       node.dirty = true;
-      for (let i = 0; i < node.childIds.length; i++) {
-          this.markDirty(node.childIds[i]);
+      const children = node.childIds;
+      for (let i = 0; i < children.length; i++) {
+          this.markDirty(children[i]);
       }
     }
   }
@@ -152,23 +152,24 @@ export class SceneGraph {
         this.combineTransforms(node.worldTransform, parentTransform, node.localTransform);
       } else {
         // Root node
-        // Root node: copy scalar properties, then clone the matrix array
-        const { matrix: _srcMatrix, ...scalarProps } = node.localTransform;
-        Object.assign(node.worldTransform, scalarProps);
-        if (!node.worldTransform.matrix) {
-            node.worldTransform.matrix = [1, 0, 0, 1, 0, 0];
-        }
-        if (node.localTransform.matrix) {
-            for (let i = 0; i < 6; i++) {
-                node.worldTransform.matrix[i] = node.localTransform.matrix[i];
-            }
+        const lt = node.localTransform;
+        const wt = node.worldTransform;
+        wt.x = lt.x;
+        wt.y = lt.y;
+        wt.rotation = lt.rotation;
+        wt.scaleX = lt.scaleX;
+        wt.scaleY = lt.scaleY;
+        if (!wt.matrix) wt.matrix = [1, 0, 0, 1, 0, 0];
+        if (lt.matrix) {
+            for (let i = 0; i < 6; i++) wt.matrix[i] = lt.matrix[i];
         }
       }
       node.dirty = false;
     }
 
-    for (const childId of node.childIds) {
-      this.updateNodeTransform(childId, node.worldTransform, isDirty);
+    const children = node.childIds;
+    for (let i = 0; i < children.length; i++) {
+      this.updateNodeTransform(children[i], node.worldTransform, isDirty);
     }
   }
 

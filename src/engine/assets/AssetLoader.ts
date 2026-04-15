@@ -86,7 +86,8 @@ export class AssetLoader {
    * @throws Error if a reference count underflow is detected (debug only).
    */
   public unloadGroup(ids: string[]): void {
-    for (const id of ids) {
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
       const currentCount = this.refCounts.get(id);
 
       if (currentCount === undefined) {
@@ -166,7 +167,6 @@ export class AssetLoader {
         .join(", ");
       const msg = `AssetLoader leak detected: ${this.cache.size} assets still in memory: ${leaks}`;
       console.warn(msg);
-      // In strict dev mode, we could throw here
     }
   }
 }
