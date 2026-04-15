@@ -3,7 +3,10 @@ import { Platform, View } from "react-native";
 import { SharedValue, useDerivedValue } from "react-native-reanimated";
 import { SharedCamera } from "../../core/types/SystemTypes";
 import { RandomService } from "../../utils/RandomService";
-import { RenderableComponent, TransformComponent } from "../../types/EngineTypes";
+import {
+  RenderableComponent,
+  TransformComponent,
+} from "../../types/EngineTypes";
 import { Entity } from "../../types/EngineTypes";
 
 // Conditionally import Skia components for non-web platforms
@@ -13,9 +16,10 @@ let Group: SkiaComponent | null = null;
 let Circle: SkiaComponent | null = null;
 let Rect: SkiaComponent | null = null;
 
-if (Platform.OS !== 'web') {
+if (Platform.OS !== "web") {
   try {
-    const SkiaModule = require("@shopify/react-native-skia") as typeof import("@shopify/react-native-skia");
+    const SkiaModule =
+      require("@shopify/react-native-skia") as typeof import("@shopify/react-native-skia");
     Canvas = SkiaModule.Canvas as unknown as SkiaComponent;
     Group = SkiaModule.Group as unknown as SkiaComponent;
     Circle = SkiaModule.Circle as unknown as SkiaComponent;
@@ -62,8 +66,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ];
   });
 
-  if (Platform.OS === 'web' || !Canvas) {
-    return <View style={{ width, height, backgroundColor: 'black' }} />;
+  if (Platform.OS === "web" || !Canvas) {
+    return <View style={{ width, height, backgroundColor: "black" }} />;
   }
 
   return (
@@ -85,9 +89,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       </Group>
 
       {/* HUD Layer (Static Screen Coordinates) */}
-      <Group>
-        {/* Render UI elements here */}
-      </Group>
+      <Group>{/* Render UI elements here */}</Group>
     </Canvas>
   );
 };
@@ -111,7 +113,12 @@ const EntityRenderer: React.FC<{
       opacity={renderable.opacity}
     >
       {renderable.renderType === "circle" && Circle && (
-        <Circle cx={0} cy={0} r={renderable.radius ?? renderable.size ?? 10} color={renderable.color} />
+        <Circle
+          cx={0}
+          cy={0}
+          r={renderable.radius ?? renderable.size ?? 10}
+          color={renderable.color}
+        />
       )}
       {renderable.renderType === "rect" && Rect && (
         <Rect

@@ -1,8 +1,25 @@
 import { World } from "../../engine/core/World";
-import { PONG_CONFIG } from "./types";
-import { TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, BoundaryComponent, TagComponent } from "../../engine/types/EngineTypes";
+import { PONG_CONFIG, PongState } from "./types";
+import { Component, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, BoundaryComponent, TagComponent } from "../../engine/types/EngineTypes";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import { RandomService } from "../../engine/utils/RandomService";
+
+export interface BallComponent extends Component {
+  type: "Ball";
+  spinFactor: number;
+  spinDecay: number;
+}
+
+export interface PaddleComponent extends Component {
+  type: "Paddle";
+  side: "left" | "right";
+  previousY: number;
+  lastVelocityY: number;
+}
+
+export interface PongStateComponent extends Component, PongState {
+  type: "PongState";
+}
 
 export const PongEntityFactory = {
   createBall(world: World) {
@@ -22,7 +39,7 @@ export const PongEntityFactory = {
     } as Collider2DComponent);
     world.addComponent(ball, { type: "Boundary", width: PONG_CONFIG.WIDTH, height: PONG_CONFIG.HEIGHT, mode: "bounce", bounceX: false, bounceY: true } as BoundaryComponent);
     world.addComponent(ball, { type: "Tag", tags: ["Ball"] } as TagComponent);
-    world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as any);
+    world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as BallComponent);
     return ball;
   },
 
@@ -49,13 +66,13 @@ export const PongEntityFactory = {
       enabled: true
     } as Collider2DComponent);
     world.addComponent(paddle, { type: "Tag", tags: ["Paddle", side] } as TagComponent);
-    world.addComponent(paddle, { type: "Paddle", side, previousY: y, lastVelocityY: 0 } as any);
+    world.addComponent(paddle, { type: "Paddle", side, previousY: y, lastVelocityY: 0 } as PaddleComponent);
     return paddle;
   },
 
   createGameState(world: World) {
     const state = world.createEntity();
-    world.addComponent(state, { type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1 } as any);
+    world.addComponent(state, { type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1 } as PongStateComponent);
     return state;
   }
 };

@@ -146,6 +146,7 @@ export class DeterministicSimulation {
             const sHealth = world.getComponent<HealthComponent>(ship, "Health")!;
             if (sHealth.invulnerableRemaining > 0) {
                 sHealth.invulnerableRemaining -= deltaTime;
+                if (sHealth.invulnerableRemaining < 0) sHealth.invulnerableRemaining = 0;
             }
         });
 
@@ -163,13 +164,13 @@ export class DeterministicSimulation {
         bullets.forEach(bullet => {
             const bPos = world.getComponent<TransformComponent>(bullet, "Transform")!;
             const bCol = world.getComponent<Collider2DComponent>(bullet, "Collider2D")!;
-            const bRadius = (bCol.shape as any).radius;
+            const bRadius = bCol.shape.type === "circle" ? bCol.shape.radius : 0;
 
             asteroids.forEach(asteroid => {
                 if (!world.hasComponent(asteroid, "Asteroid")) return;
                 const aPos = world.getComponent<TransformComponent>(asteroid, "Transform")!;
                 const aCol = world.getComponent<Collider2DComponent>(asteroid, "Collider2D")!;
-                const aRadius = (aCol.shape as any).radius;
+                const aRadius = aCol.shape.type === "circle" ? aCol.shape.radius : 0;
 
                 const dx = bPos.x - aPos.x;
                 const dy = bPos.y - aPos.y;
@@ -189,13 +190,13 @@ export class DeterministicSimulation {
             const sHealth = world.getComponent<HealthComponent>(ship, "Health")!;
             if (!sCol || sHealth.invulnerableRemaining > 0) return;
 
-            const sRadius = (sCol.shape as any).radius;
+            const sRadius = sCol.shape.type === "circle" ? sCol.shape.radius : 0;
 
             asteroids.forEach(asteroid => {
                 if (!world.hasComponent(asteroid, "Asteroid")) return;
                 const aPos = world.getComponent<TransformComponent>(asteroid, "Transform")!;
                 const aCol = world.getComponent<Collider2DComponent>(asteroid, "Collider2D")!;
-                const aRadius = (aCol.shape as any).radius;
+                const aRadius = aCol.shape.type === "circle" ? aCol.shape.radius : 0;
 
                 const dx = sPos.x - aPos.x;
                 const dy = sPos.y - aPos.y;

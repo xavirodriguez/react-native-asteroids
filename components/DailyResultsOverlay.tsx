@@ -4,6 +4,11 @@ import { LeaderboardService } from "../src/services/LeaderboardService";
 import { DailyChallengeService } from "../src/services/DailyChallengeService";
 import { seedToString } from "../src/utils/SeedUtils";
 
+interface LeaderboardEntry {
+  playerId: string;
+  score: number;
+}
+
 interface DailyResultsOverlayProps {
   gameId: string;
   score: number;
@@ -20,14 +25,17 @@ export const DailyResultsOverlay: React.FC<DailyResultsOverlayProps> = ({
   seed,
   onClose
 }) => {
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeToNext, setTimeToNext] = useState("");
 
   useEffect(() => {
     async function fetchData() {
       const dateKey = DailyChallengeService.getDateKey();
-      const entries = await LeaderboardService.fetchDailyLeaderboard(gameId, dateKey);
+      const entries = (await LeaderboardService.fetchDailyLeaderboard(
+        gameId,
+        dateKey
+      )) as LeaderboardEntry[];
       setLeaderboard(entries);
       setLoading(false);
     }

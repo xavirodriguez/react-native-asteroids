@@ -20,8 +20,11 @@ export class SceneManager {
   private state: SceneState = SceneState.IDLE;
   private transitionQueue: (() => Promise<void>)[] = [];
   private isProcessingTransition = false;
+  private world: World;
 
-  constructor() {}
+  constructor(world: World) {
+    this.world = world;
+  }
 
   public getCurrentScene(): Scene | null {
     return this.currentScene;
@@ -204,8 +207,6 @@ export class SceneManager {
 
   public async restartCurrentScene(): Promise<void> {
     if (this.currentScene) {
-        // Clear the scene's world before restarting to prevent duplicate entities/systems
-        this.currentScene.getWorld().clear();
         await this.transitionTo(this.currentScene);
     }
   }
