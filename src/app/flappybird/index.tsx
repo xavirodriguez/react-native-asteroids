@@ -15,6 +15,9 @@ import { DailyChallengeService } from "@/services/DailyChallengeService";
 import { LeaderboardService } from "@/services/LeaderboardService";
 import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
+import { Mutator } from "@/config/MutatorConfig";
+import { FlappyBirdGame } from "@/games/flappybird/FlappyBirdGame";
+import { FlappyBirdInput } from "@/games/flappybird/types/FlappyBirdTypes";
 
 export default function FlappyBirdScreen() {
   const [started, setStarted] = useState(false);
@@ -24,7 +27,7 @@ export default function FlappyBirdScreen() {
   const [playerName, setPlayerName] = useState("Jugador");
   const [initialSeed, setInitialSeed] = useState<number | undefined>();
   const [showDailyResults, setShowDailyResults] = useState(false);
-  const [activeMutators, setActiveMutators] = useState<any[]>([]);
+  const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
   const { room, connected, serverState } = useMultiplayer("flappybird", playerName, isMulti && started);
 
@@ -52,13 +55,13 @@ export default function FlappyBirdScreen() {
 
   useEffect(() => {
     if (isMulti && connected && game) {
-      (game as any).setMultiplayerMode(true);
+      (game as unknown as FlappyBirdGame).setMultiplayerMode(true);
     }
   }, [isMulti, connected, game]);
 
   useEffect(() => {
     if (isMulti && serverState && game) {
-        (game as any).updateFromServer(serverState);
+        (game as unknown as FlappyBirdGame).updateFromServer(serverState);
     }
   }, [isMulti, serverState, game]);
 
@@ -92,7 +95,7 @@ export default function FlappyBirdScreen() {
     );
   }
 
-  const handleMultiplayerInput = (input: any) => {
+  const handleMultiplayerInput = (input: Partial<FlappyBirdInput>) => {
     if (isMulti && room) {
         if (input.flap) room.send("flap");
     } else {
@@ -160,7 +163,7 @@ const StartScreen: React.FC<{
   instructions: string;
   onSeedChange?: (seed: number) => void;
   onStartDaily?: (seed: number) => void;
-  activeMutators?: any[];
+  activeMutators?: Mutator[];
 }> = ({
   title,
   highScore,

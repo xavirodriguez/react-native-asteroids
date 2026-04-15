@@ -1,14 +1,15 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { TransformComponent, HealthComponent, TTLComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent, HealthComponent, TTLComponent, Star } from "../../../engine/types/EngineTypes";
 import { Platform } from "react-native";
 import { RandomService } from "../../../engine/utils/RandomService";
+import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 
 // Lazy initialize paint to avoid issues in environments where Skia is not fully ready at module load time
-let paint: any = null;
+let paint: unknown = null;
 const getPaint = () => {
     if (Platform.OS === "web") return null;
     try {
-        const { Skia } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia } =
         require("@shopify/react-native-skia");
         if (!paint && typeof Skia !== "undefined") {
             paint = Skia.Paint();
@@ -19,21 +20,21 @@ const getPaint = () => {
     return paint;
 };
 
-export const drawSkiaShip: ShapeDrawer<any> = (canvas, entity, _pos, render, world) => {
+export const drawSkiaShip: ShapeDrawer<Record<string, unknown>> = (canvas, entity, _pos, render, world) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, BlurStyle } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia, BlurStyle } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Path || !Skia.Paint) return;
-        const p = getPaint();
+        const p = getPaint() as any;
         if (!p) return;
         const size = render.size;
-        const input = world.getComponent<any>(entity, "Input");
+        const input = world.getComponent<InputComponent>(entity, "Input");
         const health = world.getComponent<HealthComponent>(entity, "Health");
 
         const isInvulnerable = health && health.invulnerableRemaining > 0;
-          const gameState = world.getSingleton<any>("GameState");
-          const tick = (gameState as any)?.serverTick ?? 0;
+          const gameState = world.getSingleton<GameStateComponent>("GameState");
+          const tick = gameState?.serverTick ?? 0;
         const blinkOpacity = isInvulnerable
             ? Math.floor(tick / 10) % 2 === 0 ? 0.3 : 1.0
             : 1.0;
@@ -84,13 +85,13 @@ export const drawSkiaShip: ShapeDrawer<any> = (canvas, entity, _pos, render, wor
     }
 };
 
-export const drawSkiaUfo: ShapeDrawer<any> = (canvas, _entity, _pos, render) => {
+export const drawSkiaUfo: ShapeDrawer<Record<string, unknown>> = (canvas, _entity, _pos, render) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, BlurStyle } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia, BlurStyle } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint();
+        const p = getPaint() as any;
         if (!p) return;
         const size = render.size;
         const color = render.color;
@@ -124,34 +125,34 @@ export const drawSkiaUfo: ShapeDrawer<any> = (canvas, _entity, _pos, render) => 
     } catch (_e) { /* ignore */ }
 };
 
-export const skiaStarfieldEffect: EffectDrawer<any> = (canvas, world, width, height) => {
+export const skiaStarfieldEffect: EffectDrawer<Record<string, unknown>> = (canvas, world, width, height) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint();
+        const p = getPaint() as any;
         if (!p) return;
         const gameStateEntity = world.query("GameState")[0];
-        const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
+        const gameState = gameStateEntity ? world.getComponent<GameStateComponent>(gameStateEntity, "GameState") : null;
 
         if (gameState?.stars) {
             const shipEntity = world.query("Ship", "Transform")[0];
             const shipPos = shipEntity
               ? world.getComponent<TransformComponent>(shipEntity, "Transform")
-              : { x: width / 2, y: height / 2 };
+              : { x: width / 2, y: height / 2 } as TransformComponent;
 
             if (!shipPos) return;
 
             p.setColor(Skia.Color("white"));
             p.setStyle(Skia.PaintStyle.Fill);
 
-            gameState.stars.forEach((star: any) => {
-              const parallaxX = (star.x - shipPos.x * (0.05 * (star.layer + 1)) + width) % width;
-              const parallaxY = (star.y - shipPos.y * (0.05 * (star.layer + 1)) + height) % height;
+            gameState.stars.forEach((star: Star) => {
+              const parallaxX = (star.x - (shipPos.worldX ?? shipPos.x) * (0.05 * (star.layer + 1)) + width) % width;
+              const parallaxY = (star.y - (shipPos.worldY ?? shipPos.y) * (0.05 * (star.layer + 1)) + height) % height;
 
-              const gameState = world.getSingleton<any>("GameState");
-              const tick = (gameState as any)?.serverTick ?? 0;
+              const gState = world.getSingleton<GameStateComponent>("GameState");
+              const tick = gState?.serverTick ?? 0;
               const twinkle = 0.8 + Math.sin(star.twinklePhase + tick * 0.1 * star.twinkleSpeed) * 0.2;
               p.setAlphaf(star.brightness * twinkle);
               canvas.drawRect(Skia.XYWHRect(parallaxX, parallaxY, star.size, star.size), p);
@@ -160,14 +161,14 @@ export const skiaStarfieldEffect: EffectDrawer<any> = (canvas, world, width, hei
     } catch (_e) { /* ignore */ }
 };
 
-export const skiaScreenShakeEffect: EffectDrawer<any> = (canvas, world) => {
+export const skiaScreenShakeEffect: EffectDrawer<Record<string, unknown>> = (canvas, world) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined") return;
         const gameStateEntity = world.query("GameState")[0];
-        const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
+        const gameState = gameStateEntity ? world.getComponent<GameStateComponent>(gameStateEntity, "GameState") : null;
 
         if (gameState?.screenShake && gameState.screenShake.duration > 0) {
       const renderRandom = RandomService.getInstance("render");
@@ -178,13 +179,13 @@ export const skiaScreenShakeEffect: EffectDrawer<any> = (canvas, world) => {
     } catch (_e) { /* ignore */ }
 };
 
-export const drawSkiaParticle: ShapeDrawer<any> = (canvas, entity, _pos, render, world) => {
+export const drawSkiaParticle: ShapeDrawer<Record<string, unknown>> = (canvas, entity, _pos, render, world) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint();
+        const p = getPaint() as any;
         if (!p) return;
 
         const ttl = world.getComponent<TTLComponent>(entity, "TTL");
@@ -204,13 +205,13 @@ export const drawSkiaParticle: ShapeDrawer<any> = (canvas, entity, _pos, render,
     } catch (_e) { /* ignore */ }
 };
 
-export const drawSkiaBullet: ShapeDrawer<any> = (canvas, _entity, _pos, render) => {
+export const drawSkiaBullet: ShapeDrawer<Record<string, unknown>> = (canvas, _entity, _pos, render) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, BlurStyle } =  // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { Skia, BlurStyle } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint();
+        const p = getPaint() as any;
         if (!p) return;
         const size = render.size;
 

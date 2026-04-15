@@ -1,5 +1,7 @@
 import { useSharedValue } from "react-native-reanimated";
 import { CameraState, SharedCamera } from "../core/types/SystemTypes";
+import { World } from "../core/World";
+import { TransformComponent } from "../core/CoreComponents";
 
 /**
  * Hook to initialize a shared camera for the Skia renderer.
@@ -76,9 +78,10 @@ export class CameraSystem {
    * @param viewportSize - Dimensiones del área visible.
    * @mutates sharedCamera
    */
+  update(world: World, _deltaTime: number, viewportSize: { width: number; height: number }): void {
   update(world: import("../core/World").World, deltaTime: number, viewportSize: { width: number; height: number }): void {
     if (this.targetEntityId !== null) {
-      const transform = world.getComponent(this.targetEntityId, "Transform");
+      const transform = world.getComponent<TransformComponent>(this.targetEntityId, "Transform");
       if (transform) {
         let targetX = transform.x - viewportSize.width / 2;
         let targetY = transform.y - viewportSize.height / 2;

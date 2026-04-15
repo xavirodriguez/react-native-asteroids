@@ -15,6 +15,9 @@ import { DailyChallengeService } from "@/services/DailyChallengeService";
 import { LeaderboardService } from "@/services/LeaderboardService";
 import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
+import { Mutator } from "@/config/MutatorConfig";
+import { AsteroidsGame } from "@/games/asteroids/AsteroidsGame";
+import { InputState } from "@/games/asteroids/types/AsteroidTypes";
 
 export default function AsteroidsScreen() {
   const [started, setStarted] = useState(false);
@@ -24,7 +27,7 @@ export default function AsteroidsScreen() {
   const [playerName, setPlayerName] = useState("Jugador");
   const [initialSeed, setInitialSeed] = useState<number | undefined>();
   const [showDailyResults, setShowDailyResults] = useState(false);
-  const [activeMutators, setActiveMutators] = useState<any[]>([]);
+  const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
   const { room, connected, serverState, sendInput, inputBufferRef } = useMultiplayer("asteroids", playerName, isMulti && started);
 
@@ -52,7 +55,7 @@ export default function AsteroidsScreen() {
 
   useEffect(() => {
     if (isMulti && connected && game) {
-      (game as any).setMultiplayerMode(true);
+      (game as unknown as AsteroidsGame).setMultiplayerMode(true);
     }
   }, [isMulti, connected, game]);
 
@@ -61,12 +64,12 @@ export default function AsteroidsScreen() {
         const sessionId = room?.sessionId;
         const pendingInputs = inputBufferRef.current;
 
-        (game as any).updateFromServer(serverState, sessionId);
+        (game as unknown as AsteroidsGame).updateFromServer(serverState, sessionId);
 
         // Re-apply pending inputs for reconciliation
         if (sessionId && pendingInputs.length > 0) {
             pendingInputs.forEach(frame => {
-                (game as any).predictLocalPlayer(frame, 16.66);
+                (game as unknown as AsteroidsGame).predictLocalPlayer(frame, 16.66);
             });
         }
     }
@@ -102,11 +105,11 @@ export default function AsteroidsScreen() {
     );
   }
 
-  const handleMultiplayerInput = (input: any) => {
+  const handleMultiplayerInput = (input: Partial<InputState>) => {
     if (isMulti && room) {
-        const frame = sendInput(input);
+        const frame = sendInput(input as Record<string, boolean>);
         if (frame) {
-            (game as any).predictLocalPlayer(frame, 16.66);
+            (game as unknown as AsteroidsGame).predictLocalPlayer(frame, 16.66);
         }
     } else {
         handleInput(input);
@@ -177,7 +180,7 @@ const StartScreen: React.FC<{
   instructions: string;
   onSeedChange?: (seed: number) => void;
   onStartDaily?: (seed: number) => void;
-  activeMutators?: any[];
+  activeMutators?: Mutator[];
 }> = ({
   title,
   highScore,

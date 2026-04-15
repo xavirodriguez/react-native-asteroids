@@ -15,6 +15,8 @@ import { DailyChallengeService } from "@/services/DailyChallengeService";
 import { LeaderboardService } from "@/services/LeaderboardService";
 import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
+import { Mutator } from "@/config/MutatorConfig";
+import { SpaceInvadersGame } from "@/games/space-invaders/SpaceInvadersGame";
 
 export default function SpaceInvadersScreen() {
   const [started, setStarted] = useState(false);
@@ -24,7 +26,7 @@ export default function SpaceInvadersScreen() {
   const [playerName, setPlayerName] = useState("Jugador");
   const [initialSeed, setInitialSeed] = useState<number | undefined>();
   const [showDailyResults, setShowDailyResults] = useState(false);
-  const [activeMutators, setActiveMutators] = useState<any[]>([]);
+  const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
   const { room, connected, serverState } = useMultiplayer("spaceinvaders", playerName, isMulti && started);
 
@@ -52,13 +54,13 @@ export default function SpaceInvadersScreen() {
 
   useEffect(() => {
     if (isMulti && connected && game) {
-      (game as any).setMultiplayerMode(true);
+      (game as unknown as SpaceInvadersGame).setMultiplayerMode(true);
     }
   }, [isMulti, connected, game]);
 
   useEffect(() => {
     if (isMulti && serverState && game) {
-        (game as any).updateFromServer(serverState);
+        (game as unknown as SpaceInvadersGame).updateFromServer(serverState);
     }
   }, [isMulti, serverState, game]);
 
@@ -162,7 +164,7 @@ const StartScreen: React.FC<{
   instructions: string;
   onSeedChange?: (seed: number) => void;
   onStartDaily?: (seed: number) => void;
-  activeMutators?: any[];
+  activeMutators?: Mutator[];
 }> = ({
   title,
   highScore,

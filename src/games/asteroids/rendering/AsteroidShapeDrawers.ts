@@ -1,18 +1,19 @@
 import { World } from "../../../engine/core/World";
 import { Entity } from "../../../engine/core/Entity";
-import { TransformComponent, RenderComponent, TTLComponent } from "../../../engine/core/CoreComponents";
+import { TransformComponent, RenderComponent, TTLComponent, HealthComponent, Star } from "../../../engine/core/CoreComponents";
 import { drawStarField } from "../../../engine/rendering/StarField";
 import { RandomService } from "../../../engine/utils/RandomService";
+import { InputComponent, GameStateComponent, ShipComponent } from "../types/AsteroidTypes";
 
 export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: TransformComponent, render: RenderComponent, world: World) => {
     const size = render.size;
-    const input = world.getComponent<any>(entity, "Input");
-    const health = world.getComponent<any>(entity, "Health");
+    const input = world.getComponent<InputComponent>(entity, "Input");
+    const health = world.getComponent<HealthComponent>(entity, "Health");
 
     if (health && health.invulnerableRemaining > 0) {
       // Flash effect for invulnerability/hits
-      const gameState = world.getSingleton<any>("GameState");
-      const tick = (gameState as any)?.serverTick ?? 0;
+      const gameState = world.getSingleton<GameStateComponent>("GameState");
+      const tick = gameState?.serverTick ?? 0;
       if (Math.floor(tick / 10) % 2 === 0) ctx.globalAlpha = 0.3;
     }
 
@@ -53,9 +54,9 @@ export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: Tr
 };
 
 export const drawAsteroidShipTrailDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: TransformComponent, render: RenderComponent, world: World) => {
-    const shipComp = world.getComponent<any>(entity, "Ship");
-    if (shipComp && shipComp.trail) {
-        drawAsteroidShipTrail(ctx, shipComp.trail, render.size);
+    const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
+    if (shipComp && shipComp.trailPositions) {
+        drawAsteroidShipTrail(ctx, shipComp.trailPositions, render.size);
     }
 };
 
@@ -94,7 +95,7 @@ export const drawFlash = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: T
     ctx.fill();
 };
 
-export function drawAsteroidStarField(ctx: CanvasRenderingContext2D, stars: any[], width: number, height: number, world: World): void {
+export function drawAsteroidStarField(ctx: CanvasRenderingContext2D, stars: Star[], width: number, height: number, world: World): void {
     const shipEntity = world.query("Ship", "Transform")[0];
     const shipPos = shipEntity
       ? world.getComponent<TransformComponent>(shipEntity, "Transform")

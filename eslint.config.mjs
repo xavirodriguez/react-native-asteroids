@@ -7,6 +7,7 @@ import unusedImports from "eslint-plugin-unused-imports";
 /** @type {import('eslint').Linter.Config[]} */
 export default tseslint.config(
   {
+    // Global ignores must be the first object in the array
     ignores: [
       "**/node_modules/**",
       "**/dist/**",
@@ -17,6 +18,7 @@ export default tseslint.config(
       "**/.git/**",
       "**/temp/**",
       "**/etc/**",
+      "lint_report.json"
     ],
   },
   js.configs.recommended,
@@ -56,11 +58,17 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: "^_"
         }
       ],
-      "@typescript-eslint/no-require-imports": "error",
+      "@typescript-eslint/no-require-imports": ["error", {
+        "allow": ["/src/engine/rendering/SkiaRenderer", "@shopify/react-native-skia"]
+      }],
     },
   },
   {
-    files: ["**/*.config.{js,cjs}", "metro.config.js", "babel.config.js"],
+    files: [
+      "**/*.config.{js,cjs}",
+      "metro.config.js",
+      "babel.config.js"
+    ],
     languageOptions: {
       sourceType: "commonjs",
       globals: {
@@ -70,10 +78,15 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/no-var-requires": "off",
+      "no-undef": "off" // Sometimes needed for commonjs in flat config
     },
   },
   {
-    files: ["**/*.config.mjs", "eslint.config.mjs", "postcss.config.mjs"],
+    files: [
+      "**/*.config.mjs",
+      "eslint.config.mjs",
+      "postcss.config.mjs"
+    ],
     languageOptions: {
       sourceType: "module",
       globals: {

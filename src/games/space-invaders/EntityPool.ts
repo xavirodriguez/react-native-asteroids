@@ -11,6 +11,7 @@ import {
   ReclaimableComponent,
   Component
 } from "../../engine/types/EngineTypes";
+import { CircleShape } from "../../engine/physics/shapes/ShapeTypes";
 
 interface BulletComponents {
   position: TransformComponent;
@@ -38,7 +39,7 @@ export class PlayerBulletPool {
           type: "Collider2D",
           shape: { type: "circle", radius: 0 },
           layer: CollisionLayers.PROJECTILE,
-          mask: CollisionLayers.ENEMY,
+          mask: CollisionLayers.ENEMY | CollisionLayers.DEBRIS,
           offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
         },
         ttl: { type: "TTL", remaining: 0, total: 0 },
@@ -60,7 +61,7 @@ export class PlayerBulletPool {
     data.velocity.dy = dy;
     data.render.size = size;
     data.render.color = color;
-    (data.collider.shape as any).radius = size;
+    (data.collider.shape as CircleShape).radius = size;
     data.ttl.remaining = ttl;
     data.ttl.total = ttl;
     return entity;
@@ -109,7 +110,7 @@ export class EnemyBulletPool {
     data.velocity.dy = dy;
     data.render.size = size;
     data.render.color = color;
-    (data.collider.shape as any).radius = size;
+    (data.collider.shape as CircleShape).radius = size;
     data.ttl.remaining = ttl;
     data.ttl.total = ttl;
     return entity;
