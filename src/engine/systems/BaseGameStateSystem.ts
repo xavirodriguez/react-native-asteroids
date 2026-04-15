@@ -18,10 +18,10 @@ export interface IGameState {
  */
 export abstract class BaseGameStateSystem<TState extends IGameState> extends System {
   protected gameOverLogged = false;
-  protected gameInstance: BaseGame<any, any> | undefined;
+  protected gameInstance: BaseGame<Record<string, any>, any> | undefined;
   protected _world: World | undefined;
 
-  constructor(gameInstance?: BaseGame<any, any>) {
+  constructor(gameInstance?: BaseGame<Record<string, any>, any>) {
     super();
     this.gameInstance = gameInstance;
   }

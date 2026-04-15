@@ -2,6 +2,7 @@ import { Component } from "./Component";
 import { Entity } from "./Entity";
 import { EventBus } from "./EventBus";
 import { StateMachine } from "./StateMachine";
+import type { World } from "./World";
 
 export { Entity, Component };
 
@@ -113,7 +114,7 @@ export interface BoundaryComponent extends Component {
    * - `destroy`: elimina la entidad del mundo.
    */
   behavior: "wrap" | "bounce" | "destroy";
-  /** @deprecated Utilizar `behavior`. */
+  /** @deprecated Utilizar {@link BoundaryComponent.behavior} en su lugar. */
   mode?: "wrap" | "bounce" | "destroy";
   /** Si debe rebotar específicamente en el eje X. */
   bounceX?: boolean;
@@ -126,7 +127,7 @@ export interface BoundaryComponent extends Component {
  */
 export interface TagComponent extends Component {
   type: "Tag";
-  /** @deprecated Utilizar `tags`. */
+  /** @deprecated Utilizar {@link TagComponent.tags} en su lugar. */
   tag?: string;
   /** Lista de etiquetas asociadas (e.g., ["Player", "LocalPlayer"]). */
   tags: string[];
@@ -185,7 +186,7 @@ export interface Collider2DComponent extends Component {
  */
 export interface CollisionEvent {
   otherEntity: Entity;
-  manifold?: CollisionManifold;
+  manifold?: import("../legacy/LegacyComponents").CollisionManifold;
   normalX?: number;
   normalY?: number;
   depth?: number;
@@ -234,7 +235,7 @@ export interface PhysicsBody2DComponent extends Component {
 /**
  * Define la apariencia y propiedades de visualización de una entidad.
  *
- * @responsibility Proveer la información necesaria para el {@link RenderSystem}.
+ * @responsibility Proveer la información necesaria para el sistema de renderizado.
  */
 export interface RenderComponent extends Component {
   type: "Render";
@@ -272,8 +273,6 @@ export interface HealthComponent extends Component {
   /** Tiempo restante de invulnerabilidad (ms). */
   invulnerableRemaining: number;
 }
-
-import type { World } from "./World";
 
 /**
  * Reclaimable component for entities that should be returned to a pool.
@@ -339,7 +338,7 @@ export interface AnimatorComponent extends Component {
  */
 export interface StateMachineComponent extends Component {
   type: "StateMachine";
-  fsm: StateMachine<unknown, unknown>;
+  fsm: StateMachine<string, unknown>;
 }
 
 /**

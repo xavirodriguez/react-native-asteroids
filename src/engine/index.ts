@@ -1,7 +1,9 @@
 /**
  * @packageDocumentation
- * Entrypoint principal del engine 2D retro.
- * Organizado en módulos para facilitar la extensibilidad y el mantenimiento.
+ * Entrypoint principal de TinyAsterEngine.
+ *
+ * Este archivo consolida y expone la API pública del motor, organizada por dominios.
+ * Se priorizan las versiones modernas y canónicas de cada sistema.
  */
 
 // --- CORE ECS ---
@@ -10,9 +12,14 @@ export { Query } from './core/Query';
 export { System, SystemPhase } from './core/System';
 export { GameLoop } from './core/GameLoop';
 export { EntityPool } from './core/EntityPool';
+export { BaseGame } from './core/BaseGame';
+export type { IGame } from './core/IGame';
 export type { Entity } from './core/Entity';
 export type { Component } from './core/Component';
 export * from './core/CoreComponents';
+
+// --- TYPES ---
+export * from './types/EngineTypes';
 
 // --- PHYSICS & COLLISION ---
 export { PhysicsSystem2D } from './physics/dynamics/PhysicsSystem2D';
@@ -27,6 +34,11 @@ export * from './physics/query/QueryTypes';
 
 // --- RENDERING ---
 export * from './rendering/RenderTypes';
+export { type ShapeDrawer, type EffectDrawer } from './rendering/Renderer';
+export { CanvasRenderer } from './rendering/CanvasRenderer';
+export { SkiaRenderer } from './rendering/SkiaRenderer';
+export { RenderSnapshot } from './rendering/RenderSnapshot';
+export { CommandBuffer } from './rendering/CommandBuffer';
 export type { CollisionManifold } from './legacy/LegacyComponents';
 export { Camera2D } from './camera/Camera2D';
 export { CameraSystem } from './camera/CameraSystem';
@@ -35,29 +47,34 @@ export { CameraSystem } from './camera/CameraSystem';
 export { UnifiedInputSystem } from './input/UnifiedInputSystem';
 export * from './input/InputTypes';
 
-// Scenes
-export * from './scenes/Scene';
-export * from './scenes/SceneManager';
+// --- SCENES ---
+export { Scene } from './scenes/Scene';
+export { SceneManager } from './scenes/SceneManager';
 
-// Assets
+// --- ASSETS ---
 export * from './assets/AssetTypes';
-export * from './assets/AssetLoader';
+export { AssetLoader } from './assets/AssetLoader';
 
-// Utils
+// --- UTILS ---
 export * from './utils/PhysicsUtils';
-export * from './utils/RandomService';
-export * from './utils/PrefabPool';
+export { RandomService } from './utils/RandomService';
+export { PrefabPool } from './utils/PrefabPool';
+export { LifecycleUtils } from './utils/LifecycleUtils';
 
-// Systems
-export * from './systems/HierarchySystem';
-export * from './systems/MovementSystem';
-export * from './systems/FrictionSystem';
-export * from './systems/BoundarySystem';
-export * from './systems/TTLSystem';
-export * from './systems/JuiceSystem';
-export * from './systems/ParticleSystem';
-export * from './systems/ScreenShakeSystem';
+// --- SYSTEMS ---
+export { HierarchySystem } from './systems/HierarchySystem';
+export { MovementSystem } from './systems/MovementSystem';
+export { FrictionSystem } from './systems/FrictionSystem';
+export { BoundarySystem } from './systems/BoundarySystem';
+export { TTLSystem } from './systems/TTLSystem';
+export { JuiceSystem } from './systems/JuiceSystem';
+export { ParticleSystem } from './systems/ParticleSystem';
+export { ScreenShakeSystem } from './systems/ScreenShakeSystem';
+export { RenderUpdateSystem } from './systems/RenderUpdateSystem';
+export { AnimationSystem } from './systems/AnimationSystem';
+export { StateMachineSystem } from './systems/StateMachineSystem';
+export { TilemapRenderSystem } from './systems/TilemapRenderSystem';
 
-// Legacy API
+// --- NAMESPACES ---
 import * as Legacy from './legacy';
 export { Legacy };

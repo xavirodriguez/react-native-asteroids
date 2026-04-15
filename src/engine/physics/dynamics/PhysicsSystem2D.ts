@@ -109,14 +109,20 @@ export class PhysicsSystem2D extends System {
     bodyA: PhysicsBody2DComponent,
     transformB: TransformComponent,
     bodyB: PhysicsBody2DComponent,
+<<<<<<< HEAD
     collision: CollisionEvent
+=======
+    collision: import("../../core/CoreComponents").CollisionEvent
+>>>>>>> origin/master
   ): void {
+    if (collision.normalX === undefined || collision.normalY === undefined || collision.depth === undefined) return;
+
     // Normal points from A to B
     const nx = collision.normalX;
     const ny = collision.normalY;
 
     // We take the first contact point for simplicity in this implementation
-    const contact = collision.contactPoints[0] || { x: (transformA.x + transformB.x) / 2, y: (transformA.y + transformB.y) / 2 };
+    const contact = (collision.contactPoints && collision.contactPoints[0]) || { x: (transformA.x + transformB.x) / 2, y: (transformA.y + transformB.y) / 2 };
 
     // Vectors from center of mass to contact point
     const raX = contact.x - (transformA.worldX ?? transformA.x);

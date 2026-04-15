@@ -1,26 +1,19 @@
 import { World } from "../core/World";
-import { Renderer } from "./Renderer";
+import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TransformComponent, PreviousTransformComponent, Component } from "../core/CoreComponents";
-import { renderUI } from "../ui/UIRenderer";
+import { RenderComponent, TransformComponent, PreviousTransformComponent } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
-import { RenderSnapshot } from "./RenderSnapshot";
+import { RenderSnapshot, UISnapshot } from "./RenderSnapshot";
 import { CommandBuffer, DrawCommand } from "./CommandBuffer";
-
-export type ShapeDrawer = (
-  ctx: CanvasRenderingContext2D,
-  entity: Entity,
-  pos: TransformComponent,
-  render: RenderComponent,
-  world: World
-) => void;
+import { UIElementComponent, UIStyleComponent, UITextComponent, UIProgressBarComponent, UIButtonStateComponent } from "../ui/UITypes";
+import { TextRenderer } from "../ui/text/TextRenderer";
 
 /**
  * 2D Canvas-based Rendering Engine.
  *
  * @remarks
  * Implements a snapshot-based architecture for decoupled and consistent rendering.
- * Allocation-free in the hot loop using pooled commands and double-buffered snapshots.
+ * Pure rendering pipeline: renderSnapshot and its hooks/drawers no longer receive the World instance.
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
@@ -28,29 +21,24 @@ export class CanvasRenderer implements Renderer {
   protected width: number = 0;
   protected height: number = 0;
 
-  private shapeDrawers = new Map<string, ShapeDrawer>();
-  private postEntityDrawers = new Map<string, ShapeDrawer>();
-  private preRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
-  private postRenderHooks: ((ctx: CanvasRenderingContext2D, world: World) => void)[] = [];
-  private backgroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
-  private foregroundEffects: ((ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void)[] = [];
+  private shapeDrawers = new Map<string, ShapeDrawer<CanvasRenderingContext2D>>();
+  private preRenderHooks: ((ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot) => void)[] = [];
+  private postRenderHooks: ((ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot) => void)[] = [];
+  private backgroundEffects: { name: string, drawer: EffectDrawer<CanvasRenderingContext2D> }[] = [];
+  private foregroundEffects: { name: string, drawer: EffectDrawer<CanvasRenderingContext2D> }[] = [];
 
   private commandBuffer = new CommandBuffer();
   private readonly MAX_ENTITIES = 2000;
+  private readonly MAX_UI = 200;
 
   private readonly snapshotA: RenderSnapshot;
   private readonly snapshotB: RenderSnapshot;
   private currentSnapshot: RenderSnapshot;
 
-  // Reusable component objects to avoid GC pressure
-  private readonly tempPos: TransformComponent = {
-    type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1,
-    worldX: 0, worldY: 0, worldRotation: 0, worldScaleX: 1, worldScaleY: 1
-  };
-
-  private readonly tempRender: RenderComponent = {
-    type: "Render", shape: "", size: 0, color: "", rotation: 0, zIndex: 0
-  };
+  // Reusable objects to avoid GC pressure
+  private readonly tempPos = { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 };
+  private readonly tempRender: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: any } =
+    { shape: "", size: 0, color: "", hitFlashFrames: 0, data: null };
 
   constructor(ctx?: CanvasRenderingContext2D) {
     if (ctx) this.ctx = ctx;
@@ -71,9 +59,18 @@ export class CanvasRenderer implements Renderer {
         vertices: null, hitFlashFrames: 0, data: null
       };
     }
+    const uiElements = new Array(this.MAX_UI);
+    for (let i = 0; i < this.MAX_UI; i++) {
+        uiElements[i] = {
+            id: 0, elementType: "", x: 0, y: 0, width: 0, height: 0,
+            opacity: 1, visible: false, zIndex: 0
+        };
+    }
     return {
       entities,
       entityCount: 0,
+      uiElements,
+      uiCount: 0,
       shakeX: 0,
       shakeY: 0
     };
@@ -83,32 +80,28 @@ export class CanvasRenderer implements Renderer {
     this.currentSnapshot = this.currentSnapshot === this.snapshotA ? this.snapshotB : this.snapshotA;
   }
 
-  public registerShape(name: string, drawer: ShapeDrawer): void {
+  public registerShape(name: string, drawer: ShapeDrawer<CanvasRenderingContext2D>): void {
     this.shapeDrawers.set(name, drawer);
   }
 
-  public registerShapeDrawer(name: string, drawer: ShapeDrawer): void {
+  public registerShapeDrawer(name: string, drawer: ShapeDrawer<CanvasRenderingContext2D>): void {
     this.registerShape(name, drawer);
   }
 
-  public registerPostEntityDrawer(name: string, drawer: ShapeDrawer): void {
-    this.postEntityDrawers.set(name, drawer);
-  }
-
-  public addPreRenderHook(hook: (ctx: CanvasRenderingContext2D, world: World) => void): void {
+  public addPreRenderHook(hook: (ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot) => void): void {
     this.preRenderHooks.push(hook);
   }
 
-  public addPostRenderHook(hook: (ctx: CanvasRenderingContext2D, world: World) => void): void {
+  public addPostRenderHook(hook: (ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot) => void): void {
     this.postRenderHooks.push(hook);
   }
 
-  public registerBackgroundEffect(name: string, drawer: (ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void): void {
-    this.backgroundEffects.push(drawer);
+  public registerBackgroundEffect(name: string, drawer: EffectDrawer<CanvasRenderingContext2D>): void {
+      this.backgroundEffects.push({ name, drawer });
   }
 
-  public registerForegroundEffect(name: string, drawer: (ctx: CanvasRenderingContext2D, world: World, w: number, h: number) => void): void {
-    this.foregroundEffects.push(drawer);
+  public registerForegroundEffect(name: string, drawer: EffectDrawer<CanvasRenderingContext2D>): void {
+      this.foregroundEffects.push({ name, drawer });
   }
 
   private registerDefaultDrawers(): void {
@@ -130,7 +123,7 @@ export class CanvasRenderer implements Renderer {
       ctx.strokeStyle = render.color;
       ctx.lineWidth = 2;
       ctx.fillStyle = "#333";
-      if (render.hitFlashFrames && render.hitFlashFrames > 0) {
+      if (render.hitFlashFrames > 0) {
         ctx.strokeStyle = "white";
         ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
       }
@@ -164,11 +157,12 @@ export class CanvasRenderer implements Renderer {
     this.swapSnapshots();
     const snapshot = this.currentSnapshot;
 
+    // 1. Entities
     const entities = world.query("Transform", "Render");
     let count = 0;
 
     const gameStateEntity = world.query("GameState")[0];
-    const gameState = gameStateEntity ? world.getComponent<import("../../types/GameTypes").GameStateComponent>(gameStateEntity, "GameState") : null;
+    const gameState = gameStateEntity ? world.getComponent<any>(gameStateEntity, "GameState") : null;
 
     let shakeX = 0;
     let shakeY = 0;
@@ -190,8 +184,6 @@ export class CanvasRenderer implements Renderer {
       const render = world.getComponent<RenderComponent>(entity, "Render")!;
 
       const snap = snapshot.entities[count];
-
-      // Always update snap to avoid stale data in double-buffer snapshots
       snap.id = entity;
 
       let x = trans.worldX ?? trans.x;
@@ -222,16 +214,68 @@ export class CanvasRenderer implements Renderer {
       snap.size = render.size;
       snap.vertices = render.vertices || null;
       snap.hitFlashFrames = render.hitFlashFrames || 0;
-      snap.data = render.data;
+      snap.data = render.data ?? null;
 
       count++;
     }
-
     snapshot.entityCount = count;
+
+    // 2. UI Elements
+    const uiEntities = world.query("UIElement");
+    let uiCount = 0;
+    for (let i = 0; i < uiEntities.length; i++) {
+        if (uiCount >= this.MAX_UI) break;
+        const entity = uiEntities[i];
+        const el = world.getComponent<UIElementComponent>(entity, "UIElement")!;
+        const snap = snapshot.uiElements[uiCount];
+
+        snap.id = entity;
+        snap.elementType = el.elementType;
+        snap.x = el.computedX;
+        snap.y = el.computedY;
+        snap.width = el.computedWidth;
+        snap.height = el.computedHeight;
+        snap.opacity = el.opacity;
+        snap.visible = el.visible;
+        snap.zIndex = el.zIndex;
+
+        // Clone UI styles/data to prevent reference leaks and ensure pure rendering
+        const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
+        if (style) {
+            snap.style = { ...style };
+        } else {
+            snap.style = null;
+        }
+
+        const text = world.getComponent<UITextComponent>(entity, "UIText");
+        if (text) {
+            snap.text = { ...text };
+        } else {
+            snap.text = null;
+        }
+
+        const pb = world.getComponent<UIProgressBarComponent>(entity, "UIProgressBar");
+        if (pb) {
+            snap.progressBar = { ...pb };
+        } else {
+            snap.progressBar = null;
+        }
+
+        const btnState = world.getComponent<UIButtonStateComponent>(entity, "UIButtonState");
+        if (btnState) {
+            snap.data = { buttonState: btnState.state };
+        } else {
+            snap.data = null;
+        }
+
+        uiCount++;
+    }
+    snapshot.uiCount = uiCount;
+
     return snapshot;
   }
 
-  public renderSnapshot(snapshot: RenderSnapshot, world: World): void {
+  public renderSnapshot(snapshot: RenderSnapshot): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
 
@@ -240,20 +284,9 @@ export class CanvasRenderer implements Renderer {
     for (let i = 0; i < snapshot.entityCount; i++) {
       const ent = snapshot.entities[i];
       this.commandBuffer.addCommand(
-        ent.shape,
-        ent.x,
-        ent.y,
-        ent.rotation,
-        ent.scaleX,
-        ent.scaleY,
-        ent.opacity,
-        ent.color,
-        ent.size,
-        ent.zIndex,
-        ent.id,
-        ent.vertices,
-        ent.hitFlashFrames,
-        ent.data
+        ent.shape, ent.x, ent.y, ent.rotation, ent.scaleX, ent.scaleY,
+        ent.opacity, ent.color, ent.size, ent.zIndex, ent.id,
+        ent.vertices, ent.hitFlashFrames, ent.data
       );
     }
 
@@ -264,32 +297,33 @@ export class CanvasRenderer implements Renderer {
     ctx.translate(snapshot.shakeX, snapshot.shakeY);
 
     for (let i = 0; i < this.backgroundEffects.length; i++) {
-      this.backgroundEffects[i](ctx, world, this.width, this.height);
+        this.backgroundEffects[i].drawer(ctx, snapshot, this.width, this.height, null as any);
     }
 
     for (let i = 0; i < this.preRenderHooks.length; i++) {
-      this.preRenderHooks[i](ctx, world);
+      this.preRenderHooks[i](ctx, snapshot);
     }
 
     const commands = this.commandBuffer.getCommands();
     const cmdCount = this.commandBuffer.getCount();
     for (let i = 0; i < cmdCount; i++) {
-      this.executeCommand(ctx, commands[i], world);
+      this.executeCommand(ctx, commands[i]);
     }
 
     for (let i = 0; i < this.foregroundEffects.length; i++) {
-      this.foregroundEffects[i](ctx, world, this.width, this.height);
+        this.foregroundEffects[i].drawer(ctx, snapshot, this.width, this.height, null as any);
     }
 
     for (let i = 0; i < this.postRenderHooks.length; i++) {
-      this.postRenderHooks[i](ctx, world);
+      this.postRenderHooks[i](ctx, snapshot);
     }
 
     ctx.restore();
-    renderUI(ctx, world);
+
+    this.renderUIFromSnapshot(ctx, snapshot);
   }
 
-  private executeCommand(ctx: CanvasRenderingContext2D, cmd: DrawCommand, world: World): void {
+  private executeCommand(ctx: CanvasRenderingContext2D, cmd: DrawCommand): void {
     ctx.save();
     ctx.translate(cmd.x, cmd.y);
     ctx.rotate(cmd.rotation);
@@ -302,83 +336,163 @@ export class CanvasRenderer implements Renderer {
 
     const drawer = this.shapeDrawers.get(cmd.type);
     if (drawer) {
-      // Use reusable objects to avoid per-frame allocations
-      const pos = this.tempPos;
-      pos.x = cmd.x;
-      pos.y = cmd.y;
-      pos.rotation = cmd.rotation;
-      pos.scaleX = cmd.scaleX;
-      pos.scaleY = cmd.scaleY;
-      pos.worldX = cmd.x;
-      pos.worldY = cmd.y;
-      pos.worldRotation = cmd.rotation;
-      pos.worldScaleX = cmd.scaleX;
-      pos.worldScaleY = cmd.scaleY;
+      this.tempPos.x = cmd.x;
+      this.tempPos.y = cmd.y;
+      this.tempPos.rotation = cmd.rotation;
+      this.tempPos.scaleX = cmd.scaleX;
+      this.tempPos.scaleY = cmd.scaleY;
 
-      const render = this.tempRender;
-      render.shape = cmd.type;
-      render.size = cmd.size;
-      render.color = cmd.color;
-      render.rotation = cmd.rotation;
-      render.vertices = cmd.vertices || undefined;
-      render.zIndex = cmd.zIndex;
-      render.hitFlashFrames = cmd.hitFlashFrames;
-      render.data = cmd.data;
+      this.tempRender.shape = cmd.type;
+      this.tempRender.size = cmd.size;
+      this.tempRender.color = cmd.color;
+      this.tempRender.vertices = cmd.vertices || undefined;
+      this.tempRender.hitFlashFrames = cmd.hitFlashFrames;
+      this.tempRender.data = cmd.data;
 
-      drawer(ctx, cmd.entityId, pos, render, world);
+      drawer(ctx, cmd.entityId, this.tempPos, this.tempRender, null as any);
     }
 
     ctx.restore();
+  }
 
-    const postDrawer = this.postEntityDrawers.get(cmd.type);
-    if (postDrawer) {
-      const pos = this.tempPos;
-      pos.x = cmd.x;
-      pos.y = cmd.y;
-      pos.rotation = cmd.rotation;
-      pos.scaleX = cmd.scaleX;
-      pos.scaleY = cmd.scaleY;
-      pos.worldX = cmd.x;
-      pos.worldY = cmd.y;
-      pos.worldRotation = cmd.rotation;
-      pos.worldScaleX = cmd.scaleX;
-      pos.worldScaleY = cmd.scaleY;
+  private renderUIFromSnapshot(ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot): void {
+    // In-place sort of UI elements to avoid allocation
+    const ui = snapshot.uiElements;
+    const count = snapshot.uiCount;
 
-      const render = this.tempRender;
-      render.shape = cmd.type;
-      render.size = cmd.size;
-      render.color = cmd.color;
-      render.rotation = cmd.rotation;
-      render.vertices = cmd.vertices || undefined;
-      render.zIndex = cmd.zIndex;
-      render.hitFlashFrames = cmd.hitFlashFrames;
-      render.data = cmd.data;
-
-      postDrawer(ctx, cmd.entityId, pos, render, world);
+    // Stable insertion sort for UI elements
+    for (let i = 1; i < count; i++) {
+        const key = ui[i];
+        let j = i - 1;
+        while (j >= 0 && ui[j].zIndex > key.zIndex) {
+            ui[j + 1] = ui[j];
+            j--;
+        }
+        ui[j + 1] = key;
     }
+
+    for (let i = 0; i < count; i++) {
+        const element = ui[i];
+        if (!element.visible) continue;
+
+        ctx.save();
+        ctx.globalAlpha = element.opacity;
+
+        switch (element.elementType) {
+            case "panel":
+                this.drawPanel(ctx, element);
+                break;
+            case "label":
+                this.drawLabel(ctx, element);
+                break;
+            case "button":
+                this.drawButton(ctx, element);
+                break;
+            case "progressBar":
+                this.drawProgressBar(ctx, element);
+                break;
+        }
+
+        ctx.restore();
+    }
+  }
+
+  private drawPanel(ctx: CanvasRenderingContext2D, el: UISnapshot): void {
+    const style = el.style as UIStyleComponent;
+    if (!style || !style.backgroundColor) return;
+
+    ctx.fillStyle = style.backgroundColor;
+    if (style.borderRadius > 0) {
+        this.drawRoundedRect(ctx, el.x, el.y, el.width, el.height, style.borderRadius);
+        ctx.fill();
+        if (style.borderColor && style.borderWidth > 0) {
+            ctx.strokeStyle = style.borderColor;
+            ctx.lineWidth = style.borderWidth;
+            ctx.stroke();
+        }
+    } else {
+        ctx.fillRect(el.x, el.y, el.width, el.height);
+        if (style.borderColor && style.borderWidth > 0) {
+            ctx.strokeStyle = style.borderColor;
+            ctx.lineWidth = style.borderWidth;
+            ctx.strokeRect(el.x, el.y, el.width, el.height);
+        }
+    }
+  }
+
+  private drawLabel(ctx: CanvasRenderingContext2D, el: UISnapshot): void {
+    const text = el.text as UITextComponent;
+    const style = el.style as UIStyleComponent;
+    if (!text || !style) return;
+
+    TextRenderer.drawSystemText(
+        ctx, text.content, el.x, el.y, style.fontSize, style.textColor,
+        style.fontFamily, style.textAlign, text.wordWrap ? el.width : undefined
+    );
+  }
+
+  private drawButton(ctx: CanvasRenderingContext2D, el: UISnapshot): void {
+    const btnState = el.data?.buttonState;
+    const style = el.style as UIStyleComponent;
+
+    if (style) {
+        ctx.save();
+        if (btnState === "pressed") ctx.globalAlpha *= 0.8;
+        this.drawPanel(ctx, el);
+        if (btnState === "hovered") {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+            if (style.borderRadius > 0) {
+                this.drawRoundedRect(ctx, el.x, el.y, el.width, el.height, style.borderRadius);
+                ctx.fill();
+            } else {
+                ctx.fillRect(el.x, el.y, el.width, el.height);
+            }
+        }
+        ctx.restore();
+    }
+    if (el.text) this.drawLabel(ctx, el);
+  }
+
+  private drawProgressBar(ctx: CanvasRenderingContext2D, el: UISnapshot): void {
+    const pb = el.progressBar as UIProgressBarComponent;
+    const style = el.style as UIStyleComponent;
+    if (!pb) return;
+
+    ctx.fillStyle = pb.trackColor;
+    ctx.fillRect(el.x, el.y, el.width, el.height);
+
+    ctx.fillStyle = pb.fillColor;
+    const fillWidth = el.width * Math.max(0, Math.min(1, pb.value));
+    ctx.fillRect(el.x, el.y, fillWidth, el.height);
+
+    if (style?.borderColor && style.borderWidth > 0) {
+        ctx.strokeStyle = style.borderColor;
+        ctx.lineWidth = style.borderWidth;
+        ctx.strokeRect(el.x, el.y, el.width, el.height);
+    }
+  }
+
+  private drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
   }
 
   public render(world: World, alpha: number = 1): void {
     const snapshot = this.createSnapshot(world, alpha);
-    this.renderSnapshot(snapshot, world);
+    this.renderSnapshot(snapshot);
   }
 
-  public drawEntity(entity: Entity, components: Record<string, Component>, world: World): void {
-    const pos = components["Transform"] as TransformComponent;
-    const render = components["Render"] as RenderComponent;
-    if (!pos || !render || !this.ctx) return;
-
-    this.ctx.save();
-    this.ctx.translate(pos.worldX ?? pos.x, pos.worldY ?? pos.y);
-    this.ctx.rotate(pos.worldRotation ?? pos.rotation);
-    this.ctx.scale(pos.worldScaleX ?? (pos.scaleX ?? 1), pos.worldScaleY ?? (pos.scaleY ?? 1));
-
-    const drawer = this.shapeDrawers.get(render.shape);
-    if (drawer) {
-      drawer(this.ctx, entity, pos, render, world);
-    }
-
-    this.ctx.restore();
+  public drawEntity(_entity: Entity, _components: Record<string, any>, _world: World): void {
+    // Deprecated for snapshot rendering
   }
 
   public drawParticles(_world: World): void {

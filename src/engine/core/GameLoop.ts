@@ -7,12 +7,11 @@ export interface LoopConfig {
  * Deterministic Game Loop with fixed timestep.
  *
  * @remarks
- * Implements "Fix Your Timestep" with an accumulator to ensure simulation
- * consistency regardless of frame rate.
- *
- * Pipeline:
- * 1. Simulation Phase (Fixed Update): 60Hz default.
- * 2. Presentation Phase (Variable Render): Alpha interpolation.
+ * Implements a strict frame pipeline:
+ * 1. Input Phase
+ * 2. Fixed Update Phase (Simulation): Guarantees deterministic state.
+ * 3. Transform Propagation Phase: Resolves hierarchy.
+ * 4. Render Phase (Presentation): Pure, variable-rate rendering with alpha interpolation.
  */
 export class GameLoop {
   private isRunning: boolean = false;
@@ -23,8 +22,10 @@ export class GameLoop {
   private fixedDeltaTime: number = 1000 / 60;
   private maxDeltaTime: number = 100;
 
-  private updateListeners: Set<(deltaTime: number) => void> = new Set();
-  private renderListeners: Set<(alpha: number, deltaTime: number) => void> = new Set();
+  private inputListeners: (() => void)[] = [];
+  private updateListeners: ((deltaTime: number) => void)[] = [];
+  private transformListeners: (() => void)[] = [];
+  private renderListeners: ((alpha: number, deltaTime: number) => void)[] = [];
 
   constructor(config: LoopConfig = {}) {
     const { fixedHz = 60, maxDeltaMs = 100 } = config;
@@ -48,14 +49,32 @@ export class GameLoop {
     }
   }
 
+  public subscribeInput(listener: () => void): () => void {
+    this.inputListeners.push(listener);
+    return () => {
+        this.inputListeners = this.inputListeners.filter(l => l !== listener);
+    };
+  }
+
   public subscribeUpdate(listener: (deltaTime: number) => void): () => void {
-    this.updateListeners.add(listener);
-    return () => this.updateListeners.delete(listener);
+    this.updateListeners.push(listener);
+    return () => {
+        this.updateListeners = this.updateListeners.filter(l => l !== listener);
+    };
+  }
+
+  public subscribeTransform(listener: () => void): () => void {
+    this.transformListeners.push(listener);
+    return () => {
+        this.transformListeners = this.transformListeners.filter(l => l !== listener);
+    };
   }
 
   public subscribeRender(listener: (alpha: number, deltaTime: number) => void): () => void {
-    this.renderListeners.add(listener);
-    return () => this.renderListeners.delete(listener);
+    this.renderListeners.push(listener);
+    return () => {
+        this.renderListeners = this.renderListeners.filter(l => l !== listener);
+    };
   }
 
   private loop = (currentTime: number): void => {
@@ -71,17 +90,29 @@ export class GameLoop {
 
     this.accumulator += deltaTime;
 
-    // 1. Fixed Step Update Phase (Simulation)
-    // Guarantees deterministic state progression.
+    // 1. Input Phase
+    for (let i = 0; i < this.inputListeners.length; i++) {
+        this.inputListeners[i]();
+    }
+
+    // 2. Fixed Step Update Phase (Simulation)
     while (this.accumulator >= this.fixedDeltaTime) {
-      this.updateListeners.forEach((listener) => listener(this.fixedDeltaTime));
+      for (let i = 0; i < this.updateListeners.length; i++) {
+          this.updateListeners[i](this.fixedDeltaTime);
+      }
       this.accumulator -= this.fixedDeltaTime;
     }
 
-    // 2. Variable Step Render Phase (Presentation)
-    // Uses alpha for smooth visual interpolation between states.
+    // 3. Transform Propagation Phase
+    for (let i = 0; i < this.transformListeners.length; i++) {
+        this.transformListeners[i]();
+    }
+
+    // 4. Variable Step Render Phase (Presentation)
     const alpha = this.accumulator / this.fixedDeltaTime;
-    this.renderListeners.forEach((listener) => listener(alpha, deltaTime));
+    for (let i = 0; i < this.renderListeners.length; i++) {
+        this.renderListeners[i](alpha, deltaTime);
+    }
 
     if (this.isRunning) {
       this.gameLoopId = requestAnimationFrame(this.loop);

@@ -15,7 +15,8 @@ export interface CameraConfig {
  *
  * @remarks
  * Implements frame-rate independent interpolation and shake effects using
- * delta-time based exponential smoothing.
+ * delta-time based exponential smoothing: t = 1 - exp(-lambda * dt).
+ * This ensures identical behavior across 30, 60, and 120 FPS.
  */
 export class Camera2D extends System {
   private viewport = { width: 800, height: 600 };
@@ -41,7 +42,8 @@ export class Camera2D extends System {
     const cameras = world.query("Camera2D");
     const dtSeconds = deltaTime / 1000;
 
-    cameras.forEach((camEntity) => {
+    for (let i = 0; i < cameras.length; i++) {
+      const camEntity = cameras[i];
       const cam = world.getComponent<Camera2DComponent>(camEntity, "Camera2D")!;
 
       if (cam.target !== undefined) {
@@ -51,7 +53,7 @@ export class Camera2D extends System {
           const targetY = targetPos.y - this.viewport.height / (2 * cam.zoom) + cam.offset.y;
 
           // Apply exponential smoothing: t = 1 - exp(-lambda * dt)
-          // Ensures identical behavior across 30/60/120 FPS
+          // lambda represents the "stiffness" of the smoothing.
           const lambda = (cam.smoothing ?? 0.1) * 60;
           const t = 1 - Math.exp(-lambda * dtSeconds);
 
@@ -72,7 +74,7 @@ export class Camera2D extends System {
         cam.shakeOffsetX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
         cam.shakeOffsetY = (renderRandom.next() - 0.5) * cam.shakeIntensity;
 
-        // I = I0 * exp(-decay * dt)
+        // Exponential decay: I = I0 * exp(-decay * dt)
         const decayLambda = 5.0;
         cam.shakeIntensity *= Math.exp(-decayLambda * dtSeconds);
 
@@ -85,7 +87,7 @@ export class Camera2D extends System {
         cam.shakeOffsetX = 0;
         cam.shakeOffsetY = 0;
       }
-    });
+    }
   }
 
   public static follow(world: World, target: Entity): void {

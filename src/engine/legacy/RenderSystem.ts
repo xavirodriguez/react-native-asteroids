@@ -1,6 +1,12 @@
 import { World } from "../core/World";
+<<<<<<< HEAD:src/engine/rendering/RenderSystem.ts
 import { Renderer, RenderCommand } from "./RenderTypes";
 import { RenderableComponent, Transform, TransformComponent } from "../types/EngineTypes";
+=======
+import { SceneGraph } from "../core/SceneGraph";
+import { Renderer, RenderCommand } from "../rendering/RenderTypes";
+import { RenderableComponent, Transform } from "../types/EngineTypes";
+>>>>>>> origin/master:src/engine/legacy/RenderSystem.ts
 
 /**
  * Sistema puente entre el mundo ECS y los backends de renderizado.

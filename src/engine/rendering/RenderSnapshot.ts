@@ -1,14 +1,10 @@
 import { Entity } from "../core/Entity";
 
 /**
- * Snapshot de una entidad para renderizado.
+ * Snapshot of an entity for rendering.
  *
  * @remarks
- * Contiene el estado visual capturado en un momento específico de la simulación.
- * Se utiliza para desacoplar la simulación del renderizado y permitir interpolación.
- *
- * @conceptualRisk [STALE_DATA][LOW] Si los datos no se actualizan antes de cada frame,
- * se mostrará una imagen "congelada" de la entidad.
+ * Contains captured visual state.
  */
 export interface RenderEntitySnapshot {
   id: Entity;
@@ -24,24 +20,46 @@ export interface RenderEntitySnapshot {
   size: number;
   vertices: { x: number, y: number }[] | null;
   hitFlashFrames: number;
-  // Metadata for custom drawers
-  data: any;
+  data: Record<string, unknown> | null;
 }
 
 /**
- * Snapshot completo de un frame de renderizado.
- *
- * @remarks
- * Representa el estado visual total del mundo en un instante dado, incluyendo efectos globales.
- *
- * @responsibility Agrupar todas las entidades renderizables y efectos de cámara (shake).
- *
- * @conceptualRisk [ARRAY_MUTATION][MEDIUM] El array `entities` es compartido.
- * Cambiar su contenido externamente puede corromper el frame de renderizado.
+ * UI element state data for rendering.
+ */
+export interface UISnapshotData {
+  buttonState?: "idle" | "hovered" | "pressed" | "disabled";
+  [key: string]: unknown;
+}
+
+/**
+ * Snapshot of a UI element.
+ */
+export interface UISnapshot {
+  id: Entity;
+  elementType: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  opacity: number;
+  visible: boolean;
+  zIndex: number;
+  style?: import("../ui/UITypes").UIStyleComponent | null;
+  text?: import("../ui/UITypes").UITextComponent | null;
+  progressBar?: import("../ui/UITypes").UIProgressBarComponent | null;
+  data?: UISnapshotData | null;
+}
+
+/**
+ * Complete rendering frame snapshot.
  */
 export interface RenderSnapshot {
   entities: RenderEntitySnapshot[];
   entityCount: number;
+  uiElements: UISnapshot[];
+  uiCount: number;
   shakeX: number;
   shakeY: number;
+  backgroundData?: Record<string, unknown> | null;
+  foregroundData?: Record<string, unknown> | null;
 }
