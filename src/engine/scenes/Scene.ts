@@ -49,16 +49,6 @@ export abstract class Scene {
   public onResume(): void {}
 
   /**
-   * Llamado para inicializar la escena.
-   */
-  public async init(_world: World): Promise<void> {}
-
-  /**
-   * Llamado para reiniciar la escena.
-   */
-  public async restart(): Promise<void> {}
-
-  /**
    * Llamado durante el tick de actualización de la simulación.
    * @param dt - Tiempo transcurrido en segundos.
    * @param world - El mundo a actualizar.
