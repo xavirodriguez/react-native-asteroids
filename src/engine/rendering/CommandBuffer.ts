@@ -16,7 +16,7 @@ export interface DrawCommand {
   hitFlashFrames: number;
   zIndex: number;
   entityId: Entity;
-  data: any;
+  data: Record<string, unknown> | null;
 }
 
 /**
@@ -78,7 +78,7 @@ export class CommandBuffer {
     entityId: Entity,
     vertices: { x: number; y: number }[] | null = null,
     hitFlashFrames: number = 0,
-    data: any = null
+    data: Record<string, unknown> | null = null
   ): void {
     if (this.activeCount >= this.MAX_COMMANDS) {
       return;

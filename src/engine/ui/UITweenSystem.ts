@@ -22,7 +22,7 @@ export interface UITweenComponent {
     /** Función de curva para la interpolación. */
     easing: "linear" | "easeIn" | "easeOut";
     /** Callback opcional ejecutado al finalizar (si no es un bucle). */
-    onComplete?: (world: World, entity: any) => void;
+    onComplete?: (world: World, entity: import("../core/Entity").Entity) => void;
     /** Si es true, reinicia `currentTime` al llegar al final de la duración. */
     loop?: boolean;
 }

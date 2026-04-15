@@ -234,8 +234,8 @@ export class UILayoutSystem extends System {
    * Esto oculta posibles errores si la estructura de estos componentes cambia.
    */
   private resolveWorldPosition(world: World, element: UIElementComponent, attach: UIWorldAttachComponent): void {
-      const targetTransform = world.getComponent<any>(attach.targetEntity, "Transform") ||
-                              world.getComponent<any>(attach.targetEntity, "Position");
+      const targetTransform = world.getComponent<import("../core/CoreComponents").TransformComponent>(attach.targetEntity, "Transform") ||
+                              (world.getComponent<import("../core/CoreComponents").PositionComponent>(attach.targetEntity, "Position") as unknown as import("../core/CoreComponents").TransformComponent);
 
       if (!targetTransform) return;
 
@@ -245,8 +245,8 @@ export class UILayoutSystem extends System {
       if (attach.useCamera) {
           const gameState = world.getSingleton<any>("GameState");
           if (gameState?.camera) {
-              screenX -= gameState.camera.x || 0;
-              screenY -= gameState.camera.y || 0;
+              screenX -= (gameState.camera as any).x || 0;
+              screenY -= (gameState.camera as any).y || 0;
           }
       }
 

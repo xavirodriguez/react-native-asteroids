@@ -83,7 +83,7 @@ export abstract class Scene {
   /**
    * @deprecated Delegar renderizado al RenderSystem o SceneManager.
    */
-  public render(renderer: any): void {
+  public render(renderer: import("../rendering/Renderer").Renderer): void {
     renderer.render(this.world);
   }
 }

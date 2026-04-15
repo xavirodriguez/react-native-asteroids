@@ -4,7 +4,7 @@ import { InputFrame, EntitySnapshot, ReplayFrame } from "./NetTypes";
 import { RandomService } from "../../src/engine/utils/RandomService";
 import { World } from "../../src/engine/core/World";
 import { DeterministicSimulation } from "../../src/simulation/DeterministicSimulation";
-import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, ColliderComponent, TagComponent, Component } from "../../src/engine/core/CoreComponents";
+import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "../../src/engine/core/CoreComponents";
 import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {

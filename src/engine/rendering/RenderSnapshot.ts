@@ -20,7 +20,15 @@ export interface RenderEntitySnapshot {
   size: number;
   vertices: { x: number, y: number }[] | null;
   hitFlashFrames: number;
-  data: any;
+  data: Record<string, unknown> | null;
+}
+
+/**
+ * UI element state data for rendering.
+ */
+export interface UISnapshotData {
+  buttonState?: "idle" | "hovered" | "pressed" | "disabled";
+  [key: string]: unknown;
 }
 
 /**
@@ -36,9 +44,10 @@ export interface UISnapshot {
   opacity: number;
   visible: boolean;
   zIndex: number;
-  style?: any;
-  text?: any;
-  progressBar?: any;
+  style?: import("../ui/UITypes").UIStyleComponent | null;
+  text?: import("../ui/UITypes").UITextComponent | null;
+  progressBar?: import("../ui/UITypes").UIProgressBarComponent | null;
+  data?: UISnapshotData | null;
 }
 
 /**
@@ -51,6 +60,6 @@ export interface RenderSnapshot {
   uiCount: number;
   shakeX: number;
   shakeY: number;
-  backgroundData?: any;
-  foregroundData?: any;
+  backgroundData?: Record<string, unknown> | null;
+  foregroundData?: Record<string, unknown> | null;
 }

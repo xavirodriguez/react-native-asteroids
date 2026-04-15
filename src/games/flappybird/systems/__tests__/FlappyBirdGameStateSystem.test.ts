@@ -18,7 +18,7 @@ describe("FlappyBirdGameStateSystem", () => {
 
   it("should initialize with score 0", () => {
     createGameState(world);
-    const _state = world.getSingleton<FlappyBirdState>("FlappyState")!;
+    const state = world.getSingleton<FlappyBirdState>("FlappyState")!;
     expect(state.score).toBe(0);
     expect(state.isGameOver).toBe(false);
   });
