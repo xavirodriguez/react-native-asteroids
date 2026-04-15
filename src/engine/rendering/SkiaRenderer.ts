@@ -9,7 +9,8 @@ export type SkiaShapeDrawer = (
   canvas: SkCanvas,
   entity: Entity,
   pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number },
-  render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: any }
+  render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: any },
+  world: World
 ) => void;
 
 /**
@@ -255,7 +256,7 @@ export class SkiaRenderer implements Renderer {
         vertices: render.vertices ?? null,
         hitFlashFrames: render.hitFlashFrames ?? 0,
         data: render.data
-      });
+      }, world);
     }
 
     canvas.restore();
@@ -269,7 +270,7 @@ export class SkiaRenderer implements Renderer {
         vertices: render.vertices ?? null,
         hitFlashFrames: render.hitFlashFrames ?? 0,
         data: render.data
-      });
+      }, world);
     }
   }
 

@@ -24,8 +24,8 @@ export class CanvasRenderer implements Renderer {
   private shapeDrawers = new Map<string, ShapeDrawer<CanvasRenderingContext2D>>();
   private preRenderHooks: ((ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot) => void)[] = [];
   private postRenderHooks: ((ctx: CanvasRenderingContext2D, snapshot: RenderSnapshot) => void)[] = [];
-  private backgroundEffects: EffectDrawer<CanvasRenderingContext2D>[] = [];
-  private foregroundEffects: EffectDrawer<CanvasRenderingContext2D>[] = [];
+  private backgroundEffects: { name: string, drawer: EffectDrawer<CanvasRenderingContext2D> }[] = [];
+  private foregroundEffects: { name: string, drawer: EffectDrawer<CanvasRenderingContext2D> }[] = [];
 
   private commandBuffer = new CommandBuffer();
   private readonly MAX_ENTITIES = 2000;
@@ -97,11 +97,11 @@ export class CanvasRenderer implements Renderer {
   }
 
   public registerBackgroundEffect(name: string, drawer: EffectDrawer<CanvasRenderingContext2D>): void {
-      this.backgroundEffects.push(drawer);
+      this.backgroundEffects.push({ name, drawer });
   }
 
   public registerForegroundEffect(name: string, drawer: EffectDrawer<CanvasRenderingContext2D>): void {
-      this.foregroundEffects.push(drawer);
+      this.foregroundEffects.push({ name, drawer });
   }
 
   private registerDefaultDrawers(): void {
@@ -297,7 +297,7 @@ export class CanvasRenderer implements Renderer {
     ctx.translate(snapshot.shakeX, snapshot.shakeY);
 
     for (let i = 0; i < this.backgroundEffects.length; i++) {
-        this.backgroundEffects[i](ctx, snapshot, this.width, this.height);
+        this.backgroundEffects[i].drawer(ctx, snapshot, this.width, this.height, null as any);
     }
 
     for (let i = 0; i < this.preRenderHooks.length; i++) {
@@ -311,7 +311,7 @@ export class CanvasRenderer implements Renderer {
     }
 
     for (let i = 0; i < this.foregroundEffects.length; i++) {
-        this.foregroundEffects[i](ctx, snapshot, this.width, this.height);
+        this.foregroundEffects[i].drawer(ctx, snapshot, this.width, this.height, null as any);
     }
 
     for (let i = 0; i < this.postRenderHooks.length; i++) {
@@ -349,7 +349,7 @@ export class CanvasRenderer implements Renderer {
       this.tempRender.hitFlashFrames = cmd.hitFlashFrames;
       this.tempRender.data = cmd.data;
 
-      drawer(ctx, cmd.entityId, this.tempPos, this.tempRender);
+      drawer(ctx, cmd.entityId, this.tempPos, this.tempRender, null as any);
     }
 
     ctx.restore();

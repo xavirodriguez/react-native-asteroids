@@ -8,7 +8,8 @@ export type ShapeDrawer<TContext> = (
   ctx: TContext,
   entity: Entity,
   pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number },
-  render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null }
+  render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null },
+  world: import("../core/World").World
 ) => void;
 
 /**
@@ -18,7 +19,8 @@ export type EffectDrawer<TContext> = (
   ctx: TContext,
   snapshot: import("./RenderSnapshot").RenderSnapshot,
   width: number,
-  height: number
+  height: number,
+  world: import("../core/World").World
 ) => void;
 
 /**
