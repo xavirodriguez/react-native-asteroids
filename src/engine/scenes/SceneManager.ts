@@ -21,7 +21,7 @@ export class SceneManager {
   private transitionQueue: (() => Promise<void>)[] = [];
   private isProcessingTransition = false;
 
-  constructor(private world: World) {}
+  constructor() {}
 
   public getCurrentScene(): Scene | null {
     return this.currentScene;
@@ -91,7 +91,6 @@ export class SceneManager {
         this.sceneStack = [scene];
 
         await runLifecycleAsync(async () => {
-          await scene.init(this.world);
           if ((scene as any).onEnter) {
             await (scene as any).onEnter(scene.getWorld());
           }
@@ -122,7 +121,6 @@ export class SceneManager {
         this.currentScene = scene;
 
         await runLifecycleAsync(async () => {
-          await scene.init(this.world);
           if ((scene as any).onEnter) {
             await (scene as any).onEnter(scene.getWorld());
           }
@@ -188,7 +186,21 @@ export class SceneManager {
    */
   public render(alpha: number): void {
     if (this.state === SceneState.ACTIVE && this.currentScene) {
-      this.currentScene.render(alpha);
+      this.currentScene.onRender(alpha);
+    }
+  }
+
+  public pause(): void {
+    if (this.currentScene) this.currentScene.onPause();
+  }
+
+  public resume(): void {
+    if (this.currentScene) this.currentScene.onResume();
+  }
+
+  public async restartCurrentScene(): Promise<void> {
+    if (this.currentScene) {
+        await this.transitionTo(this.currentScene);
     }
   }
 }

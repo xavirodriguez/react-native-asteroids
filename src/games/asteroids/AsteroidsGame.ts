@@ -15,6 +15,7 @@ import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { ShipControlSystem } from "./systems/ShipControlSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
+import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
 import { DeterministicSimulation } from "../../simulation/DeterministicSimulation";
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { MutatorService } from "../../services/MutatorService";
@@ -208,6 +209,7 @@ export class AsteroidsGame
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new BoundarySystem());
     this.world.addSystem(new FrictionSystem());
+    this.world.addSystem(new CollisionSystem2D());
     this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
     this.world.addSystem(comboSys);
     this.world.addSystem(new TTLSystem());

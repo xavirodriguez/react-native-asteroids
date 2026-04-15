@@ -2,6 +2,8 @@ import { World } from "../../engine/core/World";
 import { Entity } from "../../engine/types/EngineTypes";
 import { FLAPPY_CONFIG } from "./types/FlappyBirdTypes";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
+import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
+import { Collider2DComponent } from "../../engine/core/CoreComponents";
 import { createInputBufferComponent } from "../../engine/types/InputBufferComponent";
 
 /**
@@ -38,7 +40,16 @@ export function createBird(options: CreateBirdParams): Entity {
     color: "#FFD700",
     rotation: 0,
   });
-  world.addComponent(bird, { type: "Collider", radius: FLAPPY_CONFIG.BIRD_RADIUS - 2 });
+  world.addComponent(bird, {
+    type: "Collider2D",
+    shape: { type: "circle", radius: FLAPPY_CONFIG.BIRD_RADIUS - 2 },
+    layer: CollisionLayers.PLAYER,
+    mask: CollisionLayers.ENEMY | CollisionLayers.DEBRIS, // Pipe or Ground
+    offsetX: 0,
+    offsetY: 0,
+    isTrigger: false,
+    enabled: true
+  } as Collider2DComponent);
   world.addComponent(bird, {
     type: "Bird",
     velocityY: 0,
@@ -97,7 +108,16 @@ export function createPipe(options: CreatePipeParams): void {
     color: "#2ecc71",
     rotation: 0,
   });
-  world.addComponent(topPipe, { type: "Collider", radius: pipeWidth / 2 });
+  world.addComponent(topPipe, {
+    type: "Collider2D",
+    shape: { type: "aabb", halfWidth: pipeWidth / 2, halfHeight: topY / 2 },
+    layer: CollisionLayers.ENEMY,
+    mask: CollisionLayers.PLAYER,
+    offsetX: 0,
+    offsetY: 0,
+    isTrigger: false,
+    enabled: true
+  } as Collider2DComponent);
   world.addComponent(topPipe, { type: "Pipe", gapY, gapSize: FLAPPY_CONFIG.GAP_SIZE, scored: false });
 
   // Bottom Pipe
@@ -113,7 +133,16 @@ export function createPipe(options: CreatePipeParams): void {
     color: "#2ecc71",
     rotation: 0,
   });
-  world.addComponent(bottomPipe, { type: "Collider", radius: pipeWidth / 2 });
+  world.addComponent(bottomPipe, {
+    type: "Collider2D",
+    shape: { type: "aabb", halfWidth: pipeWidth / 2, halfHeight: bottomHeight / 2 },
+    layer: CollisionLayers.ENEMY,
+    mask: CollisionLayers.PLAYER,
+    offsetX: 0,
+    offsetY: 0,
+    isTrigger: false,
+    enabled: true
+  } as Collider2DComponent);
   world.addComponent(bottomPipe, { type: "Pipe", gapY, gapSize: FLAPPY_CONFIG.GAP_SIZE, scored: true });
 }
 
@@ -123,7 +152,16 @@ export function createPipe(options: CreatePipeParams): void {
 export function createGround(world: World): Entity {
   const ground = world.createEntity();
   world.addComponent(ground, { type: "Transform", x: FLAPPY_CONFIG.SCREEN_WIDTH / 2, y: FLAPPY_CONFIG.GROUND_Y });
-  world.addComponent(ground, { type: "Collider", radius: 20 });
+  world.addComponent(ground, {
+    type: "Collider2D",
+    shape: { type: "aabb", halfWidth: FLAPPY_CONFIG.SCREEN_WIDTH / 2, halfHeight: (FLAPPY_CONFIG.SCREEN_HEIGHT - FLAPPY_CONFIG.GROUND_Y) / 2 },
+    layer: CollisionLayers.DEBRIS,
+    mask: CollisionLayers.PLAYER,
+    offsetX: 0,
+    offsetY: 0,
+    isTrigger: false,
+    enabled: true
+  } as Collider2DComponent);
   world.addComponent(ground, { type: "Ground" });
   world.addComponent(ground, {
     type: "Render",

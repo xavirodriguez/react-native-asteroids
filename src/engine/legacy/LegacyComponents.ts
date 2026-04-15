@@ -1,47 +1,6 @@
 import { Component } from "../core/Component";
-import { Entity } from "../core/Entity";
 
 /**
- * @deprecated Utilizar {@link TransformComponent} en su lugar para soporte de jerarquía y rotación.
- */
-export interface PositionComponent extends Component {
-  type: "Position";
-  /** Coordenada X en píxeles. */
-  x: number;
-  /** Coordenada Y en píxeles. */
-  y: number;
-}
-
-/**
- * @deprecated Use Collider2DComponent instead for multi-shape support
- */
-export interface ColliderComponent extends Component {
-  type: "Collider";
-  radius: number;
-}
-
-/**
- * Renderable component for compatibility.
- * @deprecated Use RenderComponent instead.
- */
-export interface RenderableComponent extends Component {
-  type: "Renderable";
-  shape: string;
-  visible: boolean;
-  textureId?: string;
-  width: number;
-  height: number;
-  color: string;
-  /** @deprecated Use zIndex in RenderComponent instead */
-  zOrder: number;
-  opacity?: number;
-  renderType?: string;
-  size?: number | { width: number; height: number };
-  radius?: number;
-}
-
-/**
- * Legacy Transform interface for compatibility.
  * @deprecated Use TransformComponent instead.
  */
 export interface Transform {
@@ -62,6 +21,3 @@ export interface ScreenShake {
   duration: number;
   remaining: number;
 }
-
-import { CollisionManifold } from "../physics/collision/CollisionTypes";
-export type { CollisionManifold };

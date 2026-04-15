@@ -3,6 +3,8 @@ import { Entity } from "../../engine/types/EngineTypes";
 import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
+import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
+import { Collider2DComponent } from "../../engine/core/CoreComponents";
 
 /**
  * Creates the player entity.
@@ -18,7 +20,16 @@ export function createPlayer(world: World, x: number, y: number): Entity {
     color: "#00FF00",
     rotation: 0,
   });
-  world.addComponent(player, { type: "Collider", radius: GAME_CONFIG.PLAYER_COLLIDER_RADIUS });
+  world.addComponent(player, {
+    type: "Collider2D",
+    shape: { type: "circle", radius: GAME_CONFIG.PLAYER_COLLIDER_RADIUS },
+    layer: CollisionLayers.PLAYER,
+    mask: CollisionLayers.ENEMY | CollisionLayers.DEBRIS, // Enemy bullets or Invaders
+    offsetX: 0,
+    offsetY: 0,
+    isTrigger: false,
+    enabled: true
+  } as Collider2DComponent);
   world.addComponent(player, {
     type: "Health",
     current: GAME_CONFIG.PLAYER_INITIAL_LIVES,
@@ -67,7 +78,16 @@ export function createInvader(world: World, x: number, y: number, row: number, c
     color: "#FFFFFF",
     rotation: 0,
   });
-  world.addComponent(invader, { type: "Collider", radius: 15 });
+  world.addComponent(invader, {
+    type: "Collider2D",
+    shape: { type: "circle", radius: 15 },
+    layer: CollisionLayers.ENEMY,
+    mask: CollisionLayers.PLAYER | CollisionLayers.PROJECTILE | CollisionLayers.DEBRIS, // Ship, Bullets, Shields
+    offsetX: 0,
+    offsetY: 0,
+    isTrigger: false,
+    enabled: true
+  } as Collider2DComponent);
   world.addComponent(invader, { type: "Invader", row, col, points });
   return invader;
 }
@@ -117,7 +137,16 @@ export function createShieldSegment(world: World, x: number, y: number, row: num
     color: "#00FF00",
     rotation: 0,
   });
-  world.addComponent(segment, { type: "Collider", radius: 8 });
+  world.addComponent(segment, {
+    type: "Collider2D",
+    shape: { type: "aabb", halfWidth: 7.5, halfHeight: 7.5 },
+    layer: CollisionLayers.DEBRIS,
+    mask: CollisionLayers.ENEMY | CollisionLayers.PROJECTILE, // Invaders or Bullets (Player & Enemy)
+    offsetX: 0,
+    offsetY: 0,
+    isTrigger: false,
+    enabled: true
+  } as Collider2DComponent);
   world.addComponent(segment, {
     type: "Shield",
     hp: GAME_CONFIG.SHIELD_SEGMENT_HP,

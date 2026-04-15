@@ -1,6 +1,7 @@
 import { World } from "../../engine/core/World";
 import { GAME_CONFIG, INITIAL_GAME_STATE } from "../../types/GameTypes";
-import { TransformComponent, VelocityComponent, RenderComponent, ColliderComponent, TTLComponent } from "../../engine/core/CoreComponents";
+import { TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, TTLComponent } from "../../engine/core/CoreComponents";
+import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
 import { generateStarField } from "../../engine/rendering/StarField";
 import { RandomService } from "../../engine/utils/RandomService";
@@ -43,7 +44,16 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
     color: "white",
     rotation: -Math.PI / 2,
   } as RenderComponent);
-  world.addComponent(ship, { type: "Collider", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS } as ColliderComponent);
+  world.addComponent(ship, {
+    type: "Collider2D",
+    shape: { type: "circle", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS },
+    layer: CollisionLayers.PLAYER,
+    mask: CollisionLayers.ENEMY | CollisionLayers.DEBRIS, // Asteroids are usually ENEMY or DEBRIS
+    offsetX: 0,
+    offsetY: 0,
+    isTrigger: false,
+    enabled: true
+  } as Collider2DComponent);
   world.addComponent(ship, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0, trail: [] } as any);
   world.addComponent(ship, { type: "Input", thrust: false, rotateLeft: false, rotateRight: false, shoot: false, hyperspace: false, shootCooldownRemaining: 0 } as any);
   world.addComponent(ship, { type: "Health", current: 3, max: 3, invulnerableRemaining: GAME_CONFIG.INVULNERABILITY_DURATION } as any);
@@ -75,7 +85,16 @@ export const createBullet = ({ world, x, y, angle }: { world: World; x: number; 
   world.addComponent(bullet, { type: "Transform", x, y, rotation: angle, scaleX: 1, scaleY: 1 } as TransformComponent);
   world.addComponent(bullet, { type: "Velocity", dx, dy } as VelocityComponent);
   world.addComponent(bullet, { type: "Render", shape: "circle", size: GAME_CONFIG.BULLET_SIZE, color: "white", rotation: 0 } as RenderComponent);
-  world.addComponent(bullet, { type: "Collider", radius: GAME_CONFIG.BULLET_SIZE } as ColliderComponent);
+  world.addComponent(bullet, {
+    type: "Collider2D",
+    shape: { type: "circle", radius: GAME_CONFIG.BULLET_SIZE },
+    layer: CollisionLayers.PROJECTILE,
+    mask: CollisionLayers.ENEMY,
+    offsetX: 0,
+    offsetY: 0,
+    isTrigger: false,
+    enabled: true
+  } as Collider2DComponent);
   world.addComponent(bullet, { type: "TTL", remaining: GAME_CONFIG.BULLET_TTL, total: GAME_CONFIG.BULLET_TTL } as TTLComponent);
   world.addComponent(bullet, { type: "Bullet" } as any);
   return bullet;
@@ -123,7 +142,16 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
     vertices,
     data: { internalLines }
   } as RenderComponent);
-  world.addComponent(asteroid, { type: "Collider", radius } as ColliderComponent);
+  world.addComponent(asteroid, {
+    type: "Collider2D",
+    shape: { type: "circle", radius },
+    layer: CollisionLayers.ENEMY,
+    mask: CollisionLayers.PLAYER | CollisionLayers.PROJECTILE,
+    offsetX: 0,
+    offsetY: 0,
+    isTrigger: false,
+    enabled: true
+  } as Collider2DComponent);
   world.addComponent(asteroid, { type: "Asteroid", size } as any);
   return asteroid;
 };
@@ -157,7 +185,16 @@ export const createUfo = ({ world }: { world: World }) => {
   world.addComponent(ufo, { type: "Transform", x: side, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
   world.addComponent(ufo, { type: "Velocity", dx: side === 0 ? GAME_CONFIG.UFO_SPEED : -GAME_CONFIG.UFO_SPEED, dy: 0 } as VelocityComponent);
   world.addComponent(ufo, { type: "Render", shape: "ufo", size: GAME_CONFIG.UFO_SIZE, color: "#00FF00", rotation: 0 } as RenderComponent);
-  world.addComponent(ufo, { type: "Collider", radius: GAME_CONFIG.UFO_SIZE } as ColliderComponent);
+  world.addComponent(ufo, {
+    type: "Collider2D",
+    shape: { type: "circle", radius: GAME_CONFIG.UFO_SIZE },
+    layer: CollisionLayers.ENEMY,
+    mask: CollisionLayers.PLAYER | CollisionLayers.PROJECTILE,
+    offsetX: 0,
+    offsetY: 0,
+    isTrigger: false,
+    enabled: true
+  } as Collider2DComponent);
   world.addComponent(ufo, { type: "Ufo", baseY: y, time: 0 } as any);
   return ufo;
 };

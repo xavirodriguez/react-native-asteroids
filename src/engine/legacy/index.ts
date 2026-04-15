@@ -5,7 +5,4 @@
  */
 
 export * from "./LegacyComponents";
-export { SceneGraph, type SceneNode } from "./SceneGraph";
-export { CollisionSystem } from "../systems/CollisionSystem";
-export { InputSystem } from "../input/InputSystem";
-export { RenderSystem } from "./RenderSystem";
+// Legacy systems have been removed or moved to other canonical locations.

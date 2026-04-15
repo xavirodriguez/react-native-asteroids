@@ -4,9 +4,7 @@ import { EventBus } from "./EventBus";
 import { StateMachine } from "./StateMachine";
 import type { World } from "./World";
 import type { CollisionManifold } from "../physics/collision/CollisionTypes";
-import { PositionComponent, ColliderComponent } from "../legacy/LegacyComponents";
-
-export { Entity, Component, PositionComponent, ColliderComponent };
+export { Entity, Component };
 
 /**
  * Componentes base proporcionados por el motor como primitivas reutilizables.

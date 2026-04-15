@@ -1,6 +1,6 @@
 import { World } from "../../../engine/core/World";
-import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
-import { Entity } from "../../../engine/types/EngineTypes";
+import { System } from "../../../engine/core/System";
+import { Entity, CollisionEventsComponent } from "../../../engine/types/EngineTypes";
 import { EventBus } from "../../../engine/core/EventBus";
 import {
   TransformComponent,
@@ -20,31 +20,28 @@ import { RandomService } from "../../../engine/utils/RandomService";
 import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
 
 /**
- * System that handles all game collisions.
+ * System that handles all game collisions by reacting to events from CollisionSystem2D.
  */
-export class SpaceInvadersCollisionSystem extends CollisionSystem {
-  private particlePool: ParticlePool;
-
-  constructor(particlePool: ParticlePool) {
+export class SpaceInvadersCollisionSystem extends System {
+  constructor(private _particlePool: ParticlePool) {
     super();
-    this.particlePool = particlePool;
   }
 
-  protected onCollision(world: World, e1: Entity, e2: Entity): void {
+  public override update(world: World, _deltaTime: number): void {
     const gameState = world.getSingleton<GameStateComponent>("GameState");
     if (!gameState || gameState.isGameOver) return;
 
-    this.handleCollision(world, e1, e2, gameState);
-  }
-
-  public override update(world: World, deltaTime: number): void {
-    super.update(world, deltaTime);
-
-    const gameState = world.getSingleton<GameStateComponent>("GameState");
-    if (gameState) {
-      // Special check: Invaders reaching the bottom
-      this.checkInvadersBottom(world, gameState);
+    const entitiesWithEvents = world.query("CollisionEvents");
+    for (const entity of entitiesWithEvents) {
+      const eventsComp = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents")!;
+      for (const event of eventsComp.collisions) {
+        this.handleCollision(world, entity, event.otherEntity, gameState);
+        if (gameState.isGameOver) return;
+      }
     }
+
+    // Special check: Invaders reaching the bottom
+    this.checkInvadersBottom(world, gameState);
   }
 
   private handleCollision(world: World, e1: Entity, e2: Entity, gameState: GameStateComponent): void {
@@ -68,7 +65,7 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
         }
       }
 
-      this.destroyEntity(world, bullet);
+      world.removeEntity(bullet);
       return;
     }
 
@@ -120,8 +117,8 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
         gameState.kamikazesActive--;
       }
 
-      this.destroyEntity(world, invader);
-      this.destroyEntity(world, bullet);
+      world.removeEntity(invader);
+      world.removeEntity(bullet);
       return;
     }
 
@@ -131,7 +128,7 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
       const bullet = (bulletShield as any).PlayerBullet || (bulletShield as any).EnemyBullet;
       const shield = (bulletShield as any).Shield;
       this.damageShield(world, shield);
-      this.destroyEntity(world, bullet);
+      world.removeEntity(bullet);
       return;
     }
 
@@ -155,7 +152,7 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
           if (eventBus) eventBus.emit("game:over");
         }
       }
-      this.destroyEntity(world, bullet);
+      world.removeEntity(bullet);
       return;
     }
 
@@ -169,7 +166,7 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
 
     const invaderShield = this.matchPair(world, e1, e2, "Invader", "Shield");
     if (invaderShield) {
-      this.destroyEntity(world, invaderShield.Shield);
+      world.removeEntity(invaderShield.Shield);
       return;
     }
   }
@@ -179,14 +176,13 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
     if (shield) {
       shield.hp -= 1;
       if (shield.hp <= 0) {
-        this.destroyEntity(world, shieldEntity);
+        world.removeEntity(shieldEntity);
       } else {
         const render = world.getComponent<RenderComponent>(shieldEntity, "Render");
         if (render) render.hitFlashFrames = 5;
       }
     }
   }
-
 
   private createExplosion(world: World, x: number, y: number, color: string): void {
     for (let i = 0; i < GAME_CONFIG.PARTICLE_COUNT; i++) {
@@ -199,7 +195,7 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
         Math.cos(angle) * speed,
         Math.sin(angle) * speed,
         color,
-        this.particlePool
+        this._particlePool
       );
     }
   }
@@ -217,5 +213,21 @@ export class SpaceInvadersCollisionSystem extends CollisionSystem {
         break;
       }
     }
+  }
+
+  private matchPair<T1 extends string, T2 extends string>(
+    world: World,
+    entityA: Entity,
+    entityB: Entity,
+    type1: T1,
+    type2: T2
+  ): Record<T1 | T2, Entity> | undefined {
+    if (world.hasComponent(entityA, type1) && world.hasComponent(entityB, type2)) {
+      return { [type1]: entityA, [type2]: entityB } as Record<T1 | T2, Entity>;
+    }
+    if (world.hasComponent(entityB, type1) && world.hasComponent(entityA, type2)) {
+      return { [type1]: entityB, [type2]: entityA } as Record<T1 | T2, Entity>;
+    }
+    return undefined;
   }
 }

@@ -1,12 +1,25 @@
 import { World } from "../../../engine/core/World";
-import { CollisionSystem } from "../../../engine/systems/CollisionSystem";
-import { Entity, TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
+import { System } from "../../../engine/core/System";
+import { Entity, TransformComponent, VelocityComponent, CollisionEventsComponent } from "../../../engine/types/EngineTypes";
 import { PONG_CONFIG } from "../types";
 import { Juice } from "../../../engine/utils/Juice";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
+import { EventBus } from "../../../engine/core/EventBus";
 
-export class PongCollisionSystem extends CollisionSystem {
-  protected onCollision(world: World, entityA: Entity, entityB: Entity): void {
+export class PongCollisionSystem extends System {
+  public update(world: World, _deltaTime: number): void {
+    const entitiesWithEvents = world.query("CollisionEvents");
+
+    for (const entity of entitiesWithEvents) {
+      const eventsComp = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents")!;
+
+      for (const event of eventsComp.collisions) {
+        this.resolveCollision(world, entity, event.otherEntity);
+      }
+    }
+  }
+
+  private resolveCollision(world: World, entityA: Entity, entityB: Entity): void {
     const paddleBall = this.matchPair(world, entityA, entityB, "Paddle", "Ball");
     if (paddleBall) {
         const { Paddle: paddleEntity, Ball: ballEntity } = paddleBall;
@@ -92,4 +105,19 @@ export class PongCollisionSystem extends CollisionSystem {
     }
   }
 
+  private matchPair<T1 extends string, T2 extends string>(
+    world: World,
+    entityA: Entity,
+    entityB: Entity,
+    type1: T1,
+    type2: T2
+  ): Record<T1 | T2, Entity> | undefined {
+    if (world.hasComponent(entityA, type1) && world.hasComponent(entityB, type2)) {
+      return { [type1]: entityA, [type2]: entityB } as Record<T1 | T2, Entity>;
+    }
+    if (world.hasComponent(entityB, type1) && world.hasComponent(entityA, type2)) {
+      return { [type1]: entityB, [type2]: entityA } as Record<T1 | T2, Entity>;
+    }
+    return undefined;
+  }
 }

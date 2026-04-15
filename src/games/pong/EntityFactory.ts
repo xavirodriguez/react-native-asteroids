@@ -1,6 +1,7 @@
 import { World } from "../../engine/core/World";
 import { PONG_CONFIG } from "./types";
-import { TransformComponent, VelocityComponent, RenderComponent, ColliderComponent, BoundaryComponent, TagComponent } from "../../engine/types/EngineTypes";
+import { TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, BoundaryComponent, TagComponent } from "../../engine/types/EngineTypes";
+import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import { RandomService } from "../../engine/utils/RandomService";
 
 export const PongEntityFactory = {
@@ -9,7 +10,16 @@ export const PongEntityFactory = {
     world.addComponent(ball, { type: "Transform", x: PONG_CONFIG.WIDTH / 2, y: PONG_CONFIG.HEIGHT / 2, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
     world.addComponent(ball, { type: "Velocity", dx: PONG_CONFIG.BALL_SPEED_START, dy: PONG_CONFIG.BALL_SPEED_START * (RandomService.next() > 0.5 ? 1 : -1) } as VelocityComponent);
     world.addComponent(ball, { type: "Render", shape: "circle", size: PONG_CONFIG.BALL_SIZE, color: "white", rotation: 0 } as RenderComponent);
-    world.addComponent(ball, { type: "Collider", radius: PONG_CONFIG.BALL_SIZE } as ColliderComponent);
+    world.addComponent(ball, {
+      type: "Collider2D",
+      shape: { type: "circle", radius: PONG_CONFIG.BALL_SIZE },
+      layer: CollisionLayers.PROJECTILE,
+      mask: CollisionLayers.PLAYER,
+      offsetX: 0,
+      offsetY: 0,
+      isTrigger: false,
+      enabled: true
+    } as Collider2DComponent);
     world.addComponent(ball, { type: "Boundary", width: PONG_CONFIG.WIDTH, height: PONG_CONFIG.HEIGHT, mode: "bounce", bounceX: false, bounceY: true } as BoundaryComponent);
     world.addComponent(ball, { type: "Tag", tags: ["Ball"] } as TagComponent);
     world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as any);
@@ -28,7 +38,16 @@ export const PongEntityFactory = {
       { x: PONG_CONFIG.PADDLE_WIDTH / 2, y: PONG_CONFIG.PADDLE_HEIGHT / 2 },
       { x: -PONG_CONFIG.PADDLE_WIDTH / 2, y: PONG_CONFIG.PADDLE_HEIGHT / 2 },
     ] } as RenderComponent);
-    world.addComponent(paddle, { type: "Collider", radius: PONG_CONFIG.PADDLE_HEIGHT / 2, width: PONG_CONFIG.PADDLE_WIDTH, height: PONG_CONFIG.PADDLE_HEIGHT } as any);
+    world.addComponent(paddle, {
+      type: "Collider2D",
+      shape: { type: "aabb", halfWidth: PONG_CONFIG.PADDLE_WIDTH / 2, halfHeight: PONG_CONFIG.PADDLE_HEIGHT / 2 },
+      layer: CollisionLayers.PLAYER,
+      mask: CollisionLayers.PROJECTILE,
+      offsetX: 0,
+      offsetY: 0,
+      isTrigger: false,
+      enabled: true
+    } as Collider2DComponent);
     world.addComponent(paddle, { type: "Tag", tags: ["Paddle", side] } as TagComponent);
     world.addComponent(paddle, { type: "Paddle", side, previousY: y, lastVelocityY: 0 } as any);
     return paddle;
