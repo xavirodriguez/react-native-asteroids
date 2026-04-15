@@ -20,8 +20,11 @@ export class SceneManager {
   private state: SceneState = SceneState.IDLE;
   private transitionQueue: (() => Promise<void>)[] = [];
   private isProcessingTransition = false;
+  private world: World;
 
-  constructor() {}
+  constructor(world: World) {
+    this.world = world;
+  }
 
   public getCurrentScene(): Scene | null {
     return this.currentScene;
