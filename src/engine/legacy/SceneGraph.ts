@@ -1,4 +1,5 @@
-import { Entity, Transform } from "../types/EngineTypes";
+import { Entity } from "../core/Entity";
+import { Transform } from "./LegacyComponents";
 
 /**
  * Node in the scene graph hierarchy.

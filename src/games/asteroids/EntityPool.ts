@@ -6,10 +6,10 @@ import {
   type TransformComponent,
   type VelocityComponent,
   type RenderComponent,
-  type ColliderComponent,
   type TTLComponent,
   type ReclaimableComponent
 } from "../../engine/types/EngineTypes";
+import type { ColliderComponent } from "../../engine/legacy/LegacyComponents";
 
 /**
  * Interface for pooled component data.

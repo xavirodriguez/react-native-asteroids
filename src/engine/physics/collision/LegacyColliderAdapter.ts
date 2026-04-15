@@ -1,6 +1,8 @@
 import { System } from "../../core/System";
 import { World } from "../../core/World";
-import { ColliderComponent, Collider2DComponent } from "../../types/EngineTypes";
+import { Collider2DComponent } from "../../types/EngineTypes";
+import { Legacy } from "../../index";
+type ColliderComponent = import("../../legacy/LegacyComponents").ColliderComponent;
 import { ShapeFactory } from "../shapes/ShapeFactory";
 
 export class LegacyColliderAdapter extends System {
