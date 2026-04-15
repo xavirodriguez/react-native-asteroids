@@ -5,6 +5,7 @@ export * from "../core/Entity";
 export * from "../core/CoreComponents";
 export * from "../physics/shapes/ShapeTypes";
 export * from "./CommonTypes";
+export { Transform, RenderableComponent, CollisionManifold } from "../legacy/LegacyComponents";
 
 /**
  * Represents a serialized component, containing only data and no functions or circular references.

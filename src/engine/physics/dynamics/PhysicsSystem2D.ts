@@ -1,6 +1,6 @@
 import { System } from "../../core/System";
 import { World } from "../../core/World";
-import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent } from "../../types/EngineTypes";
+import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, CollisionEvent } from "../../types/EngineTypes";
 
 /**
  * Built-in 2D Physics System for stable rigid body dynamics.
@@ -109,7 +109,7 @@ export class PhysicsSystem2D extends System {
     bodyA: PhysicsBody2DComponent,
     transformB: TransformComponent,
     bodyB: PhysicsBody2DComponent,
-    collision: any
+    collision: CollisionEvent
   ): void {
     // Normal points from A to B
     const nx = collision.normalX;

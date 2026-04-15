@@ -1,34 +1,27 @@
-# Contrato de Snapshot y Restore
+# Contrato de Snapshot y Restauración del Mundo
 
-El sistema de Snapshots permite capturar y restaurar el estado completo del mundo ECS. Este mecanismo es crítico para implementar Rollback en multijugador, Guardado de Partida y Debugging.
+## Propósito
+Este documento define los requisitos y garantías para la serialización (`snapshot`) y restauración (`restore`) del estado del mundo ECS. Este contrato es crítico para el determinismo, el soporte de rollback en juegos multijugador y el guardado de partidas.
 
 ## Estructura del Snapshot
+Un snapshot es un objeto plano (POJO) que debe contener:
+- **entities**: Lista de IDs de entidades activas, ordenada por ID.
+- **componentData**: Mapa de `ComponentType -> EntityID -> Data`.
+- **nextEntityId**: El siguiente ID de entidad a asignar.
+- **freeEntities**: Lista de IDs de entidades disponibles en el pool.
+- **version**: Contador de cambios estructurales del mundo.
+- **seed**: Estado actual del generador de números aleatorios de gameplay.
 
-Un snapshot capturado mediante `world.snapshot()` contiene:
-*   `entities`: Lista ordenada por ID de entidades activas.
-*   `componentData`: Mapa de `TipoComponente -> EntityID -> DatosPlanos`.
-*   `nextEntityId`: Próximo ID a asignar.
-*   `freeEntities`: Pool de IDs reciclables.
-*   `version`: Contador de mutaciones del mundo.
-*   `seed`: Semilla actual del generador aleatorio de gameplay.
+## Reglas de Serialización
+1. **Solo Datos Planos**: Los componentes deben contener únicamente datos primitivos, objetos planos o arrays.
+2. **Exclusión de Funciones**: No se deben serializar métodos, callbacks ni referencias circulares.
+3. **Determinismo**: La restauración de un snapshot debe resultar en un estado del mundo idéntico al momento de la captura, incluyendo el estado del RNG.
+4. **Caché de Queries**: Al restaurar, todas las queries activas deben invalidarse y reconstruirse para reflejar el nuevo estado.
 
-## Reglas de Serialización (Contrato del Componente)
+## Requisitos de Componentes
+Para asegurar una restauración correcta, los componentes que gestionan recursos externos (como pools o callbacks) deben implementar una lógica de "re-vinculación":
+- El componente `Reclaimable` debe restaurar su callback `onReclaim` a partir de los recursos disponibles en el mundo tras la restauración.
 
-Para que un componente sea compatible con el sistema de snapshots, debe cumplir:
-
-1.  **Datos Planos (Plain Objects)**: Solo se serializan propiedades que no sean funciones.
-2.  **No Referencias Circulares**: El objeto debe ser serializable mediante `JSON.stringify`.
-3.  **Estado Atómico**: El componente debe contener todo el estado necesario para recrear su comportamiento.
-
-### Excepciones y Casos Especiales
-
-*   **ReclaimableComponent**: La función `onReclaim` se restaura automáticamente si el pool correspondiente está registrado en los recursos del mundo.
-*   **StateMachineComponent**: El estado interno de la FSM debe ser capaz de serializarse. Actualmente, las funciones de transición se omiten y deben ser re-vinculadas al restaurar si son dinámicas.
-
-## Proceso de Restauración
-
-Al llamar a `world.restore(snapshot)`:
-1.  Se limpian todos los mapas de componentes actuales.
-2.  Se reconstruyen los índices y sets de componentes por entidad.
-3.  **Invalidación de Queries**: Todas las queries activas se reconstruyen para reflejar el nuevo estado, manteniendo las referencias de los objetos `Query`.
-4.  **Reseteo de RNG**: La semilla del `RandomService` se sincroniza con la del snapshot para asegurar determinismo.
+## Garantías
+- El `World` garantiza que la restauración es una operación atómica.
+- No se mantienen referencias a los objetos de datos del snapshot original (se utiliza `structuredClone`).

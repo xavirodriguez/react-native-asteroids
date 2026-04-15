@@ -19,7 +19,7 @@ export interface RenderCommand {
   height?: number;
   radius?: number;
   color?: string;
-  zOrder: number;
+  zIndex: number;
   visible: boolean;
 }
 

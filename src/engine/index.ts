@@ -1,33 +1,39 @@
-// Core
-export * from './core/World';
-export * from './core/Query';
-export * from './core/EntityPool';
-export * from './core/GameLoop';
-export * from './core/System';
+/**
+ * @packageDocumentation
+ * Entrypoint principal del engine 2D retro.
+ * Organizado en módulos para facilitar la extensibilidad y el mantenimiento.
+ */
 
-// Types
-export * from './types/EngineTypes';
+// --- CORE ECS ---
+export { World } from './core/World';
+export { Query } from './core/Query';
+export { System, SystemPhase } from './core/System';
+export { GameLoop } from './core/GameLoop';
+export { EntityPool } from './core/EntityPool';
+export type { Entity } from './core/Entity';
+export type { Component } from './core/Component';
+export * from './core/CoreComponents';
 
-// Collision & Physics
-export * from './collision/SpatialHash';
+// --- PHYSICS & COLLISION ---
+export { PhysicsSystem2D } from './physics/dynamics/PhysicsSystem2D';
+export { CollisionSystem2D } from './physics/collision/CollisionSystem2D';
+export { CollisionLayers } from './physics/collision/CollisionLayers';
+export { SpatialHash } from './collision/SpatialHash';
+export { PhysicsQuery } from './physics/query/PhysicsQuery';
+export type { AABB } from './types/CommonTypes';
 export * from './physics/shapes/ShapeTypes';
 export * from './physics/shapes/ShapeFactory';
-export * from './physics/collision/CollisionSystem2D';
-export * from './physics/collision/CollisionLayers';
-export * from './physics/collision/NarrowPhase';
-export * from './physics/collision/BroadPhase';
-export * from './physics/collision/ContinuousCollision';
-export * from './physics/query/PhysicsQuery';
 export * from './physics/query/QueryTypes';
-export * from './physics/dynamics/PhysicsSystem2D';
-export * from './physics/debug/PhysicsDebugSystem';
 
-// Rendering
+// --- RENDERING ---
 export * from './rendering/RenderTypes';
+export type { CollisionManifold } from './legacy/LegacyComponents';
+export { Camera2D } from './camera/Camera2D';
+export { CameraSystem } from './camera/CameraSystem';
 
-// Input
+// --- INPUT ---
+export { UnifiedInputSystem } from './input/UnifiedInputSystem';
 export * from './input/InputTypes';
-export * from './input/UnifiedInputSystem';
 
 // Scenes
 export * from './scenes/Scene';
@@ -51,3 +57,7 @@ export * from './systems/TTLSystem';
 export * from './systems/JuiceSystem';
 export * from './systems/ParticleSystem';
 export * from './systems/ScreenShakeSystem';
+
+// Legacy API
+import * as Legacy from './legacy';
+export { Legacy };

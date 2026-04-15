@@ -95,7 +95,7 @@ export class World {
         }
 
         if (type === "Reclaimable") {
-            delete (serializedComp as any).onReclaim;
+            delete (serializedComp as SerializedComponent).onReclaim;
         }
 
         // structuredClone is much faster and safer than JSON.parse(JSON.stringify)
@@ -167,7 +167,7 @@ export class World {
 
     // Rebuild all existing queries to maintain consistency without breaking references
     this.queries.forEach(query => {
-        (query as any).rebuild(this.activeEntities, this.entityComponentSets);
+        query.rebuild(this.activeEntities, this.entityComponentSets);
     });
 
     // Re-attach Reclaimable functions if any pool exists in resources
