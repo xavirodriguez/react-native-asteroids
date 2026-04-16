@@ -18,7 +18,7 @@ describe("AIPongController", () => {
   it("should signal move up when ball is above paddle", () => {
     const ball = world.query("Ball", "Transform")[0];
     const paddle = world.query("Paddle", "Transform").find(e =>
-        world.getComponent<any>(e, "Tag").tags.includes("right")
+        world.getComponent<import("../../../../engine/core/CoreComponents").TagComponent>(e, "Tag")?.tags.includes("right")
     )!;
 
     const ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;
@@ -37,7 +37,7 @@ describe("AIPongController", () => {
   it("should signal move down when ball is below paddle", () => {
     const ball = world.query("Ball", "Transform")[0];
     const paddle = world.query("Paddle", "Transform").find(e =>
-        world.getComponent<any>(e, "Tag").tags.includes("right")
+        world.getComponent<import("../../../../engine/core/CoreComponents").TagComponent>(e, "Tag")?.tags.includes("right")
     )!;
 
     const ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;

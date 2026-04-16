@@ -1,6 +1,7 @@
 import { PrefabPool } from "../../engine/utils/PrefabPool";
 import { World } from "../../engine/core/World";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
+import { CircleShape } from "../../engine/physics/shapes/ShapeTypes";
 import {
   type Entity,
   type Component,
@@ -15,7 +16,7 @@ import {
 /**
  * Interface for pooled component data.
  */
-interface BulletComponents {
+interface BulletComponents extends Record<string, import("../../engine/core/Component").Component> {
   position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
@@ -36,7 +37,7 @@ export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
   constructor(initialSize: number = 20) {
     super({
       factory: () => ({
-        position: { type: "Transform", x: 0, y: 0 },
+        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "bullet_shape", size: 0, color: "", rotation: 0 },
         collider: {
@@ -58,7 +59,7 @@ export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
         data.position.x = p.x; data.position.y = p.y;
         data.velocity.dx = p.dx; data.velocity.dy = p.dy;
         data.render.size = p.size; data.render.color = p.color;
-        (data.collider.shape as any).radius = p.size;
+        (data.collider.shape as CircleShape).radius = p.size;
         data.ttl.remaining = p.ttl; data.ttl.total = p.ttl;
       },
       initialSize
@@ -73,7 +74,7 @@ export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
 /**
  * Interface for pooled particle data.
  */
-interface ParticleComponents {
+interface ParticleComponents extends Record<string, import("../../engine/core/Component").Component> {
   position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
@@ -92,7 +93,7 @@ export class ParticlePool extends PrefabPool<ParticleComponents, ParticleParams>
   constructor(initialSize: number = 100) {
     super({
       factory: () => ({
-        position: { type: "Transform", x: 0, y: 0 },
+        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0 },
         ttl: { type: "TTL", remaining: 0, total: 0 },

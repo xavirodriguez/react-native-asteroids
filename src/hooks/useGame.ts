@@ -80,7 +80,7 @@ export function useGame<
   }, [GameClass, isMultiplayer]);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
-    gameRef.current?.setInput(input);
+    gameRef.current?.setInput(input as unknown as Record<string, boolean>);
   }, []);
 
   const togglePause = useCallback(() => {

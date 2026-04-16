@@ -52,6 +52,6 @@ export const ShipPhysics = {
   },
 
   applyFriction(velocity: VelocityComponent, dtMs: number, config: typeof GAME_CONFIG = GAME_CONFIG): void {
-    PhysicsUtils.applyFriction(velocity, config.SHIP_FRICTION, dtMs);
+    PhysicsUtils.applyFriction(velocity as unknown as Record<string, unknown>, config.SHIP_FRICTION, dtMs);
   }
 };

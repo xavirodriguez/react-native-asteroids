@@ -13,10 +13,10 @@ export class FlappyBirdRenderSystem extends RenderUpdateSystem {
 
   public update(world: World, deltaTime: number): void {
     super.update(world, deltaTime);
-    this.updateBirdRotation(world);
+    this.updateBirdRotation(world, deltaTime);
   }
 
-  private updateBirdRotation(world: World): void {
+  private updateBirdRotation(world: World, deltaTime: number): void {
     const birds = world.query("Bird", "Render");
     birds.forEach((entity) => {
       const bird = world.getComponent<BirdComponent>(entity, "Bird");

@@ -14,7 +14,7 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  * @remarks
  * Implements a snapshot-based architecture for decoupled and consistent rendering.
  */
-export class CanvasRenderer implements Renderer {
+export class CanvasRenderer implements Renderer<CanvasRenderingContext2D> {
   public readonly type = 'canvas';
   protected ctx: CanvasRenderingContext2D | null = null;
   protected width: number = 0;

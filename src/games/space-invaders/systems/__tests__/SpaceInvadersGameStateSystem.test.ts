@@ -13,7 +13,7 @@ describe("SpaceInvadersGameStateSystem", () => {
     world = new World();
     game = {
       getWorld: () => world,
-    } as any;
+    } as unknown as ISpaceInvadersGame;
     system = new SpaceInvadersGameStateSystem(game);
   });
 

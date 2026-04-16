@@ -1,9 +1,9 @@
 import { World } from "../../../engine/core/World";
 import { System } from "../../../engine/core/System";
 import {
-  type AsteroidComponent,
   type HealthComponent,
   type Entity,
+  type Component,
   TransformComponent,
   RenderComponent,
   CollisionEventsComponent,
@@ -18,7 +18,7 @@ import { RandomService } from "../../../engine/utils/RandomService";
 import { EventBus } from "../../../engine/core/EventBus";
 
 const ASTEROID_SPLIT_CONFIG: Record<
-  AsteroidComponent["size"],
+  string,
   { nextSize: "medium" | "small"; offset: number } | undefined
 > = {
   large: { nextSize: "medium", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE },
@@ -101,7 +101,7 @@ export class AsteroidCollisionSystem extends System {
   }
 
   private handleAsteroidDestructionLogic(world: World, asteroid: Entity, bullet: Entity): void {
-    const asteroidComp = world.getComponent<AsteroidComponent>(asteroid, "Asteroid");
+    const asteroidComp = world.getComponent<Component & { size: "large" | "medium" | "small" }>(asteroid, "Asteroid");
     const size = asteroidComp?.size || "small";
 
     const gameState = world.getSingleton<GameStateComponent>("GameState");
@@ -115,7 +115,7 @@ export class AsteroidCollisionSystem extends System {
     this.splitAsteroid(world, asteroid);
     world.removeEntity(bullet);
 
-    const eventBus = world.getResource<EventBus>("EventBus");
+    const eventBus = world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
     if (eventBus) eventBus.emit("asteroid:destroyed", { size });
   }
 
@@ -163,19 +163,19 @@ export class AsteroidCollisionSystem extends System {
 
     if (health.current <= 0) {
       hapticDeath();
-      const eventBus = world.getResource<EventBus>("EventBus");
-      if (eventBus) eventBus.emit("game:over");
+      const eventBus = world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
+      if (eventBus) eventBus.emit("game:over", {});
     } else {
       hapticDamage();
     }
   }
 
   private splitAsteroid(world: World, asteroidEntity: Entity): void {
-    const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
+    const asteroid = world.getComponent<Component & { size: "large" | "medium" | "small" }>(asteroidEntity, "Asteroid");
     const position = world.getComponent<TransformComponent>(asteroidEntity, "Transform");
 
     if (asteroid && position) {
-      this.executeSplitStrategy(world, position, asteroid.size);
+      this.executeSplitStrategy(world, position, asteroid.size as "large" | "medium" | "small");
     }
     world.removeEntity(asteroidEntity);
   }
@@ -183,7 +183,7 @@ export class AsteroidCollisionSystem extends System {
   private executeSplitStrategy(
     world: World,
     position: TransformComponent,
-    size: AsteroidComponent["size"],
+    size: "large" | "medium" | "small",
   ): void {
     const config = ASTEROID_SPLIT_CONFIG[size];
 
