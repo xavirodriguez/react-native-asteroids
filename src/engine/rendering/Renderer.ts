@@ -26,7 +26,7 @@ export type EffectDrawer<TContext> = (
 /**
  * Abstract interface for game renderers.
  */
-export interface Renderer {
+export interface Renderer<TContext = unknown> {
   readonly type: string;
 
   clear(): void;
@@ -39,11 +39,11 @@ export interface Renderer {
 
   setSize(width: number, height: number): void;
 
-  registerShape(name: string, drawer: ShapeDrawer<unknown>): void;
+  registerShape(name: string, drawer: ShapeDrawer<TContext>): void;
 
-  registerPostEntityDrawer(name: string, drawer: ShapeDrawer<unknown>): void;
+  registerPostEntityDrawer(name: string, drawer: ShapeDrawer<TContext>): void;
 
-  registerBackgroundEffect(name: string, drawer: EffectDrawer<unknown>): void;
+  registerBackgroundEffect(name: string, drawer: EffectDrawer<TContext>): void;
 
-  registerForegroundEffect(name: string, drawer: EffectDrawer<unknown>): void;
+  registerForegroundEffect(name: string, drawer: EffectDrawer<TContext>): void;
 }

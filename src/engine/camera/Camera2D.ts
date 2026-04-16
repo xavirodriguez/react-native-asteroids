@@ -1,12 +1,29 @@
+/**
+ * @packageDocumentation
+ * Platform-agnostic 2D Camera subsystem.
+ * Coordinates view transformations, target following, and screen-shake effects.
+ */
+
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { Camera2DComponent, TransformComponent, Entity } from "../types/EngineTypes";
 import { RandomService } from "../utils/RandomService";
 
+/**
+ * Configuration options for initializing the {@link Camera2D} system.
+ */
 export interface CameraConfig {
+  /** Initial viewport dimensions in screen pixels. */
   viewport: { width: number; height: number };
+  /** World boundaries to constrain the camera movement. */
   bounds?: { minX: number; minY: number; maxX: number; maxY: number };
+  /**
+   * Smoothing factor for target following.
+   * Higher values mean faster tracking.
+   * @defaultValue 0.1
+   */
   smoothing?: number;
+  /** Fixed offset from the target position. */
   offset?: { x: number; y: number };
 }
 
@@ -15,12 +32,32 @@ export interface CameraConfig {
  *
  * @remarks
  * Implements frame-rate independent interpolation and shake effects using
- * delta-time based exponential smoothing: t = 1 - exp(-lambda * dt).
+ * delta-time based exponential smoothing: `t = 1 - exp(-lambda * dt)`.
  * This ensures identical behavior across 30, 60, and 120 FPS.
+ *
+ * The system operates on entities with the `Camera2D` component (see {@link Camera2DComponent}).
+ * It typically updates after the physics/movement phase but before rendering.
+ *
+ * @example
+ * ```ts
+ * const cameraSystem = new Camera2D({
+ *   viewport: { width: 1920, height: 1080 },
+ *   smoothing: 0.15
+ * });
+ * world.addSystem(cameraSystem);
+ *
+ * // Make the camera follow the player
+ * Camera2D.follow(world, playerEntity);
+ * ```
  */
 export class Camera2D extends System {
+  /** Internal viewport dimensions used for calculations. */
   private viewport = { width: 800, height: 600 };
 
+  /**
+   * Creates a new Camera2D system instance.
+   * @param config - Optional configuration for the viewport and behavior.
+   */
   constructor(config?: CameraConfig) {
     super();
     if (config) {
@@ -28,6 +65,13 @@ export class Camera2D extends System {
     }
   }
 
+  /**
+   * Updates the viewport dimensions at runtime.
+   * Useful for handling window resize events.
+   *
+   * @param width - New viewport width in pixels.
+   * @param height - New viewport height in pixels.
+   */
   public setViewport(width: number, height: number): void {
     this.viewport = { width, height };
   }
@@ -35,8 +79,16 @@ export class Camera2D extends System {
   /**
    * Updates all active cameras in the world.
    *
-   * @param world - The ECS world.
-   * @param deltaTime - Elapsed time in milliseconds.
+   * @param world - The ECS world containing camera and transform components.
+   * @param deltaTime - Elapsed time since last frame in milliseconds.
+   *
+   * @remarks
+   * For each camera entity, this method:
+   * 1. Interpolates position towards the target (if any).
+   * 2. Clamps the camera within defined bounds.
+   * 3. Calculates and decays screen shake offsets.
+   *
+   * @mutates {@link Camera2DComponent} - Updates x, y, shakeOffsetX, shakeOffsetY, and shakeIntensity.
    */
   public update(world: World, deltaTime: number): void {
     const cameras = world.query("Camera2D");
@@ -90,6 +142,14 @@ export class Camera2D extends System {
     }
   }
 
+  /**
+   * Sets the follow target for the singleton camera.
+   *
+   * @param world - The ECS world.
+   * @param target - Entity ID of the transform to follow.
+   *
+   * @precondition A singleton entity with `Camera2D` component must exist in the world.
+   */
   public static follow(world: World, target: Entity): void {
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
     if (cam) {
@@ -97,6 +157,14 @@ export class Camera2D extends System {
     }
   }
 
+  /**
+   * Triggers a screen shake effect on the singleton camera.
+   *
+   * @param world - The ECS world.
+   * @param intensity - Initial magnitude of the shake in world units.
+   *
+   * @precondition A singleton entity with `Camera2D` component must exist in the world.
+   */
   public static shake(world: World, intensity: number): void {
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
     if (cam) {
@@ -104,6 +172,14 @@ export class Camera2D extends System {
     }
   }
 
+  /**
+   * Converts a world-space coordinate to screen-space coordinate.
+   * Account for camera position, zoom, and current screen shake.
+   *
+   * @param worldPos - Vector in world units.
+   * @param cam - The camera component state to use for transformation.
+   * @returns Transformed coordinates in pixels relative to the viewport top-left.
+   */
   public static worldToScreen(worldPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
     const shakeX = cam.shakeOffsetX || 0;
     const shakeY = cam.shakeOffsetY || 0;
@@ -113,6 +189,14 @@ export class Camera2D extends System {
     };
   }
 
+  /**
+   * Converts a screen-space coordinate (e.g., from mouse input) to world-space.
+   * Account for camera position, zoom, and current screen shake.
+   *
+   * @param screenPos - Vector in screen pixels relative to viewport top-left.
+   * @param cam - The camera component state to use for transformation.
+   * @returns Transformed coordinates in world units.
+   */
   public static screenToWorld(screenPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
     const shakeX = cam.shakeOffsetX || 0;
     const shakeY = cam.shakeOffsetY || 0;

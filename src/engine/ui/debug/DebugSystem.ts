@@ -1,13 +1,41 @@
+/**
+ * @packageDocumentation
+ * Runtime debug visualization system.
+ * Renders overlays for FPS, colliders, velocities, and entity IDs.
+ */
+
 import { System } from "../../core/System";
 import { World } from "../../core/World";
 import { DebugConfigComponent } from "./DebugTypes";
 import { TransformComponent, Collider2DComponent, VelocityComponent } from "../../core/CoreComponents";
 
+/**
+ * System that renders debug information over the game.
+ *
+ * @remarks
+ * This system should be updated and rendered last to ensure it overlays all other
+ * game and interface elements. It relies on a singleton {@link DebugConfigComponent}
+ * to determine which debug features are enabled.
+ *
+ * @responsibility Track and display the current Frames Per Second (FPS).
+ * @responsibility Draw wireframes for active colliders (circles and boxes).
+ * @responsibility Visualize velocity vectors for moving entities.
+ * @responsibility Label entities with their unique numerical IDs.
+ */
 export class DebugSystem extends System {
+  /** Current frames per second count. */
   private fps: number = 0;
+  /** Number of frames rendered since the last second boundary. */
   private frameCount: number = 0;
+  /** Timestamp of the last second boundary. */
   private lastTime: number = 0;
 
+  /**
+   * Updates the internal FPS counter.
+   *
+   * @param world - The ECS world.
+   * @param _deltaTime - Delta time (unused for FPS calculation as we use Date.now()).
+   */
   public update(world: World, _deltaTime: number): void {
     const config = world.getSingleton<DebugConfigComponent>("DebugConfig");
     if (!config) return;
@@ -21,6 +49,19 @@ export class DebugSystem extends System {
     }
   }
 
+  /**
+   * Renders debug overlays to the canvas context.
+   *
+   * @param ctx - Canvas 2D rendering context.
+   * @param world - The ECS world.
+   *
+   * @remarks
+   * For each active entity, this method performs component lookups filtered
+   * by the current debug configuration.
+   *
+   * @sideEffect Draws text and paths to the canvas.
+   * @performance Can be expensive with many entities, especially when drawing all colliders.
+   */
   public renderDebug(ctx: CanvasRenderingContext2D, world: World): void {
     const config = world.getSingleton<DebugConfigComponent>("DebugConfig");
     if (!config) return;

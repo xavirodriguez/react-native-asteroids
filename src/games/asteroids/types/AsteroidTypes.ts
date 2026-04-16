@@ -3,7 +3,7 @@ import { Component } from "../../../engine/types/EngineTypes";
 /**
  * Represents the current state of user inputs for Asteroids.
  */
-export interface InputState {
+export interface InputState extends Record<string, boolean> {
   thrust: boolean;
   rotateLeft: boolean;
   rotateRight: boolean;
@@ -14,8 +14,13 @@ export interface InputState {
 /**
  * Stores the current input state for controllable entities in Asteroids.
  */
-export interface InputComponent extends Component, InputState {
+export interface InputComponent extends Component {
   type: "Input";
+  thrust: boolean;
+  rotateLeft: boolean;
+  rotateRight: boolean;
+  shoot: boolean;
+  hyperspace: boolean;
   shootCooldownRemaining: number;
 }
 

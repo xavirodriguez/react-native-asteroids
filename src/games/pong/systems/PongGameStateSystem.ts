@@ -5,14 +5,14 @@ import { RandomService } from "../../../engine/utils/RandomService";
 import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
 import { EventBus } from "../../../engine/core/EventBus";
 
-export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
-  private state: PongState = { scoreP1: 0, scoreP2: 0, isGameOver: false };
+export class PongGameStateSystem extends BaseGameStateSystem<PongState & import("../../../engine/core/Component").Component> {
+  private state: PongState & import("../../../engine/core/Component").Component = { type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1 };
 
   constructor(private config: typeof PONG_CONFIG = PONG_CONFIG) {
     super();
   }
 
-  protected updateGameState(world: World, state: PongState, deltaTime: number): void {
+  protected updateGameState(world: World, state: PongState & import("../../../engine/core/Component").Component, deltaTime: number): void {
     void deltaTime;
 
     if (state.isGameOver) {
@@ -42,14 +42,14 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
             state.winner = 1;
             const eventBus = world.getResource<EventBus>("EventBus");
             if (eventBus) {
-                eventBus.emit("pong:set_won");
-                eventBus.emit("game:over");
+                eventBus.emit("pong:set_won", {});
+                eventBus.emit("game:over", {});
             }
         } else if (state.scoreP2 >= this.config.WIN_SCORE) {
             state.isGameOver = true;
             state.winner = 2;
             const eventBus = world.getResource<EventBus>("EventBus");
-            if (eventBus) eventBus.emit("game:over");
+            if (eventBus) eventBus.emit("game:over", {});
         }
     });
 
@@ -68,11 +68,11 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
     vel.dy = (gameplayRandom.next() - 0.5) * this.config.BALL_SPEED_START;
   }
 
-  protected getGameState(world: World): PongState | undefined {
-    return world.getSingleton<PongState>("PongState");
+  protected getGameState(world: World): (PongState & import("../../../engine/core/Component").Component) | undefined {
+    return world.getSingleton<PongState & import("../../../engine/core/Component").Component>("PongState");
   }
 
-  protected evaluateGameOverCondition(state: PongState): boolean {
+  protected evaluateGameOverCondition(state: PongState & import("../../../engine/core/Component").Component): boolean {
     return state.isGameOver;
   }
 
@@ -85,14 +85,16 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
     this.state.scoreP1 = 0;
     this.state.scoreP2 = 0;
     this.state.winner = undefined;
+    this.state.comboMultiplier = 1;
 
     if (world) {
-        const state = world.getSingleton<PongState>("PongState");
+        const state = world.getSingleton<PongState & import("../../../engine/core/Component").Component>("PongState");
         if (state) {
             state.isGameOver = false;
             state.scoreP1 = 0;
             state.scoreP2 = 0;
             state.winner = undefined;
+            state.comboMultiplier = 1;
         }
     }
   }

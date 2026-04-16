@@ -2,11 +2,12 @@ import { Room, type Client } from "@colyseus/core";
 import { SpaceInvadersState, Player, Invader } from "./schema/GameState";
 
 export class SpaceInvadersRoom extends Room<SpaceInvadersState> {
+  declare state: SpaceInvadersState;
   maxClients = 4;
   direction = 1;
   lastMove = 0;
 
-  onCreate(__unused: any) {
+  onCreate(_unused: unknown) {
     this.state = new SpaceInvadersState();
     this.state.gameStarted = false;
     this.state.gameOver = false;
@@ -35,7 +36,7 @@ export class SpaceInvadersRoom extends Room<SpaceInvadersState> {
     });
   }
 
-  onJoin(client: Client, _options: any) {
+  onJoin(client: Client, options: { name?: string }) {
     const player = new Player();
     player.x = 400;
     player.y = 550;

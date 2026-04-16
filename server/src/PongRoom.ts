@@ -21,6 +21,7 @@ class PongStateSchema extends Schema {
  * Implements an input relay for lockstep synchronization.
  */
 export class PongRoom extends Room<PongStateSchema> {
+  declare state: PongStateSchema;
   maxClients = 2;
   private inputBuffer = new Map<number, Map<string, PongInput>>();
 
@@ -59,7 +60,7 @@ export class PongRoom extends Room<PongStateSchema> {
     });
   }
 
-  onJoin(client: Client, _options: any) {
+  onJoin(client: Client, _options: unknown) {
     const player = new PongPlayer();
     player.sessionId = client.sessionId;
 

@@ -26,7 +26,9 @@ export interface BaseGameConfig {
  *
  * @remarks
  * Enforces a strict deterministic pipeline:
- * 1. Input -> 2. Simulation Update -> 3. Transform Propagation.
+ * 1. Input 
+ * 2. Simulation Update 
+ * 3. Transform Propagation.
  * Render phase is decoupled and handles interpolation.
  */
 export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
@@ -49,6 +51,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   private _globalKeyHandler = (e: KeyboardEvent) => this._handleGlobalKey(e);
   protected _config: BaseGameConfig;
   protected hierarchySystem: HierarchySystem;
+
+  public abstract initializeRenderer(renderer: import("../rendering/Renderer").Renderer<any>): void;
 
   constructor(config: BaseGameConfig = {}) {
     const { isMultiplayer = false } = config;

@@ -50,7 +50,7 @@ export class FlappyBirdGame
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
-      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...FLAPPY_CONFIG })
+      ? mutators.reduce((cfg, m) => m.apply(cfg as Record<string, unknown>), { ...FLAPPY_CONFIG } as Record<string, unknown>) as unknown as typeof FLAPPY_CONFIG
       : { ...FLAPPY_CONFIG };
 
     await super.init();
@@ -81,12 +81,13 @@ export class FlappyBirdGame
     this.isMultiplayer = active;
   }
 
-  public updateFromServer(state: Record<string, any>) {
+  public updateFromServer(state: Record<string, unknown>) {
     if (!this.isMultiplayer || !state) return;
     this.world.clear();
 
-    if (state.players && Array.isArray(state.players)) {
-        state.players.forEach((player) => {
+    const players = state.players as { x: number, y: number, velocityY: number, alive: boolean }[] | undefined;
+    if (players && Array.isArray(players)) {
+        players.forEach((player) => {
             const b = this.world.createEntity();
             this.world.addComponent(b, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 });
             this.world.addComponent(b, { type: "Render", shape: "bird", size: 15, color: player.alive ? "yellow" : "gray", rotation: 0 });
@@ -94,8 +95,9 @@ export class FlappyBirdGame
         });
     }
 
-    if (state.pipes && Array.isArray(state.pipes)) {
-        state.pipes.forEach((pipe) => {
+    const pipes = state.pipes as { x: number, gapY: number }[] | undefined;
+    if (pipes && Array.isArray(pipes)) {
+        pipes.forEach((pipe) => {
             const p = this.world.createEntity();
             this.world.addComponent(p, { type: "Transform", x: pipe.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 });
             this.world.addComponent(p, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 });
@@ -111,7 +113,7 @@ export class FlappyBirdGame
     createGround(this.world);
   }
 
-  public initializeRenderer(renderer: Renderer): void {
+  public initializeRenderer(renderer: Renderer<any>): void {
     if (renderer.type === "canvas") {
       renderer.registerShape("bird", drawFlappyBird);
       renderer.registerShape("pipe", drawFlappyPipe);
@@ -136,6 +138,7 @@ export class FlappyBirdGame
 export class NullFlappyBirdGame implements IFlappyBirdGame {
   private _world = new World();
   private _loop = new GameLoop();
+  public isMultiplayer = false;
   public start() {} public stop() {} public pause() {} public resume() {}
   public async restart() {} public destroy() {}
   public getWorld() { return this._world; }

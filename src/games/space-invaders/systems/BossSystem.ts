@@ -95,8 +95,8 @@ export class BossSystem extends System {
     });
     Juice.shake(world, 10, 1000);
     gameState.score += 5000;
-    const eventBus = world.getResource("EventBus") as any;
-    if (eventBus) eventBus.emit("si:boss_defeated");
+    const eventBus = world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
+    if (eventBus) eventBus.emit("si:boss_defeated", {});
     world.removeEntity(entity);
   }
 }

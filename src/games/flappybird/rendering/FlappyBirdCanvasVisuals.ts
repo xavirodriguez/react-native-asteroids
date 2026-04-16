@@ -1,12 +1,13 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { HealthComponent } from "../../../engine/types/EngineTypes";
-import { FLAPPY_CONFIG, FlappyBirdState } from "../types/FlappyBirdTypes";
+import { HealthComponent, TransformComponent } from "../../../engine/types/EngineTypes";
+import { FLAPPY_CONFIG, FlappyBirdState, PipeComponent, BirdComponent } from "../types/FlappyBirdTypes";
 
 /**
  * Visuals for the bird.
  */
 export const drawFlappyBird: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
-  const { size, color } = render;
+  const { size } = render;
+  let { color } = render;
 
   if (render.hitFlashFrames && render.hitFlashFrames > 0) {
     if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) {
@@ -88,7 +89,7 @@ export const drawFlappyPipe: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entit
   const width = size;
   const halfWidth = width / 2;
 
-  const pipe = world.getComponent(entity, "Pipe") as any;
+  const pipe = world.getComponent<PipeComponent>(entity, "Pipe");
   if (!pipe) return;
 
   const halfGap = pipe.gapSize / 2;
@@ -158,7 +159,7 @@ export const drawFlappyGround: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _en
  * Scrolling sky background effect.
  */
 let bgOffset = 0;
-export const scrollingBackgroundEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world, width, height) => {
+export const scrollingBackgroundEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, _snapshot, width, height, world) => {
   const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
   if (!gameState) return;
 
