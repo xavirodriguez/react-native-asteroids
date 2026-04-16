@@ -13,7 +13,7 @@ export function useKeepAwake(enabled: boolean = true): void {
   useEffect(() => {
     // Check if we are in a browser and if wakeLock is supported (non-secure contexts often lack it)
     const isWeb = typeof document !== "undefined" && typeof document.createElement === "function";
-    const supportsWakeLock = isWeb && "wakeLock" in navigator;
+    const supportsWakeLock = isWeb && typeof navigator !== "undefined" && "wakeLock" in navigator;
 
     if (!enabled) return;
 

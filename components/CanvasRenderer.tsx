@@ -19,6 +19,10 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, gameLoop,
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<EngineCanvasRenderer | null>(null);
 
+  if (!world || typeof world.query !== "function") {
+    return <View style={[styles.container, { width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT, backgroundColor: 'black' }]} />;
+  }
+
   useEffect(() => {
     if (Platform.OS !== "web") return;
 
