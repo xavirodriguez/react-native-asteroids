@@ -5,7 +5,7 @@ import { TTLSystem } from "../../../engine/systems/TTLSystem";
 import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
 import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
 import { SpaceInvadersInputSystem } from "../systems/SpaceInvadersInputSystem";
-import { BoundarySystem } from "../systems/BoundarySystem";
+import { BoundarySystem } from "../../../engine/systems/BoundarySystem";
 import { SpaceInvadersFormationSystem } from "../systems/SpaceInvadersFormationSystem";
 import { SpaceInvadersCollisionSystem } from "../systems/SpaceInvadersCollisionSystem";
 import { SpaceInvadersGameStateSystem } from "../systems/SpaceInvadersGameStateSystem";

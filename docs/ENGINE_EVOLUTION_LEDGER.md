@@ -87,6 +87,37 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 - Auditar `SpaceInvadersGame` para asegurar que no queden dependencias de `InputManager`.
 - Migrar el ejemplo `PongGame` en `ExampleRegistration.ts` para usar `Collider2DComponent`.
 
+---
+
+## [2024-05-25] Consolidación de Boundary y Aislamiento de Legacy Physics
+
+### Estado detectado
+- **Redundancia de Sistemas**: `SpaceInvaders` implementaba su propio `BoundarySystem` en lugar de usar el del motor.
+- **Superficie Pública Contaminada**: Presencia de componentes de Matter.js en el core y propiedades deprecadas en componentes base.
+- **Drift de Lógica**: Lógica de rebote duplicada y no estandarizada en utilidades físicas.
+
+### Decisiones tomadas
+1. **Unificación de Límites**: Se eliminó el `BoundarySystem` de `SpaceInvaders` y se configuró `BoundaryComponent` en sus entidades para usar el sistema del motor.
+2. **Hardening de Contratos**: Eliminación física de las propiedades `@deprecated mode` y `@deprecated tag`.
+3. **Namespace Legacy**: Se movieron `PhysicsSystem` (Matter) y `RigidBodyComponent` a `src/engine/legacy/` para proteger la API moderna.
+4. **Utilidades Canónicas**: Se centralizó `bounceBoundary` y `wrapBoundary` en `PhysicsUtils.ts`.
+
+### Archivos afectados
+- `src/engine/core/CoreComponents.ts`
+- `src/engine/systems/BoundarySystem.ts`
+- `src/engine/utils/PhysicsUtils.ts`
+- `src/engine/legacy/` (Nuevos archivos movidos)
+- `src/games/space-invaders/` (Migración completa)
+
+### Impacto
+- **Coherencia**: Un solo camino para gestionar límites de pantalla.
+- **Seguridad**: API más difícil de usar mal al eliminar campos duplicados.
+- **Modularidad**: El motor de física moderno está claramente separado del legacy.
+
+### Deuda abierta / Siguientes pasos
+- Implementar comportamiento de "clamping" (estático) en `BoundarySystem` para mayor flexibilidad.
+- Documentar el sistema de capas de colisión en una guía dedicada.
+
 ## [Plantilla para Futuras Entradas]
 
 ### [FECHA] Título de la Evolución
