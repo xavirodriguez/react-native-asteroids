@@ -1,4 +1,4 @@
-import { Skia, BlurStyle, SkCanvas, SkPaint, PaintStyle } from "@shopify/react-native-skia";
+import { Skia, BlurStyle, SkCanvas, SkPaint } from "@shopify/react-native-skia";
 import { World } from "../../../engine/core/World";
 import { Entity } from "../../../engine/core/Entity";
 import { TransformComponent, RenderComponent, TTLComponent, HealthComponent, Star } from "../../../engine/core/CoreComponents";
@@ -42,17 +42,17 @@ export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, ren
     shipPath.close();
 
     paint.setColor(Skia.Color("#DDDDDD"));
-    paint.setStyle(PaintStyle.Fill);
+    paint.setStyle(Skia.PaintStyle.Fill);
     canvas.drawPath(shipPath, paint);
 
     paint.setColor(Skia.Color(render.color));
-    paint.setStyle(PaintStyle.Stroke);
+    paint.setStyle(Skia.PaintStyle.Stroke);
     paint.setStrokeWidth(1);
     canvas.drawPath(shipPath, paint);
 
     // Details
     paint.setColor(Skia.Color("#FF0000"));
-    paint.setStyle(PaintStyle.Fill);
+    paint.setStyle(Skia.PaintStyle.Fill);
     canvas.drawRect(Skia.XYWHRect(-size / 2, size / 6, size / 6, size / 8), paint);
     canvas.drawRect(Skia.XYWHRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8), paint);
 };
@@ -76,16 +76,16 @@ export const drawSkiaUfo = (canvas: SkCanvas, entity: Entity, world: World, rend
 
     paint.setAlphaf(1.0);
     paint.setColor(Skia.Color("#999"));
-    paint.setStyle(PaintStyle.Fill);
+    paint.setStyle(Skia.PaintStyle.Fill);
     canvas.drawOval(Skia.XYWHRect(-size, -size / 2, size * 2, size), paint);
 
     paint.setColor(Skia.Color(color));
-    paint.setStyle(PaintStyle.Stroke);
+    paint.setStyle(Skia.PaintStyle.Stroke);
     canvas.drawOval(Skia.XYWHRect(-size, -size / 2, size * 2, size), paint);
 
     paint.setColor(Skia.Color("#00ffff"));
     paint.setAlphaf(0.6);
-    paint.setStyle(PaintStyle.Fill);
+    paint.setStyle(Skia.PaintStyle.Fill);
     canvas.drawOval(Skia.XYWHRect(-size / 2, -size / 2, size, size / 1.5), paint);
 
     paint.setColor(Skia.Color("yellow"));
@@ -115,7 +115,7 @@ export function drawSkiaAsteroidStarField(canvas: SkCanvas, stars: Star[], width
     if (!shipPos) return;
 
     paint.setColor(Skia.Color("white"));
-    paint.setStyle(PaintStyle.Fill);
+    paint.setStyle(Skia.PaintStyle.Fill);
 
     stars.forEach(star => {
       const parallaxX = (star.x - (shipPos.worldX ?? shipPos.x) * (0.05 * (star.layer + 1)) + width) % width;
@@ -131,7 +131,7 @@ export function drawSkiaAsteroidStarField(canvas: SkCanvas, stars: Star[], width
 
 export function drawSkiaAsteroidShipTrail(canvas: SkCanvas, trail: { x: number; y: number }[], paint: SkPaint): void {
     paint.setColor(Skia.Color("cyan"));
-    paint.setStyle(PaintStyle.Fill);
+    paint.setStyle(Skia.PaintStyle.Fill);
     trail.forEach((p, i) => {
         paint.setAlphaf((i / trail.length) * 0.4);
         canvas.drawCircle(p.x, p.y, 1.5, paint);

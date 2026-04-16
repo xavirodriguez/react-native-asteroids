@@ -13,7 +13,7 @@ import {
 } from "../../engine/types/EngineTypes";
 import { CircleShape } from "../../engine/physics/shapes/ShapeTypes";
 
-interface BulletComponents extends Record<string, import("../../engine/core/Component").Component> {
+interface BulletComponents {
   position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
@@ -32,7 +32,7 @@ export class PlayerBulletPool {
   constructor() {
     this.pool = new EntityPool<BulletComponents>(
       () => ({
-        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+        position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "player_bullet", size: 0, color: "", rotation: 0 },
         collider: {
@@ -81,7 +81,7 @@ export class EnemyBulletPool {
   constructor() {
     this.pool = new EntityPool<BulletComponents>(
       () => ({
-        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+        position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "enemy_bullet", size: 0, color: "", rotation: 0 },
         collider: {
@@ -121,7 +121,7 @@ export class EnemyBulletPool {
   }
 }
 
-interface ParticleComponents extends Record<string, import("../../engine/core/Component").Component> {
+interface ParticleComponents {
   position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
@@ -138,7 +138,7 @@ export class ParticlePool {
   constructor() {
     this.pool = new EntityPool<ParticleComponents>(
       () => ({
-        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+        position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0 },
         ttl: { type: "TTL", remaining: 0, total: 0 },

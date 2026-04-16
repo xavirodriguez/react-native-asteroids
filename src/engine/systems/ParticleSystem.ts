@@ -1,6 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { Component, ParticleEmitterComponent, ParticleEmitterConfig, Entity } from "../types/EngineTypes";
+import { ParticleEmitterComponent, ParticleEmitterConfig, Entity } from "../types/EngineTypes";
 import { PrefabPool } from "../utils/PrefabPool";
 import { RandomService } from "../utils/RandomService";
 
@@ -26,9 +26,9 @@ import { RandomService } from "../utils/RandomService";
  * de la partícula. Se debe asegurar que el servicio esté correctamente inicializado para replays.
  */
 export class ParticleSystem extends System {
-  private particlePool: PrefabPool<Record<string, Component>, any>;
+  private particlePool: PrefabPool<unknown, unknown>;
 
-  constructor(particlePool: PrefabPool<Record<string, Component>, any>) {
+  constructor(particlePool: PrefabPool<unknown, unknown>) {
     super();
     this.particlePool = particlePool;
   }

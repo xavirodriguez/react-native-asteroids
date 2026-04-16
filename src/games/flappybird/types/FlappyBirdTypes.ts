@@ -3,7 +3,7 @@ import { Component } from "../../../engine/types/EngineTypes";
 /**
  * Represents the current state of user inputs for Flappy Bird.
  */
-export interface FlappyBirdInput extends Record<string, boolean> {
+export interface FlappyBirdInput {
   flap: boolean;
   glide: boolean;
 }
@@ -11,10 +11,8 @@ export interface FlappyBirdInput extends Record<string, boolean> {
 /**
  * Stores the current input state for the bird in Flappy Bird.
  */
-export interface FlappyBirdInputComponent extends Component {
+export interface FlappyBirdInputComponent extends Component, FlappyBirdInput {
   type: "FlappyInput";
-  flap: boolean;
-  glide: boolean;
   flapCooldownRemaining: number;
 }
 

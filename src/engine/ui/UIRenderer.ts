@@ -1,9 +1,3 @@
-/**
- * @packageDocumentation
- * Canvas-based UI Rendering Pipeline.
- * Traverses UI elements and draws them using the standard HTML5 Canvas 2D API.
- */
-
 import { World } from "../core/World";
 import {
     UIElementComponent,
@@ -14,21 +8,6 @@ import {
 } from "./UITypes";
 import { TextRenderer } from "./text/TextRenderer";
 
-/**
- * Main UI rendering function for the Canvas 2D context.
- *
- * @param ctx - Canvas 2D rendering context.
- * @param world - The ECS world containing UI elements.
- *
- * @remarks
- * Performs the following steps:
- * 1. Queries all entities with a `UIElement` component.
- * 2. Sorts entities by their `zIndex` property to ensure correct layering.
- * 3. Iterates through sorted entities and dispatches rendering to specific helpers (panel, label, etc.).
- * 4. Respects the `visible` flag and `opacity` of each element.
- *
- * @responsibility Orchestrate the visual representation of all UI components.
- */
 export function renderUI(ctx: CanvasRenderingContext2D, world: World): void {
     const uiEntities = world.query("UIElement");
 
@@ -72,9 +51,6 @@ export function renderUI(ctx: CanvasRenderingContext2D, world: World): void {
     }
 }
 
-/**
- * Renders a rectangular panel with optional borders and rounded corners.
- */
 function renderPanel(ctx: CanvasRenderingContext2D, entity: import("../core/Entity").Entity, world: World, element: UIElementComponent): void {
     const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
     if (!style || !style.backgroundColor) return;
@@ -98,9 +74,6 @@ function renderPanel(ctx: CanvasRenderingContext2D, entity: import("../core/Enti
     }
 }
 
-/**
- * Renders a text label using the {@link TextRenderer}.
- */
 function renderLabel(ctx: CanvasRenderingContext2D, entity: import("../core/Entity").Entity, world: World, element: UIElementComponent): void {
     const text = world.getComponent<UITextComponent>(entity, "UIText");
     const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
@@ -119,9 +92,6 @@ function renderLabel(ctx: CanvasRenderingContext2D, entity: import("../core/Enti
     );
 }
 
-/**
- * Renders a button, including hover and pressed state overlays.
- */
 function renderButton(ctx: CanvasRenderingContext2D, entity: import("../core/Entity").Entity, world: World, element: UIElementComponent): void {
     const btnState = world.getComponent<UIButtonStateComponent>(entity, "UIButtonState");
     const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
@@ -151,23 +121,17 @@ function renderButton(ctx: CanvasRenderingContext2D, entity: import("../core/Ent
     }
 }
 
-/**
- * Renders a progress bar with a background track and a filled portion.
- */
 function renderProgressBar(ctx: CanvasRenderingContext2D, entity: import("../core/Entity").Entity, world: World, element: UIElementComponent): void {
     const pb = world.getComponent<UIProgressBarComponent>(entity, "UIProgressBar")!;
     const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
 
-    // Render track
     ctx.fillStyle = pb.trackColor;
     ctx.fillRect(element.computedX, element.computedY, element.computedWidth, element.computedHeight);
 
-    // Render fill
     ctx.fillStyle = pb.fillColor;
     const fillWidth = element.computedWidth * Math.max(0, Math.min(1, pb.value));
     ctx.fillRect(element.computedX, element.computedY, fillWidth, element.computedHeight);
 
-    // Optional border from UIStyle
     if (style?.borderColor && style.borderWidth > 0) {
         ctx.strokeStyle = style.borderColor;
         ctx.lineWidth = style.borderWidth;
@@ -175,17 +139,10 @@ function renderProgressBar(ctx: CanvasRenderingContext2D, entity: import("../cor
     }
 }
 
-/**
- * Renders an image element.
- * @remarks Currently a placeholder.
- */
 function renderImage( _ctx: CanvasRenderingContext2D,  _entity: import("../core/Entity").Entity,  _world: World,  _element: UIElementComponent): void {
     // Placeholder for image rendering
 }
 
-/**
- * Canvas utility to draw a rounded rectangle path.
- */
 function drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
     ctx.beginPath();
     ctx.moveTo(x + r, y);

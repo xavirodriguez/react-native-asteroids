@@ -8,7 +8,7 @@ export class AsteroidComboSystem extends System {
 
   public update(world: World, _deltaTime: number): void {
     if (!this.eventBus) {
-        this.eventBus = world.getResource<EventBus>("EventBus") || null;
+        this.eventBus = world.getResource<EventBus>("EventBus");
         if (this.eventBus) {
             this.eventBus.on("asteroid:bullet_missed", () => this.onBulletMissed(world));
         }
@@ -24,7 +24,7 @@ export class AsteroidComboSystem extends System {
       gameState.lastBulletHit = false; // Reset after processing
 
       if (gameState.comboMultiplier !== oldMultiplier) {
-        const eventBus = world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
+        const eventBus = world.getResource<EventBus>("EventBus");
         if (eventBus) eventBus.emit("asteroid:combo_changed", { multiplier: gameState.comboMultiplier });
       }
     }

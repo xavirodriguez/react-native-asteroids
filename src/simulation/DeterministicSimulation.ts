@@ -237,7 +237,7 @@ export class DeterministicSimulation {
 
         if (health.current <= 0) {
              const eventBus = world.getResource<EventBus>("EventBus");
-             if (eventBus) eventBus.emit("game:over", {});
+             if (eventBus) eventBus.emit("game:over");
         }
     }
 
@@ -275,7 +275,7 @@ export class DeterministicSimulation {
             // Spawn next wave
             if (!ctx.isResimulating) {
                 const eventBus = world.getResource<EventBus>("EventBus");
-                if (eventBus) eventBus.emit("wave:complete", {});
+                if (eventBus) eventBus.emit("wave:complete");
             }
 
             for (let i = 0; i < 6; i++) {

@@ -20,13 +20,13 @@ const getPaint = () => {
     return paint;
 };
 
-export const drawSkiaShip: ShapeDrawer<import("@shopify/react-native-skia").SkCanvas> = (canvas, entity, _pos, render, world) => {
+export const drawSkiaShip: ShapeDrawer<Record<string, unknown>> = (canvas, entity, _pos, render, world) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, BlurStyle, PaintStyle } =
-        require("@shopify/react-native-skia") as typeof import("@shopify/react-native-skia");
+        const { Skia, BlurStyle } =
+        require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Path || !Skia.Paint) return;
-        const p = getPaint() as import("@shopify/react-native-skia").SkPaint;
+        const p = getPaint() as any;
         if (!p) return;
         const size = render.size;
         const input = world.getComponent<InputComponent>(entity, "Input");
@@ -67,13 +67,13 @@ export const drawSkiaShip: ShapeDrawer<import("@shopify/react-native-skia").SkCa
         shipPath.close();
 
         p.setColor(Skia.Color("#DDDDDD"));
-        p.setStyle(PaintStyle.Fill);
-        (canvas as import("@shopify/react-native-skia").SkCanvas).drawPath(shipPath, p);
+        p.setStyle(Skia.PaintStyle.Fill);
+        canvas.drawPath(shipPath, p);
 
         p.setColor(Skia.Color(render.color));
-        p.setStyle(PaintStyle.Stroke);
+        p.setStyle(Skia.PaintStyle.Stroke);
         p.setStrokeWidth(1);
-        (canvas as import("@shopify/react-native-skia").SkCanvas).drawPath(shipPath, p);
+        canvas.drawPath(shipPath, p);
 
         // Details
         p.setColor(Skia.Color("#FF0000"));
@@ -85,13 +85,13 @@ export const drawSkiaShip: ShapeDrawer<import("@shopify/react-native-skia").SkCa
     }
 };
 
-export const drawSkiaUfo: ShapeDrawer<import("@shopify/react-native-skia").SkCanvas> = (canvas, _entity, _pos, render) => {
+export const drawSkiaUfo: ShapeDrawer<Record<string, unknown>> = (canvas, _entity, _pos, render) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, BlurStyle, PaintStyle } =
-        require("@shopify/react-native-skia") as typeof import("@shopify/react-native-skia");
+        const { Skia, BlurStyle } =
+        require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint() as import("@shopify/react-native-skia").SkPaint;
+        const p = getPaint() as any;
         if (!p) return;
         const size = render.size;
         const color = render.color;
@@ -105,16 +105,16 @@ export const drawSkiaUfo: ShapeDrawer<import("@shopify/react-native-skia").SkCan
 
         p.setAlphaf(1.0);
         p.setColor(Skia.Color("#999"));
-        p.setStyle(PaintStyle.Fill);
-        (canvas as import("@shopify/react-native-skia").SkCanvas).drawOval(Skia.XYWHRect(-size, -size / 2, size * 2, size), p);
+        p.setStyle(Skia.PaintStyle.Fill);
+        canvas.drawOval(Skia.XYWHRect(-size, -size / 2, size * 2, size), p);
 
         p.setColor(Skia.Color(color));
-        p.setStyle(PaintStyle.Stroke);
-        (canvas as import("@shopify/react-native-skia").SkCanvas).drawOval(Skia.XYWHRect(-size, -size / 2, size * 2, size), p);
+        p.setStyle(Skia.PaintStyle.Stroke);
+        canvas.drawOval(Skia.XYWHRect(-size, -size / 2, size * 2, size), p);
 
         p.setColor(Skia.Color("#00ffff"));
         p.setAlphaf(0.6);
-        p.setStyle(PaintStyle.Fill);
+        p.setStyle(Skia.PaintStyle.Fill);
         canvas.drawOval(Skia.XYWHRect(-size / 2, -size / 2, size, size / 1.5), p);
 
         p.setColor(Skia.Color("yellow"));
@@ -128,10 +128,10 @@ export const drawSkiaUfo: ShapeDrawer<import("@shopify/react-native-skia").SkCan
 export const skiaStarfieldEffect: EffectDrawer<Record<string, unknown>> = (canvas, snapshot, width, height, world) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, PaintStyle } =
-        require("@shopify/react-native-skia") as typeof import("@shopify/react-native-skia");
+        const { Skia } =
+        require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint() as import("@shopify/react-native-skia").SkPaint;
+        const p = getPaint() as any;
         if (!p) return;
         const gameStateEntity = world.query("GameState")[0];
         const gameState = gameStateEntity ? world.getComponent<GameStateComponent>(gameStateEntity, "GameState") : null;
@@ -159,11 +159,11 @@ export const skiaStarfieldEffect: EffectDrawer<Record<string, unknown>> = (canva
     } catch (_e) { /* ignore */ }
 };
 
-export const skiaScreenShakeEffect: EffectDrawer<import("@shopify/react-native-skia").SkCanvas> = (canvas, _snapshot, _width, _height, world) => {
+export const skiaScreenShakeEffect: EffectDrawer<Record<string, unknown>> = (canvas, world) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia } =
-        require("@shopify/react-native-skia") as typeof import("@shopify/react-native-skia");
+        require("@shopify/react-native-skia");
         if (typeof Skia === "undefined") return;
         const gameStateEntity = world.query("GameState")[0];
         const gameState = gameStateEntity ? world.getComponent<GameStateComponent>(gameStateEntity, "GameState") : null;
@@ -177,13 +177,13 @@ export const skiaScreenShakeEffect: EffectDrawer<import("@shopify/react-native-s
     } catch (_e) { /* ignore */ }
 };
 
-export const drawSkiaParticle: ShapeDrawer<import("@shopify/react-native-skia").SkCanvas> = (canvas, entity, _pos, render, world) => {
+export const drawSkiaParticle: ShapeDrawer<Record<string, unknown>> = (canvas, entity, _pos, render, world) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, PaintStyle } =
-        require("@shopify/react-native-skia") as typeof import("@shopify/react-native-skia");
+        const { Skia } =
+        require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint() as import("@shopify/react-native-skia").SkPaint;
+        const p = getPaint() as any;
         if (!p) return;
 
         const ttl = world.getComponent<TTLComponent>(entity, "TTL");
@@ -199,17 +199,17 @@ export const drawSkiaParticle: ShapeDrawer<import("@shopify/react-native-skia").
         p.setStyle(Skia.PaintStyle.Fill);
 
         const size = render.size * lifeRatio;
-        (canvas as import("@shopify/react-native-skia").SkCanvas).drawCircle(0, 0, size, p);
+        canvas.drawCircle(0, 0, size, p);
     } catch (_e) { /* ignore */ }
 };
 
-export const drawSkiaBullet: ShapeDrawer<import("@shopify/react-native-skia").SkCanvas> = (canvas, _entity, _pos, render) => {
+export const drawSkiaBullet: ShapeDrawer<Record<string, unknown>> = (canvas, _entity, _pos, render) => {
     if (Platform.OS === "web") return;
     try {
-        const { Skia, BlurStyle, PaintStyle } =
-        require("@shopify/react-native-skia") as typeof import("@shopify/react-native-skia");
+        const { Skia, BlurStyle } =
+        require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint() as import("@shopify/react-native-skia").SkPaint;
+        const p = getPaint() as any;
         if (!p) return;
         const size = render.size;
 
@@ -224,7 +224,7 @@ export const drawSkiaBullet: ShapeDrawer<import("@shopify/react-native-skia").Sk
         p.setAlphaf(1.0);
         p.setColor(Skia.Color("#FFFFFF"));
         p.setStyle(Skia.PaintStyle.Fill);
-        (canvas as import("@shopify/react-native-skia").SkCanvas).drawCircle(0, 0, size, p);
-        (canvas as import("@shopify/react-native-skia").SkCanvas).restore();
+        canvas.drawCircle(0, 0, size, p);
+        canvas.restore();
     } catch (_e) { /* ignore */ }
 };

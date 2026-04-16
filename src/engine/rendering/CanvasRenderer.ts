@@ -1,5 +1,4 @@
 import { World } from "../core/World";
-import { Component } from "../core/Component";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity } from "../core/Entity";
 import { RenderComponent, TransformComponent, PreviousTransformComponent } from "../core/CoreComponents";
@@ -15,7 +14,7 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  * @remarks
  * Implements a snapshot-based architecture for decoupled and consistent rendering.
  */
-export class CanvasRenderer implements Renderer<CanvasRenderingContext2D> {
+export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
   protected ctx: CanvasRenderingContext2D | null = null;
   protected width: number = 0;
@@ -168,7 +167,7 @@ export class CanvasRenderer implements Renderer<CanvasRenderingContext2D> {
     let count = 0;
 
     const gameStateEntity = world.query("GameState")[0];
-    const gameState = gameStateEntity ? world.getComponent<Component & Record<string, unknown>>(gameStateEntity, "GameState") : null;
+    const gameState = gameStateEntity ? world.getComponent<Record<string, unknown>>(gameStateEntity, "GameState") : null;
 
     let shakeX = 0;
     let shakeY = 0;

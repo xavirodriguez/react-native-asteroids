@@ -10,7 +10,7 @@ import type { GameStateComponent, InputState } from "../games/space-invaders/typ
  */
 export function useSpaceInvadersGame(isMultiplayer: boolean = false) {
   const { game, gameState, isPaused, handleInput, togglePause, restart } =
-    useGame<SpaceInvadersGame, GameStateComponent, InputState>(SpaceInvadersGame as unknown as new () => SpaceInvadersGame, INITIAL_GAME_STATE, isMultiplayer);
+    useGame<SpaceInvadersGame, GameStateComponent, InputState>(SpaceInvadersGame, INITIAL_GAME_STATE, isMultiplayer);
 
   const { highScore, updateHighScore } = useHighScore("space-invaders-high-score");
 

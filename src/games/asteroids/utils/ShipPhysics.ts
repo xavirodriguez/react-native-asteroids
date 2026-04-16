@@ -87,6 +87,5 @@ export const ShipPhysics = {
       input.shootCooldownRemaining = config.BULLET_SHOOT_COOLDOWN;
       if (onShoot) onShoot(bullet);
     }
-    }
   }
 };

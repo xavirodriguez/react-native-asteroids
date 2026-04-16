@@ -23,7 +23,7 @@ import { RandomService } from "../utils/RandomService";
  * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia puede perderse
  * si la app pasa a segundo plano de forma prolongada.
  */
-export class SkiaRenderer implements Renderer<SkCanvas> {
+export class SkiaRenderer implements Renderer {
   public readonly type = 'skia';
   protected canvas: SkCanvas | null = null;
   protected width: number = 0;
@@ -269,8 +269,8 @@ export class SkiaRenderer implements Renderer<SkCanvas> {
     }
   }
 
-  public registerShape(name: string, drawer: ShapeDrawer<SkCanvas>): void {
-    this.shapeDrawers.set(name, drawer);
+  public registerShape(_name: string, _drawer: ShapeDrawer<SkCanvas>): void {
+    this.shapeDrawers.set(_name, _drawer);
   }
 
   public registerBackgroundEffect(_name: string, _drawer: EffectDrawer<SkCanvas>): void {

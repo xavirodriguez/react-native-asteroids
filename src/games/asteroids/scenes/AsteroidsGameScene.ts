@@ -47,7 +47,7 @@ export class AsteroidsGameScene extends Scene {
     this.world.addSystem(new CollisionSystem2D());
     this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
     this.world.addSystem(new TTLSystem());
-    this.world.addSystem(this.gameStateSystem as unknown as import("../../../engine/core/System").System);
+    this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new UfoSystem());
     this.world.addSystem(new ScreenShakeSystem());
     this.world.addSystem(new AsteroidRenderSystem());

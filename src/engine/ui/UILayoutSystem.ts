@@ -1,12 +1,5 @@
-/**
- * @packageDocumentation
- * UI Layout Engine.
- * Resolves positioning and sizing for UI elements using anchors, relative units, and containers.
- */
-
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { Component } from "../core/Component";
 import {
   UIElementComponent,
   UIAnchor,
@@ -17,40 +10,26 @@ import {
 import { Entity } from "../core/Entity";
 
 /**
- * System that resolves the positioning and sizing of user interface (UI) elements.
- * Supports anchors, relative units (%), flow containers, and world-attached projections.
+ * Sistema que resuelve el posicionamiento y dimensionamiento de elementos de interfaz (UI).
+ * Soporta anclajes (anchors), unidades relativas (%), contenedores con flujo y adjuntos al mundo.
  *
- * @remarks
- * This system performs a recursive pass over the UI hierarchy. It translates high-level
- * layout rules (like "center this panel in the viewport" or "stack these buttons horizontally")
- * into concrete pixel coordinates stored in the `computed*` properties of {@link UIElementComponent}.
- *
- * Handles:
- * 1. Root elements (viewport-relative).
- * 2. World-attached elements (projections from 2D world space).
- * 3. Hierarchical inheritance (child offsets relative to parent).
- * 4. Flex-like containers (horizontal/vertical stacking).
- *
- * @responsibility Calculate final coordinates (`computedX`, `computedY`) and dimensions (`computedWidth`, `computedHeight`) for UI elements.
+ * @responsibility Calcular las coordenadas finales (`computedX`, `computedY`) y dimensiones (`computedWidth`, `computedHeight`) de la UI.
  * @queries `UIElement`, `UIContainer`, `UIWorldAttach`, `Transform`, `Position`, `GameState` (Singleton).
  * @mutates `UIElementComponent`.
  * @dependsOn `UIElementComponent`, `UIContainerComponent`, `UIWorldAttachComponent`.
- * @executionOrder Presentation Phase (before UI rendering).
- *
- * @conceptualRisk [LAYOUT_CASCADE] Uses recursion to resolve the layout. Very deep UI trees could cause stack overflow or performance issues.
- * @conceptualRisk [WORLD_SYNC] `UIWorldAttach` elements depend on the camera and `Transform`/`Position` components. If these are updated after the layout, the UI may "jitter" or lag behind the entity.
+ * @executionOrder Presentation Phase (antes del renderizado de UI).
+ * @conceptualRisk [LAYOUT_CASCADE] Utiliza recursión para resolver el layout. Árboles de UI muy profundos podrían causar stack overflow o problemas de rendimiento.
+ * @conceptualRisk [WORLD_SYNC] Los elementos `UIWorldAttach` dependen de la cámara y de componentes `Transform`/`Position`. Si estos se actualizan después del layout, la UI "vibrará" o irá con retraso (lag) respecto a la entidad.
  */
 export class UILayoutSystem extends System {
-  /** Current width of the target rendering area. */
   private viewportWidth: number = 800;
-  /** Current height of the target rendering area. */
   private viewportHeight: number = 600;
 
   /**
-   * Initializes the layout system with initial viewport dimensions.
+   * Inicializa el sistema de layout con dimensiones de pantalla iniciales.
    *
-   * @param viewportWidth - Render area width (default 800).
-   * @param viewportHeight - Render area height (default 600).
+   * @param viewportWidth - Ancho de la zona de renderizado (default 800).
+   * @param viewportHeight - Alto de la zona de renderizado (default 600).
    */
   constructor(viewportWidth?: number, viewportHeight?: number) {
     super();
@@ -59,11 +38,10 @@ export class UILayoutSystem extends System {
   }
 
   /**
-   * Updates the reference dimensions for layout calculations.
-   * Useful when the game window is resized.
+   * Actualiza las dimensiones de referencia para los cálculos de layout.
    *
-   * @param width - New width.
-   * @param height - New height.
+   * @param width - Nuevo ancho.
+   * @param height - Nuevo alto.
    */
   public setViewportSize(width: number, height: number): void {
     this.viewportWidth = width;
@@ -71,21 +49,17 @@ export class UILayoutSystem extends System {
   }
 
   /**
-   * Executes layout resolution for all entities with a `UIElement` component.
+   * Ejecuta la resolución de layout para todas las entidades con `UIElement`.
    *
-   * @param world - The ECS world.
-   * @param _deltaTime - Frame time (ignored by this system as it is purely positional).
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo del frame (ignorado por este sistema ya que es puramente posicional).
    *
-   * @sideEffect Updates the `computed*` properties of `UIElement` components.
-   * @remarks
-   * First, it builds a parent-child map to facilitate efficient hierarchical traversal.
-   * Then, it starts the recursive layout from all root elements (those without a `parentEntity`).
+   * @sideEffect Actualiza las propiedades `computed*` de los componentes `UIElement`.
    */
   public update(world: World, _deltaTime: number): void {
     const uiEntities = world.query("UIElement");
     if (uiEntities.length === 0) return;
 
-    // Group elements by parent for hierarchical traversal
     const childrenByParent = new Map<Entity | null, Entity[]>();
     for (const entity of uiEntities) {
         const element = world.getComponent<UIElementComponent>(entity, "UIElement")!;
@@ -104,17 +78,18 @@ export class UILayoutSystem extends System {
   }
 
   /**
-   * Recursively resolves the position and size of an element and its children.
+   * Resuelve de forma recursiva la posición y tamaño de un elemento y sus hijos.
    *
-   * @param world - The ECS world.
-   * @param entity - The UI entity to process.
-   * @param childrenByParent - Pre-calculated map of hierarchical relationships.
+   * @param world - El mundo ECS.
+   * @param entity - La entidad UI a procesar.
+   * @param childrenByParent - Mapa de relaciones jerárquicas pre-calculado.
    *
-   * @conceptualRisk [ZALGO_MAPPING] If `childrenByParent` does not include all members of `uiEntities` from `update()`, some elements will be orphaned.
+   * @conceptualRisk [ZALGO_MAPPING] Si `childrenByParent` no incluye a todos los miembros de `uiEntities` de `update()`, algunos elementos quedarán huérfanos.
    */
   private layoutElement(world: World, entity: Entity, childrenByParent: Map<Entity | null, Entity[]>): void {
     const element = world.getComponent<UIElementComponent>(entity, "UIElement")!;
 
+    // Damage numbers and other transient UI might use manual offsets
     // Resolve Root Position based on Anchor
     if (element.parentEntity === null) {
         const worldAttach = world.getComponent<UIWorldAttachComponent>(entity, "UIWorldAttach");
@@ -158,10 +133,6 @@ export class UILayoutSystem extends System {
     }
   }
 
-  /**
-   * Specialized layout logic for elements with the {@link UIContainerComponent}.
-   * Positions children in a stack (horizontal or vertical) with a specified gap.
-   */
   private layoutContainerChildren(
     world: World,
     parentEntity: Entity,
@@ -172,7 +143,6 @@ export class UILayoutSystem extends System {
     const children = childrenByParent.get(parentEntity);
     if (!children) return;
 
-    // Sort by z-index to ensure correct visual order if they overlap slightly
     const sortedChildren = [...children].sort((a, b) => {
         const elA = world.getComponent<UIElementComponent>(a, "UIElement")!;
         const elB = world.getComponent<UIElementComponent>(b, "UIElement")!;
@@ -216,14 +186,10 @@ export class UILayoutSystem extends System {
             currentY += resolvedHeight + container.gap;
         }
 
-        // Recursively layout children of this child
         this.layoutElement(world, childEntity, childrenByParent);
     }
   }
 
-  /**
-   * Helper to align an element within a container's axis.
-   */
   private alignInAxis(align: string, start: number, total: number, size: number): number {
     switch (align) {
         case "center": return start + (total / 2) - (size / 2);
@@ -234,17 +200,11 @@ export class UILayoutSystem extends System {
     }
   }
 
-  /**
-   * Resolves a {@link UIValue} (pixels or percentage) into a concrete pixel number.
-   */
   private resolveValue(uiValue: UIValue, parentSize: number): number {
     if (uiValue.unit === "px") return uiValue.value;
     return (uiValue.value / 100) * parentSize;
   }
 
-  /**
-   * Calculates the top-left coordinate for a given anchor point within a reference area.
-   */
   private resolveAnchorPosition(anchor: UIAnchor, vpW: number, vpH: number, elW: number, elH: number): {x: number, y: number} {
     switch (anchor) {
         case "top-left": return { x: 0, y: 0 };
@@ -261,18 +221,17 @@ export class UILayoutSystem extends System {
   }
 
   /**
-   * Projects a UI element onto screen coordinates based on a world entity.
+   * Proyecta un elemento de UI en coordenadas de pantalla basándose en una entidad del mundo.
    *
-   * @param world - The ECS world.
-   * @param element - The UI component to position.
-   * @param attach - World-anchor definition.
+   * @param world - El mundo ECS.
+   * @param element - El componente UI a posicionar.
+   * @param attach - Definición del anclaje al mundo.
    *
    * @remarks
-   * Attempts to read `worldX/worldY` from `Transform` first, falling back to `x/y` if they don't exist.
-   * If `useCamera` is enabled, it offsets the position by the global camera singleton state.
+   * Intenta leer `worldX/worldY` de `Transform` primero, cayendo a `x/y` si no existen.
    *
-   * @conceptualRisk [TYPE_UNSAFETY] Uses `any` to access `Transform`, `Position`, and `GameState`.
-   * This hides potential errors if the structure of these components changes.
+   * @conceptualRisk [TYPE_UNSAFETY] Usa `any` para acceder a `Transform`, `Position` y `GameState`.
+   * Esto oculta posibles errores si la estructura de estos componentes cambia.
    */
   private resolveWorldPosition(world: World, element: UIElementComponent, attach: UIWorldAttachComponent): void {
       const targetTransform = world.getComponent<import("../core/CoreComponents").TransformComponent>(attach.targetEntity, "Transform");
@@ -283,7 +242,7 @@ export class UILayoutSystem extends System {
       let screenY = targetTransform.worldY !== undefined ? targetTransform.worldY : targetTransform.y;
 
       if (attach.useCamera) {
-          const gameState = world.getSingleton<Component & Record<string, unknown>>("GameState");
+          const gameState = world.getSingleton<Record<string, unknown>>("GameState");
           const camera = gameState?.camera as Record<string, number> | undefined;
           if (camera) {
               screenX -= camera.x || 0;
