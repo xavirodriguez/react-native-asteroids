@@ -91,7 +91,7 @@ export class DeterministicSimulation {
                 };
 
                 ShipPhysics.applyRotation(render, intent, dtSeconds, GAME_CONFIG);
-                ShipPhysics.applyThrust(world, pos, vel, render, intent, dtSeconds, GAME_CONFIG);
+                ShipPhysics.applyThrust(world, pos, vel, render, intent, dtSeconds, ctx, GAME_CONFIG);
                 ShipPhysics.applyFriction(vel, deltaTime, GAME_CONFIG);
 
                 // Shooting logic
