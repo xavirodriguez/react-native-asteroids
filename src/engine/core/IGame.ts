@@ -109,4 +109,9 @@ export interface IGame<TGame = unknown> {
    * @contract Debe ser el mismo seed usado para inicializar RandomService en el canal 'gameplay'.
    */
   getSeed(): number;
+
+  /**
+   * Registers game-specific rendering logic to the provided renderer.
+   */
+  initializeRenderer(renderer: import("../rendering/Renderer").Renderer<unknown>): void;
 }

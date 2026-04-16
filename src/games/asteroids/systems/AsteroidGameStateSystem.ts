@@ -4,6 +4,7 @@ import { spawnAsteroidWave, createUfo } from "../EntityFactory";
 import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
+import { BaseGame } from "../../../engine/core/BaseGame";
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.
@@ -11,7 +12,7 @@ import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem
 export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateComponent> implements IGameStateSystem {
 
   constructor(gameInstance?: IAsteroidsGame) {
-    super(gameInstance as any);
+    super(gameInstance as unknown as BaseGame<GameStateComponent, Record<string, unknown>>);
   }
 
   /**
