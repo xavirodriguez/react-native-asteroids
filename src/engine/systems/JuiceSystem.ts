@@ -46,9 +46,9 @@ export function createJuiceComponent(): JuiceComponent {
  * Sistema encargado de procesar animaciones procedimentales (Juice) sobre las entidades.
  * Permite efectos visuales reactivos (pop, squash, stretch, fade) sin lógica de estado compleja.
  *
- * @responsibility Actualizar el progreso de cada {@link JuiceAnimation}.
+ * @responsibility Actualizar el progreso de cada 
  * @responsibility Interpolar y aplicar valores a {@link TransformComponent} o {@link RenderComponent}.
- * @responsibility Notificar la finalización mediante callbacks {@link JuiceAnimation.onComplete}.
+ * @responsibility Notificar la finalización mediante callbacks
  *
  * @queries Juice, Transform, Render
  * @mutates Transform.x, Transform.y, Transform.scaleX, Transform.scaleY, Transform.rotation

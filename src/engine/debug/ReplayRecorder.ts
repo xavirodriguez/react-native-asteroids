@@ -26,7 +26,6 @@ import { ReplayData, ReplayFrame, InputFrame } from "../../multiplayer/NetTypes"
  * @conceptualRisk [DETERMINISM][MEDIUM] If the initial world state is not captured
  * along with the inputs, the replay will not be faithful.
  *
- * @example
  * ```ts
  * const recorder = new ReplayRecorder();
  * recorder.startRecording();
