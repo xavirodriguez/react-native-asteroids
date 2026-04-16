@@ -26,7 +26,6 @@ export type UpdateListener<TGame> = (game: TGame) => void;
  * podrían causar estados inconsistentes si el juego no maneja bloqueos de transición.
  */
 export interface IGame<TGame = unknown> {
-  isMultiplayer: boolean;
   /**
    * Inicia la ejecución del bucle de juego.
    * @contract Debe invocar a `GameLoop.start()`.

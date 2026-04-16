@@ -1,7 +1,7 @@
 import { World } from "../../engine/core/World";
 import { BaseGame } from "../../engine/core/BaseGame";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { CollisionSystem2D as CollisionSystem } from "../../engine/physics/collision/CollisionSystem2D";
+import { CollisionSystem } from "../../engine/systems/CollisionSystem";
 
 type PongState = { score: number };
 type PongInput = { up: boolean, down: boolean };
@@ -11,10 +11,10 @@ type PongInput = { up: boolean, down: boolean };
  */
 export class PongGame extends BaseGame<PongState, PongInput> {
   protected registerSystems(): void {
-    this.world.addSystem(new MovementSystem());
-    this.world.addSystem(new class extends import("../../engine/core/System").System {
-      public override update(_world: World, _deltaTime: number): void {
-        console.log("Pong collision!");
+    this.world.addSystem(new MovementSystem(800, 600));
+    this.world.addSystem(new class extends CollisionSystem {
+      protected onCollision(world: World, entityA: number, entityB: number): void {
+        console.log("Pong collision!", entityA, entityB);
       }
     });
   }

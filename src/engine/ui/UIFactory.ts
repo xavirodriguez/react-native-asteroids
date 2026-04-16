@@ -1,9 +1,3 @@
-/**
- * @packageDocumentation
- * Factory for creating common UI elements.
- * Provides static methods to bootstrap Labels, Panels, Buttons, and Progress Bars.
- */
-
 import { World } from "../core/World";
 import { Entity } from "../core/Entity";
 import {
@@ -17,21 +11,7 @@ import {
     UIEdgeInsets
 } from "./UITypes";
 
-/**
- * UIFactory: Centralizes the creation of interface entities with their base components.
- *
- * @remarks
- * This factory ensures that every UI entity has the minimum set of components
- * required by the {@link UILayoutSystem} and {@link UIRenderer}.
- */
 export class UIFactory {
-    /**
-     * Creates a text label entity.
-     *
-     * @param world - The ECS world.
-     * @param config - Configuration for text, position, and style.
-     * @returns The created Entity ID.
-     */
     public static createLabel(world: World, config: {
         text: string;
         anchor: UIAnchor;
@@ -87,13 +67,6 @@ export class UIFactory {
         return entity;
     }
 
-    /**
-     * Creates a panel (rectangular container) entity.
-     *
-     * @param world - The ECS world.
-     * @param config - Configuration for dimensions, position, and background.
-     * @returns The created Entity ID.
-     */
     public static createPanel(world: World, config: {
         anchor: UIAnchor;
         width: UIValue;
@@ -149,16 +122,6 @@ export class UIFactory {
         return entity;
     }
 
-    /**
-     * Creates an interactive button entity.
-     *
-     * @param world - The ECS world.
-     * @param config - Configuration for text, action ID, and style.
-     * @returns The created Entity ID.
-     *
-     * @remarks
-     * Buttons automatically include a {@link UIButtonStateComponent} to track hover/press states.
-     */
     public static createButton(world: World, config: {
         text: string;
         anchor: UIAnchor;
@@ -207,13 +170,6 @@ export class UIFactory {
         return entity;
     }
 
-    /**
-     * Creates a progress bar entity.
-     *
-     * @param world - The ECS world.
-     * @param config - Configuration for colors and initial value.
-     * @returns The created Entity ID.
-     */
     public static createProgressBar(world: World, config: {
         anchor: UIAnchor;
         width: UIValue;

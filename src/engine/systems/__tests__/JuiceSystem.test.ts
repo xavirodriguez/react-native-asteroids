@@ -1,6 +1,6 @@
 import { World } from "../../core/World";
 import { JuiceSystem } from "../JuiceSystem";
-import { TransformComponent } from "../../types/EngineTypes";
+import { TransformComponent, VisualOffsetComponent } from "../../types/EngineTypes";
 
 describe("JuiceSystem", () => {
   let world: World;
@@ -12,7 +12,7 @@ describe("JuiceSystem", () => {
     world.addSystem(system);
   });
 
-  it("should interpolate scaleX over time", () => {
+  it("should interpolate scaleX over time using VisualOffset", () => {
     const entity = world.createEntity();
     const transform: TransformComponent = {
       type: "Transform",
@@ -26,22 +26,23 @@ describe("JuiceSystem", () => {
 
     JuiceSystem.add(world, entity, {
       property: "scaleX",
-      target: 2,
+      target: 1, // Target offset 1 means final scaleX 1 (original) + 1 (offset) = 2
       duration: 100,
       easing: "linear"
     });
 
     // Initial state
     system.update(world, 0);
-    expect(transform.scaleX).toBe(1);
+    const offset = world.getComponent<VisualOffsetComponent>(entity, "VisualOffset");
+    expect(offset?.scaleX).toBe(0);
 
     // Half way
     system.update(world, 50);
-    expect(transform.scaleX).toBe(1.5);
+    expect(offset?.scaleX).toBe(0.5);
 
     // Complete
     system.update(world, 50);
-    expect(transform.scaleX).toBe(2);
+    expect(offset?.scaleX).toBe(1);
 
     // Animation should be removed
     const juice = world.getComponent<import("../JuiceSystem").JuiceComponent>(entity, "Juice");

@@ -6,10 +6,8 @@ import { World } from "../../src/engine/core/World";
 import { DeterministicSimulation } from "../../src/simulation/DeterministicSimulation";
 import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "../../src/engine/core/CoreComponents";
 import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
-import { ShipComponent, InputComponent } from "../../src/games/asteroids/types/AsteroidTypes";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
-  declare state: AsteroidsState;
   maxClients = 4;
   private fixedTimeStep = 16.66; // 60 FPS
   private inputBuffers = new Map<string, InputFrame[]>();
@@ -83,10 +81,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.playerEntities.set(client.sessionId, entity);
 
     // Add necessary multiplayer components
-    this.world.addComponent(entity, { type: "Ship", sessionId: client.sessionId, hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0 } as ShipComponent);
+    this.world.addComponent(entity, { type: "Ship", sessionId: client.sessionId } as any);
   }
 
-  async onLeave(client: Client, code: number) {
+  async onLeave(client: Client, _code: number) {
     try {
       if (code === CloseCode.CONSENTED) throw new Error("consented leave");
       await this.allowReconnection(client, 10);
@@ -106,7 +104,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       const entity = this.playerEntities.get(sessionId);
       if (entity === undefined) return;
 
-      const input = this.world.getComponent<InputComponent>(entity, "Input");
+      const input = this.world.getComponent<any>(entity, "Input");
       const buffer = this.inputBuffers.get(sessionId);
 
       if (buffer && input) {

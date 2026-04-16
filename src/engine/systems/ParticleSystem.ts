@@ -1,6 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { Component, ParticleEmitterComponent, ParticleEmitterConfig, Entity } from "../types/EngineTypes";
+import { ParticleEmitterComponent, ParticleEmitterConfig, Entity } from "../types/EngineTypes";
 import { PrefabPool } from "../utils/PrefabPool";
 import { RandomService } from "../utils/RandomService";
 

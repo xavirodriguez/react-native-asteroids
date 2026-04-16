@@ -19,7 +19,7 @@ export async function connectToRoom(roomName: string, playerName: string) {
   return room;
 }
 
-export function sendInput(type: string, input: unknown) {
+export function sendInput(type: string, input: any) {
   room?.send(type, input);
 }
 

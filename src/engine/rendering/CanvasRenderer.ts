@@ -1,5 +1,4 @@
 import { World } from "../core/World";
-import { Component } from "../core/Component";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity } from "../core/Entity";
 import { RenderComponent, TransformComponent, PreviousTransformComponent } from "../core/CoreComponents";
@@ -15,7 +14,7 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  * @remarks
  * Implements a snapshot-based architecture for decoupled and consistent rendering.
  */
-export class CanvasRenderer implements Renderer<CanvasRenderingContext2D> {
+export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
   protected ctx: CanvasRenderingContext2D | null = null;
   protected width: number = 0;
@@ -73,7 +72,8 @@ export class CanvasRenderer implements Renderer<CanvasRenderingContext2D> {
       uiElements,
       uiCount: 0,
       shakeX: 0,
-      shakeY: 0
+      shakeY: 0,
+      elapsedTime: 0
     };
   }
 
@@ -167,7 +167,7 @@ export class CanvasRenderer implements Renderer<CanvasRenderingContext2D> {
     let count = 0;
 
     const gameStateEntity = world.query("GameState")[0];
-    const gameState = gameStateEntity ? world.getComponent<Component & Record<string, unknown>>(gameStateEntity, "GameState") : null;
+    const gameState = gameStateEntity ? world.getComponent<Record<string, unknown>>(gameStateEntity, "GameState") : null;
 
     let shakeX = 0;
     let shakeY = 0;
@@ -181,6 +181,11 @@ export class CanvasRenderer implements Renderer<CanvasRenderingContext2D> {
     snapshot.shakeX = shakeX;
     snapshot.shakeY = shakeY;
 
+    // Use serverTick from GameState singleton if available, otherwise fallback to performance.now()
+    // We access serverTick generically to avoid coupling engine to game types
+    const serverTick = gameState && (gameState as any).serverTick !== undefined ? (gameState as any).serverTick as number : null;
+    snapshot.elapsedTime = serverTick !== null ? serverTick * (1000 / 60) : performance.now();
+
     for (let i = 0; i < entities.length; i++) {
       if (count >= this.MAX_ENTITIES) break;
       const entity = entities[i];
@@ -188,6 +193,7 @@ export class CanvasRenderer implements Renderer<CanvasRenderingContext2D> {
       const trans = world.getComponent<TransformComponent>(entity, "Transform")!;
       const prevTrans = world.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
       const render = world.getComponent<RenderComponent>(entity, "Render")!;
+      const offset = world.getComponent<import("../core/CoreComponents").VisualOffsetComponent>(entity, "VisualOffset");
 
       const snap = snapshot.entities[count];
       snap.id = entity;
@@ -208,11 +214,11 @@ export class CanvasRenderer implements Renderer<CanvasRenderingContext2D> {
         rotation = prevTrans.rotation + diff * alpha;
       }
 
-      snap.x = x;
-      snap.y = y;
-      snap.rotation = rotation;
-      snap.scaleX = scaleX;
-      snap.scaleY = scaleY;
+      snap.x = x + (offset?.x ?? 0);
+      snap.y = y + (offset?.y ?? 0);
+      snap.rotation = rotation + (offset?.rotation ?? 0);
+      snap.scaleX = scaleX + (offset?.scaleX ?? 0);
+      snap.scaleY = scaleY + (offset?.scaleY ?? 0);
       snap.opacity = render.data?.opacity !== undefined ? (render.data.opacity as number) : 1;
       snap.zIndex = render.zIndex ?? 0;
       snap.shape = render.shape;

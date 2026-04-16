@@ -1,63 +1,31 @@
-/**
- * @packageDocumentation
- * Game session recording for replay and debugging.
- * Captures user input sequences to allow deterministic simulation playback.
- */
-
 import { ReplayData, ReplayFrame, InputFrame } from "../../multiplayer/NetTypes";
 
 /**
- * Game session recorder for replay and debugging purposes.
+ * Grabador de sesiones de juego para propósitos de replay y depuración.
  *
  * @remarks
- * Captures user inputs frame-by-frame to enable deterministic recreation of a session.
- * This system is essential for bug reporting, performance analysis, and
- * multiplayer desync investigations.
+ * Captura las entradas del usuario frame a frame para permitir la recreación
+ * determinista de una partida.
  *
- * The recorder stores {@link InputFrame} objects indexed by their simulation tick.
- * To ensure a perfect replay, the initial world state should also be captured
- * (although this class currently focuses on the input stream).
+ * @responsibility Almacenar la secuencia de inputs asociados a cada tick.
+ * @responsibility Generar un objeto `ReplayData` compatible con el sistema de transporte.
  *
- * @responsibility Store the sequence of inputs associated with each tick.
- * @responsibility Generate a `ReplayData` object compatible with the transport system.
- *
- * @conceptualRisk [MEMORY_LEAK][HIGH] Continuous recording without limits can
- * exhaust available memory in long sessions. Consider implementing a circular buffer or periodic flush.
- * @conceptualRisk [DETERMINISM][MEDIUM] If the initial world state is not captured
- * along with the inputs, the replay will not be faithful.
- *
- * ```ts
- * const recorder = new ReplayRecorder();
- * recorder.startRecording();
- * // In game loop:
- * recorder.recordTick(currentTick, currentInputs);
- * // To finish:
- * const replay = recorder.stopRecording();
- * ```
+ * @conceptualRisk [MEMORY_LEAK][HIGH] La grabación continua sin límites puede
+ * agotar la memoria disponible en sesiones largas.
+ * @conceptualRisk [DETERMINISM][MEDIUM] Si el estado inicial del mundo no se captura
+ * junto con los inputs, el replay no será fiel.
  */
 export class ReplayRecorder {
-  /** Sequential collection of recorded frames. */
   private frames: ReplayFrame[] = [];
-  /** Internal flag indicating if recording is currently active. */
   private isRecording: boolean = false;
-  /** Tracks the number of the last recorded tick. */
   private currentTick: number = 0;
 
-  /**
-   * Starts a new recording session.
-   * Resets the internal frame buffer and tick counter.
-   */
   public startRecording(): void {
     this.frames = [];
     this.isRecording = true;
     this.currentTick = 0;
   }
 
-  /**
-   * Stops the current recording and returns the aggregated replay data.
-   *
-   * @returns A {@link ReplayData} object with all captured frames and metadata.
-   */
   public stopRecording(): ReplayData {
     this.isRecording = false;
     return {
@@ -70,17 +38,13 @@ export class ReplayRecorder {
   }
 
   /**
-   * Records inputs received in a specific tick.
+   * Registra los inputs recibidos en un tick específico.
    *
-   * @param tick - The simulation tick number.
-   * @param inputs - Dictionary of inputs mapped by player/entity ID.
+   * @param tick - El número de tick de la simulación.
+   * @param inputs - Diccionario de inputs mapeados por ID de jugador/entidad.
    *
-   * @precondition Recording must be active (`isRecording === true`).
-   * @postcondition A new frame is added to the internal collection.
-   *
-   * @remarks
-   * Currently only records inputs. Support for game events (e.g., entity spawning, level triggers)
-   * could be added to the `events` array of the {@link ReplayFrame}.
+   * @precondition La grabación debe estar activa (`isRecording === true`).
+   * @postcondition Se añade un nuevo frame a la colección interna.
    */
   public recordTick(tick: number, inputs: Record<string, InputFrame[]>): void {
     if (!this.isRecording) return;
@@ -89,15 +53,7 @@ export class ReplayRecorder {
     this.frames.push({
       tick,
       inputs,
-      events: [] // Events could also be recorded here
+      events: [] // Events could be recorded here too
     });
-  }
-
-  /**
-   * Checks if the recorder is currently capturing data.
-   * @queries isRecording
-   */
-  public isActive(): boolean {
-    return this.isRecording;
   }
 }

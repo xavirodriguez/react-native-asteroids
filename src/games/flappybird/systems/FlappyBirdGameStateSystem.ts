@@ -46,7 +46,7 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
           pipe.scored = true;
           gameState.score += gameState.comboMultiplier || 1;
           const eventBus = world.getResource<EventBus>("EventBus");
-          if (eventBus) eventBus.emit("pipe:passed", {});
+          if (eventBus) eventBus.emit("pipe:passed");
           if (gameState.score > gameState.highScore) {
             gameState.highScore = gameState.score;
           }

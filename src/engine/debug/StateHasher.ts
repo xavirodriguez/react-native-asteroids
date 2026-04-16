@@ -1,45 +1,31 @@
-/**
- * @packageDocumentation
- * Deterministic world state hashing for desync detection.
- * Provides utilities to generate compact fingerprints of the entire ECS world state.
- */
-
 import { World } from "../core/World";
 
 /**
- * Utility for generating deterministic hashes of the full ECS world state.
- * Fundamental for desynchronization (desync) detection in multiplayer or replay environments.
+ * Utilidad para generar hashes deterministas del estado completo del mundo ECS.
+ * Fundamental para la detección de desincronización (desync) en entornos multijugador o replay.
  *
- * @remarks
- * This class implements a deep traversal of the ECS world, collecting data from all
- * active entities and their components. The resulting string is hashed using a
- * 32-bit integer algorithm (similar to Java's `String.hashCode()`).
- *
- * @responsibility Serialize and hash the state of all active entities and components.
- *
- * @conceptualRisk [JSON_DETERMINISM] `JSON.stringify` does not guarantee property order.
- * If two clients have the same data but properties were inserted in a different order,
- * the hashes will differ (false positive desync).
- * @conceptualRisk [FLOAT_PRECISION] Tiny floating-point differences between architectures
- * (e.g., x86 vs ARM) can cause the serialized string to differ and the hash to fail.
- * @conceptualRisk [PERFORMANCE] Massive string concatenation and the use of `JSON.stringify`
- * generates significant pressure on the Garbage Collector (GC).
+ * @responsibility Serializar y hashear el estado de todas las entidades y componentes activos.
+ * @conceptualRisk [JSON_DETERMINISM] `JSON.stringify` no garantiza el orden de las propiedades de los objetos.
+ * Si dos clientes tienen los mismos datos pero las propiedades del objeto se insertaron en orden distinto,
+ * los hashes diferirán (falso positivo de desync).
+ * @conceptualRisk [FLOAT_PRECISION] Diferencias minúsculas en cálculos de punto flotante entre arquitecturas
+ * (ej. x86 vs ARM) pueden causar que el string serializado difiera y el hash falle.
  */
 export class StateHasher {
   /**
-   * Generates a hash representing the current state of all entities and their components.
+   * Genera un hash que representa el estado actual de todas las entidades y sus componentes.
    *
-   * @param world - The ECS world to hash.
-   * @returns A hexadecimal string representing the state hash.
+   * @param world - El mundo ECS a hashear.
+   * @returns Un string hexadecimal representando el hash del estado.
    *
    * @remarks
-   * PERFORMANCE WARNING: This is a costly O(E * C) operation, where E is the number of entities
-   * and C is the average number of components. Use sparingly, ideally outside the critical
-   * rendering path (e.g., every 60 ticks or only when a desync is suspected).
+   * PERFORMANCE WARNING: Esta es una operación costosa O(E * C) donde E es el número de entidades
+   * y C el promedio de componentes. Debe usarse con moderación, preferiblemente fuera del hot path de renderizado.
    *
-   * The method explicitly sorts entities and component types to improve determinism.
+   * @precondition El mundo no debe estar en proceso de modificación (mitad de un update).
    *
-   * @precondition The world must not be in the process of modification (mid-update).
+   * @conceptualRisk [PERFORMANCE] La concatenación masiva de strings y el uso de `JSON.stringify` genera
+   * mucha presión sobre el recolector de basura (GC).
    */
   public static calculateHash(world: World): string {
     const entities = world.getAllEntities().sort((a, b) => a - b);
@@ -61,12 +47,6 @@ export class StateHasher {
     return this.hashString(stateString);
   }
 
-  /**
-   * Internal implementation of a 32-bit string hashing algorithm.
-   *
-   * @param str - The serialized state string.
-   * @returns Hexadecimal representation of the calculated hash.
-   */
   private static hashString(str: string): string {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {

@@ -1,6 +1,5 @@
 import { World } from "../../../engine/core/World";
-import { type GameStateComponent, GAME_CONFIG } from "../types/AsteroidTypes";
-import { type HealthComponent } from "../../../engine/core/CoreComponents";
+import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 import { spawnAsteroidWave, createUfo } from "../EntityFactory";
 import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
 import { RandomService } from "../../../engine/utils/RandomService";

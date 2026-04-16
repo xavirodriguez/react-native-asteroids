@@ -37,7 +37,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
-      ? mutators.reduce((cfg, m) => m.apply(cfg as Record<string, unknown>), { ...PONG_CONFIG } as Record<string, unknown>) as unknown as typeof PONG_CONFIG
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...PONG_CONFIG })
       : { ...PONG_CONFIG };
 
     await super.init();
@@ -97,7 +97,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
       // but for simplicity we check if any future input is missing.
       // A more robust implementation would pass the current simulation tick.
       const inputSystem = (this.world as unknown as { systems: unknown[] }).systems?.find((s): s is PongInputSystem => s instanceof PongInputSystem);
-      return !this.networkController.hasInputForTick((inputSystem as { currentTick: number })?.currentTick + 1 || 0);
+      return !this.networkController.hasInputForTick((inputSystem as any)?.currentTick + 1 || 0);
     }
     return false;
   }

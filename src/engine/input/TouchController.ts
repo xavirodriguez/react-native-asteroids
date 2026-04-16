@@ -20,6 +20,7 @@ export class TouchController<TInputState extends Record<string, boolean>>
   extends InputController<TInputState> {
 
   private snapshot: TouchSnapshot | null = null;
+  private gestureTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private isHolding: boolean = false;
   private holdThreshold: number = 500; // ms
   private swipeThreshold: number = 30; // pixels
@@ -32,10 +33,11 @@ export class TouchController<TInputState extends Record<string, boolean>>
   }
 
   /**
-   * No specific cleanup needed for this controller.
+   * Cleans up pending timeouts to avoid memory leaks and firing after destruction.
    */
   cleanup(): void {
-    // No cleanup needed
+    this.gestureTimeouts.forEach(timeout => clearTimeout(timeout));
+    this.gestureTimeouts.clear();
   }
 
   /**
@@ -104,8 +106,15 @@ export class TouchController<TInputState extends Record<string, boolean>>
   private emitGesture(gesture: string): void {
     // Briefly activate gesture input
     this.setInputs({ [gesture]: true } as unknown as Partial<TInputState>);
-    setTimeout(() => {
+
+    const existing = this.gestureTimeouts.get(gesture);
+    if (existing) clearTimeout(existing);
+
+    const timeout = setTimeout(() => {
       this.setInputs({ [gesture]: false } as unknown as Partial<TInputState>);
+      this.gestureTimeouts.delete(gesture);
     }, 50);
+
+    this.gestureTimeouts.set(gesture, timeout);
   }
 }

@@ -139,7 +139,7 @@ export interface TTLComponent extends Component {
   /** Tiempo total de vida inicial (ms). */
   total: number;
   /** Callback opcional al finalizar el tiempo de vida. */
-  onComplete?: (() => void) | null;
+  onComplete?: () => void;
 }
 
 import { Shape } from "../physics/shapes/ShapeTypes";
@@ -237,7 +237,7 @@ export interface RenderComponent extends Component {
   /** Número de frames que la entidad permanecerá en blanco tras un impacto. */
   hitFlashFrames?: number;
   /** Contenedor de metadatos para drawers personalizados. */
-  data?: Record<string, unknown> | null;
+  data?: Record<string, unknown>;
 }
 
 /**
@@ -403,6 +403,19 @@ export interface ScreenShakeComponent extends Component {
     intensity: number;
     duration: number;
   };
+}
+
+/**
+ * Component used for non-simulated visual offsets (juice, screen shake, etc).
+ * Renderers should add these values to the Transform values.
+ */
+export interface VisualOffsetComponent extends Component {
+  type: "VisualOffset";
+  x: number;
+  y: number;
+  rotation: number;
+  scaleX: number;
+  scaleY: number;
 }
 
 /**

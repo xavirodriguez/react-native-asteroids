@@ -250,7 +250,7 @@ export class World {
     return this.componentIndex.get(type)?.has(entity) ?? false;
   }
 
-  public getEntitiesWith(...componentTypes: string[]): Entity[] {
+  public getEntitiesWith(...componentTypes: string[]): ReadonlyArray<Entity> {
     return this.query(...componentTypes);
   }
 
@@ -267,7 +267,7 @@ export class World {
     }
   }
 
-  public query(...componentTypes: string[]): Entity[] {
+  public query(...componentTypes: string[]): ReadonlyArray<Entity> {
     if (componentTypes.length === 0) return [];
     const key = componentTypes.length === 1 ? componentTypes[0] : [...componentTypes].sort().join(",");
     let query = this.queries.get(key);
@@ -386,7 +386,7 @@ export class World {
     this.systemsNeedSorting = false;
   }
 
-  getAllEntities(): Entity[] {
+  getAllEntities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);
   }
 
