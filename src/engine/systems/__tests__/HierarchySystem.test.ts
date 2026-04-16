@@ -32,7 +32,6 @@ describe("HierarchySystem Iterative", () => {
 
   it("should handle deep hierarchies", () => {
     let lastEntity = world.createEntity();
-    const root = lastEntity;
     world.addComponent(lastEntity, {
       type: "Transform", x: 1, y: 1, rotation: 0, scaleX: 1, scaleY: 1, dirty: true
     } as TransformComponent);

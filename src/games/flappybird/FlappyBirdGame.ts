@@ -81,25 +81,31 @@ export class FlappyBirdGame
     this.isMultiplayer = active;
   }
 
-  public updateFromServer(state: Record<string, any>) {
+  public updateFromServer(state: Record<string, unknown>) {
     if (!this.isMultiplayer || !state) return;
     this.world.clear();
 
     if (state.players && Array.isArray(state.players)) {
-        state.players.forEach((player) => {
+        state.players.forEach((player: { x: number, y: number, alive: boolean, velocityY: number }) => {
             const b = this.world.createEntity();
-            this.world.addComponent(b, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 });
-            this.world.addComponent(b, { type: "Render", shape: "bird", size: 15, color: player.alive ? "yellow" : "gray", rotation: 0 });
-            this.world.addComponent(b, { type: "Bird", velocityY: player.velocityY, isAlive: player.alive });
+            this.world.addComponent(b, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+            this.world.addComponent(b, { type: "Render", shape: "bird", size: 15, color: player.alive ? "yellow" : "gray", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+            this.world.addComponent(b, {
+                type: "Bird",
+                velocityY: player.velocityY,
+                isAlive: player.alive,
+                isGliding: false,
+                nearMissTimer: 0
+            } as import("./EntityFactory").BirdComponent);
         });
     }
 
     if (state.pipes && Array.isArray(state.pipes)) {
-        state.pipes.forEach((pipe) => {
+        state.pipes.forEach((pipe: { x: number, gapY: number }) => {
             const p = this.world.createEntity();
-            this.world.addComponent(p, { type: "Transform", x: pipe.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 });
-            this.world.addComponent(p, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 });
-            this.world.addComponent(p, { type: "Pipe", gapY: pipe.gapY, gapSize: 140, scored: false });
+            this.world.addComponent(p, { type: "Transform", x: pipe.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+            this.world.addComponent(p, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+            this.world.addComponent(p, { type: "Pipe", gapY: pipe.gapY, gapSize: 140, scored: false } as import("./EntityFactory").PipeComponent);
         });
     }
   }

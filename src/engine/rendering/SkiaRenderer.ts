@@ -209,7 +209,11 @@ export class SkiaRenderer implements Renderer {
 
     renderCommands.forEach((cmd) => {
       const offset = world.getComponent<import("../core/CoreComponents").VisualOffsetComponent>(cmd.entity, "VisualOffset");
-      this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render, VisualOffset: offset as any }, world);
+      this.drawEntity(cmd.entity, {
+        Transform: cmd.pos,
+        Render: cmd.render,
+        VisualOffset: offset as unknown as import("../core/CoreComponents").Component
+      }, world);
     });
 
     this.drawParticles(world);
@@ -224,7 +228,7 @@ export class SkiaRenderer implements Renderer {
     const canvas = this.canvas;
     const pos = components["Transform"] as TransformComponent;
     const render = components["Render"] as RenderComponent;
-    const offset = components["VisualOffset"] as any as import("../core/CoreComponents").VisualOffsetComponent;
+    const offset = components["VisualOffset"] as unknown as import("../core/CoreComponents").VisualOffsetComponent;
 
     if (!pos || !render) return;
 

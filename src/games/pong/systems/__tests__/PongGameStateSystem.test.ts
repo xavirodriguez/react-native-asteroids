@@ -16,13 +16,14 @@ describe("PongGameStateSystem", () => {
       type: "PongState",
       scoreP1: 0,
       scoreP2: 0,
-      isGameOver: false
-    } as any);
+      isGameOver: false,
+      comboMultiplier: 1
+    } as import("../../EntityFactory").PongStateComponent);
   });
 
   it("should detect scoring for Player 1", () => {
     const ball = world.createEntity();
-    world.addComponent(ball, { type: "Ball" } as any);
+    world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as import("../../EntityFactory").BallComponent);
     world.addComponent(ball, { type: "Transform", x: PONG_CONFIG.WIDTH + 10, y: 100 } as TransformComponent);
     world.addComponent(ball, { type: "Velocity", dx: 100, dy: 0 } as VelocityComponent);
 
@@ -35,7 +36,7 @@ describe("PongGameStateSystem", () => {
 
   it("should detect scoring for Player 2", () => {
     const ball = world.createEntity();
-    world.addComponent(ball, { type: "Ball" } as any);
+    world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as import("../../EntityFactory").BallComponent);
     world.addComponent(ball, { type: "Transform", x: -10, y: 100 } as TransformComponent);
     world.addComponent(ball, { type: "Velocity", dx: -100, dy: 0 } as VelocityComponent);
 
@@ -47,11 +48,11 @@ describe("PongGameStateSystem", () => {
   });
 
   it("should detect win condition", () => {
-    const state = world.getComponent<any>(stateEntity, "PongState")!;
+    const state = world.getComponent<import("../../EntityFactory").PongStateComponent>(stateEntity, "PongState")!;
     state.scoreP1 = PONG_CONFIG.WIN_SCORE - 1;
 
     const ball = world.createEntity();
-    world.addComponent(ball, { type: "Ball" } as any);
+    world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as import("../../EntityFactory").BallComponent);
     world.addComponent(ball, { type: "Transform", x: PONG_CONFIG.WIDTH + 10, y: 100 } as TransformComponent);
     world.addComponent(ball, { type: "Velocity", dx: 100, dy: 0 } as VelocityComponent);
 

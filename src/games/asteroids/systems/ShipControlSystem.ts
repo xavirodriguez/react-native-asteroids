@@ -34,7 +34,7 @@ export class ShipControlSystem extends System {
         this.config,
         (bullet) => {
           // Listen for TTL destruction (miss)
-          const ttl = world.getComponent<any>(bullet, "TTL");
+          const ttl = world.getComponent<import("../../../engine/core/CoreComponents").TTLComponent>(bullet, "TTL");
           if (ttl) {
             const originalOnComplete = ttl.onComplete;
             ttl.onComplete = () => {

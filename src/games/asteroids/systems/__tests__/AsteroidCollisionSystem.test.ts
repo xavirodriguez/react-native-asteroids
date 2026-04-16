@@ -43,7 +43,7 @@ describe("AsteroidCollisionSystem", () => {
     const asteroids = world.query("Asteroid");
     expect(asteroids.length).toBe(2);
 
-    const sizeMap = asteroids.map(id => (world.getComponent<any>(id, "Asteroid") as any).size);
+    const sizeMap = asteroids.map(id => (world.getComponent<import("../../types/AsteroidTypes").AsteroidComponent>(id, "Asteroid")!).size);
     expect(sizeMap).toContain("medium");
     expect(sizeMap.filter(s => s === "medium").length).toBe(2);
   });
@@ -51,7 +51,7 @@ describe("AsteroidCollisionSystem", () => {
   it("should decrease ship health on asteroid collision", () => {
     const ship = createShip({ world, x: 100, y: 100 });
     // Reset invulnerability for testing
-    const h = world.getComponent<any>(ship, "Health");
+    const h = world.getComponent<import("../../types/AsteroidTypes").HealthComponent>(ship, "Health")!;
     h.invulnerableRemaining = 0;
 
     createAsteroid({ world, x: 100, y: 100, size: "small" });
@@ -67,7 +67,7 @@ describe("AsteroidCollisionSystem", () => {
 
   it("should not decrease health if ship is invulnerable", () => {
     const ship = createShip({ world, x: 100, y: 100 });
-    const health = world.getComponent<any>(ship, "Health") as any;
+    const health = world.getComponent<import("../../types/AsteroidTypes").HealthComponent>(ship, "Health")!;
     health.invulnerableRemaining = 1000;
     const initialHealth = health.current;
 

@@ -27,7 +27,7 @@ export const drawSkiaShip: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, render
         const { Skia, BlurStyle } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Path || !Skia.Paint) return;
-        const p = getPaint() as SkPaint;
+        const p = getPaint() as unknown as import("@shopify/react-native-skia").SkPaint;
         if (!p) return;
         const size = render.size;
         const input = world.getComponent<InputComponent>(entity, "Input");
@@ -92,7 +92,7 @@ export const drawSkiaUfo: ShapeDrawer<SkCanvas> = (canvas, _entity, _pos, render
         const { Skia, BlurStyle } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint() as SkPaint;
+        const p = getPaint() as unknown as import("@shopify/react-native-skia").SkPaint;
         if (!p) return;
         const size = render.size;
         const color = render.color;
@@ -132,7 +132,7 @@ export const skiaStarfieldEffect: EffectDrawer<SkCanvas> = (canvas, _snapshot, w
         const { Skia } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint() as any;
+        const p = getPaint() as unknown as import("@shopify/react-native-skia").SkPaint;
         if (!p) return;
         const gameStateEntity = world.query("GameState")[0];
         const gameState = gameStateEntity ? world.getComponent<GameStateComponent>(gameStateEntity, "GameState") : null;
@@ -184,7 +184,7 @@ export const drawSkiaParticle: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, re
         const { Skia } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint() as SkPaint;
+        const p = getPaint() as unknown as import("@shopify/react-native-skia").SkPaint;
         if (!p) return;
 
         const ttl = world.getComponent<TTLComponent>(entity, "TTL");
@@ -210,7 +210,7 @@ export const drawSkiaBullet: ShapeDrawer<SkCanvas> = (canvas, _entity, _pos, ren
         const { Skia, BlurStyle } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint() as SkPaint;
+        const p = getPaint() as unknown as import("@shopify/react-native-skia").SkPaint;
         if (!p) return;
         const size = render.size;
 

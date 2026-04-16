@@ -128,8 +128,8 @@ export class SpaceInvadersCollisionSystem extends System {
     const bulletShield = this.matchPair(world, e1, e2, "PlayerBullet", "Shield") ||
                         this.matchPair(world, e1, e2, "EnemyBullet", "Shield");
     if (bulletShield) {
-      const bullet = (bulletShield as any).PlayerBullet || (bulletShield as any).EnemyBullet;
-      const shield = (bulletShield as any).Shield;
+      const bullet = (bulletShield as Record<string, Entity>).PlayerBullet || (bulletShield as Record<string, Entity>).EnemyBullet;
+      const shield = (bulletShield as Record<string, Entity>).Shield;
       this.damageShield(world, shield);
       world.removeEntity(bullet);
       return;
