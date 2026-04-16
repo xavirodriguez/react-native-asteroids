@@ -53,10 +53,39 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 - **Determinismo**: Los reinicios ahora garantizan el mismo estado inicial si se provee una semilla.
 
 ### Deuda abierta / Siguientes pasos
-- Migrar `InputManager` (Legacy) a `UnifiedInputSystem` en juegos restantes.
 - Implementar un sistema de telemetría básico para detectar fallos de determinismo en producción.
 
 ---
+
+## [2024-05-24] Deprecación de InputManager y Consolidación de Boundary
+
+### Estado detectado
+- **Fragmentación de Input**: `AsteroidsGameScene` dependía de `InputManager` (Legacy) y configuraba controladores manualmente, duplicando la lógica de `BaseGame`.
+- **Inconsistencia en Boundary**: Uso mixto de `mode` y `behavior` en `BoundaryComponent`.
+- **Bug en PhysicsUtils**: Error de referencia `p` en `integrateMovement` impedía el correcto funcionamiento de la física.
+- **Surface Pública**: `CoreComponents.ts` exponía componentes legacy directamente, oscureciendo la API canónica.
+
+### Decisiones tomadas
+1. **Unificación de Input**: Se eliminó `InputManager` de Asteroids. Ahora todas las escenas deben usar `UnifiedInputSystem` a través del singleton `InputStateComponent`.
+2. **Estandarización de Propiedades**: Se migró el uso de `mode` a `behavior` en Pong para alinearse con el contrato moderno de `BoundaryComponent`.
+3. **Saneamiento de API Core**: Se eliminaron los re-exports de `PositionComponent` y `ColliderComponent` en `CoreComponents.ts`. Estos componentes ahora solo son accesibles a través del namespace `Legacy`.
+4. **Fix de Integración Física**: Se corrigieron las variables en `PhysicsUtils.integrateMovement` y `applyFriction` para asegurar compatibilidad con proxies de predicción.
+
+### Archivos afectados
+- `src/games/asteroids/scenes/AsteroidsGameScene.ts`
+- `src/games/asteroids/systems/AsteroidInputSystem.ts`
+- `src/games/pong/EntityFactory.ts`
+- `src/engine/core/CoreComponents.ts`
+- `src/engine/utils/PhysicsUtils.ts`
+
+### Impacto
+- **Claridad**: El flujo de entrada es ahora uniforme en todo el motor.
+- **Robustez**: Se corrigió un bug crítico en el núcleo de física que afectaba a todos los sistemas.
+- **Seguridad de API**: Se redujo la posibilidad de usar componentes obsoletos por accidente.
+
+### Deuda abierta / Siguientes pasos
+- Auditar `SpaceInvadersGame` para asegurar que no queden dependencias de `InputManager`.
+- Migrar el ejemplo `PongGame` en `ExampleRegistration.ts` para usar `Collider2DComponent`.
 
 ## [Plantilla para Futuras Entradas]
 

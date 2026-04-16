@@ -12,16 +12,12 @@ import { UfoSystem } from "../systems/UfoSystem";
 import { AsteroidRenderSystem } from "../systems/AsteroidRenderSystem";
 import { IGameStateSystem } from "../types/GameInterfaces";
 import { createShip, spawnAsteroidWave, createGameState } from "../EntityFactory";
-import { GAME_CONFIG, type InputState } from "../types/AsteroidTypes";
-import { KeyboardController } from "../../../engine/input/KeyboardController";
-import { TouchController } from "../../../engine/input/TouchController";
-import { InputManager } from "../../../engine/input/InputManager";
+import { GAME_CONFIG } from "../types/AsteroidTypes";
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { IAsteroidsGame } from "../types/GameInterfaces";
 
 export class AsteroidsGameScene extends Scene {
   private game: IAsteroidsGame;
-  private inputManager: InputManager<InputState>;
   private bulletPool: BulletPool;
   private particlePool: ParticlePool;
   private gameStateSystem: IGameStateSystem;
@@ -29,40 +25,19 @@ export class AsteroidsGameScene extends Scene {
   constructor(
     world: World,
     game: IAsteroidsGame,
-    inputManager: InputManager<InputState>,
     bulletPool: BulletPool,
     particlePool: ParticlePool,
     gameStateSystem: IGameStateSystem
   ) {
     super(world);
     this.game = game;
-    this.inputManager = inputManager;
     this.bulletPool = bulletPool;
     this.particlePool = particlePool;
     this.gameStateSystem = gameStateSystem;
   }
 
   public onEnter(): void {
-    // Ensure clean input state
-    this.inputManager.clearControllers();
-
-    const DEFAULT_INPUT: InputState = {
-      thrust: false, rotateLeft: false, rotateRight: false,
-      shoot: false, hyperspace: false
-    };
-
-    const ASTEROID_KEYMAP = {
-      [GAME_CONFIG.KEYS.THRUST]: "thrust" as const,
-      [GAME_CONFIG.KEYS.ROTATE_LEFT]: "rotateLeft" as const,
-      [GAME_CONFIG.KEYS.ROTATE_RIGHT]: "rotateRight" as const,
-      [GAME_CONFIG.KEYS.SHOOT]: "shoot" as const,
-      [GAME_CONFIG.KEYS.HYPERSPACE]: "hyperspace" as const,
-    };
-
-    this.inputManager.addController(new KeyboardController<InputState>(ASTEROID_KEYMAP, DEFAULT_INPUT));
-    this.inputManager.addController(new TouchController<InputState>());
-
-    const inputSys = new AsteroidInputSystem(this.inputManager, this.bulletPool, this.particlePool);
+    const inputSys = new AsteroidInputSystem(this.bulletPool, this.particlePool);
 
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());

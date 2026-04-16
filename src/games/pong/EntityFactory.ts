@@ -37,7 +37,7 @@ export const PongEntityFactory = {
       isTrigger: false,
       enabled: true
     } as Collider2DComponent);
-    world.addComponent(ball, { type: "Boundary", width: PONG_CONFIG.WIDTH, height: PONG_CONFIG.HEIGHT, mode: "bounce", bounceX: false, bounceY: true } as BoundaryComponent);
+    world.addComponent(ball, { type: "Boundary", width: PONG_CONFIG.WIDTH, height: PONG_CONFIG.HEIGHT, behavior: "bounce", bounceX: false, bounceY: true } as BoundaryComponent);
     world.addComponent(ball, { type: "Tag", tags: ["Ball"] } as TagComponent);
     world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as BallComponent);
     return ball;
