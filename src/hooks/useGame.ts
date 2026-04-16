@@ -7,9 +7,10 @@ type GameConstructor<TGame extends BaseGame<TState, TInput>, TState, TInput exte
   new (config: { isMultiplayer?: boolean, seed?: number }) => TGame;
 
 export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, boolean>> {
-  game: TGame;
+  game: TGame | null;
   gameState: TState | null;
   isPaused: boolean;
+  isReady: boolean;
   handleInput: (input: Partial<TInput>) => void;
   togglePause: () => void;
   restart: (seed?: number) => void;
@@ -29,6 +30,7 @@ export function useGame<
 ): UseGameResult<TGame, TState, TInput> {
 
   const [game, setGame] = useState<TGame | null>(null);
+  const [isReady, setIsReady] = useState(false);
   const gameStateRef = useRef<TState | null>(initialState);
   const [gameState, setGameState] = useState<TState | null>(initialState);
   const [isPaused, setIsPaused] = useState(false);
@@ -37,17 +39,19 @@ export function useGame<
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Principle 4: Use encapsulated hook for symmetric resource management
-  useKeepAwake(!isPaused);
+  useKeepAwake(!isPaused && isReady);
 
   useEffect(() => {
     const gameInstance = new GameClass({ isMultiplayer });
     setGame(gameInstance);
+    setIsReady(false);
 
     // Async initialization
     let isMounted = true;
     gameInstance.init().then(() => {
       if (isMounted) {
         gameInstance.start();
+        setIsReady(true);
       }
     }).catch(console.error);
 
@@ -97,9 +101,10 @@ export function useGame<
   }, [game]);
 
   return {
-    game: game as TGame,
+    game,
     gameState,
     isPaused,
+    isReady,
     handleInput,
     togglePause,
     restart,

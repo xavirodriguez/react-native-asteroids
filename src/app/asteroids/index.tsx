@@ -23,7 +23,7 @@ export default function AsteroidsScreen() {
   const [started, setStarted] = useState(false);
   const [isMulti, setIsMulti] = useState(false);
   const [isDaily, setIsDaily] = useState(false);
-  const { game, gameState, handleInput, isPaused, togglePause, highScore, seed, restartWithSeed } = useAsteroidsGame(isMulti && started);
+  const { game, gameState, handleInput, isPaused, isReady, togglePause, highScore, seed, restartWithSeed } = useAsteroidsGame(isMulti && started);
   const [playerName, setPlayerName] = useState("Jugador");
   const [initialSeed, setInitialSeed] = useState<number | undefined>();
   const [showDailyResults, setShowDailyResults] = useState(false);
@@ -75,7 +75,7 @@ export default function AsteroidsScreen() {
     }
   }, [isMulti, serverState, game, room?.sessionId]);
 
-  if (!game) return null;
+  if (!game || !isReady) return null;
 
   if (!started) {
     return (

@@ -1,4 +1,4 @@
-import { TouchController } from "../TouchController";
+import { TouchController } from "../../legacy/TouchController";
 
 describe("TouchController Lifecycle", () => {
   it("should clear timeout on cleanup", () => {

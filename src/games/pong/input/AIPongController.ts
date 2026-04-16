@@ -1,4 +1,4 @@
-import { InputController } from "../../../engine/input/InputController";
+import { InputController } from "../../../engine/legacy/InputController";
 import { World } from "../../../engine/core/World";
 import { TransformComponent } from "../../../engine/types/EngineTypes";
 import { PongInput } from "../types";
