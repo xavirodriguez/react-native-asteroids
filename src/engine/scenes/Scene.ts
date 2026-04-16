@@ -59,6 +59,11 @@ export abstract class Scene {
   public async restart(): Promise<void> {}
 
   /**
+   * Llamado durante el reinicio de la escena para limpiar recursos compartidos.
+   */
+  public onRestartCleanup(): void {}
+
+  /**
    * Llamado durante el tick de actualización de la simulación.
    * @param dt - Tiempo transcurrido en segundos.
    * @param world - El mundo a actualizar.

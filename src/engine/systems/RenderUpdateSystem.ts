@@ -72,7 +72,13 @@ export class RenderUpdateSystem extends System {
     entities.forEach((entity) => {
       const render = world.getComponent<RenderComponent>(entity, "Render");
       if (render && render.angularVelocity) {
-        render.rotation += render.angularVelocity * (deltaTime / 16.67);
+        let offset = world.getComponent<import("../core/CoreComponents").VisualOffsetComponent>(entity, "VisualOffset");
+        if (!offset) {
+          offset = world.addComponent(entity, {
+            type: "VisualOffset", x: 0, y: 0, rotation: 0, scaleX: 0, scaleY: 0
+          } as import("../core/CoreComponents").VisualOffsetComponent);
+        }
+        offset.rotation += render.angularVelocity * (deltaTime / 16.67);
       }
     });
   }

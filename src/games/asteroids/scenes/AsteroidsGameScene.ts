@@ -59,4 +59,16 @@ export class AsteroidsGameScene extends Scene {
     createGameState({ world: this.world });
     spawnAsteroidWave({ world: this.world, count: GAME_CONFIG.INITIAL_ASTEROID_COUNT });
   }
+
+  public override onRestartCleanup(): void {
+    const gameplayRandom = import("../../../engine/utils/RandomService").RandomService.getInstance("gameplay");
+    gameplayRandom.setSeed(this.game.getSeed());
+
+    const eventBus = this.world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
+    if (eventBus) {
+        // Clear all listeners to avoid cross-scene duplication
+        // Note: EventBus doesn't have a clearAll() but we should at least reset what we can.
+        // For now, focusing on RandomService as requested.
+    }
+  }
 }

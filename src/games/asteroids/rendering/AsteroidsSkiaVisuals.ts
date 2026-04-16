@@ -33,10 +33,10 @@ export const drawSkiaShip: ShapeDrawer<Record<string, unknown>> = (canvas, entit
         const health = world.getComponent<HealthComponent>(entity, "Health");
 
         const isInvulnerable = health && health.invulnerableRemaining > 0;
-          const gameState = world.getSingleton<GameStateComponent>("GameState");
-          const tick = gameState?.serverTick ?? 0;
+        // Accessing world version or other tick-based value to avoid Date.now()
+        // We can use health.invulnerableRemaining which is tick-decremented
         const blinkOpacity = isInvulnerable
-            ? Math.floor(tick / 10) % 2 === 0 ? 0.3 : 1.0
+            ? Math.floor(health.invulnerableRemaining / 150) % 2 === 0 ? 0.3 : 1.0
             : 1.0;
 
         p.setAlphaf(blinkOpacity);
@@ -125,7 +125,7 @@ export const drawSkiaUfo: ShapeDrawer<Record<string, unknown>> = (canvas, _entit
     } catch (_e) { /* ignore */ }
 };
 
-export const skiaStarfieldEffect: EffectDrawer<Record<string, unknown>> = (canvas, world, width, height) => {
+export const skiaStarfieldEffect: EffectDrawer<Record<string, unknown>> = (canvas, snapshot, width, height, world) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia } =
@@ -151,9 +151,7 @@ export const skiaStarfieldEffect: EffectDrawer<Record<string, unknown>> = (canva
               const parallaxX = (star.x - (shipPos.worldX ?? shipPos.x) * (0.05 * (star.layer + 1)) + width) % width;
               const parallaxY = (star.y - (shipPos.worldY ?? shipPos.y) * (0.05 * (star.layer + 1)) + height) % height;
 
-              const gState = world.getSingleton<GameStateComponent>("GameState");
-              const tick = gState?.serverTick ?? 0;
-              const twinkle = 0.8 + Math.sin(star.twinklePhase + tick * 0.1 * star.twinkleSpeed) * 0.2;
+              const twinkle = 0.8 + Math.sin(star.twinklePhase + snapshot.elapsedTime * 0.005 * star.twinkleSpeed) * 0.2;
               p.setAlphaf(star.brightness * twinkle);
               canvas.drawRect(Skia.XYWHRect(parallaxX, parallaxY, star.size, star.size), p);
             });

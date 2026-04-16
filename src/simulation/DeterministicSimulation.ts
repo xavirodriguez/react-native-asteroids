@@ -23,6 +23,15 @@ const ASTEROID_SPLIT_CONFIG: Record<
 
 export class DeterministicSimulation {
     public static update(world: World, deltaTime: number, ctx: SimulationContext) {
+        RandomService.lockGameplayContext = true;
+        try {
+            this.internalUpdate(world, deltaTime, ctx);
+        } finally {
+            RandomService.lockGameplayContext = false;
+        }
+    }
+
+    private static internalUpdate(world: World, deltaTime: number, ctx: SimulationContext) {
         const dtSeconds = deltaTime / 1000;
 
         // 0. Update server tick in GameState
@@ -32,7 +41,7 @@ export class DeterministicSimulation {
         }
 
         // 1. Process Inputs & Ship Physics
-        this.updateShips(world, deltaTime, dtSeconds, ctx);
+        this.updateShips(world, deltaTime, ctx);
 
         // 2. Integration & Boundary Wrapping
         this.integrateMovement(world, dtSeconds);
@@ -71,8 +80,8 @@ export class DeterministicSimulation {
         });
     }
 
-    private static updateShips(world: World, deltaTime: number, dtSeconds: number, ctx: SimulationContext) {
-        const ships = world.query("Ship", "Transform", "Velocity", "Render");
+    private static updateShips(world: World, deltaTime: number, ctx: SimulationContext) {
+        const ships = world.query("Ship", "Transform", "Velocity", "Render", "Input");
         ships.forEach(entity => {
             const pos = world.getComponent<TransformComponent>(entity, "Transform");
             const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
@@ -80,30 +89,16 @@ export class DeterministicSimulation {
             const input = world.getComponent<InputComponent>(entity, "Input");
 
             if (pos && vel && render && input) {
-                const intent: InputComponent = {
-                    type: "Input",
-                    rotateLeft: input.rotateLeft,
-                    rotateRight: input.rotateRight,
-                    thrust: input.thrust,
-                    shoot: input.shoot,
-                    hyperspace: input.hyperspace,
-                    shootCooldownRemaining: input.shootCooldownRemaining
-                };
-
-                ShipPhysics.applyRotation(render, intent, dtSeconds);
-                ShipPhysics.applyThrust(world, pos, vel, render, intent, dtSeconds, ctx);
-                ShipPhysics.applyFriction(vel, deltaTime);
-
-                // Shooting logic
-                if (input.shoot) {
-                    if (input.shootCooldownRemaining <= 0) {
-                        createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
-                        input.shootCooldownRemaining = GAME_CONFIG.BULLET_SHOOT_COOLDOWN;
-                    }
-                }
-                if (input.shootCooldownRemaining > 0) {
-                    input.shootCooldownRemaining -= deltaTime;
-                }
+                ShipPhysics.simulateShipTick(
+                    world,
+                    pos,
+                    vel,
+                    render,
+                    input,
+                    deltaTime,
+                    ctx,
+                    GAME_CONFIG
+                );
             }
         });
     }
@@ -149,13 +144,6 @@ export class DeterministicSimulation {
                 if (sHealth.invulnerableRemaining < 0) sHealth.invulnerableRemaining = 0;
             }
         });
-
-        // In DeterministicSimulation, we don't have a System list like in AsteroidsGame.
-        // We simulate the collision detection and resolution manually for Asteroids gameplay.
-        // For strict determinism, we use the engine's NarrowPhase directly if we want to avoid event components
-        // or we can manually check circles as it was doing.
-        // Given this is a SHARED simulation used by server/client for Asteroids,
-        // we'll keep the logic but update it to use the new Collider2DComponent structure.
 
         const bullets = world.query("Bullet", "Transform", "Collider2D");
         const asteroids = world.query("Asteroid", "Transform", "Collider2D");
@@ -241,7 +229,6 @@ export class DeterministicSimulation {
                  shake.intensity = GAME_CONFIG.SHAKE_INTENSITY_IMPACT;
                  shake.remaining = GAME_CONFIG.SHAKE_DURATION_IMPACT;
              }
-             // Haptics/Audio would go here
         }
 
         if (health.current <= 0) {

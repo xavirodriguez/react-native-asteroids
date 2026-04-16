@@ -207,6 +207,7 @@ export class SceneManager {
 
   public async restartCurrentScene(): Promise<void> {
     if (this.currentScene) {
+        this.currentScene.onRestartCleanup();
         await this.transitionTo(this.currentScene);
     }
   }

@@ -79,7 +79,6 @@ export class CameraSystem {
    * @mutates sharedCamera
    */
   update(world: World, _deltaTime: number, viewportSize: { width: number; height: number }): void {
-  update(world: import("../core/World").World, deltaTime: number, viewportSize: { width: number; height: number }): void {
     if (this.targetEntityId !== null) {
       const transform = world.getComponent<TransformComponent>(this.targetEntityId, "Transform");
       if (transform) {

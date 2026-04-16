@@ -208,7 +208,8 @@ export class SkiaRenderer implements Renderer {
     renderCommands.sort((a, b) => a.zIndex - b.zIndex);
 
     renderCommands.forEach((cmd) => {
-      this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render }, world);
+      const offset = world.getComponent<import("../core/CoreComponents").VisualOffsetComponent>(cmd.entity, "VisualOffset");
+      this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render, VisualOffset: offset as any }, world);
     });
 
     this.drawParticles(world);
@@ -223,14 +224,15 @@ export class SkiaRenderer implements Renderer {
     const canvas = this.canvas;
     const pos = components["Transform"] as TransformComponent;
     const render = components["Render"] as RenderComponent;
+    const offset = components["VisualOffset"] as any as import("../core/CoreComponents").VisualOffsetComponent;
 
     if (!pos || !render) return;
 
-    const x = pos.worldX !== undefined ? pos.worldX : pos.x;
-    const y = pos.worldY !== undefined ? pos.worldY : pos.y;
-    const rotation = pos.worldRotation !== undefined ? pos.worldRotation : render.rotation;
-    const scaleX = pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1);
-    const scaleY = pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1);
+    const x = (pos.worldX !== undefined ? pos.worldX : pos.x) + (offset?.x ?? 0);
+    const y = (pos.worldY !== undefined ? pos.worldY : pos.y) + (offset?.y ?? 0);
+    const rotation = (pos.worldRotation !== undefined ? pos.worldRotation : render.rotation) + (offset?.rotation ?? 0);
+    const scaleX = (pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1)) + (offset?.scaleX ?? 0);
+    const scaleY = (pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1)) + (offset?.scaleY ?? 0);
 
     canvas.save();
     canvas.translate(x, y);

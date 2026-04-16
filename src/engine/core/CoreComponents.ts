@@ -429,6 +429,19 @@ export interface ScreenShakeComponent extends Component {
 }
 
 /**
+ * Component used for non-simulated visual offsets (juice, screen shake, etc).
+ * Renderers should add these values to the Transform values.
+ */
+export interface VisualOffsetComponent extends Component {
+  type: "VisualOffset";
+  x: number;
+  y: number;
+  rotation: number;
+  scaleX: number;
+  scaleY: number;
+}
+
+/**
  * Star component for background effects.
  */
 export interface Star extends Component {
