@@ -28,8 +28,7 @@ export function useGame<
   isMultiplayer: boolean = false
 ): UseGameResult<TGame, TState, TInput> {
 
-  // useRef so the instance is not recreated on every render
-  const gameRef = useRef<TGame | null>(null);
+  const [game, setGame] = useState<TGame | null>(null);
   const gameStateRef = useRef<TState | null>(initialState);
   const [gameState, setGameState] = useState<TState | null>(initialState);
   const [isPaused, setIsPaused] = useState(false);
@@ -42,21 +41,21 @@ export function useGame<
 
   useEffect(() => {
     // @ts-expect-error - Constructor argument handling
-    const game = new GameClass({ isMultiplayer });
-    gameRef.current = game;
+    const gameInstance = new GameClass({ isMultiplayer });
+    setGame(gameInstance);
 
     // Async initialization
     let isMounted = true;
-    game.init().then(() => {
+    gameInstance.init().then(() => {
       if (isMounted) {
-        game.start();
+        gameInstance.start();
       }
     }).catch(console.error);
 
     let lastUpdateTime = 0;
     const UI_UPDATE_INTERVAL = 1000 / 15; // Throttled to 15 FPS for UI components
 
-    const unsubscribe = game.subscribe((updatedGame) => {
+    const unsubscribe = gameInstance.subscribe((updatedGame) => {
       const state = updatedGame.getGameState() as TState;
       gameStateRef.current = state;
 
@@ -74,7 +73,7 @@ export function useGame<
       isMounted = false;
       unsubscribe();
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      game.destroy();
+      gameInstance.destroy();
     };
   // Re-initialize if multiplayer mode or game class changes
   }, [GameClass, isMultiplayer]);
@@ -84,7 +83,6 @@ export function useGame<
   }, []);
 
   const togglePause = useCallback(() => {
-    const game = gameRef.current;
     if (!game) {
       return;
     }
@@ -93,14 +91,14 @@ export function useGame<
     } else {
       game.pause();
     }
-  }, []);
+  }, [game]);
 
   const restart = useCallback((seed?: number) => {
-    gameRef.current?.restart(seed).catch(console.error);
-  }, []);
+    game?.restart(seed).catch(console.error);
+  }, [game]);
 
   return {
-    game: gameRef.current as TGame,
+    game: game as TGame,
     gameState,
     isPaused,
     handleInput,

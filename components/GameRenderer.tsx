@@ -73,7 +73,7 @@ export const GameRenderer = React.memo(function GameRenderer({ world, onInitiali
     }
   }, [world, onInitialize]);
 
-  if (Platform.OS === 'web' || !Canvas || !Drawing) {
+  if (Platform.OS === 'web' || !Canvas || !Drawing || !world || typeof world.query !== "function") {
     return <View style={[styles.container, { width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT, backgroundColor: 'black' }]} />;
   }
 

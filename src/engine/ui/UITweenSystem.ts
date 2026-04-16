@@ -1,51 +1,71 @@
+/**
+ * @packageDocumentation
+ * UI Animation System (Tweens).
+ * Provides frame-by-frame interpolation for UI properties like opacity and offsets.
+ */
+
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { UIElementComponent } from "./UITypes";
 
 /**
- * Componente que define una animación interpolada para una propiedad de un elemento de UI.
+ * Component that defines an interpolated animation for a UI element property.
  *
- * @responsibility Almacenar el estado y la configuración de una transición visual en la UI.
+ * @remarks
+ * Tweens allow for smooth visual transitions (e.g., fading in a panel or sliding a button).
+ * They are automatically processed by the {@link UITweenSystem} and removed upon completion
+ * unless the `loop` flag is set.
+ *
+ * @responsibility Store the state and configuration of a visual transition in the UI.
  */
 export interface UITweenComponent {
     type: "UITween";
-    /** La propiedad de `UIElementComponent` a animar. */
+    /** The property of `UIElementComponent` to animate. */
     property: "opacity" | "offsetX" | "offsetY";
-    /** Valor inicial al comienzo del tween. */
+    /** Initial value at the start of the tween. */
     startValue: number;
-    /** Valor objetivo al finalizar el tween. */
+    /** Target value at the end of the tween. */
     endValue: number;
-    /** Duración total de la animación en milisegundos. */
+    /** Total duration of the animation in milliseconds. */
     duration: number;
-    /** Tiempo transcurrido acumulado. */
+    /** Accumulated elapsed time in milliseconds. */
     currentTime: number;
-    /** Función de curva para la interpolación. */
+    /** Easing function for the interpolation. @defaultValue "linear" */
     easing: "linear" | "easeIn" | "easeOut";
-    /** Callback opcional ejecutado al finalizar (si no es un bucle). */
+    /**
+     * Optional callback executed when the animation finishes.
+     * Not called if `loop` is true.
+     */
     onComplete?: (world: World, entity: import("../core/Entity").Entity) => void;
-    /** Si es true, reinicia `currentTime` al llegar al final de la duración. */
+    /** If true, resets `currentTime` to zero when it reaches the duration, looping indefinitely. */
     loop?: boolean;
 }
 
 /**
- * Sistema que procesa las animaciones de UI frame a frame.
+ * System that processes UI animations frame-by-frame.
  *
- * @responsibility Actualizar las propiedades de `UIElement` basadas en el progreso de sus `UITween`.
+ * @remarks
+ * This system iterates through all entities with both `UIElement` and `UITween`.
+ * It calculates the interpolation progress and directly mutates the target
+ * property in the {@link UIElementComponent}.
+ *
+ * @responsibility Update UI properties based on the progress of their active tweens.
  * @queries `UIElement`, `UITween`.
  * @mutates `UIElementComponent`, `UITweenComponent`.
- * @executionOrder Presentation Phase (antes del renderizado, generalmente después del layout si el tween afecta offsets).
- * @conceptualRisk [DT_UNIT_MISMATCH] El sistema asume que `deltaTime` está en la misma unidad que `duration` (ms).
- * Si el motor entrega segundos, la animación será extremadamente lenta o imperceptible.
+ * @executionOrder Presentation Phase (before rendering, typically after layout if the tween affects offsets).
+ *
+ * @conceptualRisk [DT_UNIT_MISMATCH] The system assumes `deltaTime` is in milliseconds.
+ * If the engine provides seconds, the animation will be extremely slow or imperceptible.
  */
 export class UITweenSystem extends System {
     /**
-     * Avanza el tiempo de todos los tweens activos y actualiza los componentes de UI asociados.
+     * Advances the time of all active tweens and updates associated UI components.
      *
-     * @param world - El mundo ECS.
-     * @param deltaTime - El tiempo transcurrido desde el último frame (ms esperados).
+     * @param world - The ECS world.
+     * @param deltaTime - Elapsed time since the last frame in milliseconds.
      *
-     * @sideEffect Modifica `UIElement.opacity/offsetX/offsetY`.
-     * @sideEffect Elimina `UITweenComponent` de la entidad al finalizar (si `loop` es false).
+     * @sideEffect Modifies `UIElement.opacity/offsetX/offsetY`.
+     * @sideEffect Removes the `UITweenComponent` from the entity upon completion (if `loop` is false).
      */
     public update(world: World, deltaTime: number): void {
         const entities = world.query("UIElement", "UITween");
@@ -83,6 +103,9 @@ export class UITweenSystem extends System {
         }
     }
 
+    /**
+     * Resolves the internal easing function.
+     */
     private ease(t: number, type: string): number {
         switch (type) {
             case "easeIn": return t * t;
