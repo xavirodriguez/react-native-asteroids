@@ -3,6 +3,7 @@ import { TransformComponent, HealthComponent, TTLComponent, Star } from "../../.
 import { Platform } from "react-native";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
+import type { SkCanvas, SkPaint } from "@shopify/react-native-skia";
 
 // Lazy initialize paint to avoid issues in environments where Skia is not fully ready at module load time
 let paint: unknown = null;
@@ -20,7 +21,7 @@ const getPaint = () => {
     return paint;
 };
 
-export const drawSkiaShip: ShapeDrawer<Record<string, unknown>> = (canvas, entity, _pos, render, world) => {
+export const drawSkiaShip: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, render, world) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia, BlurStyle } =
@@ -67,7 +68,7 @@ export const drawSkiaShip: ShapeDrawer<Record<string, unknown>> = (canvas, entit
         shipPath.close();
 
         p.setColor(Skia.Color("#DDDDDD"));
-        p.setStyle(Skia.PaintStyle.Fill);
+        p.setStyle(PaintStyle.Fill);
         canvas.drawPath(shipPath, p);
 
         p.setColor(Skia.Color(render.color));
@@ -77,7 +78,7 @@ export const drawSkiaShip: ShapeDrawer<Record<string, unknown>> = (canvas, entit
 
         // Details
         p.setColor(Skia.Color("#FF0000"));
-        p.setStyle(Skia.PaintStyle.Fill);
+        p.setStyle(PaintStyle.Fill);
         canvas.drawRect(Skia.XYWHRect(-size / 2, size / 6, size / 6, size / 8), p);
         canvas.drawRect(Skia.XYWHRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8), p);
     } catch (_e) {
@@ -85,7 +86,7 @@ export const drawSkiaShip: ShapeDrawer<Record<string, unknown>> = (canvas, entit
     }
 };
 
-export const drawSkiaUfo: ShapeDrawer<Record<string, unknown>> = (canvas, _entity, _pos, render) => {
+export const drawSkiaUfo: ShapeDrawer<SkCanvas> = (canvas, _entity, _pos, render) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia, BlurStyle } =
@@ -105,11 +106,11 @@ export const drawSkiaUfo: ShapeDrawer<Record<string, unknown>> = (canvas, _entit
 
         p.setAlphaf(1.0);
         p.setColor(Skia.Color("#999"));
-        p.setStyle(Skia.PaintStyle.Fill);
+        p.setStyle(PaintStyle.Fill);
         canvas.drawOval(Skia.XYWHRect(-size, -size / 2, size * 2, size), p);
 
         p.setColor(Skia.Color(color));
-        p.setStyle(Skia.PaintStyle.Stroke);
+        p.setStyle(PaintStyle.Stroke);
         canvas.drawOval(Skia.XYWHRect(-size, -size / 2, size * 2, size), p);
 
         p.setColor(Skia.Color("#00ffff"));
@@ -125,7 +126,7 @@ export const drawSkiaUfo: ShapeDrawer<Record<string, unknown>> = (canvas, _entit
     } catch (_e) { /* ignore */ }
 };
 
-export const skiaStarfieldEffect: EffectDrawer<Record<string, unknown>> = (canvas, snapshot, width, height, world) => {
+export const skiaStarfieldEffect: EffectDrawer<SkCanvas> = (canvas, _snapshot, width, height, world) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia } =
@@ -145,7 +146,7 @@ export const skiaStarfieldEffect: EffectDrawer<Record<string, unknown>> = (canva
             if (!shipPos) return;
 
             p.setColor(Skia.Color("white"));
-            p.setStyle(Skia.PaintStyle.Fill);
+            p.setStyle(PaintStyle.Fill);
 
             gameState.stars.forEach((star: Star) => {
               const parallaxX = (star.x - (shipPos.worldX ?? shipPos.x) * (0.05 * (star.layer + 1)) + width) % width;
@@ -159,7 +160,7 @@ export const skiaStarfieldEffect: EffectDrawer<Record<string, unknown>> = (canva
     } catch (_e) { /* ignore */ }
 };
 
-export const skiaScreenShakeEffect: EffectDrawer<Record<string, unknown>> = (canvas, world) => {
+export const skiaScreenShakeEffect: EffectDrawer<SkCanvas> = (canvas, _snapshot, _width, _height, world) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia } =
@@ -177,7 +178,7 @@ export const skiaScreenShakeEffect: EffectDrawer<Record<string, unknown>> = (can
     } catch (_e) { /* ignore */ }
 };
 
-export const drawSkiaParticle: ShapeDrawer<Record<string, unknown>> = (canvas, entity, _pos, render, world) => {
+export const drawSkiaParticle: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, render, world) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia } =
@@ -196,14 +197,14 @@ export const drawSkiaParticle: ShapeDrawer<Record<string, unknown>> = (canvas, e
 
         p.setColor(Skia.Color(`hsl(${hue}, 100%, ${lightness}%)`));
         p.setAlphaf(lifeRatio);
-        p.setStyle(Skia.PaintStyle.Fill);
+        p.setStyle(PaintStyle.Fill);
 
         const size = render.size * lifeRatio;
         canvas.drawCircle(0, 0, size, p);
     } catch (_e) { /* ignore */ }
 };
 
-export const drawSkiaBullet: ShapeDrawer<Record<string, unknown>> = (canvas, _entity, _pos, render) => {
+export const drawSkiaBullet: ShapeDrawer<SkCanvas> = (canvas, _entity, _pos, render) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia, BlurStyle } =
@@ -223,7 +224,7 @@ export const drawSkiaBullet: ShapeDrawer<Record<string, unknown>> = (canvas, _en
         p.setMaskFilter(null);
         p.setAlphaf(1.0);
         p.setColor(Skia.Color("#FFFFFF"));
-        p.setStyle(Skia.PaintStyle.Fill);
+        p.setStyle(PaintStyle.Fill);
         canvas.drawCircle(0, 0, size, p);
         canvas.restore();
     } catch (_e) { /* ignore */ }

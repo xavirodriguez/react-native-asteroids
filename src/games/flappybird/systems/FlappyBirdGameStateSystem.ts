@@ -10,6 +10,7 @@ import { createPipe } from "../EntityFactory";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { EventBus } from "../../../engine/core/EventBus";
 import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
+import { BaseGame } from "../../../engine/core/BaseGame";
 
 /**
  * System that manages game logic: scores, spawner, and game over condition.
