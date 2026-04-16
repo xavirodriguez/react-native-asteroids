@@ -105,7 +105,7 @@ export class SpaceInvadersCollisionSystem extends System {
         world.addComponent(popup, { type: "UIText", content: `x${gameState.multiplier}` });
         world.addComponent(popup, { type: "TTL", remaining: 1000, total: 1000 });
 
-        JuiceSystem.add(world, popup, { property: "y", target: pos.y - 60, duration: 1000, easing: "easeOut" });
+        JuiceSystem.add(world, popup, { property: "y", target: -40, duration: 1000, easing: "easeOut" });
         JuiceSystem.add(world, popup, { property: "opacity", target: 0, duration: 1000, easing: "easeIn" });
       }
 

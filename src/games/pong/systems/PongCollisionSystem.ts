@@ -59,11 +59,11 @@ export class PongCollisionSystem extends System {
         const originalPaddleX = paddlePos.x;
         Juice.add(world, paddleEntity, {
           property: "x",
-          target: originalPaddleX + (recoilDir * 10),
+          target: recoilDir * 10,
           duration: 50,
           easing: "easeOut",
           onComplete: (e) => {
-            Juice.add(world, e, { property: "x", target: originalPaddleX, duration: 150, easing: "elasticOut" });
+            Juice.add(world, e, { property: "x", target: 0, duration: 150, easing: "elasticOut" });
           }
         });
 

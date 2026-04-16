@@ -136,13 +136,13 @@ export class FlappyBirdCollisionSystem extends System {
 
         JuiceSystem.add(world, birdEntity, {
           property: "scaleX",
-          target: 1.5,
+          target: 0.5,
           duration: 100,
           easing: "easeOut",
           onComplete: (e) => {
             JuiceSystem.add(world, e, {
               property: "scaleX",
-              target: 1,
+              target: 0,
               duration: 200,
               easing: "elasticOut"
             });
@@ -150,13 +150,13 @@ export class FlappyBirdCollisionSystem extends System {
         });
         JuiceSystem.add(world, birdEntity, {
           property: "scaleY",
-          target: 0.5,
+          target: -0.5,
           duration: 100,
           easing: "easeOut",
           onComplete: (e) => {
             JuiceSystem.add(world, e, {
               property: "scaleY",
-              target: 1,
+              target: 0,
               duration: 200,
               easing: "elasticOut"
             });
