@@ -2,7 +2,7 @@ import { World } from "../../../engine/core/World";
 import { System } from "../../../engine/core/System";
 import { Entity, TransformComponent, CollisionEventsComponent, Collider2DComponent, RenderComponent } from "../../../engine/types/EngineTypes";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
-import { FlappyBirdState, BirdComponent, PipeComponent } from "../types/FlappyBirdTypes";
+import { FlappyBirdState, BirdComponent } from "../types/FlappyBirdTypes";
 import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
 import { Juice } from "../../../engine/utils/Juice";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
@@ -60,15 +60,15 @@ export class FlappyBirdCollisionSystem extends System {
 
       const birdPos = world.getComponent<TransformComponent>(bird, "Transform")!;
       const birdCol = world.getComponent<Collider2DComponent>(bird, "Collider2D")!; // radius is in shape
-      const birdRadius = birdCol.shape.type === "circle" ? (birdCol.shape as import("../../../engine/physics/shapes/ShapeTypes").CircleShape).radius : 0;
+      const birdRadius = birdCol.shape.type === "circle" ? birdCol.shape.radius : 0;
 
       for (const pipe of pipes) {
         const pipePos = world.getComponent<TransformComponent>(pipe, "Transform")!;
         const pipeComp = world.getComponent<PipeComponent>(pipe, "Pipe")!;
         const pipeCol = world.getComponent<Collider2DComponent>(pipe, "Collider2D")!;
 
-        const pipeWidth = pipeCol.shape.type === "aabb" ? (pipeCol.shape as import("../../../engine/physics/shapes/ShapeTypes").AABBShape).halfWidth * 2 : 0;
-        const halfPipeHeight = pipeCol.shape.type === "aabb" ? (pipeCol.shape as import("../../../engine/physics/shapes/ShapeTypes").AABBShape).halfHeight : 0;
+        const pipeWidth = pipeCol.shape.type === "aabb" ? pipeCol.shape.halfWidth * 2 : 0;
+        const halfPipeHeight = pipeCol.shape.type === "aabb" ? pipeCol.shape.halfHeight : 0;
         const isTopPipe = pipePos.y < pipeComp.gapY;
 
         // Bird AABB
@@ -125,8 +125,6 @@ export class FlappyBirdCollisionSystem extends System {
     const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
     if (gameState && !gameState.isGameOver) {
       gameState.isGameOver = true;
-      const eventBus = world.getResource<EventBus>("EventBus");
-      if (eventBus) eventBus.emit("game:over", {});
 
       const birds = world.query("Bird");
       birds.forEach(birdEntity => {
@@ -138,13 +136,13 @@ export class FlappyBirdCollisionSystem extends System {
 
         JuiceSystem.add(world, birdEntity, {
           property: "scaleX",
-          target: 1.5,
+          target: 0.5,
           duration: 100,
           easing: "easeOut",
           onComplete: (e) => {
             JuiceSystem.add(world, e, {
               property: "scaleX",
-              target: 1,
+              target: 0,
               duration: 200,
               easing: "elasticOut"
             });
@@ -152,13 +150,13 @@ export class FlappyBirdCollisionSystem extends System {
         });
         JuiceSystem.add(world, birdEntity, {
           property: "scaleY",
-          target: 0.5,
+          target: -0.5,
           duration: 100,
           easing: "easeOut",
           onComplete: (e) => {
             JuiceSystem.add(world, e, {
               property: "scaleY",
-              target: 1,
+              target: 0,
               duration: 200,
               easing: "elasticOut"
             });

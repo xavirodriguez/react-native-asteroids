@@ -46,52 +46,75 @@ export class HierarchySystem extends System {
    */
   public update(world: World, _deltaTime: number): void {
     const transforms = world.query("Transform");
-    const processed = new Set<Entity>();
+    if (transforms.length === 0) return;
+
     this.wasDirty.clear();
 
+    // 1. Build processing order (Topological Sort - fully iterative)
+    const order: Entity[] = [];
+    const visited = new Set<Entity>();
+    const processing = new Set<Entity>();
+    const stack: { entity: Entity, stage: 'enter' | 'exit' }[] = [];
+
     for (let i = 0; i < transforms.length; i++) {
-      this.updateTransform(world, transforms[i], processed, false);
+      const startEntity = transforms[i];
+      if (visited.has(startEntity)) continue;
+
+      stack.push({ entity: startEntity, stage: 'enter' });
+
+      while (stack.length > 0) {
+        const current = stack.pop()!;
+        const { entity, stage } = current;
+
+        if (stage === 'enter') {
+          if (visited.has(entity)) continue;
+          if (processing.has(entity)) {
+            console.warn(`[HierarchySystem] Circular dependency detected at entity ${entity}.`);
+            continue;
+          }
+
+          processing.add(entity);
+          stack.push({ entity, stage: 'exit' });
+
+          const transform = world.getComponent<TransformComponent>(entity, "Transform");
+          if (transform && transform.parent !== undefined) {
+            stack.push({ entity: transform.parent, stage: 'enter' });
+          }
+        } else {
+          processing.delete(entity);
+          visited.add(entity);
+          order.push(entity);
+        }
+      }
     }
-  }
 
-  /**
-   * Actualiza recursivamente la transformación de una entidad.
-   */
-  private updateTransform(world: World, entity: Entity, processed: Set<Entity>, forcedDirty: boolean): boolean {
-    if (processed.has(entity)) {
-      return this.wasDirty.has(entity);
-    }
+    // 2. Iteratively process transformations in topological order
+    for (let i = 0; i < order.length; i++) {
+      const entity = order[i];
+      const transform = world.getComponent<TransformComponent>(entity, "Transform");
+      if (!transform) continue;
 
-    const transform = world.getComponent<TransformComponent>(entity, "Transform");
-    if (!transform) return false;
+      let parentDirty = false;
+      if (transform.parent !== undefined) {
+        parentDirty = this.wasDirty.has(transform.parent);
+      }
 
-    // A transformation is dirty if it's explicitly marked OR its parent was updated this frame
-    let isDirty = transform.dirty || forcedDirty;
-
-    if (transform.parent !== undefined) {
-      // Propagation: parent's dirty state forces child to be dirty
-      const parentChanged = this.updateTransform(world, transform.parent, processed, forcedDirty);
-      isDirty = isDirty || parentChanged;
+      const isDirty = transform.dirty || parentDirty;
 
       if (isDirty) {
-        const parentTransform = world.getComponent<TransformComponent>(transform.parent, "Transform")!;
-        const parentMat = this.getMatrixFromTransform(parentTransform, true);
-        const localMat = this.getMatrixFromTransform(transform, false);
-        const worldMat = this.multiplyMat3(parentMat, localMat);
-        this.applyMatrixToWorldTransform(transform, worldMat);
+        if (transform.parent !== undefined) {
+          const parentTransform = world.getComponent<TransformComponent>(transform.parent, "Transform")!;
+          const parentMat = this.getMatrixFromTransform(parentTransform, true);
+          const localMat = this.getMatrixFromTransform(transform, false);
+          const worldMat = this.multiplyMat3(parentMat, localMat);
+          this.applyMatrixToWorldTransform(transform, worldMat);
+        } else {
+          this.setToLocal(transform);
+        }
+        transform.dirty = false;
+        this.wasDirty.add(entity);
       }
-    } else if (isDirty) {
-      // Root entity
-      this.setToLocal(transform);
     }
-
-    if (isDirty) {
-      transform.dirty = false;
-      this.wasDirty.add(entity);
-    }
-
-    processed.add(entity);
-    return isDirty;
   }
 
   private setToLocal(t: TransformComponent): void {

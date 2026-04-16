@@ -4,7 +4,7 @@ import type { BaseGame } from "../engine/core/BaseGame";
 
 // Constructor type - accepts any class that extends BaseGame
 type GameConstructor<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, boolean>> =
-  new () => TGame;
+  new (config: { isMultiplayer?: boolean, seed?: number }) => TGame;
 
 export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, boolean>> {
   game: TGame;
@@ -40,7 +40,6 @@ export function useGame<
   useKeepAwake(!isPaused);
 
   useEffect(() => {
-    // @ts-expect-error - Constructor argument handling
     const gameInstance = new GameClass({ isMultiplayer });
     setGame(gameInstance);
 
@@ -79,8 +78,8 @@ export function useGame<
   }, [GameClass, isMultiplayer]);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
-    gameRef.current?.setInput(input as unknown as Record<string, boolean>);
-  }, []);
+    game?.setInput(input as Record<string, boolean>);
+  }, [game]);
 
   const togglePause = useCallback(() => {
     if (!game) {

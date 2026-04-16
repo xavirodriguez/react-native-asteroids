@@ -1,49 +1,19 @@
-/**
- * @packageDocumentation
- * Resource Management and Loading Pipeline.
- * Handles the asynchronous loading, caching, and reference counting of game assets.
- */
-
 import { AssetDescriptor, AssetHandle } from "./AssetTypes";
 
 /**
  * AssetLoader for managing game assets with caching and reference counting.
  *
  * @remarks
- * This class implements a strict ownership model. Scenes or systems must increment
- * and decrement reference counts when they start/stop using an asset. When the count
- * reaches zero, the asset is automatically disposed and removed from cache.
- *
- * It includes debug assertions to detect common pitfalls like memory leaks
- * or double-unload operations.
- *
- * @responsibility Asynchronous loading of textures, audio, JSON, and fonts.
- * @responsibility Centralized cache for shared resources.
- * @responsibility Reference counting to automate lifecycle and memory management.
- *
- * @example
- * ```ts
- * const loader = new AssetLoader();
- * loader.queueAssets([{ id: "hero", type: "texture", uri: "/sprites/hero.png" }]);
- * await loader.loadAll();
- * const heroTexture = loader.get("hero").data;
- * // ... later ...
- * loader.unloadGroup(["hero"]);
- * ```
+ * Implements a strict ownership model where scenes or systems must increment/decrement
+ * reference counts. Includes debug assertions to detect leaks or double-unloads.
  */
 export class AssetLoader {
-  /** Internal cache mapping asset IDs to their state handles. */
   private cache = new Map<string, AssetHandle>();
-  /** Pending asset descriptors waiting to be loaded. */
   private queue: AssetDescriptor[] = [];
-  /** Reference counts per asset ID. */
   private refCounts = new Map<string, number>();
 
   /**
-   * Enqueues assets for loading in the next `loadAll` call.
-   *
-   * @param assets - Array of descriptors defining the resources to fetch.
-   * @postcondition Descriptors are added to the internal queue.
+   * Enqueues assets for loading.
    */
   public queueAssets(assets: AssetDescriptor[]): void {
     this.queue.push(...assets);
@@ -51,12 +21,7 @@ export class AssetLoader {
 
   /**
    * Loads all enqueued assets asynchronously.
-   *
-   * @remarks
-   * For already loaded assets in the queue, it simply increments their reference count.
-   * For new assets, it creates a 'loading' handle, performs the IO, and then updates the status.
-   *
-   * @returns A promise that resolves when all queued assets are either ready or in an error state.
+   * Increments reference counts for already loaded assets.
    */
   public async loadAll(): Promise<void> {
     const assetsToLoad = [...this.queue];
@@ -92,12 +57,6 @@ export class AssetLoader {
 
   /**
    * Gets an asset handle from the cache.
-   *
-   * @param id - The unique asset identifier.
-   * @returns A handle containing the status and (if ready) the loaded data.
-   *
-   * @remarks
-   * This method does NOT increment the reference count.
    */
   public get<T>(id: string): AssetHandle<T> {
     const handle = this.cache.get(id);
@@ -109,10 +68,6 @@ export class AssetLoader {
 
   /**
    * Explicitly increments the reference count for an asset.
-   * Useful when sharing an already loaded asset between systems.
-   *
-   * @param id - The asset identifier.
-   * @mutates refCounts
    */
   public incrementRef(id: string): void {
     const count = this.refCounts.get(id);
@@ -126,15 +81,9 @@ export class AssetLoader {
   /**
    * Decrements reference counts and unloads assets if they reach zero.
    *
-   * @param ids - Array of asset identifiers to release.
-   *
    * @remarks
-   * Enforces symmetry in load/unload operations. If an asset is released more
-   * times than it was loaded/referenced, a warning is issued.
-   *
-   * @throws Error (via console.error) if a reference count underflow is detected.
-   * @mutates cache, refCounts
-   * @sideEffect Calls `dispose()` on the asset data if the method exists.
+   * Enforces symmetry in load/unload operations.
+   * @throws Error if a reference count underflow is detected (debug only).
    */
   public unloadGroup(ids: string[]): void {
     for (let i = 0; i < ids.length; i++) {
@@ -162,25 +111,18 @@ export class AssetLoader {
     }
   }
 
-  /**
-   * Internal helper to trigger resource cleanup.
-   */
   private disposeAsset(id: string): void {
     const handle = this.cache.get(id);
     if (!handle || !handle.data) return;
 
     const data = handle.data as Record<string, unknown>;
-    // Generic cleanup hook for heavy resources like textures or sound buffers
     if (typeof data.dispose === 'function') {
         (data.dispose as () => void)();
     }
   }
 
   /**
-   * Returns current loading progress summary.
-   *
-   * @returns Object with loaded count, total count, and normalized percentage (0.0 to 1.0).
-   * @queries cache
+   * Returns current loading progress.
    */
   public progress(): { loaded: number; total: number; percent: number } {
     let loaded = 0;
@@ -199,10 +141,6 @@ export class AssetLoader {
     };
   }
 
-  /**
-   * Platform-specific loading implementation.
-   * @remarks Currently simplified for documentation purposes.
-   */
   private async performLoad(desc: AssetDescriptor): Promise<unknown> {
     if (desc.type === 'json') {
       return Promise.resolve({ success: true });
@@ -210,11 +148,6 @@ export class AssetLoader {
     return Promise.resolve(desc.uri);
   }
 
-  /**
-   * Helper for quick preloading of multiple texture assets.
-   *
-   * @param assets - Map of ID to URI strings.
-   */
   public async preload(assets: Record<string, string>): Promise<void> {
     const descriptors: AssetDescriptor[] = Object.entries(assets).map(([id, uri]) => ({
       id,
@@ -227,10 +160,6 @@ export class AssetLoader {
 
   /**
    * Debug helper to detect memory leaks.
-   * Logs a warning if any assets remain in memory with a positive reference count.
-   *
-   * @remarks
-   * Recommended to call this during scene transitions or at the end of a session.
    */
   public assertNoLeaks(): void {
     if (this.cache.size > 0) {

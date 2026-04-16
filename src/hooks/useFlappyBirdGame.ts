@@ -10,7 +10,7 @@ import type { FlappyBirdState, FlappyBirdInput } from "../games/flappybird/types
  */
 export function useFlappyBirdGame(isMultiplayer: boolean = false) {
   const { game, gameState, isPaused, handleInput, togglePause, restart } =
-    useGame<FlappyBirdGame, FlappyBirdState, FlappyBirdInput>(FlappyBirdGame as unknown as new () => FlappyBirdGame, INITIAL_FLAPPY_STATE, isMultiplayer);
+    useGame<FlappyBirdGame, FlappyBirdState, FlappyBirdInput>(FlappyBirdGame, INITIAL_FLAPPY_STATE, isMultiplayer);
 
   const { highScore, updateHighScore } = useHighScore("flappy-high-score");
 

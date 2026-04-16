@@ -1,34 +1,7 @@
-/**
- * @packageDocumentation
- * Text rendering pipeline.
- * Dispatches drawing calls for both system and bitmap fonts to the Canvas context.
- */
-
 import { BitmapFontDefinition } from "./FontRegistry";
 import { TextMeasure } from "./TextMeasure";
 
-/**
- * Utilities for rendering text in Canvas 2D.
- *
- * @responsibility Abstract standard and bitmap text drawing operations.
- * @responsibility Handle text alignment and multi-line rendering.
- */
 export class TextRenderer {
-  /**
-   * Draws text using native browser/system fonts.
-   *
-   * @param ctx - Canvas 2D rendering context.
-   * @param text - The string to render.
-   * @param x - Anchor X coordinate.
-   * @param y - Anchor Y coordinate.
-   * @param fontSize - Size in pixels.
-   * @param color - Text fill color.
-   * @param fontFamily - CSS font family.
-   * @param align - Horizontal alignment relative to (x, y).
-   * @param maxWidth - Optional width for wrapping.
-   *
-   * @sideEffect Mutates context state and draws glyphs.
-   */
   public static drawSystemText(
     ctx: CanvasRenderingContext2D,
     text: string,
@@ -56,24 +29,6 @@ export class TextRenderer {
     ctx.restore();
   }
 
-  /**
-   * Draws text by copying glyphs from a bitmap font texture.
-   *
-   * @param ctx - Canvas 2D rendering context.
-   * @param text - The string to render.
-   * @param font - The font definition metadata.
-   * @param fontTexture - The image containing the glyph sheet.
-   * @param x - Anchor X coordinate.
-   * @param y - Anchor Y coordinate.
-   * @param fontSize - Desired font size (scales the bitmap glyphs).
-   * @param _color - Optional color overlay (requires context globalCompositeOperation tricks).
-   * @param align - Horizontal alignment relative to (x, y).
-   * @param maxWidth - Optional width for wrapping.
-   *
-   * @remarks
-   * Currently, the standard `drawImage` does not support direct coloring. Tinting would require
-   * an offscreen buffer or a specific shader in a WebGL renderer.
-   */
   public static drawBitmapText(
     ctx: CanvasRenderingContext2D,
     text: string,
@@ -81,7 +36,7 @@ export class TextRenderer {
     fontTexture: HTMLImageElement | ImageBitmap,
     x: number, y: number,
     fontSize: number,
-    _color: string,
+    color: string,
     align: "left" | "center" | "right",
     maxWidth?: number
   ): void {
@@ -93,8 +48,6 @@ export class TextRenderer {
     let currentY = y;
     for (const line of metrics.lines) {
         let currentX = x;
-
-        // Manual alignment calculation for bitmap fonts
         if (align === "center") {
             let lineWidth = 0;
             for (const char of line) {
@@ -111,7 +64,6 @@ export class TextRenderer {
             currentX -= lineWidth;
         }
 
-        // Draw individual characters
         for (let i = 0; i < line.length; i++) {
             const char = line[i];
             const glyph = font.glyphs.get(char) || font.glyphs.get(" ");

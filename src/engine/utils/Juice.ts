@@ -52,20 +52,20 @@ export class Juice {
   public static pop(world: World, entity: Entity, scale: number = 1.2, duration: number = 100): void {
     JuiceSystem.add(world, entity, {
       property: "scaleX",
-      target: scale,
+      target: scale - 1,
       duration: duration / 2,
       easing: "easeOut",
       onComplete: (e) => {
-        JuiceSystem.add(world, e, { property: "scaleX", target: 1, duration: duration, easing: "elasticOut" });
+        JuiceSystem.add(world, e, { property: "scaleX", target: 0, duration: duration, easing: "elasticOut" });
       }
     });
     JuiceSystem.add(world, entity, {
       property: "scaleY",
-      target: scale,
+      target: scale - 1,
       duration: duration / 2,
       easing: "easeOut",
       onComplete: (e) => {
-        JuiceSystem.add(world, e, { property: "scaleY", target: 1, duration: duration, easing: "elasticOut" });
+        JuiceSystem.add(world, e, { property: "scaleY", target: 0, duration: duration, easing: "elasticOut" });
       }
     });
   }
@@ -83,20 +83,20 @@ export class Juice {
   public static squash(world: World, entity: Entity, sx: number = 1.5, sy: number = 0.5, duration: number = 100): void {
     JuiceSystem.add(world, entity, {
       property: "scaleX",
-      target: sx,
+      target: sx - 1,
       duration: duration,
       easing: "easeOut",
       onComplete: (e) => {
-        JuiceSystem.add(world, e, { property: "scaleX", target: 1, duration: duration * 2, easing: "elasticOut" });
+        JuiceSystem.add(world, e, { property: "scaleX", target: 0, duration: duration * 2, easing: "elasticOut" });
       }
     });
     JuiceSystem.add(world, entity, {
       property: "scaleY",
-      target: sy,
+      target: sy - 1,
       duration: duration,
       easing: "easeOut",
       onComplete: (e) => {
-        JuiceSystem.add(world, e, { property: "scaleY", target: 1, duration: duration * 2, easing: "elasticOut" });
+        JuiceSystem.add(world, e, { property: "scaleY", target: 0, duration: duration * 2, easing: "elasticOut" });
       }
     });
   }

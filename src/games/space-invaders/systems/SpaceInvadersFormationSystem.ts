@@ -74,7 +74,7 @@ export class SpaceInvadersFormationSystem extends System {
     }
   }
 
-  private fireFromFormation(world: World, invaderEntities: number[]): void {
+  private fireFromFormation(world: World, invaderEntities: ReadonlyArray<number>): void {
     // Group invaders by column and pick the bottom one
     const columns: Map<number, { entity: number, y: number }> = new Map();
 

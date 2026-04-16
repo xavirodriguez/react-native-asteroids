@@ -13,7 +13,7 @@ describe("FlappyBirdGameStateSystem", () => {
     game = new FlappyBirdGame();
     // BaseGame calls registerSystems in constructor, which sets up the scene
     world = game.getWorld();
-    system = new FlappyBirdGameStateSystem(game as any);
+    system = new FlappyBirdGameStateSystem(game);
   });
 
   it("should initialize with score 0", () => {
@@ -28,18 +28,18 @@ describe("FlappyBirdGameStateSystem", () => {
     // BIRD_X is 100.
     const _state = createGameState(world);
     const pipe = world.createEntity();
-    world.addComponent(pipe, { type: "Transform", x: 150, y: 300, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../../../engine/core/CoreComponents").TransformComponent);
-    world.addComponent(pipe, { type: "Pipe", gapY: 300, gapSize: 140, scored: false } as import("../../types/FlappyBirdTypes").PipeComponent);
+    world.addComponent(pipe, { type: "Transform", x: 150, y: 300 });
+    world.addComponent(pipe, { type: "Pipe", gapY: 300, gapSize: 140, scored: false });
 
     system.update(world, 16.67);
     expect(world.getSingleton<FlappyBirdState>("FlappyState")!.score).toBe(0);
 
     // Move pipe past bird
-    const pos = world.getComponent<import("../../../../engine/core/CoreComponents").TransformComponent>(pipe, "Transform")!;
+    const pos = world.getComponent<{x: number}>(pipe, "Transform")!;
     pos.x = 50;
 
     system.update(world, 16.67);
     expect(world.getSingleton<FlappyBirdState>("FlappyState")!.score).toBe(1);
-    expect(world.getComponent<import("../../types/FlappyBirdTypes").PipeComponent>(pipe, "Pipe")!.scored).toBe(true);
+    expect(world.getComponent<{scored: boolean}>(pipe, "Pipe")!.scored).toBe(true);
   });
 });

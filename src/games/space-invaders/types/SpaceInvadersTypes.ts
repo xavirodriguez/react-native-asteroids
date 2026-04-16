@@ -3,7 +3,7 @@ import { Component } from "../../../engine/types/EngineTypes";
 /**
  * Represents the current state of user inputs for Space Invaders.
  */
-export interface InputState extends Record<string, boolean> {
+export interface InputState {
   moveLeft: boolean;
   moveRight: boolean;
   shoot: boolean;
@@ -12,11 +12,8 @@ export interface InputState extends Record<string, boolean> {
 /**
  * Stores the current input state for the player in Space Invaders.
  */
-export interface InputComponent extends Component {
+export interface InputComponent extends Component, InputState {
   type: "Input";
-  moveLeft: boolean;
-  moveRight: boolean;
-  shoot: boolean;
   shootCooldownRemaining: number;
 }
 

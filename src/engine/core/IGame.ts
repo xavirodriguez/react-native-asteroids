@@ -26,7 +26,6 @@ export type UpdateListener<TGame> = (game: TGame) => void;
  * podrían causar estados inconsistentes si el juego no maneja bloqueos de transición.
  */
 export interface IGame<TGame = unknown> {
-  isMultiplayer: boolean;
   /**
    * Inicia la ejecución del bucle de juego.
    * @contract Debe invocar a `GameLoop.start()`.
@@ -110,9 +109,4 @@ export interface IGame<TGame = unknown> {
    * @contract Debe ser el mismo seed usado para inicializar RandomService en el canal 'gameplay'.
    */
   getSeed(): number;
-
-  /**
-   * Registers game-specific rendering logic to the provided renderer.
-   */
-  initializeRenderer(renderer: import("../rendering/Renderer").Renderer<any>): void;
 }

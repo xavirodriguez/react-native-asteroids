@@ -3,8 +3,7 @@ import { CollisionSystem2D } from "../../../../engine/physics/collision/Collisio
 import { AsteroidCollisionSystem } from "../AsteroidCollisionSystem";
 import { ParticlePool } from "../../EntityPool";
 import { createAsteroid, createShip, createBullet, createGameState } from "../../EntityFactory";
-import { GAME_CONFIG, type GameStateComponent, AsteroidComponent } from "../../types/AsteroidTypes";
-import { HealthComponent } from "../../../../engine/core/CoreComponents";
+import { GAME_CONFIG, type GameStateComponent } from "../../types/AsteroidTypes";
 
 describe("AsteroidCollisionSystem", () => {
   let world: World;
@@ -44,7 +43,7 @@ describe("AsteroidCollisionSystem", () => {
     const asteroids = world.query("Asteroid");
     expect(asteroids.length).toBe(2);
 
-    const sizeMap = asteroids.map(id => world.getComponent<AsteroidComponent>(id, "Asteroid")?.size);
+    const sizeMap = asteroids.map(id => (world.getComponent<any>(id, "Asteroid") as any).size);
     expect(sizeMap).toContain("medium");
     expect(sizeMap.filter(s => s === "medium").length).toBe(2);
   });
@@ -52,7 +51,7 @@ describe("AsteroidCollisionSystem", () => {
   it("should decrease ship health on asteroid collision", () => {
     const ship = createShip({ world, x: 100, y: 100 });
     // Reset invulnerability for testing
-    const h = world.getComponent<HealthComponent>(ship, "Health")!;
+    const h = world.getComponent<any>(ship, "Health");
     h.invulnerableRemaining = 0;
 
     createAsteroid({ world, x: 100, y: 100, size: "small" });
@@ -68,7 +67,7 @@ describe("AsteroidCollisionSystem", () => {
 
   it("should not decrease health if ship is invulnerable", () => {
     const ship = createShip({ world, x: 100, y: 100 });
-    const health = world.getComponent<HealthComponent>(ship, "Health")!;
+    const health = world.getComponent<any>(ship, "Health") as any;
     health.invulnerableRemaining = 1000;
     const initialHealth = health.current;
 

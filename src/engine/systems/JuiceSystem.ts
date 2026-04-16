@@ -1,4 +1,4 @@
-import { Component, Entity, TransformComponent, RenderComponent } from "../types/EngineTypes";
+import { Component, Entity, TransformComponent, RenderComponent, VisualOffsetComponent } from "../types/EngineTypes";
 import { System } from "../core/System";
 import { World } from "../core/World";
 
@@ -46,12 +46,12 @@ export function createJuiceComponent(): JuiceComponent {
  * Sistema encargado de procesar animaciones procedimentales (Juice) sobre las entidades.
  * Permite efectos visuales reactivos (pop, squash, stretch, fade) sin lógica de estado compleja.
  *
- * @responsibility Actualizar el progreso de cada 
- * @responsibility Interpolar y aplicar valores a {@link TransformComponent} o {@link RenderComponent}.
- * @responsibility Notificar la finalización mediante callbacks
+ * @responsibility Actualizar el progreso de cada {@link JuiceAnimation}.
+ * @responsibility Interpolar y aplicar valores a {@link VisualOffsetComponent} o {@link RenderComponent}.
+ * @responsibility Notificar la finalización mediante callbacks {@link JuiceAnimation.onComplete}.
  *
- * @queries Juice, Transform, Render
- * @mutates Transform.x, Transform.y, Transform.scaleX, Transform.scaleY, Transform.rotation
+ * @queries Juice, VisualOffset, Render
+ * @mutates VisualOffset.x, VisualOffset.y, VisualOffset.scaleX, VisualOffset.scaleY, VisualOffset.rotation
  * @mutates Render.rotation, Render.opacity
  * @executionOrder Fase: Presentation. Debe ejecutarse después de Simulation para sobreescribir visuales.
  *
@@ -59,9 +59,8 @@ export function createJuiceComponent(): JuiceComponent {
  * El sistema utiliza un integrador basado en tiempo real (ms).
  * Se recomienda para efectos no críticos que no afecten la lógica de colisiones.
  *
- * @conceptualRisk [DETERMINISM][MEDIUM] JuiceSystem muta componentes core (Transform) basándose
- * en animaciones visuales. Si un sistema de simulación lee estos valores para colisiones,
- * podría causar desincronización entre clientes.
+ * @conceptualRisk [DETERMINISM][LOW] JuiceSystem ahora muta VisualOffsetComponent en lugar de Transform,
+ * eliminando el riesgo de desincronización en la simulación física.
  * @conceptualRisk [MUTATION][LOW] Las animaciones se eliminan del array durante la iteración
  * inversa; el diseño es seguro ante mutaciones estructurales locales.
  */
@@ -71,17 +70,24 @@ export class JuiceSystem extends System {
 
     entities.forEach((entity) => {
       const juice = world.getComponent<JuiceComponent>(entity, "Juice");
-      const transform = world.getComponent<TransformComponent>(entity, "Transform");
+      let offset = world.getComponent<VisualOffsetComponent>(entity, "VisualOffset");
       const render = world.getComponent<RenderComponent>(entity, "Render");
 
       if (!juice) return;
+
+      // Ensure VisualOffset exists if we have animations that need it
+      if (!offset && juice.animations.some(a => a.property !== "opacity")) {
+        offset = world.addComponent(entity, {
+          type: "VisualOffset", x: 0, y: 0, rotation: 0, scaleX: 0, scaleY: 0
+        } as VisualOffsetComponent);
+      }
 
       for (let i = juice.animations.length - 1; i >= 0; i--) {
         const anim = juice.animations[i];
 
         // Inicializar valor de inicio si es necesario
         if (anim.startValue === undefined) {
-          anim.startValue = this.getPropertyValue(anim.property, transform, render);
+          anim.startValue = this.getPropertyValue(anim.property, offset, render);
         }
 
         anim.elapsed += deltaTime;
@@ -89,7 +95,7 @@ export class JuiceSystem extends System {
         const easedProgress = this.applyEasing(progress, anim.easing || "linear");
 
         const currentValue = anim.startValue + (anim.target - anim.startValue) * easedProgress;
-        this.setPropertyValue(anim.property, currentValue, transform, render);
+        this.setPropertyValue(anim.property, currentValue, offset, render);
 
         if (progress >= 1) {
           juice.animations.splice(i, 1);
@@ -99,30 +105,27 @@ export class JuiceSystem extends System {
     });
   }
 
-  private getPropertyValue(prop: string, transform?: TransformComponent, render?: RenderComponent): number {
+  private getPropertyValue(prop: string, offset?: VisualOffsetComponent, render?: RenderComponent): number {
     switch (prop) {
-      case "scaleX": return transform?.scaleX ?? 1;
-      case "scaleY": return transform?.scaleY ?? 1;
-      case "rotation": return transform?.rotation ?? render?.rotation ?? 0;
-      case "x": return transform?.x ?? 0;
-      case "y": return transform?.y ?? 0;
+      case "scaleX": return offset?.scaleX ?? 0;
+      case "scaleY": return offset?.scaleY ?? 0;
+      case "rotation": return offset?.rotation ?? 0;
+      case "x": return offset?.x ?? 0;
+      case "y": return offset?.y ?? 0;
       case "opacity": return (render?.data?.opacity as number) ?? 1;
       default: return 0;
     }
   }
 
-  private setPropertyValue(prop: string, value: number, transform?: TransformComponent, render?: RenderComponent): void {
-    if (!transform && !render) return;
-
+  private setPropertyValue(prop: string, value: number, offset?: VisualOffsetComponent, render?: RenderComponent): void {
     switch (prop) {
-      case "scaleX": if (transform) transform.scaleX = value; break;
-      case "scaleY": if (transform) transform.scaleY = value; break;
+      case "scaleX": if (offset) offset.scaleX = value; break;
+      case "scaleY": if (offset) offset.scaleY = value; break;
       case "rotation":
-        if (transform) transform.rotation = value;
-        if (render) render.rotation = value;
+        if (offset) offset.rotation = value;
         break;
-      case "x": if (transform) transform.x = value; break;
-      case "y": if (transform) transform.y = value; break;
+      case "x": if (offset) offset.x = value; break;
+      case "y": if (offset) offset.y = value; break;
       case "opacity":
         if (render) {
             if (!render.data) render.data = {};

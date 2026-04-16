@@ -75,7 +75,7 @@ export class KamikazeSystem extends System {
     });
   }
 
-  private spawnKamikaze(world: World, invaders: number[], gameState: GameStateComponent): void {
+  private spawnKamikaze(world: World, invaders: ReadonlyArray<number>, gameState: GameStateComponent): void {
     if (invaders.length === 0) return;
     const randomIndex = Math.floor(Math.random() * invaders.length);
     const invader = invaders[randomIndex];

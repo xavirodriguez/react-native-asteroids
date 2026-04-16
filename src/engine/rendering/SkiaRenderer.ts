@@ -23,7 +23,7 @@ import { RandomService } from "../utils/RandomService";
  * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia puede perderse
  * si la app pasa a segundo plano de forma prolongada.
  */
-export class SkiaRenderer implements Renderer<SkCanvas> {
+export class SkiaRenderer implements Renderer {
   public readonly type = 'skia';
   protected canvas: SkCanvas | null = null;
   protected width: number = 0;
@@ -208,7 +208,8 @@ export class SkiaRenderer implements Renderer<SkCanvas> {
     renderCommands.sort((a, b) => a.zIndex - b.zIndex);
 
     renderCommands.forEach((cmd) => {
-      this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render }, world);
+      const offset = world.getComponent<import("../core/CoreComponents").VisualOffsetComponent>(cmd.entity, "VisualOffset");
+      this.drawEntity(cmd.entity, { Transform: cmd.pos, Render: cmd.render, VisualOffset: offset as any }, world);
     });
 
     this.drawParticles(world);
@@ -223,14 +224,15 @@ export class SkiaRenderer implements Renderer<SkCanvas> {
     const canvas = this.canvas;
     const pos = components["Transform"] as TransformComponent;
     const render = components["Render"] as RenderComponent;
+    const offset = components["VisualOffset"] as any as import("../core/CoreComponents").VisualOffsetComponent;
 
     if (!pos || !render) return;
 
-    const x = pos.worldX !== undefined ? pos.worldX : pos.x;
-    const y = pos.worldY !== undefined ? pos.worldY : pos.y;
-    const rotation = pos.worldRotation !== undefined ? pos.worldRotation : render.rotation;
-    const scaleX = pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1);
-    const scaleY = pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1);
+    const x = (pos.worldX !== undefined ? pos.worldX : pos.x) + (offset?.x ?? 0);
+    const y = (pos.worldY !== undefined ? pos.worldY : pos.y) + (offset?.y ?? 0);
+    const rotation = (pos.worldRotation !== undefined ? pos.worldRotation : render.rotation) + (offset?.rotation ?? 0);
+    const scaleX = (pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1)) + (offset?.scaleX ?? 0);
+    const scaleY = (pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1)) + (offset?.scaleY ?? 0);
 
     canvas.save();
     canvas.translate(x, y);
@@ -267,8 +269,8 @@ export class SkiaRenderer implements Renderer<SkCanvas> {
     }
   }
 
-  public registerShape(name: string, drawer: ShapeDrawer<SkCanvas>): void {
-    this.shapeDrawers.set(name, drawer);
+  public registerShape(_name: string, _drawer: ShapeDrawer<SkCanvas>): void {
+    this.shapeDrawers.set(_name, _drawer);
   }
 
   public registerBackgroundEffect(_name: string, _drawer: EffectDrawer<SkCanvas>): void {
