@@ -1,4 +1,4 @@
-import { Component, Entity, TransformComponent, RenderComponent, VisualOffsetComponent } from "../types/EngineTypes";
+import { Component, Entity, RenderComponent, VisualOffsetComponent } from "../types/EngineTypes";
 import { System } from "../core/System";
 import { World } from "../core/World";
 

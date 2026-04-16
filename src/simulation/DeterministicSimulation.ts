@@ -3,7 +3,7 @@ import { Entity, TransformComponent, VelocityComponent, RenderComponent, HealthC
 import { PhysicsUtils } from "../engine/utils/PhysicsUtils";
 import { ShipPhysics } from "../games/asteroids/utils/ShipPhysics";
 import { GAME_CONFIG, type AsteroidComponent, type GameStateComponent, type UfoComponent, type InputComponent } from "../games/asteroids/types/AsteroidTypes";
-import { createAsteroid, createBullet, createParticle, createUfo } from "../games/asteroids/EntityFactory";
+import { createAsteroid, createParticle, createUfo } from "../games/asteroids/EntityFactory";
 import { RandomService } from "../engine/utils/RandomService";
 import { EventBus } from "../engine/core/EventBus";
 import { ScreenShakeComponent } from "../engine/types/EngineTypes";
