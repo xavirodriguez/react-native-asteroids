@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ * Legacy Camera System for React Native Skia.
+ * This module is maintained for compatibility, but {@link Camera2D} is preferred for new code.
+ */
+
 import { useSharedValue } from "react-native-reanimated";
 import { CameraState, SharedCamera } from "../core/types/SystemTypes";
 import { World } from "../core/World";
@@ -5,6 +11,12 @@ import { TransformComponent } from "../core/CoreComponents";
 
 /**
  * Hook to initialize a shared camera for the Skia renderer.
+ *
+ * @param initialState - Initial values for position, zoom and shake.
+ * @returns A Reanimated SharedValue containing the {@link CameraState}.
+ *
+ * @remarks
+ * This hook should be used within a React component that manages the Skia game view.
  */
 export const useSharedCamera = (initialState: Partial<CameraState> = {}): SharedCamera => {
   return useSharedValue<CameraState>({
@@ -16,45 +28,64 @@ export const useSharedCamera = (initialState: Partial<CameraState> = {}): Shared
 };
 
 /**
- * CameraSystem: Gestiona la lógica de la cámara (seguimiento, lerp, sacudida y límites).
+ * CameraSystem: Manages camera logic (following, lerp, shake, and bounds).
  *
- * @deprecated Este sistema depende de `react-native-reanimated` (SharedValue).
- * Usar {@link Camera2D} para una implementación agnóstica de la plataforma y determinista.
+ * @deprecated This system depends on `react-native-reanimated` (SharedValue) and has non-deterministic shake.
+ * Use {@link Camera2D} for a platform-agnostic and deterministic implementation.
  *
- * @responsibility Calcular la posición de la cámara basada en un objetivo.
- * @responsibility Aplicar límites (clamping) a la vista.
- * @responsibility Gestionar efectos cosméticos como `shake`.
+ * @remarks
+ * Coordinates target following and cosmetic effects like screen shake.
+ * Unlike Camera2D, this system directly mutates a SharedValue for use with Reanimated/Skia.
  *
- * @conceptualRisk [Z-INDEX_FLICKER] Este sistema no maneja planos de profundidad, solo posición 2D.
- * @conceptualRisk [ASYNC_SHAKE] El uso de `setTimeout` para el decaimiento del shake es NO DETERMINISTA
- * y puede causar desincronización en grabaciones/replays.
- * @conceptualRisk [FRAME_RATE_DEPENDENCE] El lerp de posición es dependiente del framerate (no compensa dt).
+ * @responsibility Calculate camera position based on a target entity.
+ * @responsibility Apply viewport clamping based on defined bounds.
+ * @responsibility Manage cosmetic 'shake' effects via timer-based decay.
+ *
+ * @conceptualRisk [Z-INDEX_FLICKER] This system does not handle depth planes, only 2D position.
+ * @conceptualRisk [ASYNC_SHAKE] Use of `setTimeout` for shake decay is NON-DETERMINISTIC
+ * and may cause desync in replays/recordings.
+ * @conceptualRisk [FRAME_RATE_DEPENDENCE] Position LERP is frame-rate dependent (does not compensate for dt).
  */
 export class CameraSystem {
+  /** Entity ID of the transform component to follow. */
   private targetEntityId: number | null = null;
+  /** Viewport boundaries to constrain the camera. */
   private bounds: { minX: number; minY: number; maxX: number; maxY: number } | null = null;
+  /** Linear interpolation factor for movement smoothing. @defaultValue 0.1 */
   private lerpFactor: number = 0.1;
 
+  /**
+   * Creates a new CameraSystem instance.
+   * @param sharedCamera - The shared value used to communicate state to the renderer.
+   */
   constructor(private sharedCamera: SharedCamera) {}
 
   /**
-   * Configura una entidad para ser seguida por la cámara.
-   * @param entityId - ID de la entidad objetivo o null para dejar de seguir.
+   * Sets an entity to be followed by the camera.
+   *
+   * @param entityId - Target entity ID or null to stop following.
+   * @param options - Additional settings like lerp factor.
    */
   follow(entityId: number | null, options: { lerp?: number } = {}): void {
     this.targetEntityId = entityId;
     if (options.lerp !== undefined) this.lerpFactor = options.lerp;
   }
 
+  /**
+   * Sets the world boundaries for the camera.
+   * @param bounds - Min/Max coordinates or null to disable clamping.
+   */
   setBounds(bounds: { minX: number; minY: number; maxX: number; maxY: number } | null): void {
     this.bounds = bounds;
   }
 
   /**
-   * Activa un efecto de sacudida de pantalla.
-   * @param intensity - Magnitud de la sacudida.
-   * @param duration - Duración en milisegundos.
-   * @sideEffect Inicia un temporizador `setTimeout` que muta `sharedCamera.value` fuera del bucle de juego.
+   * Triggers a screen shake effect.
+   *
+   * @param intensity - Magnitude of the shake.
+   * @param duration - Duration in milliseconds before resetting.
+   *
+   * @sideEffect Starts a `setTimeout` that mutates `sharedCamera.value` outside the main loop.
    */
   shake(intensity: number, duration: number = 500): void {
     this.sharedCamera.value = {
@@ -72,14 +103,15 @@ export class CameraSystem {
   }
 
   /**
-   * Actualiza la posición de la cámara.
-   * @param world - El mundo ECS para buscar el Transform del objetivo.
-   * @param deltaTime - Tiempo transcurrido (actualmente no se usa para el lerp, riesgo de drift).
-   * @param viewportSize - Dimensiones del área visible.
-   * @mutates sharedCamera
+   * Updates the camera position based on its target.
+   *
+   * @param world - The ECS world to query for target Transform.
+   * @param _deltaTime - Elapsed time (currently unused, contributing to frame-rate dependence).
+   * @param viewportSize - Current dimensions of the visible area.
+   *
+   * @mutates {@link sharedCamera} - Updates x and y properties.
    */
   update(world: World, _deltaTime: number, viewportSize: { width: number; height: number }): void {
-  update(world: import("../core/World").World, deltaTime: number, viewportSize: { width: number; height: number }): void {
     if (this.targetEntityId !== null) {
       const transform = world.getComponent<TransformComponent>(this.targetEntityId, "Transform");
       if (transform) {
@@ -104,6 +136,12 @@ export class CameraSystem {
     // Apply screen shake offset dynamically in the renderer (later)
   }
 
+  /**
+   * Projects a world coordinate to screen space.
+   *
+   * @param point - World coordinates.
+   * @returns Coordinates in pixels relative to viewport.
+   */
   worldToScreen(point: { x: number; y: number }): { x: number; y: number } {
     const cam = this.sharedCamera.value;
     return {
@@ -112,6 +150,12 @@ export class CameraSystem {
     };
   }
 
+  /**
+   * Unprojects a screen coordinate to world space.
+   *
+   * @param point - Screen coordinates in pixels.
+   * @returns Coordinates in world units.
+   */
   screenToWorld(point: { x: number; y: number }): { x: number; y: number } {
     const cam = this.sharedCamera.value;
     return {
