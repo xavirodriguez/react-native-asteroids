@@ -39,10 +39,6 @@ interface GameRendererProps {
  * Component responsible for rendering the game world using @shopify/react-native-skia.
  */
 export const GameRenderer = React.memo(function GameRenderer({ world, onInitialize, gameLoop }: GameRendererProps) {
-  if (!world || typeof world.query !== "function") {
-    return <View style={[styles.container, { width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT, backgroundColor: 'black' }]} />;
-  }
-
   const rendererRef = useRef<SkiaRendererType | null>(null);
   const [, setTick] = useState(0);
   const alphaRef = useRef(1);
@@ -77,7 +73,9 @@ export const GameRenderer = React.memo(function GameRenderer({ world, onInitiali
     }
   }, [world, onInitialize]);
 
-  if (Platform.OS === 'web' || !Canvas || !Drawing) {
+  const isWorldValid = world && typeof world.query === "function";
+
+  if (Platform.OS === 'web' || !Canvas || !Drawing || !isWorldValid) {
     return <View style={[styles.container, { width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT, backgroundColor: 'black' }]} />;
   }
 

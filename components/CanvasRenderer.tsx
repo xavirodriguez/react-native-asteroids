@@ -19,12 +19,9 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, gameLoop,
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<EngineCanvasRenderer | null>(null);
 
-  if (!world || typeof world.query !== "function") {
-    return <View style={[styles.container, { width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT, backgroundColor: 'black' }]} />;
-  }
-
   useEffect(() => {
     if (Platform.OS !== "web") return;
+    if (!world || typeof world.query !== "function") return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -54,9 +51,13 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, gameLoop,
     }
   }, [world, gameLoop, onInitialize]);
 
+  const isWorldValid = world && typeof world.query === "function";
+
   return (
     <View style={styles.container}>
-      {Platform.OS === "web" ? (
+      {!isWorldValid ? (
+         <View style={{ width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT, backgroundColor: 'black' }} />
+      ) : Platform.OS === "web" ? (
       <canvas
         ref={canvasRef}
         width={GAME_CONFIG.SCREEN_WIDTH}
