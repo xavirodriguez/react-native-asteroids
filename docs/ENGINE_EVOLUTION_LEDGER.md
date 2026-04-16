@@ -118,6 +118,33 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 - Implementar comportamiento de "clamping" (estático) en `BoundarySystem` para mayor flexibilidad.
 - Documentar el sistema de capas de colisión en una guía dedicada.
 
+## [2024-05-25] Aislamiento de Sistemas Legacy y Unificación de Colisiones
+
+### Estado detectado
+- **Contaminación de API**: Sistemas obsoletos (`CameraSystem`, `InputManager`) y controladores dependientes de plataforma coexistían con las APIs modernas en los directorios core.
+- **Desorden en Colisiones**: `SpatialHash` residía en un directorio separado de los sistemas de colisión modernos.
+
+### Decisiones tomadas
+1. **Encapsulación Legacy**: Se movieron `CameraSystem`, `InputManager`, `InputController`, `KeyboardController`, `TouchController` y `CollisionRouter` a `src/engine/legacy/`.
+2. **Namespace Legacy**: Se actualizaron los exports para que estos símbolos solo sean accesibles a través del objeto `Legacy` en el entrypoint principal.
+3. **Consolidación de Física**: Se reubicó `SpatialHash` en `src/engine/physics/collision/` para agruparlo con la lógica de fase ancha (BroadPhase).
+
+### Archivos afectados
+- `src/engine/legacy/` (Nuevos archivos movidos)
+- `src/engine/index.ts`
+- `src/engine/physics/collision/SpatialHash.ts`
+- `src/engine/physics/collision/CollisionSystem2D.ts`
+- `docs/MIGRATION_GUIDE.md`
+
+### Impacto
+- **Claridad de API**: La superficie pública del motor ahora es más limpia y se centra en las APIs canónicas.
+- **Modularidad**: Mejor organización del dominio de física y colisiones.
+- **Seguridad**: Reduce la probabilidad de que nuevos desarrolladores usen sistemas obsoletos o dependientes de plataforma por error.
+
+### Deuda abierta / Siguientes pasos
+- Migrar cualquier uso residual de `CameraSystem` en la UI a `Camera2D`.
+- Eliminar físicamente los archivos de `legacy/` en la próxima versión mayor.
+
 ## [Plantilla para Futuras Entradas]
 
 ### [FECHA] Título de la Evolución

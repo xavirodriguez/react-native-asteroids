@@ -1,5 +1,5 @@
 import { SpatialHash } from "../SpatialHash";
-import { Entity, AABB } from "../../types/EngineTypes";
+import { Entity, AABB } from "../../../types/EngineTypes";
 
 describe("SpatialHash", () => {
   let spatialHash: SpatialHash;

@@ -4,7 +4,7 @@ import { Entity, TransformComponent, Collider2DComponent, CollisionEventsCompone
 import { BroadPhase } from "./BroadPhase";
 import { NarrowPhase } from "./NarrowPhase";
 import { ContinuousCollision, CCDResult } from "./ContinuousCollision";
-import { SpatialHash } from "../../collision/SpatialHash";
+import { SpatialHash } from "./SpatialHash";
 
 export type CollisionCallback = (world: World, entityA: Entity, entityB: Entity, manifold: CollisionManifold) => void;
 export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) => void;

@@ -1,5 +1,5 @@
-import { Entity, AABB } from "../types/EngineTypes";
-import { ObjectPool } from "../utils/ObjectPool";
+import { Entity, AABB } from "../../types/EngineTypes";
+import { ObjectPool } from "../../utils/ObjectPool";
 
 /**
  * Implementación de Spatial Hashing para detección de colisiones de fase ancha (broadphase) eficiente.
