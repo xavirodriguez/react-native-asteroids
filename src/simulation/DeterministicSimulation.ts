@@ -90,9 +90,9 @@ export class DeterministicSimulation {
                     shootCooldownRemaining: input.shootCooldownRemaining
                 };
 
-                ShipPhysics.applyRotation(render, intent, dtSeconds);
-                ShipPhysics.applyThrust(world, pos, vel, render, intent, dtSeconds, ctx);
-                ShipPhysics.applyFriction(vel, deltaTime);
+                ShipPhysics.applyRotation(render, intent, dtSeconds, GAME_CONFIG);
+                ShipPhysics.applyThrust(world, pos, vel, render, intent, dtSeconds, ctx, GAME_CONFIG);
+                ShipPhysics.applyFriction(vel, deltaTime, GAME_CONFIG);
 
                 // Shooting logic
                 if (input.shoot) {
@@ -246,7 +246,7 @@ export class DeterministicSimulation {
 
         if (health.current <= 0) {
              const eventBus = world.getResource<EventBus>("EventBus");
-             if (eventBus) eventBus.emit("game:over");
+             if (eventBus) eventBus.emit("game:over", {});
         }
     }
 
@@ -284,7 +284,7 @@ export class DeterministicSimulation {
             // Spawn next wave
             if (!ctx.isResimulating) {
                 const eventBus = world.getResource<EventBus>("EventBus");
-                if (eventBus) eventBus.emit("wave:complete");
+                if (eventBus) eventBus.emit("wave:complete", {});
             }
 
             for (let i = 0; i < 6; i++) {

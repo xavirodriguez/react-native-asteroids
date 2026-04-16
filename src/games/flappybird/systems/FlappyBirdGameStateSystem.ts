@@ -16,7 +16,7 @@ import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem
  */
 export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdState> implements IFlappyStateSystem {
   constructor(game: IFlappyBirdGame, private config: typeof FLAPPY_CONFIG = FLAPPY_CONFIG) {
-    super(game as any);
+    super(game as unknown as import("../../../engine/core/BaseGame").BaseGame<any, any>);
   }
 
   protected updateGameState(world: World, gameState: FlappyBirdState, deltaTime: number): void {
@@ -45,7 +45,7 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
           pipe.scored = true;
           gameState.score += gameState.comboMultiplier || 1;
           const eventBus = world.getResource<EventBus>("EventBus");
-          if (eventBus) eventBus.emit("pipe:passed");
+          if (eventBus) eventBus.emit("pipe:passed", {});
           if (gameState.score > gameState.highScore) {
             gameState.highScore = gameState.score;
           }

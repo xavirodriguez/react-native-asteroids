@@ -128,10 +128,12 @@ export class SpaceInvadersCollisionSystem extends System {
     const bulletShield = this.matchPair(world, e1, e2, "PlayerBullet", "Shield") ||
                         this.matchPair(world, e1, e2, "EnemyBullet", "Shield");
     if (bulletShield) {
-      const bullet = (bulletShield as any).PlayerBullet || (bulletShield as any).EnemyBullet;
-      const shield = (bulletShield as any).Shield;
-      this.damageShield(world, shield);
-      world.removeEntity(bullet);
+      const bullet = (bulletShield as { PlayerBullet?: Entity, EnemyBullet?: Entity }).PlayerBullet || (bulletShield as { EnemyBullet?: Entity }).EnemyBullet;
+      const shield = (bulletShield as { Shield: Entity }).Shield;
+      if (bullet) {
+        this.damageShield(world, shield);
+        world.removeEntity(bullet);
+      }
       return;
     }
 
@@ -152,7 +154,7 @@ export class SpaceInvadersCollisionSystem extends System {
         if (health.current <= 0) {
           gameState.isGameOver = true;
           const eventBus = world.getResource<EventBus>("EventBus");
-          if (eventBus) eventBus.emit("game:over");
+          if (eventBus) eventBus.emit("game:over", {});
         }
       }
       world.removeEntity(bullet);
@@ -163,7 +165,7 @@ export class SpaceInvadersCollisionSystem extends System {
     if (invaderPlayer) {
       gameState.isGameOver = true;
       const eventBus = world.getResource<EventBus>("EventBus");
-      if (eventBus) eventBus.emit("game:over");
+      if (eventBus) eventBus.emit("game:over", {});
       return;
     }
 
@@ -212,7 +214,7 @@ export class SpaceInvadersCollisionSystem extends System {
       if (pos && pos.y > limit) {
         gameState.isGameOver = true;
         const eventBus = world.getResource<EventBus>("EventBus");
-        if (eventBus) eventBus.emit("game:over");
+        if (eventBus) eventBus.emit("game:over", {});
         break;
       }
     }

@@ -6,6 +6,7 @@ import { MovementSystem } from "../../../../engine/systems/MovementSystem";
 import { ParticlePool, BulletPool } from "../../EntityPool";
 import { createBullet, createGameState } from "../../EntityFactory";
 import { GAME_CONFIG, type GameStateComponent } from "../../types/AsteroidTypes";
+import { TransformComponent } from "../../../../engine/core/CoreComponents";
 
 describe("Asteroids Gameplay Integration", () => {
   let world: World;
@@ -27,7 +28,7 @@ describe("Asteroids Gameplay Integration", () => {
 
     const gameStateEntity = createGameState({ world });
     // Ensure asteroidsRemaining starts at 0 to trigger initial wave
-    const gs = world.getComponent<any>(gameStateEntity, "GameState");
+    const gs = world.getComponent<GameStateComponent>(gameStateEntity, "GameState")!;
     gs.asteroidsRemaining = 0;
     gs.level = 0; // It will increment to 1
 
@@ -53,7 +54,7 @@ describe("Asteroids Gameplay Integration", () => {
     // 1. Find an asteroid and spawn a bullet on top of it
     const asteroids = world.query("Asteroid", "Transform");
     const targetAsteroid = asteroids[0];
-    const pos = world.getComponent<any>(targetAsteroid, "Transform");
+    const pos = world.getComponent<TransformComponent>(targetAsteroid, "Transform")!;
 
     createBullet({
       world,

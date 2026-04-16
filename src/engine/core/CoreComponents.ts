@@ -162,7 +162,7 @@ export interface TTLComponent extends Component {
   /** Tiempo total de vida inicial (ms). */
   total: number;
   /** Callback opcional al finalizar el tiempo de vida. */
-  onComplete?: () => void;
+  onComplete?: (() => void) | null;
 }
 
 import { Shape } from "../physics/shapes/ShapeTypes";
@@ -260,7 +260,7 @@ export interface RenderComponent extends Component {
   /** Número de frames que la entidad permanecerá en blanco tras un impacto. */
   hitFlashFrames?: number;
   /** Contenedor de metadatos para drawers personalizados. */
-  data?: Record<string, unknown>;
+  data?: Record<string, unknown> | null;
 }
 
 /**

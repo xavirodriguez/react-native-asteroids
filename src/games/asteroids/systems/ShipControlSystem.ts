@@ -27,7 +27,7 @@ export class ShipControlSystem extends System {
 
       // 1. Apply movement
       ShipPhysics.applyRotation(render, input, dtSeconds, this.config);
-      ShipPhysics.applyThrust(world, pos, vel, render, input, dtSeconds, this.config);
+      ShipPhysics.applyThrust(world, pos, vel, render, input, dtSeconds, undefined, this.config);
       ShipPhysics.applyFriction(vel, deltaTime, this.config);
 
       // 2. Handle Shooting
@@ -39,13 +39,13 @@ export class ShipControlSystem extends System {
         const bullet = createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
 
         // Listen for TTL destruction (miss)
-        const ttl = world.getComponent<any>(bullet, "TTL");
+        const ttl = world.getComponent<import("../../../engine/core/CoreComponents").TTLComponent>(bullet, "TTL");
         if (ttl) {
           const originalOnComplete = ttl.onComplete;
           ttl.onComplete = () => {
             if (originalOnComplete) originalOnComplete();
             const eventBus = world.getResource<EventBus>("EventBus");
-            if (eventBus) eventBus.emit("asteroid:bullet_missed");
+            if (eventBus) eventBus.emit("asteroid:bullet_missed", {});
           };
         }
 

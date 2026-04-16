@@ -44,7 +44,8 @@ export class PongCollisionSystem extends System {
         ballVel.dy *= PONG_CONFIG.BALL_SPEED_INC;
 
         // Reposition ball to prevent multiple collisions
-        const paddleSide = world.getComponent<any>(paddleEntity, "Paddle").side;
+        const paddleSideComp = world.getComponent<import("../../../engine/core/Component").Component & { side: string }>(paddleEntity, "Paddle");
+        const paddleSide = paddleSideComp?.side;
         if (paddleSide === "left") {
           ballPos.x = paddlePos.x + PONG_CONFIG.PADDLE_WIDTH / 2 + PONG_CONFIG.BALL_SIZE + 1;
         } else {
@@ -68,8 +69,8 @@ export class PongCollisionSystem extends System {
         });
 
         // Spin Logic
-        const paddleComp = world.getComponent<any>(paddleEntity, "Paddle");
-        const ballComp = world.getComponent<any>(ballEntity, "Ball");
+        const paddleComp = world.getComponent<import("../../../engine/core/Component").Component & { lastVelocityY: number }>(paddleEntity, "Paddle");
+        const ballComp = world.getComponent<import("../../../engine/core/Component").Component & { spinFactor: number, spinDecay: number }>(ballEntity, "Ball");
         if (paddleComp && ballComp) {
           const spin = Math.max(-1, Math.min(1, paddleComp.lastVelocityY / 1000));
           if (Math.abs(spin) > 0.3) {
@@ -94,7 +95,7 @@ export class PongCollisionSystem extends System {
             ballVel.dx *= (1 + 0.2 * charge);
             Juice.shake(world, charge * 5, 100);
 
-            const eventBus = world.getResource<EventBus>("EventBus");
+            const eventBus = world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
             if (eventBus) eventBus.emit("pong:charged_smash", { chargeLevel: charge });
           }
         }
