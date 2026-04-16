@@ -7,17 +7,20 @@ import {
   VelocityComponent,
   RenderComponent,
   Collider2DComponent,
+  BoundaryComponent,
   TTLComponent,
   ReclaimableComponent,
   Component
 } from "../../engine/types/EngineTypes";
 import { CircleShape } from "../../engine/physics/shapes/ShapeTypes";
+import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 
 interface BulletComponents extends Record<string, import("../../engine/core/Component").Component> {
   position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
   collider: Collider2DComponent;
+  boundary: BoundaryComponent;
   ttl: TTLComponent;
   reclaimable: ReclaimableComponent;
   bullet: Component;
@@ -41,6 +44,12 @@ export class PlayerBulletPool {
           layer: CollisionLayers.PROJECTILE,
           mask: CollisionLayers.ENEMY | CollisionLayers.DEBRIS,
           offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
+        },
+        boundary: {
+          type: "Boundary",
+          width: GAME_CONFIG.SCREEN_WIDTH,
+          height: GAME_CONFIG.SCREEN_HEIGHT,
+          behavior: "destroy"
         },
         ttl: { type: "TTL", remaining: 0, total: 0 },
         reclaimable: { type: "Reclaimable", onReclaim: () => {} },
@@ -90,6 +99,12 @@ export class EnemyBulletPool {
           layer: CollisionLayers.ENEMY,
           mask: CollisionLayers.PLAYER,
           offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
+        },
+        boundary: {
+          type: "Boundary",
+          width: GAME_CONFIG.SCREEN_WIDTH,
+          height: GAME_CONFIG.SCREEN_HEIGHT,
+          behavior: "destroy"
         },
         ttl: { type: "TTL", remaining: 0, total: 0 },
         reclaimable: { type: "Reclaimable", onReclaim: () => {} },

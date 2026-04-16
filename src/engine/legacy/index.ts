@@ -5,4 +5,4 @@
  */
 
 export * from "./LegacyComponents";
-// Legacy systems have been removed or moved to other canonical locations.
+export { PhysicsSystem } from "./PhysicsSystem";

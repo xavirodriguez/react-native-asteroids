@@ -78,10 +78,50 @@ export class PhysicsUtils {
   /**
    * Wraps coordinates around a screen boundary.
    */
-  public static wrapBoundary(pos: TransformComponent, width: number, height: number): void {
-    if (pos.x < 0) pos.x = width;
-    else if (pos.x > width) pos.x = 0;
-    if (pos.y < 0) pos.y = height;
-    else if (pos.y > height) pos.y = 0;
+  public static wrapBoundary(pos: TransformComponent, width: number, height: number, minX: number = 0, minY: number = 0): void {
+    const maxX = minX + width;
+    const maxY = minY + height;
+
+    if (pos.x < minX) pos.x = maxX;
+    else if (pos.x > maxX) pos.x = minX;
+    if (pos.y < minY) pos.y = maxY;
+    else if (pos.y > maxY) pos.y = minY;
+  }
+
+  /**
+   * Bounces an entity off screen boundaries.
+   */
+  public static bounceBoundary(
+    pos: TransformComponent,
+    vel: import("../core/CoreComponents").VelocityComponent,
+    width: number,
+    height: number,
+    minX: number = 0,
+    minY: number = 0,
+    bounceX: boolean = true,
+    bounceY: boolean = true
+  ): void {
+    const maxX = minX + width;
+    const maxY = minY + height;
+
+    if (bounceX) {
+      if (pos.x < minX) {
+        pos.x = minX;
+        vel.dx *= -1;
+      } else if (pos.x > maxX) {
+        pos.x = maxX;
+        vel.dx *= -1;
+      }
+    }
+
+    if (bounceY) {
+      if (pos.y < minY) {
+        pos.y = minY;
+        vel.dy *= -1;
+      } else if (pos.y > maxY) {
+        pos.y = maxY;
+        vel.dy *= -1;
+      }
+    }
   }
 }

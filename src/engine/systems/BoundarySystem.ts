@@ -16,7 +16,7 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * @responsibility Mantener las entidades dentro del área de juego o destruirlas si salen.
  * @queries Transform, Boundary
  * @mutates Transform, Velocity, World (Entity removal)
- * @dependsOn {@link PhysicsUtils.wrapBoundary}
+ * @dependsOn {@link PhysicsUtils.wrapBoundary}, {@link PhysicsUtils.bounceBoundary}
  * @executionOrder Fase: Simulation. Debe ejecutarse después de MovementSystem.
  *
  * @remarks
@@ -26,11 +26,6 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * @contract Wrap: Si `x > width`, `x = 0` y viceversa. Mismo comportamiento para `y` y `height`.
  * @contract Bounce: Invierte el componente de velocidad correspondiente y mantiene la entidad en el borde.
  * @contract Destroy: Elimina la entidad invocando su pool de reciclaje si existe.
- *
- * @conceptualRisk [DRIFT][MEDIUM] La lógica de `bounce` está implementada localmente en lugar de usar
- * `PhysicsUtils`, lo que puede causar discrepancias con otros sistemas físicos centralizados.
- * @conceptualRisk [UNCLEAR] El uso de `boundary.mode` como fallback de `boundary.behavior` sugiere
- * una migración de API incompleta o falta de estandarización en `BoundaryComponent`.
  */
 export class BoundarySystem extends System {
   public update(world: World, deltaTime: number): void {
@@ -53,49 +48,25 @@ export class BoundarySystem extends System {
     boundary: BoundaryComponent,
     vel: VelocityComponent | undefined
   ): void {
-    const { width, height } = boundary;
-    const behavior = boundary.behavior || boundary.mode;
+    const { width, height, x = 0, y = 0 } = boundary;
+    const behavior = boundary.behavior;
 
-    const isOutOfBounds = pos.x < 0 || pos.x > width || pos.y < 0 || pos.y > height;
+    const isOutOfBounds = pos.x < x || pos.x > x + width || pos.y < y || pos.y > y + height;
 
     if (!isOutOfBounds) return;
 
     switch (behavior) {
       case "wrap":
-        this.wrap(pos, width, height);
+        PhysicsUtils.wrapBoundary(pos, width, height, x, y);
         break;
       case "bounce":
-        if (vel) this.bounce(pos, vel, width, height, boundary.bounceX, boundary.bounceY);
+        if (vel) {
+          PhysicsUtils.bounceBoundary(pos, vel, width, height, x, y, boundary.bounceX, boundary.bounceY);
+        }
         break;
       case "destroy":
         this.destroy(world, entity);
         break;
-    }
-  }
-
-  private wrap(pos: TransformComponent, width: number, height: number): void {
-    PhysicsUtils.wrapBoundary(pos, width, height);
-  }
-
-  private bounce(pos: TransformComponent, vel: VelocityComponent, width: number, height: number, bounceX: boolean = true, bounceY: boolean = true): void {
-    if (bounceX) {
-      if (pos.x < 0) {
-        pos.x = 0;
-        vel.dx *= -1;
-      } else if (pos.x > width) {
-        pos.x = width;
-        vel.dx *= -1;
-      }
-    }
-
-    if (bounceY) {
-      if (pos.y < 0) {
-        pos.y = 0;
-        vel.dy *= -1;
-      } else if (pos.y > height) {
-        pos.y = height;
-        vel.dy *= -1;
-      }
     }
   }
 

@@ -4,7 +4,7 @@ import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
-import { Collider2DComponent } from "../../engine/core/CoreComponents";
+import { Collider2DComponent, BoundaryComponent } from "../../engine/core/CoreComponents";
 
 /**
  * Creates the player entity.
@@ -44,6 +44,16 @@ export function createPlayer(world: World, x: number, y: number): Entity {
     shootCooldownRemaining: 0,
   });
   world.addComponent(player, { type: "Player" });
+  world.addComponent(player, {
+    type: "Boundary",
+    width: GAME_CONFIG.SCREEN_WIDTH - GAME_CONFIG.PLAYER_RENDER_WIDTH,
+    height: GAME_CONFIG.SCREEN_HEIGHT,
+    x: GAME_CONFIG.PLAYER_RENDER_WIDTH / 2,
+    y: 0,
+    behavior: "bounce",
+    bounceX: true,
+    bounceY: false,
+  } as BoundaryComponent);
 
   createEmitter(world, {
     position: { x, y },

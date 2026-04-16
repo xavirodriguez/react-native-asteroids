@@ -1,7 +1,8 @@
-import { System } from "../../core/System";
-import { World } from "../../core/World";
-import { TransformComponent, RigidBodyComponent } from "../../types/EngineTypes";
-import { IPhysicsAdapter } from "../../core/types/SystemTypes";
+import { System } from "../core/System";
+import { World } from "../core/World";
+import { TransformComponent } from "../types/EngineTypes";
+import { RigidBodyComponent } from "./LegacyComponents";
+import { IPhysicsAdapter } from "../core/types/SystemTypes";
 
 /**
  * PhysicsSystem: Orchestrates the physics simulation and syncs results to the ECS.
