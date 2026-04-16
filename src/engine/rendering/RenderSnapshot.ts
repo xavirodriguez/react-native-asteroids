@@ -60,7 +60,6 @@ export interface RenderSnapshot {
   uiCount: number;
   shakeX: number;
   shakeY: number;
-  elapsedTime: number;
   backgroundData?: Record<string, unknown> | null;
   foregroundData?: Record<string, unknown> | null;
 }

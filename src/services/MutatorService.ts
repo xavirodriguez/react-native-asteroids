@@ -29,7 +29,7 @@ export class MutatorService {
    */
   public static getActiveMutatorsForGame(gameId: string): Mutator[] {
     const weekly = this.getWeeklyMutators();
-    return weekly.filter(m => m.games.includes(gameId as any) || m.games.includes('all'));
+    return weekly.filter(m => m.games.includes(gameId as import("../config/MutatorConfig").GameId) || m.games.includes('all'));
   }
 
   /**

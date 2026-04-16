@@ -17,7 +17,7 @@ describe("FlappyBirdCollisionSystem", () => {
     mockGame = {
       getWorld: () => world,
       pause: jest.fn(),
-    } as any;
+    } as unknown as IFlappyBirdGame;
     system = new FlappyBirdCollisionSystem(mockGame);
   });
 

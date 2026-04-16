@@ -3,7 +3,7 @@ import { TransformComponent, VelocityComponent, RenderComponent } from "../../..
 import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 import { PhysicsUtils } from "../../../engine/utils/PhysicsUtils";
 import { RandomService } from "../../../engine/utils/RandomService";
-import { createParticle, createBullet } from "../EntityFactory";
+import { createParticle } from "../EntityFactory";
 import { SimulationContext } from "../../../simulation/DeterministicSimulation";
 
 /**
@@ -52,40 +52,6 @@ export const ShipPhysics = {
   },
 
   applyFriction(velocity: VelocityComponent, dtMs: number, config: typeof GAME_CONFIG = GAME_CONFIG): void {
-    PhysicsUtils.applyFriction(velocity, config.SHIP_FRICTION, dtMs);
-  },
-
-  /**
-   * Unified ship simulation tick.
-   * Ensures identical physics and action logic between ECS systems and prediction.
-   */
-  simulateShipTick(
-    world: World,
-    pos: TransformComponent,
-    vel: VelocityComponent,
-    render: RenderComponent,
-    input: InputComponent,
-    deltaTime: number,
-    ctx?: SimulationContext,
-    config: typeof GAME_CONFIG = GAME_CONFIG,
-    onShoot?: (bullet: import("../../../engine/core/Entity").Entity) => void
-  ): void {
-    const dtSeconds = deltaTime / 1000;
-
-    // 1. Movement & Rotation
-    this.applyRotation(render, input, dtSeconds, config);
-    this.applyThrust(world, pos, vel, render, input, dtSeconds, ctx, config);
-    this.applyFriction(vel, deltaTime, config);
-
-    // 2. Shooting
-    if (input.shootCooldownRemaining > 0) {
-      input.shootCooldownRemaining -= deltaTime;
-    }
-
-    if (input.shoot && input.shootCooldownRemaining <= 0) {
-      const bullet = createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
-      input.shootCooldownRemaining = config.BULLET_SHOOT_COOLDOWN;
-      if (onShoot) onShoot(bullet);
-    }
+    PhysicsUtils.applyFriction(velocity as unknown as Record<string, unknown>, config.SHIP_FRICTION, dtMs);
   }
 };

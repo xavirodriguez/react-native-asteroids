@@ -5,7 +5,7 @@ import { drawStarField } from "../../../engine/rendering/StarField";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { InputComponent, GameStateComponent, ShipComponent } from "../types/AsteroidTypes";
 
-export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: TransformComponent, render: RenderComponent, world: World) => {
+export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number }, render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null }, world: World) => {
     const size = render.size;
     const input = world.getComponent<InputComponent>(entity, "Input");
     const health = world.getComponent<HealthComponent>(entity, "Health");
@@ -53,14 +53,14 @@ export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: Tr
     ctx.fillRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8);
 };
 
-export const drawAsteroidShipTrailDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: TransformComponent, render: RenderComponent, world: World) => {
+export const drawAsteroidShipTrailDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number }, render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null }, world: World) => {
     const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
     if (shipComp && shipComp.trailPositions) {
         drawAsteroidShipTrail(ctx, shipComp.trailPositions, render.size);
     }
 };
 
-export const drawUfo = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: TransformComponent, render: RenderComponent,  _world: World) => {
+export const drawUfo = (ctx: CanvasRenderingContext2D, _entity: Entity, _pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number }, render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null },  _world: World) => {
     const size = render.size;
     const color = render.color;
     ctx.strokeStyle = color;
@@ -82,7 +82,7 @@ export const drawUfo = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: Tra
     ctx.beginPath(); ctx.arc(size / 2, 0, 1.5, 0, Math.PI * 2); ctx.fill();
 };
 
-export const drawFlash = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: TransformComponent, render: RenderComponent, world: World) => {
+export const drawFlash = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number }, render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null }, world: World) => {
     const ttl = world.getComponent<TTLComponent>(entity, "TTL");
     if (!ttl) return;
     const size = render.size;
@@ -103,10 +103,7 @@ export function drawAsteroidStarField(ctx: CanvasRenderingContext2D, stars: Star
 
     if (!shipPos) return;
 
-    const gameState = world.getSingleton<GameStateComponent>("GameState");
-    const elapsedTime = gameState ? gameState.serverTick * (1000 / 60) : performance.now();
-
-    drawStarField(ctx, stars, width, height, shipPos, elapsedTime);
+    drawStarField(ctx, stars, width, height, shipPos);
 }
 
 export function drawAsteroidCRTEffect(ctx: CanvasRenderingContext2D, width: number, height: number): void {

@@ -10,7 +10,6 @@ import { Entity } from "../types/EngineTypes";
  */
 export class EntityPool {
   private pool: Entity[] = [];
-  private pooledSet: Set<Entity> = new Set();
   private nextId = 1;
 
   /**
@@ -25,12 +24,7 @@ export class EntityPool {
    * @sideEffect Incrementa `nextId` si el pool está vacío.
    */
   public acquire(): Entity {
-    if (this.pool.length > 0) {
-        const id = this.pool.pop()!;
-        this.pooledSet.delete(id);
-        return id;
-    }
-    return this.nextId++;
+    return this.pool.length > 0 ? this.pool.pop()! : this.nextId++;
   }
 
   /**
@@ -48,15 +42,7 @@ export class EntityPool {
    * mismo ID a dos solicitantes distintos, provocando corrupción de estado en el `World`.
    */
   public release(id: Entity): void {
-    if (this.pooledSet.has(id)) {
-        console.warn(`[EntityPool] Double-release detected for entity ID: ${id}. Ignoring.`);
-        if (__DEV__) {
-            // throw new Error(`Entity ${id} already in pool.`);
-        }
-        return;
-    }
     this.pool.push(id);
-    this.pooledSet.add(id);
   }
 
   /**
@@ -70,7 +56,6 @@ export class EntityPool {
    */
   public clear(): void {
     this.pool = [];
-    this.pooledSet.clear();
     this.nextId = 1;
   }
 }

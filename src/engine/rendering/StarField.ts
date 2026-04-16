@@ -31,8 +31,7 @@ export function drawStarField(
   stars: Star[],
   width: number,
   height: number,
-  shipPos: { x: number; y: number } = { x: width / 2, y: height / 2 },
-  elapsedTime: number = performance.now()
+  shipPos: { x: number; y: number } = { x: width / 2, y: height / 2 }
 ): void {
   stars.forEach((star) => {
     // Parallax effect: deeper layers move slower
@@ -40,7 +39,7 @@ export function drawStarField(
     const parallaxX = (star.x - shipPos.x * parallaxFactor + width) % width;
     const parallaxY = (star.y - shipPos.y * parallaxFactor + height) % height;
 
-    const twinkle = 0.8 + Math.sin(star.twinklePhase + elapsedTime * 0.005 * star.twinkleSpeed) * 0.2;
+    const twinkle = 0.8 + Math.sin(star.twinklePhase + Date.now() * 0.005 * star.twinkleSpeed) * 0.2;
 
     ctx.globalAlpha = star.brightness * twinkle;
     ctx.fillStyle = "white";

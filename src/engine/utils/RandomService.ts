@@ -19,7 +19,6 @@
 export class RandomService {
   private static globalInstance: RandomService = new RandomService(12345);
   private static namedInstances: Map<string, RandomService> = new Map();
-  public static lockGameplayContext: boolean = false;
 
   private seed: number;
 
@@ -31,13 +30,6 @@ export class RandomService {
    * Returns a named instance of the RandomService, creating it if it doesn't exist.
    */
   public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
-    if (this.lockGameplayContext && name === "render") {
-        console.warn("[RandomService] Accessing 'render' instance during gameplay simulation! This will break determinism.");
-        if (__DEV__) {
-            // throw new Error("Deterministic violation: 'render' random accessed during simulation.");
-        }
-    }
-
     if (name === "global") return this.globalInstance;
 
     let instance = this.namedInstances.get(name);

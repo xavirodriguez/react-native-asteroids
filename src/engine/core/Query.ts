@@ -76,12 +76,12 @@ export class Query {
    * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] Si un consumidor modifica el array devuelto
    * (e.g., mediante `.push()` o `.sort()` in-place), corromperá el estado interno de la Query.
    */
-  public getEntities(): ReadonlyArray<Entity> {
+  public getEntities(): Entity[] {
     if (this.needsUpdateArray) {
       this.entityArray = Array.from(this.entities).sort((a, b) => a - b);
       this.needsUpdateArray = false;
     }
-    return this.entityArray as ReadonlyArray<Entity>;
+    return this.entityArray;
   }
 
   /**
