@@ -5,7 +5,6 @@ import { StateMachine } from "./StateMachine";
 import type { World } from "./World";
 import type { CollisionManifold } from "../physics/collision/CollisionTypes";
 export { Entity, Component };
-export { PositionComponent, ColliderComponent } from "../legacy/LegacyComponents";
 
 /**
  * Componentes base proporcionados por el motor como primitivas reutilizables.

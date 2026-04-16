@@ -33,8 +33,8 @@ export class PhysicsUtils {
     const dx = vel.dx !== undefined ? "dx" : "velocityX";
     const dy = vel.dy !== undefined ? "dy" : "velocityY";
 
-    p[x] = ((p[x] as number) || 0) + ((v[dx] as number) || 0) * deltaTimeInSeconds;
-    p[y] = ((p[y] as number) || 0) + ((v[dy] as number) || 0) * deltaTimeInSeconds;
+    pos[x] = ((pos[x] as number) || 0) + ((vel[dx] as number) || 0) * deltaTimeInSeconds;
+    pos[y] = ((pos[y] as number) || 0) + ((vel[dy] as number) || 0) * deltaTimeInSeconds;
   }
 
   /**
@@ -59,8 +59,8 @@ export class PhysicsUtils {
 
     const dtFactor = deltaTimeMs / (1000 / 60);
     const frictionFactor = Math.pow(friction, dtFactor);
-    if (v[dx] !== undefined) v[dx] = (v[dx] as number) * frictionFactor;
-    if (v[dy] !== undefined) v[dy] = (v[dy] as number) * frictionFactor;
+    if (vel[dx] !== undefined) vel[dx] = (vel[dx] as number) * frictionFactor;
+    if (vel[dy] !== undefined) vel[dy] = (vel[dy] as number) * frictionFactor;
   }
 
   /**
