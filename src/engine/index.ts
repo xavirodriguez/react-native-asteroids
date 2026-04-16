@@ -26,7 +26,7 @@ export type { AABB } from './types/CommonTypes';
 export { PhysicsSystem2D } from './physics/dynamics/PhysicsSystem2D';
 export { CollisionSystem2D } from './physics/collision/CollisionSystem2D';
 export { CollisionLayers } from './physics/collision/CollisionLayers';
-export { SpatialHash } from './collision/SpatialHash';
+export { SpatialHash } from './physics/collision/SpatialHash';
 export { PhysicsQuery } from './physics/query/PhysicsQuery';
 export { NarrowPhase } from './physics/collision/NarrowPhase';
 export { BroadPhase } from './physics/collision/BroadPhase';
@@ -43,7 +43,6 @@ export { SkiaRenderer } from './rendering/SkiaRenderer';
 export { RenderSnapshot } from './rendering/RenderSnapshot';
 export { CommandBuffer } from './rendering/CommandBuffer';
 export { Camera2D } from './camera/Camera2D';
-export { CameraSystem } from './camera/CameraSystem';
 
 // --- INPUT ---
 export { UnifiedInputSystem } from './input/UnifiedInputSystem';
