@@ -58,7 +58,7 @@ export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
         data.position.x = p.x; data.position.y = p.y;
         data.velocity.dx = p.dx; data.velocity.dy = p.dy;
         data.render.size = p.size; data.render.color = p.color;
-        (data.collider.shape as any).radius = p.size;
+        (data.collider.shape as { radius: number }).radius = p.size;
         data.ttl.remaining = p.ttl; data.ttl.total = p.ttl;
       },
       initialSize

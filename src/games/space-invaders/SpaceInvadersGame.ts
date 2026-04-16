@@ -88,27 +88,29 @@ export class SpaceInvadersGame
     this.isMultiplayer = active;
   }
 
-  public updateFromServer(state: any) {
+  public updateFromServer(state: Record<string, unknown>) {
     if (!this.isMultiplayer || !state) return;
     const world = this.getWorld();
     world.clear();
 
-    if (state.players) {
-      state.players.forEach((player: any) => {
+    if (state.players && typeof state.players === 'object') {
+      Object.values(state.players).forEach((player: unknown) => {
         const p = world.createEntity();
-        world.addComponent(p, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 });
-        world.addComponent(p, { type: "Render", shape: "player_ship", size: 20, color: player.alive ? "green" : "red", rotation: 0 });
-        world.addComponent(p, { type: "Player" });
+        const playerState = player as { x: number, y: number, alive: boolean };
+        world.addComponent(p, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+        world.addComponent(p, { type: "Render", shape: "player_ship", size: 20, color: playerState.alive ? "green" : "red", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+        world.addComponent(p, { type: "Player" } as import("../../engine/types/EngineTypes").Component);
       });
     }
 
-    if (state.invaders) {
-      state.invaders.forEach((invader: any) => {
-        if (!invader.alive) return;
+    if (state.invaders && typeof state.invaders === 'object') {
+      Object.values(state.invaders).forEach((invader: unknown) => {
+        const invaderState = invader as { x: number, y: number, alive: boolean };
+        if (!invaderState.alive) return;
         const i = world.createEntity();
-        world.addComponent(i, { type: "Transform", x: invader.x, y: invader.y, rotation: 0, scaleX: 1, scaleY: 1 });
-        world.addComponent(i, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 });
-        world.addComponent(i, { type: "Invader", row: 0, col: 0, points: 10 });
+        world.addComponent(i, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+        world.addComponent(i, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+        world.addComponent(i, { type: "Invader", row: 0, col: 0, points: 10 } as import("./types/SpaceInvadersTypes").InvaderComponent);
       });
     }
   }

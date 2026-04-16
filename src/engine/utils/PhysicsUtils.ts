@@ -27,14 +27,14 @@ export class PhysicsUtils {
    * @conceptualRisk [PRECISION_LOSS][LOW] La acumulación de errores de punto flotante en integraciones
    * largas puede causar divergencias mínimas entre clientes.
    */
-  public static integrateMovement(pos: Record<string, any>, vel: Record<string, any>, deltaTimeInSeconds: number): void {
+  public static integrateMovement(pos: Record<string, unknown>, vel: Record<string, unknown>, deltaTimeInSeconds: number): void {
     const x = pos.x !== undefined ? "x" : "worldX";
     const y = pos.y !== undefined ? "y" : "worldY";
     const dx = vel.dx !== undefined ? "dx" : "velocityX";
     const dy = vel.dy !== undefined ? "dy" : "velocityY";
 
-    pos[x] = ((pos[x] as number) || 0) + ((vel[dx] as number) || 0) * deltaTimeInSeconds;
-    pos[y] = ((pos[y] as number) || 0) + ((vel[dy] as number) || 0) * deltaTimeInSeconds;
+    (pos as Record<string, number>)[x] = ((pos[x] as number) || 0) + ((vel[dx] as number) || 0) * deltaTimeInSeconds;
+    (pos as Record<string, number>)[y] = ((pos[y] as number) || 0) + ((vel[dy] as number) || 0) * deltaTimeInSeconds;
   }
 
   /**
@@ -53,14 +53,14 @@ export class PhysicsUtils {
    * @postcondition Los componentes `dx`/`dy` de `vel` son reducidos.
    * @sideEffect Muta el objeto `vel` directamente por referencia.
    */
-  public static applyFriction(vel: Record<string, any>, friction: number, deltaTimeMs: number): void {
+  public static applyFriction(vel: Record<string, unknown>, friction: number, deltaTimeMs: number): void {
     const dx = vel.dx !== undefined ? "dx" : "velocityX";
     const dy = vel.dy !== undefined ? "dy" : "velocityY";
 
     const dtFactor = deltaTimeMs / (1000 / 60);
     const frictionFactor = Math.pow(friction, dtFactor);
-    if (vel[dx] !== undefined) vel[dx] = (vel[dx] as number) * frictionFactor;
-    if (vel[dy] !== undefined) vel[dy] = (vel[dy] as number) * frictionFactor;
+    if (vel[dx] !== undefined) (vel as Record<string, number>)[dx] = (vel[dx] as number) * frictionFactor;
+    if (vel[dy] !== undefined) (vel as Record<string, number>)[dy] = (vel[dy] as number) * frictionFactor;
   }
 
   /**

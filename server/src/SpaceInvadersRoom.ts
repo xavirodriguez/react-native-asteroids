@@ -6,7 +6,7 @@ export class SpaceInvadersRoom extends Room<SpaceInvadersState> {
   direction = 1;
   lastMove = 0;
 
-  onCreate(__unused: any) {
+  onCreate(__unused: Record<string, unknown>) {
     this.state = new SpaceInvadersState();
     this.state.gameStarted = false;
     this.state.gameOver = false;
@@ -35,14 +35,14 @@ export class SpaceInvadersRoom extends Room<SpaceInvadersState> {
     });
   }
 
-  onJoin(client: Client, _options: any) {
+  onJoin(client: Client, _options: Record<string, unknown>) {
     const player = new Player();
     player.x = 400;
     player.y = 550;
     player.score = 0;
     player.lives = 3;
     player.alive = true;
-    player.name = options.name || `Invader ${this.clients.length}`;
+    player.name = (_options.name as string) || `Invader ${this.clients.length}`;
     this.state.players.set(client.sessionId, player);
   }
 

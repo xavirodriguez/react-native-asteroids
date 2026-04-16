@@ -26,7 +26,7 @@ export const drawSkiaShip: ShapeDrawer<Record<string, unknown>> = (canvas, entit
         const { Skia, BlurStyle } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Path || !Skia.Paint) return;
-        const p = getPaint() as any;
+        const p = getPaint() as unknown as import("@shopify/react-native-skia").SkPaint;
         if (!p) return;
         const size = render.size;
         const input = world.getComponent<InputComponent>(entity, "Input");
@@ -91,7 +91,7 @@ export const drawSkiaUfo: ShapeDrawer<Record<string, unknown>> = (canvas, _entit
         const { Skia, BlurStyle } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint() as any;
+        const p = getPaint() as unknown as import("@shopify/react-native-skia").SkPaint;
         if (!p) return;
         const size = render.size;
         const color = render.color;
@@ -131,7 +131,7 @@ export const skiaStarfieldEffect: EffectDrawer<Record<string, unknown>> = (canva
         const { Skia } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint() as any;
+        const p = getPaint() as unknown as import("@shopify/react-native-skia").SkPaint;
         if (!p) return;
         const gameStateEntity = world.query("GameState")[0];
         const gameState = gameStateEntity ? world.getComponent<GameStateComponent>(gameStateEntity, "GameState") : null;
@@ -183,7 +183,7 @@ export const drawSkiaParticle: ShapeDrawer<Record<string, unknown>> = (canvas, e
         const { Skia } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint() as any;
+        const p = getPaint() as unknown as import("@shopify/react-native-skia").SkPaint;
         if (!p) return;
 
         const ttl = world.getComponent<TTLComponent>(entity, "TTL");
@@ -209,7 +209,7 @@ export const drawSkiaBullet: ShapeDrawer<Record<string, unknown>> = (canvas, _en
         const { Skia, BlurStyle } =
         require("@shopify/react-native-skia");
         if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const p = getPaint() as any;
+        const p = getPaint() as unknown as import("@shopify/react-native-skia").SkPaint;
         if (!p) return;
         const size = render.size;
 

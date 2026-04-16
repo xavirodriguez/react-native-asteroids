@@ -44,7 +44,7 @@ export class PongCollisionSystem extends System {
         ballVel.dy *= PONG_CONFIG.BALL_SPEED_INC;
 
         // Reposition ball to prevent multiple collisions
-        const paddleSide = world.getComponent<any>(paddleEntity, "Paddle").side;
+        const paddleSide = world.getComponent<import("../EntityFactory").PaddleComponent>(paddleEntity, "Paddle")!.side;
         if (paddleSide === "left") {
           ballPos.x = paddlePos.x + PONG_CONFIG.PADDLE_WIDTH / 2 + PONG_CONFIG.BALL_SIZE + 1;
         } else {
@@ -56,7 +56,6 @@ export class PongCollisionSystem extends System {
 
         // Juice: Recoil de la pala
         const recoilDir = paddleSide === "left" ? -1 : 1;
-        const originalPaddleX = paddlePos.x;
         Juice.add(world, paddleEntity, {
           property: "x",
           target: recoilDir * 10,
@@ -68,8 +67,8 @@ export class PongCollisionSystem extends System {
         });
 
         // Spin Logic
-        const paddleComp = world.getComponent<any>(paddleEntity, "Paddle");
-        const ballComp = world.getComponent<any>(ballEntity, "Ball");
+        const paddleComp = world.getComponent<import("../EntityFactory").PaddleComponent>(paddleEntity, "Paddle");
+        const ballComp = world.getComponent<import("../EntityFactory").BallComponent>(ballEntity, "Ball");
         if (paddleComp && ballComp) {
           const spin = Math.max(-1, Math.min(1, paddleComp.lastVelocityY / 1000));
           if (Math.abs(spin) > 0.3) {

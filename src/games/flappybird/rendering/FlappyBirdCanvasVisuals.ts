@@ -88,7 +88,7 @@ export const drawFlappyPipe: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entit
   const width = size;
   const halfWidth = width / 2;
 
-  const pipe = world.getComponent(entity, "Pipe") as any;
+  const pipe = world.getComponent<import("../EntityFactory").PipeComponent>(entity, "Pipe");
   if (!pipe) return;
 
   const halfGap = pipe.gapSize / 2;

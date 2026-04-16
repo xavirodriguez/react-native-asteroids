@@ -52,7 +52,7 @@ export class AIPongController extends InputController<PongInput> {
 
     const ball = world.query("Ball", "Transform", "Velocity")[0];
     const paddle = world.query("Paddle", "Transform", "Tag").find(e => {
-        const tags = world.getComponent<any>(e, "Tag").tags;
+        const tags = world.getComponent<import("../../../engine/types/EngineTypes").TagComponent>(e, "Tag")!.tags;
         return tags.includes("right"); // AI usually controls P2
     });
 

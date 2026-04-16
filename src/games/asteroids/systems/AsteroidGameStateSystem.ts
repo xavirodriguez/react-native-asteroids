@@ -11,7 +11,7 @@ import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem
 export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateComponent> implements IGameStateSystem {
 
   constructor(gameInstance?: IAsteroidsGame) {
-    super(gameInstance as any);
+    super(gameInstance as unknown as IAsteroidsGame & import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, boolean>>);
   }
 
   /**

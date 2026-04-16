@@ -183,7 +183,7 @@ export class CanvasRenderer implements Renderer {
 
     // Use serverTick from GameState singleton if available, otherwise fallback to performance.now()
     // We access serverTick generically to avoid coupling engine to game types
-    const serverTick = gameState && (gameState as any).serverTick !== undefined ? (gameState as any).serverTick as number : null;
+    const serverTick = gameState && (gameState as Record<string, unknown>).serverTick !== undefined ? (gameState as Record<string, unknown>).serverTick as number : null;
     snapshot.elapsedTime = serverTick !== null ? serverTick * (1000 / 60) : performance.now();
 
     for (let i = 0; i < entities.length; i++) {

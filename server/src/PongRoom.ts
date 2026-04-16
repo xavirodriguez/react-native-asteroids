@@ -59,7 +59,7 @@ export class PongRoom extends Room<PongStateSchema> {
     });
   }
 
-  onJoin(client: Client, _options: any) {
+  onJoin(client: Client, _options: Record<string, unknown>) {
     const player = new PongPlayer();
     player.sessionId = client.sessionId;
 

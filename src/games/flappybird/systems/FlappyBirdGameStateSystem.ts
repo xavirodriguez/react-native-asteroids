@@ -16,7 +16,7 @@ import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem
  */
 export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdState> implements IFlappyStateSystem {
   constructor(game: IFlappyBirdGame, private config: typeof FLAPPY_CONFIG = FLAPPY_CONFIG) {
-    super(game as any);
+    super(game as unknown as IFlappyBirdGame & import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, boolean>>);
   }
 
   protected updateGameState(world: World, gameState: FlappyBirdState, deltaTime: number): void {

@@ -27,7 +27,7 @@ describe("Asteroids Gameplay Integration", () => {
 
     const gameStateEntity = createGameState({ world });
     // Ensure asteroidsRemaining starts at 0 to trigger initial wave
-    const gs = world.getComponent<any>(gameStateEntity, "GameState");
+    const gs = world.getComponent<import("../../types/AsteroidTypes").GameStateComponent>(gameStateEntity, "GameState")!;
     gs.asteroidsRemaining = 0;
     gs.level = 0; // It will increment to 1
 
@@ -53,7 +53,7 @@ describe("Asteroids Gameplay Integration", () => {
     // 1. Find an asteroid and spawn a bullet on top of it
     const asteroids = world.query("Asteroid", "Transform");
     const targetAsteroid = asteroids[0];
-    const pos = world.getComponent<any>(targetAsteroid, "Transform");
+    const pos = world.getComponent<import("../../../../engine/types/EngineTypes").TransformComponent>(targetAsteroid, "Transform")!;
 
     createBullet({
       world,

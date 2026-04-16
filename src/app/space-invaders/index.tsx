@@ -94,7 +94,7 @@ export default function SpaceInvadersScreen() {
     );
   }
 
-  const handleMultiplayerInput = (input: any) => {
+  const handleMultiplayerInput = (input: Record<string, boolean>) => {
     if (isMulti && room) {
         room.send("input", input);
     } else {

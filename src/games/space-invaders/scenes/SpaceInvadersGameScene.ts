@@ -53,7 +53,7 @@ export class SpaceInvadersGameScene extends Scene {
 
   public onEnter(): void {
     // Inject EventBus and other engine resources into the scene world
-    const eventBus = (this.game as any).eventBus;
+    const eventBus = (this.game as unknown as { eventBus: import("../../../engine/core/EventBus").EventBus }).eventBus;
     if (eventBus) {
       this.world.setResource("EventBus", eventBus);
     }
@@ -62,7 +62,7 @@ export class SpaceInvadersGameScene extends Scene {
     const inputSys = new SpaceInvadersInputSystem(this.playerBulletPool);
     if (this.game.isMultiplayer) inputSys.setMultiplayerMode(true);
 
-    this.world.addSystem((this.game as any).unifiedInput);
+    this.world.addSystem((this.game as unknown as import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, boolean>>).unifiedInput);
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new JuiceSystem());

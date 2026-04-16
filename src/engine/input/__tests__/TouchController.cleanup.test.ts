@@ -3,11 +3,11 @@ import { TouchController } from "../TouchController";
 describe("TouchController Lifecycle", () => {
   it("should clear timeout on cleanup", () => {
     jest.useFakeTimers();
-    const controller = new TouchController<any>();
-    const setInputsSpy = jest.spyOn(controller as any, 'setInputs');
+    const controller = new TouchController<Record<string, boolean>>();
+    const setInputsSpy = jest.spyOn(controller as unknown as { setInputs: (inputs: Record<string, boolean>) => void }, 'setInputs');
 
     // Trigger a gesture that sets a timeout
-    (controller as any).emitGesture("tap");
+    (controller as unknown as { emitGesture: (g: string) => void }).emitGesture("tap");
     expect(setInputsSpy).toHaveBeenCalledWith({ tap: true });
 
     // Cleanup before timeout fires
