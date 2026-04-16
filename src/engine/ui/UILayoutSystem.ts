@@ -6,6 +6,7 @@
 
 import { System } from "../core/System";
 import { World } from "../core/World";
+import { Component } from "../core/Component";
 import {
   UIElementComponent,
   UIAnchor,
@@ -282,7 +283,7 @@ export class UILayoutSystem extends System {
       let screenY = targetTransform.worldY !== undefined ? targetTransform.worldY : targetTransform.y;
 
       if (attach.useCamera) {
-          const gameState = world.getSingleton<Record<string, unknown>>("GameState");
+          const gameState = world.getSingleton<Component & Record<string, unknown>>("GameState");
           const camera = gameState?.camera as Record<string, number> | undefined;
           if (camera) {
               screenX -= camera.x || 0;

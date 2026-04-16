@@ -1,6 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { RenderComponent, TransformComponent } from "../core/CoreComponents";
+import { Component, RenderComponent, TransformComponent } from "../core/CoreComponents";
 
 /**
  * Sistema de preparación visual y efectos cosméticos.
@@ -55,7 +55,7 @@ export class RenderUpdateSystem extends System {
     const shipEntities = world.query("Transform", "Ship");
     shipEntities.forEach((entity) => {
         const pos = world.getComponent<TransformComponent>(entity, "Transform");
-        const ship = world.getComponent<Record<string, unknown>>(entity, "Ship");
+        const ship = world.getComponent<Component & Record<string, unknown>>(entity, "Ship");
 
         if (pos && ship && Array.isArray(ship.trailPositions)) {
             const trails = ship.trailPositions as {x: number, y: number}[];

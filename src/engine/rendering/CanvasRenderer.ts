@@ -1,4 +1,5 @@
 import { World } from "../core/World";
+import { Component } from "../core/Component";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity } from "../core/Entity";
 import { RenderComponent, TransformComponent, PreviousTransformComponent } from "../core/CoreComponents";
@@ -166,7 +167,7 @@ export class CanvasRenderer implements Renderer<CanvasRenderingContext2D> {
     let count = 0;
 
     const gameStateEntity = world.query("GameState")[0];
-    const gameState = gameStateEntity ? world.getComponent<Record<string, unknown>>(gameStateEntity, "GameState") : null;
+    const gameState = gameStateEntity ? world.getComponent<Component & Record<string, unknown>>(gameStateEntity, "GameState") : null;
 
     let shakeX = 0;
     let shakeY = 0;
