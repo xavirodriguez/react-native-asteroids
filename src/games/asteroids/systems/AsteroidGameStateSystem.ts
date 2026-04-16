@@ -4,7 +4,6 @@ import { spawnAsteroidWave, createUfo } from "../EntityFactory";
 import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
-import { BaseGame } from "../../../engine/core/BaseGame";
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.

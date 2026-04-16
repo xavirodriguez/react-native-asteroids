@@ -17,16 +17,23 @@ import type { GameStateComponent } from "../src/types/GameTypes";
 type SkiaModuleType = typeof import("@shopify/react-native-skia");
 
 // Conditionally import Skia components
-let Canvas: React.ComponentType<Record<string, unknown>> | null = null;
-let BackdropBlur: React.ComponentType<Record<string, unknown>> | null = null;
+let Canvas: React.ComponentType<{
+  style?: import("react-native").StyleProp<import("react-native").ViewStyle>;
+  children?: React.ReactNode;
+}> | null = null;
+let BackdropBlur: React.ComponentType<{
+  blur: number;
+  clip?: { x: number; y: number; width: number; height: number };
+  children?: React.ReactNode;
+}> | null = null;
 let Fill: React.ComponentType<{ color: string }> | null = null;
 
 if (Platform.OS !== "web") {
   try {
     const SkiaModule = require("@shopify/react-native-skia") as SkiaModuleType;
-    Canvas = SkiaModule.Canvas as unknown as React.ComponentType<Record<string, unknown>>;
-    BackdropBlur = SkiaModule.BackdropBlur as unknown as React.ComponentType<Record<string, unknown>>;
-    Fill = SkiaModule.Fill as unknown as React.ComponentType<{ color: string }>;
+    Canvas = SkiaModule.Canvas as unknown as typeof Canvas;
+    BackdropBlur = SkiaModule.BackdropBlur as unknown as typeof BackdropBlur;
+    Fill = SkiaModule.Fill as unknown as typeof Fill;
   } catch (_err) {
     // Skia not available
   }

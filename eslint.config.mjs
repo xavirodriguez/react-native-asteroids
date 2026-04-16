@@ -67,7 +67,9 @@ export default tseslint.config(
     files: [
       "**/*.config.{js,cjs}",
       "metro.config.js",
-      "babel.config.js"
+      "babel.config.js",
+      "postcss.config.js",
+      "tailwind.config.js"
     ],
     languageOptions: {
       sourceType: "commonjs",
@@ -78,7 +80,8 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/no-var-requires": "off",
-      "no-undef": "off" // Sometimes needed for commonjs in flat config
+      "no-undef": "off", // Sometimes needed for commonjs in flat config
+      "no-unused-vars": "off",
     },
   },
   {

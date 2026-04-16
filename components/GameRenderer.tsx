@@ -10,16 +10,17 @@ import { GameLoop } from "../src/engine/core/GameLoop";
 type SkiaModuleType = typeof import("@shopify/react-native-skia");
 
 // Conditionally import Skia components for non-web platforms
-let Canvas: React.ComponentType<Record<string, unknown>> | null = null;
+let Canvas: React.ComponentType<{
+  style?: import("react-native").StyleProp<import("react-native").ViewStyle>;
+  children?: React.ReactNode;
+}> | null = null;
 let Drawing: React.ComponentType<{ onDraw: (canvas: SkCanvas) => void }> | null = null;
 
 if (Platform.OS !== "web") {
   try {
     const SkiaModule = require("@shopify/react-native-skia") as SkiaModuleType;
-    Canvas = SkiaModule.Canvas as unknown as React.ComponentType<Record<string, unknown>>;
-    Drawing = SkiaModule.Drawing as unknown as React.ComponentType<{
-      onDraw: (canvas: SkCanvas) => void;
-    }>;
+    Canvas = SkiaModule.Canvas as unknown as typeof Canvas;
+    Drawing = SkiaModule.Drawing as unknown as typeof Drawing;
   } catch (_err) {
     console.warn("Skia not available");
   }

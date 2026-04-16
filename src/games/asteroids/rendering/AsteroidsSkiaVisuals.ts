@@ -3,7 +3,7 @@ import { TransformComponent, HealthComponent, TTLComponent, Star } from "../../.
 import { Platform } from "react-native";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
-import type { SkCanvas, SkPaint } from "@shopify/react-native-skia";
+import type { SkCanvas } from "@shopify/react-native-skia";
 
 // Lazy initialize paint to avoid issues in environments where Skia is not fully ready at module load time
 let paint: unknown = null;
