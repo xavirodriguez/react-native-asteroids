@@ -23,7 +23,11 @@ const ASTEROID_SPLIT_CONFIG: Record<
 
 export class DeterministicSimulation {
     public static update(world: World, deltaTime: number, ctx: SimulationContext) {
-        RandomService.lockGameplayContext = true;
+        // Only lock gameplay context during resimulation.
+        // Forward simulation may legitimately trigger visual effects that use the render RNG.
+        if (ctx.isResimulating) {
+            RandomService.lockGameplayContext = true;
+        }
         try {
             this.internalUpdate(world, deltaTime, ctx);
         } finally {

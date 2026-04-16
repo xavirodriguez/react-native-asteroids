@@ -15,6 +15,7 @@ import { createShip, spawnAsteroidWave, createGameState } from "../EntityFactory
 import { GAME_CONFIG } from "../types/AsteroidTypes";
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { IAsteroidsGame } from "../types/GameInterfaces";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 export class AsteroidsGameScene extends Scene {
   private game: IAsteroidsGame;
@@ -61,7 +62,7 @@ export class AsteroidsGameScene extends Scene {
   }
 
   public override onRestartCleanup(): void {
-    const gameplayRandom = import("../../../engine/utils/RandomService").RandomService.getInstance("gameplay");
+    const gameplayRandom = RandomService.getInstance("gameplay");
     gameplayRandom.setSeed(this.game.getSeed());
 
     const eventBus = this.world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
