@@ -78,14 +78,15 @@ export const ShipPhysics = {
     this.applyFriction(vel, deltaTime, config);
 
     // 2. Shooting
-    if (input.shootCooldownRemaining > 0) {
-      input.shootCooldownRemaining -= deltaTime;
-    }
-
     if (input.shoot && input.shootCooldownRemaining <= 0) {
       const bullet = createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
       input.shootCooldownRemaining = config.BULLET_SHOOT_COOLDOWN;
       if (onShoot) onShoot(bullet);
+    }
+
+    if (input.shootCooldownRemaining > 0) {
+      input.shootCooldownRemaining -= deltaTime;
+    }
     }
   }
 };
