@@ -25,6 +25,13 @@ The Matter.js-dependent `CollisionRouter` has been moved to `Legacy`.
 `SpatialHash` has been moved from `@engine/collision/SpatialHash` to `@engine/physics/collision/SpatialHash`.
 - **Update:** Internal engine imports have been updated. Public access via the main entry point remains the same (exported from `src/engine/index.ts`).
 
+### 5. Legacy Type Renaming and API Sanitization (2024-05-25)
+Legacy types have been renamed and removed from the top-level API to prevent naming collisions and ensure developers use modern alternatives.
+- **Renamed:** `Transform` (Legacy) -> `LegacyTransform`, `ScreenShake` (Legacy) -> `LegacyScreenShake`.
+- **API Change:** Legacy types are no longer re-exported from `EngineTypes.ts`. They are only accessible via the `Legacy` namespace.
+- **Old:** `import { Transform } from '@engine/index';`
+- **New:** `import { Legacy } from '@engine/index'; const t: Legacy.LegacyTransform = ...;`
+
 ## Migration Steps
 1. Update any direct file imports to use the new paths in `src/engine/legacy/`.
 2. Prefer the modern alternatives (`Camera2D`, `UnifiedInputSystem`, `CollisionSystem2D`) for all new development.

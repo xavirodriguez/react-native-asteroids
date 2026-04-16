@@ -1,4 +1,4 @@
-import { Entity, Transform } from "../types/EngineTypes";
+import { Entity, Legacy } from "../index";
 
 /**
  * Comandos emitidos por el `RenderSystem` para ser consumidos por el adaptador.
@@ -12,7 +12,7 @@ import { Entity, Transform } from "../types/EngineTypes";
 export interface RenderCommand {
   type: string;
   entityId: Entity;
-  worldTransform: Transform;
+  worldTransform: Legacy.LegacyTransform;
   alpha: number; // For interpolation
   textureId?: string;
   width?: number;
