@@ -73,7 +73,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     PongEntityFactory.createGameState(this.world);
   }
 
-  public initializeRenderer(renderer: Renderer<any>): void {
+  public initializeRenderer(renderer: Renderer<unknown>): void {
     if (renderer.type === "canvas") {
       renderer.registerShape("circle", drawPongBall); // Override default circle with spinning ball
     }

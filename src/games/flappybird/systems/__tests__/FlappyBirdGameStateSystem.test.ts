@@ -3,6 +3,7 @@ import { FlappyBirdGame } from "../../FlappyBirdGame";
 import { FlappyBirdGameStateSystem } from "../FlappyBirdGameStateSystem";
 import { createGameState } from "../../EntityFactory";
 import { FlappyBirdState } from "../../types/FlappyBirdTypes";
+import { BaseGame } from "../../../../engine/core/BaseGame";
 
 describe("FlappyBirdGameStateSystem", () => {
   let world: World;
@@ -13,7 +14,7 @@ describe("FlappyBirdGameStateSystem", () => {
     game = new FlappyBirdGame();
     // BaseGame calls registerSystems in constructor, which sets up the scene
     world = game.getWorld();
-    system = new FlappyBirdGameStateSystem(game as any);
+    system = new FlappyBirdGameStateSystem(game as unknown as BaseGame<FlappyBirdState, Record<string, unknown>>);
   });
 
   it("should initialize with score 0", () => {

@@ -57,7 +57,7 @@ export class SpaceInvadersGame
     // Handled by SpaceInvadersGameScene.onEnter()
   }
 
-  public initializeRenderer(renderer: Renderer<any>): void {
+  public initializeRenderer(renderer: Renderer<unknown>): void {
     if (renderer.type === "canvas") {
       renderer.registerShape("player_ship", drawSpaceInvadersPlayer);
       renderer.registerShape("invader", drawSpaceInvadersInvader);

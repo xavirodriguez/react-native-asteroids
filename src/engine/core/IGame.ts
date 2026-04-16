@@ -114,5 +114,5 @@ export interface IGame<TGame = unknown> {
   /**
    * Registers game-specific rendering logic to the provided renderer.
    */
-  initializeRenderer(renderer: import("../rendering/Renderer").Renderer<any>): void;
+  initializeRenderer(renderer: import("../rendering/Renderer").Renderer<unknown>): void;
 }

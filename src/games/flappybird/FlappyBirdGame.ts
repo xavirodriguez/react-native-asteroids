@@ -113,7 +113,7 @@ export class FlappyBirdGame
     createGround(this.world);
   }
 
-  public initializeRenderer(renderer: Renderer<any>): void {
+  public initializeRenderer(renderer: Renderer<unknown>): void {
     if (renderer.type === "canvas") {
       renderer.registerShape("bird", drawFlappyBird);
       renderer.registerShape("pipe", drawFlappyPipe);

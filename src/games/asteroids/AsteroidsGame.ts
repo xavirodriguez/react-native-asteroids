@@ -242,7 +242,7 @@ export class AsteroidsGame
   /**
    * Registers game-specific rendering logic to the provided renderer.
    */
-  public initializeRenderer(renderer: Renderer<any>): void {
+  public initializeRenderer(renderer: Renderer<unknown>): void {
     initializeAsteroidsRenderer(renderer);
   }
 

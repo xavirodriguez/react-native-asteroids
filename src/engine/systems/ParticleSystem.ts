@@ -5,6 +5,19 @@ import { PrefabPool } from "../utils/PrefabPool";
 import { RandomService } from "../utils/RandomService";
 
 /**
+ * Configuration parameters for spawning a single particle.
+ */
+export interface ParticleParams {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string;
+  ttl: number;
+}
+
+/**
  * Sistema encargado de gestionar emisores de partículas declarativos.
  * Utiliza un {@link PrefabPool} para instanciar partículas de forma eficiente,
  * minimizando la fragmentación de memoria y la presión sobre el GC.
@@ -26,9 +39,9 @@ import { RandomService } from "../utils/RandomService";
  * de la partícula. Se debe asegurar que el servicio esté correctamente inicializado para replays.
  */
 export class ParticleSystem extends System {
-  private particlePool: PrefabPool<Record<string, Component>, any>;
+  private particlePool: PrefabPool<Record<string, Component>, ParticleParams>;
 
-  constructor(particlePool: PrefabPool<Record<string, Component>, any>) {
+  constructor(particlePool: PrefabPool<Record<string, Component>, ParticleParams>) {
     super();
     this.particlePool = particlePool;
   }

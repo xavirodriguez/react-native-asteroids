@@ -52,7 +52,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected _config: BaseGameConfig;
   protected hierarchySystem: HierarchySystem;
 
-  public abstract initializeRenderer(renderer: import("../rendering/Renderer").Renderer<any>): void;
+  public abstract initializeRenderer(renderer: import("../rendering/Renderer").Renderer<unknown>): void;
 
   constructor(config: BaseGameConfig = {}) {
     const { isMultiplayer = false } = config;
