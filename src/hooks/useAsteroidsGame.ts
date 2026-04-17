@@ -9,7 +9,7 @@ import type { GameStateComponent, InputState } from "../types/GameTypes";
  * Custom hook to manage the lifecycle of the Asteroids game engine.
  */
 export function useAsteroidsGame(isMultiplayer: boolean = false) {
-  const { game, gameState, isPaused, handleInput, togglePause, restart } =
+  const { game, gameState, isPaused, isReady, handleInput, togglePause, restart } =
     useGame<AsteroidsGame, GameStateComponent, InputState>(AsteroidsGame, INITIAL_GAME_STATE, isMultiplayer);
 
   const { highScore, updateHighScore } = useHighScore();
@@ -26,6 +26,7 @@ export function useAsteroidsGame(isMultiplayer: boolean = false) {
     gameState: gameState ?? INITIAL_GAME_STATE,
     handleInput,
     isPaused,
+    isReady,
     togglePause,
     highScore,
     seed: game?.getSeed(),

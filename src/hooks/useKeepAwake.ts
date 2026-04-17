@@ -11,31 +11,43 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
  */
 export function useKeepAwake(enabled: boolean = true): void {
   useEffect(() => {
-    // Check if we are in a browser and if wakeLock is supported (non-secure contexts often lack it)
-    const isWeb = typeof document !== "undefined" && typeof document.createElement === "function";
-    const supportsWakeLock = isWeb && typeof navigator !== "undefined" && "wakeLock" in navigator;
+    // Improved platform detection for Web environment
+    const isWeb = typeof window !== "undefined" && typeof navigator !== "undefined";
+
+    // WakeLock is only available in secure contexts (HTTPS) and supported browsers
+    const supportsWakeLock = isWeb &&
+      'wakeLock' in navigator &&
+      (navigator as any).wakeLock !== undefined &&
+      (navigator as any).wakeLock !== null;
 
     if (!enabled) return;
 
-    // Only skip activation on web without WakeLock support; native is handled by Expo
+    // On web, if WakeLock is not supported, we don't even try to call Expo's API
+    // as it might attempt to access navigator.wakeLock and throw.
     if (isWeb && !supportsWakeLock) {
-      // Silently fail on web without support to avoid console noise in dev
       return;
     }
 
-    // Symmetric activation
-    activateKeepAwakeAsync().catch((error) => {
-      // Common on web or if already deactivated
-      console.warn("Could not activate keep-awake:", error);
-    });
+    // Symmetric activation with extra safety
+    try {
+      activateKeepAwakeAsync().catch((error) => {
+        // Common on web if not in secure context or if already deactivated
+        // We log as info to avoid cluttering error logs for a non-critical failure
+        console.info("Keep-awake activation skipped or failed:", error.message);
+      });
+    } catch (e) {
+      // Catch synchronous errors if any
+      console.info("Keep-awake not supported in this environment");
+    }
 
     return () => {
       // Symmetric deactivation
       try {
-        deactivateKeepAwake();
+        if (!isWeb || supportsWakeLock) {
+          deactivateKeepAwake();
+        }
       } catch (error) {
-        // Wrap in try-catch to prevent errors on web during rapid transitions
-        console.warn("Error deactivating keep-awake:", error);
+        // Silently fail on cleanup to prevent crash during unmount
       }
     };
   }, [enabled]);
