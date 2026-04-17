@@ -65,16 +65,17 @@ export class Query {
    * Devuelve un array cacheado para minimizar la presión del GC.
    *
    * @remarks
-   * El array devuelto es una referencia a un caché interno. No debe ser modificado por el
-   * consumidor (e.g. mediante `.sort()` o `.push()`).
+   * El array devuelto es una referencia a un caché interno por razones de rendimiento.
+   * Se devuelve como `ReadonlyArray` para señalizar que NO debe ser modificado.
    *
    * @returns Un array de IDs de {@link Entity}.
    *
+   * @precondition No se debe realizar casting de este array a uno mutable ni utilizar métodos in-place (sort, push).
    * @postcondition El array devuelto refleja el estado actual del {@link World} para esta firma.
-   * @postcondition Las entidades en el array están ordenadas por ID de forma ascendente.
+   * @postcondition Las entidades en el array están siempre ordenadas por ID de forma ascendente.
    *
-   * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] Si un consumidor modifica el array devuelto
-   * (e.g., mediante `.push()` o `.sort()` in-place), corromperá el estado interno de la Query.
+   * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] Si un consumidor rompe el contrato de solo lectura
+   * mediante casting forzado, corromperá el estado interno de la Query y de todos los sistemas dependientes.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.needsUpdateArray) {

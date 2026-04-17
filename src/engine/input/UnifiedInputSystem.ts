@@ -159,21 +159,33 @@ export class UnifiedInputSystem extends System {
    * @returns Un objeto con la lista de acciones activas y el valor de los ejes.
    * @queries activeKeys, activeTouches, overrides - Lee el estado acumulado.
    *
-   * @conceptualRisk [INPUT_DRIFT][HIGH] `getInputState()` actualmente ignora los `overrides`
-   * lógicos en su implementación (solo usa bindings de hardware). Esto causará que los jugadores
-   * que usen controles en pantalla no envíen sus acciones correctamente en modo multijugador.
+   * @postcondition El estado devuelto incorpora tanto las entradas de hardware como los `overrides` lógicos.
    */
   public getInputState(): { actions: string[], axes: Record<string, number> } {
-    const actions: string[] = [];
+    const actionsSet = new Set<string>();
     const axes: Record<string, number> = {};
 
+    // 1. Process hardware bindings
     this.bindings.forEach((inputs, action) => {
       const isPressed = inputs.some(input =>
         this.activeKeys.has(input) || this.activeTouches.has(input)
       );
-      if (isPressed) actions.push(action);
+      if (isPressed) actionsSet.add(action);
     });
 
+    // 2. Process logical overrides (UI or Network)
+    this.overrides.forEach((isPressed, action) => {
+      if (isPressed === undefined) return;
+      if (isPressed) {
+        actionsSet.add(action);
+      } else {
+        actionsSet.delete(action);
+      }
+    });
+
+    const actions = Array.from(actionsSet).sort();
+
+    // 3. Process axis bindings
     this.axisBindings.forEach((config, axis) => {
       let value = 0;
       if (config.pos.some(k => this.activeKeys.has(k))) value += 1;
