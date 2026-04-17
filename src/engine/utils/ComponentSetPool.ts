@@ -3,12 +3,12 @@ import { Entity, Component, ReclaimableComponent } from "../types/EngineTypes";
 import { ObjectPool } from "./ObjectPool";
 
 /**
- * Generic EntityPool that manages a pool of component sets.
+ * Generic ComponentSetPool that manages a pool of component sets.
  * Reduces GC pressure by reusing component objects across entities.
  *
  * @template T - A record of component types that form the pooled entity.
  */
-export class EntityPool<T extends Record<string, Component>> {
+export class ComponentSetPool<T extends Record<string, Component>> {
   private pool: ObjectPool<T>;
   private keyToType: Record<string, string>;
 

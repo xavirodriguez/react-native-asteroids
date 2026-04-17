@@ -1,8 +1,8 @@
 import { World } from "../../core/World";
-import { EntityPool } from "../EntityPool";
+import { ComponentSetPool } from "../ComponentSetPool";
 import { TransformComponent, TTLComponent, ReclaimableComponent } from "../../types/EngineTypes";
 
-describe("EntityPool", () => {
+describe("ComponentSetPool", () => {
   let world: World;
 
   beforeEach(() => {
@@ -16,7 +16,7 @@ describe("EntityPool", () => {
   }
 
   it("should acquire an entity with components", () => {
-    const pool = new EntityPool<TestComponents>(
+    const pool = new ComponentSetPool<TestComponents>(
       () => ({
         position: { type: "Transform", x: 0, y: 0 },
         ttl: { type: "TTL", remaining: 10, total: 10 },
@@ -39,7 +39,7 @@ describe("EntityPool", () => {
 
   it("should reuse components after release", () => {
     let factoryCount = 0;
-    const pool = new EntityPool<TestComponents>(
+    const pool = new ComponentSetPool<TestComponents>(
       () => {
         factoryCount++;
         return {
@@ -53,7 +53,7 @@ describe("EntityPool", () => {
       }
     );
 
-    // Initial factory call during EntityPool constructor to map keys to types
+    // Initial factory call during ComponentSetPool constructor to map keys to types
     // Since we call release(template) in constructor, it's now pooled.
     expect(factoryCount).toBe(1);
 
@@ -78,7 +78,7 @@ describe("EntityPool", () => {
   });
 
   it("should automatically wire up Reclaimable component", () => {
-    const pool = new EntityPool<TestComponents>(
+    const pool = new ComponentSetPool<TestComponents>(
       () => ({
         position: { type: "Transform", x: 0, y: 0 },
         ttl: { type: "TTL", remaining: 10, total: 10 },

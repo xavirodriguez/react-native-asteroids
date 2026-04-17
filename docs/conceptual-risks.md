@@ -48,5 +48,5 @@ Esta sección documenta las fragilidades arquitectónicas y de diseño detectada
 | **LIFECYCLE**   | **MEDIUM** | `SceneManager.restartCurrentScene` limpia el mundo pero no los recursos compartidos, pudiendo arrastrar estado sucio. | `SceneManager.ts` |
 | **DETERMINISM** | **LOW**    | `RenderUpdateSystem` muta `Render.rotation`. Si un sistema de colisiones depende de esta rotación en lugar de la del `Transform`, habrá drift visual vs físico. | `RenderUpdateSystem.ts` |
 | **GC_PRESSURE** | **LOW**    | Generación frecuente de arrays en `World.query` y `Query.getEntities`. Aunque se cachean, la exposición de la referencia mutable es peligrosa. | `World.ts`, `Query.ts` |
-| **DETERMINISM** | **CRITICAL** | Uso de `Math.random()` en lógica de selección de objetivos de IA. Rompe el determinismo de la simulación. | `KamikazeSystem.ts` |
+| **DETERMINISM** | **FIXED**    | Uso de `Math.random()` en lógica de selección de objetivos de IA. Migrado a `RandomService("gameplay")`. | `KamikazeSystem.ts` |
 | **DETERMINISM** | **HIGH** | `getInputState` solo considera inputs de hardware, ignorando overrides de UI. Causa desincronización en red para jugadores móviles. | `UnifiedInputSystem.ts` |
