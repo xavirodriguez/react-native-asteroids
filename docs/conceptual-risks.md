@@ -42,9 +42,11 @@ Esta sección documenta las fragilidades arquitectónicas y de diseño detectada
 | **PERFORMANCE**| **MEDIUM** | El loop de `GameLoop` puede disparar el "Spiral of Death" si la simulación es más lenta que el tiempo real, a pesar del límite `maxDeltaMs`. | `GameLoop.ts` |
 | **LIFECYCLE**   | **HIGH** | `runLifecycle` siempre introduce un microtask delay (async), lo que puede causar desincronización en métodos que esperan ejecución inmediata. | `LifecycleUtils.ts` |
 | **DETERMINISM** | **MEDIUM** | `RandomService.getInstance("render")` puede ser usado erróneamente en lógica de gameplay, rompiendo el determinismo silenciosamente. | `RandomService.ts` |
-| **HIERARCHY**   | **MEDIUM** | `HierarchySystem` utiliza recursión para resolver transformaciones, riesgo de Stack Overflow en jerarquías profundas. | `HierarchySystem.ts` |
+| **HIERARCHY**   | **LOW**    | `HierarchySystem` utiliza un algoritmo iterativo, pero jerarquías circulares disparan un warning y se ignoran, pudiendo dejar entidades en posiciones 0,0. | `HierarchySystem.ts` |
 | **DETERMINISM** | **MEDIUM** | `JuiceSystem` muta componentes `Transform` core. Si se usa para lógica de colisiones, causará desincronización en red. | `JuiceSystem.ts` |
 | **HIERARCHY**   | **LOW**    | `World.addComponent` normaliza jerarquías rompiendo silenciosamente el parentesco si el padre no existe. Evita crashes pero oculta errores de orden de creación. | `World.ts` |
 | **LIFECYCLE**   | **MEDIUM** | `SceneManager.restartCurrentScene` limpia el mundo pero no los recursos compartidos, pudiendo arrastrar estado sucio. | `SceneManager.ts` |
 | **DETERMINISM** | **LOW**    | `RenderUpdateSystem` muta `Render.rotation`. Si un sistema de colisiones depende de esta rotación en lugar de la del `Transform`, habrá drift visual vs físico. | `RenderUpdateSystem.ts` |
 | **GC_PRESSURE** | **LOW**    | Generación frecuente de arrays en `World.query` y `Query.getEntities`. Aunque se cachean, la exposición de la referencia mutable es peligrosa. | `World.ts`, `Query.ts` |
+| **DETERMINISM** | **CRITICAL** | Uso de `Math.random()` en lógica de selección de objetivos de IA. Rompe el determinismo de la simulación. | `KamikazeSystem.ts` |
+| **DETERMINISM** | **HIGH** | `getInputState` solo considera inputs de hardware, ignorando overrides de UI. Causa desincronización en red para jugadores móviles. | `UnifiedInputSystem.ts` |

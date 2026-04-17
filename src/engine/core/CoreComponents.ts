@@ -145,16 +145,25 @@ export interface TTLComponent extends Component {
 import { Shape } from "../physics/shapes/ShapeTypes";
 
 /**
- * Modern collider component supporting multiple shapes and collision layers.
+ * Componente de colisión moderno que soporta múltiples formas y capas de colisión.
+ *
+ * @responsibility Definir el volumen físico y las reglas de filtrado para la detección de colisiones.
  */
 export interface Collider2DComponent extends Component {
   type: "Collider2D";
+  /** Definición geométrica de la forma (Circle, AABB, etc.). */
   shape: Shape;
+  /** Desplazamiento horizontal relativo al centro de la entidad en píxeles. */
   offsetX: number;
+  /** Desplazamiento vertical relativo al centro de la entidad en píxeles. */
   offsetY: number;
+  /** Máscara de bits representando la capa a la que pertenece este objeto. */
   layer: number;
+  /** Máscara de bits que define con qué capas puede colisionar este objeto. */
   mask: number;
+  /** Si es true, la colisión no genera respuesta física (rebote) pero sí eventos de trigger. */
   isTrigger: boolean;
+  /** Permite activar/desactivar el collider sin eliminar el componente. */
   enabled: boolean;
 }
 
@@ -189,25 +198,48 @@ export interface ContinuousColliderComponent extends Component {
 }
 
 /**
- * Rigid body component for the built-in physics engine.
+ * Componente de cuerpo rígido para el motor de física integrado.
+ *
+ * @responsibility Almacenar propiedades dinámicas y materiales para la simulación física impulsiva.
+ * @remarks Las unidades están estandarizadas en píxeles, segundos y radianes.
  */
 export interface PhysicsBody2DComponent extends Component {
   type: "PhysicsBody2D";
+  /**
+   * - `static`: No se mueve y tiene masa infinita.
+   * - `dynamic`: Afectado por fuerzas y gravedad.
+   * - `kinematic`: Se mueve por velocidad manual, masa infinita.
+   */
   bodyType: "static" | "dynamic" | "kinematic";
+  /** Velocidad lineal en X (px/s). */
   velocityX: number;
+  /** Velocidad lineal en Y (px/s). */
   velocityY: number;
+  /** Velocidad de rotación (rad/s). */
   angularVelocity: number;
+  /** Fuerza acumulada en X para el tick actual. */
   forceX: number;
+  /** Fuerza acumulada en Y para el tick actual. */
   forceY: number;
+  /** Torque acumulado para el tick actual. */
   torque: number;
+  /** Masa del objeto. */
   mass: number;
+  /** Masa inversa (1/masa). Cacheada para optimizar cálculos. */
   inverseMass: number;
+  /** Momento de inercia. */
   inertia: number;
+  /** Inercia inversa. */
   inverseInertia: number;
+  /** Coeficiente de restitución (rebote). Rango: [0, 1]. */
   restitution: number;
+  /** Rozamiento cuando el objeto está en reposo. */
   staticFriction: number;
+  /** Rozamiento durante el movimiento. */
   dynamicFriction: number;
+  /** Multiplicador de la gravedad global aplicada a este cuerpo. */
   gravityScale: number;
+  /** Si es true, el objeto no rotará por fuerzas externas. */
   fixedRotation: boolean;
 }
 
@@ -254,10 +286,14 @@ export interface HealthComponent extends Component {
 }
 
 /**
- * Reclaimable component for entities that should be returned to a pool.
+ * Componente que marca una entidad para ser reciclada en lugar de destruida.
+ *
+ * @responsibility Proporcionar un gancho para devolver la entidad a su pool de origen.
+ * @remarks Utilizado por el sistema de pooling de proyectiles y partículas.
  */
 export interface ReclaimableComponent extends Component {
   type: "Reclaimable";
+  /** Callback ejecutado por el World cuando la entidad se libera. */
   onReclaim: (world: World, entity: Entity) => void;
 }
 
@@ -406,15 +442,22 @@ export interface ScreenShakeComponent extends Component {
 }
 
 /**
- * Component used for non-simulated visual offsets (juice, screen shake, etc).
- * Renderers should add these values to the Transform values.
+ * Componente utilizado para desplazamientos visuales no simulados (Juice, Screen Shake, etc).
+ *
+ * @responsibility Separar los efectos visuales de la posición lógica/física de la entidad.
+ * @remarks Los renderizadores deben sumar estos valores a los del `Transform` al dibujar.
  */
 export interface VisualOffsetComponent extends Component {
   type: "VisualOffset";
+  /** Desplazamiento visual en X. */
   x: number;
+  /** Desplazamiento visual en Y. */
   y: number;
+  /** Rotación visual adicional en radianes. */
   rotation: number;
+  /** Factor de escala visual en X. */
   scaleX: number;
+  /** Factor de escala visual en Y. */
   scaleY: number;
 }
 

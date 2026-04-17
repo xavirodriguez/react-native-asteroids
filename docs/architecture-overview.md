@@ -22,16 +22,19 @@ El motor proporciona las primitivas necesarias para la simulación, mientras que
 - **Reglas de Juego**: Sistemas de puntuación, oleadas, niveles y condiciones de derrota.
 
 ## Módulos Principales
-1. **ECS World (`core/World.ts`)**: Base de datos in-memory de entidades y componentes.
-2. **Game Loop (`core/GameLoop.ts`)**: Latido determinista a 60Hz.
-3. **Unified Input (`input/UnifiedInputSystem.ts`)**: Capa de abstracción de hardware.
-4. **Renderer Pipeline (`rendering/`)**: Sistema de dibujo extensible.
+1. **ECS World (`core/World.ts`)**: Registro central y base de datos in-memory. Gestiona el ciclo de vida de entidades y el acceso reactivo mediante Queries.
+2. **Game Loop (`core/GameLoop.ts`)**: Orquestador de tiempo que garantiza un timestep fijo de 60Hz para la simulación y variable para el renderizado.
+3. **BaseGame (`core/BaseGame.ts`)**: Clase maestra que coordina la inicialización, el loop determinista y la integración con la UI de React Native.
+4. **Unified Input (`input/UnifiedInputSystem.ts`)**: Normaliza entradas de hardware y permite inyecciones lógicas (overrides) para controles táctiles y red.
+5. **Renderer Pipeline (`rendering/`)**: Pipeline desacoplado que utiliza snapshots e interpolación para una visualización fluida.
+6. **Scene Manager (`scenes/SceneManager.ts`)**: FSM atómica para gestionar transiciones de estado de juego sin fugas de memoria.
 
 ## Principios Arquitectónicos
-1. **Composición sobre Herencia**: El comportamiento se define por qué componentes tiene una entidad, no por su clase.
-2. **Simulación Determinista**: Uso de `RandomService` y timesteps fijos para garantizar resultados reproducibles.
-3. **Unificación de Loop**: Los renderizadores son pasivos y sincronizados con el latido del motor.
-4. **Local-First / Server-Authoritative**: Soporte nativo para predicción en cliente con validación en servidor.
+1. **ECS Puro**: Separación estricta de datos (Componentes) y lógica (Sistemas). Las entidades son simples identificadores numéricos.
+2. **Simulación Determinista**: Timesteps fijos (16.67ms) y uso obligatorio de `RandomService` (PRNG) para asegurar que la lógica sea reproducible.
+3. **Desacoplamiento Visual**: El motor de renderizado es un consumidor pasivo del estado del mundo, operando sobre transformaciones interpoladas.
+4. **Single Source of Truth**: El `World` (o la `Scene` activa) es el único almacén de estado; React Native actúa solo como una capa de presentación y control.
+5. **Zero Allocation (Hot Path)**: Uso intensivo de pools (`EntityPool`, `PrefabPool`, `CommandBuffer`) para minimizar la presión del GC durante el gameplay.
 
 ## API Reference
 La documentación técnica detallada de cada clase, interfaz y sistema se genera automáticamente a partir del código fuente.

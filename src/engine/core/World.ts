@@ -186,7 +186,15 @@ export class World {
   }
 
   /**
-   * Crea una nueva entidad única en el mundo.
+   * Crea una nueva entidad única en el mundo utilizando el pool de entidades.
+   *
+   * @remarks
+   * Intenta reutilizar un ID del {@link EntityPool} antes de generar uno nuevo.
+   * Incrementa la versión del mundo para invalidar cachés estructurales.
+   *
+   * @returns Un nuevo identificador de {@link Entity}.
+   * @postcondition La entidad devuelta es considerada activa en el mundo.
+   * @sideEffect Incrementa {@link World.version}.
    */
   public createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -196,7 +204,10 @@ export class World {
   }
 
   /**
-   * Elimina todos los sistemas registrados en el mundo.
+   * Elimina todos los sistemas registrados de todas las fases.
+   *
+   * @postcondition La lista de sistemas queda vacía.
+   * @sideEffect Incrementa {@link World.version}.
    */
   clearSystems(): void {
     this.systems = [];
@@ -206,7 +217,22 @@ export class World {
   }
 
   /**
-   * Adjunta un componente a una entidad.
+   * Adjunta o reemplaza un componente en una entidad específica.
+   *
+   * @remarks
+   * Si la entidad ya poseía un componente del mismo tipo, este será sobrescrito.
+   * Realiza validaciones de integridad jerárquica para componentes de tipo 'Transform'.
+   * Notifica a las queries interesadas sobre el cambio estructural.
+   *
+   * @param entity - El ID de la entidad destino.
+   * @param component - La instancia del componente a añadir.
+   * @returns El componente añadido para facilitar el encadenamiento.
+   *
+   * @precondition La entidad debe existir o ser un ID válido manejado por el motor.
+   * @postcondition El componente es accesible vía {@link World.getComponent}.
+   * @throws {Error} Si se intenta asignar una entidad como su propio padre en un Transform.
+   * @sideEffect Incrementa {@link World.version}.
+   * @mutates componentMaps, componentIndex, entityComponentSets
    */
   addComponent<T extends Component>(entity: Entity, component: T): T {
     const type = component.type;
@@ -242,18 +268,49 @@ export class World {
     return component;
   }
 
+  /**
+   * Recupera un componente de una entidad por su tipo.
+   *
+   * @param entity - La entidad a consultar.
+   * @param type - El nombre discriminador del componente.
+   * @returns La instancia del componente o `undefined` si no existe.
+   * @queries componentMaps
+   */
   getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
     return this.componentMaps.get(type)?.get(entity) as T;
   }
 
+  /**
+   * Comprueba la existencia de un componente en una entidad de forma eficiente.
+   *
+   * @param entity - La entidad a consultar.
+   * @param type - El tipo de componente.
+   * @returns `true` si la entidad posee el componente.
+   * @queries componentIndex
+   */
   hasComponent(entity: Entity, type: string): boolean {
     return this.componentIndex.get(type)?.has(entity) ?? false;
   }
 
+  /**
+   * Alias de {@link World.query} para obtener entidades con una firma específica.
+   * @deprecated Usar {@link World.query} directamente.
+   */
   public getEntitiesWith(...componentTypes: string[]): ReadonlyArray<Entity> {
     return this.query(...componentTypes);
   }
 
+  /**
+   * Elimina un componente de una entidad.
+   *
+   * @remarks
+   * Notifica a las queries reactivas para que actualicen sus índices.
+   *
+   * @param entity - La entidad destino.
+   * @param type - El tipo de componente a eliminar.
+   * @postcondition La entidad ya no posee el componente especificado.
+   * @sideEffect Incrementa {@link World.version}.
+   */
   removeComponent(entity: Entity, type: string): void {
     const componentMap = this.componentMaps.get(type);
     if (componentMap && componentMap.delete(entity)) {
@@ -267,6 +324,22 @@ export class World {
     }
   }
 
+  /**
+   * Realiza una consulta reactiva de entidades que poseen todos los tipos de componentes indicados.
+   *
+   * @remarks
+   * Utiliza un sistema de caché basado en {@link Query}. Si la consulta ya existe y el
+   * mundo no ha cambiado estructuralmente, devuelve el resultado cacheado instantáneamente.
+   * Las queries son sensibles al orden alfabético de los tipos para maximizar la reutilización.
+   *
+   * @param componentTypes - Lista de tipos que definen la firma de la consulta.
+   * @returns Un array de solo lectura con las entidades coincidentes.
+   *
+   * @precondition Debe proporcionarse al menos un tipo de componente.
+   * @postcondition El array devuelto está ordenado por ID de entidad.
+   * @conceptualRisk [PERFORMANCE][MEDIUM] Crear queries de muchos tipos en cada frame es costoso.
+   * Se deben definir las firmas de consulta de forma estática siempre que sea posible.
+   */
   public query(...componentTypes: string[]): ReadonlyArray<Entity> {
     if (componentTypes.length === 0) return [];
     const key = componentTypes.length === 1 ? componentTypes[0] : [...componentTypes].sort().join(",");
@@ -294,6 +367,17 @@ export class World {
     return query.getEntities();
   }
 
+  /**
+   * Elimina completamente una entidad y todos sus componentes asociados del mundo.
+   *
+   * @remarks
+   * Libera el ID de la entidad para que pueda ser reutilizado por el {@link EntityPool}.
+   * Limpia todas las referencias en los índices de componentes y queries.
+   *
+   * @param entity - La entidad a destruir.
+   * @postcondition La entidad ya no existe en el mundo y sus componentes son inaccesibles.
+   * @sideEffect Incrementa {@link World.version}.
+   */
   public removeEntity(entity: Entity): void {
     this.removeEntityFromComponentMaps(entity);
     this.entityComponentSets.delete(entity);
@@ -305,6 +389,16 @@ export class World {
     }
   }
 
+  /**
+   * Limpia el estado completo del mundo, incluyendo entidades, componentes y queries.
+   *
+   * @remarks
+   * No elimina los sistemas registrados, pero sí todos los recursos y datos de simulación.
+   * Útil para reinicios completos de nivel o cambios de escena drásticos.
+   *
+   * @postcondition El mundo queda en un estado inicial vacío.
+   * @sideEffect Incrementa {@link World.version}.
+   */
   public clear(): void {
     this.activeEntities.clear();
     this.componentMaps.clear();
@@ -316,22 +410,51 @@ export class World {
     this.version++;
   }
 
+  /**
+   * Registra un recurso global en el mundo.
+   * Los recursos son singletons que no están asociados a ninguna entidad.
+   *
+   * @param name - Identificador único del recurso.
+   * @param resource - La instancia u objeto del recurso.
+   */
   setResource<T>(name: string, resource: T): void {
     this.resources.set(name, resource);
   }
 
+  /**
+   * Recupera un recurso global previamente registrado.
+   *
+   * @param name - Nombre del recurso.
+   * @returns El recurso o `undefined` si no existe.
+   */
   getResource<T>(name: string): T | undefined {
     return this.resources.get(name) as T;
   }
 
+  /**
+   * Comprueba si un recurso específico está registrado.
+   */
   hasResource(name: string): boolean {
     return this.resources.has(name);
   }
 
+  /**
+   * Elimina un recurso del mundo.
+   */
   removeResource(name: string): void {
     this.resources.delete(name);
   }
 
+  /**
+   * Registra un nuevo sistema en el mundo para que participe en el ciclo de actualización.
+   *
+   * @remarks
+   * El sistema se ejecutará en la fase indicada con la prioridad especificada.
+   * Los cambios en la lista de sistemas fuerzan una re-ordenación en el siguiente {@link World.update}.
+   *
+   * @param system - Instancia del sistema que extiende {@link System}.
+   * @param config - Configuración de fase y prioridad.
+   */
   addSystem(system: System, config: SystemConfig = {}): void {
     const phase = config.phase ?? SystemPhase.Simulation;
     const priority = config.priority ?? 0;
@@ -339,6 +462,19 @@ export class World {
     this.systemsNeedSorting = true;
   }
 
+  /**
+   * Ejecuta un ciclo completo de actualización para todos los sistemas registrados.
+   *
+   * @remarks
+   * 1. Re-ordena sistemas si es necesario.
+   * 2. Itera por fase (Input -> Simulation -> Collision -> GameRules -> Presentation).
+   * 3. Ejecuta cada sistema, opcionalmente midiendo su rendimiento si `debugMode` es true.
+   *
+   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   *
+   * @precondition El mundo no debe estar en proceso de restauración o snapshotting.
+   * @postcondition El estado del mundo ha avanzado un paso de simulación.
+   */
   update(deltaTime: number): void {
     if (this.systemsNeedSorting) this.sortSystems();
     this.sortedSystems.forEach((system) => {
@@ -417,6 +553,19 @@ export class World {
     });
   }
 
+  /**
+   * Busca y devuelve el primer componente encontrado de un tipo específico (patrón Singleton).
+   *
+   * @remarks
+   * Útil para componentes que se sabe que solo tienen una instancia (ej: `InputState`, `EventBus`).
+   * Si el componente está congelado (`Object.isFrozen`), se devuelve una copia mutable para
+   * cumplir con el Principio de Mutabilidad de Singletons.
+   *
+   * @param type - El tipo de componente a buscar.
+   * @returns La instancia (o copia) del componente, o `undefined`.
+   * @queries query, getComponent
+   * @sideEffect Puede llamar a {@link World.addComponent} si el componente original estaba congelado.
+   */
   getSingleton<T extends Component>(type: string): T | undefined {
     const [entity] = this.query(type);
     if (entity === undefined) return undefined;

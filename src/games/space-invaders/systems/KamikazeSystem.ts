@@ -77,6 +77,7 @@ export class KamikazeSystem extends System {
 
   private spawnKamikaze(world: World, invaders: ReadonlyArray<number>, gameState: GameStateComponent): void {
     if (invaders.length === 0) return;
+    /** @conceptualRisk [DETERMINISM][CRITICAL] Uso de Math.random() en lógica de simulación. */
     const randomIndex = Math.floor(Math.random() * invaders.length);
     const invader = invaders[randomIndex];
     const pos = world.getComponent<TransformComponent>(invader, "Transform");
