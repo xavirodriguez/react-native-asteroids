@@ -18,7 +18,8 @@ export default tseslint.config(
       "**/.git/**",
       "**/temp/**",
       "**/etc/**",
-      "lint_report.json"
+      "lint_report.json",
+      "**/*.min.js"
     ],
   },
   js.configs.recommended,
@@ -80,7 +81,7 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/no-var-requires": "off",
-      "no-undef": "off", // Sometimes needed for commonjs in flat config
+      "no-undef": "off",
       "no-unused-vars": "off",
     },
   },

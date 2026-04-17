@@ -9,16 +9,26 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
  *
  * @param enabled - Whether the device should stay awake.
  */
+/**
+ * Interface extension for Navigator to include experimental WakeLock API.
+ */
+interface NavigatorWithWakeLock extends Navigator {
+  wakeLock?: {
+    request(type: "screen"): Promise<unknown>;
+  };
+}
+
 export function useKeepAwake(enabled: boolean = true): void {
   useEffect(() => {
     // Improved platform detection for Web environment
     const isWeb = typeof window !== "undefined" && typeof navigator !== "undefined";
+    const nav = navigator as NavigatorWithWakeLock;
 
     // WakeLock is only available in secure contexts (HTTPS) and supported browsers
     const supportsWakeLock = isWeb &&
-      'wakeLock' in navigator &&
-      (navigator as any).wakeLock !== undefined &&
-      (navigator as any).wakeLock !== null;
+      'wakeLock' in nav &&
+      nav.wakeLock !== undefined &&
+      nav.wakeLock !== null;
 
     if (!enabled) return;
 
@@ -30,12 +40,12 @@ export function useKeepAwake(enabled: boolean = true): void {
 
     // Symmetric activation with extra safety
     try {
-      activateKeepAwakeAsync().catch((error) => {
+      activateKeepAwakeAsync().catch((error: Error) => {
         // Common on web if not in secure context or if already deactivated
         // We log as info to avoid cluttering error logs for a non-critical failure
         console.info("Keep-awake activation skipped or failed:", error.message);
       });
-    } catch (e) {
+    } catch (_e) {
       // Catch synchronous errors if any
       console.info("Keep-awake not supported in this environment");
     }
@@ -46,7 +56,7 @@ export function useKeepAwake(enabled: boolean = true): void {
         if (!isWeb || supportsWakeLock) {
           deactivateKeepAwake();
         }
-      } catch (error) {
+      } catch (_error) {
         // Silently fail on cleanup to prevent crash during unmount
       }
     };
