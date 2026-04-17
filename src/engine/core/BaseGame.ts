@@ -134,13 +134,34 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   public abstract getGameState(): TState;
   public abstract isGameOver(): boolean;
 
+  /** Inicia el ciclo de ejecución del juego. */
   public start(): void { this.gameLoop.start(); }
+
+  /** Detiene el ciclo de ejecución del juego. */
   public stop(): void { this.gameLoop.stop(); }
+
+  /** Pausa la simulación lógica manteniendo el renderizado activo. */
   public pause(): void { this._isPaused = true; this.sceneManager.pause(); this._notifyListeners(); }
+
+  /** Reanuda la simulación lógica tras una pausa. */
   public resume(): void { this._isPaused = false; this.sceneManager.resume(); this._notifyListeners(); }
+
+  /** Consulta si el juego se encuentra en estado de pausa. */
   public isPausedState(): boolean { return this._isPaused; }
+
+  /** Proporciona acceso al {@link GameLoop} para suscripciones directas. */
   public getGameLoop(): GameLoop { return this.gameLoop; }
 
+  /**
+   * Reinicia el estado del juego, opcionalmente con una nueva semilla aleatoria.
+   *
+   * @remarks
+   * Realiza una limpieza previa mediante `_onBeforeRestart`. Si hay escenas activas,
+   * reinicia la escena actual; de lo contrario, limpia el mundo y re-inicializa entidades.
+   *
+   * @param seed - Semilla opcional para garantizar repetibilidad.
+   * @postcondition El juego vuelve a su estado inicial de simulación.
+   */
   public async restart(seed?: number): Promise<void> {
     await this._onBeforeRestart();
 
@@ -160,6 +181,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this._notifyListeners();
   }
 
+  /**
+   * Libera todos los recursos y detiene el motor de forma definitiva.
+   *
+   * @remarks
+   * Detiene el loop, limpia los listeners de entrada (críticos para evitar fugas),
+   * elimina listeners de teclado globales y limpia suscriptores de UI.
+   *
+   * @precondition Debe llamarse cuando el componente de React que aloja el juego se desmonte.
+   */
   public destroy(): void {
     this.stop();
     this.unifiedInput.cleanup();
@@ -167,6 +197,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this._listeners.clear();
   }
 
+  /**
+   * Devuelve el mundo ECS activo (ya sea el global o el de la escena actual).
+   *
+   * @remarks
+   * Es la fuente de verdad preferida para que los componentes externos (como el Renderer)
+   * consulten el estado de las entidades.
+   *
+   * @returns La instancia de {@link World} activa.
+   */
   public getWorld(): World {
     const scene = this.sceneManager.getCurrentScene();
     return scene ? scene.getWorld() : this.world;

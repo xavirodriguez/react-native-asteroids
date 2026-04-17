@@ -7,11 +7,11 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * Sistema genérico encargado de actualizar las posiciones de las entidades basado en su velocidad.
  * Implementa un integrador lineal simple (Euler explicit).
  *
- * @responsibility Integrar la velocidad en la posición para el tick actual.
+ * @responsibility Integrar la velocidad lineal y angular en la transformación para el tick actual.
  * @queries Transform, Velocity
- * @mutates Transform.x, Transform.y
+ * @mutates Transform.x, Transform.y, Transform.rotation, Transform.dirty
  * @dependsOn {@link PhysicsUtils.integrateMovement}
- * @executionOrder Fase: Simulation. Debe ejecutarse antes de Collision y Boundary.
+ * @executionOrder Fase: {@link SystemPhase.Simulation}. Debe ejecutarse antes de Collision y Boundary.
  *
  * @remarks
  * Este sistema es el motor de movimiento principal para todas las entidades físicas no estáticas.
@@ -30,12 +30,12 @@ export class MovementSystem extends System {
    * @param world - El mundo ECS que contiene las entidades.
    * @param deltaTime - Tiempo transcurrido desde el último tick en milisegundos.
    *
-   * @precondition Las entidades deben tener componentes `Transform` y `Velocity`.
-   * @postcondition Las coordenadas `x` e `y` del `Transform` se actualizan.
-
+   * @precondition Las entidades deben tener componentes {@link TransformComponent} y {@link VelocityComponent}.
+   * @postcondition Las coordenadas `x`, `y` y `rotation` del `Transform` se actualizan.
+   * @postcondition El flag `dirty` del `Transform` se marca como `true`.
    *
    * @contract La posición resultante es `p_new = p_old + (v * dt_seconds)`.
-   * @invariant No modifica la velocidad de la entidad.
+   * @invariant No modifica los componentes de velocidad de la entidad.
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Transform", "Velocity");

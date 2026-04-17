@@ -10,18 +10,19 @@ export type CollisionCallback = (world: World, entityA: Entity, entityB: Entity,
 export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) => void;
 
 /**
- * Comprehensive 2D collision detection system.
+ * Sistema integral de detección de colisiones 2D.
  *
- * @responsibility Hybrid broad-phase selection, Narrow-phase detection (AABB/Circle), and Continuous Collision Detection (CCD).
+ * @responsibility Selección de fase ancha híbrida, detección de fase estrecha (AABB/Círculo) y CCD.
+ * @queries Transform, Collider2D, CollisionEvents, ContinuousCollider, Velocity
+ * @mutates {@link CollisionEventsComponent} - Limpia y repuebla los buffers de eventos por frame.
+ * @mutates {@link TransformComponent} - Puede ajustar posiciones cuando CCD dispara pasos TOI tempranos.
+ * @emits Datos de manifold de colisión y eventos de ciclo de vida de Trigger (Enter, Stay, Exit).
+ * @executionOrder Fase: {@link SystemPhase.Collision}.
  *
- * @conceptualRisk [MUTATION_SAFETY] Collision/trigger callbacks are executed during world iteration.
- * Handlers that add/remove entities or components may lead to inconsistent world states or iteration errors.
- * @conceptualRisk [SPATIAL_HASH_TUNING] Broad-phase performance is highly sensitive to cell size versus entity density.
- *
- * @mutates {@link CollisionEventsComponent} - Clears and repopulates per-frame event buffers.
- * @mutates {@link TransformComponent} - May adjust positions when CCD triggers early time-of-impact (TOI) steps.
- *
- * @emits Collision manifold data and Trigger lifecycle events (Enter, Stay, Exit).
+ * @conceptualRisk [MUTATION_SAFETY][HIGH] Los callbacks de colisión/trigger se ejecutan durante la
+ * iteración del mundo. Los handlers que añaden/eliminan entidades pueden causar estados inconsistentes.
+ * @conceptualRisk [SPATIAL_HASH_TUNING][MEDIUM] El rendimiento de la fase ancha es altamente
+ * sensible al tamaño de celda frente a la densidad de entidades.
  */
 export class CollisionSystem2D extends System {
   private onCollisionCallbacks: CollisionCallback[] = [];

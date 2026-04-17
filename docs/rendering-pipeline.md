@@ -11,15 +11,23 @@ Cada frame, el renderer captura una "foto" del estado actual del mundo.
 - **Interpolación Lineal (Lerp)**: Si el frame de renderizado ocurre entre dos ticks de simulación, el sistema interpola las posiciones entre `PreviousTransform` y `Transform` usando el factor `alpha`.
 
 ### 2. CommandBuffer
-En lugar de dibujar directamente mientras itera por las entidades, el motor genera una lista de comandos.
-- **Pooling**: Los objetos de comando se reutilizan de un pool interno.
-- **Sorting**: Permite ordenar todas las entidades por su `zIndex` de forma global antes de enviar los comandos al backend (Canvas/Skia).
+En lugar de dibujar directamente mientras itera por las entidades, el motor genera una lista de comandos abstractos.
+- **Abstracción**: Los sistemas de presentación no saben si están dibujando en Canvas o Skia.
+- **Sorting**: Los comandos se ordenan por su `zIndex` antes de la ejecución.
+- **Zero-Allocation**: Se utilizan pools de comandos para evitar instanciaciones en cada frame.
 
-### 3. Backends de Renderizado
-El motor abstrae el dibujo mediante la interfaz `Renderer`.
-- **CanvasRenderer**: Utilizado en Web, aprovecha la API de Context2D.
-- **SkiaRenderer**: Utilizado en Native (Expo), aprovecha el rendimiento de GPU mediante Shopify Skia.
-- **SVG**: Utilizado para renderizado estático o de baja frecuencia.
+### 3. Backends de Renderizado (Skia vs Canvas)
+El motor abstrae el dibujo mediante la interfaz `Renderer<Context>`.
+
+#### Skia (Native/GPU)
+- **Implementación**: Utiliza `@shopify/react-native-skia`.
+- **Ventajas**: Renderizado acelerado por hardware (GPU), soporte nativo para efectos complejos y filtros de imagen.
+- **Uso**: Recomendado para dispositivos móviles reales.
+
+#### Canvas (Web/2D)
+- **Implementación**: Context2D estándar del navegador.
+- **Ventajas**: Alta compatibilidad, sin dependencias nativas pesadas.
+- **Uso**: Desarrollo rápido en navegador y despliegues web.
 
 ## Flujo de un Frame de Renderizado
 

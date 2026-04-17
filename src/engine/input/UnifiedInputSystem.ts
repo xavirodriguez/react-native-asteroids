@@ -157,10 +157,11 @@ export class UnifiedInputSystem extends System {
    * en juegos multijugador.
    *
    * @returns Un objeto con la lista de acciones activas y el valor de los ejes.
-   * @queries activeKeys, activeTouches - Lee el estado de los acumuladores de eventos.
-   * @conceptualRisk [INPUT_DRIFT] `getInputState()` actualmente ignora `overrides` y solo considera
-   * entradas crudas de hardware. Esto puede causar desincronización si un sistema externo
-   * (como un joystick virtual UI) usa `setOverride`.
+   * @queries activeKeys, activeTouches, overrides - Lee el estado acumulado.
+   *
+   * @conceptualRisk [INPUT_DRIFT][HIGH] `getInputState()` actualmente ignora los `overrides`
+   * lógicos en su implementación (solo usa bindings de hardware). Esto causará que los jugadores
+   * que usen controles en pantalla no envíen sus acciones correctamente en modo multijugador.
    */
   public getInputState(): { actions: string[], axes: Record<string, number> } {
     const actions: string[] = [];

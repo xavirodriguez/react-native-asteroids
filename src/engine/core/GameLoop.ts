@@ -43,7 +43,13 @@ export class GameLoop {
 
   /**
    * Suscribe un callback para la fase de entrada (Input).
-   * Se ejecuta una vez por cada frame del navegador.
+   *
+   * @remarks
+   * Se ejecuta una vez por cada frame del navegador (variable step), antes de la simulación física.
+   * Útil para capturar estados de teclado o puntero que deben ser procesados en el siguiente tick.
+   *
+   * @param listener - Función que recibe el deltaTime del frame actual.
+   * @returns Una función para cancelar la suscripción.
    */
   public subscribeInput(listener: GameLoopListener): () => void {
     this.inputListeners.add(listener);
@@ -52,7 +58,14 @@ export class GameLoop {
 
   /**
    * Suscribe un callback para la simulación física (Fixed Update).
-   * Puede ejecutarse cero, una o varias veces por frame del navegador.
+   *
+   * @remarks
+   * Esta es la fase determinista del motor. Se garantiza que el callback reciba un
+   * incremento de tiempo constante (16.67ms). Puede ejecutarse múltiples veces en un
+   * solo frame del navegador para "recuperar" tiempo si el rendimiento cae.
+   *
+   * @param listener - Función que recibe el fixedDeltaTime (16.67ms).
+   * @returns Una función para cancelar la suscripción.
    */
   public subscribeUpdate(listener: GameLoopListener): () => void {
     this.updateListeners.add(listener);
@@ -65,7 +78,14 @@ export class GameLoop {
 
   /**
    * Suscribe un callback para la propagación de transformaciones jerárquicas.
-   * Se ejecuta después de la simulación y antes del renderizado.
+   *
+   * @remarks
+   * Se ejecuta una vez por frame del navegador, inmediatamente después de que todos los
+   * ticks de simulación necesarios para ese frame hayan terminado.
+   * Es el lugar ideal para el {@link HierarchySystem}.
+   *
+   * @param listener - Función de callback.
+   * @returns Función de cancelación.
    */
   public subscribeTransform(listener: GameLoopListener): () => void {
     this.transformListeners.add(listener);
@@ -74,7 +94,14 @@ export class GameLoop {
 
   /**
    * Suscribe un callback para la fase de presentación (Render).
-   * Se ejecuta una vez por cada frame del navegador con el factor de interpolación alpha.
+   *
+   * @remarks
+   * Se ejecuta una vez por cada frame del navegador. Recibe un factor `alpha` que indica
+   * cuánto tiempo del acumulador queda pendiente respecto al tick fijo, permitiendo
+   * realizar interpolación visual para un movimiento suave.
+   *
+   * @param listener - Función que recibe `alpha` (0.0 a 1.0) y `deltaTime`.
+   * @returns Función de cancelación.
    */
   public subscribeRender(listener: RenderListener): () => void {
     this.renderListeners.add(listener);
