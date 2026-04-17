@@ -150,10 +150,11 @@ export class AsteroidCollisionSystem extends System {
     health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
 
     const ships = world.query("Ship", "Render");
-    ships.forEach(entity => {
+    for (let i = 0; i < ships.length; i++) {
+      const entity = ships[i];
       const render = world.getComponent<RenderComponent>(entity, "Render");
       if (render) render.hitFlashFrames = 6;
-    });
+    }
 
     const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
     if (shake) {
@@ -201,10 +202,12 @@ export class AsteroidCollisionSystem extends System {
     const a1 = createAsteroid({ world, x: position.x + offset, y: position.y + offset, size });
     const a2 = createAsteroid({ world, x: position.x - offset, y: position.y - offset, size });
 
-    [a1, a2].forEach(entity => {
+    const spawns = [a1, a2];
+    for (let i = 0; i < spawns.length; i++) {
+      const entity = spawns[i];
       const render = world.getComponent<RenderComponent>(entity, "Render");
       if (render) render.hitFlashFrames = 10;
-    });
+    }
   }
 
   private addScore(world: World, points: number): void {

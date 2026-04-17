@@ -17,7 +17,8 @@ export class ShipControlSystem extends System {
   public update(world: World, deltaTime: number): void {
     const ships = world.query("Ship", "Input", "Transform", "Velocity", "Render");
 
-    ships.forEach(entity => {
+    for (let i = 0; i < ships.length; i++) {
+      const entity = ships[i];
       const input = world.getComponent<InputComponent>(entity, "Input")!;
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!;
@@ -46,6 +47,6 @@ export class ShipControlSystem extends System {
           hapticShoot();
         }
       );
-    });
+    }
   }
 }

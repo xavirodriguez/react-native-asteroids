@@ -32,13 +32,14 @@ export class BoundarySystem extends System {
     void deltaTime;
     const entities = world.query("Transform", "Boundary");
 
-    entities.forEach((entity) => {
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
       const boundary = world.getComponent<BoundaryComponent>(entity, "Boundary")!;
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
 
       this.applyBoundary(world, entity, pos, boundary, vel);
-    });
+    }
   }
 
   private applyBoundary(
