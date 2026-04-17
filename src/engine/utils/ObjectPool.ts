@@ -8,6 +8,7 @@
  */
 export class ObjectPool<T> {
   private pool: T[] = [];
+  private pooledSet: Set<T> = new Set();
   private factory: () => T;
   private reset: (obj: T) => void;
 
@@ -16,7 +17,9 @@ export class ObjectPool<T> {
     this.reset = reset;
 
     for (let i = 0; i < initialSize; i++) {
-      this.pool.push(this.factory());
+      const obj = this.factory();
+      this.pool.push(obj);
+      this.pooledSet.add(obj);
     }
   }
 
@@ -28,9 +31,15 @@ export class ObjectPool<T> {
    * to populate its properties before use.
    */
   public acquire(): T {
-    const obj = this.pool.pop() || this.factory();
-    this.reset(obj);
-    return obj;
+    const obj = this.pool.pop();
+    if (obj) {
+      this.pooledSet.delete(obj);
+      this.reset(obj);
+      return obj;
+    }
+    const newObj = this.factory();
+    this.reset(newObj);
+    return newObj;
   }
 
   /**
@@ -52,8 +61,13 @@ export class ObjectPool<T> {
    * Resets the object before storing it to avoid holding references.
    */
   public release(obj: T): void {
+    if (this.pooledSet.has(obj)) {
+      console.warn("[ObjectPool] Double-release detected. Ignoring.");
+      return;
+    }
     this.reset(obj);
     this.pool.push(obj);
+    this.pooledSet.add(obj);
   }
 
   public get size(): number {

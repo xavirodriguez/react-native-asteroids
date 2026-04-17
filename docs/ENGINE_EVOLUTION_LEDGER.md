@@ -169,6 +169,31 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 - Migrar cualquier uso residual de `CameraSystem` en la UI a `Camera2D`.
 - Eliminar físicamente los archivos de `legacy/` en la próxima versión mayor.
 
+## [2024-05-26] Unificación de Identidad de Pool y Hardening de Determinismo
+
+### Estado detectado
+- **Ambigüedad de Naming**: Existencia de dos clases `EntityPool`, una en el core (manejo de IDs) y otra en utils (manejo de conjuntos de componentes).
+- **Riesgo de Corrupción**: El sistema de pooling de utilidades (`ObjectPool`) carecía de protección contra el "double-release", lo que podía causar inconsistencias graves si se liberaba el mismo objeto dos veces.
+- **Brecha de Determinismo**: `KamikazeSystem.ts` en Space Invaders utilizaba `Math.random()`, lo que impedía que las partidas fueran reproducibles.
+
+### Decisiones tomadas
+1. **Unificación Semántica**: Se renombró `EntityPool` (utils) a `ComponentSetPool`. Ahora `EntityPool` es un nombre reservado exclusivamente para el generador de IDs en `core`.
+2. **Hardening de ObjectPool**: Se implementó una protección basada en `Set` dentro de `ObjectPool` para detectar e ignorar intentos de liberación duplicada de objetos.
+3. **Determinismo en IA**: Se migró `KamikazeSystem` para usar `RandomService.getInstance("gameplay")`, garantizando que la selección de pilotos sea determinista.
+
+### Archivos afectados
+- `src/engine/utils/ComponentSetPool.ts` (Renombrado de `EntityPool.ts`)
+- `src/engine/utils/ObjectPool.ts`
+- `src/engine/utils/PrefabPool.ts`
+- `src/games/space-invaders/systems/KamikazeSystem.ts`
+- `src/games/space-invaders/EntityPool.ts`
+- `src/games/asteroids/EntityPool.ts` (No requirió cambios de importación al depender solo de PrefabPool)
+
+### Impacto
+- **Claridad**: Se elimina la confusión entre pooling de identidades y pooling de datos.
+- **Robustez**: Mayor seguridad ante errores de gestión de memoria en el código de gameplay.
+- **Determinismo**: Se cierra un riesgo crítico detectado en el catálogo de riesgos conceptuales.
+
 ## [Plantilla para Futuras Entradas]
 
 ### [FECHA] Título de la Evolución

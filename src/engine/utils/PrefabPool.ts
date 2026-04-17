@@ -1,6 +1,6 @@
 import { World } from "../core/World";
 import { Entity, Component } from "../types/EngineTypes";
-import { EntityPool } from "./EntityPool";
+import { ComponentSetPool } from "./ComponentSetPool";
 
 /**
  * Configuration for a PrefabPool.
@@ -14,14 +14,14 @@ export interface PrefabConfig<T extends Record<string, Component>, I> {
 
 /**
  * A PrefabPool provides a declarative way to manage pools of complex entities.
- * It combines an EntityPool with a specific initialization logic.
+ * It combines an ComponentSetPool with a specific initialization logic.
  */
 export class PrefabPool<T extends Record<string, Component>, I> {
-  private pool: EntityPool<T>;
+  private pool: ComponentSetPool<T>;
   private initializer: (components: T, params: I) => void;
 
   constructor(config: PrefabConfig<T, I>) {
-    this.pool = new EntityPool<T>(config.factory, config.reset, config.initialSize || 0);
+    this.pool = new ComponentSetPool<T>(config.factory, config.reset, config.initialSize || 0);
     this.initializer = config.initializer;
   }
 

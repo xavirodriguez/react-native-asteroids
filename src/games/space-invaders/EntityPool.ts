@@ -1,4 +1,4 @@
-import { EntityPool } from "../../engine/utils/EntityPool";
+import { ComponentSetPool } from "../../engine/utils/ComponentSetPool";
 import { World } from "../../engine/core/World";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import {
@@ -30,10 +30,10 @@ interface BulletComponents {
  * Pool for player bullets.
  */
 export class PlayerBulletPool {
-  private pool: EntityPool<BulletComponents>;
+  private pool: ComponentSetPool<BulletComponents>;
 
   constructor() {
-    this.pool = new EntityPool<BulletComponents>(
+    this.pool = new ComponentSetPool<BulletComponents>(
       () => ({
         position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
@@ -85,10 +85,10 @@ export class PlayerBulletPool {
  * Pool for enemy bullets.
  */
 export class EnemyBulletPool {
-  private pool: EntityPool<BulletComponents>;
+  private pool: ComponentSetPool<BulletComponents>;
 
   constructor() {
-    this.pool = new EntityPool<BulletComponents>(
+    this.pool = new ComponentSetPool<BulletComponents>(
       () => ({
         position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
@@ -148,10 +148,10 @@ interface ParticleComponents {
  * Pool for particles.
  */
 export class ParticlePool {
-  private pool: EntityPool<ParticleComponents>;
+  private pool: ComponentSetPool<ParticleComponents>;
 
   constructor() {
-    this.pool = new EntityPool<ParticleComponents>(
+    this.pool = new ComponentSetPool<ParticleComponents>(
       () => ({
         position: { type: "Transform", x: 0, y: 0 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
