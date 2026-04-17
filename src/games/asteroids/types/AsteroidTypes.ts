@@ -54,7 +54,7 @@ export interface AsteroidComponent extends Component {
   size: "large" | "medium" | "small";
 }
 
-import { Star, ScreenShake } from "../../../engine/types/EngineTypes";
+import { Star, Legacy } from "../../../engine/index";
 
 /**
  * Component to track global game progress and state.
@@ -71,7 +71,7 @@ export interface GameStateComponent extends Component {
   lastBulletHit: boolean;
   serverTick: number;
   stars?: Star[];
-  screenShake?: ScreenShake | null;
+  screenShake?: Legacy.LegacyScreenShake | null;
   debugCRT?: boolean;
 }
 

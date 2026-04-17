@@ -118,6 +118,30 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 - Implementar comportamiento de "clamping" (estático) en `BoundarySystem` para mayor flexibilidad.
 - Documentar el sistema de capas de colisión en una guía dedicada.
 
+## [2024-05-25] Saneamiento de API Pública y Renombrado de Tipos Legacy
+
+### Estado detectado
+- **Ambigüedad de Nombres**: Coexistencia de `Transform` (Legacy) y `TransformComponent` (Moderno).
+- **Redundancia de Tipos**: Definiciones duplicadas de `PositionComponent` y `ColliderComponent` en `LegacyComponents.ts`.
+- **Surface Pública Contaminada**: Re-exportación de tipos legacy en `EngineTypes.ts`, permitiendo su uso accidental fuera del namespace `Legacy`.
+
+### Decisiones tomadas
+1. **Renombrado de Claridad**: Se renombró `Transform` (Legacy) a `LegacyTransform` y `ScreenShake` (Legacy) a `LegacyScreenShake`.
+2. **Saneamiento de Legacy**: Se eliminaron las definiciones duplicadas de componentes en `LegacyComponents.ts`.
+3. **Encapsulación de API**: Se eliminaron los re-exports de tipos legacy en `EngineTypes.ts`. Ahora solo son accesibles a través del namespace `Legacy`.
+
+### Archivos afectados
+- `src/engine/legacy/LegacyComponents.ts`
+- `src/engine/types/EngineTypes.ts`
+- `docs/MIGRATION_GUIDE.md`
+
+### Impacto
+- **Seguridad**: Se elimina la posibilidad de colisiones de nombres y el uso accidental de tipos obsoletos.
+- **Claridad**: El camino canónico (`TransformComponent`, `ScreenShakeComponent`) es ahora el único visible en el top-level.
+
+### Deuda abierta / Siguientes pasos
+- Auditar cualquier dependencia externa que pueda haberse roto por la eliminación de exports en `EngineTypes.ts`.
+
 ## [2024-05-25] Aislamiento de Sistemas Legacy y Unificación de Colisiones
 
 ### Estado detectado
