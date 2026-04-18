@@ -38,13 +38,19 @@ export class InterpolationPrepSystem extends System {
           type: "PreviousTransform",
           x: transform.x,
           y: transform.y,
-          rotation: transform.rotation
+          rotation: transform.rotation,
+          worldX: transform.worldX,
+          worldY: transform.worldY,
+          worldRotation: transform.worldRotation,
         };
         world.addComponent(entity, prev);
       } else {
         prev.x = transform.x;
         prev.y = transform.y;
         prev.rotation = transform.rotation;
+        prev.worldX = transform.worldX;
+        prev.worldY = transform.worldY;
+        prev.worldRotation = transform.worldRotation;
       }
     });
   }

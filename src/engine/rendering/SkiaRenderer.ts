@@ -193,14 +193,23 @@ export class SkiaRenderer implements Renderer {
       // Interpolate position and rotation
       const interpolatedPos = { ...pos };
       if (prevPos && this.alpha < 1) {
-        interpolatedPos.x = prevPos.x + (pos.x - prevPos.x) * this.alpha;
-        interpolatedPos.y = prevPos.y + (pos.y - prevPos.y) * this.alpha;
+        // Prefer world coordinates if available for consistent hierarchy interpolation
+        const prevX = prevPos.worldX !== undefined ? prevPos.worldX : prevPos.x;
+        const prevY = prevPos.worldY !== undefined ? prevPos.worldY : prevPos.y;
+        const prevRot = prevPos.worldRotation !== undefined ? prevPos.worldRotation : prevPos.rotation;
+
+        const currentX = pos.worldX !== undefined ? pos.worldX : pos.x;
+        const currentY = pos.worldY !== undefined ? pos.worldY : pos.y;
+        const currentRot = pos.worldRotation !== undefined ? pos.worldRotation : pos.rotation;
+
+        interpolatedPos.x = prevX + (currentX - prevX) * this.alpha;
+        interpolatedPos.y = prevY + (currentY - prevY) * this.alpha;
 
         // Shortest path rotation interpolation
-        let diff = pos.rotation - prevPos.rotation;
+        let diff = currentRot - prevRot;
         while (diff < -Math.PI) diff += Math.PI * 2;
         while (diff > Math.PI) diff -= Math.PI * 2;
-        interpolatedPos.rotation = prevPos.rotation + diff * this.alpha;
+        interpolatedPos.rotation = prevRot + diff * this.alpha;
       }
 
       return {
@@ -238,9 +247,11 @@ export class SkiaRenderer implements Renderer {
 
     if (!pos || !render) return;
 
+    // Note: If using interpolatedPos from render(), worldX/Y might already be the interpolated world values.
+    // However, drawEntity is also used for particles or other direct calls.
     const x = (pos.worldX !== undefined ? pos.worldX : pos.x) + (offset?.x ?? 0);
     const y = (pos.worldY !== undefined ? pos.worldY : pos.y) + (offset?.y ?? 0);
-    const rotation = (pos.worldRotation !== undefined ? pos.worldRotation : render.rotation) + (offset?.rotation ?? 0);
+    const rotation = (pos.worldRotation !== undefined ? pos.worldRotation : (pos.rotation ?? 0)) + (offset?.rotation ?? 0);
     const scaleX = (pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1)) + (offset?.scaleX ?? 0);
     const scaleY = (pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1)) + (offset?.scaleY ?? 0);
 

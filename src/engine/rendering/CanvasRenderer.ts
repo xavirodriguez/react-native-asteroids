@@ -214,13 +214,18 @@ export class CanvasRenderer implements Renderer {
       const scaleY = trans.worldScaleY ?? (trans.scaleY ?? 1);
 
       if (prevTrans && alpha < 1) {
-        x = prevTrans.x + (x - prevTrans.x) * alpha;
-        y = prevTrans.y + (y - prevTrans.y) * alpha;
+        // Prefer world coordinates if available for consistent hierarchy interpolation
+        const prevX = prevTrans.worldX !== undefined ? prevTrans.worldX : prevTrans.x;
+        const prevY = prevTrans.worldY !== undefined ? prevTrans.worldY : prevTrans.y;
+        const prevRot = prevTrans.worldRotation !== undefined ? prevTrans.worldRotation : prevTrans.rotation;
 
-        let diff = rotation - prevTrans.rotation;
+        x = prevX + (x - prevX) * alpha;
+        y = prevY + (y - prevY) * alpha;
+
+        let diff = rotation - prevRot;
         while (diff < -Math.PI) diff += Math.PI * 2;
         while (diff > Math.PI) diff -= Math.PI * 2;
-        rotation = prevTrans.rotation + diff * alpha;
+        rotation = prevRot + diff * alpha;
       }
 
       snap.x = x + (offset?.x ?? 0);

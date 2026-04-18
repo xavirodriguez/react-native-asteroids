@@ -239,6 +239,39 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 - **Robustez**: Mayor seguridad ante errores de gestión de memoria en el código de gameplay.
 - **Determinismo**: Se cierra un riesgo crítico detectado en el catálogo de riesgos conceptuales.
 
+---
+
+## [2024-05-26] Consolidación de Orquestación e Interpolación Jerárquica
+
+### Estado detectado
+- **Fragmentación de Lógica**: `BaseGame.ts` gestionaba manualmente el snapshot de transformaciones previas, duplicando la intención de `InterpolationPrepSystem.ts` pero ignorado en la práctica.
+- **Bug de Jerarquías**: La interpolación visual fallaba para entidades hijas (children) al no capturar ni utilizar las coordenadas de mundo (`worldX/Y`) del frame anterior, causando jitter visual.
+- **Acoplamiento**: El bucle de simulación en `BaseGame` contenía lógica procedimental de bajo nivel en lugar de delegar en sistemas ECS estándar.
+
+### Decisiones tomadas
+1. **Consolidación en Sistemas**: Se eliminó el bucle manual de snapshot en `BaseGame` y se registró formalmente `InterpolationPrepSystem` en la fase de `Input` con máxima prioridad.
+2. **Interpolación Aware de Jerarquías**: Se expandió `PreviousTransformComponent` para incluir `worldX`, `worldY` y `worldRotation`.
+3. **Hardening de Renderers**: `CanvasRenderer` y `SkiaRenderer` se actualizaron para priorizar las coordenadas de mundo del snapshot previo, garantizando una interpolación suave incluso en estructuras complejas.
+4. **Validación**: Creación de tests unitarios específicos para asegurar que el sistema captura correctamente el estado antes de la simulación.
+
+### Archivos afectados
+- `src/engine/core/BaseGame.ts`
+- `src/engine/core/CoreComponents.ts`
+- `src/engine/systems/InterpolationPrepSystem.ts`
+- `src/engine/rendering/CanvasRenderer.ts`
+- `src/engine/rendering/SkiaRenderer.ts`
+- `src/engine/systems/__tests__/InterpolationPrepSystem.test.ts`
+
+### Impacto
+- **Coherencia**: El pipeline de simulación es ahora 100% basado en sistemas ECS.
+- **Calidad Visual**: Se elimina el jitter en entidades con padres (e.g., torretas sobre naves, satélites).
+- **Mantenibilidad**: La lógica de preparación para renderizado está centralizada y testeada.
+
+### Deuda abierta / Siguientes pasos
+- Investigar la interpolación de escala (`scaleX/Y`) para completar el soporte total de transformaciones.
+
+---
+
 ## [Plantilla para Futuras Entradas]
 
 ### [FECHA] Título de la Evolución

@@ -13,6 +13,8 @@ import { XPSystem } from "../systems/XPSystem";
 import { PaletteSystem } from "../systems/PaletteSystem";
 import { PlayerProfileService } from "../../services/PlayerProfileService";
 import { HierarchySystem } from "../systems/HierarchySystem";
+import { InterpolationPrepSystem } from "../systems/InterpolationPrepSystem";
+import { SystemPhase } from "./System";
 
 export interface BaseGameConfig {
   pauseKey?: string;
@@ -98,23 +100,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
       const activeWorld = this.getWorld();
 
-      // 1. PRE-UPDATE: Snapshot
-      const entities = activeWorld.query("Transform");
-      for (let i = 0; i < entities.length; i++) {
-        const entity = entities[i];
-        const t = activeWorld.getComponent<TransformComponent>(entity, "Transform")!;
-        let prev = activeWorld.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
-        if (!prev) {
-          prev = activeWorld.addComponent(entity, { type: "PreviousTransform", x: t.x, y: t.y, rotation: t.rotation } as PreviousTransformComponent);
-        }
-        if (prev) {
-          prev.x = t.x;
-          prev.y = t.y;
-          prev.rotation = t.rotation;
-        }
-      }
-
-      // 2. INPUT
+      // 1. INPUT
       if (this.isMultiplayer) {
         // Multiplayer input handling logic (if any)
       } else {
@@ -245,6 +231,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   protected async registerEngineSystems(): Promise<void> {
+    this.world.addSystem(new InterpolationPrepSystem(), { phase: SystemPhase.Input, priority: 1000 });
     this.world.addSystem(new XPSystem(this.eventBus));
     const profile = await PlayerProfileService.getProfile();
     this.world.addSystem(new PaletteSystem(profile.activePalette));
