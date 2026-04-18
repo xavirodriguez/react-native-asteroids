@@ -92,7 +92,7 @@ export class CollisionSystem2D extends System {
         });
       });
     } else {
-      candidates = BroadPhase.sweepAndPrune(entities, world);
+      candidates = BroadPhase.sweepAndPrune([...entities], world);
     }
 
     for (const [entityA, entityB] of candidates) {

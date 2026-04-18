@@ -5,7 +5,7 @@ import { GameStateComponent } from "../types/SpaceInvadersTypes";
 /**
  * Visuals for the player ship.
  */
-export const drawSpaceInvadersPlayer: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
+export const drawSpaceInvadersPlayer: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, _elapsedTime, render, _world) => {
   const { size, color } = render;
 
   if (render.hitFlashFrames && render.hitFlashFrames > 0) {
@@ -25,7 +25,7 @@ export const drawSpaceInvadersPlayer: ShapeDrawer<CanvasRenderingContext2D> = (c
 /**
  * Visuals for an invader.
  */
-export const drawSpaceInvadersInvader: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
+export const drawSpaceInvadersInvader: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, _elapsedTime, render, _world) => {
   const { size, color } = render;
 
   if (render.hitFlashFrames && render.hitFlashFrames > 0) {
@@ -55,7 +55,7 @@ export const drawSpaceInvadersInvader: ShapeDrawer<CanvasRenderingContext2D> = (
 /**
  * Visuals for bullets.
  */
-export const drawSpaceInvadersBullet: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
+export const drawSpaceInvadersBullet: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, _elapsedTime, render, _world) => {
   const { size, color } = render;
   ctx.fillStyle = color;
   ctx.fillRect(-size / 2, -size, size, size * 2);
@@ -64,7 +64,7 @@ export const drawSpaceInvadersBullet: ShapeDrawer<CanvasRenderingContext2D> = (c
 /**
  * Visuals for shield blocks.
  */
-export const drawSpaceInvadersShield: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
+export const drawSpaceInvadersShield: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, _elapsedTime, render, _world) => {
   const { size, color } = render;
 
   if (render.hitFlashFrames && render.hitFlashFrames > 0) {
@@ -81,7 +81,7 @@ export const drawSpaceInvadersShield: ShapeDrawer<CanvasRenderingContext2D> = (c
 /**
  * Visuals for particles.
  */
-export const drawSpaceInvadersParticle: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
+export const drawSpaceInvadersParticle: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, _elapsedTime, render, _world) => {
   const { size, color } = render;
   ctx.fillStyle = color;
   ctx.beginPath();
