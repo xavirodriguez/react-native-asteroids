@@ -1,7 +1,10 @@
 import { UnifiedInputSystem } from "../UnifiedInputSystem";
+import { World } from "../../core/World";
+import { InputStateComponent } from "../../types/EngineTypes";
 
 describe("UnifiedInputSystem Overrides", () => {
   let inputSystem: UnifiedInputSystem;
+  let world: World;
 
   beforeEach(() => {
     // Mock window to prevent errors during UnifiedInputSystem instantiation
@@ -10,16 +13,17 @@ describe("UnifiedInputSystem Overrides", () => {
       removeEventListener: jest.fn(),
     } as any;
     inputSystem = new UnifiedInputSystem();
+    world = new World();
   });
 
   afterEach(() => {
     delete (global as any).window;
   });
 
-  it("should incorporate overrides into getInputState", () => {
+  it("should incorporate overrides into getInputState with OR semantics", () => {
     inputSystem.bind("shoot", ["Space"]);
 
-    // Simulate hardware key press (internal state manipulation for testing)
+    // Simulate hardware key press
     (inputSystem as any).activeKeys.add("Space");
 
     // Initial state: hardware only
@@ -35,15 +39,71 @@ describe("UnifiedInputSystem Overrides", () => {
     inputSystem.setOverride("jump", true);
     state = inputSystem.getInputState();
     expect(state.actions).toContain("jump");
-    expect(state.actions).toContain("shoot"); // Shoot is still pressed on hardware
-
-    // Remove override
-    inputSystem.setOverride("jump", undefined as any); // Removing by setting to undefined
-    state = inputSystem.getInputState();
-    // Hardware space is still pressed
-    inputSystem.setOverride("shoot", undefined as any);
-    state = inputSystem.getInputState();
     expect(state.actions).toContain("shoot");
+
+    // clearOverride returns control to hardware
+    inputSystem.clearOverride("jump");
+    state = inputSystem.getInputState();
+    expect(state.actions).not.toContain("jump");
+    expect(state.actions).toContain("shoot");
+  });
+
+  it("should handle axis overrides", () => {
+    inputSystem.bindAxis("horizontal", ["ArrowRight"], ["ArrowLeft"]);
+    (inputSystem as any).activeKeys.add("ArrowRight");
+
+    // Hardware only
+    let state = inputSystem.getInputState();
+    expect(state.axes["horizontal"]).toBe(1);
+
+    // Override axis
+    inputSystem.setAxisOverride("horizontal", -0.5);
+    state = inputSystem.getInputState();
+    expect(state.axes["horizontal"]).toBe(-0.5);
+
+    // Clear axis override
+    inputSystem.clearAxisOverride("horizontal");
+    state = inputSystem.getInputState();
+    expect(state.axes["horizontal"]).toBe(1);
+  });
+
+  it("should be consistent between update() and getInputState()", () => {
+    inputSystem.bind("shoot", ["Space"]);
+    inputSystem.bindAxis("horizontal", ["ArrowRight"], ["ArrowLeft"]);
+
+    (inputSystem as any).activeKeys.add("Space");
+    (inputSystem as any).activeKeys.add("ArrowRight");
+    inputSystem.setOverride("jump", true);
+    inputSystem.setAxisOverride("vertical", 1);
+
+    // Run update to sync with World
+    inputSystem.update(world, 16);
+    const inputComponent = world.getSingleton<InputStateComponent>("InputState")!;
+    const snapshot = inputSystem.getInputState();
+
+    // Check actions consistency
+    expect(snapshot.actions).toContain("shoot");
+    expect(snapshot.actions).toContain("jump");
+    expect(inputComponent.actions.get("shoot")).toBe(true);
+    expect(inputComponent.actions.get("jump")).toBe(true);
+
+    // Check axes consistency
+    expect(snapshot.axes["horizontal"]).toBe(1);
+    expect(snapshot.axes["vertical"]).toBe(1);
+    expect(inputComponent.axes.get("horizontal")).toBe(1);
+    expect(inputComponent.axes.get("vertical")).toBe(1);
+  });
+
+  it("should include activeTouches in axes calculation", () => {
+    inputSystem.bindAxis("fire", ["TouchTap"], []);
+    (inputSystem as any).activeTouches.add("TouchTap");
+
+    const snapshot = inputSystem.getInputState();
+    expect(snapshot.axes["fire"]).toBe(1);
+
+    inputSystem.update(world, 16);
+    const inputComponent = world.getSingleton<InputStateComponent>("InputState")!;
+    expect(inputComponent.axes.get("fire")).toBe(1);
   });
 
   it("should sort actions alphabetically in getInputState", () => {
@@ -53,13 +113,5 @@ describe("UnifiedInputSystem Overrides", () => {
 
     const state = inputSystem.getInputState();
     expect(state.actions).toEqual(["apple", "middle", "zebra"]);
-  });
-
-  it("should preserve hardware axis values", () => {
-    inputSystem.bindAxis("horizontal", ["ArrowRight"], ["ArrowLeft"]);
-    (inputSystem as any).activeKeys.add("ArrowRight");
-
-    const state = inputSystem.getInputState();
-    expect(state.axes["horizontal"]).toBe(1);
   });
 });

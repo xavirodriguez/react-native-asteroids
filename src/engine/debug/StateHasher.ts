@@ -28,7 +28,7 @@ export class StateHasher {
    * mucha presión sobre el recolector de basura (GC).
    */
   public static calculateHash(world: World): string {
-    const entities = [...world.getAllEntities()].sort((a, b) => a - b);
+    const entities = world.getAllEntities().sort((a, b) => a - b);
     let stateString = "";
 
     for (const entity of entities) {
