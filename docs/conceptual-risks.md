@@ -38,7 +38,7 @@ Esta sección documenta las fragilidades arquitectónicas y de diseño detectada
 |-----------|-----------|-------------|-----------|
 | **DETERMINISM** | **CRITICAL** | `currentTick` (number) puede desbordarse tras ~285,000 años, pero los límites de lockstep/buffer podrían verse afectados por la precisión mucho antes. | `BaseGame.ts` |
 | **DETERMINISM** | **FIXED** | `getInputState()` ignora los `overrides`. Esto significa que el input enviado por red no incluirá acciones de la UI táctil. | `UnifiedInputSystem.ts` |
-| **MEMORY** | **FIXED** | `EntityPool.release()` no previene el "double-release", lo que puede corromper la identidad de entidades en el `World`. | `EntityPool.ts` |
+| **MEMORY** | **CRITICAL** | `EntityPool.release()` no previene el "double-release", lo que puede corromper la identidad de entidades en el `World`. | `EntityPool.ts` |
 | **PERFORMANCE**| **MEDIUM** | El loop de `GameLoop` puede disparar el "Spiral of Death" si la simulación es más lenta que el tiempo real, a pesar del límite `maxDeltaMs`. | `GameLoop.ts` |
 | **LIFECYCLE**   | **HIGH** | `runLifecycle` siempre introduce un microtask delay (async), lo que puede causar desincronización en métodos que esperan ejecución inmediata. | `LifecycleUtils.ts` |
 | **DETERMINISM** | **MEDIUM** | `RandomService.getInstance("render")` puede ser usado erróneamente en lógica de gameplay, rompiendo el determinismo silenciosamente. | `RandomService.ts` |
