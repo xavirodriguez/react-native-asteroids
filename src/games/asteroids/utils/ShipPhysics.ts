@@ -11,15 +11,21 @@ import { SimulationContext } from "../../../simulation/DeterministicSimulation";
  * Can be used by both the client and server/prediction.
  */
 export const ShipPhysics = {
-  applyRotation(render: RenderComponent, input: InputComponent, dtSeconds: number, config: typeof GAME_CONFIG = GAME_CONFIG): void {
-    if (input.rotateLeft) render.rotation -= config.SHIP_ROTATION_SPEED * dtSeconds;
-    if (input.rotateRight) render.rotation += config.SHIP_ROTATION_SPEED * dtSeconds;
+  applyRotation(pos: TransformComponent, input: InputComponent, dtSeconds: number, config: typeof GAME_CONFIG = GAME_CONFIG): void {
+    if (input.rotateLeft) {
+      pos.rotation -= config.SHIP_ROTATION_SPEED * dtSeconds;
+      pos.dirty = true;
+    }
+    if (input.rotateRight) {
+      pos.rotation += config.SHIP_ROTATION_SPEED * dtSeconds;
+      pos.dirty = true;
+    }
   },
 
-  applyThrust(world: World, position: TransformComponent, velocity: VelocityComponent, render: RenderComponent, input: InputComponent, dtSeconds: number, ctx?: SimulationContext, config: typeof GAME_CONFIG = GAME_CONFIG): void {
+  applyThrust(world: World, position: TransformComponent, velocity: VelocityComponent, input: InputComponent, dtSeconds: number, ctx?: SimulationContext, config: typeof GAME_CONFIG = GAME_CONFIG): void {
     if (input.thrust) {
-      velocity.dx += Math.cos(render.rotation) * config.SHIP_THRUST * dtSeconds;
-      velocity.dy += Math.sin(render.rotation) * config.SHIP_THRUST * dtSeconds;
+      velocity.dx += Math.cos(position.rotation) * config.SHIP_THRUST * dtSeconds;
+      velocity.dy += Math.sin(position.rotation) * config.SHIP_THRUST * dtSeconds;
 
       if (ctx?.isResimulating) return;
 
@@ -30,7 +36,7 @@ export const ShipPhysics = {
 
       const particleCount = Math.floor((3 + Math.floor(renderRandom.next() * 3)) * intensity);
       for (let i = 0; i < particleCount; i++) {
-        const angle = render.rotation + Math.PI + (renderRandom.next() - 0.5) * 0.4;
+        const angle = position.rotation + Math.PI + (renderRandom.next() - 0.5) * 0.4;
         const speed = (50 + renderRandom.next() * 80) * intensity;
 
         let color = "#FF8800";
@@ -39,8 +45,8 @@ export const ShipPhysics = {
 
         createParticle({
           world,
-          x: position.x - Math.cos(render.rotation) * 10,
-          y: position.y - Math.sin(render.rotation) * 10,
+          x: position.x - Math.cos(position.rotation) * 10,
+          y: position.y - Math.sin(position.rotation) * 10,
           dx: Math.cos(angle) * speed + velocity.dx * 0.5,
           dy: Math.sin(angle) * speed + velocity.dy * 0.5,
           color: color,
@@ -63,7 +69,7 @@ export const ShipPhysics = {
     world: World,
     pos: TransformComponent,
     vel: VelocityComponent,
-    render: RenderComponent,
+    _render: RenderComponent,
     input: InputComponent,
     deltaTime: number,
     ctx?: SimulationContext,
@@ -73,8 +79,8 @@ export const ShipPhysics = {
     const dtSeconds = deltaTime / 1000;
 
     // 1. Movement & Rotation
-    this.applyRotation(render, input, dtSeconds, config);
-    this.applyThrust(world, pos, vel, render, input, dtSeconds, ctx, config);
+    this.applyRotation(pos, input, dtSeconds, config);
+    this.applyThrust(world, pos, vel, input, dtSeconds, ctx, config);
     this.applyFriction(vel, deltaTime, config);
 
     // 2. Shooting
@@ -83,7 +89,7 @@ export const ShipPhysics = {
     }
 
     if (input.shoot && input.shootCooldownRemaining <= 0) {
-      const bullet = createBullet({ world, x: pos.x, y: pos.y, angle: render.rotation });
+      const bullet = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation });
       input.shootCooldownRemaining = config.BULLET_SHOOT_COOLDOWN;
       if (onShoot) onShoot(bullet);
     }

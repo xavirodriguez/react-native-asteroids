@@ -59,7 +59,7 @@ export class SkiaRenderer implements Renderer {
   }
 
   private registerDefaultDrawers(): void {
-    this.registerShapeDrawer("circle", (canvas, _entity, _pos, render) => {
+    this.registerShapeDrawer("circle", (canvas, _entity, _pos, _elapsedTime, render) => {
       const color = Skia.Color(render.color);
       color[3] *= this.paint.getAlphaf();
       this.paint.setColor(color);
@@ -67,7 +67,7 @@ export class SkiaRenderer implements Renderer {
       canvas.drawCircle(0, 0, render.size, this.paint);
     });
 
-    this.registerShapeDrawer("rect", (canvas, _entity, _pos, render) => {
+    this.registerShapeDrawer("rect", (canvas, _entity, _pos, _elapsedTime, render) => {
       const color = Skia.Color(render.color);
       color[3] *= this.paint.getAlphaf();
       this.paint.setColor(color);
@@ -75,7 +75,7 @@ export class SkiaRenderer implements Renderer {
       canvas.drawRect(Skia.XYWHRect(-render.size / 2, -render.size / 2, render.size, render.size), this.paint);
     });
 
-    this.registerShapeDrawer("polygon", (canvas, _entity, _pos, render) => {
+    this.registerShapeDrawer("polygon", (canvas, _entity, _pos, _elapsedTime, render) => {
       if (!render.vertices || render.vertices.length === 0) return;
 
       const path = Skia.Path.Make();
@@ -111,7 +111,7 @@ export class SkiaRenderer implements Renderer {
       }
     });
 
-    this.registerShapeDrawer("line", (canvas, _entity, _pos, render) => {
+    this.registerShapeDrawer("line", (canvas, _entity, _pos, _elapsedTime, render) => {
       const color = Skia.Color(render.color);
       color[3] *= this.paint.getAlphaf();
       this.paint.setColor(color);
@@ -240,9 +240,14 @@ export class SkiaRenderer implements Renderer {
 
     const x = (pos.worldX !== undefined ? pos.worldX : pos.x) + (offset?.x ?? 0);
     const y = (pos.worldY !== undefined ? pos.worldY : pos.y) + (offset?.y ?? 0);
-    const rotation = (pos.worldRotation !== undefined ? pos.worldRotation : render.rotation) + (offset?.rotation ?? 0);
+    const rotation = (pos.worldRotation !== undefined ? pos.worldRotation : pos.rotation) + (offset?.rotation ?? 0);
     const scaleX = (pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1)) + (offset?.scaleX ?? 0);
     const scaleY = (pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1)) + (offset?.scaleY ?? 0);
+
+    // Calculate deterministic elapsed time from world state if possible
+    const gameState = world.getSingleton<Record<string, unknown>>("GameState");
+    const serverTick = gameState && gameState.serverTick !== undefined ? gameState.serverTick as number : null;
+    const elapsedTime = serverTick !== null ? serverTick * (1000 / 60) : performance.now();
 
     canvas.save();
     canvas.translate(x, y);
@@ -254,7 +259,7 @@ export class SkiaRenderer implements Renderer {
 
     const drawer = this.shapeDrawers.get(render.shape);
     if (drawer) {
-      drawer(canvas, entity, { x, y, rotation, scaleX, scaleY }, {
+      drawer(canvas, entity, { x, y, rotation, scaleX, scaleY }, elapsedTime, {
         shape: render.shape,
         size: render.size,
         color: render.color,
@@ -268,7 +273,7 @@ export class SkiaRenderer implements Renderer {
 
     const postDrawer = this.postEntityDrawers.get(render.shape);
     if (postDrawer) {
-      postDrawer(canvas, entity, { x, y, rotation, scaleX, scaleY }, {
+      postDrawer(canvas, entity, { x, y, rotation, scaleX, scaleY }, elapsedTime, {
         shape: render.shape,
         size: render.size,
         color: render.color,

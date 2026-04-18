@@ -21,7 +21,7 @@ const getPaint = () => {
     return paint;
 };
 
-export const drawSkiaShip: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, render, world) => {
+export const drawSkiaShip: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, elapsedTime, render, world) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia, BlurStyle } =
@@ -34,10 +34,8 @@ export const drawSkiaShip: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, render
         const health = world.getComponent<HealthComponent>(entity, "Health");
 
         const isInvulnerable = health && health.invulnerableRemaining > 0;
-        // Accessing world version or other tick-based value to avoid Date.now()
-        // We can use health.invulnerableRemaining which is tick-decremented
         const blinkOpacity = isInvulnerable
-            ? Math.floor(health.invulnerableRemaining / 150) % 2 === 0 ? 0.3 : 1.0
+            ? Math.floor(elapsedTime / 150) % 2 === 0 ? 0.3 : 1.0
             : 1.0;
 
         p.setAlphaf(blinkOpacity);
@@ -86,7 +84,7 @@ export const drawSkiaShip: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, render
     }
 };
 
-export const drawSkiaUfo: ShapeDrawer<SkCanvas> = (canvas, _entity, _pos, render) => {
+export const drawSkiaUfo: ShapeDrawer<SkCanvas> = (canvas, _entity, _pos, _elapsedTime, render) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia, BlurStyle } =
@@ -126,7 +124,7 @@ export const drawSkiaUfo: ShapeDrawer<SkCanvas> = (canvas, _entity, _pos, render
     } catch (_e) { /* ignore */ }
 };
 
-export const skiaStarfieldEffect: EffectDrawer<SkCanvas> = (canvas, _snapshot, width, height, world) => {
+export const skiaStarfieldEffect: EffectDrawer<SkCanvas> = (canvas, snapshot, width, height, world) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia } =
@@ -178,7 +176,7 @@ export const skiaScreenShakeEffect: EffectDrawer<SkCanvas> = (canvas, _snapshot,
     } catch (_e) { /* ignore */ }
 };
 
-export const drawSkiaParticle: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, render, world) => {
+export const drawSkiaParticle: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, _elapsedTime, render, world) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia } =
@@ -204,7 +202,7 @@ export const drawSkiaParticle: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, re
     } catch (_e) { /* ignore */ }
 };
 
-export const drawSkiaBullet: ShapeDrawer<SkCanvas> = (canvas, _entity, _pos, render) => {
+export const drawSkiaBullet: ShapeDrawer<SkCanvas> = (canvas, _entity, _pos, _elapsedTime, render) => {
     if (Platform.OS === "web") return;
     try {
         const { Skia, BlurStyle } =
