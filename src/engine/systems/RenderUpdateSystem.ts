@@ -39,7 +39,8 @@ export class RenderUpdateSystem extends System {
 
   protected updateTrails(world: World): void {
     const entities = world.query("Transform", "Render");
-    entities.forEach((entity) => {
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
       const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const render = world.getComponent<RenderComponent>(entity, "Render");
 
@@ -49,11 +50,12 @@ export class RenderUpdateSystem extends System {
           render.trailPositions.shift();
         }
       }
-    });
+    }
 
     // Support game-specific trail components (like Asteroids Ship)
     const shipEntities = world.query("Transform", "Ship");
-    shipEntities.forEach((entity) => {
+    for (let i = 0; i < shipEntities.length; i++) {
+        const entity = shipEntities[i];
         const pos = world.getComponent<TransformComponent>(entity, "Transform");
         const ship = world.getComponent<Record<string, unknown>>(entity, "Ship");
 
@@ -64,12 +66,13 @@ export class RenderUpdateSystem extends System {
                 trails.shift();
             }
         }
-    });
+    }
   }
 
   private updateRotation(world: World, deltaTime: number): void {
     const entities = world.query("Render");
-    entities.forEach((entity) => {
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
       const render = world.getComponent<RenderComponent>(entity, "Render");
       if (render && render.angularVelocity) {
         let offset = world.getComponent<import("../core/CoreComponents").VisualOffsetComponent>(entity, "VisualOffset");
@@ -80,16 +83,17 @@ export class RenderUpdateSystem extends System {
         }
         offset.rotation += render.angularVelocity * (deltaTime / 16.67);
       }
-    });
+    }
   }
 
   private updateHitFlashes(world: World): void {
     const entities = world.query("Render");
-    entities.forEach((entity) => {
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
       const render = world.getComponent<RenderComponent>(entity, "Render");
       if (render && render.hitFlashFrames && render.hitFlashFrames > 0) {
         render.hitFlashFrames--;
       }
-    });
+    }
   }
 }

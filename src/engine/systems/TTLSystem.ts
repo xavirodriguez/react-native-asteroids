@@ -26,7 +26,8 @@ export class TTLSystem extends System {
   public update(world: World, deltaTime: number): void {
     const ttlEntities = world.query("TTL");
 
-    ttlEntities.forEach((entity) => {
+    for (let i = 0; i < ttlEntities.length; i++) {
+      const entity = ttlEntities[i];
       const ttl = world.getComponent<TTLComponent>(entity, "TTL");
       if (ttl) {
         ttl.remaining -= deltaTime;
@@ -45,6 +46,6 @@ export class TTLSystem extends System {
           world.removeEntity(entity);
         }
       }
-    });
+    }
   }
 }

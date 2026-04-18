@@ -68,12 +68,13 @@ export class JuiceSystem extends System {
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Juice");
 
-    entities.forEach((entity) => {
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
       const juice = world.getComponent<JuiceComponent>(entity, "Juice");
       let offset = world.getComponent<VisualOffsetComponent>(entity, "VisualOffset");
       const render = world.getComponent<RenderComponent>(entity, "Render");
 
-      if (!juice) return;
+      if (!juice) continue;
 
       // Ensure VisualOffset exists if we have animations that need it
       if (!offset && juice.animations.some(a => a.property !== "opacity")) {
@@ -82,8 +83,8 @@ export class JuiceSystem extends System {
         } as VisualOffsetComponent);
       }
 
-      for (let i = juice.animations.length - 1; i >= 0; i--) {
-        const anim = juice.animations[i];
+      for (let j = juice.animations.length - 1; j >= 0; j--) {
+        const anim = juice.animations[j];
 
         // Inicializar valor de inicio si es necesario
         if (anim.startValue === undefined) {
@@ -98,11 +99,11 @@ export class JuiceSystem extends System {
         this.setPropertyValue(anim.property, currentValue, offset, render);
 
         if (progress >= 1) {
-          juice.animations.splice(i, 1);
+          juice.animations.splice(j, 1);
           if (anim.onComplete) anim.onComplete(entity);
         }
       }
-    });
+    }
   }
 
   private getPropertyValue(prop: string, offset?: VisualOffsetComponent, render?: RenderComponent): number {

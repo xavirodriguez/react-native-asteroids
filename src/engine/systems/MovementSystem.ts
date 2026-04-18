@@ -41,13 +41,14 @@ export class MovementSystem extends System {
     const entities = world.query("Transform", "Velocity");
     const dtSeconds = deltaTime / 1000;
 
-    entities.forEach((entity) => {
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
       const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
 
       if (pos && vel) {
         PhysicsUtils.integrateMovement(pos, vel, dtSeconds);
       }
-    });
+    }
   }
 }
