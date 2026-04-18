@@ -38,6 +38,9 @@ export interface SystemConfig {
  * actúan sobre conjuntos de componentes filtrados mediante queries en el {@link World}.
  *
  * El orden de ejecución es crítico y se gestiona mediante {@link SystemPhase} y prioridades.
+ *
+ * @responsibility Encapsular la lógica de comportamiento del juego.
+ * @responsibility Transformar el estado del mundo basándose en el paso del tiempo.
  */
 export abstract class System {
   /**
@@ -45,6 +48,11 @@ export abstract class System {
    *
    * @param world - La instancia del {@link World} sobre la que opera el sistema.
    * @param deltaTime - Tiempo transcurrido desde el último tick en milisegundos.
+   *
+   * @remarks
+   * El sistema debe consultar entidades relevantes mediante {@link World.query} y aplicar
+   * transformaciones a sus componentes. Se recomienda no almacenar estado mutable dentro
+   * del sistema para facilitar el soporte de multijugador y rebobinado.
    *
    * @precondition El `world` debe estar en un estado consistente.
    * @postcondition Las mutaciones realizadas deben mantener los invariantes de los componentes.

@@ -11,8 +11,19 @@ export enum SceneState {
 
 /**
  * Gestor central de transiciones entre escenas.
- * Implementa una Máquina de Estados Finitos (FSM) y una cola atómica para
- * garantizar que solo ocurra una transición a la vez, evitando estados corruptos.
+ *
+ * @responsibility Implementar una Máquina de Estados Finitos (FSM) para el flujo de escenas.
+ * @responsibility Garantizar transiciones atómicas mediante una cola de tareas secuencial.
+ * @responsibility Gestionar la pila de escenas (push/pop) para sub-estados como menús de pausa.
+ *
+ * @remarks
+ * El `SceneManager` es crítico para prevenir fugas de memoria y condiciones de carrera
+ * durante la carga/descarga de recursos asíncronos. Utiliza {@link LifecycleUtils}
+ * para asegurar que los ganchos de ciclo de vida se ejecuten correctamente.
+ *
+ * @conceptualRisk [TRANSITION_INTERRUPTION][HIGH] Si una transición asíncrona es
+ * interrumpida por otra, el estado del motor puede quedar inconsistente. Se mitiga
+ * mediante `transitionQueue`.
  */
 export class SceneManager {
   private sceneStack: Scene[] = [];
@@ -70,8 +81,20 @@ export class SceneManager {
   }
 
   /**
-   * Atomic transition to a new scene.
-   * Clears the current stack and replaces it with the new scene.
+   * Realiza una transición atómica a una nueva escena.
+   * Limpia la pila actual y reemplaza la escena activa.
+   *
+   * @param scene - La nueva instancia de {@link Scene} a cargar.
+   *
+   * @remarks
+   * 1. Sale de la escena actual (onExit).
+   * 2. Cambia el estado a LOADING.
+   * 3. Entra en la nueva escena (onEnter).
+   * 4. Cambia el estado a ACTIVE.
+   *
+   * @precondition El manager debe estar en un estado estable (IDLE o ACTIVE).
+   * @postcondition La nueva escena es la única en la pila y es la escena activa.
+   * @sideEffect Incrementa la versión del mundo para forzar re-renders.
    */
   public async transitionTo(scene: Scene): Promise<void> {
     return this.enqueueTransition(async () => {
@@ -205,6 +228,16 @@ export class SceneManager {
     if (this.currentScene) this.currentScene.onResume();
   }
 
+  /**
+   * Reinicia la escena activa actual.
+   *
+   * @remarks
+   * Llama a `onRestartCleanup()` en la escena para limpiar recursos compartidos
+   * (como semillas de PRNG o suscripciones a eventos) antes de realizar una
+   * transición atómica hacia sí misma.
+   *
+   * @postcondition La escena vuelve a su estado inicial definido en `onEnter`.
+   */
   public async restartCurrentScene(): Promise<void> {
     if (this.currentScene) {
         this.currentScene.onRestartCleanup();

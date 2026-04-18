@@ -6,7 +6,7 @@ TinyAsterEngine es un framework de videojuegos arcade 2D de alto rendimiento con
 Su filosofía se basa en el desacoplamiento total de la simulación y la representación visual, garantizando determinismo para aplicaciones multijugador y una alta tasa de fotogramas mediante optimizaciones de memoria (pooling y zero-allocation).
 
 ## Límites Engine vs. Game
-El motor proporciona las primitivas necesarias para la simulación, mientras que el juego define la lógica específica.
+El motor proporciona las primitivas necesarias para la simulación, mientras que el juego define la lógica específica. Un contrato claro garantiza que el Core del motor permanezca agnóstico al género del videojuego.
 
 ### Responsabilidades del Engine (`src/engine/`)
 - **Core**: Gestión del mundo ECS, entidades, componentes base y el loop de juego de tiempo fijo.
@@ -20,6 +20,7 @@ El motor proporciona las primitivas necesarias para la simulación, mientras que
 - **Fábrica de Entidades**: Definición de prefabs (Ship, Asteroid, Bullet).
 - **Visuales**: Registro de `ShapeDrawers` específicos y efectos de partículas.
 - **Reglas de Juego**: Sistemas de puntuación, oleadas, niveles y condiciones de derrota.
+- **UI & Assets**: Definición de pantallas de React Native y carga de recursos específicos.
 
 ## Módulos Principales
 1. **ECS World (`core/World.ts`)**: Registro central y base de datos in-memory. Gestiona el ciclo de vida de entidades y el acceso reactivo mediante Queries.
