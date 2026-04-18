@@ -7,6 +7,11 @@ import { World } from "../core/World";
  *
  * @responsibility Orquestar la inicialización y limpieza de entidades/sistemas para un estado de juego específico.
  * @responsibility Proveer un contexto aislado (World) para evitar fugas de estado entre escenas.
+ *
+ * @remarks
+ * Las escenas permiten segmentar la lógica del juego en módulos independientes.
+ * Cada escena puede tener su propio conjunto de sistemas y entidades, lo que
+ * simplifica la gestión de la memoria y la complejidad.
  */
 export abstract class Scene {
   /**
@@ -64,10 +69,17 @@ export abstract class Scene {
   public onRestartCleanup(): void {}
 
   /**
-   * Llamado durante el tick de actualización de la simulación.
-   * @param dt - Tiempo transcurrido en segundos.
-   * @param world - El mundo a actualizar.
-   * @executionOrder Típicamente llamado por el {@link SceneManager} dentro del GameLoop.
+   * Llamado durante el tick de actualización de la simulación (Fixed Step).
+   *
+   * @param dt - Tiempo transcurrido en milisegundos (fixedDeltaTime).
+   * @param world - El mundo {@link World} asociado a la escena.
+   *
+   * @remarks
+   * Por defecto, delega la actualización al `world.update(dt)`. Las escenas
+   * pueden sobrescribir este método para añadir lógica de orquestación previa
+   * o posterior a la ejecución de los sistemas.
+   *
+   * @executionOrder Típicamente llamado por el {@link SceneManager} dentro del {@link GameLoop}.
    */
   public onUpdate(dt: number, world: World): void {
     world.update(dt);

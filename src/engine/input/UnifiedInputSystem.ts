@@ -19,6 +19,7 @@ export class UnifiedInputSystem extends System {
   private bindings = new Map<InputAction, string[]>();
   private axisBindings = new Map<string, { pos: string[]; neg: string[] }>();
   private overrides = new Map<InputAction, boolean>();
+  private axisOverrides = new Map<string, number>();
   private activeKeys = new Set<string>();
   private activeTouches = new Set<string>();
 
@@ -66,6 +67,34 @@ export class UnifiedInputSystem extends System {
    */
   public setOverride(action: InputAction, isPressed: boolean): void {
     this.overrides.set(action, isPressed);
+  }
+
+  /**
+   * Elimina un override previo para una acción, devolviendo el control al hardware.
+   *
+   * @param action - La acción cuyo override se desea eliminar.
+   */
+  public clearOverride(action: InputAction): void {
+    this.overrides.delete(action);
+  }
+
+  /**
+   * Sobrescribe programáticamente el valor de un eje.
+   *
+   * @param axis - Nombre del eje.
+   * @param value - Valor del eje (típicamente entre -1 y 1).
+   */
+  public setAxisOverride(axis: string, value: number): void {
+    this.axisOverrides.set(axis, value);
+  }
+
+  /**
+   * Elimina un override previo para un eje.
+   *
+   * @param axis - El eje cuyo override se desea eliminar.
+   */
+  public clearAxisOverride(axis: string): void {
+    this.axisOverrides.delete(axis);
   }
 
   private setupListeners(): void {
@@ -126,12 +155,23 @@ export class UnifiedInputSystem extends System {
       }
     });
 
-    // Update axes based on bindings
+    // Update axes based on bindings and overrides
     this.axisBindings.forEach((config, axis) => {
       let value = 0;
-      if (config.pos.some(k => this.activeKeys.has(k))) value += 1;
-      if (config.neg.some(k => this.activeKeys.has(k))) value -= 1;
-      inputState!.axes.set(axis, value);
+      if (config.pos.some(k => this.activeKeys.has(k) || this.activeTouches.has(k))) value += 1;
+      if (config.neg.some(k => this.activeKeys.has(k) || this.activeTouches.has(k))) value -= 1;
+
+      const override = this.axisOverrides.get(axis);
+      const finalValue = override !== undefined ? override : value;
+
+      inputState!.axes.set(axis, finalValue);
+    });
+
+    // Handle axis overrides that might not have bindings
+    this.axisOverrides.forEach((value, axis) => {
+        if (!this.axisBindings.has(axis)) {
+            inputState!.axes.set(axis, value);
+        }
     });
   }
 
@@ -159,26 +199,49 @@ export class UnifiedInputSystem extends System {
    * @returns Un objeto con la lista de acciones activas y el valor de los ejes.
    * @queries activeKeys, activeTouches, overrides - Lee el estado acumulado.
    *
-   * @conceptualRisk [INPUT_DRIFT][HIGH] `getInputState()` actualmente ignora los `overrides`
-   * lógicos en su implementación (solo usa bindings de hardware). Esto causará que los jugadores
-   * que usen controles en pantalla no envíen sus acciones correctamente en modo multijugador.
+   * @postcondition El estado devuelto incorpora tanto las entradas de hardware como los `overrides` lógicos.
    */
   public getInputState(): { actions: string[], axes: Record<string, number> } {
-    const actions: string[] = [];
+    const actionsSet = new Set<string>();
     const axes: Record<string, number> = {};
 
+    // 1. Process hardware bindings combined with overrides (matching update() OR logic)
     this.bindings.forEach((inputs, action) => {
-      const isPressed = inputs.some(input =>
+      const isRawPressed = inputs.some(input =>
         this.activeKeys.has(input) || this.activeTouches.has(input)
       );
-      if (isPressed) actions.push(action);
+      const isOverridden = this.overrides.get(action);
+      const isPressed = isOverridden !== undefined ? (isRawPressed || isOverridden) : isRawPressed;
+
+      if (isPressed) actionsSet.add(action);
     });
 
+    // 2. Process logical overrides for actions that are NOT bound to hardware
+    this.overrides.forEach((isPressed, action) => {
+      if (!this.bindings.has(action) && isPressed) {
+        actionsSet.add(action);
+      }
+    });
+
+    const actions = Array.from(actionsSet).sort();
+
+    // 3. Process axis bindings and overrides
     this.axisBindings.forEach((config, axis) => {
       let value = 0;
-      if (config.pos.some(k => this.activeKeys.has(k))) value += 1;
-      if (config.neg.some(k => this.activeKeys.has(k))) value -= 1;
-      if (value !== 0) axes[axis] = value;
+      if (config.pos.some(k => this.activeKeys.has(k) || this.activeTouches.has(k))) value += 1;
+      if (config.neg.some(k => this.activeKeys.has(k) || this.activeTouches.has(k))) value -= 1;
+
+      const override = this.axisOverrides.get(axis);
+      const finalValue = override !== undefined ? override : value;
+
+      if (finalValue !== 0) axes[axis] = finalValue;
+    });
+
+    // 4. Process axis overrides that are NOT bound
+    this.axisOverrides.forEach((value, axis) => {
+        if (!this.axisBindings.has(axis) && value !== 0) {
+            axes[axis] = value;
+        }
     });
 
     return { actions, axes };

@@ -37,7 +37,7 @@ Esta sección documenta las fragilidades arquitectónicas y de diseño detectada
 | Categoría | Severidad | Descripción | Ubicación |
 |-----------|-----------|-------------|-----------|
 | **DETERMINISM** | **CRITICAL** | `currentTick` (number) puede desbordarse tras ~285,000 años, pero los límites de lockstep/buffer podrían verse afectados por la precisión mucho antes. | `BaseGame.ts` |
-| **DETERMINISM** | **HIGH** | `getInputState()` ignora los `overrides`. Esto significa que el input enviado por red no incluirá acciones de la UI táctil. | `UnifiedInputSystem.ts` |
+| **DETERMINISM** | **FIXED** | `getInputState()` ignora los `overrides`. Esto significa que el input enviado por red no incluirá acciones de la UI táctil. | `UnifiedInputSystem.ts` |
 | **MEMORY** | **CRITICAL** | `EntityPool.release()` no previene el "double-release", lo que puede corromper la identidad de entidades en el `World`. | `EntityPool.ts` |
 | **PERFORMANCE**| **MEDIUM** | El loop de `GameLoop` puede disparar el "Spiral of Death" si la simulación es más lenta que el tiempo real, a pesar del límite `maxDeltaMs`. | `GameLoop.ts` |
 | **LIFECYCLE**   | **HIGH** | `runLifecycle` siempre introduce un microtask delay (async), lo que puede causar desincronización en métodos que esperan ejecución inmediata. | `LifecycleUtils.ts` |
@@ -48,5 +48,7 @@ Esta sección documenta las fragilidades arquitectónicas y de diseño detectada
 | **LIFECYCLE**   | **MEDIUM** | `SceneManager.restartCurrentScene` limpia el mundo pero no los recursos compartidos, pudiendo arrastrar estado sucio. | `SceneManager.ts` |
 | **DETERMINISM** | **LOW**    | `RenderUpdateSystem` muta `Render.rotation`. Si un sistema de colisiones depende de esta rotación en lugar de la del `Transform`, habrá drift visual vs físico. | `RenderUpdateSystem.ts` |
 | **GC_PRESSURE** | **LOW**    | Generación frecuente de arrays en `World.query` y `Query.getEntities`. Aunque se cachean, la exposición de la referencia mutable es peligrosa. | `World.ts`, `Query.ts` |
+| **GC_PRESSURE** | **MEDIUM** | El crecimiento ilimitado de `trailPositions` en `RenderUpdateSystem` puede causar picos de latencia en sesiones largas si no se limita por longitud. | `RenderUpdateSystem.ts` |
+| **PERFORMANCE**| **HIGH**   | La fase ancha de colisiones híbrida es sensible al `cellSize`. Un tamaño incorrecto puede degradar el rendimiento a O(N²) silenciosamente. | `CollisionSystem2D.ts` |
 | **DETERMINISM** | **FIXED**    | Uso de `Math.random()` en lógica de selección de objetivos de IA. Migrado a `RandomService("gameplay")`. | `KamikazeSystem.ts` |
-| **DETERMINISM** | **HIGH** | `getInputState` solo considera inputs de hardware, ignorando overrides de UI. Causa desincronización en red para jugadores móviles. | `UnifiedInputSystem.ts` |
+| **DETERMINISM** | **FIXED** | `getInputState` solo considera inputs de hardware, ignorando overrides de UI. Causa desincronización en red para jugadores móviles. | `UnifiedInputSystem.ts` |

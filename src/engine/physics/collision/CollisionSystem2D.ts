@@ -12,17 +12,25 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
 /**
  * Sistema integral de detección de colisiones 2D.
  *
- * @responsibility Selección de fase ancha híbrida, detección de fase estrecha (AABB/Círculo) y CCD.
+ * @responsibility Selección de fase ancha híbrida (Spatial Hash / Sweep and Prune).
+ * @responsibility Detección de fase estrecha (AABB, Círculo) y generación de manifolds.
+ * @responsibility Implementar Continuous Collision Detection (CCD) para objetos rápidos.
+ *
  * @queries Transform, Collider2D, CollisionEvents, ContinuousCollider, Velocity
  * @mutates {@link CollisionEventsComponent} - Limpia y repuebla los buffers de eventos por frame.
- * @mutates {@link TransformComponent} - Puede ajustar posiciones cuando CCD dispara pasos TOI tempranos.
+ * @mutates {@link TransformComponent} - Puede ajustar posiciones cuando CCD detecta impactos.
  * @emits Datos de manifold de colisión y eventos de ciclo de vida de Trigger (Enter, Stay, Exit).
  * @executionOrder Fase: {@link SystemPhase.Collision}.
  *
- * @conceptualRisk [MUTATION_SAFETY][HIGH] Los callbacks de colisión/trigger se ejecutan durante la
- * iteración del mundo. Los handlers que añaden/eliminan entidades pueden causar estados inconsistentes.
- * @conceptualRisk [SPATIAL_HASH_TUNING][MEDIUM] El rendimiento de la fase ancha es altamente
- * sensible al tamaño de celda frente a la densidad de entidades.
+ * @remarks
+ * Este sistema es el corazón de la interacción física. Utiliza un Spatial Hash para optimizar
+ * mundos con más de 50 entidades. Los eventos de colisión se almacenan en componentes
+ * para ser consumidos por sistemas de GameRules (ej: DamageSystem).
+ *
+ * @conceptualRisk [MUTATION_SAFETY][HIGH] Los callbacks de colisión se ejecutan durante la
+ * iteración. Modificar el World (añadir/quitar entidades) en estos callbacks es peligroso.
+ * @conceptualRisk [SPATIAL_HASH_TUNING][MEDIUM] El tamaño de celda del hash debe estar
+ * equilibrado con el tamaño promedio de los objetos para evitar saturación de celdas.
  */
 export class CollisionSystem2D extends System {
   private onCollisionCallbacks: CollisionCallback[] = [];
@@ -84,7 +92,7 @@ export class CollisionSystem2D extends System {
         });
       });
     } else {
-      candidates = BroadPhase.sweepAndPrune(entities, world);
+      candidates = BroadPhase.sweepAndPrune([...entities], world);
     }
 
     for (const [entityA, entityB] of candidates) {

@@ -9,10 +9,19 @@ import { UIElementComponent, UIStyleComponent, UITextComponent, UIProgressBarCom
 import { TextRenderer } from "../ui/text/TextRenderer";
 
 /**
- * 2D Canvas-based Rendering Engine.
+ * Motor de renderizado basado en el API 2D Canvas de la Web.
+ *
+ * @responsibility Implementar una arquitectura basada en snapshots para un renderizado desacoplado.
+ * @responsibility Generar buffers de comandos optimizados y ordenados por profundidad (zIndex).
+ * @responsibility Dibujar elementos de UI procedimentales (paneles, etiquetas, barras de progreso).
  *
  * @remarks
- * Implements a snapshot-based architecture for decoupled and consistent rendering.
+ * Es el renderizador estándar para la plataforma Web y entornos de desarrollo rápido.
+ * Utiliza una estrategia de "Zero-Allocation" mediante el reciclaje de objetos snapshot
+ * y comandos para minimizar la presión sobre el GC.
+ *
+ * @conceptualRisk [GC_PRESSURE][LOW] Aunque usa pools, el crecimiento de `entities` en el
+ * snapshot más allá de `MAX_ENTITIES` (2000) causará pérdida de dibujo.
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
@@ -110,19 +119,19 @@ export class CanvasRenderer implements Renderer {
   }
 
   private registerDefaultDrawers(): void {
-    this.registerShape("circle", (ctx, _entity, _pos, render) => {
+    this.registerShape("circle", (ctx, _entity, _pos, _elapsedTime, render) => {
       ctx.fillStyle = render.color;
       ctx.beginPath();
       ctx.arc(0, 0, render.size, 0, Math.PI * 2);
       ctx.fill();
     });
 
-    this.registerShape("rect", (ctx, _entity, _pos, render) => {
+    this.registerShape("rect", (ctx, _entity, _pos, _elapsedTime, render) => {
       ctx.fillStyle = render.color;
       ctx.fillRect(-render.size / 2, -render.size / 2, render.size, render.size);
     });
 
-    this.registerShape("polygon", (ctx, _entity, _pos, render) => {
+    this.registerShape("polygon", (ctx, _entity, _pos, _elapsedTime, render) => {
       const vertices = render.vertices;
       if (!vertices || vertices.length === 0) return;
       ctx.strokeStyle = render.color;
@@ -319,7 +328,7 @@ export class CanvasRenderer implements Renderer {
     const commands = this.commandBuffer.getCommands();
     const cmdCount = this.commandBuffer.getCount();
     for (let i = 0; i < cmdCount; i++) {
-      this.executeCommand(ctx, commands[i], world);
+      this.executeCommand(ctx, commands[i], world, snapshot.elapsedTime);
     }
 
     for (let i = 0; i < this.foregroundEffects.length; i++) {
@@ -335,7 +344,7 @@ export class CanvasRenderer implements Renderer {
     this.renderUIFromSnapshot(ctx, snapshot);
   }
 
-  private executeCommand(ctx: CanvasRenderingContext2D, cmd: DrawCommand, world: World): void {
+  private executeCommand(ctx: CanvasRenderingContext2D, cmd: DrawCommand, world: World, elapsedTime: number): void {
     ctx.save();
     ctx.translate(cmd.x, cmd.y);
     ctx.rotate(cmd.rotation);
@@ -361,14 +370,14 @@ export class CanvasRenderer implements Renderer {
 
     const drawer = this.shapeDrawers.get(cmd.type);
     if (drawer) {
-      drawer(ctx, cmd.entityId, this.tempPos, this.tempRender, world);
+      drawer(ctx, cmd.entityId, this.tempPos, elapsedTime, this.tempRender, world);
     }
 
     ctx.restore();
 
     const postDrawer = this.postEntityDrawers.get(cmd.type);
     if (postDrawer) {
-        postDrawer(ctx, cmd.entityId, this.tempPos, this.tempRender, world);
+        postDrawer(ctx, cmd.entityId, this.tempPos, elapsedTime, this.tempRender, world);
     }
   }
 
@@ -503,6 +512,20 @@ export class CanvasRenderer implements Renderer {
     ctx.closePath();
   }
 
+  /**
+   * Ejecuta el pipeline de renderizado completo para el World actual.
+   *
+   * @remarks
+   * El proceso se divide en dos fases críticas:
+   * 1. **Captura (Capture)**: Crea un {@link RenderSnapshot} interpolado del World.
+   * 2. **Dibujo (Draw)**: Ejecuta los comandos del snapshot en el contexto de Canvas.
+   *
+   * @param world - El mundo ECS fuente de datos.
+   * @param alpha - Factor de interpolación para movimiento suave.
+   *
+   * @precondition El contexto `ctx` debe haber sido establecido mediante {@link CanvasRenderer.setContext}.
+   * @postcondition Se genera una imagen completa en el Canvas.
+   */
   public render(world: World, alpha: number = 1): void {
     const snapshot = this.createSnapshot(world, alpha);
     this.renderSnapshot(snapshot, world);

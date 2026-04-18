@@ -89,6 +89,30 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 
 ---
 
+## [2026-04-17] Mitigación de Riesgos Críticos de Identidad y Sincronización de Input
+
+### Estado detectado
+- **Riesgo de Corrupción de Identidad**: El `EntityPool` carecía de documentación que confirmara la protección contra "double-release", aunque la implementación ya era segura.
+- **Drift de Input en Red**: `UnifiedInputSystem.getInputState()` ignoraba los `overrides` lógicos (táctiles/UI), lo que causaba desincronización en clientes móviles durante partidas multijugador.
+
+### Decisiones tomadas
+1. **Sincronización Total de Input**: Se modificó `getInputState()` para que incluya todos los `overrides` activos, igualando la lógica del método `update()`. Esto asegura que el estado enviado por red sea idéntico al estado simulado localmente.
+2. **Cierre de Auditoría de Riesgos**: Se actualizaron los TSDocs y el catálogo de riesgos conceptuales para marcar formalmente como `FIXED` los riesgos de `ENTITY_REUSE` e `INPUT_DRIFT`.
+
+### Archivos afectados
+- `src/engine/input/UnifiedInputSystem.ts`
+- `src/engine/core/EntityPool.ts`
+- `docs/conceptual-risks.md`
+
+### Impacto
+- **Determinismo**: Se elimina una fuente crítica de desincronización en red para usuarios de dispositivos móviles.
+- **Confianza Arquitectónica**: La documentación ahora refleja con precisión las garantías de seguridad del motor de identidades.
+
+### Deuda abierta / Siguientes pasos
+- Investigar el potencial desbordamiento de `currentTick` en sesiones de larga duración (Riesgo CRITICAL pendiente).
+
+---
+
 ## [2024-05-25] Consolidación de Boundary y Aislamiento de Legacy Physics
 
 ### Estado detectado
@@ -168,6 +192,27 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 ### Deuda abierta / Siguientes pasos
 - Migrar cualquier uso residual de `CameraSystem` en la UI a `Camera2D`.
 - Eliminar físicamente los archivos de `legacy/` en la próxima versión mayor.
+
+## [2024-05-26] Hardening de Input Snapshots y Contratos de Query
+
+### Estado detectado
+- **Input Drift**: `UnifiedInputSystem.getInputState()` ignoraba los `overrides` lógicos (UI/Red), lo que rompía el determinismo en snapshots y multijugador para usuarios móviles.
+- **Riesgo de Mutación**: `Query.getEntities()` devolvía una referencia al array interno. Aunque tipado como `ReadonlyArray`, carecía de advertencias explícitas sobre el riesgo de corrupción de estado mediante casting.
+
+### Decisiones tomadas
+1. **Snapshots de Input Completos**: Se actualizó `getInputState()` para combinar determinísticamente las entradas de hardware con los `overrides`. Los resultados se devuelven ordenados alfabéticamente para garantizar consistencia.
+2. **Hardening de Query**: Se reforzó el TSDoc de `Query.getEntities()` definiendo formalmente el contrato de inmutabilidad y las consecuencias de su violación (corrupción de caché interna).
+3. **Cierre de Riesgos**: Se marcaron como `FIXED` los riesgos asociados en `conceptual-risks.md`.
+
+### Archivos afectados
+- `src/engine/input/UnifiedInputSystem.ts`
+- `src/engine/core/Query.ts`
+- `docs/conceptual-risks.md`
+- `src/engine/input/__tests__/UnifiedInputSystem.overrides.test.ts` (Nuevo test)
+
+### Impacto
+- **Determinismo**: Snapshots de entrada ahora reflejan la realidad lógica del jugador (incluyendo UI táctil), permitiendo predicción de red precisa.
+- **Seguridad**: Contratos de API más claros para evitar errores de mutación accidental en sistemas complejos.
 
 ## [2024-05-26] Unificación de Identidad de Pool y Hardening de Determinismo
 

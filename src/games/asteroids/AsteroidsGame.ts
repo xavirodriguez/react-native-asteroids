@@ -137,6 +137,7 @@ export class AsteroidsGame
                const aVel = authoritativeSnapshot.componentData["Velocity"]?.[localPlayerId];
 
                if (!pPos || !aPos || Math.abs(pPos.x - aPos.x) > 0.01 || Math.abs(pPos.y - aPos.y) > 0.01 ||
+                   Math.abs(pPos.rotation - aPos.rotation) > 0.01 ||
                    !pVel || !aVel || Math.abs(pVel.dx - aVel.dx) > 0.01 || Math.abs(pVel.dy - aVel.dy) > 0.01) {
                    needsRollback = true;
                }

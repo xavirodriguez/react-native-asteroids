@@ -9,7 +9,7 @@ export interface GameLoopConfig {
 
 /**
  * Motor de tiempo central que orquesta el ciclo de vida del juego.
- * implementa un Fixed Timestep con interpolación para garantizar un comportamiento determinista.
+ * Implementa un Fixed Timestep con interpolación para garantizar un comportamiento determinista.
  *
  * @responsibility Mantener una tasa de actualización constante (60Hz) para la simulación física.
  * @responsibility Calcular el factor de interpolación (alpha) para el renderizado visual.
@@ -17,9 +17,13 @@ export interface GameLoopConfig {
  *
  * @remarks
  * El determinismo es fundamental para el soporte de rollback y repeticiones.
- * El loop separa la lógica de simulación de la tasa de refresco del monitor.
+ * El loop separa la lógica de simulación de la tasa de refresco del monitor, evitando que
+ * variaciones en el rendimiento del renderizado afecten la integridad de la física.
  *
  * @contract Fixed Update: Se garantiza que la fase de simulación siempre reciba incrementos de 16.67ms (1/60s).
+ *
+ * @conceptualRisk [SPIRAL_OF_DEATH][MEDIUM] Si el tiempo de simulación excede el tiempo real,
+ * el acumulador crecerá indefinidamente. Se mitiga mediante `maxDeltaMs`.
  */
 export class GameLoop {
   private isRunning = false;

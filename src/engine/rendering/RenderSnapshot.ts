@@ -1,10 +1,11 @@
 import { Entity } from "../core/Entity";
 
 /**
- * Snapshot of an entity for rendering.
+ * Instantánea de una entidad capturada para renderizado.
  *
  * @remarks
- * Contains captured visual state.
+ * Contiene el estado visual final (ya interpolado y con offsets aplicados) necesario
+ * para que el renderer dibuje la entidad sin consultar el mundo de nuevo.
  */
 export interface RenderEntitySnapshot {
   id: Entity;
@@ -51,16 +52,30 @@ export interface UISnapshot {
 }
 
 /**
- * Complete rendering frame snapshot.
+ * Snapshot completo de un frame de renderizado.
+ *
+ * @remarks
+ * Esta estructura desacopla la fase de captura (que lee del World) de la fase de dibujo.
+ * Permite que el renderizado sea determinista y evita problemas de concurrencia o
+ * mutaciones del World durante el dibujo.
  */
 export interface RenderSnapshot {
+  /** Array pre-asignado de snapshots de entidades. */
   entities: RenderEntitySnapshot[];
+  /** Número real de entidades capturadas en este snapshot. */
   entityCount: number;
+  /** Array pre-asignado de snapshots de elementos de UI. */
   uiElements: UISnapshot[];
+  /** Número real de elementos de UI capturados. */
   uiCount: number;
+  /** Desplazamiento horizontal acumulado por efectos de Screen Shake. */
   shakeX: number;
+  /** Desplazamiento vertical acumulado por efectos de Screen Shake. */
   shakeY: number;
+  /** Tiempo transcurrido (ms) desde el inicio de la simulación. */
   elapsedTime: number;
+  /** Datos arbitrarios para efectos de fondo. */
   backgroundData?: Record<string, unknown> | null;
+  /** Datos arbitrarios para efectos de primer plano. */
   foregroundData?: Record<string, unknown> | null;
 }

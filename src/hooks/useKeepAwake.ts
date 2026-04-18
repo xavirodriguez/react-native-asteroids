@@ -44,7 +44,8 @@ export function useKeepAwake(enabled: boolean = true): void {
       activateKeepAwakeAsync().catch((error: Error) => {
         // Common on web if not in secure context or if already deactivated
         // We log as info to avoid cluttering error logs for a non-critical failure
-        console.info("Keep-awake activation skipped or failed:", error.message);
+        const message = error instanceof Error ? error.message : String(error);
+        console.info("Keep-awake activation skipped or failed:", message);
       });
     } catch (_e) {
       // Catch synchronous errors if any

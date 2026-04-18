@@ -22,12 +22,20 @@ export interface BaseGameConfig {
 }
 
 /**
- * Main orchestrator for game lifecycle and state.
+ * Orquestador principal del ciclo de vida y el estado del juego.
  *
  * @remarks
- * Enforces a strict deterministic pipeline:
- * 1. Input -> 2. Simulation Update -> 3. Transform Propagation.
- * Render phase is decoupled and handles interpolation.
+ * Impone un pipeline determinista estricto:
+ * 1. INPUT: Captura y procesamiento de comandos.
+ * 2. SIMULATION: Ejecución de la lógica de juego y sistemas físicos (Fixed Step).
+ * 3. TRANSFORM: Propagación de jerarquías espaciales.
+ *
+ * La fase de renderizado está desacoplada y gestiona la interpolación visual mediante
+ * el valor `alpha` calculado por el {@link GameLoop}.
+ *
+ * @responsibility Coordinar la inicialización de sistemas y entidades.
+ * @responsibility Gestionar las transiciones de pausa y reinicio.
+ * @responsibility Proveer acceso unificado al mundo ECS y recursos globales.
  */
 export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   implements IGame<BaseGame<TState, TInput>> {
@@ -157,10 +165,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    *
    * @remarks
    * Realiza una limpieza previa mediante `_onBeforeRestart`. Si hay escenas activas,
-   * reinicia la escena actual; de lo contrario, limpia el mundo y re-inicializa entidades.
+   * reinicia la escena actual invocando `onRestartCleanup()`; de lo contrario, limpia
+   * el mundo y re-inicializa las entidades.
    *
-   * @param seed - Semilla opcional para garantizar repetibilidad.
+   * @param seed - Semilla opcional para garantizar repetibilidad en la simulación.
    * @postcondition El juego vuelve a su estado inicial de simulación.
+   * @sideEffect Reinicia el tick de simulación y el estado de pausa.
+   * @sideEffect Actualiza la semilla global en {@link RandomService}.
    */
   public async restart(seed?: number): Promise<void> {
     await this._onBeforeRestart();
@@ -216,13 +227,16 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Inicializa el juego y todos sus subsistemas.
+   * Inicializa el juego y todos sus subsistemas de forma asíncrona.
    *
    * @remarks
-   * Debe llamarse antes de {@link BaseGame.start}. Registra sistemas base del motor,
-   * sistemas específicos del juego y crea las entidades iniciales.
+   * Debe llamarse obligatoriamente antes de {@link BaseGame.start}. Registra los sistemas
+   * core del motor (XP, Paleta), los sistemas específicos del juego mediante {@link BaseGame.registerSystems}
+   * e inicializa las entidades base mediante {@link BaseGame.initializeEntities}.
    *
-   * @postcondition El {@link World} está poblado y listo para la simulación.
+   * @postcondition El {@link World} está configurado con sistemas y entidades iniciales.
+   * @conceptualRisk [ASYNC_RACE][MEDIUM] Llamar a `start()` antes de que la promesa de `init()`
+   * se resuelva puede resultar en una simulación sin sistemas o entidades.
    */
   public async init(): Promise<void> {
     await this.registerEngineSystems();
