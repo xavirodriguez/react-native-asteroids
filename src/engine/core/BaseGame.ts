@@ -59,6 +59,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   private _globalKeyHandler = (e: KeyboardEvent) => this._handleGlobalKey(e);
   protected _config: BaseGameConfig;
   protected hierarchySystem: HierarchySystem;
+  protected interpolationPrepSystem: InterpolationPrepSystem;
 
   public abstract initializeRenderer(renderer: import("../rendering/Renderer").Renderer<unknown>): void;
 
@@ -73,6 +74,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.inputBuffer = new InputBuffer();
     this.replayRecorder = new ReplayRecorder();
     this.hierarchySystem = new HierarchySystem();
+    this.interpolationPrepSystem = new InterpolationPrepSystem();
 
     this.world.setResource("EventBus", this.eventBus);
     this.world.setResource("UnifiedInputSystem", this.unifiedInput);
@@ -99,6 +101,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       if (this._isPaused) return;
 
       const activeWorld = this.getWorld();
+
+      // 0. PRE-UPDATE: Snapshot for interpolation
+      this.interpolationPrepSystem.update(activeWorld, deltaTime);
 
       // 1. INPUT
       if (this.isMultiplayer) {
@@ -231,7 +236,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   protected async registerEngineSystems(): Promise<void> {
-    this.world.addSystem(new InterpolationPrepSystem(), { phase: SystemPhase.Input, priority: 1000 });
     this.world.addSystem(new XPSystem(this.eventBus));
     const profile = await PlayerProfileService.getProfile();
     this.world.addSystem(new PaletteSystem(profile.activePalette));
