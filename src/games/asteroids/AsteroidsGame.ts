@@ -225,7 +225,7 @@ export class AsteroidsGame
     if (this.isMultiplayer) return;
 
     const { world, config } = this;
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+
     const { createGameState, createShip, spawnAsteroidWave } = require("./EntityFactory");
 
     createGameState({ world });

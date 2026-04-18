@@ -7,14 +7,12 @@ import { NetworkTransport } from "../network/NetworkTransport";
 import { ReplayRecorder } from "../debug/ReplayRecorder";
 import { SceneManager } from "../scenes/SceneManager";
 import { RandomService } from "../utils/RandomService";
-import { PreviousTransformComponent, TransformComponent } from "./CoreComponents";
 import type { IGame, UpdateListener } from "./IGame";
 import { XPSystem } from "../systems/XPSystem";
 import { PaletteSystem } from "../systems/PaletteSystem";
 import { PlayerProfileService } from "../../services/PlayerProfileService";
 import { HierarchySystem } from "../systems/HierarchySystem";
 import { InterpolationPrepSystem } from "../systems/InterpolationPrepSystem";
-import { SystemPhase } from "./System";
 
 export interface BaseGameConfig {
   pauseKey?: string;

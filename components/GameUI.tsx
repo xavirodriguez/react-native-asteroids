@@ -16,24 +16,31 @@ import type { GameStateComponent } from "../src/types/GameTypes";
 
 type SkiaModuleType = typeof import("@shopify/react-native-skia");
 
-// Conditionally import Skia components
-let Canvas: React.ComponentType<{
+// Define types for the Skia components we use
+type CanvasComponent = React.ComponentType<{
   style?: import("react-native").StyleProp<import("react-native").ViewStyle>;
   children?: React.ReactNode;
-}> | null = null;
-let BackdropBlur: React.ComponentType<{
+}>;
+
+type BackdropBlurComponent = React.ComponentType<{
   blur: number;
   clip?: { x: number; y: number; width: number; height: number };
   children?: React.ReactNode;
-}> | null = null;
-let Fill: React.ComponentType<{ color: string }> | null = null;
+}>;
+
+type FillComponent = React.ComponentType<{ color: string }>;
+
+// Conditionally import Skia components
+let Canvas: CanvasComponent | null = null;
+let BackdropBlur: BackdropBlurComponent | null = null;
+let Fill: FillComponent | null = null;
 
 if (Platform.OS !== "web") {
   try {
     const SkiaModule = require("@shopify/react-native-skia") as SkiaModuleType;
-    Canvas = SkiaModule.Canvas as unknown as typeof Canvas;
-    BackdropBlur = SkiaModule.BackdropBlur as unknown as typeof BackdropBlur;
-    Fill = SkiaModule.Fill as unknown as typeof Fill;
+    Canvas = SkiaModule.Canvas as unknown as CanvasComponent;
+    BackdropBlur = SkiaModule.BackdropBlur as unknown as BackdropBlurComponent;
+    Fill = SkiaModule.Fill as unknown as FillComponent;
   } catch (_err) {
     // Skia not available
   }

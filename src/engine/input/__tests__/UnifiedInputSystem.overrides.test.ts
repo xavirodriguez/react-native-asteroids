@@ -8,23 +8,25 @@ describe("UnifiedInputSystem Overrides", () => {
 
   beforeEach(() => {
     // Mock window to prevent errors during UnifiedInputSystem instantiation
-    global.window = {
+    const mockWindow = {
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
-    } as any;
+    };
+    (global as unknown as { window: unknown }).window = mockWindow;
     inputSystem = new UnifiedInputSystem();
     world = new World();
   });
 
   afterEach(() => {
-    delete (global as any).window;
+    delete (global as unknown as { window: unknown }).window;
   });
 
   it("should incorporate overrides into getInputState with OR semantics", () => {
     inputSystem.bind("shoot", ["Space"]);
 
     // Simulate hardware key press
-    (inputSystem as any).activeKeys.add("Space");
+    const internalInput = inputSystem as unknown as { activeKeys: Set<string> };
+    internalInput.activeKeys.add("Space");
 
     // Initial state: hardware only
     let state = inputSystem.getInputState();
@@ -50,7 +52,8 @@ describe("UnifiedInputSystem Overrides", () => {
 
   it("should handle axis overrides", () => {
     inputSystem.bindAxis("horizontal", ["ArrowRight"], ["ArrowLeft"]);
-    (inputSystem as any).activeKeys.add("ArrowRight");
+    const internalInput = inputSystem as unknown as { activeKeys: Set<string> };
+    internalInput.activeKeys.add("ArrowRight");
 
     // Hardware only
     let state = inputSystem.getInputState();
@@ -71,8 +74,13 @@ describe("UnifiedInputSystem Overrides", () => {
     inputSystem.bind("shoot", ["Space"]);
     inputSystem.bindAxis("horizontal", ["ArrowRight"], ["ArrowLeft"]);
 
-    (inputSystem as any).activeKeys.add("Space");
-    (inputSystem as any).activeKeys.add("ArrowRight");
+    const internalInput = inputSystem as unknown as {
+        activeKeys: Set<string>;
+        setOverride: (action: string, value: boolean) => void;
+        setAxisOverride: (axis: string, value: number) => void;
+    };
+    internalInput.activeKeys.add("Space");
+    internalInput.activeKeys.add("ArrowRight");
     inputSystem.setOverride("jump", true);
     inputSystem.setAxisOverride("vertical", 1);
 
@@ -96,7 +104,8 @@ describe("UnifiedInputSystem Overrides", () => {
 
   it("should include activeTouches in axes calculation", () => {
     inputSystem.bindAxis("fire", ["TouchTap"], []);
-    (inputSystem as any).activeTouches.add("TouchTap");
+    const internalInput = inputSystem as unknown as { activeTouches: Set<string> };
+    internalInput.activeTouches.add("TouchTap");
 
     const snapshot = inputSystem.getInputState();
     expect(snapshot.axes["fire"]).toBe(1);
