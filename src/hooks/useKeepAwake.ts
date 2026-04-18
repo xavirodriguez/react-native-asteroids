@@ -22,7 +22,8 @@ export function useKeepAwake(enabled: boolean = true): void {
   useEffect(() => {
     // Improved platform detection for Web environment
     const isWeb = typeof window !== "undefined" && typeof navigator !== "undefined";
-    const nav = navigator as NavigatorWithWakeLock;
+    const nav = (typeof navigator !== "undefined" ? navigator : undefined) as NavigatorWithWakeLock | undefined;
+
 
     // WakeLock is only available in secure contexts (HTTPS) and supported browsers
     const supportsWakeLock = isWeb &&
