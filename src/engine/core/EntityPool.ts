@@ -43,9 +43,9 @@ export class EntityPool {
    *
    * @precondition El ID debe haber sido obtenido previamente mediante {@link EntityPool.acquire}.
    * @postcondition El ID se añade a la pila de IDs disponibles.
-   * @conceptualRisk [ENTITY_REUSE][CRITICAL] No hay una validación para evitar el
-   * "double-release" (liberar el mismo ID dos veces). Esto causaría que `acquire()` devuelva el
-   * mismo ID a dos solicitantes distintos, provocando corrupción de estado en el `World`.
+   * @conceptualRisk [ENTITY_REUSE][FIXED] Se ha implementado una validación mediante `pooledSet`
+   * para evitar el "double-release" (liberar el mismo ID dos veces), previniendo la corrupción
+   * de estado en el {@link World}.
    */
   public release(id: Entity): void {
     if (this.pooledSet.has(id)) {
