@@ -12,6 +12,9 @@ import { Entity } from "../types/EngineTypes";
  * Las queries eliminan la necesidad de iterar sobre todas las entidades del mundo en cada frame.
  * El {@link World} notifica a las queries relevantes solo cuando hay cambios estructurales
  * (add/remove componente), permitiendo una complejidad O(1) para obtener entidades activas.
+ *
+ * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] Si un consumidor modifica el array devuelto
+ * (e.g., mediante `.push()` o `.sort()` in-place), corromperá el estado interno de la Query.
  */
 export class Query {
   private entities: Set<Entity> = new Set();
@@ -68,7 +71,7 @@ export class Query {
    * El array devuelto es una referencia a un caché interno por razones de rendimiento.
    * Se devuelve como `ReadonlyArray` para señalizar que NO debe ser modificado.
    *
-   * @returns Un array de IDs de {@link Entity}.
+   * @returns Un array de solo lectura de IDs de {@link Entity}.
    *
    * @precondition No se debe realizar casting de este array a uno mutable ni utilizar métodos in-place (sort, push).
    * @postcondition El array devuelto refleja el estado actual del {@link World} para esta firma.

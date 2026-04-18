@@ -42,15 +42,15 @@ export function useGame<
   useKeepAwake(!isPaused && isReady);
 
   useEffect(() => {
+    let isMounted = true;
     const gameInstance = new GameClass({ isMultiplayer });
-    setGame(gameInstance);
     setIsReady(false);
 
     // Async initialization
-    let isMounted = true;
     gameInstance.init().then(() => {
       if (isMounted) {
         gameInstance.start();
+        setGame(gameInstance);
         setIsReady(true);
       }
     }).catch(console.error);

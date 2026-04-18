@@ -18,7 +18,8 @@ export class FlappyBirdRenderSystem extends RenderUpdateSystem {
 
   private updateBirdRotation(world: World, deltaTime: number): void {
     const birds = world.query("Bird", "Render");
-    birds.forEach((entity) => {
+    for (let i = 0; i < birds.length; i++) {
+      const entity = birds[i];
       const bird = world.getComponent<BirdComponent>(entity, "Bird");
       const render = world.getComponent<RenderComponent>(entity, "Render");
 
@@ -33,6 +34,6 @@ export class FlappyBirdRenderSystem extends RenderUpdateSystem {
 
         render.rotation += (targetRotation - render.rotation) * lerpFactor;
       }
-    });
+    }
   }
 }

@@ -1,48 +1,52 @@
-# Guía de Onboarding para Desarrolladores de Motor
+# Guía de Onboarding para Desarrolladores del Motor
 
-Bienvenido al desarrollo de TinyAsterEngine. Esta guía te ayudará a extender el juego de forma segura.
+Bienvenido al equipo de desarrollo de TinyAsterEngine. Esta guía te ayudará a navegar por la arquitectura del motor y a realizar tus primeras contribuciones de forma segura.
 
-## Cómo Crear un Nuevo Sistema
+## 1. Mapa Mental de la Arquitectura
 
-1. Crea un archivo en `src/engine/systems/` o `src/games/tu_juego/systems/`.
-2. Extiende la clase `System`.
-3. Define tu lógica en el método `update`.
-4. **Importante**: No guardes estado en el sistema. Si necesitas guardar algo (como un temporizador), crea un nuevo componente y asígnalo a una entidad singleton.
+El motor se divide en tres capas principales:
 
-```typescript
-export class MiNuevoSystem extends System {
-  update(world: World, deltaTime: number) {
-    const entities = world.query("MiComponente");
-    // Lógica aquí...
-  }
-}
-```
+1.  **Core ECS (`src/engine/core/`)**: Las primitivas de datos y el loop de tiempo.
+2.  **Sistemas de Motor (`src/engine/systems/`)**: Comportamientos universales (Física, TTL, Jerarquías).
+3.  **Backends de Renderizado (`src/engine/rendering/`)**: Cómo se dibujan los datos en pantalla.
 
-## Cómo Añadir un Nuevo Componente
+## 2. Cómo Fluye un Frame
 
-1. Añade la interfaz en `src/engine/core/CoreComponents.ts` (si es genérico) o en los tipos de tu juego.
-2. Asegúrate de incluir el campo `type`.
-3. Documenta las unidades (píxeles, milisegundos, radianes).
+Cada tick de simulación (60Hz) sigue este orden estricto:
 
-```typescript
-export interface MiComponente extends Component {
-  type: "MiComponente";
-  valor: number; // en píxeles
-}
-```
+1.  **Captura de Input**: `UnifiedInputSystem` traduce teclas/toques a acciones.
+2.  **Física y Movimiento**: `MovementSystem` integra velocidades.
+3.  **Detección de Colisiones**: `CollisionSystem2D` genera eventos.
+4.  **Lógica de Juego**: Los sistemas específicos (ej: `AsteroidsGame`) procesan eventos.
+5.  **Jerarquías**: `HierarchySystem` calcula posiciones de mundo.
+6.  **Presentación**: `RenderUpdateSystem` prepara estelas y efectos visuales.
 
-## Reglas de Oro para el Determinismo
-- **NUNCA** uses `Math.random()`. Usa `RandomService.getInstance("gameplay").next()`.
-- **NUNCA** uses `Date.now()`. Usa el `deltaTime` proporcionado por el sistema o mantén un contador de ticks.
-- **NUNCA** asumas el orden de ejecución de las entidades dentro de una query.
+## 3. Reglas de Oro para Desarrolladores
 
-## Cómo Depurar
-- Activa el modo debug: `world.debugMode = true`.
-- Usa el `SystemProfiler` para ver el coste de tus sistemas.
-- Visualiza colisiones añadiendo el componente `DebugConfig` al World.
+### Determinismo ante todo
+- Nunca uses `Math.random()`. Usa `RandomService.getInstance("gameplay")`.
+- Nunca uses `Date.now()`. Usa el `deltaTime` proporcionado por el sistema o `elapsedTime` del snapshot.
 
-## Flujo de Trabajo para Nuevas Funcionalidades
-1. Define los datos (Componentes).
-2. Define la lógica (Systems).
-3. Define la visualización (ShapeDrawers).
-4. Registra todo en la clase de tu juego (extensión de `BaseGame`).
+### Desacoplamiento de Datos
+- No añadas lógica a los componentes. Solo propiedades de datos.
+- No añadas estado mutable a los sistemas. El estado debe vivir en los componentes o recursos del `World`.
+
+### Gestión de Memoria
+- Evita crear objetos (`{}`) o arrays (`[]`) en el método `update()` de un sistema.
+- Usa pools para entidades o componentes que se crean y destruyen con frecuencia.
+
+## 4. Primeros Pasos Sugeridos
+
+1.  **Explora un Juego**: Mira `src/games/Asteroids/AsteroidsGame.ts` para ver cómo se ensambla un juego.
+2.  **Crea un Componente**: Añade una nueva propiedad a `CoreComponents.ts`.
+3.  **Implementa un Sistema**: Crea un sistema sencillo que reaccione a tu nuevo componente.
+4.  **Registra un Shape**: Añade un nuevo dibujo en `CanvasRenderer.ts` y úsalo en tu juego.
+
+## 5. Glosario de Términos
+
+- **World**: La base de datos central de ECS.
+- **Entity**: Un simple ID numérico.
+- **Component**: Una bolsa de datos con un `type`.
+- **System**: El código que hace que las cosas se muevan.
+- **Snapshot**: Una foto del estado visual para el renderer.
+- **Alpha**: El factor de interpolación entre ticks físicos.

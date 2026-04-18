@@ -35,11 +35,12 @@ export class FrictionSystem extends System {
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Velocity", "Friction");
 
-    entities.forEach((entity) => {
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!;
       const friction = world.getComponent<FrictionComponent>(entity, "Friction")!;
 
       PhysicsUtils.applyFriction(vel, friction.value, deltaTime);
-    });
+    }
   }
 }

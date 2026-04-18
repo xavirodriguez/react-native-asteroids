@@ -143,7 +143,13 @@ export class SkiaRenderer implements Renderer {
   /**
    * Ejecuta el pipeline de renderizado de Skia.
    *
+   * @remarks
+   * A diferencia del {@link CanvasRenderer}, esta implementación actual realiza un dibujo
+   * más directo, aunque mantiene el soporte para interpolación visual. Se recomienda
+   * evolucionar hacia el modelo de snapshots para garantizar paridad visual total.
+   *
    * @param world - El mundo ECS que contiene las entidades a dibujar.
+   * @param alpha - Factor de interpolación [0, 1].
    *
    * @precondition El lienzo (SkCanvas) debe estar listo para recibir comandos.
    * @postcondition Se genera la imagen del frame actual con interpolación aplicada.

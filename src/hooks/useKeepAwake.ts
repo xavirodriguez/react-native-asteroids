@@ -30,10 +30,16 @@ export function useKeepAwake(enabled: boolean = true): void {
 
     // Symmetric activation with extra safety
     try {
+      // Additional check for navigator existence before calling Expo's API on web
+      if (isWeb && (typeof navigator === "undefined" || !navigator)) {
+          return;
+      }
+
       activateKeepAwakeAsync().catch((error) => {
         // Common on web if not in secure context or if already deactivated
         // We log as info to avoid cluttering error logs for a non-critical failure
-        console.info("Keep-awake activation skipped or failed:", error.message);
+        const message = error instanceof Error ? error.message : String(error);
+        console.info("Keep-awake activation skipped or failed:", message);
       });
     } catch (e) {
       // Catch synchronous errors if any

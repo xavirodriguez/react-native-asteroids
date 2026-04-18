@@ -89,6 +89,30 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 
 ---
 
+## [2026-04-17] Mitigación de Riesgos Críticos de Identidad y Sincronización de Input
+
+### Estado detectado
+- **Riesgo de Corrupción de Identidad**: El `EntityPool` carecía de documentación que confirmara la protección contra "double-release", aunque la implementación ya era segura.
+- **Drift de Input en Red**: `UnifiedInputSystem.getInputState()` ignoraba los `overrides` lógicos (táctiles/UI), lo que causaba desincronización en clientes móviles durante partidas multijugador.
+
+### Decisiones tomadas
+1. **Sincronización Total de Input**: Se modificó `getInputState()` para que incluya todos los `overrides` activos, igualando la lógica del método `update()`. Esto asegura que el estado enviado por red sea idéntico al estado simulado localmente.
+2. **Cierre de Auditoría de Riesgos**: Se actualizaron los TSDocs y el catálogo de riesgos conceptuales para marcar formalmente como `FIXED` los riesgos de `ENTITY_REUSE` e `INPUT_DRIFT`.
+
+### Archivos afectados
+- `src/engine/input/UnifiedInputSystem.ts`
+- `src/engine/core/EntityPool.ts`
+- `docs/conceptual-risks.md`
+
+### Impacto
+- **Determinismo**: Se elimina una fuente crítica de desincronización en red para usuarios de dispositivos móviles.
+- **Confianza Arquitectónica**: La documentación ahora refleja con precisión las garantías de seguridad del motor de identidades.
+
+### Deuda abierta / Siguientes pasos
+- Investigar el potencial desbordamiento de `currentTick` en sesiones de larga duración (Riesgo CRITICAL pendiente).
+
+---
+
 ## [2024-05-25] Consolidación de Boundary y Aislamiento de Legacy Physics
 
 ### Estado detectado

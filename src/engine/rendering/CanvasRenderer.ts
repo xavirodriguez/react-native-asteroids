@@ -9,10 +9,19 @@ import { UIElementComponent, UIStyleComponent, UITextComponent, UIProgressBarCom
 import { TextRenderer } from "../ui/text/TextRenderer";
 
 /**
- * 2D Canvas-based Rendering Engine.
+ * Motor de renderizado basado en el API 2D Canvas de la Web.
+ *
+ * @responsibility Implementar una arquitectura basada en snapshots para un renderizado desacoplado.
+ * @responsibility Generar buffers de comandos optimizados y ordenados por profundidad (zIndex).
+ * @responsibility Dibujar elementos de UI procedimentales (paneles, etiquetas, barras de progreso).
  *
  * @remarks
- * Implements a snapshot-based architecture for decoupled and consistent rendering.
+ * Es el renderizador estándar para la plataforma Web y entornos de desarrollo rápido.
+ * Utiliza una estrategia de "Zero-Allocation" mediante el reciclaje de objetos snapshot
+ * y comandos para minimizar la presión sobre el GC.
+ *
+ * @conceptualRisk [GC_PRESSURE][LOW] Aunque usa pools, el crecimiento de `entities` en el
+ * snapshot más allá de `MAX_ENTITIES` (2000) causará pérdida de dibujo.
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
@@ -503,6 +512,20 @@ export class CanvasRenderer implements Renderer {
     ctx.closePath();
   }
 
+  /**
+   * Ejecuta el pipeline de renderizado completo para el World actual.
+   *
+   * @remarks
+   * El proceso se divide en dos fases críticas:
+   * 1. **Captura (Capture)**: Crea un {@link RenderSnapshot} interpolado del World.
+   * 2. **Dibujo (Draw)**: Ejecuta los comandos del snapshot en el contexto de Canvas.
+   *
+   * @param world - El mundo ECS fuente de datos.
+   * @param alpha - Factor de interpolación para movimiento suave.
+   *
+   * @precondition El contexto `ctx` debe haber sido establecido mediante {@link CanvasRenderer.setContext}.
+   * @postcondition Se genera una imagen completa en el Canvas.
+   */
   public render(world: World, alpha: number = 1): void {
     const snapshot = this.createSnapshot(world, alpha);
     this.renderSnapshot(snapshot, world);
