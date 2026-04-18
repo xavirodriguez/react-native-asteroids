@@ -75,6 +75,13 @@ export interface PreviousTransformComponent extends Component {
   y: number;
   /** Rotación en el tick anterior (radianes). */
   rotation: number;
+
+  /** Coordenada X absoluta en el mundo en el tick anterior. */
+  worldX?: number;
+  /** Coordenada Y absoluta en el mundo en el tick anterior. */
+  worldY?: number;
+  /** Rotación absoluta en el mundo en el tick anterior. */
+  worldRotation?: number;
 }
 
 /**
