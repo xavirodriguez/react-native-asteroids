@@ -26,16 +26,16 @@ describe("UnifiedInputSystem Overrides", () => {
     let state = inputSystem.getInputState();
     expect(state.actions).toContain("shoot");
 
-    // Override to false (logical inhibition)
+    // Override to false (matching update() OR logic: hardware=true OR override=false => true)
     inputSystem.setOverride("shoot", false);
     state = inputSystem.getInputState();
-    expect(state.actions).not.toContain("shoot");
+    expect(state.actions).toContain("shoot");
 
     // Override to true (logical activation)
     inputSystem.setOverride("jump", true);
     state = inputSystem.getInputState();
     expect(state.actions).toContain("jump");
-    expect(state.actions).not.toContain("shoot");
+    expect(state.actions).toContain("shoot"); // Shoot is still pressed on hardware
 
     // Remove override
     inputSystem.setOverride("jump", undefined as any); // Removing by setting to undefined

@@ -165,21 +165,21 @@ export class UnifiedInputSystem extends System {
     const actionsSet = new Set<string>();
     const axes: Record<string, number> = {};
 
-    // 1. Process hardware bindings
+    // 1. Process hardware bindings combined with overrides (matching update() OR logic)
     this.bindings.forEach((inputs, action) => {
-      const isPressed = inputs.some(input =>
+      const isRawPressed = inputs.some(input =>
         this.activeKeys.has(input) || this.activeTouches.has(input)
       );
+      const isOverridden = this.overrides.get(action);
+      const isPressed = isOverridden !== undefined ? (isRawPressed || isOverridden) : isRawPressed;
+
       if (isPressed) actionsSet.add(action);
     });
 
-    // 2. Process logical overrides (UI or Network)
+    // 2. Process logical overrides for actions that are NOT bound to hardware
     this.overrides.forEach((isPressed, action) => {
-      if (isPressed === undefined) return;
-      if (isPressed) {
+      if (!this.bindings.has(action) && isPressed) {
         actionsSet.add(action);
-      } else {
-        actionsSet.delete(action);
       }
     });
 
