@@ -58,14 +58,22 @@ export interface TransformComponent extends Component {
 /**
  * Almacena el estado de la transformación en el frame anterior.
  *
+ * @responsibility Proveer datos históricos para interpolación visual.
+ *
  * @remarks
  * Esencial para realizar interpolación visual suave (mediante el valor `alpha` del `GameLoop`)
  * cuando la tasa de renderizado es superior a la de simulación (fixed timestep).
+ *
+ * @conceptualRisk [STALE_SNAPSHOT][LOW] Si este componente no se actualiza al inicio de cada
+ * tick de simulación (Fixed Update), la interpolación producirá jitter visual.
  */
 export interface PreviousTransformComponent extends Component {
   type: "PreviousTransform";
+  /** Posición X en el tick anterior (píxeles). */
   x: number;
+  /** Posición Y en el tick anterior (píxeles). */
   y: number;
+  /** Rotación en el tick anterior (radianes). */
   rotation: number;
 }
 
@@ -73,13 +81,15 @@ export interface PreviousTransformComponent extends Component {
  * Define el vector de movimiento y la velocidad angular de una entidad.
  *
  * @responsibility Proveer datos para la integración física de movimiento.
+ *
  * @remarks Las unidades son píxeles por segundo (px/s) y radianes por segundo (rad/s).
+ * Consumido por {@link MovementSystem}.
  */
 export interface VelocityComponent extends Component {
   type: "Velocity";
-  /** Velocidad lineal en el eje X en px/s. */
+  /** Velocidad lineal en el eje X en px/s. Rango sugerido: [-2000, 2000]. */
   dx: number;
-  /** Velocidad lineal en el eje Y en px/s. */
+  /** Velocidad lineal en el eje Y en px/s. Rango sugerido: [-2000, 2000]. */
   dy: number;
   /** Velocidad angular en radianes/s (opcional). */
   vAngle?: number;
@@ -96,22 +106,27 @@ export interface FrictionComponent extends Component {
 
 /**
  * Define los límites espaciales para una entidad y su comportamiento al alcanzarlos.
+ *
+ * @responsibility Restringir el movimiento de la entidad a un área rectangular.
+ * @responsibility Definir la respuesta (teletransporte, rebote o muerte) al salir del área.
+ *
+ * @remarks Consumido por {@link BoundarySystem}.
  */
 export interface BoundaryComponent extends Component {
   type: "Boundary";
-  /** Origen X del área delimitada (opcional, por defecto 0). */
+  /** Origen X del área delimitada en coordenadas de mundo. Por defecto 0. */
   x?: number;
-  /** Origen Y del área delimitada (opcional, por defecto 0). */
+  /** Origen Y del área delimitada en coordenadas de mundo. Por defecto 0. */
   y?: number;
-  /** Ancho del área. */
+  /** Ancho del área en píxeles. */
   width: number;
-  /** Alto del área. */
+  /** Alto del área en píxeles. */
   height: number;
   /**
    * Comportamiento al salir de los límites:
-   * - `wrap`: aparece por el lado opuesto.
-   * - `bounce`: rebota invirtiendo la velocidad.
-   * - `destroy`: elimina la entidad del mundo.
+   * - `wrap`: aparece por el lado opuesto (estilo Asteroids).
+   * - `bounce`: rebota invirtiendo la velocidad (estilo Pong).
+   * - `destroy`: elimina la entidad del mundo (proyectiles).
    */
   behavior: "wrap" | "bounce" | "destroy";
   /** Si debe rebotar específicamente en el eje X. */

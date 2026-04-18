@@ -414,8 +414,12 @@ export class World {
    * Registra un recurso global en el mundo.
    * Los recursos son singletons que no están asociados a ninguna entidad.
    *
+   * @remarks
+   * Útil para servicios compartidos como `EventBus`, `AssetLoader` o configuraciones globales.
+   *
    * @param name - Identificador único del recurso.
    * @param resource - La instancia u objeto del recurso.
+   * @postcondition El recurso es accesible mediante {@link World.getResource}.
    */
   setResource<T>(name: string, resource: T): void {
     this.resources.set(name, resource);
@@ -426,6 +430,7 @@ export class World {
    *
    * @param name - Nombre del recurso.
    * @returns El recurso o `undefined` si no existe.
+   * @queries resources
    */
   getResource<T>(name: string): T | undefined {
     return this.resources.get(name) as T;

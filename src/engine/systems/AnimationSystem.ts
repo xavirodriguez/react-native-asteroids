@@ -3,16 +3,23 @@ import { World } from "../core/World";
 import { AnimatorComponent } from "../types/EngineTypes";
 
 /**
- * System that manages frame progression for entities with an AnimatorComponent.
+ * Sistema que gestiona la progresión de frames para entidades con AnimatorComponent.
  *
- * @responsibility Manages frame-based sprite/property animation progression, handling loops and completion callbacks.
+ * @responsibility Gestionar la progresión de animaciones basadas en frames.
+ * @responsibility Manejar bucles (loops) y callbacks de finalización (onComplete).
  *
- * @conceptualRisk [PRECISION_DRIFT] Accrued `elapsed` time uses floating-point modulo/addition, which can drift in long sessions.
- * @conceptualRisk [FRAME_SKIPPING] Large `deltaTime` values can cause multiple frames to be advanced in a single update cycle.
+ * @queries Animator
+ * @mutates {@link AnimatorComponent} - Actualiza el índice de `frame` y el tiempo `elapsed`.
+ * @executionOrder Fase: Presentation.
  *
- * @mutates {@link AnimatorComponent} - Updates `frame` index and `elapsed` time state.
+ * @remarks
+ * El sistema calcula cuántos frames deben avanzar basándose en los FPS de la animación
+ * y el `deltaTime` acumulado. Soporta skipping de frames si el tick es lento.
  *
- * @dependsOn {@link AnimatorComponent}
+ * @conceptualRisk [PRECISION_DRIFT] El tiempo `elapsed` acumulado usa suma/módulo de punto
+ * flotante, lo que puede derivar en sesiones muy largas.
+ * @conceptualRisk [FRAME_SKIPPING] Valores grandes de `deltaTime` pueden causar que se
+ * salten múltiples frames en un solo ciclo de actualización.
  */
 export class AnimationSystem extends System {
   public update(world: World, deltaTime: number): void {
