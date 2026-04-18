@@ -25,9 +25,13 @@ describe("EntityPool Double-Release", () => {
     const spy = jest.spyOn(console, 'warn').mockImplementation();
 
     pool.release(id1);
-    pool.release(id1); // Second release should be ignored
 
-    expect(spy).toHaveBeenCalledWith(expect.stringContaining("Double-release detected"));
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        expect(() => pool.release(id1)).toThrow();
+    } else {
+        pool.release(id1);
+        expect(spy).toHaveBeenCalledWith(expect.stringContaining("Double-release detected"));
+    }
 
     const id2 = pool.acquire();
     const id3 = pool.acquire();

@@ -119,19 +119,19 @@ export class CanvasRenderer implements Renderer {
   }
 
   private registerDefaultDrawers(): void {
-    this.registerShape("circle", (ctx, _entity, _pos, render) => {
+    this.registerShape("circle", (ctx, _entity, _pos, _elapsedTime, render) => {
       ctx.fillStyle = render.color;
       ctx.beginPath();
       ctx.arc(0, 0, render.size, 0, Math.PI * 2);
       ctx.fill();
     });
 
-    this.registerShape("rect", (ctx, _entity, _pos, render) => {
+    this.registerShape("rect", (ctx, _entity, _pos, _elapsedTime, render) => {
       ctx.fillStyle = render.color;
       ctx.fillRect(-render.size / 2, -render.size / 2, render.size, render.size);
     });
 
-    this.registerShape("polygon", (ctx, _entity, _pos, render) => {
+    this.registerShape("polygon", (ctx, _entity, _pos, _elapsedTime, render) => {
       const vertices = render.vertices;
       if (!vertices || vertices.length === 0) return;
       ctx.strokeStyle = render.color;
@@ -333,7 +333,7 @@ export class CanvasRenderer implements Renderer {
     const commands = this.commandBuffer.getCommands();
     const cmdCount = this.commandBuffer.getCount();
     for (let i = 0; i < cmdCount; i++) {
-      this.executeCommand(ctx, commands[i], world);
+      this.executeCommand(ctx, commands[i], world, snapshot.elapsedTime);
     }
 
     for (let i = 0; i < this.foregroundEffects.length; i++) {
@@ -349,7 +349,7 @@ export class CanvasRenderer implements Renderer {
     this.renderUIFromSnapshot(ctx, snapshot);
   }
 
-  private executeCommand(ctx: CanvasRenderingContext2D, cmd: DrawCommand, world: World): void {
+  private executeCommand(ctx: CanvasRenderingContext2D, cmd: DrawCommand, world: World, elapsedTime: number): void {
     ctx.save();
     ctx.translate(cmd.x, cmd.y);
     ctx.rotate(cmd.rotation);
@@ -375,14 +375,14 @@ export class CanvasRenderer implements Renderer {
 
     const drawer = this.shapeDrawers.get(cmd.type);
     if (drawer) {
-      drawer(ctx, cmd.entityId, this.tempPos, this.tempRender, world);
+      drawer(ctx, cmd.entityId, this.tempPos, elapsedTime, this.tempRender, world);
     }
 
     ctx.restore();
 
     const postDrawer = this.postEntityDrawers.get(cmd.type);
     if (postDrawer) {
-        postDrawer(ctx, cmd.entityId, this.tempPos, this.tempRender, world);
+        postDrawer(ctx, cmd.entityId, this.tempPos, elapsedTime, this.tempRender, world);
     }
   }
 

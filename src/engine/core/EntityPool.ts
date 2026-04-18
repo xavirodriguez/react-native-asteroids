@@ -51,7 +51,7 @@ export class EntityPool {
     if (this.pooledSet.has(id)) {
         console.warn(`[EntityPool] Double-release detected for entity ID: ${id}. Ignoring.`);
         if (__DEV__) {
-            // throw new Error(`Entity ${id} already in pool.`);
+            throw new Error(`Entity ${id} already in pool.`);
         }
         return;
     }

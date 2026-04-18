@@ -3,7 +3,7 @@ import { TTLComponent, HealthComponent, VelocityComponent } from "../../../engin
 import { RandomService } from "../../../engine/utils/RandomService";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 
-export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
+export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, _elapsedTime, render, world) => {
   const size = render.size;
 
   if (render.hitFlashFrames && render.hitFlashFrames > 0) {
@@ -81,7 +81,7 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
   ctx.fillRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8);
 };
 
-export const drawAsteroidsUfo: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render) => {
+export const drawAsteroidsUfo: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, _elapsedTime, render) => {
   const size = render.size;
   const color = render.color;
   ctx.strokeStyle = color;
@@ -136,7 +136,7 @@ export const asteroidsCRTEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, 
   ctx.restore();
 };
 
-export const drawAsteroidsBullet: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render) => {
+export const drawAsteroidsBullet: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, _elapsedTime, render) => {
   const size = render.size;
   const color = render.color;
 
@@ -150,7 +150,7 @@ export const drawAsteroidsBullet: ShapeDrawer<CanvasRenderingContext2D> = (ctx, 
   ctx.restore();
 };
 
-export const drawAsteroidsParticle: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, pos, render, world) => {
+export const drawAsteroidsParticle: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, _elapsedTime, render, world) => {
   const ttl = world.getComponent<TTLComponent>(entity, "TTL");
   if (!ttl) return;
 
@@ -169,7 +169,7 @@ export const drawAsteroidsParticle: ShapeDrawer<CanvasRenderingContext2D> = (ctx
   ctx.fill();
 };
 
-export const drawAsteroidsAsteroid: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render) => {
+export const drawAsteroidsAsteroid: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, _elapsedTime, render) => {
   const { color, vertices, hitFlashFrames } = render;
 
   ctx.strokeStyle = color;

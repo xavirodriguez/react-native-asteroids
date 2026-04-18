@@ -5,7 +5,7 @@ import { FLAPPY_CONFIG, FlappyBirdState } from "../types/FlappyBirdTypes";
 /**
  * Visuals for the bird.
  */
-export const drawFlappyBird: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, render, world) => {
+export const drawFlappyBird: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, _elapsedTime, render, world) => {
   const { size, color } = render;
 
   if (render.hitFlashFrames && render.hitFlashFrames > 0) {
@@ -83,7 +83,7 @@ export const drawFlappyBird: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entit
 /**
  * Visuals for a pipe segment.
  */
-export const drawFlappyPipe: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, pos, render, world) => {
+export const drawFlappyPipe: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, _elapsedTime, render, world) => {
   const { size, color } = render;
   const width = size;
   const halfWidth = width / 2;
@@ -141,7 +141,7 @@ export const drawFlappyPipe: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entit
 /**
  * Visuals for the ground.
  */
-export const drawFlappyGround: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, render, _world) => {
+export const drawFlappyGround: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _entity, _pos, _elapsedTime, render, _world) => {
   const { size, color } = render;
   const width = size;
   const height = 40;

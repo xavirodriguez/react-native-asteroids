@@ -67,9 +67,7 @@ export class AsteroidsGameScene extends Scene {
 
     const eventBus = this.world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
     if (eventBus) {
-        // Clear all listeners to avoid cross-scene duplication
-        // Note: EventBus doesn't have a clearAll() but we should at least reset what we can.
-        // For now, focusing on RandomService as requested.
+        eventBus.clear();
     }
   }
 }

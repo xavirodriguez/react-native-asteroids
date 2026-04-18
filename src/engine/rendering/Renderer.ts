@@ -8,6 +8,7 @@ export type ShapeDrawer<TContext> = (
   ctx: TContext,
   entity: Entity,
   pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number },
+  elapsedTime: number,
   render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null },
   world: World
 ) => void;
@@ -64,10 +65,10 @@ export interface Renderer {
   setSize(width: number, height: number): void;
 
   /** Registra una función de dibujo para un tipo de forma ('shape'). */
-  registerShape(name: string, drawer: ShapeDrawer<unknown>): void;
+  registerShape(name: string, drawer: ShapeDrawer<TContext>): void;
 
   /** Registra un drawer que se ejecuta tras el dibujo principal de la entidad. */
-  registerPostEntityDrawer(name: string, drawer: ShapeDrawer<unknown>): void;
+  registerPostEntityDrawer(name: string, drawer: ShapeDrawer<TContext>): void;
 
   /** Registra un efecto visual de fondo (e.g., Starfield). */
   registerBackgroundEffect(name: string, drawer: EffectDrawer<unknown>): void;
