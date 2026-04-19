@@ -304,8 +304,6 @@ export interface RenderComponent extends Component {
   vertices?: { x: number; y: number }[];
   /** Prioridad de profundidad. Valores mayores se renderizan al final. Default: 0. */
   zIndex?: number;
-  /** Historial de posiciones para efectos de estela (trail). */
-  trailPositions?: { x: number; y: number }[];
   /** Número de frames que la entidad permanecerá en blanco tras un impacto. */
   hitFlashFrames?: number;
   /** Contenedor de metadatos para drawers personalizados. */
@@ -590,6 +588,24 @@ export interface VisualOffsetComponent extends Component {
  *
  * @responsibility Proveer datos para el efecto visual de campo estelar.
  */
+/**
+ * Gestiona una estela (trail) visual mediante un buffer circular.
+ *
+ * @responsibility Almacenar posiciones históricas de forma eficiente para evitar presión de GC.
+ * @remarks Utiliza un array de tamaño fijo para evitar re-asignaciones.
+ */
+export interface TrailComponent extends Component {
+  type: "Trail";
+  /** Buffer circular de posiciones. Tamaño fijo = maxLength. */
+  points: { x: number; y: number }[];
+  /** Índice de la posición más reciente. */
+  currentIndex: number;
+  /** Cantidad de puntos válidos en el buffer. */
+  count: number;
+  /** Capacidad máxima del buffer. */
+  maxLength: number;
+}
+
 export interface Star extends Component {
   type: "Star";
   /** Posición X en el espacio virtual. */

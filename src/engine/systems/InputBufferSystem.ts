@@ -6,7 +6,8 @@ import { InputBufferComponent } from "../types/InputBufferComponent";
 export class InputBufferSystem extends System {
   public update(world: World, deltaTime: number): void {
     const entities = world.query("InputBuffer");
-    entities.forEach(entity => {
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
       const buffer = world.getComponent<InputBufferComponent>(entity, "InputBuffer");
       if (buffer && buffer.bufferTimer > 0) {
         buffer.bufferTimer -= deltaTime;
@@ -14,7 +15,7 @@ export class InputBufferSystem extends System {
           buffer.bufferedAction = null;
         }
       }
-    });
+    }
   }
 
   public static buffer(world: World, entity: Entity, action: string, duration?: number): void {

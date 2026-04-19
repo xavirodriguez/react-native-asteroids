@@ -1,7 +1,7 @@
 import { Skia, BlurStyle, SkCanvas, SkPaint } from "@shopify/react-native-skia";
 import { World } from "../../../engine/core/World";
 import { Entity } from "../../../engine/core/Entity";
-import { TransformComponent, RenderComponent, TTLComponent, HealthComponent, Star } from "../../../engine/core/CoreComponents";
+import { TransformComponent, RenderComponent, TTLComponent, HealthComponent, Star, TrailComponent } from "../../../engine/core/CoreComponents";
 import { InputComponent, GameStateComponent, ShipComponent } from "../types/AsteroidTypes";
 
 export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => {
@@ -58,9 +58,9 @@ export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, ren
 };
 
 export const drawSkiaAsteroidShipTrailDrawer = (canvas: SkCanvas, entity: Entity, world: World, _render: RenderComponent, paint: SkPaint) => {
-    const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
-    if (shipComp && shipComp.trailPositions) {
-        drawSkiaAsteroidShipTrail(canvas, shipComp.trailPositions, paint);
+    const trail = world.getComponent<TrailComponent>(entity, "Trail");
+    if (trail) {
+        drawSkiaAsteroidShipTrail(canvas, trail, paint);
     }
 };
 
@@ -129,11 +129,14 @@ export function drawSkiaAsteroidStarField(canvas: SkCanvas, stars: Star[], width
     });
 }
 
-export function drawSkiaAsteroidShipTrail(canvas: SkCanvas, trail: { x: number; y: number }[], paint: SkPaint): void {
+export function drawSkiaAsteroidShipTrail(canvas: SkCanvas, trail: TrailComponent, paint: SkPaint): void {
     paint.setColor(Skia.Color("cyan"));
     paint.setStyle(Skia.PaintStyle.Fill);
-    trail.forEach((p, i) => {
-        paint.setAlphaf((i / trail.length) * 0.4);
+    for (let i = 0; i < trail.count; i++) {
+        const index = (trail.currentIndex - (trail.count - 1) + i + trail.maxLength) % trail.maxLength;
+        const p = trail.points[index];
+        if (!p) continue;
+        paint.setAlphaf((i / trail.count) * 0.4);
         canvas.drawCircle(p.x, p.y, 1.5, paint);
-    });
+    }
 }

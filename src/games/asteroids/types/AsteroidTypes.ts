@@ -34,7 +34,6 @@ export interface ShipComponent extends Component {
   sessionId?: string;
   hyperspaceTimer: number;
   hyperspaceCooldownRemaining: number;
-  trailPositions?: { x: number; y: number }[];
 }
 
 /**

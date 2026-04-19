@@ -304,6 +304,37 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 
 ---
 
+## [2024-05-26] Estandarización de Estelas y Disciplina de Bucles
+
+### Estado detectado
+- **Presión de GC**: `RenderUpdateSystem` y Asteroids empleaban arrays dinámicos para estelas, generando re-asignaciones constantes de objetos `{x, y}`.
+- **Incumplimiento de Estándar**: Sistemas críticos como `CollisionSystem2D` y `PhysicsSystem2D` utilizaban `.forEach()`, violando la disciplina de rendimiento y seguridad de scope del motor.
+- **Fragmentación**: La lógica de estelas estaba dispersa entre componentes core y de gameplay.
+
+### Decisiones tomadas
+1. **TrailComponent Canónico**: Se introdujo un componente especializado que emplea un buffer circular con un array de tamaño fijo, eliminando la presión sobre el GC.
+2. **Refactor de Sistemas**: Migración masiva de sistemas de simulación y presentación a bucles `for` nativos para garantizar máximo rendimiento y evitar errores de captura de variables.
+3. **Migración de Asteroids**: Se actualizó el juego Asteroids para adoptar el nuevo estándar, eliminando la gestión manual de estelas en `ShipComponent`.
+
+### Archivos afectados
+- `src/engine/core/CoreComponents.ts`
+- `src/engine/systems/RenderUpdateSystem.ts`
+- `src/engine/physics/collision/CollisionSystem2D.ts`
+- `src/engine/physics/dynamics/PhysicsSystem2D.ts`
+- `src/games/asteroids/EntityFactory.ts`
+- `src/games/asteroids/rendering/` (Canvas, Skia, ShapeDrawers)
+- +6 sistemas adicionales del motor.
+
+### Impacto
+- **Rendimiento**: Estabilidad del frame-rate mejorada al reducir las pausas de GC.
+- **Coherencia**: Alineación total con los estándares de codificación documentados para sistemas ECS.
+- **Seguridad**: Mejora en la robustez de los sistemas ante posibles cambios en el ciclo de vida del motor.
+
+### Deuda abierta / Siguientes pasos
+- Implementar un `CommandBuffer` para el `World` que permita diferir cambios estructurales (add/remove) durante la iteración de sistemas, reforzando la seguridad de mutación.
+
+---
+
 ## [Plantilla para Futuras Entradas]
 
 ### [FECHA] Título de la Evolución

@@ -1,6 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { RenderComponent, TransformComponent } from "../core/CoreComponents";
+import { RenderComponent, TransformComponent, TrailComponent } from "../core/CoreComponents";
 
 /**
  * Sistema de preparación visual y efectos cosméticos.
@@ -8,8 +8,8 @@ import { RenderComponent, TransformComponent } from "../core/CoreComponents";
  * @responsibility Gestionar efectos visuales temporales como estelas (trails) y destellos (flashes).
  * @responsibility Actualizar la rotación cosmética basada en la velocidad angular.
  * @responsibility Sincronizar la versión del mundo para disparar re-renders en la UI.
- * @queries Transform, Render, Ship
- * @mutates Render.trailPositions, Render.rotation, Render.hitFlashFrames, World.version
+ * @queries Transform, Render, Trail
+ * @mutates Trail.points, Trail.currentIndex, Trail.count, Render.rotation, Render.hitFlashFrames, World.version
  * @executionOrder Fase: Presentation. Ejecutar al final del pipeline de simulación.
  *
  * @remarks
@@ -47,35 +47,38 @@ export class RenderUpdateSystem extends System {
     world.version++;
   }
 
+  /**
+   * Actualiza el buffer circular de las estelas.
+   *
+   * @remarks
+   * Utiliza una estrategia de buffer circular sobre un array de tamaño fijo
+   * para evitar re-asignaciones de memoria y presión de GC.
+   */
   protected updateTrails(world: World): void {
-    const entities = world.query("Transform", "Render");
+    const entities = world.query("Transform", "Trail");
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
       const pos = world.getComponent<TransformComponent>(entity, "Transform");
-      const render = world.getComponent<RenderComponent>(entity, "Render");
+      const trail = world.getComponent<TrailComponent>(entity, "Trail");
 
-      if (pos && render && render.trailPositions) {
-        render.trailPositions.push({ x: pos.x, y: pos.y });
-        if (render.trailPositions.length > this.trailMaxLength) {
-          render.trailPositions.shift();
+      if (pos && trail) {
+        // Calcular nuevo índice en el buffer circular
+        trail.currentIndex = (trail.currentIndex + 1) % trail.maxLength;
+
+        // Reutilizar objeto de posición si es posible o asignar nuevo solo una vez por slot
+        if (!trail.points[trail.currentIndex]) {
+          trail.points[trail.currentIndex] = { x: pos.x, y: pos.y };
+        } else {
+          const point = trail.points[trail.currentIndex];
+          point.x = pos.x;
+          point.y = pos.y;
+        }
+
+        // Incrementar contador de puntos válidos hasta el máximo
+        if (trail.count < trail.maxLength) {
+          trail.count++;
         }
       }
-    }
-
-    // Support game-specific trail components (like Asteroids Ship)
-    const shipEntities = world.query("Transform", "Ship");
-    for (let i = 0; i < shipEntities.length; i++) {
-        const entity = shipEntities[i];
-        const pos = world.getComponent<TransformComponent>(entity, "Transform");
-        const ship = world.getComponent<Record<string, unknown>>(entity, "Ship");
-
-        if (pos && ship && Array.isArray(ship.trailPositions)) {
-            const trails = ship.trailPositions as {x: number, y: number}[];
-            trails.push({ x: pos.x, y: pos.y });
-            if (trails.length > this.trailMaxLength) {
-                trails.shift();
-            }
-        }
     }
   }
 
