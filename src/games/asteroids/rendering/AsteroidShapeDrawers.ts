@@ -1,6 +1,6 @@
 import { World } from "../../../engine/core/World";
 import { Entity } from "../../../engine/core/Entity";
-import { TransformComponent, TTLComponent, HealthComponent, Star } from "../../../engine/core/CoreComponents";
+import { TransformComponent, TTLComponent, HealthComponent, Star, TrailComponent } from "../../../engine/core/CoreComponents";
 import { drawStarField } from "../../../engine/rendering/StarField";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { InputComponent, GameStateComponent, ShipComponent } from "../types/AsteroidTypes";
@@ -52,9 +52,9 @@ export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: { 
 };
 
 export const drawAsteroidShipTrailDrawer = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number }, _elapsedTime: number, render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null }, world: World) => {
-    const shipComp = world.getComponent<ShipComponent>(entity, "Ship");
-    if (shipComp && shipComp.trailPositions) {
-        drawAsteroidShipTrail(ctx, shipComp.trailPositions, render.size);
+    const trail = world.getComponent<TrailComponent>(entity, "Trail");
+    if (trail) {
+        drawAsteroidShipTrail(ctx, trail, render.size);
     }
 };
 
@@ -128,10 +128,15 @@ export function drawAsteroidCRTEffect(ctx: CanvasRenderingContext2D, width: numb
     ctx.restore();
 }
 
-export function drawAsteroidShipTrail(ctx: CanvasRenderingContext2D, trail: { x: number; y: number }[], shipSize: number): void {
+export function drawAsteroidShipTrail(ctx: CanvasRenderingContext2D, trail: TrailComponent, shipSize: number): void {
     // Improvement 2: Trail cyan with alpha/size fade
-    trail.forEach((p, i) => {
-      const ratio = i / trail.length;
+    for (let i = 0; i < trail.count; i++) {
+      // Iterar desde el punto más antiguo al más nuevo en el buffer circular
+      const index = (trail.currentIndex - (trail.count - 1) + i + trail.maxLength) % trail.maxLength;
+      const p = trail.points[index];
+      if (!p) continue;
+
+      const ratio = i / trail.count;
       const alpha = ratio * 0.4;
       const currentSize = 1 + ratio * (shipSize / 3); // Improvement 2: size fade
 
@@ -140,6 +145,6 @@ export function drawAsteroidShipTrail(ctx: CanvasRenderingContext2D, trail: { x:
       ctx.beginPath();
       ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
       ctx.fill();
-    });
+    }
     ctx.globalAlpha = 1.0;
 }

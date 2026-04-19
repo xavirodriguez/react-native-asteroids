@@ -29,7 +29,8 @@ export class InterpolationPrepSystem extends System {
   public update(world: World, _deltaTime: number): void {
     const entities = world.query("Transform");
 
-    entities.forEach(entity => {
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
       const transform = world.getComponent<TransformComponent>(entity, "Transform")!;
       let prev = world.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
 
@@ -52,6 +53,6 @@ export class InterpolationPrepSystem extends System {
         prev.worldY = transform.worldY;
         prev.worldRotation = transform.worldRotation;
       }
-    });
+    }
   }
 }

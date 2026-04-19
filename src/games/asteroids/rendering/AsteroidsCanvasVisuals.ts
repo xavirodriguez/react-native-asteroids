@@ -1,5 +1,5 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { TTLComponent, HealthComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
+import { TTLComponent, HealthComponent, VelocityComponent, TrailComponent } from "../../../engine/types/EngineTypes";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 
@@ -23,7 +23,8 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
   }
 
   // Ship Trail (Requirement 2 & Vol 2. 2.1)
-  if (render && render.trailPositions && render.trailPositions.length > 0) {
+  const trail = world.getComponent<TrailComponent>(entity, "Trail");
+  if (trail && trail.count > 0) {
     ctx.save();
     // We need to draw in global coordinates. Since drawEntity already translated/rotated, we reset.
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -35,14 +36,18 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
     if (speed > 150) trailColor = "#FFFFFF"; // Plasma white
     else if (speed > 50) trailColor = "#88AAFF"; // Light blue
 
-    render.trailPositions.forEach((p, i) => {
-        const alpha = (i / render.trailPositions!.length) * 0.6;
+    for (let i = 0; i < trail.count; i++) {
+        const index = (trail.currentIndex - (trail.count - 1) + i + trail.maxLength) % trail.maxLength;
+        const p = trail.points[index];
+        if (!p) continue;
+
+        const alpha = (i / trail.count) * 0.6;
         ctx.globalAlpha = alpha;
         ctx.fillStyle = trailColor;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
         ctx.fill();
-    });
+    }
     ctx.restore();
   }
 
@@ -108,11 +113,12 @@ export const asteroidsStarfieldEffect: EffectDrawer<CanvasRenderingContext2D> = 
 
   if (gameState?.stars) {
     // Requirement 3: Draw all stars static with globalAlpha = brightness
-    gameState.stars.forEach((star) => {
+    for (let i = 0; i < gameState.stars.length; i++) {
+      const star = gameState.stars[i];
       ctx.globalAlpha = star.brightness;
       ctx.fillStyle = "white";
       ctx.fillRect(star.x, star.y, star.size, star.size);
-    });
+    }
     ctx.globalAlpha = 1.0;
   }
 };

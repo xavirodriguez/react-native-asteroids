@@ -33,9 +33,10 @@ export class AnimationSystem extends System {
    */
   public update(world: World, deltaTime: number): void {
     const animators = world.query("Animator");
-    animators.forEach((entity) => {
+    for (let i = 0; i < animators.length; i++) {
+      const entity = animators[i];
       const anim = world.getComponent<AnimatorComponent>(entity, "Animator");
-      if (!anim || !anim.animations[anim.current]) return;
+      if (!anim || !anim.animations[anim.current]) continue;
 
       const config = anim.animations[anim.current];
       anim.elapsed += deltaTime;

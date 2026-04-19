@@ -50,9 +50,10 @@ export class ParticleSystem extends System {
     const dtSeconds = deltaTime / 1000;
     const emitters = world.query("ParticleEmitter");
 
-    emitters.forEach((entity) => {
+    for (let i = 0; i < emitters.length; i++) {
+      const entity = emitters[i];
       const emitter = world.getComponent<ParticleEmitterComponent>(entity, "ParticleEmitter")!;
-      if (!emitter.active) return;
+      if (!emitter.active) continue;
 
       const config = emitter.config;
 

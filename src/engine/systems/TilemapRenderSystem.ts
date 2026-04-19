@@ -11,7 +11,8 @@ export class TilemapRenderSystem extends System {
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
     const viewport = { width: 800, height: 600 };
 
-    tilemaps.forEach((entity) => {
+    for (let i = 0; i < tilemaps.length; i++) {
+      const entity = tilemaps[i];
       const tilemap = world.getComponent<TilemapComponent>(entity, "Tilemap")!;
 
       // Identify visible tile range

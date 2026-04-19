@@ -39,9 +39,10 @@ export class PhysicsSystem2D extends System {
     const entities = world.query("Transform", "PhysicsBody2D");
 
     // 1. Integration phase
-    entities.forEach(entity => {
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
       const body = world.getComponent<PhysicsBody2DComponent>(entity, "PhysicsBody2D")!;
-      if (body.bodyType === "static") return;
+      if (body.bodyType === "static") continue;
 
       const transform = world.getComponent<TransformComponent>(entity, "Transform")!;
 
@@ -64,31 +65,33 @@ export class PhysicsSystem2D extends System {
       body.forceX = 0;
       body.forceY = 0;
       body.torque = 0;
-    });
+    }
 
     // 2. Collision Response phase
     const eventEntities = world.query("CollisionEvents", "PhysicsBody2D");
     const processedPairs = new Set<string>();
 
-    eventEntities.forEach(entityA => {
+    for (let i = 0; i < eventEntities.length; i++) {
+      const entityA = eventEntities[i];
       const bodyA = world.getComponent<PhysicsBody2DComponent>(entityA, "PhysicsBody2D")!;
       const events = world.getComponent<CollisionEventsComponent>(entityA, "CollisionEvents")!;
       const transformA = world.getComponent<TransformComponent>(entityA, "Transform")!;
 
-      events.collisions.forEach(collision => {
+      for (let j = 0; j < events.collisions.length; j++) {
+        const collision = events.collisions[j];
         const entityB = collision.otherEntity;
         const bodyB = world.getComponent<PhysicsBody2DComponent>(entityB, "PhysicsBody2D");
-        if (!bodyB) return;
+        if (!bodyB) continue;
 
         // Ensure each pair is only processed once
         const pairId = entityA < entityB ? `${entityA},${entityB}` : `${entityB},${entityA}`;
-        if (processedPairs.has(pairId)) return;
+        if (processedPairs.has(pairId)) continue;
         processedPairs.add(pairId);
 
         const transformB = world.getComponent<TransformComponent>(entityB, "Transform")!;
         this.resolveCollision(transformA, bodyA, transformB, bodyB, collision);
-      });
-    });
+      }
+    }
   }
 
   /**

@@ -65,32 +65,35 @@ export class CollisionSystem2D extends System {
     const entities = world.query("Transform", "Collider2D");
     const currentFramePairs = new Set<string>();
     const eventEntities = world.query("CollisionEvents");
-    eventEntities.forEach(entity => {
+    for (let i = 0; i < eventEntities.length; i++) {
+      const entity = eventEntities[i];
       const events = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents")!;
       events.collisions.length = 0; events.triggersEntered.length = 0; events.triggersExited.length = 0;
-    });
+    }
 
     let candidates: Array<[Entity, Entity]>;
     if (this.spatialHash && entities.length > 50) {
       this.spatialHash.clear();
       const entityBoundsMap = new Map<Entity, import("../../types/EngineTypes").AABB>();
-      entities.forEach(entity => {
+      for (let i = 0; i < entities.length; i++) {
+        const entity = entities[i];
         const bounds = BroadPhase.getShapeBounds(world.getComponent<TransformComponent>(entity, "Transform")!, world.getComponent<Collider2DComponent>(entity, "Collider2D")!);
         entityBoundsMap.set(entity, bounds);
         this.spatialHash!.insert(entity, bounds);
-      });
+      }
       candidates = [];
-      entities.forEach(entityA => {
+      for (let i = 0; i < entities.length; i++) {
+        const entityA = entities[i];
         const boundsA = entityBoundsMap.get(entityA);
-        if (!boundsA) return;
+        if (!boundsA) continue;
 
         const potentials = new Set<Entity>();
         this.spatialHash!.query(boundsA, potentials);
-        potentials.forEach(entityB => {
-          if (entityA >= entityB) return;
+        for (const entityB of potentials) {
+          if (entityA >= entityB) continue;
           candidates.push([entityA, entityB]);
-        });
-      });
+        }
+      }
     } else {
       candidates = BroadPhase.sweepAndPrune([...entities], world);
     }
@@ -137,24 +140,30 @@ export class CollisionSystem2D extends System {
         currentFramePairs.add(pairId);
         if (colA.isTrigger || colB.isTrigger) {
           if (!this.activePairs.has(pairId)) {
-            this.onTriggerEnterCallbacks.forEach(cb => cb(world, entityA, entityB));
+            for (let j = 0; j < this.onTriggerEnterCallbacks.length; j++) {
+              this.onTriggerEnterCallbacks[j](world, entityA, entityB);
+            }
             this.notifyTriggerEvent(world, entityA, entityB, "enter");
           }
           this.notifyTriggerEvent(world, entityA, entityB, "stay");
         } else {
-          this.onCollisionCallbacks.forEach(cb => cb(world, entityA, entityB, manifold));
+          for (let j = 0; j < this.onCollisionCallbacks.length; j++) {
+            this.onCollisionCallbacks[j](world, entityA, entityB, manifold);
+          }
           this.notifyCollisionEvent(world, entityA, entityB, manifold);
         }
       }
     }
 
-    this.activePairs.forEach(pairId => {
+    for (const pairId of this.activePairs) {
       if (!currentFramePairs.has(pairId)) {
         const [idA, idB] = pairId.split(",").map(Number);
-        this.onTriggerExitCallbacks.forEach(cb => cb(world, idA, idB));
+        for (let j = 0; j < this.onTriggerExitCallbacks.length; j++) {
+          this.onTriggerExitCallbacks[j](world, idA, idB);
+        }
         this.notifyTriggerEvent(world, idA, idB, "exit");
       }
-    });
+    }
     this.activePairs = currentFramePairs;
   }
 
