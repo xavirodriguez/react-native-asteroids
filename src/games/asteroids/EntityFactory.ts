@@ -8,7 +8,8 @@ import {
     TTLComponent,
     FrictionComponent,
     BoundaryComponent,
-    HealthComponent
+    HealthComponent,
+    ManualMovementComponent
 } from "../../engine/core/CoreComponents";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
@@ -74,6 +75,7 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
   world.addComponent(ship, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0, trailPositions: [] } as ShipComponent);
   world.addComponent(ship, { type: "Input", thrust: false, rotateLeft: false, rotateRight: false, shoot: false, hyperspace: false, shootCooldownRemaining: 0 } as InputComponent);
   world.addComponent(ship, { type: "Health", current: 3, max: 3, invulnerableRemaining: GAME_CONFIG.INVULNERABILITY_DURATION } as HealthComponent);
+  world.addComponent(ship, { type: "ManualMovement" } as ManualMovementComponent);
 
   // Tutorialization particles
   createEmitter(world, {

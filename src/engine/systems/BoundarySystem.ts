@@ -38,7 +38,7 @@ export class BoundarySystem extends System {
       const boundary = world.getComponent<BoundaryComponent>(entity, "Boundary")!;
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
 
-      if (world.hasComponent(entity, "Ship")) continue;
+      if (world.hasComponent(entity, "ManualMovement")) continue;
       this.applyBoundary(world, entity, pos, boundary, vel);
     }
   }

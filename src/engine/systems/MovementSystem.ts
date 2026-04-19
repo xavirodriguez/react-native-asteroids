@@ -47,7 +47,7 @@ export class MovementSystem extends System {
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
 
       if (pos && vel) {
-        if (world.hasComponent(entity, "Ship")) continue;
+        if (world.hasComponent(entity, "ManualMovement")) continue;
         PhysicsUtils.integrateMovement(pos, vel, dtSeconds);
       }
     }

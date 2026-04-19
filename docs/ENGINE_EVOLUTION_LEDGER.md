@@ -272,6 +272,38 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 
 ---
 
+## [2024-05-26] Saneamiento de Core y Abstracción de Autoridad Física
+
+### Estado detectado
+- **Acoplamiento de Gameplay**: Sistemas core (`MovementSystem`, `FrictionSystem`, `BoundarySystem`) dependían de un check hardcoded por el componente `"Ship"`.
+- **Fragilidad de Integración**: `PhysicsUtils.integrateMovement` empleaba lógica de detección de propiedades por string propensa a colisiones y errores de tipado.
+
+### Decisiones tomadas
+1. **ManualMovementComponent**: Se introdujo un componente de señalización genérico en el core para permitir que las entidades opten por no participar en la integración automática del motor.
+2. **Desacoplamiento Total**: Eliminación de toda referencia a `"Ship"` dentro de los directorios de `src/engine/`.
+3. **Hardening de PhysicsUtils**: Refactor de `integrateMovement` para asegurar consistencia en el uso de coordenadas locales vs mundo y claves de velocidad.
+4. **Alineación de Simulación**: Actualización de `DeterministicSimulation.ts` y factorías de Asteroids para adoptar el nuevo estándar.
+
+### Archivos afectados
+- `src/engine/core/CoreComponents.ts`
+- `src/engine/systems/MovementSystem.ts`
+- `src/engine/systems/FrictionSystem.ts`
+- `src/engine/systems/BoundarySystem.ts`
+- `src/engine/utils/PhysicsUtils.ts`
+- `src/games/asteroids/EntityFactory.ts`
+- `src/simulation/DeterministicSimulation.ts`
+- `docs/adr/004-manual-movement-abstraction.md` (Nuevo ADR)
+
+### Impacto
+- **Modularidad**: El motor ahora es independiente de cualquier juego específico.
+- **Claridad de API**: Se establece un camino canónico para gestionar la autoridad de movimiento.
+- **Robustez**: Integración física más predecible y segura ante cambios en componentes.
+
+### Deuda abierta / Siguientes pasos
+- Auditar `CollisionSystem2D` para asegurar que el filtrado de colisiones no dependa de tags de juego para lógica interna (ej. ignore-self).
+
+---
+
 ## [Plantilla para Futuras Entradas]
 
 ### [FECHA] Título de la Evolución
