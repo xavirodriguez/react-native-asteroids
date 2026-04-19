@@ -28,13 +28,23 @@ export class PhysicsUtils {
    * largas puede causar divergencias mínimas entre clientes.
    */
   public static integrateMovement(pos: Record<string, unknown>, vel: Record<string, unknown>, deltaTimeInSeconds: number): void {
-    const x = pos.x !== undefined ? "x" : "worldX";
-    const y = pos.y !== undefined ? "y" : "worldY";
-    const dx = vel.dx !== undefined ? "dx" : "velocityX";
-    const dy = vel.dy !== undefined ? "dy" : "velocityY";
+    // Priority: local coordinates (x, y) over world coordinates (worldX, worldY)
+    const hasLocal = pos.x !== undefined && pos.y !== undefined;
+    const xKey = hasLocal ? "x" : "worldX";
+    const yKey = hasLocal ? "y" : "worldY";
 
-    (pos as Record<string, number>)[x] = ((pos[x] as number) || 0) + ((vel[dx] as number) || 0) * deltaTimeInSeconds;
-    (pos as Record<string, number>)[y] = ((pos[y] as number) || 0) + ((vel[dy] as number) || 0) * deltaTimeInSeconds;
+    // Priority: standard delta (dx, dy) over physics velocity (velocityX, velocityY)
+    const hasDelta = vel.dx !== undefined && vel.dy !== undefined;
+    const dxKey = hasDelta ? "dx" : "velocityX";
+    const dyKey = hasDelta ? "dy" : "velocityY";
+
+    const currentX = (pos[xKey] as number) || 0;
+    const currentY = (pos[yKey] as number) || 0;
+    const vx = (vel[dxKey] as number) || 0;
+    const vy = (vel[dyKey] as number) || 0;
+
+    (pos as Record<string, number>)[xKey] = currentX + vx * deltaTimeInSeconds;
+    (pos as Record<string, number>)[yKey] = currentY + vy * deltaTimeInSeconds;
   }
 
   /**

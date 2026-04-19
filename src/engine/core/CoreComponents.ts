@@ -56,6 +56,16 @@ export interface TransformComponent extends Component {
 }
 
 /**
+ * Indica que una entidad gestiona su propia integración física y movimiento.
+ *
+ * @responsibility Señalizar a los sistemas core (Movement, Friction, Boundary) que deben
+ * ignorar esta entidad para evitar doble integración o conflictos de autoridad.
+ */
+export interface ManualMovementComponent extends Component {
+  type: "ManualMovement";
+}
+
+/**
  * Almacena el estado de la transformación en el frame anterior.
  *
  * @responsibility Proveer datos históricos para interpolación visual.

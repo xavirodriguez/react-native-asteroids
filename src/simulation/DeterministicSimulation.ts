@@ -108,10 +108,10 @@ export class DeterministicSimulation {
     }
 
     private static integrateMovement(world: World, dtSeconds: number) {
-        // We exclude entities with "Ship" tag as they are already processed in updateShips
+        // We exclude entities with "ManualMovement" as they are processed elsewhere (e.g. ships)
         const moveables = world.query("Transform", "Velocity");
         moveables.forEach(entity => {
-            if (world.hasComponent(entity, "Ship")) return;
+            if (world.hasComponent(entity, "ManualMovement")) return;
 
             const pos = world.getComponent<TransformComponent>(entity, "Transform");
             const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
