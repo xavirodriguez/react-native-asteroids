@@ -1,6 +1,6 @@
 import { World } from "../../../engine/core/World";
 import { Entity } from "../../../engine/core/Entity";
-import { TransformComponent, RenderComponent, TTLComponent, HealthComponent, Star } from "../../../engine/core/CoreComponents";
+import { TransformComponent, TTLComponent, HealthComponent, Star } from "../../../engine/core/CoreComponents";
 import { drawStarField } from "../../../engine/rendering/StarField";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { InputComponent, GameStateComponent, ShipComponent } from "../types/AsteroidTypes";

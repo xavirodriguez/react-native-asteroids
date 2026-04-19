@@ -10,14 +10,14 @@ export default tseslint.config(
     // Global ignores must be the first object in the array
     ignores: [
       "**/node_modules/**",
-      "**/dist/**",
-      "**/.expo/**",
-      "**/web-build/**",
-      "**/build/**",
-      "**/coverage/**",
-      "**/.git/**",
-      "**/temp/**",
-      "**/etc/**",
+      "dist/**",
+      ".expo/**",
+      "web-build/**",
+      "build/**",
+      "coverage/**",
+      ".git/**",
+      "temp/**",
+      "etc/**",
       "lint_report.json",
       "**/*.min.js"
     ],
@@ -60,7 +60,7 @@ export default tseslint.config(
         }
       ],
       "@typescript-eslint/no-require-imports": ["error", {
-        "allow": ["/src/engine/rendering/SkiaRenderer", "@shopify/react-native-skia"]
+        "allow": ["../src/engine/rendering/SkiaRenderer", "@shopify/react-native-skia", "./EntityFactory", "./AsteroidsSkiaVisuals"]
       }],
     },
   },
@@ -80,9 +80,6 @@ export default tseslint.config(
     },
     rules: {
       "@typescript-eslint/no-require-imports": "off",
-      "@typescript-eslint/no-var-requires": "off",
-      "no-undef": "off",
-      "no-unused-vars": "off",
     },
   },
   {

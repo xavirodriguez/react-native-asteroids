@@ -35,7 +35,7 @@ export type EffectDrawer<TContext> = (
  * de simulación durante el proceso de dibujo. El renderizado suele basarse en snapshots
  * para permitir interpolación y desacoplamiento del frame rate de simulación.
  */
-export interface Renderer {
+export interface Renderer<TContext = unknown> {
   /** Discriminador del tipo de renderer (e.g., 'canvas', 'skia'). */
   readonly type: string;
 
@@ -71,8 +71,8 @@ export interface Renderer {
   registerPostEntityDrawer(name: string, drawer: ShapeDrawer<TContext>): void;
 
   /** Registra un efecto visual de fondo (e.g., Starfield). */
-  registerBackgroundEffect(name: string, drawer: EffectDrawer<unknown>): void;
+  registerBackgroundEffect(name: string, drawer: EffectDrawer<TContext>): void;
 
   /** Registra un efecto visual de primer plano (e.g., HUD, Post-processing). */
-  registerForegroundEffect(name: string, drawer: EffectDrawer<unknown>): void;
+  registerForegroundEffect(name: string, drawer: EffectDrawer<TContext>): void;
 }
