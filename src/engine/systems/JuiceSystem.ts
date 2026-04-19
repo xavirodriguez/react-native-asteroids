@@ -65,6 +65,15 @@ export function createJuiceComponent(): JuiceComponent {
  * inversa; el diseño es seguro ante mutaciones estructurales locales.
  */
 export class JuiceSystem extends System {
+  /**
+   * Actualiza las animaciones procedimentales de Juice.
+   *
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   *
+   * @precondition Las entidades deben poseer un {@link JuiceComponent}.
+   * @postcondition Los valores interpolados se aplican a {@link VisualOffsetComponent} o {@link RenderComponent}.
+   */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Juice");
 

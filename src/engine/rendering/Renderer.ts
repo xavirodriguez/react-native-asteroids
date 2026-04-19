@@ -35,7 +35,7 @@ export type EffectDrawer<TContext> = (
  * de simulación durante el proceso de dibujo. El renderizado suele basarse en snapshots
  * para permitir interpolación y desacoplamiento del frame rate de simulación.
  */
-export interface Renderer {
+export interface Renderer<TContext = unknown> {
   /** Discriminador del tipo de renderer (e.g., 'canvas', 'skia'). */
   readonly type: string;
 

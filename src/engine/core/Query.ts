@@ -25,6 +25,8 @@ export class Query {
    * Inicializa una query para una firma de componentes determinada.
    *
    * @param componentTypes - Lista de tipos de componentes que definen la firma.
+   *
+   * @precondition Debe proporcionarse al menos un tipo de componente.
    */
   constructor(public readonly componentTypes: string[]) {}
 
@@ -42,6 +44,8 @@ export class Query {
    * Añade una entidad al resultado de la query si no está presente.
    *
    * @param entity - La entidad a añadir.
+   *
+   * @precondition La entidad debe cumplir la firma de la query.
    * @postcondition Si la entidad era nueva, marca {@link Query.needsUpdateArray} como `true`.
    */
   public add(entity: Entity): void {
@@ -55,6 +59,7 @@ export class Query {
    * Elimina una entidad del resultado de la query.
    *
    * @param entity - La entidad a eliminar.
+   *
    * @postcondition Si la entidad estaba presente, marca {@link Query.needsUpdateArray} como `true`.
    */
   public remove(entity: Entity): void {
@@ -100,8 +105,14 @@ export class Query {
   }
 
   /**
-   * Rebuilds the query results from scratch.
-   * Used during world restoration to ensure consistency without breaking references.
+   * Reconstruye los resultados de la query desde cero.
+   * Utilizado durante la restauración del mundo para asegurar la consistencia sin romper referencias.
+   *
+   * @param allEntities - Conjunto de todas las entidades activas.
+   * @param entityComponentSets - Mapa de conjuntos de componentes por entidad.
+   *
+   * @postcondition {@link Query.entities} refleja el estado actual proporcionado.
+   * @postcondition Marca {@link Query.needsUpdateArray} como `true`.
    */
   public rebuild(allEntities: Set<Entity>, entityComponentSets: Map<Entity, Set<string>>): void {
     this.entities.clear();

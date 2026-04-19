@@ -31,6 +31,9 @@ export class FrictionSystem extends System {
    *
    * @param world - El mundo ECS.
    * @param deltaTime - Tiempo transcurrido en milisegundos.
+   *
+   * @precondition Las entidades deben poseer componentes {@link VelocityComponent} y {@link FrictionComponent}.
+   * @postcondition Los componentes `dx` y `dy` de la velocidad son reducidos según el factor de fricción.
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Velocity", "Friction");

@@ -308,6 +308,8 @@ export class World {
    *
    * @param entity - La entidad destino.
    * @param type - El tipo de componente a eliminar.
+   *
+   * @precondition La entidad debe existir en el mundo.
    * @postcondition La entidad ya no posee el componente especificado.
    * @sideEffect Incrementa {@link World.version}.
    */
@@ -419,6 +421,8 @@ export class World {
    *
    * @param name - Identificador único del recurso.
    * @param resource - La instancia u objeto del recurso.
+   *
+   * @precondition El nombre del recurso debe ser único para evitar sobrescritura accidental.
    * @postcondition El recurso es accesible mediante {@link World.getResource}.
    */
   setResource<T>(name: string, resource: T): void {
@@ -459,6 +463,9 @@ export class World {
    *
    * @param system - Instancia del sistema que extiende {@link System}.
    * @param config - Configuración de fase y prioridad.
+   *
+   * @precondition El sistema debe ser una instancia válida de {@link System}.
+   * @postcondition El sistema se añade a la cola de ejecución.
    */
   addSystem(system: System, config: SystemConfig = {}): void {
     const phase = config.phase ?? SystemPhase.Simulation;

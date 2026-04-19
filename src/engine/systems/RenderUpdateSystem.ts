@@ -30,6 +30,16 @@ export class RenderUpdateSystem extends System {
     this.trailMaxLength = trailMaxLength;
   }
 
+  /**
+   * Ejecuta las actualizaciones visuales secundarias.
+   *
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   *
+   * @precondition El mundo debe estar inicializado y contener entidades con Render.
+   * @postcondition Se actualizan estelas, rotaciones cosméticas y contadores de flashes.
+   * @sideEffect Incrementa {@link World.version} para disparar re-renderizado.
+   */
   public update(world: World, deltaTime: number): void {
     this.updateTrails(world);
     this.updateRotation(world, deltaTime);

@@ -30,7 +30,7 @@ Las consultas a entidades están altamente optimizadas mediante la clase `Query`
 - **Filtrado Eficiente**: Al realizar una consulta de múltiples tipos de componentes, el motor comienza filtrando por el tipo de componente menos frecuente (menor tamaño de Set) para reducir drásticamente el espacio de búsqueda.
 
 ### Riesgos Detectados
-- **[MUTABLE_CACHE_LEAK]**: `Query.getEntities()` devuelve una referencia al array interno. Si un sistema modifica este array (e.g. `.sort()` o `.pop()`), corromperá la query para todos los demás sistemas.
-- **[ENTITY_DOUBLE_RELEASE]**: `EntityPool` no valida si un ID ya ha sido liberado, lo que puede causar que dos entidades activas compartan el mismo ID tras ser adquiridas.
-- **[STRUCTURAL_CHANGE_COST]**: Añadir o quitar componentes en hot-loops incrementa `world.version` y notifica a todas las queries interesadas, lo que puede ser costoso (O(Q) donde Q es el número de queries suscritas al tipo de componente).
-- **[ID_REUSE_STALE_REFS]**: Si un sistema externo guarda un ID de entidad y esta es eliminada y reciclada, la referencia apuntará a una nueva entidad accidentalmente.
+- **[MUTABLE_CACHE_LEAK]**: `Query.getEntities()` devuelve una referencia al array interno. Si un sistema modifica este array (e.g. `.sort()` o `.pop()`), corromperá la query para todos los demás sistemas. *Estado: Documentado en TSDoc como ReadonlyArray.*
+- **[ENTITY_DOUBLE_RELEASE]**: `EntityPool` no valida si un ID ya ha sido liberado. *Estado: FIXED mediante `pooledSet` en `EntityPool.ts`.*
+- **[STRUCTURAL_CHANGE_COST]**: Añadir o quitar componentes en hot-loops incrementa `world.version` y notifica a todas las queries interesadas.
+- **[ID_REUSE_STALE_REFS]**: Riesgo inherente a la reutilización de IDs numéricos. Se recomienda no persistir IDs de entidades entre frames de forma externa al World.

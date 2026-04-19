@@ -66,6 +66,7 @@ export class EntityPool {
    * Invalida todos los IDs de entidades creados anteriormente. Debe usarse con precaución,
    * generalmente solo durante el reinicio total del motor.
    *
+   * @precondition El mundo ECS debe estar vacío para evitar colisiones de IDs con entidades existentes.
    * @postcondition {@link EntityPool.pool} queda vacío y `nextId` vuelve a 1.
    */
   public clear(): void {

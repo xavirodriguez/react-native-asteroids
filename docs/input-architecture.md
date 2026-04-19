@@ -33,7 +33,7 @@ El sistema combina los overrides con la entrada física real: `isPressed = hardw
 ## Multijugador y Predicción
 Para juegos en red, el estado de entrada se captura en cada tick y se envía al servidor como un `InputFrame`.
 - **Determinismo**: Solo las acciones en el `InputState` deben afectar la simulación física.
-- **Riesgo [INPUT_DRIFT]**: Actualmente, `getInputState()` (usado para red) solo lee entradas de hardware e ignora los overrides de la UI. Esto significa que si un jugador usa botones táctiles en pantalla, el servidor no recibirá esas acciones.
+- **Riesgo [INPUT_DRIFT]**: FIXED. `getInputState()` incorpora ahora los `overrides` lógicos en su retorno, asegurando que las acciones de la UI táctil se sincronicen por red.
 
 ## Lifecycle
 El `UnifiedInputSystem` gestiona listeners globales en `window`. Es **crítico** llamar a `cleanup()` al destruir el juego para evitar fugas de memoria y que eventos de un juego afecten al siguiente.

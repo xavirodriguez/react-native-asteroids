@@ -69,18 +69,18 @@ export interface TransformComponent extends Component {
  */
 export interface PreviousTransformComponent extends Component {
   type: "PreviousTransform";
-  /** Posición X en el tick anterior (píxeles). */
+  /** Posición X en el tick anterior (píxeles). Unidades: px. */
   x: number;
-  /** Posición Y en el tick anterior (píxeles). */
+  /** Posición Y en el tick anterior (píxeles). Unidades: px. */
   y: number;
-  /** Rotación en el tick anterior (radianes). */
+  /** Rotación en el tick anterior (radianes). Rango: [0, 2π]. */
   rotation: number;
 
-  /** Coordenada X absoluta en el mundo en el tick anterior. */
+  /** Coordenada X absoluta en el mundo en el tick anterior. Unidades: px. */
   worldX?: number;
-  /** Coordenada Y absoluta en el mundo en el tick anterior. */
+  /** Coordenada Y absoluta en el mundo en el tick anterior. Unidades: px. */
   worldY?: number;
-  /** Rotación absoluta en el mundo en el tick anterior. */
+  /** Rotación absoluta en el mundo en el tick anterior. Unidades: rad. */
   worldRotation?: number;
 }
 
@@ -104,6 +104,9 @@ export interface VelocityComponent extends Component {
 
 /**
  * Aplica una fuerza de rozamiento o amortiguación a la velocidad.
+ *
+ * @responsibility Reducir la velocidad lineal de una entidad a lo largo del tiempo.
+ * @remarks Consumido por `FrictionSystem`.
  */
 export interface FrictionComponent extends Component {
   type: "Friction";
@@ -144,6 +147,8 @@ export interface BoundaryComponent extends Component {
 
 /**
  * Permite añadir etiquetas semánticas a las entidades para filtrado rápido.
+ *
+ * @responsibility Proveer metadatos de cadena para la identificación lógica de entidades.
  */
 export interface TagComponent extends Component {
   type: "Tag";
@@ -153,12 +158,15 @@ export interface TagComponent extends Component {
 
 /**
  * Time To Live: Gestiona la destrucción automática de una entidad tras un tiempo.
+ *
+ * @responsibility Eliminar la entidad del mundo una vez transcurrido el tiempo asignado.
+ * @remarks Las unidades están en milisegundos. Consumido por {@link TTLSystem}.
  */
 export interface TTLComponent extends Component {
   type: "TTL";
-  /** Tiempo restante de vida (ms). */
+  /** Tiempo restante de vida en milisegundos. */
   remaining: number;
-  /** Tiempo total de vida inicial (ms). */
+  /** Tiempo total de vida inicial en milisegundos. */
   total: number;
   /** Callback opcional al finalizar el tiempo de vida. */
   onComplete?: () => void;
@@ -347,82 +355,143 @@ export interface EventBusComponent extends Component {
 }
 
 /**
- * Animator component for frame-based animations.
+ * Configuración para una secuencia de animación.
  */
 export interface AnimationConfig {
+  /** Índices de los frames en el atlas o tileset. */
   frames: number[];
+  /** Fotogramas por segundo de la animación. */
   fps: number;
+  /** Si la animación debe reiniciarse al terminar. */
   loop: boolean;
+  /** Callback ejecutado al finalizar una animación no cíclica. */
   onComplete?: (entity: Entity) => void;
 }
 
 export type AnimationMap = Record<string, AnimationConfig>;
 
+/**
+ * Gestiona la reproducción de animaciones basadas en frames.
+ *
+ * @responsibility Controlar el estado de la animación actual y el avance de frames.
+ * @remarks Consumido por `AnimationSystem`.
+ */
 export interface AnimatorComponent extends Component {
   type: "Animator";
+  /** Diccionario de animaciones disponibles por nombre. */
   animations: AnimationMap;
+  /** Identificador de la animación en reproducción. */
   current: string;
+  /** Índice del frame actual dentro de la animación activa. */
   frame: number;
+  /** Tiempo acumulado en el frame actual (ms). */
   elapsed: number;
 }
 
 /**
- * State machine component for complex logic.
+ * Componente que encapsula una Máquina de Estados Finitos.
+ *
+ * @responsibility Gestionar transiciones de estado complejas para la IA o lógica de entidad.
+ * @remarks Basado en la clase {@link StateMachine}.
  */
 export interface StateMachineComponent extends Component {
   type: "StateMachine";
+  /** Instancia de la FSM. */
   fsm: StateMachine<string, unknown>;
 }
 
 /**
- * Particle emitter configuration and component.
+ * Configuración declarativa para un emisor de partículas.
  */
 export interface ParticleEmitterConfig {
+  /** Posición de emisión relativa (opcional). */
   position?: { x: number; y: number };
+  /** Partículas por segundo. 0 para solo ráfagas. */
   rate: number;
+  /** Número de partículas a emitir instantáneamente al inicio. */
   burst?: number;
+  /** Rango de vida de la partícula en milisegundos. */
   lifetime: { min: number; max: number };
+  /** Rango de velocidad inicial en px/s. */
   speed: { min: number; max: number };
+  /** Rango de ángulo de emisión en grados [0, 360]. */
   angle: { min: number; max: number };
+  /** Rango de tamaño inicial de la partícula. */
   size: { min: number; max: number };
+  /** Paleta de colores aleatorios para las partículas. */
   color: string[];
+  /** Vector de gravedad aplicado a cada partícula (px/s²). */
   gravity?: { x: number; y: number };
+  /** Si el emisor debe reiniciarse automáticamente. */
   loop: boolean;
 }
 
+/**
+ * Gestiona la generación de partículas en el mundo.
+ *
+ * @responsibility Orquestar el spawn de entidades de partícula basado en la configuración.
+ * @remarks Consumido por `ParticleSystem`.
+ */
 export interface ParticleEmitterComponent extends Component {
   type: "ParticleEmitter";
+  /** Configuración del comportamiento de emisión. */
   config: ParticleEmitterConfig;
+  /** Control de encendido/apagado del emisor. */
   active: boolean;
+  /** Tiempo acumulado para el control de la tasa de emisión (s). */
   elapsed: number;
 }
 
 /**
- * Tilemap data and component.
+ * Definición de un conjunto de tiles (tileset).
  */
 export interface Tileset {
+  /** Identificador único del tileset. */
   id: number;
+  /** ID del recurso de textura asociado. */
   textureId: string;
+  /** Si los tiles de este conjunto son sólidos por defecto. */
   solid: boolean;
 }
 
+/**
+ * Capa individual de un mapa de tiles.
+ */
 export interface TilemapLayer {
+  /** Nombre de la capa (ej: 'Suelo', 'Obstáculos'). */
   name: string;
+  /** Array plano de IDs de tiles (row-major). */
   tiles: number[];
+  /** Si esta capa debe participar en el sistema de colisiones. */
   collidable: boolean;
 }
 
+/**
+ * Datos estructurales de un mapa de tiles 2D.
+ */
 export interface TilemapData {
+  /** Tamaño de cada tile cuadrado en píxeles. */
   tileSize: number;
+  /** Ancho del mapa en número de tiles. */
   width: number;
+  /** Alto del mapa en número de tiles. */
   height: number;
+  /** Colección de capas ordenadas. */
   layers: TilemapLayer[];
+  /** Referencias a los tilesets utilizados. */
   tilesets: Tileset[];
 }
 
+/**
+ * Representa un mapa de tiles estático o dinámico.
+ *
+ * @responsibility Proveer datos de entorno y colisión basados en rejilla.
+ */
 export interface TilemapComponent extends Component {
   type: "Tilemap";
+  /** Datos completos del mapa. */
   data: TilemapData;
+  /** Cache interna para optimizar el renderizado (culling). */
   _visibleRange?: {
     startX: number;
     startY: number;
@@ -432,19 +501,32 @@ export interface TilemapComponent extends Component {
 }
 
 /**
- * Camera 2D component.
+ * Representa una cámara 2D para el control del viewport.
+ *
+ * @responsibility Definir la ventana de visualización y aplicar transformaciones de vista.
+ * @remarks Soporta suavizado de movimiento (smoothing) y efectos de sacudida (shake).
  */
 export interface Camera2DComponent extends Component {
   type: "Camera2D";
+  /** Centro X de la cámara en el mundo. */
   x: number;
+  /** Centro Y de la cámara en el mundo. */
   y: number;
+  /** Nivel de zoom (1.0 = 100%). */
   zoom: number;
+  /** Intensidad actual del efecto de sacudida. */
   shakeIntensity: number;
+  /** Desplazamiento X temporal por sacudida. */
   shakeOffsetX: number;
+  /** Desplazamiento Y temporal por sacudida. */
   shakeOffsetY: number;
+  /** Factor de interpolación para el seguimiento (0.1 = lento, 1.0 = instantáneo). */
   smoothing: number;
+  /** Desplazamiento relativo al centro de la pantalla (px). */
   offset: { x: number; y: number };
+  /** Límites de movimiento de la cámara en coordenadas de mundo. */
   bounds: { minX: number; minY: number; maxX: number; maxY: number } | null;
+  /** Entidad opcional a la que la cámara debe seguir. */
   target?: Entity;
 }
 
@@ -452,11 +534,21 @@ export interface Camera2DComponent extends Component {
  * Common data structures.
  */
 
+/**
+ * Efecto de sacudida de pantalla controlado por tiempo.
+ *
+ * @responsibility Aplicar desplazamientos aleatorios a la cámara para enfatizar impactos.
+ * @remarks Consumido por `ScreenShakeSystem`.
+ */
 export interface ScreenShakeComponent extends Component {
   type: "ScreenShake";
+  /** Fuerza máxima del desplazamiento (px). */
   intensity: number;
+  /** Duración total del efecto (ms). */
   duration: number;
+  /** Tiempo restante del efecto (ms). */
   remaining: number;
+  /** Configuración original para reinicios o loops. */
   config?: {
     intensity: number;
     duration: number;
@@ -484,16 +576,26 @@ export interface VisualOffsetComponent extends Component {
 }
 
 /**
- * Star component for background effects.
+ * Representa una estrella procedural para fondos galácticos.
+ *
+ * @responsibility Proveer datos para el efecto visual de campo estelar.
  */
 export interface Star extends Component {
   type: "Star";
+  /** Posición X en el espacio virtual. */
   x: number;
+  /** Posición Y en el espacio virtual. */
   y: number;
+  /** Radio de la estrella (px). */
   size: number;
+  /** Opacidad actual [0, 1]. */
   alpha: number;
+  /** Brillo base. */
   brightness: number;
+  /** Fase actual de la animación de parpadeo (twinkle). */
   twinklePhase: number;
+  /** Velocidad de la animación de parpadeo. */
   twinkleSpeed: number;
+  /** Capa de profundidad (Parallax). 0 es el fondo más lejano. */
   layer: number;
 }

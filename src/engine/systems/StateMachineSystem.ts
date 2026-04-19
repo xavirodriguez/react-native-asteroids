@@ -15,6 +15,15 @@ import { StateMachineComponent } from "../types/EngineTypes";
  * @dependsOn {@link StateMachineComponent}
  */
 export class StateMachineSystem extends System {
+  /**
+   * Actualiza las máquinas de estado de las entidades.
+   *
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   *
+   * @precondition Las entidades deben poseer un {@link StateMachineComponent}.
+   * @postcondition Se delega la actualización a la instancia interna de la FSM.
+   */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("StateMachine");
     entities.forEach((entity) => {

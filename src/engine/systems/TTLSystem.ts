@@ -23,6 +23,15 @@ import { TTLComponent, ReclaimableComponent } from "../types/EngineTypes";
  * @invariant No modifica otros componentes de la entidad (e.g., Transform, Velocity).
  */
 export class TTLSystem extends System {
+  /**
+   * Actualiza el tiempo de vida de las entidades.
+   *
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   *
+   * @precondition Las entidades deben poseer un {@link TTLComponent}.
+   * @postcondition Se reduce `remaining`. Si llega a <= 0, la entidad es eliminada.
+   */
   public update(world: World, deltaTime: number): void {
     const ttlEntities = world.query("TTL");
 
