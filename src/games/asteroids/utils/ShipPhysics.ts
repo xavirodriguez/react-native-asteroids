@@ -83,7 +83,11 @@ export const ShipPhysics = {
     this.applyThrust(world, pos, vel, input, dtSeconds, ctx, config);
     this.applyFriction(vel, deltaTime, config);
 
-    // 2. Shooting
+    // 2. Integration & Boundary Wrapping (Unified Pipeline)
+    PhysicsUtils.integrateMovement(pos, vel, dtSeconds);
+    PhysicsUtils.wrapBoundary(pos, config.SCREEN_WIDTH, config.SCREEN_HEIGHT);
+
+    // 3. Shooting
     if (input.shootCooldownRemaining > 0) {
       input.shootCooldownRemaining -= deltaTime;
     }

@@ -44,10 +44,10 @@ export class DeterministicSimulation {
             gameState.serverTick++;
         }
 
-        // 1. Process Inputs & Ship Physics
+        // 1. Process Inputs & Ship Physics (Includes Integration & Boundary for Ships)
         this.updateShips(world, deltaTime, ctx);
 
-        // 2. Integration & Boundary Wrapping
+        // 2. Integration & Boundary Wrapping (For Non-Ship entities)
         this.integrateMovement(world, dtSeconds);
 
         // 3. TTL (Time To Live)
@@ -108,8 +108,11 @@ export class DeterministicSimulation {
     }
 
     private static integrateMovement(world: World, dtSeconds: number) {
+        // We exclude entities with "Ship" tag as they are already processed in updateShips
         const moveables = world.query("Transform", "Velocity");
         moveables.forEach(entity => {
+            if (world.hasComponent(entity, "Ship")) return;
+
             const pos = world.getComponent<TransformComponent>(entity, "Transform");
             const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
             if (pos && vel) {

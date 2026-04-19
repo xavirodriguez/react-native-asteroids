@@ -32,10 +32,8 @@ export class RandomService {
    */
   public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
     if (this.lockGameplayContext && name === "render") {
-        console.warn("[RandomService] Accessing 'render' instance during gameplay simulation! This will break determinism.");
-        if (__DEV__) {
-            throw new Error("Deterministic violation: 'render' random accessed during simulation.");
-        }
+        console.error("[RandomService] Accessing 'render' instance during gameplay simulation! This will break determinism.");
+        throw new Error("Deterministic violation: 'render' random accessed during simulation.");
     }
 
     if (name === "global") return this.globalInstance;
