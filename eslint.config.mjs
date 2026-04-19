@@ -7,7 +7,7 @@ import unusedImports from "eslint-plugin-unused-imports";
 /** @type {import('eslint').Linter.Config[]} */
 export default tseslint.config(
   {
-    // Global ignores must be the first object in the array
+    // Global ignores must be the first object in the array for Flat Config
     ignores: [
       "**/node_modules/**",
       "dist/**",
@@ -18,7 +18,6 @@ export default tseslint.config(
       ".git/**",
       "temp/**",
       "etc/**",
-      "lint_report.json",
       "**/*.min.js"
     ],
   },
@@ -68,9 +67,7 @@ export default tseslint.config(
     files: [
       "**/*.config.{js,cjs}",
       "metro.config.js",
-      "babel.config.js",
-      "postcss.config.js",
-      "tailwind.config.js"
+      "babel.config.js"
     ],
     languageOptions: {
       sourceType: "commonjs",

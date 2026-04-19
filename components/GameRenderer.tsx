@@ -7,17 +7,28 @@ import type { SkiaRenderer as SkiaRendererType } from "../src/engine/rendering/S
 import type { Renderer } from "../src/engine/rendering/Renderer";
 import { GameLoop } from "../src/engine/core/GameLoop";
 
+/**
+ * Type definition for the @shopify/react-native-skia module.
+ */
 type SkiaModuleType = typeof import("@shopify/react-native-skia");
 
-// Define types for the Skia components we use
-type CanvasComponent = React.ComponentType<{
+/**
+ * Props for the Skia Canvas component.
+ */
+interface CanvasProps {
   style?: import("react-native").StyleProp<import("react-native").ViewStyle>;
   children?: React.ReactNode;
-}>;
+}
 
-type DrawingComponent = React.ComponentType<{
+/**
+ * Props for the Skia Drawing component.
+ */
+interface DrawingProps {
   onDraw: (canvas: SkCanvas) => void;
-}>;
+}
+
+type CanvasComponent = React.ComponentType<CanvasProps>;
+type DrawingComponent = React.ComponentType<DrawingProps>;
 
 // Conditionally import Skia components for non-web platforms
 let Canvas: CanvasComponent | null = null;
@@ -25,6 +36,7 @@ let Drawing: DrawingComponent | null = null;
 
 if (Platform.OS !== "web") {
   try {
+
     const SkiaModule = require("@shopify/react-native-skia") as SkiaModuleType;
     Canvas = SkiaModule.Canvas as unknown as CanvasComponent;
     Drawing = SkiaModule.Drawing as unknown as DrawingComponent;
@@ -39,7 +51,9 @@ if (Platform.OS !== "web") {
 interface GameRendererProps {
   /** The ECS world containing the entities to be rendered. */
   world: World;
+  /** Optional callback to initialize the renderer. */
   onInitialize?: (renderer: Renderer) => void;
+  /** The game loop to subscribe for render ticks. */
   gameLoop?: GameLoop;
 }
 
@@ -64,6 +78,7 @@ export const GameRenderer = React.memo(function GameRenderer({ world, onInitiali
   const onDraw = useMemo(() => (canvas: SkCanvas) => {
     if (!rendererRef.current) {
         try {
+
             const { SkiaRenderer: EngineSkiaRenderer } = require("../src/engine/rendering/SkiaRenderer") as typeof import("../src/engine/rendering/SkiaRenderer");
             const renderer = new EngineSkiaRenderer(canvas);
             if (onInitialize) onInitialize(renderer);

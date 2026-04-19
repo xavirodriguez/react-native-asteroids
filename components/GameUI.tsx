@@ -14,21 +14,38 @@ import Animated, {
 } from "react-native-reanimated";
 import type { GameStateComponent } from "../src/types/GameTypes";
 
+/**
+ * Type definition for the @shopify/react-native-skia module.
+ */
 type SkiaModuleType = typeof import("@shopify/react-native-skia");
 
-// Define types for the Skia components we use
-type CanvasComponent = React.ComponentType<{
+/**
+ * Props for the Skia Canvas component.
+ */
+interface CanvasProps {
   style?: import("react-native").StyleProp<import("react-native").ViewStyle>;
   children?: React.ReactNode;
-}>;
+}
 
-type BackdropBlurComponent = React.ComponentType<{
+/**
+ * Props for the Skia BackdropBlur component.
+ */
+interface BackdropBlurProps {
   blur: number;
   clip?: { x: number; y: number; width: number; height: number };
   children?: React.ReactNode;
-}>;
+}
 
-type FillComponent = React.ComponentType<{ color: string }>;
+/**
+ * Props for the Skia Fill component.
+ */
+interface FillProps {
+  color: string;
+}
+
+type CanvasComponent = React.ComponentType<CanvasProps>;
+type BackdropBlurComponent = React.ComponentType<BackdropBlurProps>;
+type FillComponent = React.ComponentType<FillProps>;
 
 // Conditionally import Skia components
 let Canvas: CanvasComponent | null = null;
