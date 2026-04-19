@@ -31,7 +31,7 @@ export class ShipControlSystem extends System {
         render,
         input,
         deltaTime,
-        undefined,
+        { isResimulating: false },
         this.config,
         (bullet) => {
           // Listen for TTL destruction (miss)

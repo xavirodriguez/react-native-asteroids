@@ -74,6 +74,9 @@ export class RenderUpdateSystem extends System {
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
       const render = world.getComponent<RenderComponent>(entity, "Render");
+
+      // Principle: Unified rotation authority is TransformComponent.
+      // Cosmetic rotations (like debris) must use VisualOffsetComponent.
       if (render && render.angularVelocity) {
         let offset = world.getComponent<import("../core/CoreComponents").VisualOffsetComponent>(entity, "VisualOffset");
         if (!offset) {

@@ -40,6 +40,7 @@ export class FrictionSystem extends System {
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!;
       const friction = world.getComponent<FrictionComponent>(entity, "Friction")!;
 
+      if (world.hasComponent(entity, "Ship")) continue;
       PhysicsUtils.applyFriction(vel, friction.value, deltaTime);
     }
   }

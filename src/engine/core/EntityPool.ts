@@ -49,11 +49,8 @@ export class EntityPool {
    */
   public release(id: Entity): void {
     if (this.pooledSet.has(id)) {
-        console.warn(`[EntityPool] Double-release detected for entity ID: ${id}. Ignoring.`);
-        if (__DEV__) {
-            throw new Error(`Entity ${id} already in pool.`);
-        }
-        return;
+        console.error(`[EntityPool] Double-release detected for entity ID: ${id}.`);
+        throw new Error(`Entity ${id} already in pool.`);
     }
     this.pool.push(id);
     this.pooledSet.add(id);
