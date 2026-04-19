@@ -41,3 +41,6 @@ El motor proporciona las primitivas necesarias para la simulación, mientras que
 La documentación técnica detallada de cada clase, interfaz y sistema se genera automáticamente a partir del código fuente.
 
 - [**Referencia de API Completa**](./api-reference/index.md)
+
+## Mantenibilidad y Rigor Técnico
+El motor sigue una política de **Documentación Profunda**. Cada cambio en el Core o en los Sistemas debe estar acompañado de su correspondiente TSDoc, siguiendo los templates obligatorios que especifican responsabilidades, contratos y riesgos conceptuales.

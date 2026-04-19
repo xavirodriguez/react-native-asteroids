@@ -8,6 +8,12 @@ export interface SaveConfig<T> {
   migrate?: (oldData: unknown, oldVersion: number) => T;
 }
 
+/**
+ * Sistema de persistencia simple utilizando localStorage.
+ *
+ * @conceptualRisk [DETERMINISM][LOW] El uso de `Date.now()` para el timestamp del save
+ * no afecta la simulación pero es una fuente de tiempo real externa.
+ */
 export class SaveSystem<T> {
   private config: SaveConfig<T>;
 

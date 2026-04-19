@@ -22,6 +22,15 @@ import { AnimatorComponent } from "../types/EngineTypes";
  * salten múltiples frames en un solo ciclo de actualización.
  */
 export class AnimationSystem extends System {
+  /**
+   * Actualiza el frame de animación basado en el tiempo transcurrido.
+   *
+   * @param world - El mundo ECS.
+   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   *
+   * @precondition Las entidades deben poseer un {@link AnimatorComponent}.
+   * @postcondition El frame actual y el tiempo transcurrido del animator son actualizados.
+   */
   public update(world: World, deltaTime: number): void {
     const animators = world.query("Animator");
     animators.forEach((entity) => {
