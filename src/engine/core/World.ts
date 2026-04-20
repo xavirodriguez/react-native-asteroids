@@ -172,6 +172,8 @@ export class World {
         query.rebuild(this.activeEntities, this.entityComponentSets);
     });
 
+    this.commandBuffer.clear();
+
     // Re-attach Reclaimable functions if any pool exists in resources
     const reclaimableMap = this.componentMaps.get("Reclaimable");
     if (reclaimableMap) {
@@ -436,6 +438,7 @@ export class World {
     this.queries.clear();
     this.queriesByComponent.clear();
     this.resources.clear();
+    this.commandBuffer.clear();
     this.version++;
   }
 

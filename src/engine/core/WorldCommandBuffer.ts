@@ -92,4 +92,11 @@ export class WorldCommandBuffer {
   public get isEmpty(): boolean {
     return this.commands.length === 0;
   }
+
+  /**
+   * Limpia el buffer de comandos sin ejecutarlos.
+   */
+  public clear(): void {
+    this.commands = [];
+  }
 }
