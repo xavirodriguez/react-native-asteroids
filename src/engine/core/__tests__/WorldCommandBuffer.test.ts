@@ -109,4 +109,21 @@ describe("WorldCommandBuffer", () => {
     expect(entitiesWithTest.length).toBe(1);
     expect(world.getComponent<TestComponent>(entitiesWithTest[0], "Test")?.value).toBe(200);
   });
+
+  it("should be cleared when world is cleared", () => {
+    world.getCommandBuffer().createEntity();
+    expect(world.getCommandBuffer().isEmpty).toBe(false);
+
+    world.clear();
+    expect(world.getCommandBuffer().isEmpty).toBe(true);
+  });
+
+  it("should be cleared when world is restored", () => {
+    world.getCommandBuffer().createEntity();
+    expect(world.getCommandBuffer().isEmpty).toBe(false);
+
+    const snapshot = world.snapshot();
+    world.restore(snapshot);
+    expect(world.getCommandBuffer().isEmpty).toBe(true);
+  });
 });
