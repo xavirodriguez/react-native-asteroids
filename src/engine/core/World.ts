@@ -3,6 +3,7 @@ import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
+import { WorldCommandBuffer } from "./WorldCommandBuffer";
 
 interface RegisteredSystem {
   system: System;
@@ -49,6 +50,7 @@ export class World {
   private freeEntities: Entity[] = [];
   private resources = new Map<string, unknown>();
   public version = 0;
+  private commandBuffer = new WorldCommandBuffer();
 
   /**
    * Genera una instantánea serializable del estado completo del mundo para rollback o persistencia.
@@ -401,6 +403,31 @@ export class World {
    * @postcondition El mundo queda en un estado inicial vacío.
    * @sideEffect Incrementa {@link World.version}.
    */
+  /**
+   * Proporciona acceso al buffer de comandos para diferir mutaciones estructurales.
+   *
+   * @remarks
+   * Se recomienda encarecidamente utilizar este buffer durante la actualización de sistemas
+   * para evitar problemas de invalidación de iteradores en las Queries.
+   *
+   * @returns La instancia de {@link WorldCommandBuffer} del mundo.
+   */
+  public getCommandBuffer(): WorldCommandBuffer {
+    return this.commandBuffer;
+  }
+
+  /**
+   * Aplica todas las mutaciones estructurales grabadas en el buffer de comandos.
+   *
+   * @remarks
+   * Debe llamarse al final de cada tick de simulación (Fixed Update).
+   *
+   * @sideEffect Ejecuta operaciones de creación/eliminación diferidas.
+   */
+  public flush(): void {
+    this.commandBuffer.flush(this);
+  }
+
   public clear(): void {
     this.activeEntities.clear();
     this.componentMaps.clear();

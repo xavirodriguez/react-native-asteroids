@@ -5,6 +5,8 @@ export type RenderListener = (alpha: number, deltaTime: number) => void;
 
 export interface GameLoopConfig {
   maxDeltaMs?: number;
+  /** Límite máximo de actualizaciones de simulación permitidas por frame real. */
+  maxUpdatesPerFrame?: number;
 }
 
 /**
@@ -31,6 +33,7 @@ export class GameLoop {
   private accumulator = 0;
   private readonly fixedDeltaTime = 1000 / 60; // 60 FPS simulación
   private readonly maxDeltaMs: number;
+  private readonly maxUpdatesPerFrame: number;
 
   private inputListeners = new Set<GameLoopListener>();
   private updateListeners = new Set<GameLoopListener>();
@@ -43,6 +46,7 @@ export class GameLoop {
 
   constructor(config: GameLoopConfig = {}) {
     this.maxDeltaMs = config.maxDeltaMs ?? 100;
+    this.maxUpdatesPerFrame = config.maxUpdatesPerFrame ?? 240; // Evita el Spiral of Death
   }
 
   /**
@@ -140,7 +144,14 @@ export class GameLoop {
     this.inputListeners.forEach(listener => listener(deltaTime));
 
     // 2. Simulation Phase (Fixed Step)
+    let updatesThisFrame = 0;
     while (this.accumulator >= this.fixedDeltaTime) {
+      if (updatesThisFrame >= this.maxUpdatesPerFrame) {
+        console.warn(`[GameLoop] Spiral of Death detected. Dropping remaining ticks for this frame. (Updates: ${updatesThisFrame})`);
+        this.accumulator = 0; // Descarta el tiempo acumulado sobrante para estabilizar
+        break;
+      }
+
       // Determinism: ensure RNG is seeded for this tick if needed
       RandomService.getInstance("gameplay");
 
@@ -154,6 +165,7 @@ export class GameLoop {
       }
 
       this.accumulator -= this.fixedDeltaTime;
+      updatesThisFrame++;
     }
 
     // 3. Transform Phase (after simulation, before render)

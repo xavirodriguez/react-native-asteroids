@@ -142,6 +142,36 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 - Implementar comportamiento de "clamping" (estático) en `BoundarySystem` para mayor flexibilidad.
 - Documentar el sistema de capas de colisión en una guía dedicada.
 
+---
+
+## [2024-05-26] Seguridad de Mutación y Protección de Bucle
+
+### Estado detectado
+- **Riesgo de Inconsistencia**: Las mutaciones estructurales inmediatas durante la actualización de sistemas podían invalidar iteradores de queries.
+- **Spiral of Death**: El motor carecía de un límite de ticks por frame, lo que permitía bloqueos en caso de degradación de performance.
+
+### Decisiones tomadas
+1. **Diferimiento de Mutaciones**: Implementación de `WorldCommandBuffer` para registrar cambios estructurales.
+2. **Sincronización Atómica**: Integración de `world.flush()` al final de la fase de simulación en `BaseGame`.
+3. **Cap de Simulación**: Implementación de `maxUpdatesPerFrame` en `GameLoop` para estabilizar el acumulador ante lag masivo.
+4. **ADR 005**: Documentación formal del nuevo contrato de mutación.
+
+### Archivos afectados
+- `src/engine/core/WorldCommandBuffer.ts`
+- `src/engine/core/World.ts`
+- `src/engine/core/BaseGame.ts`
+- `src/engine/core/GameLoop.ts`
+- `docs/adr/005-world-mutation-safety.md`
+
+### Impacto
+- **Seguridad**: Se eliminan fallos sutiles por mutación durante la iteración.
+- **Robustez**: El motor es ahora "crash-proof" ante picos de carga de CPU.
+
+### Deuda abierta / Siguientes pasos
+- Migrar sistemas existentes que realizan eliminaciones masivas para usar el buffer de forma explícita (aunque `flush` al final del tick ya proporciona seguridad básica).
+
+---
+
 ## [2024-05-25] Saneamiento de API Pública y Renombrado de Tipos Legacy
 
 ### Estado detectado
