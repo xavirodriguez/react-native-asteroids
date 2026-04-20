@@ -3,7 +3,6 @@ import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
-import { WorldCommandBuffer, CommandType } from "./WorldCommandBuffer";
 import { WorldCommandBuffer } from "./WorldCommandBuffer";
 
 interface RegisteredSystem {
@@ -53,6 +52,7 @@ export class World {
   private freeEntities: Entity[] = [];
   private resources = new Map<string, unknown>();
   public version = 0;
+  private isUpdating = false;
   private commandBuffer = new WorldCommandBuffer();
 
   /**
@@ -211,7 +211,7 @@ export class World {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
 
     if (this.isUpdating) {
-      this.commandBuffer.push({ type: CommandType.CREATE_ENTITY, entity: id });
+      this.commandBuffer.createEntity();
       return id;
     }
 
@@ -257,7 +257,7 @@ export class World {
    */
   addComponent<T extends Component>(entity: Entity, component: T): T {
     if (this.isUpdating) {
-      this.commandBuffer.push({ type: CommandType.ADD_COMPONENT, entity, component });
+      this.commandBuffer.addComponent(entity, component);
       return component;
     }
 
@@ -287,7 +287,7 @@ export class World {
         this.entityComponentSets.set(entity, componentSet);
       }
       componentSet.add(type);
-      this.notifyQueries(entity, componentSet, stype);
+      this.notifyQueries(entity, componentSet, type);
     }
 
     this.version++;
@@ -345,7 +345,7 @@ export class World {
    */
   removeComponent(entity: Entity, type: string): void {
     if (this.isUpdating) {
-      this.commandBuffer.push({ type: CommandType.REMOVE_COMPONENT, entity, componentType: type });
+      this.commandBuffer.removeComponent(entity, type);
       return;
     }
 
@@ -419,7 +419,7 @@ export class World {
    */
   public removeEntity(entity: Entity): void {
     if (this.isUpdating) {
-      this.commandBuffer.push({ type: CommandType.REMOVE_ENTITY, entity });
+      this.commandBuffer.removeEntity(entity);
       return;
     }
 
@@ -582,32 +582,6 @@ export class World {
     this.flush();
   }
 
-  /**
-   * Aplica todos los comandos acumulados en el buffer de comandos.
-   * Se llama automáticamente al final de cada {@link World.update}.
-   */
-  public flush(): void {
-    if (this.commandBuffer.isEmpty) return;
-
-    const commands = this.commandBuffer.consume();
-    for (const cmd of commands) {
-      switch (cmd.type) {
-        case CommandType.CREATE_ENTITY:
-          this.activeEntities.add(cmd.entity);
-          this.version++;
-          break;
-        case CommandType.REMOVE_ENTITY:
-          this.removeEntity(cmd.entity);
-          break;
-        case CommandType.ADD_COMPONENT:
-          this.addComponent(cmd.entity, cmd.component);
-          break;
-        case CommandType.REMOVE_COMPONENT:
-          this.removeComponent(cmd.entity, cmd.componentType);
-          break;
-      }
-    }
-  }
 
   getSystemTiming(system: System): number {
     return this.profilers.get(system)?.getAverageTime() ?? 0;

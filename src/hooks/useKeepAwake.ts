@@ -26,10 +26,10 @@ export function useKeepAwake(enabled: boolean = true): void {
 
 
     // WakeLock is only available in secure contexts (HTTPS) and supported browsers
-    const supportsWakeLock = isWeb &&
+    const supportsWakeLock = !!(isWeb &&
+      nav &&
       'wakeLock' in nav &&
-      nav.wakeLock !== undefined &&
-      nav.wakeLock !== null;
+      nav.wakeLock);
 
     if (!enabled) return;
 
