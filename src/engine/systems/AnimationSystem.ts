@@ -61,6 +61,6 @@ export class AnimationSystem extends System {
           anim.frame = nextFrameIdx;
         }
       }
-    });
+    }
   }
 }

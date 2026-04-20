@@ -47,7 +47,7 @@ type CanvasComponent = React.ComponentType<CanvasProps>;
 type BackdropBlurComponent = React.ComponentType<BackdropBlurProps>;
 type FillComponent = React.ComponentType<FillProps>;
 
-// Conditionally import Skia components
+// Conditionally import Skia components for non-web platforms
 let Canvas: CanvasComponent | null = null;
 let BackdropBlur: BackdropBlurComponent | null = null;
 let Fill: FillComponent | null = null;

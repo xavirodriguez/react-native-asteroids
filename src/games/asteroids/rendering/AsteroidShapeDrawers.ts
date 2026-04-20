@@ -3,7 +3,7 @@ import { Entity } from "../../../engine/core/Entity";
 import { TransformComponent, TTLComponent, HealthComponent, Star, TrailComponent } from "../../../engine/core/CoreComponents";
 import { drawStarField } from "../../../engine/rendering/StarField";
 import { RandomService } from "../../../engine/utils/RandomService";
-import { InputComponent, GameStateComponent, ShipComponent } from "../types/AsteroidTypes";
+import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 
 export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number }, elapsedTime: number, render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null }, world: World) => {
     const size = render.size;

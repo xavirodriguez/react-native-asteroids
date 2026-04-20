@@ -18,7 +18,10 @@ export default tseslint.config(
       ".git/**",
       "temp/**",
       "etc/**",
-      "**/*.min.js"
+      "**/*.min.js",
+      "web-report/**",
+      "expo-env.d.ts",
+      "assets/**"
     ],
   },
   js.configs.recommended,

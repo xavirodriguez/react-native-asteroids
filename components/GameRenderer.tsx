@@ -36,7 +36,7 @@ let Drawing: DrawingComponent | null = null;
 
 if (Platform.OS !== "web") {
   try {
-
+    // Explicitly typed require to satisfy ESLint and provide type safety
     const SkiaModule = require("@shopify/react-native-skia") as SkiaModuleType;
     Canvas = SkiaModule.Canvas as unknown as CanvasComponent;
     Drawing = SkiaModule.Drawing as unknown as DrawingComponent;
@@ -78,7 +78,7 @@ export const GameRenderer = React.memo(function GameRenderer({ world, onInitiali
   const onDraw = useMemo(() => (canvas: SkCanvas) => {
     if (!rendererRef.current) {
         try {
-
+            // Refined dynamic import for renderer to avoid naming collisions and improve clarity
             const { SkiaRenderer: EngineSkiaRenderer } = require("../src/engine/rendering/SkiaRenderer") as typeof import("../src/engine/rendering/SkiaRenderer");
             const renderer = new EngineSkiaRenderer(canvas);
             if (onInitialize) onInitialize(renderer);
