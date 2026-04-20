@@ -2,7 +2,7 @@ import { Skia, SkCanvas, SkPaint, PaintStyle } from "@shopify/react-native-skia"
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TransformComponent, PreviousTransformComponent, Component } from "../core/CoreComponents";
+import { RenderComponent, TransformComponent, PreviousTransformComponent, Component, GenericComponent } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
 
 /**
@@ -256,7 +256,7 @@ export class SkiaRenderer implements Renderer {
     const scaleY = (pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1)) + (offset?.scaleY ?? 0);
 
     // Calculate deterministic elapsed time from world state if possible
-    const gameState = world.getSingleton<Record<string, unknown>>("GameState");
+    const gameState = world.getSingleton<GenericComponent>("GameState");
     const serverTick = gameState && gameState.serverTick !== undefined ? gameState.serverTick as number : null;
     const elapsedTime = serverTick !== null ? serverTick * (1000 / 60) : performance.now();
 

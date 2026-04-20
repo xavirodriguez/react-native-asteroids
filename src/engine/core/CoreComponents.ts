@@ -1,10 +1,10 @@
-import { Component } from "./Component";
+import { Component, GenericComponent } from "./Component";
 import { Entity } from "./Entity";
 import { EventBus } from "./EventBus";
 import { StateMachine } from "./StateMachine";
 import type { World } from "./World";
 import type { CollisionManifold } from "../physics/collision/CollisionTypes";
-export { Entity, Component };
+export { Entity, Component, GenericComponent };
 
 /**
  * Componentes base proporcionados por el motor como primitivas reutilizables.

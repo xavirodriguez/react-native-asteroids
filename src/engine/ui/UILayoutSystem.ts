@@ -8,6 +8,7 @@ import {
   UIWorldAttachComponent
 } from "./UITypes";
 import { Entity } from "../core/Entity";
+import { GenericComponent } from "../core/CoreComponents";
 
 /**
  * Sistema que resuelve el posicionamiento y dimensionamiento de elementos de interfaz (UI).
@@ -242,7 +243,7 @@ export class UILayoutSystem extends System {
       let screenY = targetTransform.worldY !== undefined ? targetTransform.worldY : targetTransform.y;
 
       if (attach.useCamera) {
-          const gameState = world.getSingleton<Record<string, unknown>>("GameState");
+          const gameState = world.getSingleton<GenericComponent>("GameState");
           const camera = gameState?.camera as Record<string, number> | undefined;
           if (camera) {
               screenX -= camera.x || 0;
