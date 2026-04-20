@@ -78,12 +78,15 @@ export class Query {
    *
    * @returns Un array de solo lectura de IDs de {@link Entity}.
    *
-   * @precondition No se debe realizar casting de este array a uno mutable ni utilizar métodos in-place (sort, push).
+   * @precondition No se debe realizar casting de este array a uno mutable ni utilizar
+   * métodos in-place (sort, push, splice).
    * @postcondition El array devuelto refleja el estado actual del {@link World} para esta firma.
    * @postcondition Las entidades en el array están siempre ordenadas por ID de forma ascendente.
    *
-   * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] Si un consumidor rompe el contrato de solo lectura
-   * mediante casting forzado, corromperá el estado interno de la Query y de todos los sistemas dependientes.
+   * @conceptualRisk [MEMORY][MEDIUM] Fuga de caché mutable en Queries. Los sistemas reciben
+   * una referencia al array interno de la query y pueden corromperlo si realizan casting forzado.
+   * @conceptualRisk [GC_PRESSURE][LOW] Generación frecuente de nuevos arrays internos cuando
+   * `needsUpdateArray` es true. Se mitiga mediante el sistema de cacheado incremental.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.needsUpdateArray) {

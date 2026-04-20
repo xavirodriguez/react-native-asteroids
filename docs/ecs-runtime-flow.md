@@ -34,3 +34,4 @@ Las consultas a entidades están altamente optimizadas mediante la clase `Query`
 - **[ENTITY_DOUBLE_RELEASE]**: `EntityPool` no valida si un ID ya ha sido liberado. *Estado: FIXED mediante `pooledSet` en `EntityPool.ts`.*
 - **[STRUCTURAL_CHANGE_COST]**: Añadir o quitar componentes en hot-loops incrementa `world.version` y notifica a todas las queries interesadas.
 - **[ID_REUSE_STALE_REFS]**: Riesgo inherente a la reutilización de IDs numéricos. Se recomienda no persistir IDs de entidades entre frames de forma externa al World.
+- **[JSON_DETERMINISM]**: La serialización vía `snapshot()` no garantiza el orden de las propiedades, lo que puede afectar la generación de hashes de estado para multiplayer.

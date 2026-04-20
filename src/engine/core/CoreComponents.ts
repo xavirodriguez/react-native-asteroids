@@ -22,16 +22,22 @@ export { Entity, Component };
  * @responsibility Definir la ubicación y orientación de la entidad en el espacio 2D.
  * @remarks Las propiedades `world*` son calculadas y actualizadas por el `HierarchySystem`.
  *
+ * @precondition La escala debe ser mayor que 0 para evitar singularidades en el renderizado.
+ * @postcondition El flag `dirty` debe marcarse al modificar manualmente `x`, `y` o `rotation`.
+ * @invariant Las coordenadas de mundo se derivan de la composición local y la del padre.
+ *
  * @conceptualRisk [STALE_WORLD_DATA][HIGH] Leer `worldX/Y` antes de que el `HierarchySystem`
  * se ejecute en el frame actual resultará en datos del frame anterior.
+ * @conceptualRisk [HIERARCHY][LOW] `World.addComponent` normaliza jerarquías rompiendo
+ * silenciosamente el parentesco si el padre no existe para evitar crashes.
  */
 export interface TransformComponent extends Component {
   type: "Transform";
-  /** Coordenada X local en píxeles. Rango esperado: [-10000, 10000]. */
+  /** Coordenada X local en píxeles. Unidades: px. Rango esperado: [-10000, 10000]. */
   x: number;
-  /** Coordenada Y local en píxeles. Rango esperado: [-10000, 10000]. */
+  /** Coordenada Y local en píxeles. Unidades: px. Rango esperado: [-10000, 10000]. */
   y: number;
-  /** Rotación local en radianes. Rango: [0, 2π]. */
+  /** Rotación local en radianes. Unidades: rad. Rango: [0, 2π]. */
   rotation: number;
   /** Escala X local. Default: 1.0. */
   scaleX: number;
@@ -60,6 +66,9 @@ export interface TransformComponent extends Component {
  *
  * @responsibility Señalizar a los sistemas core (Movement, Friction, Boundary) que deben
  * ignorar esta entidad para evitar doble integración o conflictos de autoridad.
+ *
+ * @remarks
+ * Establecido como el estándar oficial de exclusión de física manual según ADR 005.
  */
 export interface ManualMovementComponent extends Component {
   type: "ManualMovement";
@@ -74,6 +83,7 @@ export interface ManualMovementComponent extends Component {
  * Esencial para realizar interpolación visual suave (mediante el valor `alpha` del `GameLoop`)
  * cuando la tasa de renderizado es superior a la de simulación (fixed timestep).
  *
+ * @precondition Debe ser actualizado por {@link InterpolationPrepSystem} al inicio de cada tick.
  * @conceptualRisk [STALE_SNAPSHOT][LOW] Si este componente no se actualiza al inicio de cada
  * tick de simulación (Fixed Update), la interpolación producirá jitter visual.
  */
@@ -97,18 +107,21 @@ export interface PreviousTransformComponent extends Component {
 /**
  * Define el vector de movimiento y la velocidad angular de una entidad.
  *
- * @responsibility Proveer datos para la integración física de movimiento.
+ * @responsibility Proveer datos para la integración física de movimiento lineal y angular.
  *
  * @remarks Las unidades son píxeles por segundo (px/s) y radianes por segundo (rad/s).
  * Consumido por {@link MovementSystem}.
+ *
+ * @precondition `dx` y `dy` deben estar definidos; `vAngle` es opcional.
+ * @postcondition La posición del `Transform` se verá afectada en el siguiente tick de simulación.
  */
 export interface VelocityComponent extends Component {
   type: "Velocity";
-  /** Velocidad lineal en el eje X en px/s. Rango sugerido: [-2000, 2000]. */
+  /** Velocidad lineal en el eje X. Unidades: px/s. Rango sugerido: [-2000, 2000]. */
   dx: number;
-  /** Velocidad lineal en el eje Y en px/s. Rango sugerido: [-2000, 2000]. */
+  /** Velocidad lineal en el eje Y. Unidades: px/s. Rango sugerido: [-2000, 2000]. */
   dy: number;
-  /** Velocidad angular en radianes/s (opcional). */
+  /** Velocidad angular. Unidades: rad/s (opcional). */
   vAngle?: number;
 }
 
@@ -287,6 +300,9 @@ export interface PhysicsBody2DComponent extends Component {
  * Define la apariencia y propiedades de visualización de una entidad.
  *
  * @responsibility Proveer la información necesaria para el sistema de renderizado.
+ *
+ * @conceptualRisk [DETERMINISM][LOW] `RenderUpdateSystem` muta `Render.rotation`. Si un sistema
+ * de colisiones depende de esta rotación en lugar de la del `Transform`, habrá drift.
  */
 export interface RenderComponent extends Component {
   type: "Render";
@@ -568,6 +584,9 @@ export interface ScreenShakeComponent extends Component {
  *
  * @responsibility Separar los efectos visuales de la posición lógica/física de la entidad.
  * @remarks Los renderizadores deben sumar estos valores a los del `Transform` al dibujar.
+ *
+ * @conceptualRisk [DETERMINISM][MEDIUM] `JuiceSystem` muta este componente. Si se usa para
+ * lógica de colisiones o simulación, causará desincronización en red.
  */
 export interface VisualOffsetComponent extends Component {
   type: "VisualOffset";

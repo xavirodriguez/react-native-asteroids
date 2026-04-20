@@ -17,8 +17,8 @@ import { RenderComponent, TransformComponent, TrailComponent } from "../core/Cor
  * Incrementa {@link World.version} para asegurar que los componentes de React/UI se
  * actualicen con el estado más reciente del motor.
  *
- * @conceptualRisk [PERFORMANCE][MEDIUM] El crecimiento de arrays en `trailPositions` genera
- * presión sobre el GC si hay muchas entidades con estela activa.
+ * @conceptualRisk [GC_PRESSURE][FIXED] El crecimiento ilimitado de estelas fue resuelto
+ * mediante `TrailComponent` y un buffer circular pre-asignado.
  * @conceptualRisk [DETERMINISM][LOW] Mutar `Render.rotation` puede causar desincronización
  * si la lógica de colisiones u otra lógica de simulación depende accidentalmente de este valor.
  */

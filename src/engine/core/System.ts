@@ -39,8 +39,9 @@ export interface SystemConfig {
  *
  * El orden de ejecución es crítico y se gestiona mediante {@link SystemPhase} y prioridades.
  *
- * @responsibility Encapsular la lógica de comportamiento del juego.
- * @responsibility Transformar el estado del mundo basándose en el paso del tiempo.
+ * @responsibility Encapsular la lógica de comportamiento del juego de forma desacoplada.
+ * @responsibility Transformar el estado del mundo basándose en el avance del tiempo (ticks).
+ * @responsibility Mantener la simulación pura operando sobre componentes y recursos.
  */
 export abstract class System {
   /**

@@ -22,8 +22,8 @@ export interface GameLoopConfig {
  *
  * @contract Fixed Update: Se garantiza que la fase de simulación siempre reciba incrementos de 16.67ms (1/60s).
  *
- * @conceptualRisk [SPIRAL_OF_DEATH][MEDIUM] Si el tiempo de simulación excede el tiempo real,
- * el acumulador crecerá indefinidamente. Se mitiga mediante `maxDeltaMs`.
+ * @conceptualRisk [PERFORMANCE][HIGH] El loop de `GameLoop` puede disparar el "Spiral of Death"
+ * si la simulación es consistentemente más lenta que el tiempo real, a pesar del límite `maxDeltaMs`.
  */
 export class GameLoop {
   private isRunning = false;
