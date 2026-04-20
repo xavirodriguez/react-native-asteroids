@@ -42,5 +42,11 @@ La documentación técnica detallada de cada clase, interfaz y sistema se genera
 
 - [**Referencia de API Completa**](./api-reference/index.md)
 
+## Integración con React Native y Expo
+El motor está diseñado para coexistir de forma eficiente con el ecosistema React Native:
+- **Puente React-ECS**: El hook `useGame` actúa como puente, permitiendo que los componentes de React envíen inputs al motor y reciban actualizaciones de estado (throttled).
+- **Desacoplamiento de Renderizado**: Los backends (Skia/Canvas) operan fuera del ciclo de reconciliación de React, eliminando el overhead de re-renderizado innecesario de la UI.
+- **Plataformas**: Expo facilita el acceso a APIs nativas y el empaquetado multiplataforma (iOS, Android, Web).
+
 ## Mantenibilidad y Rigor Técnico
-El motor sigue una política de **Documentación Profunda**. Cada cambio en el Core o en los Sistemas debe estar acompañado de su correspondiente TSDoc, siguiendo los templates obligatorios que especifican responsabilidades, contratos y riesgos conceptuales.
+El motor sigue una política de **Documentación Profunda**. Cada cambio en el Core o en los Sistemas debe estar acompañado de su correspondiente TSDoc, siguiendo los templates obligatorios que especifican responsabilidades, contratos y riesgos conceptuales. Toda la documentación técnica debe estar en español (descripciones) e inglés (tags).

@@ -59,3 +59,4 @@ renderer.registerShape("ship", (ctx, entity, pos, render, world) => {
 - **[GC_PRESSURE]**: El snapshot pre-asigna espacio para 2000 entidades (`MAX_ENTITIES`). Exceder este límite causará que las entidades dejen de renderizarse.
 - **[STALE_DATA]**: Si un sistema muta la posición local después de que el `HierarchySystem` ha corrido, el render mostrará la posición anterior del mundo (lag visual de 1 frame).
 - **[DETERMINISTIC_VISUALS]**: Los `ShapeDrawers` reciben `elapsedTime` para asegurar que efectos procedimentales (animaciones, parpadeos) sean consistentes entre frames y clientes.
+- **[HIERARCHY_INTERPOLATION]**: Renderers como `CanvasRenderer` y `SkiaRenderer` priorizan las coordenadas `worldX/Y/Rotation` de `PreviousTransformComponent` para una estabilidad visual perfecta en entidades jerárquicas.

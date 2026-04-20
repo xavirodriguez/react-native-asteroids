@@ -54,3 +54,4 @@ Esta sección documenta las fragilidades arquitectónicas y de diseño detectada
 | **DETERMINISM** | **FIXED** | `getInputState` solo considera inputs de hardware, ignorando overrides de UI. Causa desincronización en red para jugadores móviles. | `UnifiedInputSystem.ts` |
 | **DETERMINISM** | **LOW**    | Uso de `Date.now()` para sellos de tiempo de guardado y cálculo de FPS. Aislado en utilidades y debug. | `SaveSystem.ts`, `DebugSystem.ts` |
 | **LIFECYCLE**   | **HIGH**   | El uso de `setTimeout` en sistemas de cámara y controladores táctiles (Legacy) puede causar fugas si no se limpian correctamente. | `CameraSystem.ts`, `TouchController.ts` |
+| **DETERMINISM** | **LOW**    | El uso de `elapsedTime` en visuales debe ser consistente con la simulación para evitar jitter visual. | `Renderer.ts` |

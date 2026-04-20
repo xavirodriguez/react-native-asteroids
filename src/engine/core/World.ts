@@ -27,10 +27,12 @@ interface RegisteredSystem {
  * - **Principio 6**: Los componentes singleton recuperados mediante {@link World.getSingleton} están
  * garantizados como mutables (se realiza una copia si están congelados).
  *
- * @conceptualRisk [PERFORMANCE] Las consultas (queries) sin caché pueden volverse costosas
+ * @conceptualRisk [PERFORMANCE][MEDIUM] Las consultas (queries) sin caché pueden volverse costosas
  * si se realizan múltiples veces por frame en mundos con miles de entidades.
- * @conceptualRisk [CONSISTENCY] La eliminación de componentes durante una iteración
+ * @conceptualRisk [CONSISTENCY][HIGH] La eliminación de componentes durante una iteración
  * de sistema puede invalidar el estado de los iteradores si no se maneja mediante buffers.
+ * @conceptualRisk [MEMORY][LOW] El versionado del World (`world.version`) es un entero simple.
+ * Potencial overflow en sesiones de juego extremadamente largas.
  */
 export class World {
   private activeEntities = new Set<Entity>();
@@ -189,11 +191,12 @@ export class World {
    * Crea una nueva entidad única en el mundo utilizando el pool de entidades.
    *
    * @remarks
-   * Intenta reutilizar un ID del {@link EntityPool} antes de generar uno nuevo.
+   * Intenta reutilizar un ID del pool de entidades libres antes de generar uno nuevo.
    * Incrementa la versión del mundo para invalidar cachés estructurales.
    *
    * @returns Un nuevo identificador de {@link Entity}.
    * @postcondition La entidad devuelta es considerada activa en el mundo.
+   * @postcondition El ID devuelto es un entero positivo único en el estado actual.
    * @sideEffect Incrementa {@link World.version}.
    */
   public createEntity(): Entity {
@@ -229,7 +232,9 @@ export class World {
    * @returns El componente añadido para facilitar el encadenamiento.
    *
    * @precondition La entidad debe existir o ser un ID válido manejado por el motor.
+   * @precondition El componente debe tener una propiedad `type` válida.
    * @postcondition El componente es accesible vía {@link World.getComponent}.
+   * @postcondition Si el tipo es 'Transform', se garantiza la validez de la jerarquía.
    * @throws {Error} Si se intenta asignar una entidad como su propio padre en un Transform.
    * @sideEffect Incrementa {@link World.version}.
    * @mutates componentMaps, componentIndex, entityComponentSets
@@ -275,6 +280,7 @@ export class World {
    * @param type - El nombre discriminador del componente.
    * @returns La instancia del componente o `undefined` si no existe.
    * @queries componentMaps
+   * @precondition La entidad debe ser un ID válido.
    */
   getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
     return this.componentMaps.get(type)?.get(entity) as T;
@@ -311,7 +317,9 @@ export class World {
    *
    * @precondition La entidad debe existir en el mundo.
    * @postcondition La entidad ya no posee el componente especificado.
+   * @postcondition Las queries que dependían de este componente ya no incluirán a la entidad.
    * @sideEffect Incrementa {@link World.version}.
+   * @mutates componentMaps, componentIndex, entityComponentSets
    */
   removeComponent(entity: Entity, type: string): void {
     const componentMap = this.componentMaps.get(type);
@@ -424,6 +432,7 @@ export class World {
    *
    * @precondition El nombre del recurso debe ser único para evitar sobrescritura accidental.
    * @postcondition El recurso es accesible mediante {@link World.getResource}.
+   * @sideEffect Sobrescribe cualquier recurso previo con el mismo nombre.
    */
   setResource<T>(name: string, resource: T): void {
     this.resources.set(name, resource);
@@ -465,7 +474,8 @@ export class World {
    * @param config - Configuración de fase y prioridad.
    *
    * @precondition El sistema debe ser una instancia válida de {@link System}.
-   * @postcondition El sistema se añade a la cola de ejecución.
+   * @postcondition El sistema se añade a la cola de ejecución en la fase correspondiente.
+   * @sideEffect Activa {@link World.systemsNeedSorting} para la siguiente actualización.
    */
   addSystem(system: System, config: SystemConfig = {}): void {
     const phase = config.phase ?? SystemPhase.Simulation;

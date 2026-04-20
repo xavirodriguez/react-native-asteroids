@@ -13,6 +13,9 @@ import { TransformComponent, PreviousTransformComponent } from "../core/CoreComp
  * @remarks
  * Este sistema es fundamental para el renderizado suave. Los datos capturados aquí son utilizados
  * por los renderizadores (Canvas/Skia) para interpolar posiciones entre ticks físicos fijos.
+ *
+ * @conceptualRisk [STALE_SNAPSHOT][LOW] Si este sistema no se ejecuta al inicio de cada tick,
+ * la interpolación producirá jitter visual.
  */
 export class InterpolationPrepSystem extends System {
   /**
