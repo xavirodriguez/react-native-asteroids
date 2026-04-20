@@ -396,16 +396,6 @@ export class World {
   }
 
   /**
-   * Limpia el estado completo del mundo, incluyendo entidades, componentes y queries.
-   *
-   * @remarks
-   * No elimina los sistemas registrados, pero sí todos los recursos y datos de simulación.
-   * Útil para reinicios completos de nivel o cambios de escena drásticos.
-   *
-   * @postcondition El mundo queda en un estado inicial vacío.
-   * @sideEffect Incrementa {@link World.version}.
-   */
-  /**
    * Proporciona acceso al buffer de comandos para diferir mutaciones estructurales.
    *
    * @remarks
@@ -430,6 +420,16 @@ export class World {
     this.commandBuffer.flush(this);
   }
 
+  /**
+   * Limpia el estado completo del mundo, incluyendo entidades, componentes y queries.
+   *
+   * @remarks
+   * No elimina los sistemas registrados, pero sí todos los recursos y datos de simulación.
+   * Útil para reinicios completos de nivel o cambios de escena drásticos.
+   *
+   * @postcondition El mundo queda en un estado inicial vacío.
+   * @sideEffect Incrementa {@link World.version}.
+   */
   public clear(): void {
     this.activeEntities.clear();
     this.componentMaps.clear();

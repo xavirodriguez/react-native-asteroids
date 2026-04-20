@@ -60,16 +60,7 @@ export class WorldCommandBuffer {
    * @param world - La instancia del mundo sobre la que aplicar los cambios.
    */
   public flush(world: World): void {
-  public flush(world: World): void {
-    const MAX_FLUSH_ITERATIONS = 10;
-    let iteration = 0;
     while (this.commands.length > 0) {
-      if (iteration >= MAX_FLUSH_ITERATIONS) {
-        console.warn(`[WorldCommandBuffer] Max flush iterations (${MAX_FLUSH_ITERATIONS}) reached. Dropping ${this.commands.length} remaining commands to prevent infinite loop.`);
-        this.commands = [];
-        break;
-      }
-
       const currentCommands = this.commands;
       this.commands = [];
 
@@ -92,9 +83,7 @@ export class WorldCommandBuffer {
             break;
         }
       }
-      iteration++;
     }
-  }
   }
 
   /**
