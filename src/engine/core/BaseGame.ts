@@ -36,6 +36,11 @@ export interface BaseGameConfig {
  * @responsibility Coordinar la inicialización de sistemas y entidades.
  * @responsibility Gestionar las transiciones de pausa y reinicio.
  * @responsibility Proveer acceso unificado al mundo ECS y recursos globales.
+ *
+ * @conceptualRisk [DETERMINISM][CRITICAL] `currentTick` (number) puede desbordarse tras ~285,000 años,
+ * pero los límites de lockstep/buffer podrían verse afectados por la precisión mucho antes.
+ * @conceptualRisk [ASYNC_RACE][MEDIUM] Llamar a `start()` antes de que la promesa de `init()`
+ * se resuelva puede resultar en una simulación inconsistente.
  */
 export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   implements IGame<BaseGame<TState, TInput>> {
@@ -134,16 +139,30 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   public abstract getGameState(): TState;
   public abstract isGameOver(): boolean;
 
-  /** Inicia el ciclo de ejecución del juego. */
+  /**
+   * Inicia el ciclo de ejecución del juego.
+   * @postcondition El {@link GameLoop} comienza a despachar eventos de actualización.
+   */
   public start(): void { this.gameLoop.start(); }
 
-  /** Detiene el ciclo de ejecución del juego. */
+  /**
+   * Detiene el ciclo de ejecución del juego de forma inmediata.
+   * @postcondition El {@link GameLoop} cesa todas sus actividades.
+   */
   public stop(): void { this.gameLoop.stop(); }
 
-  /** Pausa la simulación lógica manteniendo el renderizado activo. */
+  /**
+   * Pausa la simulación lógica manteniendo el renderizado activo.
+   * @postcondition {@link BaseGame._isPaused} se establece en `true`.
+   * @sideEffect Notifica a la escena actual y a los suscriptores externos.
+   */
   public pause(): void { this._isPaused = true; this.sceneManager.pause(); this._notifyListeners(); }
 
-  /** Reanuda la simulación lógica tras una pausa. */
+  /**
+   * Reanuda la simulación lógica tras una pausa.
+   * @postcondition {@link BaseGame._isPaused} se establece en `false`.
+   * @sideEffect Notifica a la escena actual y a los suscriptores externos.
+   */
   public resume(): void { this._isPaused = false; this.sceneManager.resume(); this._notifyListeners(); }
 
   /** Consulta si el juego se encuentra en estado de pausa. */

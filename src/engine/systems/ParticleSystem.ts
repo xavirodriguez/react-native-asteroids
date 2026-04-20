@@ -1,6 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { ParticleEmitterComponent, ParticleEmitterConfig, Entity } from "../types/EngineTypes";
+import { ParticleEmitterComponent, ParticleEmitterConfig, Entity, Component } from "../types/EngineTypes";
 import { PrefabPool } from "../utils/PrefabPool";
 import { RandomService } from "../utils/RandomService";
 
@@ -78,7 +78,7 @@ export class ParticleSystem extends System {
       } else {
           emitter.elapsed += dtSeconds; // Still advance elapsed for non-rate emitters
       }
-    });
+    }
   }
 
   /**

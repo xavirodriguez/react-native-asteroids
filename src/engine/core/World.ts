@@ -3,6 +3,7 @@ import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
+import { WorldCommandBuffer, CommandType } from "./WorldCommandBuffer";
 import { WorldCommandBuffer } from "./WorldCommandBuffer";
 
 interface RegisteredSystem {
@@ -28,10 +29,12 @@ interface RegisteredSystem {
  * - **Principio 6**: Los componentes singleton recuperados mediante {@link World.getSingleton} están
  * garantizados como mutables (se realiza una copia si están congelados).
  *
- * @conceptualRisk [PERFORMANCE] Las consultas (queries) sin caché pueden volverse costosas
+ * @conceptualRisk [PERFORMANCE][MEDIUM] Las consultas (queries) sin caché pueden volverse costosas
  * si se realizan múltiples veces por frame en mundos con miles de entidades.
- * @conceptualRisk [CONSISTENCY] La eliminación de componentes durante una iteración
+ * @conceptualRisk [CONSISTENCY][HIGH] La eliminación de componentes durante una iteración
  * de sistema puede invalidar el estado de los iteradores si no se maneja mediante buffers.
+ * @conceptualRisk [MEMORY][LOW] El versionado del World (`world.version`) es un entero simple.
+ * Potencial overflow en sesiones de juego extremadamente largas.
  */
 export class World {
   private activeEntities = new Set<Entity>();
@@ -191,15 +194,25 @@ export class World {
    * Crea una nueva entidad única en el mundo utilizando el pool de entidades.
    *
    * @remarks
-   * Intenta reutilizar un ID del {@link EntityPool} antes de generar uno nuevo.
+   * Intenta reutilizar un ID del pool de entidades libres antes de generar uno nuevo.
    * Incrementa la versión del mundo para invalidar cachés estructurales.
+   *
+   * Si se llama durante {@link World.update}, la creación se difiere al final del frame,
+   * pero el ID se reserva y devuelve inmediatamente.
    *
    * @returns Un nuevo identificador de {@link Entity}.
    * @postcondition La entidad devuelta es considerada activa en el mundo.
+   * @postcondition El ID devuelto es un entero positivo único en el estado actual.
    * @sideEffect Incrementa {@link World.version}.
    */
   public createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
+
+    if (this.isUpdating) {
+      this.commandBuffer.push({ type: CommandType.CREATE_ENTITY, entity: id });
+      return id;
+    }
+
     this.activeEntities.add(id);
     this.version++;
     return id;
@@ -226,17 +239,26 @@ export class World {
    * Realiza validaciones de integridad jerárquica para componentes de tipo 'Transform'.
    * Notifica a las queries interesadas sobre el cambio estructural.
    *
+   * Si se llama durante {@link World.update}, la adición se difiere al final del frame.
+   *
    * @param entity - El ID de la entidad destino.
    * @param component - La instancia del componente a añadir.
    * @returns El componente añadido para facilitar el encadenamiento.
    *
    * @precondition La entidad debe existir o ser un ID válido manejado por el motor.
+   * @precondition El componente debe tener una propiedad `type` válida.
    * @postcondition El componente es accesible vía {@link World.getComponent}.
+   * @postcondition Si el tipo es 'Transform', se garantiza la validez de la jerarquía.
    * @throws {Error} Si se intenta asignar una entidad como su propio padre en un Transform.
    * @sideEffect Incrementa {@link World.version}.
    * @mutates componentMaps, componentIndex, entityComponentSets
    */
   addComponent<T extends Component>(entity: Entity, component: T): T {
+    if (this.isUpdating) {
+      this.commandBuffer.push({ type: CommandType.ADD_COMPONENT, entity, component });
+      return component;
+    }
+
     const type = component.type;
 
     if (type === "Transform") {
@@ -263,7 +285,7 @@ export class World {
         this.entityComponentSets.set(entity, componentSet);
       }
       componentSet.add(type);
-      this.notifyQueries(entity, componentSet, type);
+      this.notifyQueries(entity, componentSet, stype);
     }
 
     this.version++;
@@ -277,6 +299,7 @@ export class World {
    * @param type - El nombre discriminador del componente.
    * @returns La instancia del componente o `undefined` si no existe.
    * @queries componentMaps
+   * @precondition La entidad debe ser un ID válido.
    */
   getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
     return this.componentMaps.get(type)?.get(entity) as T;
@@ -307,15 +330,23 @@ export class World {
    *
    * @remarks
    * Notifica a las queries reactivas para que actualicen sus índices.
+   * Si se llama durante {@link World.update}, la eliminación se difiere al final del frame.
    *
    * @param entity - La entidad destino.
    * @param type - El tipo de componente a eliminar.
    *
    * @precondition La entidad debe existir en el mundo.
    * @postcondition La entidad ya no posee el componente especificado.
+   * @postcondition Las queries que dependían de este componente ya no incluirán a la entidad.
    * @sideEffect Incrementa {@link World.version}.
+   * @mutates componentMaps, componentIndex, entityComponentSets
    */
   removeComponent(entity: Entity, type: string): void {
+    if (this.isUpdating) {
+      this.commandBuffer.push({ type: CommandType.REMOVE_COMPONENT, entity, componentType: type });
+      return;
+    }
+
     const componentMap = this.componentMaps.get(type);
     if (componentMap && componentMap.delete(entity)) {
       this.componentIndex.get(type)?.delete(entity);
@@ -378,11 +409,18 @@ export class World {
    * Libera el ID de la entidad para que pueda ser reutilizado por el {@link EntityPool}.
    * Limpia todas las referencias en los índices de componentes y queries.
    *
+   * Si se llama durante {@link World.update}, la eliminación se difiere al final del frame.
+   *
    * @param entity - La entidad a destruir.
    * @postcondition La entidad ya no existe en el mundo y sus componentes son inaccesibles.
    * @sideEffect Incrementa {@link World.version}.
    */
   public removeEntity(entity: Entity): void {
+    if (this.isUpdating) {
+      this.commandBuffer.push({ type: CommandType.REMOVE_ENTITY, entity });
+      return;
+    }
+
     this.removeEntityFromComponentMaps(entity);
     this.entityComponentSets.delete(entity);
     this.queries.forEach(query => query.remove(entity));
@@ -451,6 +489,7 @@ export class World {
    *
    * @precondition El nombre del recurso debe ser único para evitar sobrescritura accidental.
    * @postcondition El recurso es accesible mediante {@link World.getResource}.
+   * @sideEffect Sobrescribe cualquier recurso previo con el mismo nombre.
    */
   setResource<T>(name: string, resource: T): void {
     this.resources.set(name, resource);
@@ -492,7 +531,8 @@ export class World {
    * @param config - Configuración de fase y prioridad.
    *
    * @precondition El sistema debe ser una instancia válida de {@link System}.
-   * @postcondition El sistema se añade a la cola de ejecución.
+   * @postcondition El sistema se añade a la cola de ejecución en la fase correspondiente.
+   * @sideEffect Activa {@link World.systemsNeedSorting} para la siguiente actualización.
    */
   addSystem(system: System, config: SystemConfig = {}): void {
     const phase = config.phase ?? SystemPhase.Simulation;
@@ -508,6 +548,7 @@ export class World {
    * 1. Re-ordena sistemas si es necesario.
    * 2. Itera por fase (Input -> Simulation -> Collision -> GameRules -> Presentation).
    * 3. Ejecuta cada sistema, opcionalmente midiendo su rendimiento si `debugMode` es true.
+   * 4. Aplica todos los cambios estructurales diferidos (creación/eliminación de entidades y componentes).
    *
    * @param deltaTime - Tiempo transcurrido en milisegundos.
    *
@@ -516,18 +557,53 @@ export class World {
    */
   update(deltaTime: number): void {
     if (this.systemsNeedSorting) this.sortSystems();
-    this.sortedSystems.forEach((system) => {
-      if (this.debugMode) {
-        let profiler = this.profilers.get(system);
-        if (!profiler) {
-          profiler = new SystemProfiler(system);
-          this.profilers.set(system, profiler);
+
+    this.isUpdating = true;
+    try {
+      this.sortedSystems.forEach((system) => {
+        if (this.debugMode) {
+          let profiler = this.profilers.get(system);
+          if (!profiler) {
+            profiler = new SystemProfiler(system);
+            this.profilers.set(system, profiler);
+          }
+          profiler.update(this, deltaTime);
+        } else {
+          system.update(this, deltaTime);
         }
-        profiler.update(this, deltaTime);
-      } else {
-        system.update(this, deltaTime);
+      });
+    } finally {
+      this.isUpdating = false;
+    }
+
+    this.flush();
+  }
+
+  /**
+   * Aplica todos los comandos acumulados en el buffer de comandos.
+   * Se llama automáticamente al final de cada {@link World.update}.
+   */
+  public flush(): void {
+    if (this.commandBuffer.isEmpty) return;
+
+    const commands = this.commandBuffer.consume();
+    for (const cmd of commands) {
+      switch (cmd.type) {
+        case CommandType.CREATE_ENTITY:
+          this.activeEntities.add(cmd.entity);
+          this.version++;
+          break;
+        case CommandType.REMOVE_ENTITY:
+          this.removeEntity(cmd.entity);
+          break;
+        case CommandType.ADD_COMPONENT:
+          this.addComponent(cmd.entity, cmd.component);
+          break;
+        case CommandType.REMOVE_COMPONENT:
+          this.removeComponent(cmd.entity, cmd.componentType);
+          break;
       }
-    });
+    }
   }
 
   getSystemTiming(system: System): number {

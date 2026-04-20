@@ -28,6 +28,8 @@ type Mat3 = [number, number, number, number, number, number];
  * coste de cálculo elevado si la raíz cambia frecuentemente.
  * @conceptualRisk [WORLD_SYNC][HIGH] Si un sistema lee `worldX/Y` antes de que `HierarchySystem`
  * se ejecute en el frame actual, obtendrá datos del frame anterior (lag visual o de física).
+ * @conceptualRisk [HIERARCHY][LOW] Jerarquías circulares disparan un warning y se ignoran,
+ * pudiendo dejar entidades en posiciones 0,0.
  */
 export class HierarchySystem extends System {
   private wasDirty = new Set<Entity>();
