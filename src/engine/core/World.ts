@@ -4,6 +4,7 @@ import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
 import { WorldCommandBuffer, CommandType } from "./WorldCommandBuffer";
+import { WorldCommandBuffer } from "./WorldCommandBuffer";
 
 interface RegisteredSystem {
   system: System;
@@ -52,8 +53,6 @@ export class World {
   private freeEntities: Entity[] = [];
   private resources = new Map<string, unknown>();
   public version = 0;
-
-  private isUpdating = false;
   private commandBuffer = new WorldCommandBuffer();
 
   /**
@@ -176,6 +175,8 @@ export class World {
         query.rebuild(this.activeEntities, this.entityComponentSets);
     });
 
+    this.commandBuffer.clear();
+
     // Re-attach Reclaimable functions if any pool exists in resources
     const reclaimableMap = this.componentMaps.get("Reclaimable");
     if (reclaimableMap) {
@@ -286,7 +287,7 @@ export class World {
         this.entityComponentSets.set(entity, componentSet);
       }
       componentSet.add(type);
-      this.notifyQueries(entity, componentSet, type);
+      this.notifyQueries(entity, componentSet, stype);
     }
 
     this.version++;
@@ -433,6 +434,31 @@ export class World {
   }
 
   /**
+   * Proporciona acceso al buffer de comandos para diferir mutaciones estructurales.
+   *
+   * @remarks
+   * Se recomienda encarecidamente utilizar este buffer durante la actualización de sistemas
+   * para evitar problemas de invalidación de iteradores en las Queries.
+   *
+   * @returns La instancia de {@link WorldCommandBuffer} del mundo.
+   */
+  public getCommandBuffer(): WorldCommandBuffer {
+    return this.commandBuffer;
+  }
+
+  /**
+   * Aplica todas las mutaciones estructurales grabadas en el buffer de comandos.
+   *
+   * @remarks
+   * Debe llamarse al final de cada tick de simulación (Fixed Update).
+   *
+   * @sideEffect Ejecuta operaciones de creación/eliminación diferidas.
+   */
+  public flush(): void {
+    this.commandBuffer.flush(this);
+  }
+
+  /**
    * Limpia el estado completo del mundo, incluyendo entidades, componentes y queries.
    *
    * @remarks
@@ -450,6 +476,7 @@ export class World {
     this.queries.clear();
     this.queriesByComponent.clear();
     this.resources.clear();
+    this.commandBuffer.clear();
     this.version++;
   }
 

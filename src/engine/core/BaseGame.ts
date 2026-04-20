@@ -126,6 +126,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       // Must happen AFTER simulation but BEFORE rendering.
       this.hierarchySystem.update(activeWorld, deltaTime);
 
+      // 5. FLUSH: Apply deferred structural changes
+      activeWorld.flush();
+
       this.currentTick++;
       this._notifyListeners();
     });
