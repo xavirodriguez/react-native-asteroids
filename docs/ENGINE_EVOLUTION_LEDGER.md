@@ -331,7 +331,35 @@ Este documento registra de forma cronológica y estratégica la evolución del T
 - **Seguridad**: Mejora en la robustez de los sistemas ante posibles cambios en el ciclo de vida del motor.
 
 ### Deuda abierta / Siguientes pasos
-- Implementar un `CommandBuffer` para el `World` que permita diferir cambios estructurales (add/remove) durante la iteración de sistemas, reforzando la seguridad de mutación.
+- Documentar el sistema de capas de colisión en una guía dedicada.
+
+---
+
+## [2024-05-26] Implementación de WorldCommandBuffer para Mutaciones Seguras
+
+### Estado detectado
+- **Riesgo de Inconsistencia**: Las mutaciones estructurales del mundo (crear/eliminar entidades o componentes) durante la ejecución de sistemas podían invalidar los iteradores de las queries o causar estados inconsistentes mid-frame.
+- **Incumplimiento de Estándar**: Aunque el motor es reactivo, carecía de una barrera formal para proteger la integridad del mundo durante el tick de simulación.
+
+### Decisiones tomadas
+1. **WorldCommandBuffer**: Introducción de un buffer de comandos dedicado para registrar cambios estructurales.
+2. **Mutaciones Diferidas**: El `World` ahora detecta si está en medio de un `update()` y, de ser así, encola las mutaciones en lugar de aplicarlas inmediatamente.
+3. **Flush Automático**: Los cambios se aplican de forma atómica al finalizar la iteración de todos los sistemas en `World.update()`.
+4. **Reserva de IDs**: `createEntity` garantiza la devolución de un ID válido y único incluso cuando la creación es diferida, permitiendo configurar la entidad inmediatamente.
+
+### Archivos afectados
+- `src/engine/core/World.ts`
+- `src/engine/core/WorldCommandBuffer.ts` (Nuevo)
+- `src/engine/core/__tests__/WorldCommandBuffer.test.ts` (Nuevo)
+- `docs/adr/005-world-command-buffer.md` (Nuevo ADR)
+
+### Impacto
+- **Seguridad de Uso**: Los desarrolladores pueden añadir o eliminar componentes sin preocuparse por corromper el bucle actual.
+- **Coherencia**: Se garantiza una vista estable del mundo para todos los sistemas dentro de un mismo tick.
+- **Robustez**: Mayor alineación con motores ECS de grado profesional (como Flecs o EnTT).
+
+### Deuda abierta / Siguientes pasos
+- Investigar el impacto en sistemas que requieren feedback inmediato de la estructura del mundo dentro del mismo frame.
 
 ---
 

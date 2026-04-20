@@ -3,6 +3,7 @@ import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
+import { WorldCommandBuffer, CommandType } from "./WorldCommandBuffer";
 
 interface RegisteredSystem {
   system: System;
@@ -49,6 +50,9 @@ export class World {
   private freeEntities: Entity[] = [];
   private resources = new Map<string, unknown>();
   public version = 0;
+
+  private isUpdating = false;
+  private commandBuffer = new WorldCommandBuffer();
 
   /**
    * Genera una instantánea serializable del estado completo del mundo para rollback o persistencia.
@@ -192,12 +196,21 @@ export class World {
    * Intenta reutilizar un ID del {@link EntityPool} antes de generar uno nuevo.
    * Incrementa la versión del mundo para invalidar cachés estructurales.
    *
+   * Si se llama durante {@link World.update}, la creación se difiere al final del frame,
+   * pero el ID se reserva y devuelve inmediatamente.
+   *
    * @returns Un nuevo identificador de {@link Entity}.
    * @postcondition La entidad devuelta es considerada activa en el mundo.
    * @sideEffect Incrementa {@link World.version}.
    */
   public createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
+
+    if (this.isUpdating) {
+      this.commandBuffer.push({ type: CommandType.CREATE_ENTITY, entity: id });
+      return id;
+    }
+
     this.activeEntities.add(id);
     this.version++;
     return id;
@@ -224,6 +237,8 @@ export class World {
    * Realiza validaciones de integridad jerárquica para componentes de tipo 'Transform'.
    * Notifica a las queries interesadas sobre el cambio estructural.
    *
+   * Si se llama durante {@link World.update}, la adición se difiere al final del frame.
+   *
    * @param entity - El ID de la entidad destino.
    * @param component - La instancia del componente a añadir.
    * @returns El componente añadido para facilitar el encadenamiento.
@@ -235,6 +250,11 @@ export class World {
    * @mutates componentMaps, componentIndex, entityComponentSets
    */
   addComponent<T extends Component>(entity: Entity, component: T): T {
+    if (this.isUpdating) {
+      this.commandBuffer.push({ type: CommandType.ADD_COMPONENT, entity, component });
+      return component;
+    }
+
     const type = component.type;
 
     if (type === "Transform") {
@@ -305,6 +325,7 @@ export class World {
    *
    * @remarks
    * Notifica a las queries reactivas para que actualicen sus índices.
+   * Si se llama durante {@link World.update}, la eliminación se difiere al final del frame.
    *
    * @param entity - La entidad destino.
    * @param type - El tipo de componente a eliminar.
@@ -314,6 +335,11 @@ export class World {
    * @sideEffect Incrementa {@link World.version}.
    */
   removeComponent(entity: Entity, type: string): void {
+    if (this.isUpdating) {
+      this.commandBuffer.push({ type: CommandType.REMOVE_COMPONENT, entity, componentType: type });
+      return;
+    }
+
     const componentMap = this.componentMaps.get(type);
     if (componentMap && componentMap.delete(entity)) {
       this.componentIndex.get(type)?.delete(entity);
@@ -376,11 +402,18 @@ export class World {
    * Libera el ID de la entidad para que pueda ser reutilizado por el {@link EntityPool}.
    * Limpia todas las referencias en los índices de componentes y queries.
    *
+   * Si se llama durante {@link World.update}, la eliminación se difiere al final del frame.
+   *
    * @param entity - La entidad a destruir.
    * @postcondition La entidad ya no existe en el mundo y sus componentes son inaccesibles.
    * @sideEffect Incrementa {@link World.version}.
    */
   public removeEntity(entity: Entity): void {
+    if (this.isUpdating) {
+      this.commandBuffer.push({ type: CommandType.REMOVE_ENTITY, entity });
+      return;
+    }
+
     this.removeEntityFromComponentMaps(entity);
     this.entityComponentSets.delete(entity);
     this.queries.forEach(query => query.remove(entity));
@@ -481,6 +514,7 @@ export class World {
    * 1. Re-ordena sistemas si es necesario.
    * 2. Itera por fase (Input -> Simulation -> Collision -> GameRules -> Presentation).
    * 3. Ejecuta cada sistema, opcionalmente midiendo su rendimiento si `debugMode` es true.
+   * 4. Aplica todos los cambios estructurales diferidos (creación/eliminación de entidades y componentes).
    *
    * @param deltaTime - Tiempo transcurrido en milisegundos.
    *
@@ -489,18 +523,53 @@ export class World {
    */
   update(deltaTime: number): void {
     if (this.systemsNeedSorting) this.sortSystems();
-    this.sortedSystems.forEach((system) => {
-      if (this.debugMode) {
-        let profiler = this.profilers.get(system);
-        if (!profiler) {
-          profiler = new SystemProfiler(system);
-          this.profilers.set(system, profiler);
+
+    this.isUpdating = true;
+    try {
+      this.sortedSystems.forEach((system) => {
+        if (this.debugMode) {
+          let profiler = this.profilers.get(system);
+          if (!profiler) {
+            profiler = new SystemProfiler(system);
+            this.profilers.set(system, profiler);
+          }
+          profiler.update(this, deltaTime);
+        } else {
+          system.update(this, deltaTime);
         }
-        profiler.update(this, deltaTime);
-      } else {
-        system.update(this, deltaTime);
+      });
+    } finally {
+      this.isUpdating = false;
+    }
+
+    this.flush();
+  }
+
+  /**
+   * Aplica todos los comandos acumulados en el buffer de comandos.
+   * Se llama automáticamente al final de cada {@link World.update}.
+   */
+  public flush(): void {
+    if (this.commandBuffer.isEmpty) return;
+
+    const commands = this.commandBuffer.consume();
+    for (const cmd of commands) {
+      switch (cmd.type) {
+        case CommandType.CREATE_ENTITY:
+          this.activeEntities.add(cmd.entity);
+          this.version++;
+          break;
+        case CommandType.REMOVE_ENTITY:
+          this.removeEntity(cmd.entity);
+          break;
+        case CommandType.ADD_COMPONENT:
+          this.addComponent(cmd.entity, cmd.component);
+          break;
+        case CommandType.REMOVE_COMPONENT:
+          this.removeComponent(cmd.entity, cmd.componentType);
+          break;
       }
-    });
+    }
   }
 
   getSystemTiming(system: System): number {
