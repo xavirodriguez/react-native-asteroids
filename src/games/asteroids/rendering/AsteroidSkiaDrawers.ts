@@ -2,7 +2,7 @@ import { Skia, BlurStyle, SkCanvas, SkPaint } from "@shopify/react-native-skia";
 import { World } from "../../../engine/core/World";
 import { Entity } from "../../../engine/core/Entity";
 import { TransformComponent, RenderComponent, TTLComponent, HealthComponent, Star, TrailComponent } from "../../../engine/core/CoreComponents";
-import { InputComponent, GameStateComponent, ShipComponent } from "../types/AsteroidTypes";
+import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 
 export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => {
     const size = render.size;
