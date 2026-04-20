@@ -82,23 +82,26 @@ export function useGame<
   }, [GameClass, isMultiplayer]);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
-    game?.setInput(input as Record<string, boolean>);
-  }, [game]);
+    if (game && isReady) {
+      game.setInput(input as Record<string, boolean>);
+    }
+  }, [game, isReady]);
 
   const togglePause = useCallback(() => {
-    if (!game) {
-      return;
+    if (game && isReady) {
+      if (game.isPausedState()) {
+        game.resume();
+      } else {
+        game.pause();
+      }
     }
-    if (game.isPausedState()) {
-      game.resume();
-    } else {
-      game.pause();
-    }
-  }, [game]);
+  }, [game, isReady]);
 
   const restart = useCallback((seed?: number) => {
-    game?.restart(seed).catch(console.error);
-  }, [game]);
+    if (game && isReady) {
+      game.restart(seed).catch(console.error);
+    }
+  }, [game, isReady]);
 
   return {
     game,
