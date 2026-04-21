@@ -19,11 +19,11 @@ export function initializeAsteroidsRenderer(renderer: Renderer): void {
     canvasRenderer.registerPostEntityDrawer("triangle", drawAsteroidShipTrailDrawer);
 
     // Register custom hooks for Asteroids
-    canvasRenderer.addPreRenderHook((ctx: CanvasRenderingContext2D, _snapshot: unknown, world: import("../../../engine/core/World").World) => {
+    canvasRenderer.addPreRenderHook((ctx: CanvasRenderingContext2D, snapshot: import("../../../engine/rendering/RenderSnapshot").RenderSnapshot, world: import("../../../engine/core/World").World) => {
       const gameStateEntity = world.query("GameState")[0];
       const gameState = gameStateEntity ? (world.getComponent<Record<string, unknown>>(gameStateEntity, "GameState")) : null;
       if (gameState?.stars) {
-        drawAsteroidStarField(ctx, gameState.stars as unknown as import("../../../engine/types/EngineTypes").Star[], GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT, world);
+        drawAsteroidStarField(ctx, gameState.stars as unknown as import("../../../engine/types/EngineTypes").Star[], GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT, world, snapshot.elapsedTime);
       }
     });
 
