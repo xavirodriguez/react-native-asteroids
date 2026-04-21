@@ -7,6 +7,7 @@ export interface InputState {
   moveLeft: boolean;
   moveRight: boolean;
   shoot: boolean;
+  [key: string]: any;
 }
 
 /**

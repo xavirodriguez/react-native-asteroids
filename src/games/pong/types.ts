@@ -1,4 +1,5 @@
 export interface PongState {
+  type: "PongState";
   scoreP1: number;
   scoreP2: number;
   isGameOver: boolean;

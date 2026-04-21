@@ -1,11 +1,12 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { BaseGame } from "../core/BaseGame";
+import { Component } from "../core/Component";
 
 /**
  * Interface for components that represent a generic game state.
  */
-export interface IGameState {
+export interface IGameState extends Component {
   isGameOver: boolean;
   gameOverLogged?: boolean;
 }

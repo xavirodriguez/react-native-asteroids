@@ -6,6 +6,7 @@ import { Component } from "../../../engine/types/EngineTypes";
 export interface FlappyBirdInput {
   flap: boolean;
   glide: boolean;
+  [key: string]: any;
 }
 
 /**

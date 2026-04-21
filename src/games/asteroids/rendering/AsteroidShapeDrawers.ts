@@ -93,16 +93,13 @@ export const drawFlash = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: {
     ctx.fill();
 };
 
-export function drawAsteroidStarField(ctx: CanvasRenderingContext2D, stars: Star[], width: number, height: number, world: World): void {
+export function drawAsteroidStarField(ctx: CanvasRenderingContext2D, stars: Star[], width: number, height: number, world: World, elapsedTime: number): void {
     const shipEntity = world.query("Ship", "Transform")[0];
     const shipPos = shipEntity
       ? world.getComponent<TransformComponent>(shipEntity, "Transform")
-      : { x: width / 2, y: height / 2 };
+      : { x: width / 2, y: height / 2 } as TransformComponent;
 
     if (!shipPos) return;
-
-    const gameState = world.getSingleton<GameStateComponent>("GameState");
-    const elapsedTime = gameState ? gameState.serverTick * (1000 / 60) : performance.now();
 
     drawStarField(ctx, stars, width, height, shipPos, elapsedTime);
 }

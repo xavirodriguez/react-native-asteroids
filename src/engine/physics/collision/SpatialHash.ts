@@ -91,9 +91,9 @@ export class SpatialHash {
    * @mutates grid, cellPool
    */
   public clear(): void {
-    for (const cell of this.grid.values()) {
+    this.grid.forEach(cell => {
       this.cellPool.release(cell);
-    }
+    });
     this.grid.clear();
 
     if (__DEV__) {

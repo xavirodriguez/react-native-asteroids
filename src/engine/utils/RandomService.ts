@@ -109,6 +109,9 @@ export class RandomService {
    * @remarks
    * Cada llamada muta la semilla interna de la instancia.
    *
+   * @responsibility Proveer números aleatorios reproducibles basados en semillas.
+   * @responsibility Segregar el estado del PRNG entre simulación y presentación.
+   *
    * @returns Un valor aleatorio entre 0 (inclusive) y 1 (exclusive).
    * @sideEffect Muta `this.seed`.
    * @invariant El mismo estado inicial (semilla) produce siempre la misma secuencia.

@@ -13,9 +13,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
  * Interface extension for Navigator to include experimental WakeLock API.
  */
 interface NavigatorWithWakeLock extends Navigator {
-  wakeLock?: {
-    request(type: "screen"): Promise<unknown>;
-  };
+  wakeLock?: any;
 }
 
 export function useKeepAwake(enabled: boolean = true): void {

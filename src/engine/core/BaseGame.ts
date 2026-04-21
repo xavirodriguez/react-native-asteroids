@@ -47,7 +47,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
   protected world: World;
   protected gameLoop: GameLoop;
-  protected unifiedInput: UnifiedInputSystem;
+  public readonly unifiedInput: UnifiedInputSystem;
   protected eventBus: EventBus;
   protected sceneManager: SceneManager;
   protected inputBuffer: InputBuffer;
@@ -265,9 +265,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     return false;
   }
 
-  public setInput(input: Record<string, boolean>): void {
+  public setInput(input: Record<string, any>): void {
     Object.entries(input).forEach(([action, pressed]) => {
-      this.unifiedInput.setOverride(action, pressed);
+      this.unifiedInput.setOverride(action, !!pressed);
     });
   }
 

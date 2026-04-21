@@ -3,7 +3,7 @@ import { useKeepAwake } from "./useKeepAwake";
 import type { BaseGame } from "../engine/core/BaseGame";
 
 // Constructor type - accepts any class that extends BaseGame
-type GameConstructor<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, boolean>> =
+type GameConstructor<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, any>> =
   new (config: { isMultiplayer?: boolean, seed?: number }) => TGame;
 
 export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, boolean>> {
