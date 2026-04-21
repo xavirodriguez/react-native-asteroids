@@ -158,7 +158,7 @@ export const drawFlappyGround: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _en
  * Scrolling sky background effect.
  */
 let bgOffset = 0;
-export const scrollingBackgroundEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world, width, height) => {
+export const scrollingBackgroundEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, snapshot, width, height, world) => {
   const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
   if (!gameState) return;
 

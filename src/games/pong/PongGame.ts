@@ -53,7 +53,8 @@ export class PongGame extends BaseGame<PongState, PongInput> {
   }
 
   protected registerSystems(): void {
-    const _mode = this._config.gameOptions?.mode || "local";
+    const mode = this._config.gameOptions?.mode || "local";
+    const aiDifficulty = mode === "ai" ? "medium" : undefined;
 
     // Bind inputs for UnifiedInputSystem
     this.unifiedInput.bind("p1Up", ["KeyW"]);
@@ -63,7 +64,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
 
     this.stateSystem = new PongGameStateSystem(this.config);
     this.world.addSystem(this.unifiedInput);
-    this.world.addSystem(new PongInputSystem());
+    this.world.addSystem(new PongInputSystem(aiDifficulty));
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new JuiceSystem());
     this.world.addSystem(new ScreenShakeSystem());

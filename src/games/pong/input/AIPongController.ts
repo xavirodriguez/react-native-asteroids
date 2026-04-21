@@ -1,4 +1,3 @@
-import { InputController } from "../../../engine/legacy/InputController";
 import { World } from "../../../engine/core/World";
 import { TransformComponent } from "../../../engine/types/EngineTypes";
 import { PongInput } from "../types";
@@ -6,17 +5,17 @@ import { PongInput } from "../types";
 export type AIDifficulty = "easy" | "medium" | "hard";
 
 /**
- * AI Agent for Pong that acts as an InputController.
+ * AI Agent for Pong.
  * Follows the ball vertically with configurable difficulty.
+ * Refactored to avoid legacy InputController dependency.
  */
-export class AIPongController extends InputController<PongInput> {
+export class AIPongController {
   private difficulty: AIDifficulty;
   private lastUpdate = 0;
   private reactionDelay = 0; // ms
   private errorMargin = 0;   // pixels
 
   constructor(difficulty: AIDifficulty = "medium") {
-    super();
     this.difficulty = difficulty;
     this.applyDifficultySettings();
   }
@@ -71,6 +70,6 @@ export class AIPongController extends InputController<PongInput> {
       else newState.p2Down = true;
     }
 
-    this.setInputs(newState);
+    return newState;
   }
 }
