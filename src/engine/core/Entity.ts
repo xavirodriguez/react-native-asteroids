@@ -1,16 +1,13 @@
 /**
- * Identificador único para una entidad en el mundo ECS.
+ * Unique identifier for an entity in the world.
  *
  * @remarks
- * En esta implementación, una Entidad es un ID numérico ligero (entero).
- * No posee datos ni comportamiento propios; sirve exclusivamente como clave
- * para indexar componentes en el {@link World}.
+ * In this ECS implementation, an Entity is a lightweight numeric ID.
+ * It has no data or behavior of its own; it serves as a key to look up components.
  *
- * Los IDs son gestionados por un {@link EntityPool} que permite la reutilización
- * de identificadores de entidades destruidas para minimizar la fragmentación.
+ * IDs are reused by the {@link World} once an entity is removed.
  *
- * @conceptualRisk [ID_REUSE_STALE_REFS][HIGH] Si un sistema externo mantiene una referencia
- * a un ID de Entidad después de que esta ha sido destruida, podría acceder inadvertidamente
- * a una nueva entidad que haya reutilizado el mismo ID.
+ * @conceptualRisk [ID_REUSE_STALE_REFS] If an external system holds a reference to an Entity ID
+ * after it has been removed, it might inadvertently point to a new entity that has reused the same ID.
  */
 export type Entity = number;

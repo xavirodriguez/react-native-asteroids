@@ -5,8 +5,7 @@
     "emitDeclarationOnly": true,
     "outDir": "./temp/declarations",
     "noEmit": false,
-    "skipLibCheck": true,
-    "resolveJsonModule": false
+    "skipLibCheck": true
   },
   "include": [
     "src/engine/**/*.ts"

@@ -6,8 +6,6 @@ import { Entity } from "../core/Entity";
  * @remarks
  * Contiene el estado visual final (ya interpolado y con offsets aplicados) necesario
  * para que el renderer dibuje la entidad sin consultar el mundo de nuevo.
- *
- * @responsibility Almacenar datos visuales inmutables para un frame de dibujo.
  */
 export interface RenderEntitySnapshot {
   id: Entity;
@@ -60,8 +58,6 @@ export interface UISnapshot {
  * Esta estructura desacopla la fase de captura (que lee del World) de la fase de dibujo.
  * Permite que el renderizado sea determinista y evita problemas de concurrencia o
  * mutaciones del World durante el dibujo.
- *
- * @responsibility Desacoplar la simulación del dibujo mediante captura de estado.
  */
 export interface RenderSnapshot {
   /** Array pre-asignado de snapshots de entidades. */

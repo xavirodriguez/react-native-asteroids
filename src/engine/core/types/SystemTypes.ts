@@ -30,17 +30,3 @@ export interface GameInputEvent {
   targetEntityId?: number;
 }
 
-/**
- * Interface for the Physics Adapter to encapsulate Matter.js.
- */
-export interface IPhysicsAdapter {
-  update(dt: number): void;
-  createBody(entityId: number, config: unknown): unknown;
-  removeBody(bodyId: unknown): void;
-  applyForce(bodyId: unknown, position: { x: number; y: number }, force: { x: number; y: number }): void;
-  applyImpulse(bodyId: unknown, impulse: { x: number; y: number }): void;
-  setVelocity(bodyId: unknown, velocity: { x: number; y: number }): void;
-  setPosition(bodyId: unknown, position: { x: number; y: number }): void;
-  setRotation(bodyId: unknown, angle: number): void;
-  getBodyTransform(bodyId: unknown): { x: number; y: number; rotation: number };
-}

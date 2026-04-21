@@ -5,10 +5,8 @@
  */
 
 export * from "./LegacyComponents";
-export { PhysicsSystem } from "./PhysicsSystem";
 export { CameraSystem } from "./CameraSystem";
 export { InputController } from "./InputController";
 export { InputManager } from "./InputManager";
 export { KeyboardController } from "./KeyboardController";
 export { TouchController } from "./TouchController";
-export { CollisionRouter } from "./CollisionRouter";
