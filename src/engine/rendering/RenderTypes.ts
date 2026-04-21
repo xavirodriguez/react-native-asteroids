@@ -1,4 +1,16 @@
-import { Entity, Legacy } from "../index";
+import { Entity } from "../index";
+
+/**
+ * Representa el estado transformado de una entidad listo para renderizado.
+ * @responsibility Almacenar datos de posición, rotación y escala para el pipeline de dibujo.
+ */
+export interface TransformSnapshot {
+  x: number;
+  y: number;
+  rotation: number;
+  scaleX: number;
+  scaleY: number;
+}
 
 /**
  * Comandos emitidos por el `RenderSystem` para ser consumidos por el adaptador.
@@ -12,7 +24,7 @@ import { Entity, Legacy } from "../index";
 export interface RenderCommand {
   type: string;
   entityId: Entity;
-  worldTransform: Legacy.LegacyTransform;
+  worldTransform: TransformSnapshot;
   alpha: number; // For interpolation
   textureId?: string;
   width?: number;

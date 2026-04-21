@@ -1,4 +1,26 @@
-import { TransformComponent } from "../types/EngineTypes";
+import { TransformComponent, PhysicsBody2DComponent } from "../types/EngineTypes";
+
+/**
+ * Interface mínima para objetos que representan una posición.
+ */
+interface PositionLike {
+  x?: number;
+  y?: number;
+  worldX?: number;
+  worldY?: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Interface mínima para objetos que representan una velocidad.
+ */
+interface VelocityLike {
+  dx?: number;
+  dy?: number;
+  velocityX?: number;
+  velocityY?: number;
+  [key: string]: unknown;
+}
 
 /**
  * Utilidades de integración física compartidas.
@@ -27,7 +49,7 @@ export class PhysicsUtils {
    * @conceptualRisk [PRECISION_LOSS][LOW] La acumulación de errores de punto flotante en integraciones
    * largas puede causar divergencias mínimas entre clientes.
    */
-  public static integrateMovement(pos: any, vel: any, deltaTimeInSeconds: number): void {
+  public static integrateMovement(pos: PositionLike, vel: VelocityLike, deltaTimeInSeconds: number): void {
     // Priority: local coordinates (x, y) over world coordinates (worldX, worldY)
     const hasLocal = pos.x !== undefined && pos.y !== undefined;
     const xKey = hasLocal ? "x" : "worldX";
@@ -63,7 +85,7 @@ export class PhysicsUtils {
    * @postcondition Los componentes `dx`/`dy` de `vel` son reducidos.
    * @sideEffect Muta el objeto `vel` directamente por referencia.
    */
-  public static applyFriction(vel: any, friction: number, deltaTimeMs: number): void {
+  public static applyFriction(vel: VelocityLike, friction: number, deltaTimeMs: number): void {
     const dx = vel.dx !== undefined ? "dx" : "velocityX";
     const dy = vel.dy !== undefined ? "dy" : "velocityY";
 
@@ -121,5 +143,22 @@ export class PhysicsUtils {
         vel.dy *= -1;
       }
     }
+  }
+
+  /**
+   * Actualiza las propiedades de masa e inercia de un cuerpo físico, manteniendo las inversas en sincronía.
+   *
+   * @param body - El componente de cuerpo rígido a actualizar.
+   * @param mass - La nueva masa (debe ser > 0 para cuerpos dinámicos).
+   * @param inertia - El nuevo momento de inercia (debe ser > 0 para permitir rotación).
+   *
+   * @responsibility Garantizar que `inverseMass` e `inverseInertia` siempre reflejen 1/masa y 1/inercia.
+   */
+  public static updateBodyMassProperties(body: PhysicsBody2DComponent, mass: number, inertia: number): void {
+    const mutableBody = body as { -readonly [K in keyof PhysicsBody2DComponent]: PhysicsBody2DComponent[K] };
+    mutableBody.mass = mass;
+    mutableBody.inverseMass = mass > 0 ? 1 / mass : 0;
+    mutableBody.inertia = inertia;
+    mutableBody.inverseInertia = inertia > 0 ? 1 / inertia : 0;
   }
 }

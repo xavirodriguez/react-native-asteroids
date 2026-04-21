@@ -15,9 +15,12 @@ export interface Component {
 }
 
 /**
- * A generic version of a component that allows arbitrary data access.
- * Useful for accessing components whose structure is not known at compile time (e.g. GameState).
+ * Una versión genérica de un componente que permite el acceso a datos arbitrarios.
+ * Útil para acceder a componentes cuya estructura no se conoce en tiempo de compilación (ej. GameState).
+ *
+ * @conceptualRisk [TYPE_SAFETY][MEDIUM] El uso de `unknown` requiere casting explícito.
+ * Se recomienda usar interfaces específicas siempre que sea posible.
  */
 export interface GenericComponent extends Component {
-  [key: string]: any;
+  [key: string]: unknown;
 }

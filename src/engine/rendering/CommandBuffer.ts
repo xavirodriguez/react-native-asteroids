@@ -20,6 +20,27 @@ export interface DrawCommand {
 }
 
 /**
+ * Opciones para añadir un comando al buffer.
+ * Evita el uso de parámetros posicionales excesivos.
+ */
+export interface DrawCommandOptions {
+  type: CommandType;
+  x: number;
+  y: number;
+  rotation?: number;
+  scaleX?: number;
+  scaleY?: number;
+  opacity?: number;
+  color?: string;
+  size?: number;
+  zIndex?: number;
+  entityId: Entity;
+  vertices?: { x: number; y: number }[] | null;
+  hitFlashFrames?: number;
+  data?: Record<string, unknown> | null;
+}
+
+/**
  * Persistently pooled command buffer to eliminate per-frame allocations.
  *
  * @remarks
@@ -62,43 +83,30 @@ export class CommandBuffer {
   }
 
   /**
-   * Adds a command to the buffer by updating the next available pooled object.
+   * Añade un comando al buffer actualizando el siguiente objeto disponible del pool.
+   *
+   * @param options - Configuración del comando de dibujo.
    */
-  public addCommand(
-    type: CommandType,
-    x: number,
-    y: number,
-    rotation: number,
-    scaleX: number,
-    scaleY: number,
-    opacity: number,
-    color: string,
-    size: number,
-    zIndex: number,
-    entityId: Entity,
-    vertices: { x: number; y: number }[] | null = null,
-    hitFlashFrames: number = 0,
-    data: Record<string, unknown> | null = null
-  ): void {
+  public addCommand(options: DrawCommandOptions): void {
     if (this.activeCount >= this.MAX_COMMANDS) {
       return;
     }
 
     const cmd = this.pool[this.activeCount];
-    cmd.type = type;
-    cmd.x = x;
-    cmd.y = y;
-    cmd.rotation = rotation;
-    cmd.scaleX = scaleX;
-    cmd.scaleY = scaleY;
-    cmd.opacity = opacity;
-    cmd.color = color;
-    cmd.size = size;
-    cmd.zIndex = zIndex;
-    cmd.entityId = entityId;
-    cmd.vertices = vertices;
-    cmd.hitFlashFrames = hitFlashFrames;
-    cmd.data = data;
+    cmd.type = options.type;
+    cmd.x = options.x;
+    cmd.y = options.y;
+    cmd.rotation = options.rotation ?? 0;
+    cmd.scaleX = options.scaleX ?? 1;
+    cmd.scaleY = options.scaleY ?? 1;
+    cmd.opacity = options.opacity ?? 1;
+    cmd.color = options.color ?? '';
+    cmd.size = options.size ?? 0;
+    cmd.zIndex = options.zIndex ?? 0;
+    cmd.entityId = options.entityId;
+    cmd.vertices = options.vertices ?? null;
+    cmd.hitFlashFrames = options.hitFlashFrames ?? 0;
+    cmd.data = options.data ?? null;
 
     this.activeCount++;
   }
