@@ -3,7 +3,7 @@ import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
-import { WorldCommandBuffer } from "./WorldCommandBuffer";
+import { WorldCommandBuffer, CommandType } from "./WorldCommandBuffer";
 
 interface RegisteredSystem {
   system: System;
@@ -37,6 +37,7 @@ interface RegisteredSystem {
  */
 export class World {
   private activeEntities = new Set<Entity>();
+  private isUpdating = false;
   private componentMaps = new Map<string, Map<Entity, Component>>();
   private componentIndex = new Map<string, Set<Entity>>();
   private entityComponentSets = new Map<Entity, Set<string>>();
@@ -202,22 +203,29 @@ export class World {
    * Si se llama durante {@link World.update}, la creación se difiere al final del frame,
    * pero el ID se reserva y devuelve inmediatamente.
    *
+   * @param id - ID opcional de la entidad. Usado internamente por el buffer de comandos.
    * @returns Un nuevo identificador de {@link Entity}.
    * @postcondition La entidad devuelta es considerada activa en el mundo.
    * @postcondition El ID devuelto es un entero positivo único en el estado actual.
    * @sideEffect Incrementa {@link World.version}.
    */
-  public createEntity(): Entity {
-    const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
+  public createEntity(id?: Entity): Entity {
+    const entityId = id ?? (this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++);
 
     if (this.isUpdating) {
-      this.commandBuffer.createEntity();
-      return id;
+      this.commandBuffer.createEntity(entityId);
+      return entityId;
     }
 
-    this.activeEntities.add(id);
+    this.activeEntities.add(entityId);
+
+    // If an ID was provided manually, ensure nextEntityId stays ahead
+    if (id !== undefined && id >= this.nextEntityId) {
+      this.nextEntityId = id + 1;
+    }
+
     this.version++;
-    return id;
+    return entityId;
   }
 
   /**
@@ -581,7 +589,6 @@ export class World {
 
     this.flush();
   }
-
 
   getSystemTiming(system: System): number {
     return this.profilers.get(system)?.getAverageTime() ?? 0;

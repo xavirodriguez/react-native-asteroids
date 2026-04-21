@@ -1,11 +1,21 @@
 import { Entity, Component } from "../types/EngineTypes";
 import type { World } from "./World";
 
+/**
+ * Tipos de comandos estructurales que pueden ser diferidos.
+ */
+export enum CommandType {
+  CREATE_ENTITY = "createEntity",
+  REMOVE_ENTITY = "removeEntity",
+  ADD_COMPONENT = "addComponent",
+  REMOVE_COMPONENT = "removeComponent"
+}
+
 type Command =
-  | { type: "createEntity", callback?: (entity: Entity) => void }
-  | { type: "removeEntity", entity: Entity }
-  | { type: "addComponent", entity: Entity, component: Component }
-  | { type: "removeComponent", entity: Entity, componentType: string };
+  | { type: CommandType.CREATE_ENTITY, entity?: Entity, callback?: (entity: Entity) => void }
+  | { type: CommandType.REMOVE_ENTITY, entity: Entity }
+  | { type: CommandType.ADD_COMPONENT, entity: Entity, component: Component }
+  | { type: CommandType.REMOVE_COMPONENT, entity: Entity, componentType: string };
 
 /**
  * Buffer de comandos para diferir mutaciones estructurales del mundo ECS.
@@ -27,15 +37,16 @@ export class WorldCommandBuffer {
   private commands: Command[] = [];
 
   /**
-   * Graba la creación de una nueva entidad para su ejecución diferida.
-   *
-   * @param callback - Función opcional que recibe el ID de la entidad creada tras el flush.
-   *
-   * @remarks Utilizado para spawnear proyectiles o partículas durante la actualización de sistemas.
-   * @postcondition El comando se añade a la cola interna.
+   * Graba la creación de una nueva entidad.
+   * @param entityOrCallback - ID reservado por el Mundo o callback de creación.
+   * @param callback - Función opcional que recibe la entidad creada tras el flush.
    */
-  public createEntity(callback?: (entity: Entity) => void): void {
-    this.commands.push({ type: "createEntity", callback });
+  public createEntity(entityOrCallback?: Entity | ((entity: Entity) => void), callback?: (entity: Entity) => void): void {
+    if (typeof entityOrCallback === "function") {
+      this.commands.push({ type: CommandType.CREATE_ENTITY, entity: undefined, callback: entityOrCallback });
+    } else {
+      this.commands.push({ type: CommandType.CREATE_ENTITY, entity: entityOrCallback, callback });
+    }
   }
 
   /**
@@ -47,7 +58,7 @@ export class WorldCommandBuffer {
    * @postcondition El comando se añade a la cola interna.
    */
   public removeEntity(entity: Entity): void {
-    this.commands.push({ type: "removeEntity", entity });
+    this.commands.push({ type: CommandType.REMOVE_ENTITY, entity });
   }
 
   /**
@@ -60,7 +71,7 @@ export class WorldCommandBuffer {
    * @postcondition El comando se añade a la cola interna.
    */
   public addComponent(entity: Entity, component: Component): void {
-    this.commands.push({ type: "addComponent", entity, component });
+    this.commands.push({ type: CommandType.ADD_COMPONENT, entity, component });
   }
 
   /**
@@ -72,7 +83,7 @@ export class WorldCommandBuffer {
    * @postcondition El comando se añade a la cola interna.
    */
   public removeComponent(entity: Entity, componentType: string): void {
-    this.commands.push({ type: "removeComponent", entity, componentType });
+    this.commands.push({ type: CommandType.REMOVE_COMPONENT, entity, componentType });
   }
 
   /**
@@ -97,18 +108,18 @@ export class WorldCommandBuffer {
       for (let i = 0; i < currentCommands.length; i++) {
         const command = currentCommands[i];
         switch (command.type) {
-          case "createEntity": {
-            const entity = world.createEntity();
+          case CommandType.CREATE_ENTITY: {
+            const entity = world.createEntity(command.entity);
             if (command.callback) command.callback(entity);
             break;
           }
-          case "removeEntity":
+          case CommandType.REMOVE_ENTITY:
             world.removeEntity(command.entity);
             break;
-          case "addComponent":
+          case CommandType.ADD_COMPONENT:
             world.addComponent(command.entity, command.component);
             break;
-          case "removeComponent":
+          case CommandType.REMOVE_COMPONENT:
             world.removeComponent(command.entity, command.componentType);
             break;
         }
