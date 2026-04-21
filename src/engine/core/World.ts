@@ -4,7 +4,6 @@ import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
 import { WorldCommandBuffer, CommandType } from "./WorldCommandBuffer";
-import { WorldCommandBuffer } from "./WorldCommandBuffer";
 
 interface RegisteredSystem {
   system: System;
@@ -38,6 +37,7 @@ interface RegisteredSystem {
  */
 export class World {
   private activeEntities = new Set<Entity>();
+  private isUpdating = false;
   private componentMaps = new Map<string, Map<Entity, Component>>();
   private componentIndex = new Map<string, Set<Entity>>();
   private entityComponentSets = new Map<Entity, Set<string>>();
@@ -202,22 +202,29 @@ export class World {
    * Si se llama durante {@link World.update}, la creación se difiere al final del frame,
    * pero el ID se reserva y devuelve inmediatamente.
    *
+   * @param id - ID opcional de la entidad. Usado internamente por el buffer de comandos.
    * @returns Un nuevo identificador de {@link Entity}.
    * @postcondition La entidad devuelta es considerada activa en el mundo.
    * @postcondition El ID devuelto es un entero positivo único en el estado actual.
    * @sideEffect Incrementa {@link World.version}.
    */
-  public createEntity(): Entity {
-    const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
+  public createEntity(id?: Entity): Entity {
+    const entityId = id ?? (this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++);
 
     if (this.isUpdating) {
-      this.commandBuffer.push({ type: CommandType.CREATE_ENTITY, entity: id });
-      return id;
+      this.commandBuffer.createEntity(entityId);
+      return entityId;
     }
 
-    this.activeEntities.add(id);
+    this.activeEntities.add(entityId);
+
+    // If an ID was provided manually, ensure nextEntityId stays ahead
+    if (id !== undefined && id >= this.nextEntityId) {
+      this.nextEntityId = id + 1;
+    }
+
     this.version++;
-    return id;
+    return entityId;
   }
 
   /**
@@ -257,7 +264,7 @@ export class World {
    */
   addComponent<T extends Component>(entity: Entity, component: T): T {
     if (this.isUpdating) {
-      this.commandBuffer.push({ type: CommandType.ADD_COMPONENT, entity, component });
+      this.commandBuffer.addComponent(entity, component);
       return component;
     }
 
@@ -287,7 +294,7 @@ export class World {
         this.entityComponentSets.set(entity, componentSet);
       }
       componentSet.add(type);
-      this.notifyQueries(entity, componentSet, stype);
+      this.notifyQueries(entity, componentSet, type);
     }
 
     this.version++;
@@ -345,7 +352,7 @@ export class World {
    */
   removeComponent(entity: Entity, type: string): void {
     if (this.isUpdating) {
-      this.commandBuffer.push({ type: CommandType.REMOVE_COMPONENT, entity, componentType: type });
+      this.commandBuffer.removeComponent(entity, type);
       return;
     }
 
@@ -419,7 +426,7 @@ export class World {
    */
   public removeEntity(entity: Entity): void {
     if (this.isUpdating) {
-      this.commandBuffer.push({ type: CommandType.REMOVE_ENTITY, entity });
+      this.commandBuffer.removeEntity(entity);
       return;
     }
 
@@ -580,33 +587,6 @@ export class World {
     }
 
     this.flush();
-  }
-
-  /**
-   * Aplica todos los comandos acumulados en el buffer de comandos.
-   * Se llama automáticamente al final de cada {@link World.update}.
-   */
-  public flush(): void {
-    if (this.commandBuffer.isEmpty) return;
-
-    const commands = this.commandBuffer.consume();
-    for (const cmd of commands) {
-      switch (cmd.type) {
-        case CommandType.CREATE_ENTITY:
-          this.activeEntities.add(cmd.entity);
-          this.version++;
-          break;
-        case CommandType.REMOVE_ENTITY:
-          this.removeEntity(cmd.entity);
-          break;
-        case CommandType.ADD_COMPONENT:
-          this.addComponent(cmd.entity, cmd.component);
-          break;
-        case CommandType.REMOVE_COMPONENT:
-          this.removeComponent(cmd.entity, cmd.componentType);
-          break;
-      }
-    }
   }
 
   getSystemTiming(system: System): number {
