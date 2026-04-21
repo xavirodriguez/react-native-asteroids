@@ -1,4 +1,4 @@
-import { InputStateComponent, InputAction, TilemapComponent } from "../core/CoreComponents";
+import { InputStateComponent, InputAction, TilemapComponent, TilesetConfig } from "../core/CoreComponents";
 
 /**
  * Utility functions for interacting with components as pure data.
@@ -33,7 +33,7 @@ export const TilemapUtils = {
     for (const layer of data.layers) {
       if (!layer.collidable) continue;
       const tileId = layer.tiles[tileY * data.width + tileX];
-      const tileset = data.tilesets.find(ts => ts.id === tileId);
+      const tileset = data.tilesets.find((ts: TilesetConfig) => ts.id === tileId);
       if (tileset?.solid) return true;
       if (!tileset && tileId > 0) return true; // Default to solid if ID > 0 and no specific config
     }

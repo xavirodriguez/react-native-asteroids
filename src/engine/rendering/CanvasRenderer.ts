@@ -309,11 +309,22 @@ export class CanvasRenderer implements Renderer {
 
     for (let i = 0; i < snapshot.entityCount; i++) {
       const ent = snapshot.entities[i];
-      this.commandBuffer.addCommand(
-        ent.shape, ent.x, ent.y, ent.rotation, ent.scaleX, ent.scaleY,
-        ent.opacity, ent.color, ent.size, ent.zIndex, ent.id,
-        ent.vertices, ent.hitFlashFrames, ent.data
-      );
+      this.commandBuffer.addCommand({
+        type: ent.shape,
+        x: ent.x,
+        y: ent.y,
+        rotation: ent.rotation,
+        scaleX: ent.scaleX,
+        scaleY: ent.scaleY,
+        opacity: ent.opacity,
+        color: ent.color,
+        size: ent.size,
+        zIndex: ent.zIndex,
+        entityId: ent.id,
+        vertices: ent.vertices,
+        hitFlashFrames: ent.hitFlashFrames,
+        data: ent.data
+      });
     }
 
     this.commandBuffer.sort();

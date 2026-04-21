@@ -4,6 +4,7 @@ import { EventBus } from "./EventBus";
 import { StateMachine } from "./StateMachine";
 import type { World } from "./World";
 import type { CollisionManifold } from "../physics/collision/CollisionTypes";
+import { AABB } from "../types/CommonTypes";
 export { Entity, Component, GenericComponent };
 
 /**
@@ -229,9 +230,19 @@ export interface EventBusComponent extends Component {
   bus: EventBus;
 }
 
+/**
+ * Configuration for an animation.
+ */
+export interface AnimationConfig {
+  fps: number;
+  frames: number[] | string[];
+  loop: boolean;
+  onComplete?: (entity: Entity) => void;
+}
+
 export interface AnimatorComponent extends Component {
   type: "Animator";
-  animations: Record<string, unknown>;
+  animations: Record<string, AnimationConfig>;
   current: string;
   frame: number;
   elapsed: number;
@@ -242,17 +253,69 @@ export interface StateMachineComponent extends Component {
   fsm: StateMachine<string, unknown>;
 }
 
+/**
+ * Configuration for a particle emitter.
+ */
+export interface ParticleEmitterConfig {
+  burst?: number;
+  rate: number;
+  loop: boolean;
+  angle: { min: number; max: number };
+  speed: { min: number; max: number };
+  lifetime: { min: number; max: number };
+  size: { min: number; max: number };
+  color: string[];
+  position?: { x: number; y: number };
+}
+
 export interface ParticleEmitterComponent extends Component {
   type: "ParticleEmitter";
-  config: unknown;
+  config: ParticleEmitterConfig;
   active: boolean;
   elapsed: number;
 }
 
+/**
+ * Configuration for a tileset.
+ */
+export interface TilesetConfig {
+  id: number;
+  solid: boolean;
+}
+
+/**
+ * Represents a layer in a tilemap.
+ */
+export interface TilemapLayer {
+  tiles: number[];
+  collidable: boolean;
+}
+
+/**
+ * Data structure for a tilemap.
+ */
+export interface TilemapData {
+  width: number;
+  height: number;
+  tileSize: number;
+  layers: TilemapLayer[];
+  tilesets: TilesetConfig[];
+}
+
+/**
+ * Represents the visible range of a tilemap.
+ */
+export interface TilemapVisibleRange {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+
 export interface TilemapComponent extends Component {
   type: "Tilemap";
-  data: unknown;
-  _visibleRange?: unknown;
+  data: TilemapData;
+  _visibleRange?: TilemapVisibleRange;
 }
 
 export interface Camera2DComponent extends Component {
@@ -265,7 +328,7 @@ export interface Camera2DComponent extends Component {
   shakeOffsetY: number;
   smoothing: number;
   offset: { x: number; y: number };
-  bounds: unknown;
+  bounds: AABB | null;
   target?: Entity;
 }
 
