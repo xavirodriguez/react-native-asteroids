@@ -89,10 +89,11 @@ export class CollisionSystem2D extends System {
 
         const potentials = new Set<Entity>();
         this.spatialHash!.query(boundsA, potentials);
-        for (const entityB of potentials) {
-          if (entityA >= entityB) continue;
-          candidates.push([entityA, entityB]);
-        }
+        potentials.forEach(entityB => {
+          if (entityA < entityB) {
+            candidates.push([entityA, entityB]);
+          }
+        });
       }
     } else {
       candidates = BroadPhase.sweepAndPrune([...entities], world);
@@ -155,7 +156,7 @@ export class CollisionSystem2D extends System {
       }
     }
 
-    for (const pairId of this.activePairs) {
+    this.activePairs.forEach(pairId => {
       if (!currentFramePairs.has(pairId)) {
         const [idA, idB] = pairId.split(",").map(Number);
         for (let j = 0; j < this.onTriggerExitCallbacks.length; j++) {
@@ -163,7 +164,7 @@ export class CollisionSystem2D extends System {
         }
         this.notifyTriggerEvent(world, idA, idB, "exit");
       }
-    }
+    });
     this.activePairs = currentFramePairs;
   }
 

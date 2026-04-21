@@ -1,4 +1,4 @@
-import { InputController } from "../../../engine/input/InputController";
+import { InputController } from "../../../engine/legacy/InputController";
 import { PongInput, PONG_CONFIG } from "../types";
 
 /**

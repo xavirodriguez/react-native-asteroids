@@ -97,7 +97,7 @@ export function drawAsteroidStarField(ctx: CanvasRenderingContext2D, stars: Star
     const shipEntity = world.query("Ship", "Transform")[0];
     const shipPos = shipEntity
       ? world.getComponent<TransformComponent>(shipEntity, "Transform")
-      : { x: width / 2, y: height / 2 };
+      : { x: width / 2, y: height / 2 } as TransformComponent;
 
     if (!shipPos) return;
 

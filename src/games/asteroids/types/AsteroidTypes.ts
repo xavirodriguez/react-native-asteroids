@@ -9,6 +9,7 @@ export interface InputState {
   rotateRight: boolean;
   shoot: boolean;
   hyperspace: boolean;
+  [key: string]: unknown;
 }
 
 /**

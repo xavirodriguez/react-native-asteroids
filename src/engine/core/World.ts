@@ -632,15 +632,15 @@ export class World {
   private notifyQueries(entity: Entity, componentSet: Set<string>, changedType?: string): void {
     const queriesToNotify = changedType
       ? (this.queriesByComponent.get(changedType) || [])
-      : this.queries.values();
+      : Array.from(this.queries.values());
 
-    for (const query of queriesToNotify) {
+    queriesToNotify.forEach((query) => {
       if (query.matches(componentSet)) {
         query.add(entity);
       } else {
         query.remove(entity);
       }
-    }
+    });
   }
 
   private removeEntityFromComponentMaps(entity: Entity): void {

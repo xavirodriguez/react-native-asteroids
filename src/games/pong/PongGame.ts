@@ -28,8 +28,17 @@ export class PongGame extends BaseGame<PongState, PongInput> {
   public readonly gameId = "pong";
   private config: typeof PONG_CONFIG;
 
-  constructor(mode: PongMode = "local") {
-    super({ pauseKey: "Escape", gameOptions: { mode } });
+  constructor(config: { isMultiplayer?: boolean, seed?: number, mode?: PongMode } | PongMode = "local") {
+    const isConfig = typeof config === "object" && config !== null;
+    const mode = isConfig ? (config.mode || "local") : config;
+    const isMultiplayer = isConfig ? config.isMultiplayer : false;
+    const seed = isConfig ? config.seed : undefined;
+
+    super({
+      pauseKey: "Escape",
+      isMultiplayer,
+      gameOptions: { mode, seed }
+    });
     this.assetLoader = new AssetLoader();
   }
 
@@ -37,7 +46,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
-      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...PONG_CONFIG })
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...PONG_CONFIG }) as typeof PONG_CONFIG
       : { ...PONG_CONFIG };
 
     await super.init();

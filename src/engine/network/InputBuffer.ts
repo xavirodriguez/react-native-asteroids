@@ -60,14 +60,14 @@ export class InputBuffer {
    * Cleans up old frames from the buffers.
    */
   public cleanUp(uptoTick: number): void {
-    for (const tick of this.localBuffer.keys()) {
+    Array.from(this.localBuffer.keys()).forEach(tick => {
       if (tick < uptoTick) this.localBuffer.delete(tick);
-    }
+    });
 
     this.remoteBuffers.forEach(buffer => {
-      for (const tick of buffer.keys()) {
+      Array.from(buffer.keys()).forEach(tick => {
         if (tick < uptoTick) buffer.delete(tick);
-      }
+      });
     });
   }
 }

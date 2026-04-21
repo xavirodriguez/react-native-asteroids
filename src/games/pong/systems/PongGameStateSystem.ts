@@ -6,7 +6,7 @@ import { TransformComponent, VelocityComponent } from "../../../engine/types/Eng
 import { EventBus } from "../../../engine/core/EventBus";
 
 export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
-  private state: PongState = { scoreP1: 0, scoreP2: 0, isGameOver: false };
+  private state: PongState = { type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1 };
 
   constructor(private config: typeof PONG_CONFIG = PONG_CONFIG) {
     super();

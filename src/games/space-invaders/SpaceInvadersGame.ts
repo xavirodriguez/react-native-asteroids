@@ -23,11 +23,11 @@ export class SpaceInvadersGame
   extends BaseGame<GameStateComponent, InputState>
   implements ISpaceInvadersGame {
 
-  private playerBulletPool: PlayerBulletPool;
-  private enemyBulletPool: EnemyBulletPool;
-  private particlePool: ParticlePool;
+  private playerBulletPool!: PlayerBulletPool;
+  private enemyBulletPool!: EnemyBulletPool;
+  private particlePool!: ParticlePool;
   public readonly gameId = "spaceinvaders";
-  private config: typeof GAME_CONFIG;
+  private config!: typeof GAME_CONFIG;
 
   constructor(config: { isMultiplayer?: boolean, seed?: number } = {}) {
     super({
@@ -42,7 +42,7 @@ export class SpaceInvadersGame
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
-      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...GAME_CONFIG })
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...GAME_CONFIG }) as typeof GAME_CONFIG
       : { ...GAME_CONFIG };
 
     await super.init();
@@ -150,6 +150,7 @@ export class SpaceInvadersGame
 }
 
 export class NullSpaceInvadersGame implements ISpaceInvadersGame {
+  public isMultiplayer = false;
   private _world = new World();
   private _loop = new GameLoop();
   public start() {} public stop() {} public pause() {} public resume() {}

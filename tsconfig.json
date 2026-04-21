@@ -4,6 +4,7 @@
     "strict": true,
     "strictPropertyInitialization": true,
     "noImplicitAny": true,
+    "downlevelIteration": true,
     "paths": {
       "@/*": [
         "./*",

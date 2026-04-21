@@ -128,11 +128,11 @@ export class AssetLoader {
     let loaded = 0;
     const total = this.cache.size;
 
-    for (const handle of this.cache.values()) {
+    this.cache.forEach(handle => {
       if (handle.status === 'ready' || handle.status === 'error') {
         loaded++;
       }
-    }
+    });
 
     return {
       loaded,

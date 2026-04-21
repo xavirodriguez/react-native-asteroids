@@ -76,7 +76,7 @@ export class EventBus {
    * @param event - Nombre del evento.
    * @param payload - Datos asociados al evento.
    */
-  public emit<T = unknown>(event: string, payload: T): void {
+  public emit<T = unknown>(event: string, payload?: T): void {
     // Notify exact matches
     this.notify(event, payload);
 
