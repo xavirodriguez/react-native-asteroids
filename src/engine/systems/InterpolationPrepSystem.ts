@@ -3,31 +3,40 @@ import { World } from "../core/World";
 import { TransformComponent, PreviousTransformComponent } from "../core/CoreComponents";
 
 /**
- * Sistema que captura el estado de transformación actual antes de que sea modificado por la simulación.
+ * Sistema responsable de capturar el estado de las transformaciones antes de la simulación.
  *
- * @responsibility Almacenar la posición y rotación del tick anterior en {@link PreviousTransformComponent}.
+ * @responsibility Almacenar una copia del {@link TransformComponent} actual en
+ * {@link PreviousTransformComponent} para su uso en la interpolación visual.
+ *
  * @queries Transform
  * @mutates PreviousTransform
- * @executionOrder Fase: Input o Simulation (al inicio). Debe ejecutarse antes de cualquier sistema que mueva entidades.
+ *
+ * @executionOrder
+ * Fase: {@link SystemPhase.Input} (o Pre-Simulation).
+ * Debe ejecutarse como el **primer paso absoluto** de cada tick de simulación (Fixed Update).
  *
  * @remarks
- * Este sistema es fundamental para el renderizado suave. Los datos capturados aquí son utilizados
- * por los renderizadores (Canvas/Skia) para interpolar posiciones entre ticks físicos fijos.
+ * Este sistema es fundamental para garantizar un movimiento suave (60+ FPS visuales) en un motor
+ * con lógica de tiempo fijo (Fixed Timestep). Al guardar el estado justo antes de que los
+ * sistemas de física lo muten, permitimos que el renderer dibuje posiciones interpoladas.
+ *
+ * Implementa el soporte para jerarquías capturando tanto coordenadas locales como de mundo.
  *
  * @conceptualRisk [STALE_SNAPSHOT][LOW] Si este sistema no se ejecuta al inicio de cada tick,
  * la interpolación producirá jitter visual.
  */
 export class InterpolationPrepSystem extends System {
   /**
-   * Captura el estado actual del Transform en PreviousTransform.
+   * Captura sincrónicamente el estado actual de todas las entidades que poseen un Transform.
    *
-   * @param world - El mundo ECS.
-   * @param _deltaTime - Tiempo transcurrido (ignorado).
+   * @param world - La instancia del mundo ECS.
+   * @param _deltaTime - Tiempo transcurrido en el tick actual (ignorado).
    *
-   * @precondition Debe ejecutarse al inicio del frame, antes de cualquier mutación de simulación.
-   * @postcondition El componente `PreviousTransform` de cada entidad contiene los datos de la
-   * posición previa a la simulación del frame actual.
-   * @sideEffect Crea el componente `PreviousTransform` si no existía previamente.
+   * @precondition El sistema debe ejecutarse antes de cualquier mutación de posición (física).
+   * @postcondition Todas las entidades con `Transform` tienen un `PreviousTransform` actualizado.
+   * @postcondition Se capturan `x`, `y`, `rotation` y sus equivalentes `world*`.
+   *
+   * @sideEffect Crea el componente `PreviousTransform` si la entidad no lo posee.
    */
   public update(world: World, _deltaTime: number): void {
     const entities = world.query("Transform");
