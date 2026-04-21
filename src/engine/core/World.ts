@@ -251,7 +251,7 @@ export class World {
    * @precondition El componente debe tener una propiedad `type` válida.
    * @postcondition El componente es accesible vía {@link World.getComponent}.
    * @postcondition Si el tipo es 'Transform', se garantiza la validez de la jerarquía.
-   * @throws {Error} Si se intenta asignar una entidad como su propio padre en un Transform.
+   * @throws Error - Si se intenta asignar una entidad como su propio padre en un Transform.
    * @sideEffect Incrementa {@link World.version}.
    * @mutates componentMaps, componentIndex, entityComponentSets
    */
@@ -549,7 +549,7 @@ export class World {
    *
    * @remarks
    * 1. Re-ordena sistemas si es necesario.
-   * 2. Itera por fase (Input -> Simulation -> Collision -> GameRules -> Presentation).
+   * 2. Itera por fase (Input -\> Simulation -\> Collision -\> GameRules -\> Presentation).
    * 3. Ejecuta cada sistema, opcionalmente midiendo su rendimiento si `debugMode` es true.
    * 4. Aplica todos los cambios estructurales diferidos (creación/eliminación de entidades y componentes).
    *
