@@ -7,7 +7,7 @@ import { InputController } from "./InputController";
  * y desacoplada de controladores específicos.
  *
  * @remarks
- * El InputManager mantiene una lista de {@link InputController} y agrega sus estados
+ * El InputManager mantiene una lista de InputController y agrega sus estados
  * en un único estado de entrada unificado mediante una operación OR lógica.
  *
  * @responsibility Agregar múltiples fuentes de entrada (Teclado, Touch, Red).
@@ -23,7 +23,7 @@ export class InputManager<TInputState extends Record<string, boolean>> {
 
   /**
    * Registra un controlador de entrada en el gestor e invoca su inicialización.
-   * @param controller - El {@link InputController} a añadir.
+   * @param controller - El InputController a añadir.
    * @contract Llama a `controller.setup()` inmediatamente.
    * @mutates controllers
    */

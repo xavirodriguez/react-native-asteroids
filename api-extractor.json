@@ -20,17 +20,17 @@
     "enabled": false
   },
   "messages": {
-    "compilerMessageReporting": {
-      "default": {
-        "logLevel": "warning"
-      }
-    },
     "extractorMessageReporting": {
-      "default": {
-        "logLevel": "warning"
+      "ae-wrong-input-file-type": {
+        "logLevel": "none"
       },
       "ae-missing-release-tag": {
         "logLevel": "none"
+      }
+    },
+    "compilerMessageReporting": {
+      "default": {
+        "logLevel": "warning"
       }
     },
     "tsdocMessageReporting": {

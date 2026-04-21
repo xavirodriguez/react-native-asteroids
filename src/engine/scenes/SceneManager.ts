@@ -18,7 +18,7 @@ export enum SceneState {
  *
  * @remarks
  * El `SceneManager` es crítico para prevenir fugas de memoria y condiciones de carrera
- * durante la carga/descarga de recursos asíncronos. Utiliza {@link LifecycleUtils}
+ * durante la carga/descarga de recursos asíncronos. Utiliza LifecycleUtils
  * para asegurar que los ganchos de ciclo de vida se ejecuten correctamente.
  *
  * @conceptualRisk [TRANSITION_INTERRUPTION][HIGH] Si una transición asíncrona es

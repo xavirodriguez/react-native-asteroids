@@ -447,7 +447,7 @@ export class World {
    * Se recomienda encarecidamente utilizar este buffer durante la actualización de sistemas
    * para evitar problemas de invalidación de iteradores en las Queries.
    *
-   * @returns La instancia de {@link WorldCommandBuffer} del mundo.
+   * @returns La instancia de WorldCommandBuffer del mundo.
    */
   public getCommandBuffer(): WorldCommandBuffer {
     return this.commandBuffer;
