@@ -265,7 +265,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     return false;
   }
 
-  public setInput(input: Record<string, any>): void {
+  public setInput(input: Record<string, unknown>): void {
     Object.entries(input).forEach(([action, pressed]) => {
       this.unifiedInput.setOverride(action, !!pressed);
     });
