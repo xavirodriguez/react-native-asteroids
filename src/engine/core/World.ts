@@ -3,7 +3,7 @@ import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
-import { WorldCommandBuffer, CommandType } from "./WorldCommandBuffer";
+import { WorldCommandBuffer } from "./WorldCommandBuffer";
 
 interface RegisteredSystem {
   system: System;
