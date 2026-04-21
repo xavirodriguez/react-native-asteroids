@@ -28,6 +28,10 @@ export interface StateMachineConfig<TState extends string, TContext> {
 /**
  * Implementación genérica de Máquina de Estados Finitos (FSM).
  *
+ * @remarks
+ * Permite definir comportamientos complejos mediante estados discretos (ej: 'Idle', 'Chase', 'Attack').
+ * Se integra con el sistema ECS almacenándose típicamente dentro de un {@link StateMachineComponent}.
+ *
  * @responsibility Gestionar el estado actual y las transiciones basadas en eventos o lógica.
  * @responsibility Ejecutar hooks de ciclo de vida (`onEnter`, `onUpdate`, `onExit`) de forma consistente.
  *
@@ -45,6 +49,14 @@ export class StateMachine<TState extends string, TContext> {
   private config: StateMachineConfig<TState, TContext>;
   private context: TContext;
 
+  /**
+   * Inicializa la máquina de estados y entra en el estado inicial definido en la configuración.
+   *
+   * @param config - Definición de estados y hooks de comportamiento.
+   * @param context - Datos persistentes compartidos entre todos los estados.
+   *
+   * @postcondition El estado inicial ejecuta su hook `onEnter`.
+   */
   constructor(config: StateMachineConfig<TState, TContext>, context: TContext) {
     this.config = config;
     this.context = context;
@@ -52,6 +64,18 @@ export class StateMachine<TState extends string, TContext> {
     this.config.states[this.currentStateKey]?.onEnter?.(this.context);
   }
 
+  /**
+   * Realiza una transición atómica hacia un nuevo estado.
+   *
+   * @remarks
+   * Si el nuevo estado es idéntico al actual, la transición se ignora.
+   *
+   * @param newStateKey - La clave del estado destino.
+   *
+   * @precondition El estado `newStateKey` debe estar definido en la configuración inicial.
+   * @postcondition Se ejecuta `onExit` del anterior y `onEnter` del nuevo.
+   * @sideEffect Muta la propiedad interna `currentStateKey`.
+   */
   public transition(newStateKey: TState): void {
     if (this.currentStateKey === newStateKey) return;
 
@@ -60,10 +84,23 @@ export class StateMachine<TState extends string, TContext> {
     this.config.states[this.currentStateKey]?.onEnter?.(this.context);
   }
 
+  /**
+   * Ejecuta el hook `onUpdate` del estado activo actualmente.
+   *
+   * @param dt - Tiempo transcurrido en milisegundos.
+   *
+   * @remarks
+   * Este método debe invocarse desde el sistema que posea o gestione la entidad con la FSM.
+   */
   public update(dt: number): void {
     this.config.states[this.currentStateKey]?.onUpdate?.(this.context, dt);
   }
 
+  /**
+   * Devuelve la clave del estado activo.
+   *
+   * @returns El nombre del estado actual como string literal.
+   */
   public getCurrentState(): TState {
     return this.currentStateKey;
   }

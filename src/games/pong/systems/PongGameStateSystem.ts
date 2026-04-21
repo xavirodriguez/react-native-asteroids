@@ -12,9 +12,7 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
     super();
   }
 
-  protected updateGameState(world: World, state: PongState, deltaTime: number): void {
-    void deltaTime;
-
+  protected updateGameState(world: World, state: PongState, _deltaTime: number): void {
     if (state.isGameOver) {
         this.state.scoreP1 = state.scoreP1;
         this.state.scoreP2 = state.scoreP2;

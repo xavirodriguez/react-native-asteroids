@@ -13,6 +13,8 @@ export { System, SystemPhase } from './core/System';
 export { GameLoop } from './core/GameLoop';
 export { EntityPool } from './core/EntityPool';
 export { BaseGame } from './core/BaseGame';
+export { WorldCommandBuffer } from './core/WorldCommandBuffer';
+export { StateMachine } from './core/StateMachine';
 export type { IGame } from './core/IGame';
 export type { Entity } from './core/Entity';
 export type { Component } from './core/Component';
@@ -60,7 +62,7 @@ export { AssetLoader } from './assets/AssetLoader';
 export * from './utils/PhysicsUtils';
 export { RandomService } from './utils/RandomService';
 export { PrefabPool } from './utils/PrefabPool';
-export { runLifecycleSync, runLifecycleAsync } from './utils/LifecycleUtils';
+export { runLifecycleSync, runLifecycleAsync, LifecycleUtils } from './utils/LifecycleUtils';
 
 // --- SYSTEMS ---
 export { HierarchySystem } from './systems/HierarchySystem';
@@ -68,14 +70,18 @@ export { MovementSystem } from './systems/MovementSystem';
 export { FrictionSystem } from './systems/FrictionSystem';
 export { BoundarySystem } from './systems/BoundarySystem';
 export { TTLSystem } from './systems/TTLSystem';
-export { JuiceSystem } from './systems/JuiceSystem';
+export { JuiceSystem, type JuiceAnimation, type JuiceComponent } from './systems/JuiceSystem';
 export { ParticleSystem } from './systems/ParticleSystem';
 export { ScreenShakeSystem } from './systems/ScreenShakeSystem';
 export { RenderUpdateSystem } from './systems/RenderUpdateSystem';
 export { AnimationSystem } from './systems/AnimationSystem';
 export { StateMachineSystem } from './systems/StateMachineSystem';
+export { InterpolationPrepSystem } from './systems/InterpolationPrepSystem';
 export { TilemapRenderSystem } from './systems/TilemapRenderSystem';
 
 // --- NAMESPACES ---
 import * as Legacy from './legacy';
 export { Legacy };
+
+// Export legacy types directly for documentation links
+export type { InputController } from './legacy/InputController';

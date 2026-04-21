@@ -1,23 +1,35 @@
 /**
- * Base interface for all components.
- * Every component must have a type discriminator.
+ * Interfaz base para todos los componentes en la arquitectura ECS.
  *
  * @remarks
- * Components are POJOs (Plain Old JavaScript Objects) that hold data but no logic.
- * Systems process entities by filtering for these data structures.
+ * Los componentes son POJOs (Plain Old JavaScript Objects) que contienen exclusivamente
+ * datos y estados, sin lógica de comportamiento. El {@link World} utiliza la propiedad
+ * `type` para indexar y filtrar entidades de forma eficiente.
+ *
+ * Los componentes deben ser serializables para soportar snapshots y multijugador.
+ * Se recomienda evitar referencias circulares o punteros a objetos complejos.
+ *
+ * @responsibility Almacenar datos de estado de forma atómica y pura.
  */
 export interface Component {
   /**
-   * Discriminator for the component type.
-   * Must be unique across the engine and games.
+   * Discriminador único para el tipo de componente.
+   * Debe ser consistente en todo el motor y los juegos registrados.
    */
   type: string;
 }
 
 /**
- * A generic version of a component that allows arbitrary data access.
- * Useful for accessing components whose structure is not known at compile time (e.g. GameState).
+ * Versión genérica de un componente que permite el acceso a datos arbitrarios.
+ *
+ * @remarks
+ * Útil para interactuar con componentes cuya estructura exacta no se conoce en tiempo
+ * de compilación o para tipos de estado dinámicos como `GameState`.
+ *
+ * @conceptualRisk [TYPE_SAFETY][MEDIUM] El uso de index signatures relaja las garantías
+ * de TypeScript. Se debe preferir interfaces fuertemente tipadas siempre que sea posible.
  */
 export interface GenericComponent extends Component {
+  /** Acceso dinámico a propiedades del componente. */
   [key: string]: any;
 }

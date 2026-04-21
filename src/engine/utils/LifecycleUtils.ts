@@ -27,3 +27,12 @@ export function runLifecycleSync(fn: () => void): void {
 export async function runLifecycleAsync(fn: () => Promise<void>): Promise<void> {
   return fn();
 }
+
+/**
+ * Namespace for lifecycle utilities used in documentation links.
+ * @internal
+ */
+export const LifecycleUtils = {
+  runSync: runLifecycleSync,
+  runAsync: runLifecycleAsync
+};

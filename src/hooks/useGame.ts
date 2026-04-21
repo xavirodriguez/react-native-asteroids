@@ -17,7 +17,30 @@ export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, T
 }
 
 /**
- * Generic hook to manage game lifecycle and state in React.
+ * Hook genérico para gestionar el ciclo de vida y el estado de un juego en React.
+ *
+ * @remarks
+ * Este hook es el puente oficial entre el motor ECS (imperativo) y React (declarativo).
+ * Se encarga de la inicialización asíncrona, el arranque del loop, la suscripción
+ * a cambios de estado y la limpieza de recursos al desmontar el componente.
+ *
+ * @responsibility Orquestar el ciclo de vida del motor dentro de un componente React.
+ * @responsibility Sincronizar el estado de simulación con el estado de React de forma throttled.
+ * @responsibility Proveer callbacks estables para el control de entrada y pausa.
+ *
+ * @param GameClass - Constructor de la clase de juego que extiende {@link BaseGame}.
+ * @param initialState - Estado inicial para el hook antes de la carga del motor.
+ * @param isMultiplayer - Flag para habilitar el modo de red.
+ *
+ * @returns Un objeto {@link UseGameResult} con el motor, el estado y métodos de control.
+ *
+ * @conceptualRisk [REACT_RE_RENDER][MEDIUM] Actualizar el estado de React en cada frame
+ * de simulación (60Hz) es costoso. Este hook utiliza un intervalo de actualización de
+ * UI (15 FPS por defecto) para optimizar el rendimiento.
+ * @conceptualRisk [ASYNC_INIT][HIGH] El acceso a `game` será `null` hasta que la promesa
+ * de `init()` se resuelva. Los componentes UI deben manejar este estado inicial.
+ * @conceptualRisk [LIFECYCLE_LEAK][LOW] Si no se llama a `game.destroy()` (gestionado
+ * automáticamente por el hook), el loop y los listeners de entrada persistirán.
  */
 export function useGame<
   TGame extends BaseGame<TState, TInput>,
@@ -82,23 +105,26 @@ export function useGame<
   }, [GameClass, isMultiplayer]);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
-    game?.setInput(input as Record<string, boolean>);
-  }, [game]);
+    if (game && isReady) {
+      game.setInput(input as Record<string, boolean>);
+    }
+  }, [game, isReady]);
 
   const togglePause = useCallback(() => {
-    if (!game) {
-      return;
+    if (game && isReady) {
+      if (game.isPausedState()) {
+        game.resume();
+      } else {
+        game.pause();
+      }
     }
-    if (game.isPausedState()) {
-      game.resume();
-    } else {
-      game.pause();
-    }
-  }, [game]);
+  }, [game, isReady]);
 
   const restart = useCallback((seed?: number) => {
-    game?.restart(seed).catch(console.error);
-  }, [game]);
+    if (game && isReady) {
+      game.restart(seed).catch(console.error);
+    }
+  }, [game, isReady]);
 
   return {
     game,
