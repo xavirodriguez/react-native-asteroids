@@ -19,7 +19,7 @@ import { TTLComponent, ReclaimableComponent } from "../types/EngineTypes";
  * El sistema invoca el callback `onComplete` definido en el componente antes de
  * proceder con la eliminación de la entidad del mundo.
  *
- * @contract Destrucción: Una entidad es eliminada SI Y SOLO SI `remaining \<= 0`.
+ * @contract Destrucción: Una entidad es eliminada SI Y SOLO SI `remaining <= 0`.
  * @invariant No modifica otros componentes de la entidad (e.g., Transform, Velocity).
  */
 export class TTLSystem extends System {
@@ -30,7 +30,7 @@ export class TTLSystem extends System {
    * @param deltaTime - Tiempo transcurrido en milisegundos.
    *
    * @precondition Las entidades deben poseer un {@link TTLComponent}.
-   * @postcondition Se reduce `remaining`. Si llega a \<= 0, la entidad es eliminada.
+   * @postcondition Se reduce `remaining`. Si llega a <= 0, la entidad es eliminada.
    */
   public update(world: World, deltaTime: number): void {
     const ttlEntities = world.query("TTL");

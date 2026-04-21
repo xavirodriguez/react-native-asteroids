@@ -41,21 +41,3 @@ export interface LegacyScreenShake {
   remaining: number;
 }
 
-/**
- * RigidBodyComponent is used primarily by the Matter.js adapter.
- * @deprecated For the built-in physics engine, use {@link PhysicsBody2DComponent}.
- */
-export interface RigidBodyComponent extends Component {
-  type: "RigidBody";
-  bodyId: number | string;
-  isStatic?: boolean;
-  isSensor?: boolean;
-  restitution?: number;
-  friction?: number;
-  density?: number;
-  collisionFilter?: {
-    group: number;
-    category: number;
-    mask: number;
-  };
-}

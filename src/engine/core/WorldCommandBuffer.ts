@@ -22,16 +22,11 @@ type Command =
  *
  * @responsibility Grabar operaciones de creación, eliminación y modificación de entidades/componentes.
  * @responsibility Ejecutar los comandos grabados de forma secuencial sobre una instancia de {@link World}.
- * @responsibility Garantizar la seguridad de los iteradores durante la actualización de sistemas.
  *
  * @remarks
  * El uso del CommandBuffer es fundamental para evitar la invalidación de iteradores durante
- * la ejecución de sistemas (error "Iterator Invalidation"). Los cambios grabados no son
- * visibles en el mundo hasta que se llama explícitamente a {@link WorldCommandBuffer.flush}
- * (normalmente invocado por {@link World.flush} al final del tick).
- *
- * @conceptualRisk [STALE_QUERY_RESULTS][LOW] Las entidades creadas o componentes añadidos al
- * buffer no aparecerán en las consultas (`world.query`) hasta que se realice el flush.
+ * la ejecución de sistemas. Los cambios grabados no son visibles en el mundo hasta que
+ * se llama a {@link World.flush}.
  */
 export class WorldCommandBuffer {
   private commands: Command[] = [];
@@ -50,12 +45,8 @@ export class WorldCommandBuffer {
   }
 
   /**
-   * Graba la eliminación de una entidad para su ejecución diferida.
-   *
-   * @param entity - ID de la entidad a destruir.
-   *
-   * @remarks Es la forma segura de destruir entidades que mueren por impacto o TTL.
-   * @postcondition El comando se añade a la cola interna.
+   * Graba la eliminación de una entidad.
+   * @param entity - ID de la entidad a eliminar.
    */
   public removeEntity(entity: Entity): void {
     this.commands.push({ type: CommandType.REMOVE_ENTITY, entity });
@@ -63,12 +54,8 @@ export class WorldCommandBuffer {
 
   /**
    * Graba la adición o reemplazo de un componente en una entidad.
-   *
-   * @param entity - ID de la entidad destino.
-   * @param component - La instancia del componente a añadir.
-   *
-   * @remarks Útil para añadir estados temporales (ej: Invulnerabilidad) sin romper bucles.
-   * @postcondition El comando se añade a la cola interna.
+   * @param entity - ID de la entidad.
+   * @param component - Instancia del componente.
    */
   public addComponent(entity: Entity, component: Component): void {
     this.commands.push({ type: CommandType.ADD_COMPONENT, entity, component });
@@ -76,29 +63,16 @@ export class WorldCommandBuffer {
 
   /**
    * Graba la eliminación de un componente de una entidad.
-   *
-   * @param entity - ID de la entidad destino.
-   * @param componentType - Nombre discriminador del componente.
-   *
-   * @postcondition El comando se añade a la cola interna.
+   * @param entity - ID de la entidad.
+   * @param componentType - Nombre del tipo de componente.
    */
   public removeComponent(entity: Entity, componentType: string): void {
     this.commands.push({ type: CommandType.REMOVE_COMPONENT, entity, componentType });
   }
 
   /**
-   * Aplica de forma atómica todos los comandos grabados sobre el mundo y limpia el buffer.
-   *
-   * @remarks
-   * Este método soporta flushes recursivos: si la ejecución de un comando (ej: a través del
-   * callback de `createEntity`) añade nuevos comandos al buffer, estos se procesarán en
-   * la misma llamada hasta que el buffer quede vacío.
-   *
-   * @param world - La instancia del {@link World} sobre la que aplicar los cambios.
-   *
-   * @precondition El mundo debe estar en un estado donde sea seguro realizar mutaciones.
-   * @postcondition El buffer de comandos queda vacío.
-   * @sideEffect Altera estructuralmente el mundo y sus índices de consultas.
+   * Aplica todos los comandos grabados sobre el mundo proporcionado y limpia el buffer.
+   * @param world - La instancia del mundo sobre la que aplicar los cambios.
    */
   public flush(world: World): void {
     while (this.commands.length > 0) {
