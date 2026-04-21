@@ -24,24 +24,26 @@ export type { AABB } from './types/CommonTypes';
 
 // --- PHYSICS & COLLISION ---
 export { PhysicsSystem2D } from './physics/dynamics/PhysicsSystem2D';
-export { CollisionSystem2D } from './physics/collision/CollisionSystem2D';
+export { CollisionSystem2D, type CollisionCallback, type TriggerCallback } from './physics/collision/CollisionSystem2D';
 export { CollisionLayers } from './physics/collision/CollisionLayers';
 export { SpatialHash } from './physics/collision/SpatialHash';
 export { PhysicsQuery } from './physics/query/PhysicsQuery';
 export { NarrowPhase } from './physics/collision/NarrowPhase';
 export { BroadPhase } from './physics/collision/BroadPhase';
-export { ContinuousCollision } from './physics/collision/ContinuousCollision';
+export { ContinuousCollision, type CCDResult } from './physics/collision/ContinuousCollision';
+export { type CollisionManifold } from './physics/collision/CollisionTypes';
 export * from './physics/shapes/ShapeTypes';
 export * from './physics/shapes/ShapeFactory';
 export * from './physics/query/QueryTypes';
 
 // --- RENDERING ---
 export * from './rendering/RenderTypes';
-export { type ShapeDrawer, type EffectDrawer } from './rendering/Renderer';
+export type { TransformSnapshot } from './rendering/RenderTypes';
+export { type Renderer, type ShapeDrawer, type EffectDrawer } from './rendering/Renderer';
 export { CanvasRenderer } from './rendering/CanvasRenderer';
 export { SkiaRenderer } from './rendering/SkiaRenderer';
 export { RenderSnapshot } from './rendering/RenderSnapshot';
-export { CommandBuffer } from './rendering/CommandBuffer';
+export { CommandBuffer, type DrawCommand, type DrawCommandOptions, type CommandType } from './rendering/CommandBuffer';
 export { Camera2D } from './camera/Camera2D';
 
 // --- INPUT ---
