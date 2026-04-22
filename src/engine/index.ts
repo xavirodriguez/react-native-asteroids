@@ -7,6 +7,11 @@
  *
  * @warning Algunas exportaciones pueden incluir componentes internos necesarios para la extensibilidad,
  * pero cuyo uso directo no está recomendado para lógica de alto nivel.
+ *
+ * @remarks
+ * El motor está diseñado para minimizar las alocaciones en hot-paths, aunque no garantiza
+ * el "zero-allocation" absoluto. Se busca la reproducibilidad de la simulación bajo
+ * condiciones controladas.
  */
 
 // --- CORE ECS ---

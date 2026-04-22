@@ -74,15 +74,17 @@ export class PhysicsUtils {
    * Soporta tanto componentes ECS estándar como objetos proxy.
    *
    * @remarks
-   * Utiliza una función exponencial basada en el tiempo para garantizar que la fricción
+   * Utiliza una función exponencial basada en el tiempo para favorecer que la fricción
    * se aplique de forma consistente independientemente del framerate.
    *
    * @param vel - Objeto de velocidad (estándar o proxy).
    * @param friction - Coeficiente de fricción (ej: 0.99).
    * @param deltaTimeMs - Tiempo transcurrido en milisegundos.
    *
-   * @precondition `friction` debe estar en el rango [0, 1].
-   * @postcondition Los componentes `dx`/`dy` de `vel` son reducidos.
+   * @remarks
+   * La amortiguación se aplica como una reducción de la velocidad buscando independencia de la tasa de frames.
+   *
+   * @precondition `friction` debe estar preferiblemente en el rango [0, 1].
    * @sideEffect Muta el objeto `vel` directamente por referencia.
    */
   public static applyFriction(vel: VelocityLike, friction: number, deltaTimeMs: number): void {
@@ -152,7 +154,7 @@ export class PhysicsUtils {
    * @param mass - La nueva masa (debe ser > 0 para cuerpos dinámicos).
    * @param inertia - El nuevo momento de inercia (debe ser > 0 para permitir rotación).
    *
-   * @responsibility Garantizar que `inverseMass` e `inverseInertia` siempre reflejen 1/masa y 1/inercia.
+   * @responsibility Mantener la sincronía de `inverseMass` e `inverseInertia` con la masa y la inercia.
    */
   public static updateBodyMassProperties(body: PhysicsBody2DComponent, mass: number, inertia: number): void {
     const mutableBody = body as { -readonly [K in keyof PhysicsBody2DComponent]: PhysicsBody2DComponent[K] };

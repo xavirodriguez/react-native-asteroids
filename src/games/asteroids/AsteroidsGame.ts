@@ -70,7 +70,10 @@ export class AsteroidsGame
   }
 
   /**
-   * Predicts local player movement using the shared deterministic simulation.
+   * Performs local player movement prediction using the shared simulation.
+   *
+   * @remarks
+   * Aims to maintain visual consistency by preemptively executing simulation logic on the client.
    */
   public predictLocalPlayer(input: InputFrame, deltaTime: number) {
     this.inputHistory.push(input);
@@ -89,7 +92,7 @@ export class AsteroidsGame
 
     DeterministicSimulation.update(this.world, deltaTime, { isResimulating: false });
 
-    // Save state after simulation of this tick
+    // Attempts to capture state after simulation for potential reconciliation
     this.stateHistory.set(input.tick, this.world.snapshot());
 
     // Keep history manageable

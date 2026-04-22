@@ -11,15 +11,15 @@ export interface CameraConfig {
 }
 
 /**
- * Sistema de Cámara 2D Profesional para TinyAsterEngine.
+ * Sistema de Cámara 2D para TinyAsterEngine.
  *
  * @responsibility Gestionar el seguimiento de múltiples objetivos con suavizado.
  * @responsibility Implementar áreas de zona muerta (deadzone) para un control de cámara orgánico.
- * @responsibility Manejar efectos de vibración (screen shake) con decaimiento determinista.
+ * @responsibility Manejar efectos de vibración (screen shake) con decaimiento controlado.
  *
  * @remarks
- * Utiliza interpolación exponencial para el suavizado, lo que garantiza una respuesta
- * fluida e independiente de la tasa de frames (30, 60, 120+ FPS).
+ * Utiliza interpolación exponencial para el suavizado, diseñada para ofrecer una respuesta
+ * fluida en diversas tasas de refresco (30, 60, 120+ FPS).
  * Las coordenadas de la cámara representan la esquina superior izquierda de la vista en el espacio del mundo.
  */
 export class Camera2D extends System {

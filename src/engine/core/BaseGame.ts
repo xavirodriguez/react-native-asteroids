@@ -37,7 +37,7 @@ export enum GameStatus {
  * Orquestador principal del ciclo de vida y el estado del juego.
  *
  * @remarks
- * Diseñado para implementar un pipeline orientado al determinismo:
+ * Diseñado para implementar un pipeline orientado a la reproducibilidad:
  * 1. INPUT: Captura y procesamiento de comandos.
  * 2. SIMULATION: Ejecución de la lógica de juego y sistemas físicos (Fixed Step).
  * 3. TRANSFORM: Propagación de jerarquías espaciales.
@@ -235,7 +235,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * reinicia la escena actual invocando `onRestartCleanup()`; de lo contrario, limpia
    * el mundo y re-inicializa las entidades.
    *
-   * @param seed - Semilla opcional para garantizar repetibilidad en la simulación.
+   * @param seed - Semilla opcional para favorecer la repetibilidad en la simulación.
    * @postcondition El juego intenta volver a su estado inicial de simulación.
    * @sideEffect Reinicia el tick de simulación y el estado de pausa.
    * @sideEffect Actualiza la semilla global en {@link RandomService}.

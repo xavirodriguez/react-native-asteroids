@@ -56,8 +56,8 @@ export function createJuiceComponent(): JuiceComponent {
  * @executionOrder Fase: Presentation. Debe ejecutarse después de Simulation para sobreescribir visuales.
  *
  * @remarks
- * El sistema utiliza un integrador basado en tiempo real (ms).
- * Se recomienda para efectos no críticos que no afecten la lógica de colisiones.
+ * El sistema utiliza un integrador basado en tiempo real. Se recomienda para efectos
+ * estéticos que no deben interferir con la lógica de colisiones o física.
  *
  * @conceptualRisk [DETERMINISM][LOW] JuiceSystem ahora muta VisualOffsetComponent en lugar de Transform,
  * eliminando el riesgo de desincronización en la simulación física.

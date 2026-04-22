@@ -4,13 +4,15 @@ import { Entity } from "../types/EngineTypes";
  * Gestor de reciclaje de identificadores de entidades.
  *
  * @remarks
- * Proporciona una estrategia orientada a la reducción de alocaciones para la creación y destrucción de entidades.
- * Al reutilizar IDs numéricos, se busca minimizar la fragmentación de memoria y reducir el trabajo
- * del recolector de basura (GC) en juegos con alta tasa de spawn (balas, partículas).
+ * Proporciona una estrategia diseñada para reducir las alocaciones durante la creación y destrucción de entidades.
+ * Al reutilizar IDs numéricos, se busca minimizar la presión sobre el recolector de basura (GC).
  */
 export class EntityPool {
+  /** @internal */
   private pool: Entity[] = [];
+  /** @internal */
   private pooledSet: Set<Entity> = new Set();
+  /** @internal */
   private nextId = 1;
 
   /**
