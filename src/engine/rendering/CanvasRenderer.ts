@@ -1,7 +1,7 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TransformComponent, PreviousTransformComponent, GenericComponent } from "../core/CoreComponents";
+import { RenderComponent, TransformComponent, PreviousTransformComponent, GenericComponent, Camera2DComponent } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
 import { RenderSnapshot, UISnapshot } from "./RenderSnapshot";
 import { CommandBuffer, DrawCommand } from "./CommandBuffer";
@@ -82,6 +82,9 @@ export class CanvasRenderer implements Renderer {
       uiCount: 0,
       shakeX: 0,
       shakeY: 0,
+      cameraX: 0,
+      cameraY: 0,
+      cameraZoom: 1,
       elapsedTime: 0
     };
   }
@@ -171,6 +174,27 @@ export class CanvasRenderer implements Renderer {
     this.swapSnapshots();
     const snapshot = this.currentSnapshot;
 
+    // 0. Camera selection and data
+    const cameras = world.query("Camera2D");
+    let mainCam: Camera2DComponent | null = null;
+    for (const camEntity of cameras) {
+      const cam = world.getComponent<Camera2DComponent>(camEntity, "Camera2D")!;
+      if (cam.isMain || !mainCam) {
+        mainCam = cam;
+        if (cam.isMain) break;
+      }
+    }
+
+    snapshot.cameraX = mainCam?.x ?? 0;
+    snapshot.cameraY = mainCam?.y ?? 0;
+    snapshot.cameraZoom = mainCam?.zoom ?? 1;
+
+    // Visual viewport for culling in world space
+    const cullMinX = snapshot.cameraX;
+    const cullMinY = snapshot.cameraY;
+    const cullMaxX = cullMinX + this.width / snapshot.cameraZoom;
+    const cullMaxY = cullMinY + this.height / snapshot.cameraZoom;
+
     // 1. Entities
     const entities = world.query("Transform", "Render");
     let count = 0;
@@ -187,6 +211,12 @@ export class CanvasRenderer implements Renderer {
         shakeX = (renderRandom.next() - 0.5) * screenShake.intensity;
         shakeY = (renderRandom.next() - 0.5) * screenShake.intensity;
       }
+    }
+
+    // Combine camera shake if present
+    if (mainCam && (mainCam.shakeOffsetX !== 0 || mainCam.shakeOffsetY !== 0)) {
+        shakeX += mainCam.shakeOffsetX;
+        shakeY += mainCam.shakeOffsetY;
     }
 
     snapshot.shakeX = shakeX;
@@ -243,6 +273,14 @@ export class CanvasRenderer implements Renderer {
       snap.vertices = render.vertices || null;
       snap.hitFlashFrames = render.hitFlashFrames || 0;
       snap.data = render.data ?? null;
+
+      // Frustum Culling: check if entity AABB intersects camera viewport
+      const size = render.size;
+      const margin = size * 2; // Extra margin for safe culling
+      if (snap.x + margin < cullMinX || snap.x - margin > cullMaxX ||
+          snap.y + margin < cullMinY || snap.y - margin > cullMaxY) {
+          continue;
+      }
 
       count++;
     }
@@ -333,7 +371,10 @@ export class CanvasRenderer implements Renderer {
 
     this.clear();
     ctx.save();
-    ctx.translate(snapshot.shakeX, snapshot.shakeY);
+
+    // Apply Camera Transformation
+    ctx.scale(snapshot.cameraZoom, snapshot.cameraZoom);
+    ctx.translate(-snapshot.cameraX + snapshot.shakeX / snapshot.cameraZoom, -snapshot.cameraY + snapshot.shakeY / snapshot.cameraZoom);
 
     for (let i = 0; i < this.backgroundEffects.length; i++) {
         this.backgroundEffects[i].drawer(ctx, snapshot, this.width, this.height, world);
