@@ -72,12 +72,6 @@ export interface RenderSnapshot {
   shakeX: number;
   /** Desplazamiento vertical acumulado por efectos de Screen Shake. */
   shakeY: number;
-  /** Posición X de la cámara en el mundo. */
-  cameraX: number;
-  /** Posición Y de la cámara en el mundo. */
-  cameraY: number;
-  /** Nivel de zoom de la cámara. */
-  cameraZoom: number;
   /** Tiempo transcurrido (ms) desde el inicio de la simulación. */
   elapsedTime: number;
   /** Datos arbitrarios para efectos de fondo. */
