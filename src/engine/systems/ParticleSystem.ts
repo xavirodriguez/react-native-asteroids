@@ -35,8 +35,8 @@ export interface ParticleParams {
  * @conceptualRisk [PERFORMANCE][HIGH] Un número excesivo de emisores activos o una tasa (rate)
  * muy alta puede saturar el {@link World} con entidades de corta duración, degradando el rendimiento
  * de todas las queries del motor.
- * @conceptualRisk [DETERMINISM][MEDIUM] Utiliza `RandomService.nextRange` (global) para las propiedades
- * de la partícula. Se debe asegurar que el servicio esté correctamente inicializado para replays.
+ * @conceptualRisk [DETERMINISM][LOW] Utiliza `RandomService.getRenderRandom()` para las propiedades
+ * de la partícula, lo que garantiza que la simulación de gameplay no se vea afectada por efectos visuales.
  */
 export class ParticleSystem extends System {
   private particlePool: PrefabPool<Record<string, Component>, ParticleParams>;
@@ -89,11 +89,12 @@ export class ParticleSystem extends System {
   }
 
   private spawnParticle(world: World, config: ParticleEmitterConfig): void {
-    const angle = RandomService.nextRange(config.angle.min, config.angle.max) * (Math.PI / 180);
-    const speed = RandomService.nextRange(config.speed.min, config.speed.max);
-    const lifetime = RandomService.nextRange(config.lifetime.min, config.lifetime.max) * 1000;
-    const size = RandomService.nextRange(config.size.min, config.size.max);
-    const color = config.color[RandomService.nextInt(0, config.color.length)];
+    const renderRandom = RandomService.getRenderRandom();
+    const angle = renderRandom.nextRange(config.angle.min, config.angle.max) * (Math.PI / 180);
+    const speed = renderRandom.nextRange(config.speed.min, config.speed.max);
+    const lifetime = renderRandom.nextRange(config.lifetime.min, config.lifetime.max) * 1000;
+    const size = renderRandom.nextRange(config.size.min, config.size.max);
+    const color = config.color[renderRandom.nextInt(0, config.color.length)];
 
     const pos = config.position || { x: 0, y: 0 };
 
