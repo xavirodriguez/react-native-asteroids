@@ -57,7 +57,6 @@ export class AsteroidsGame
 
   public override async init(): Promise<void> {
     if (!this.assetLoader) this.assetLoader = new AssetLoader();
-    this.world.setResource("AssetLoader", this.assetLoader);
 
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
@@ -258,6 +257,12 @@ export class AsteroidsGame
 
   public isGameOver(): boolean {
     return this.gameStateSystem.isGameOver();
+  }
+
+  protected override registerGameResources(world: World): void {
+    if (this.assetLoader) {
+      world.setResource("AssetLoader", this.assetLoader);
+    }
   }
 
 }

@@ -332,31 +332,35 @@ export class CanvasRenderer implements Renderer {
     this.commandBuffer.sort();
 
     this.clear();
-    ctx.save();
-    ctx.translate(snapshot.shakeX, snapshot.shakeY);
 
+    // 1. Background and Pre-render (Clean Screen Space)
+    ctx.save();
     for (let i = 0; i < this.backgroundEffects.length; i++) {
         this.backgroundEffects[i].drawer(ctx, snapshot, this.width, this.height, world);
     }
-
     for (let i = 0; i < this.preRenderHooks.length; i++) {
       this.preRenderHooks[i](ctx, snapshot, world);
     }
+    ctx.restore();
 
+    // 2. Entities and World-Space (With Shake)
+    ctx.save();
+    ctx.translate(snapshot.shakeX, snapshot.shakeY);
     const commands = this.commandBuffer.getCommands();
     const cmdCount = this.commandBuffer.getCount();
     for (let i = 0; i < cmdCount; i++) {
       this.executeCommand(ctx, commands[i], world, snapshot.elapsedTime);
     }
+    ctx.restore();
 
+    // 3. Foreground and Post-render (Clean Screen Space)
+    ctx.save();
     for (let i = 0; i < this.foregroundEffects.length; i++) {
         this.foregroundEffects[i].drawer(ctx, snapshot, this.width, this.height, world);
     }
-
     for (let i = 0; i < this.postRenderHooks.length; i++) {
       this.postRenderHooks[i](ctx, snapshot, world);
     }
-
     ctx.restore();
 
     this.renderUIFromSnapshot(ctx, snapshot);

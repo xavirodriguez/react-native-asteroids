@@ -66,7 +66,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected _config: BaseGameConfig;
   protected hierarchySystem: HierarchySystem;
   protected interpolationPrepSystem: InterpolationPrepSystem;
-  protected readOnlyWorld: ReadOnlyWorld;
 
   public abstract initializeRenderer(renderer: import("../rendering/Renderer").Renderer<unknown>): void;
 
@@ -74,7 +73,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     const { isMultiplayer = false } = config;
     this.isMultiplayer = isMultiplayer;
     this.world = new World();
-    this.readOnlyWorld = new ReadOnlyWorld(this.world);
     this.gameLoop = new GameLoop();
     this.unifiedInput = new UnifiedInputSystem();
     this.eventBus = new EventBus();
@@ -191,6 +189,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       // Skip system re-registration during restart because systems survive world.clear().
       // We only need to re-register the resources that were cleared.
       this.registerEssentialSystems(this.world, { skipSystems: true });
+      this.registerGameResources(this.world);
       this.initializeEntities();
     }
 
@@ -252,6 +251,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
   protected async registerEngineSystems(): Promise<void> {
     this.registerEssentialSystems(this.world);
+    this.registerGameResources(this.world);
 
     this.world.addSystem(new XPSystem(this.eventBus), { phase: SystemPhase.GameRules });
     const profile = await PlayerProfileService.getProfile();
@@ -278,6 +278,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       world.addSystem(this.unifiedInput, { phase: SystemPhase.Input });
       world.addSystem(this.hierarchySystem, { phase: SystemPhase.PostSimulation });
     }
+  }
+
+  /**
+   * Hook para que las subclases registren recursos específicos del juego.
+   * Se llama durante la inicialización y tras un reinicio del mundo.
+   * @param world - El mundo donde registrar los recursos.
+   */
+  protected registerGameResources(world: World): void {
+    // Implementado por subclases
   }
 
   protected shouldStallSimulation(): boolean {
