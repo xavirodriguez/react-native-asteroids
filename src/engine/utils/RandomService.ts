@@ -7,8 +7,8 @@
  * @responsibility Segregar el estado del PRNG entre simulación y presentación.
  *
  * @remarks
- * Es imperativo utilizar `getGameplayRandom()` para cualquier lógica que afecte
- * el estado del juego (IA, spawn, daño) para garantizar determinismo y soporte de replay.
+ * Es altamente recomendado utilizar `getGameplayRandom()` para cualquier lógica que afecte
+ * el estado del juego (IA, spawn, daño) para facilitar el determinismo y el soporte de replay.
  * Para efectos puramente estéticos (partículas, flashes), se debe usar `getRenderRandom()`.
  *
  * @invariant Dos instancias con la misma semilla y el mismo número de llamadas a next() deben

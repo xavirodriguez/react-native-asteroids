@@ -4,6 +4,9 @@
  *
  * Este archivo consolida y expone la API pública del motor, organizada por dominios.
  * Se priorizan las versiones modernas y canónicas de cada sistema.
+ *
+ * @warning Algunas exportaciones pueden incluir componentes internos necesarios para la extensibilidad,
+ * pero cuyo uso directo no está recomendado para lógica de alto nivel.
  */
 
 // --- CORE ECS ---

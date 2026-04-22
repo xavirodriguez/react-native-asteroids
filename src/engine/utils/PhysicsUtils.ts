@@ -24,7 +24,7 @@ interface VelocityLike {
 
 /**
  * Utilidades de integración física compartidas.
- * Garantiza la consistencia matemática entre los sistemas del motor y las predicciones de red.
+ * Diseñadas para fomentar la consistencia matemática entre los sistemas del motor y las predicciones de red.
  *
  * @responsibility Proveer algoritmos de integración estándar (Euler/Damping).
  * @responsibility Centralizar el manejo de unidades (milisegundos vs segundos).

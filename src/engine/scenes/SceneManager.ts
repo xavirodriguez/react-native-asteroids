@@ -13,7 +13,7 @@ export enum SceneState {
  * Gestor central de transiciones entre escenas.
  *
  * @responsibility Implementar una Máquina de Estados Finitos (FSM) para el flujo de escenas.
- * @responsibility Garantizar transiciones atómicas mediante una cola de tareas secuencial.
+ * @responsibility Gestionar transiciones secuenciales mediante una cola de tareas.
  * @responsibility Gestionar la pila de escenas (push/pop) para sub-estados como menús de pausa.
  *
  * @remarks
@@ -81,7 +81,7 @@ export class SceneManager {
   }
 
   /**
-   * Realiza una transición atómica a una nueva escena.
+   * Realiza una transición a una nueva escena.
    * Limpia la pila actual y reemplaza la escena activa.
    *
    * @param scene - La nueva instancia de {@link Scene} a cargar.

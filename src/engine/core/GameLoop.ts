@@ -22,7 +22,7 @@ export interface GameLoopConfig {
  * El loop separa la lógica de simulación de la tasa de refresco del monitor, evitando que
  * variaciones en el rendimiento del renderizado afecten la integridad de la física.
  *
- * @contract Fixed Update: Se garantiza que la fase de simulación siempre reciba incrementos de 16.67ms (1/60s).
+ * @contract Fixed Update: La fase de simulación está diseñada para recibir incrementos constantes de 16.67ms (1/60s).
  *
  * @conceptualRisk [PERFORMANCE][HIGH] El loop de `GameLoop` puede disparar el "Spiral of Death"
  * si la simulación es consistentemente más lenta que el tiempo real, a pesar del límite `maxDeltaMs`.
@@ -68,7 +68,7 @@ export class GameLoop {
    * Suscribe un callback para la simulación física (Fixed Update).
    *
    * @remarks
-   * Esta es la fase determinista del motor. Se garantiza que el callback reciba un
+   * Esta es la fase orientada al determinismo del motor. El sistema intenta que el callback reciba un
    * incremento de tiempo constante (16.67ms). Puede ejecutarse múltiples veces en un
    * solo frame del navegador para "recuperar" tiempo si el rendimiento cae.
    *
@@ -147,8 +147,13 @@ export class GameLoop {
     let updatesThisFrame = 0;
     while (this.accumulator >= this.fixedDeltaTime) {
       if (updatesThisFrame >= this.maxUpdatesPerFrame) {
+        /**
+         * @warning Spiral of Death detected.
+         * Se descarta el tiempo acumulado sobrante para evitar bloquear el hilo principal.
+         * Esto rompe el determinismo temporal estricto en favor de la estabilidad operativa.
+         */
         console.warn(`[GameLoop] Spiral of Death detected. Dropping remaining ticks for this frame. (Updates: ${updatesThisFrame})`);
-        this.accumulator = 0; // Descarta el tiempo acumulado sobrante para estabilizar
+        this.accumulator = 0;
         break;
       }
 

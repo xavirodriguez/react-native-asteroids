@@ -25,7 +25,7 @@ export interface BaseGameConfig {
  * Orquestador principal del ciclo de vida y el estado del juego.
  *
  * @remarks
- * Impone un pipeline determinista estricto:
+ * Diseñado para implementar un pipeline orientado al determinismo:
  * 1. INPUT: Captura y procesamiento de comandos.
  * 2. SIMULATION: Ejecución de la lógica de juego y sistemas físicos (Fixed Step).
  * 3. TRANSFORM: Propagación de jerarquías espaciales.
@@ -95,7 +95,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
   private setupLoop(): void {
     /**
-     * Deterministic Pipeline (Fixed Update Phase):
+     * Pipeline orientado al determinismo (Fixed Update Phase):
      *
      * 1. PRE-UPDATE: Snapshot Transforms for Interpolation.
      * 2. INPUT: Process raw inputs into semantic actions.
@@ -182,7 +182,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * el mundo y re-inicializa las entidades.
    *
    * @param seed - Semilla opcional para garantizar repetibilidad en la simulación.
-   * @postcondition El juego vuelve a su estado inicial de simulación.
+   * @postcondition El juego intenta volver a su estado inicial de simulación.
    * @sideEffect Reinicia el tick de simulación y el estado de pausa.
    * @sideEffect Actualiza la semilla global en {@link RandomService}.
    */
