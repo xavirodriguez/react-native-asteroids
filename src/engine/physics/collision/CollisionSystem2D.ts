@@ -72,7 +72,7 @@ export class CollisionSystem2D extends System {
     }
 
     let candidates: Array<[Entity, Entity]>;
-    if (this.spatialHash && entities.length > 50) {
+    if (this.spatialHash) {
       this.spatialHash.clear();
       const entityBoundsMap = new Map<Entity, import("../../types/EngineTypes").AABB>();
       for (let i = 0; i < entities.length; i++) {
@@ -108,26 +108,48 @@ export class CollisionSystem2D extends System {
       const transA = world.getComponent<TransformComponent>(entityA, "Transform")!;
       const transB = world.getComponent<TransformComponent>(entityB, "Transform")!;
       const ccdA = world.getComponent<ContinuousColliderComponent>(entityA, "ContinuousCollider");
+      const ccdB = world.getComponent<ContinuousColliderComponent>(entityB, "ContinuousCollider");
       const velA = world.getComponent<VelocityComponent>(entityA, "Velocity");
+      const velB = world.getComponent<VelocityComponent>(entityB, "Velocity");
 
-      if (ccdA?.enabled && velA) {
-          const dtSeconds = _deltaTime / 1000;
-          let ccdResult: CCDResult | null = null;
+      // Continuous Collision Detection (CCD)
+      if ((ccdA?.enabled || ccdB?.enabled)) {
+          const velX = (velA?.dx ?? 0) - (velB?.dx ?? 0);
+          const velY = (velA?.dy ?? 0) - (velB?.dy ?? 0);
+          const relativeSpeedSq = velX * velX + velY * velY;
+
+          const thresholdA = ccdA?.velocityThreshold ?? 0;
+          const thresholdB = ccdB?.velocityThreshold ?? 0;
+          const minThreshold = (ccdA?.enabled && ccdB?.enabled)
+            ? Math.min(thresholdA, thresholdB)
+            : (ccdA?.enabled ? thresholdA : thresholdB);
+
+          if (relativeSpeedSq > minThreshold * minThreshold) {
+              const dtSeconds = _deltaTime / 1000;
+              let ccdResult: CCDResult | null = null;
           const ax = (transA.worldX ?? transA.x) + colA.offsetX;
           const ay = (transA.worldY ?? transA.y) + colA.offsetY;
           const bx = (transB.worldX ?? transB.x) + colB.offsetX;
           const by = (transB.worldY ?? transB.y) + colB.offsetY;
 
           if (colA.shape.type === "circle") {
-              if (colB.shape.type === "circle") ccdResult = ContinuousCollision.sweptCircleVsCircle(ax, ay, velA.dx, velA.dy, colA.shape.radius, bx, by, colB.shape.radius, dtSeconds);
-              else if (colB.shape.type === "aabb") ccdResult = ContinuousCollision.sweptCircleVsAABB(ax, ay, velA.dx, velA.dy, colA.shape.radius, bx, by, colB.shape.halfWidth, colB.shape.halfHeight, dtSeconds);
+              if (colB.shape.type === "circle") ccdResult = ContinuousCollision.sweptCircleVsCircle(ax, ay, velX, velY, colA.shape.radius, bx, by, colB.shape.radius, dtSeconds);
+              else if (colB.shape.type === "aabb") ccdResult = ContinuousCollision.sweptCircleVsAABB(ax, ay, velX, velY, colA.shape.radius, bx, by, colB.shape.halfWidth, colB.shape.halfHeight, dtSeconds);
           } else if (colA.shape.type === "aabb" && colB.shape.type === "aabb") {
-              ccdResult = ContinuousCollision.sweptAABBVsAABB(ax, ay, velA.dx, velA.dy, colA.shape.halfWidth, colA.shape.halfHeight, bx, by, colB.shape.halfWidth, colB.shape.halfHeight, dtSeconds);
+              ccdResult = ContinuousCollision.sweptAABBVsAABB(ax, ay, velX, velY, colA.shape.halfWidth, colA.shape.halfHeight, bx, by, colB.shape.halfWidth, colB.shape.halfHeight, dtSeconds);
           }
 
-          if (ccdResult?.hit && ccdResult.timeOfImpact < 1) {
-              transA.x += velA.dx * dtSeconds * ccdResult.timeOfImpact;
-              transA.y += velA.dy * dtSeconds * ccdResult.timeOfImpact;
+              if (ccdResult?.hit && ccdResult.timeOfImpact < 1) {
+                  // Resolve by moving both entities to TOI
+                  if (velA) {
+                      transA.x += velA.dx * dtSeconds * ccdResult.timeOfImpact;
+                      transA.y += velA.dy * dtSeconds * ccdResult.timeOfImpact;
+                  }
+                  if (velB) {
+                      transB.x += velB.dx * dtSeconds * ccdResult.timeOfImpact;
+                      transB.y += velB.dy * dtSeconds * ccdResult.timeOfImpact;
+                  }
+              }
           }
       }
 

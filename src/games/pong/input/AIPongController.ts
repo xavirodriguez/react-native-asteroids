@@ -1,4 +1,3 @@
-import { InputController } from "../../../engine/legacy/InputController";
 import { World } from "../../../engine/core/World";
 import { TransformComponent } from "../../../engine/types/EngineTypes";
 import { PongInput } from "../types";
@@ -6,17 +5,18 @@ import { PongInput } from "../types";
 export type AIDifficulty = "easy" | "medium" | "hard";
 
 /**
- * AI Agent for Pong that acts as an InputController.
+ * AI Agent for Pong.
  * Follows the ball vertically with configurable difficulty.
+ * Refactored to avoid legacy InputController dependency.
  */
-export class AIPongController extends InputController<PongInput> {
+export class AIPongController {
   private difficulty: AIDifficulty;
   private lastUpdate = 0;
   private reactionDelay = 0; // ms
   private errorMargin = 0;   // pixels
+  private lastInputs: Partial<PongInput> = { p2Up: false, p2Down: false };
 
   constructor(difficulty: AIDifficulty = "medium") {
-    super();
     this.difficulty = difficulty;
     this.applyDifficultySettings();
   }
@@ -46,8 +46,8 @@ export class AIPongController extends InputController<PongInput> {
    * Note: In a real game loop, we'd pass the world or a snapshot.
    * For this ECS, we'll assume the update method will be called by the game.
    */
-  public update(world: World, currentTime: number): void {
-    if (currentTime - this.lastUpdate < this.reactionDelay) return;
+  public update(world: World, currentTime: number): Partial<PongInput> {
+    if (currentTime - this.lastUpdate < this.reactionDelay) return this.lastInputs;
     this.lastUpdate = currentTime;
 
     const ball = world.query("Ball", "Transform", "Velocity")[0];
@@ -56,7 +56,7 @@ export class AIPongController extends InputController<PongInput> {
         return tags.includes("right"); // AI usually controls P2
     });
 
-    if (!ball || !paddle) return;
+    if (!ball || !paddle) return this.lastInputs;
 
     const ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;
     const paddlePos = world.getComponent<TransformComponent>(paddle, "Transform")!;
@@ -71,6 +71,7 @@ export class AIPongController extends InputController<PongInput> {
       else newState.p2Down = true;
     }
 
-    this.setInputs(newState);
+    this.lastInputs = newState;
+    return newState;
   }
 }

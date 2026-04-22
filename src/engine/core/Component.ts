@@ -18,9 +18,11 @@ export interface Component {
  * Una versión genérica de un componente que permite el acceso a datos arbitrarios.
  * Útil para acceder a componentes cuya estructura no se conoce en tiempo de compilación (ej. GameState).
  *
- * @conceptualRisk [TYPE_SAFETY][MEDIUM] El uso de `unknown` requiere casting explícito.
- * Se recomienda usar interfaces específicas siempre que sea posible.
+ * @remarks
+ * Esta versión genérica mejora la seguridad de tipos al permitir especificar la estructura esperada
+ * de los datos. Se integra con el sistema de serialización al mantener la consistencia de tipos.
+ *
+ * @conceptualRisk [TYPE_SAFETY][LOW] Aunque es genérico, el uso inapropiado de tipos amplios
+ * puede debilitar la seguridad. Úsese con tipos de datos específicos (POJOs).
  */
-export interface GenericComponent extends Component {
-  [key: string]: unknown;
-}
+export type GenericComponent<T = Record<string, unknown>> = Component & T;

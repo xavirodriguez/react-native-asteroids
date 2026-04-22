@@ -27,8 +27,7 @@ describe("AIPongController", () => {
     ballPos.y = 100;
     paddlePos.y = 300;
 
-    controller.update(world, 1000);
-    const inputs = controller.getCurrentInputs();
+    const inputs = controller.update(world, 1000);
 
     expect(inputs.p2Up).toBe(true);
     expect(inputs.p2Down).toBe(false);
@@ -46,8 +45,7 @@ describe("AIPongController", () => {
     ballPos.y = 500;
     paddlePos.y = 300;
 
-    controller.update(world, 1000);
-    const inputs = controller.getCurrentInputs();
+    const inputs = controller.update(world, 1000);
 
     expect(inputs.p2Down).toBe(true);
     expect(inputs.p2Up).toBe(false);
