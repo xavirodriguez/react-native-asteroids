@@ -43,6 +43,9 @@ export class PongGame extends BaseGame<PongState, PongInput> {
   }
 
   public override async init(): Promise<void> {
+    if (!this.assetLoader) this.assetLoader = new AssetLoader();
+    this.world.setResource("AssetLoader", this.assetLoader);
+
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled

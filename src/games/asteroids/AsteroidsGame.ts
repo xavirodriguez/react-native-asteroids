@@ -56,6 +56,9 @@ export class AsteroidsGame
   }
 
   public override async init(): Promise<void> {
+    if (!this.assetLoader) this.assetLoader = new AssetLoader();
+    this.world.setResource("AssetLoader", this.assetLoader);
+
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
@@ -190,7 +193,6 @@ export class AsteroidsGame
     // Initialize pools here because super() calls this before the constructor finishes
     if (!this.bulletPool) this.bulletPool = new BulletPool();
     if (!this.particlePool) this.particlePool = new ParticlePool();
-    if (!this.assetLoader) this.assetLoader = new AssetLoader();
 
     // Configure UnifiedInputSystem bindings
     this.unifiedInput.bind("thrust", [GAME_CONFIG.KEYS.THRUST]);
