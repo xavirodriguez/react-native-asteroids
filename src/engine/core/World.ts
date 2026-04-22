@@ -55,7 +55,7 @@ export class World {
   public version = 0;
   private commandBuffer = new WorldCommandBuffer();
   private readOnlyProxy: World;
-  private destructionPayload: { entity: Entity; world: World } = { entity: 0 as Entity, world: this };
+  private destructionPayload: { entity: Entity; world: World } = { entity: 0 as Entity, world: null! };
 
   constructor() {
     this.readOnlyProxy = new ReadOnlyWorld(this) as unknown as World;
