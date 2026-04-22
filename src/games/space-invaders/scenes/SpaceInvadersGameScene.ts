@@ -62,7 +62,6 @@ export class SpaceInvadersGameScene extends Scene {
     const inputSys = new SpaceInvadersInputSystem(this.playerBulletPool);
     if (this.game.isMultiplayer) inputSys.setMultiplayerMode(true);
 
-    this.world.addSystem((this.game as unknown as import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, any>>).unifiedInput);
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new JuiceSystem());
