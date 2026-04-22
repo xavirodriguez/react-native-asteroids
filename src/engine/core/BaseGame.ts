@@ -163,7 +163,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * @postcondition El {@link GameLoop} comienza a despachar eventos de actualización.
    */
   public start(): void {
-    if (this._status === GameStatus.UNINITIALIZED) {
+    if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.INITIALIZING) {
       throw new Error("BaseGame: Cannot start() before init().");
     }
     if (this._status === GameStatus.DESTROYED) {
