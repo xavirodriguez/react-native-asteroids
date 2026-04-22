@@ -78,7 +78,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.gameLoop = new GameLoop();
     this.unifiedInput = new UnifiedInputSystem();
     this.eventBus = new EventBus();
-    this.sceneManager = new SceneManager(this.world);
+    this.sceneManager = new SceneManager(this.world, (world) => this.registerEssentialSystems(world));
     this.inputBuffer = new InputBuffer();
     this.replayRecorder = new ReplayRecorder();
     this.hierarchySystem = new HierarchySystem();
@@ -104,11 +104,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
      * Pipeline orientado al determinismo (Fixed Update Phase):
      *
      * 1. EVENT PROCESSING: Handle deferred events from the previous frame.
-     * 2. PRE-UPDATE: Snapshot Transforms for Interpolation.
-     * 3. INPUT: Process raw inputs into semantic actions.
-     * 4. SIMULATION: Execute game logic and physics systems.
-     * 5. POST-UPDATE: Propagate transforms through hierarchy and flush changes.
-     * 6. PRESENTATION: Read-only phase for visuals and audio.
+     * 2. SIMULATION & PRESENTATION: Process physics, rules, and visuals via phase-gated pipeline.
      */
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (this._isPaused) return;
@@ -118,18 +114,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       // 1. EVENT PROCESSING
       this.eventBus.processDeferred();
 
-      // 2. PRE-UPDATE: Snapshot for interpolation
-      this.interpolationPrepSystem.update(activeWorld, deltaTime);
-
-      // 4. SIMULATION & PRESENTATION
+      // 2. SIMULATION & PRESENTATION
       if (this.sceneManager.getCurrentScene()) {
         this.sceneManager.update(deltaTime);
       } else {
         activeWorld.update(deltaTime);
       }
-
-      // Ensure hierarchy propagation happens on the active world (base or scene).
-      this.hierarchySystem.update(activeWorld, deltaTime);
 
       this.currentTick++;
       this._notifyListeners();
@@ -199,6 +189,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       await this.sceneManager.restartCurrentScene();
     } else {
       this.world.clear();
+      this.registerEssentialSystems(this.world);
       this.initializeEntities();
     }
     if (this._isPaused) this.resume();
@@ -258,6 +249,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   protected async registerEngineSystems(): Promise<void> {
+    this.registerEssentialSystems(this.world);
+
     this.world.addSystem(new XPSystem(this.eventBus), { phase: SystemPhase.GameRules });
     const profile = await PlayerProfileService.getProfile();
     this.world.addSystem(new PaletteSystem(profile.activePalette), { phase: SystemPhase.Presentation });
@@ -267,6 +260,19 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     if (assetLoader) {
       this.world.addSystem(new AssetCleanupSystem(assetLoader, this.eventBus), { phase: SystemPhase.Simulation });
     }
+  }
+
+  /**
+   * Registra los recursos y sistemas esenciales en un mundo (base o de escena).
+   * @param world - El mundo donde registrar los elementos.
+   */
+  protected registerEssentialSystems(world: World): void {
+    world.setResource("EventBus", this.eventBus);
+    world.setResource("UnifiedInputSystem", this.unifiedInput);
+
+    world.addSystem(this.interpolationPrepSystem, { phase: SystemPhase.Input, priority: 1000 });
+    world.addSystem(this.unifiedInput, { phase: SystemPhase.Input });
+    world.addSystem(this.hierarchySystem, { phase: SystemPhase.PostSimulation });
   }
 
   protected shouldStallSimulation(): boolean {

@@ -32,9 +32,11 @@ export class SceneManager {
   private transitionQueue: (() => Promise<void>)[] = [];
   private isProcessingTransition = false;
   private world: World;
+  private onWorldCreated?: (world: World) => void;
 
-  constructor(world: World) {
+  constructor(world: World, onWorldCreated?: (world: World) => void) {
     this.world = world;
+    this.onWorldCreated = onWorldCreated;
   }
 
   public getCurrentScene(): Scene | null {
@@ -117,6 +119,10 @@ export class SceneManager {
         this.currentScene = scene;
         this.sceneStack = [scene];
 
+        if (this.onWorldCreated) {
+          this.onWorldCreated(scene.getWorld());
+        }
+
         await runLifecycleAsync(async () => {
           const sceneAsAny = scene as unknown as Record<string, unknown>;
           if (typeof sceneAsAny.onEnter === "function") {
@@ -147,6 +153,10 @@ export class SceneManager {
         this.state = SceneState.LOADING;
         this.sceneStack.push(scene);
         this.currentScene = scene;
+
+        if (this.onWorldCreated) {
+          this.onWorldCreated(scene.getWorld());
+        }
 
         await runLifecycleAsync(async () => {
           const sceneAsAny = scene as unknown as Record<string, unknown>;
