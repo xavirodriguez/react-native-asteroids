@@ -238,13 +238,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     }
 
     if (this.sceneManager.getCurrentScene()) {
+      await this._onBeforeRestart();
       await this.sceneManager.restartCurrentScene();
     } else {
+      await this._onBeforeRestart();
       this.world.clear();
       this.registerEssentialSystems(this.world);
       this.initializeEntities();
     }
-  }
 
   /**
    * Libera todos los recursos y detiene el motor de forma definitiva.
