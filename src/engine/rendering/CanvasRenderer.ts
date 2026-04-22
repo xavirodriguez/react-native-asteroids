@@ -180,11 +180,13 @@ export class CanvasRenderer implements Renderer {
 
     let shakeX = 0;
     let shakeY = 0;
-    if (gameState?.screenShake && (gameState.screenShake as Record<string, number>).remaining > 0) {
-      const renderRandom = RandomService.getInstance("render");
+    if (gameState?.screenShake) {
       const screenShake = gameState.screenShake as Record<string, number>;
-      shakeX = (renderRandom.next() - 0.5) * screenShake.intensity;
-      shakeY = (renderRandom.next() - 0.5) * screenShake.intensity;
+      if (screenShake.remaining > 0 || screenShake.duration > 0) {
+        const renderRandom = RandomService.getInstance("render");
+        shakeX = (renderRandom.next() - 0.5) * screenShake.intensity;
+        shakeY = (renderRandom.next() - 0.5) * screenShake.intensity;
+      }
     }
 
     snapshot.shakeX = shakeX;
