@@ -329,7 +329,9 @@ export interface Camera2DComponent extends Component {
   smoothing: number;
   offset: { x: number; y: number };
   bounds: AABB | null;
-  target?: Entity;
+  deadzone: AABB | null;
+  targets: Entity[];
+  isMain?: boolean;
 }
 
 export interface ScreenShakeComponent extends Component {
