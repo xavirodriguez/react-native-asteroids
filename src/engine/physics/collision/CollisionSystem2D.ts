@@ -10,7 +10,7 @@ export type CollisionCallback = (world: World, entityA: Entity, entityB: Entity,
 export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) => void;
 
 /**
- * Sistema integral de detección de colisiones 2D.
+ * Sistema de detección de colisiones 2D.
  *
  * @responsibility Selección de fase ancha híbrida (Spatial Hash / Sweep and Prune).
  * @responsibility Detección de fase estrecha (AABB, Círculo) y generación de manifolds.
@@ -23,8 +23,8 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
  * @executionOrder Fase: {@link SystemPhase.Collision}.
  *
  * @remarks
- * Este sistema es el corazón de la interacción física. Utiliza un Spatial Hash para optimizar
- * mundos con más de 50 entidades. Los eventos de colisión se almacenan en componentes
+ * Este sistema orquesta la interacción física entre entidades. Utiliza un Spatial Hash para optimizar
+ * mundos con alta densidad de entidades. Los eventos de colisión se almacenan en componentes
  * para ser consumidos por sistemas de GameRules (ej: DamageSystem).
  *
  * @conceptualRisk [MUTATION_SAFETY][HIGH] Los callbacks de colisión se ejecutan durante la
@@ -46,6 +46,10 @@ export class CollisionSystem2D extends System {
 
   /**
    * Orchestrates the collision detection pipeline.
+   *
+   * @warning Los callbacks registrados (`onCollision`, `onTriggerEnter`, etc.) se ejecutan durante
+   * la fase de resolución. NO debe realizar mutaciones estructurales directas en el World
+   * dentro de estos callbacks; use el {@link WorldCommandBuffer} en su lugar.
    *
    * @remarks
    * 1. Resets per-frame collision/trigger events.

@@ -2,11 +2,11 @@ import { Entity, AABB } from "../../types/EngineTypes";
 import { ObjectPool } from "../../utils/ObjectPool";
 
 /**
- * Implementación de Spatial Hashing para detección de colisiones de fase ancha (broadphase) eficiente.
+ * Implementación de Spatial Hashing para detección de colisiones de fase ancha (broadphase).
  * Divide el espacio 2D en una cuadrícula uniforme y rastrea qué entidades ocupan qué celdas.
  *
- * @responsibility Reducir la complejidad de comprobación de colisiones de O(N²) a aproximadamente O(N log N).
- * @responsibility Gestionar el ciclo de vida de las listas de entidades por celda mediante pooling para minimizar GC.
+ * @responsibility Intentar reducir la complejidad de comprobación de colisiones de O(N²) hacia O(N log N) en escenarios promedio.
+ * @responsibility Gestionar el ciclo de vida de las listas de entidades por celda mediante pooling para reducir la presión sobre el GC.
  *
  * @conceptualRisk [GRID_SIZE_TUNING] Un `cellSize` demasiado pequeño aumenta el uso de memoria y el coste de inserción (muchas celdas por AABB).
  * @conceptualRisk [GRID_SIZE_TUNING] Un `cellSize` demasiado grande degrada a O(N²) dentro de una misma celda saturada.

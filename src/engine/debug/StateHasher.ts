@@ -1,10 +1,10 @@
 import { World } from "../core/World";
 
 /**
- * Utilidad para generar hashes deterministas del estado completo del mundo ECS.
- * Fundamental para la detección de desincronización (desync) en entornos multijugador o replay.
+ * Utilidad para generar hashes del estado del mundo ECS.
+ * Fundamental para ayudar en la detección de desincronización (desync) en entornos multijugador o replay.
  *
- * @responsibility Serializar y hashear el estado de todas las entidades y componentes activos.
+ * @responsibility Serializar y hashear el estado serializable de todas las entidades y componentes activos.
  * @conceptualRisk [JSON_DETERMINISM] `JSON.stringify` no garantiza el orden de las propiedades de los objetos.
  * Si dos clientes tienen los mismos datos pero las propiedades del objeto se insertaron en orden distinto,
  * los hashes diferirán (falso positivo de desync).

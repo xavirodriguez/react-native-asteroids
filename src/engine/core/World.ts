@@ -56,10 +56,10 @@ export class World {
   private commandBuffer = new WorldCommandBuffer();
 
   /**
-   * Genera una instantánea serializable del estado completo del mundo para rollback o persistencia.
+   * Genera una instantánea serializable del estado del mundo para rollback o persistencia.
    *
    * @remarks
-   * Captura entidades activas, datos de componentes, contadores de IDs, versión del mundo
+   * Captura entidades activas, datos serializables de componentes, contadores de IDs, versión del mundo
    * y la semilla actual del generador de números aleatorios de gameplay.
    * Las entidades se devuelven en orden de inserción del Set (no necesariamente ordenadas por ID).
    *
@@ -122,14 +122,14 @@ export class World {
    * Restaura el estado del mundo a partir de una instantánea previamente capturada.
    *
    * @remarks
-   * Este método reconstruye todos los mapas de componentes e índices. También garantiza
-   * que las queries existentes se invaliden y reconstruyan para mantener la consistencia
-   * de los resultados sin romper las referencias a los objetos Query.
+   * Este método reconstruye todos los mapas de componentes e índices basándose en los datos serializados.
+   * También garantiza que las queries existentes se invaliden y reconstruyan para mantener la
+   * consistencia de los resultados sin romper las referencias a los objetos Query.
    *
    * @param state - El objeto de estado obtenido de {@link World.snapshot}.
    *
    * @precondition El estado proporcionado debe ser una estructura válida generada por el motor.
-   * @postcondition El mundo refleja exactamente el estado contenido en la instantánea.
+   * @postcondition El mundo refleja el estado contenido en la instantánea (limitado a propiedades serializables).
    * @postcondition {@link World.version} se sincroniza con el valor del estado restaurado.
    * @sideEffect Limpia todos los datos actuales del mundo antes de la restauración.
    * @sideEffect Re-inicializa la semilla de `RandomService("gameplay")`.
@@ -553,6 +553,10 @@ export class World {
 
   /**
    * Ejecuta un ciclo completo de actualización para todos los sistemas registrados.
+   *
+   * @warning No se deben realizar mutaciones estructurales directas (createEntity, addComponent, etc.)
+   * durante la ejecución de los sistemas. Use el {@link WorldCommandBuffer} en su lugar para
+   * diferir estos cambios al final del frame y evitar la invalidación de iteradores.
    *
    * @remarks
    * 1. Re-ordena sistemas si es necesario.

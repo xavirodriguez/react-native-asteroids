@@ -34,7 +34,7 @@ export interface StateMachineConfig<TState extends string, TContext> {
  * @typeParam TState - Claves de estado permitidas.
  * @typeParam TContext - Contexto persistente inyectado en los hooks.
  *
- * @contract Transición: Al cambiar de estado, se garantiza el orden: `old.onExit` -\> `new.onEnter`.
+ * @contract Transición: Al cambiar de estado, el sistema ejecuta los hooks en orden: `old.onExit` -\> `new.onEnter`.
  * @contract Unicidad: No se puede transicionar al mismo estado en el que se encuentra la máquina.
  *
  * @conceptualRisk [CONTEXT_MUTATION][LOW] El contexto es mutable por referencia; los estados
