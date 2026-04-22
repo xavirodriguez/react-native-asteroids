@@ -63,7 +63,6 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     this.unifiedInput.bind("p2Down", ["ArrowDown"]);
 
     this.stateSystem = new PongGameStateSystem(this.config);
-    this.world.addSystem(this.unifiedInput);
     this.world.addSystem(new PongInputSystem(aiDifficulty));
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new JuiceSystem());

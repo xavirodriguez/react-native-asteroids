@@ -204,7 +204,6 @@ export class AsteroidsGame
     this.gameStateSystem = new AsteroidGameStateSystem(this);
     const comboSys = new AsteroidComboSystem();
 
-    this.world.addSystem(this.unifiedInput);
     this.world.addSystem(inputSys);
     this.world.addSystem(new ShipControlSystem(this.config));
     this.world.addSystem(new MovementSystem());

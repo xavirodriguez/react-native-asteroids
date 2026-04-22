@@ -128,6 +128,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
         activeWorld.update(deltaTime);
       }
 
+      // Ensure hierarchy propagation happens on the active world (base or scene).
+      this.hierarchySystem.update(activeWorld, deltaTime);
+
       this.currentTick++;
       this._notifyListeners();
     });
@@ -258,9 +261,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.world.addSystem(new XPSystem(this.eventBus), { phase: SystemPhase.GameRules });
     const profile = await PlayerProfileService.getProfile();
     this.world.addSystem(new PaletteSystem(profile.activePalette), { phase: SystemPhase.Presentation });
-
-    // Register essential engine systems in their canonical phases
-    this.world.addSystem(this.hierarchySystem, { phase: SystemPhase.PostSimulation });
 
     // Register AssetCleanupSystem if AssetLoader is available
     const assetLoader = this.world.getResource<AssetLoader>("AssetLoader");

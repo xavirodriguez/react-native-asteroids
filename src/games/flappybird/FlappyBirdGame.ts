@@ -65,7 +65,6 @@ export class FlappyBirdGame
     const inputSys = new FlappyBirdInputSystem(this.config);
     if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
 
-    this.world.addSystem(this.unifiedInput);
     this.world.addSystem(new InputBufferSystem());
     this.world.addSystem(inputSys);
     this.world.addSystem(new FlappyBirdGlideSystem());
