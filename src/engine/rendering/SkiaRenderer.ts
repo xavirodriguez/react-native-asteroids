@@ -170,6 +170,9 @@ export class SkiaRenderer implements Renderer {
       uiCount: 0,
       shakeX,
       shakeY,
+      cameraX: 0,
+      cameraY: 0,
+      cameraZoom: 1,
       elapsedTime
     };
   }
