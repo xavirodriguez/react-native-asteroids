@@ -55,6 +55,7 @@ export class World {
   public version = 0;
   private commandBuffer = new WorldCommandBuffer();
   private readOnlyProxy: World;
+  private destructionPayload: { entity: Entity; world: World } = { entity: 0 as Entity, world: this };
 
   constructor() {
     this.readOnlyProxy = new ReadOnlyWorld(this) as unknown as World;
@@ -437,7 +438,9 @@ export class World {
 
     const eventBus = this.getResource<EventBus>("EventBus");
     if (eventBus) {
-      eventBus.emit("entity:destroyed", { entity, world: this });
+      this.destructionPayload.entity = entity;
+      this.destructionPayload.world = this;
+      eventBus.emit("entity:destroyed", this.destructionPayload);
     }
 
     this.removeEntityFromComponentMaps(entity);
@@ -624,6 +627,9 @@ export class World {
     this.executeSystemsInPhase(SystemPhase.Collision, deltaTime);
     this.executeSystemsInPhase(SystemPhase.GameRules, deltaTime);
 
+    // Finalize state before presentation (Hierarchy propagation, etc.)
+    this.executeSystemsInPhase(SystemPhase.PostSimulation, deltaTime);
+
     // Sync structural changes before presentation
     this.flush();
 
@@ -649,7 +655,8 @@ export class World {
       [SystemPhase.Simulation]: 1,
       [SystemPhase.Collision]: 2,
       [SystemPhase.GameRules]: 3,
-      [SystemPhase.Presentation]: 4,
+      [SystemPhase.PostSimulation]: 4,
+      [SystemPhase.Presentation]: 5,
     };
     const getPhaseWeight = (phase: string) => phaseOrder[phase] ?? 999;
     this.systems.sort((a, b) => {
@@ -736,6 +743,9 @@ const __DEV__ = process.env.NODE_ENV !== "production";
 export class ReadOnlyWorld {
   constructor(private world: World) {}
 
+  public get version(): number { return this.world.version; }
+  public get debugMode(): boolean { return this.world.debugMode; }
+
   public getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
     return this.world.getComponent(entity, type);
   }
@@ -773,6 +783,18 @@ export class ReadOnlyWorld {
 
   public getEntityComponentTypes(entity: Entity): string[] {
     return this.world.getEntityComponentTypes(entity);
+  }
+
+  public getSystemTiming(system: System): number {
+    return this.world.getSystemTiming(system);
+  }
+
+  public getAllSystemTimings(): Record<string, number> {
+    return this.world.getAllSystemTimings();
+  }
+
+  public snapshot(): WorldSnapshot {
+    return this.world.snapshot();
   }
 
   public createEntity(): never {

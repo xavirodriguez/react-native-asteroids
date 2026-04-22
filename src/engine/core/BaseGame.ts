@@ -86,6 +86,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
     this.world.setResource("EventBus", this.eventBus);
     this.world.setResource("UnifiedInputSystem", this.unifiedInput);
+    this.world.addSystem(this.unifiedInput, { phase: SystemPhase.Input });
 
     this._config = config;
     this.currentSeed = (config.gameOptions?.seed as number) ?? this._generateExternalSeed();
@@ -120,22 +121,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       // 2. PRE-UPDATE: Snapshot for interpolation
       this.interpolationPrepSystem.update(activeWorld, deltaTime);
 
-      // 3. INPUT
-      if (this.isMultiplayer) {
-        // Multiplayer input handling logic (if any)
-      } else {
-        this.unifiedInput.update(activeWorld, deltaTime);
-      }
-
       // 4. SIMULATION & PRESENTATION
       if (this.sceneManager.getCurrentScene()) {
         this.sceneManager.update(deltaTime);
       } else {
         activeWorld.update(deltaTime);
       }
-
-      // 5. POST-UPDATE: Transform Propagation (Hierarchy)
-      this.hierarchySystem.update(activeWorld, deltaTime);
 
       this.currentTick++;
       this._notifyListeners();
@@ -267,6 +258,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.world.addSystem(new XPSystem(this.eventBus), { phase: SystemPhase.GameRules });
     const profile = await PlayerProfileService.getProfile();
     this.world.addSystem(new PaletteSystem(profile.activePalette), { phase: SystemPhase.Presentation });
+
+    // Register essential engine systems in their canonical phases
+    this.world.addSystem(this.hierarchySystem, { phase: SystemPhase.PostSimulation });
 
     // Register AssetCleanupSystem if AssetLoader is available
     const assetLoader = this.world.getResource<AssetLoader>("AssetLoader");

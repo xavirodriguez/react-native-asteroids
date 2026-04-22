@@ -141,11 +141,16 @@ export class EventBus {
   }
 
   /**
-   * Clears handlers matching a pattern or all if none provided.
+   * Clears handlers and deferred queues matching a pattern or all if none provided.
+   *
+   * @remarks
+   * Any events in the deferred queues are returned to the pool to prevent leaks.
    */
   public clear(pattern?: string): void {
     if (!pattern) {
       this.handlers.clear();
+      this.clearQueue(this.deferredQueue);
+      this.clearQueue(this.processingQueue);
       return;
     }
 
@@ -159,6 +164,36 @@ export class EventBus {
       }
     } else {
       this.handlers.delete(pattern);
+    }
+
+    this.clearQueue(this.deferredQueue, pattern);
+    this.clearQueue(this.processingQueue, pattern);
+  }
+
+  private clearQueue(queue: Array<{ event: string; payload: unknown }>, pattern?: string): void {
+    if (!pattern) {
+      while (queue.length > 0) {
+        const item = queue.pop()!;
+        item.event = "";
+        item.payload = undefined;
+        this.pool.push(item);
+      }
+      return;
+    }
+
+    const isWildcard = pattern.endsWith("*");
+    const prefix = isWildcard ? pattern.slice(0, -1) : pattern;
+
+    for (let i = queue.length - 1; i >= 0; i--) {
+      const item = queue[i];
+      const matches = isWildcard ? item.event.startsWith(prefix) : item.event === pattern;
+
+      if (matches) {
+        queue.splice(i, 1);
+        item.event = "";
+        item.payload = undefined;
+        this.pool.push(item);
+      }
     }
   }
 
