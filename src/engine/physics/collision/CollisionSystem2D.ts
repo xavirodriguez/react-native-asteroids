@@ -133,10 +133,10 @@ export class CollisionSystem2D extends System {
           const by = (transB.worldY ?? transB.y) + colB.offsetY;
 
           if (colA.shape.type === "circle") {
-              if (colB.shape.type === "circle") ccdResult = ContinuousCollision.sweptCircleVsCircle(ax, ay, velA.dx, velA.dy, colA.shape.radius, bx, by, colB.shape.radius, dtSeconds);
-              else if (colB.shape.type === "aabb") ccdResult = ContinuousCollision.sweptCircleVsAABB(ax, ay, velA.dx, velA.dy, colA.shape.radius, bx, by, colB.shape.halfWidth, colB.shape.halfHeight, dtSeconds);
+              if (colB.shape.type === "circle") ccdResult = ContinuousCollision.sweptCircleVsCircle(ax, ay, velX, velY, colA.shape.radius, bx, by, colB.shape.radius, dtSeconds);
+              else if (colB.shape.type === "aabb") ccdResult = ContinuousCollision.sweptCircleVsAABB(ax, ay, velX, velY, colA.shape.radius, bx, by, colB.shape.halfWidth, colB.shape.halfHeight, dtSeconds);
           } else if (colA.shape.type === "aabb" && colB.shape.type === "aabb") {
-              ccdResult = ContinuousCollision.sweptAABBVsAABB(ax, ay, velA.dx, velA.dy, colA.shape.halfWidth, colA.shape.halfHeight, bx, by, colB.shape.halfWidth, colB.shape.halfHeight, dtSeconds);
+              ccdResult = ContinuousCollision.sweptAABBVsAABB(ax, ay, velX, velY, colA.shape.halfWidth, colA.shape.halfHeight, bx, by, colB.shape.halfWidth, colB.shape.halfHeight, dtSeconds);
           }
 
               if (ccdResult?.hit && ccdResult.timeOfImpact < 1) {
