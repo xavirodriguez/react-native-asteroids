@@ -96,10 +96,7 @@ export const drawSpaceInvadersParticle: ShapeDrawer<CanvasRenderingContext2D> = 
  * Screen shake background effect.
  */
 export const spaceInvadersScreenShakeEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, _snapshot, _width, _height, world) => {
-  const entities = world.query("GameState");
-  if (entities.length === 0) return;
-
-  const gameState = world.getComponent<GameStateComponent>(entities[0], "GameState");
+  const gameState = world.getSingleton<GameStateComponent>("GameState");
   if (gameState && gameState.screenShake && gameState.screenShake.duration > 0) {
     const { intensity } = gameState.screenShake;
     const renderRandom = RandomService.getRenderRandom();

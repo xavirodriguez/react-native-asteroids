@@ -25,6 +25,7 @@ export type { AABB } from './types/CommonTypes';
 // --- PHYSICS & COLLISION ---
 export { PhysicsSystem2D } from './physics/dynamics/PhysicsSystem2D';
 export { CollisionSystem2D, type CollisionCallback, type TriggerCallback } from './physics/collision/CollisionSystem2D';
+export type { CollisionEvent } from './core/CoreComponents';
 export { CollisionLayers } from './physics/collision/CollisionLayers';
 export { SpatialHash } from './physics/collision/SpatialHash';
 export { PhysicsQuery } from './physics/query/PhysicsQuery';
@@ -73,11 +74,9 @@ export { TTLSystem } from './systems/TTLSystem';
 export { JuiceSystem } from './systems/JuiceSystem';
 export { ParticleSystem } from './systems/ParticleSystem';
 export { ScreenShakeSystem } from './systems/ScreenShakeSystem';
+export type { ScreenShakeComponent } from './core/CoreComponents';
 export { RenderUpdateSystem } from './systems/RenderUpdateSystem';
 export { AnimationSystem } from './systems/AnimationSystem';
 export { StateMachineSystem } from './systems/StateMachineSystem';
 export { TilemapRenderSystem } from './systems/TilemapRenderSystem';
 
-// --- NAMESPACES ---
-import * as Legacy from './legacy';
-export { Legacy };

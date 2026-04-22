@@ -65,7 +65,6 @@ export class SpaceInvadersGame
       renderer.registerShape("enemy_bullet", drawSpaceInvadersBullet); // Reuse bullet drawer
       renderer.registerShape("shield_block", drawSpaceInvadersShield);
       renderer.registerShape("particle", drawSpaceInvadersParticle);
-      renderer.registerBackgroundEffect("screenshake", spaceInvadersScreenShakeEffect);
     }
   }
 

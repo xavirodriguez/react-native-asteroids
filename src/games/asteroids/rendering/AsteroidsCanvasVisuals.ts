@@ -108,7 +108,7 @@ export const drawAsteroidsUfo: ShapeDrawer<CanvasRenderingContext2D> = (ctx, _en
   ctx.beginPath(); ctx.arc(size / 2, 0, 1.5, 0, Math.PI * 2); ctx.fill();
 };
 
-export const asteroidsStarfieldEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, world) => {
+export const asteroidsStarfieldEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, _snapshot, _width, _height, world) => {
   const gameState = world.getSingleton<GameStateComponent>("GameState");
 
   if (gameState?.stars) {
@@ -123,7 +123,7 @@ export const asteroidsStarfieldEffect: EffectDrawer<CanvasRenderingContext2D> = 
   }
 };
 
-export const asteroidsCRTEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, _world, width, height) => {
+export const asteroidsCRTEffect: EffectDrawer<CanvasRenderingContext2D> = (ctx, _snapshot, width, height, _world) => {
   ctx.save();
   ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
   for (let y = 0; y < height; y += 3) {
