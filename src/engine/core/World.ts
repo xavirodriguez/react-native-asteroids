@@ -3,7 +3,7 @@ import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
-import { WorldCommandBuffer, CommandType } from "./WorldCommandBuffer";
+import { WorldCommandBuffer } from "./WorldCommandBuffer";
 
 interface RegisteredSystem {
   system: System;
@@ -447,7 +447,7 @@ export class World {
    * Se recomienda encarecidamente utilizar este buffer durante la actualización de sistemas
    * para evitar problemas de invalidación de iteradores en las Queries.
    *
-   * @returns La instancia de {@link WorldCommandBuffer} del mundo.
+   * @returns La instancia de WorldCommandBuffer del mundo.
    */
   public getCommandBuffer(): WorldCommandBuffer {
     return this.commandBuffer;

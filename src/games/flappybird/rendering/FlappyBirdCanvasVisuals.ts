@@ -83,7 +83,7 @@ export const drawFlappyBird: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entit
 /**
  * Visuals for a pipe segment.
  */
-export const drawFlappyPipe: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, _elapsedTime, render, world) => {
+export const drawFlappyPipe: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, pos, _elapsedTime, render, world) => {
   const { size, color } = render;
   const width = size;
   const halfWidth = width / 2;

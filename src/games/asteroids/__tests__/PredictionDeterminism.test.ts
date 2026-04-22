@@ -3,7 +3,6 @@ import { ShipPhysics } from "../utils/ShipPhysics";
 import { DeterministicSimulation } from "../../../simulation/DeterministicSimulation";
 import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
 import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
-import { InputFrame } from "../../../multiplayer/NetTypes";
 
 describe("Prediction vs ECS Determinism", () => {
   it("should produce identical results for ECS path and Prediction path", () => {

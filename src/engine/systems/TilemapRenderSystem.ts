@@ -44,5 +44,5 @@ export function createTilemapComponent(data: import("../core/CoreComponents").Ti
   return {
     type: "Tilemap",
     data
-  };
+  } as TilemapComponent;
 }
