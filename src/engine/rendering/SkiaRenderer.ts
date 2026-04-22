@@ -33,6 +33,8 @@ export class SkiaRenderer implements Renderer {
   private postEntityDrawers = new Map<string, ShapeDrawer<SkCanvas>>();
   private preRenderHooks: ((canvas: SkCanvas, world: World) => void)[] = [];
   private postRenderHooks: ((canvas: SkCanvas, world: World) => void)[] = [];
+  private backgroundEffects: { name: string, drawer: EffectDrawer<SkCanvas> }[] = [];
+  private foregroundEffects: { name: string, drawer: EffectDrawer<SkCanvas> }[] = [];
 
   constructor(canvas?: SkCanvas) {
     if (canvas) {
@@ -141,6 +143,36 @@ export class SkiaRenderer implements Renderer {
   }
 
   /**
+   * Genera una instantánea ligera del estado visual para efectos y UI.
+   */
+  public createSnapshot(world: World): import("./RenderSnapshot").RenderSnapshot {
+    const gameStateEntity = world.query("GameState")[0];
+    const gameState = gameStateEntity ? world.getComponent<GenericComponent>(gameStateEntity, "GameState") : null;
+
+    let shakeX = 0;
+    let shakeY = 0;
+    if (gameState?.screenShake && (gameState.screenShake as Record<string, number>).remaining > 0) {
+      const renderRandom = RandomService.getInstance("render");
+      const screenShake = gameState.screenShake as Record<string, number>;
+      shakeX = (renderRandom.next() - 0.5) * screenShake.intensity;
+      shakeY = (renderRandom.next() - 0.5) * screenShake.intensity;
+    }
+
+    const serverTick = gameState && (gameState as Record<string, unknown>).serverTick !== undefined ? (gameState as Record<string, unknown>).serverTick as number : null;
+    const elapsedTime = serverTick !== null ? serverTick * (1000 / 60) : performance.now();
+
+    return {
+      entities: [],
+      entityCount: 0,
+      uiElements: [],
+      uiCount: 0,
+      shakeX,
+      shakeY,
+      elapsedTime
+    };
+  }
+
+  /**
    * Ejecuta el pipeline de renderizado de Skia.
    *
    * @remarks
@@ -165,23 +197,16 @@ export class SkiaRenderer implements Renderer {
 
     this.clear();
 
-    const gameStateEntity = world.query("GameState")[0];
-    const gameState = gameStateEntity
-      ? (world.getComponent<import("../../types/GameTypes").GameStateComponent>(gameStateEntity, "GameState"))
-      : null;
-
-    let shakeX = 0;
-    let shakeY = 0;
-    if (gameState?.screenShake && gameState.screenShake.remaining > 0) {
-      const renderRandom = RandomService.getInstance("render");
-      shakeX = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
-      shakeY = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
-    }
+    const snapshot = this.createSnapshot(world);
 
     canvas.save();
-    canvas.translate(shakeX, shakeY);
+    canvas.translate(snapshot.shakeX, snapshot.shakeY);
 
     this.preRenderHooks.forEach(hook => hook(canvas, world));
+
+    this.backgroundEffects.forEach(effect => {
+      effect.drawer(canvas, snapshot, this.width, this.height, world);
+    });
 
     const entities = world.query("Transform", "Render");
 
@@ -232,6 +257,10 @@ export class SkiaRenderer implements Renderer {
     });
 
     this.drawParticles(world);
+
+    this.foregroundEffects.forEach(effect => {
+      effect.drawer(canvas, snapshot, this.width, this.height, world);
+    });
 
     canvas.restore();
 
@@ -299,12 +328,12 @@ export class SkiaRenderer implements Renderer {
     this.shapeDrawers.set(_name, _drawer);
   }
 
-  public registerBackgroundEffect(_name: string, _drawer: EffectDrawer<SkCanvas>): void {
-      // Basic implementation to satisfy Renderer interface
+  public registerBackgroundEffect(name: string, drawer: EffectDrawer<SkCanvas>): void {
+      this.backgroundEffects.push({ name, drawer });
   }
 
-  public registerForegroundEffect(_name: string, _drawer: EffectDrawer<SkCanvas>): void {
-      // Basic implementation to satisfy Renderer interface
+  public registerForegroundEffect(name: string, drawer: EffectDrawer<SkCanvas>): void {
+      this.foregroundEffects.push({ name, drawer });
   }
 
   public drawParticles( _world: World): void {
