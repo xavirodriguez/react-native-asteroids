@@ -188,9 +188,10 @@ export class SpaceInvadersCollisionSystem extends System {
   }
 
   private createExplosion(world: World, x: number, y: number, color: string): void {
+    const renderRandom = RandomService.getRenderRandom();
     for (let i = 0; i < GAME_CONFIG.PARTICLE_COUNT; i++) {
-      const angle = RandomService.next() * Math.PI * 2;
-      const speed = RandomService.next() * 100 + 50;
+      const angle = renderRandom.next() * Math.PI * 2;
+      const speed = renderRandom.next() * 100 + 50;
       createParticle(
         world,
         x,

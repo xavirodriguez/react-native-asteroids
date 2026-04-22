@@ -257,14 +257,14 @@ export class DeterministicSimulation {
     }
 
     private static spawnExplosion(world: World, position: TransformComponent) {
-        const gameplayRandom = RandomService.getInstance("gameplay");
+        const renderRandom = RandomService.getRenderRandom();
         for (let i = 0; i < GAME_CONFIG.PARTICLE_COUNT; i++) {
           createParticle({
             world,
             x: position.x,
             y: position.y,
-            dx: (gameplayRandom.next() - 0.5) * 160,
-            dy: (gameplayRandom.next() - 0.5) * 160,
+            dx: (renderRandom.next() - 0.5) * 160,
+            dy: (renderRandom.next() - 0.5) * 160,
             color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
           });
         }

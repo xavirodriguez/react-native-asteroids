@@ -7,15 +7,18 @@
  * @responsibility Segregar el estado del PRNG entre simulación y presentación.
  *
  * @remarks
- * Es imperativo utilizar `getInstance("gameplay")` para cualquier lógica que afecte
+ * Es imperativo utilizar `getGameplayRandom()` para cualquier lógica que afecte
  * el estado del juego (IA, spawn, daño) para garantizar determinismo y soporte de replay.
- * Para efectos puramente estéticos (partículas, flashes), se debe usar `getInstance("render")`.
+ * Para efectos puramente estéticos (partículas, flashes), se debe usar `getRenderRandom()`.
  *
  * @invariant Dos instancias con la misma semilla y el mismo número de llamadas a next() deben
  * retornar exactamente la misma secuencia de valores.
  * @conceptualRisk [SEED_COLLISION] El uso de la misma semilla en múltiples instancias "named"
  * no coordinadas puede resultar en patrones de aleatoriedad idénticos.
  */
+
+export type RandomStream = "gameplay" | "render" | "global";
+
 export class RandomService {
   private static globalInstance: RandomService = new RandomService(12345);
   private static namedInstances: Map<string, RandomService> = new Map();
@@ -28,13 +31,31 @@ export class RandomService {
   }
 
   /**
-   * Returns a named instance of the RandomService, creating it if it doesn't exist.
+   * Helper prioritario para obtener el stream de gameplay.
+   * Úselo en sistemas de simulación, IA, física y lógica autoritativa.
    */
-  public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
-    if (this.lockGameplayContext && name === "render") {
-        const errorMsg = "[RandomService] Accessing 'render' instance during gameplay simulation! This will break determinism.";
+  public static getGameplayRandom(): RandomService {
+    return this.getInstance("gameplay");
+  }
+
+  /**
+   * Helper prioritario para obtener el stream de renderizado.
+   * Úselo para partículas, sacudidas de cámara y efectos visuales no autoritativos.
+   */
+  public static getRenderRandom(): RandomService {
+    return this.getInstance("render");
+  }
+
+  /**
+   * Returns a named instance of the RandomService, creating it if it doesn't exist.
+   *
+   * @throws Error si se intenta acceder a "render" o "global" mientras lockGameplayContext es true.
+   */
+  public static getInstance(name: RandomStream = "global", initialSeed: number = 12345): RandomService {
+    if (this.lockGameplayContext && (name === "render" || name === "global")) {
+        const errorMsg = `[RandomService] Accessing '${name}' instance during gameplay simulation! This will break determinism. Use getGameplayRandom() instead.`;
         console.error(errorMsg);
-        throw new Error("Deterministic violation: 'render' random accessed during simulation.");
+        throw new Error(`Deterministic violation: '${name}' random accessed during simulation.`);
     }
 
     if (name === "global") return this.globalInstance;
@@ -48,9 +69,22 @@ export class RandomService {
   }
 
   /**
+   * Verifica si el acceso estático está permitido en el contexto actual.
+   */
+  private static checkStaticAccess(method: string): void {
+    if (this.lockGameplayContext) {
+      const errorMsg = `[RandomService] Static method '${method}' accessed during gameplay simulation! This uses the 'global' stream and will break determinism. Use getGameplayRandom().${method}(...) instead.`;
+      console.error(errorMsg);
+      throw new Error(`Deterministic violation: Static ${method} accessed during simulation.`);
+    }
+  }
+
+  /**
    * Sets the seed for the global instance.
+   * @deprecated Use getGameplayRandom().setSeed(seed) or getRenderRandom().setSeed(seed).
    */
   public static setSeed(newSeed: number): void {
+    this.checkStaticAccess("setSeed");
     this.globalInstance.setSeed(newSeed);
   }
 
@@ -70,36 +104,46 @@ export class RandomService {
 
   /**
    * Static helper for the global instance.
+   * @deprecated Use getGameplayRandom().next() or getRenderRandom().next().
    */
   public static next(): number {
+    this.checkStaticAccess("next");
     return this.globalInstance.next();
   }
 
   /**
    * Static helper for the global instance.
+   * @deprecated Use getGameplayRandom().nextRange() or getRenderRandom().nextRange().
    */
   public static nextRange(min: number, max: number): number {
+    this.checkStaticAccess("nextRange");
     return this.globalInstance.nextRange(min, max);
   }
 
   /**
    * Static helper for the global instance.
+   * @deprecated Use getGameplayRandom().chance() or getRenderRandom().chance().
    */
   public static chance(probability: number): boolean {
+    this.checkStaticAccess("chance");
     return this.globalInstance.chance(probability);
   }
 
   /**
    * Static helper for the global instance.
+   * @deprecated Use getGameplayRandom().nextInt() or getRenderRandom().nextInt().
    */
   public static nextInt(min: number, max: number): number {
+    this.checkStaticAccess("nextInt");
     return this.globalInstance.nextInt(min, max);
   }
 
   /**
    * Static helper for the global instance.
+   * @deprecated Use getGameplayRandom().nextSign() or getRenderRandom().nextSign().
    */
   public static nextSign(): number {
+    this.checkStaticAccess("nextSign");
     return this.globalInstance.nextSign();
   }
 
@@ -109,9 +153,6 @@ export class RandomService {
    *
    * @remarks
    * Cada llamada muta la semilla interna de la instancia.
-   *
-   * @responsibility Proveer números aleatorios reproducibles basados en semillas.
-   * @responsibility Segregar el estado del PRNG entre simulación y presentación.
    *
    * @returns Un valor aleatorio entre 0 (inclusive) y 1 (exclusive).
    * @sideEffect Muta `this.seed`.

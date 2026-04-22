@@ -56,8 +56,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // Derive camera transform for the WorldLayer
   const cameraTransform = useDerivedValue(() => {
     const cam = sharedCamera.value;
-    const shakeX = (RandomService.next() - 0.5) * cam.shakeIntensity;
-    const shakeY = (RandomService.next() - 0.5) * cam.shakeIntensity;
+    const renderRandom = RandomService.getRenderRandom();
+    const shakeX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
+    const shakeY = (renderRandom.next() - 0.5) * cam.shakeIntensity;
 
     return [
       { scale: cam.zoom },

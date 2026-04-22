@@ -67,7 +67,7 @@ export class SpaceInvadersFormationSystem extends System {
     formation.fireCooldownRemaining -= deltaTime;
     if (formation.fireCooldownRemaining <= 0) {
       this.fireFromFormation(world, invaders);
-      formation.fireCooldownRemaining = RandomService.nextRange(
+      formation.fireCooldownRemaining = RandomService.getGameplayRandom().nextRange(
         GAME_CONFIG.ENEMY_FIRE_INTERVAL_MIN,
         GAME_CONFIG.ENEMY_FIRE_INTERVAL_MAX
       ) / (1 + ratio); // Faster firing as fewer invaders remain
@@ -91,7 +91,7 @@ export class SpaceInvadersFormationSystem extends System {
 
     const activeColumns = Array.from(columns.values());
     if (activeColumns.length > 0) {
-      const shooter = activeColumns[RandomService.nextInt(0, activeColumns.length)];
+      const shooter = activeColumns[RandomService.getGameplayRandom().nextInt(0, activeColumns.length)];
       const shooterPos = world.getComponent<TransformComponent>(shooter.entity, "Transform");
       if (shooterPos) {
         createEnemyBullet(world, shooterPos.x, shooterPos.y + 15, this.enemyBulletPool);

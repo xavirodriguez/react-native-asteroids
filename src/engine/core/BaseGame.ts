@@ -83,9 +83,11 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.world.setResource("UnifiedInputSystem", this.unifiedInput);
 
     this._config = config;
-    this.currentSeed = (config.gameOptions?.seed as number) ?? RandomService.getInstance("gameplay").nextInt(0, 0xFFFFFFFF);
-    RandomService.setSeed(this.currentSeed);
-    RandomService.getInstance("gameplay").setSeed(this.currentSeed);
+    this.currentSeed = (config.gameOptions?.seed as number) ?? this._generateExternalSeed();
+
+    // Initialize streams
+    RandomService.getGameplayRandom().setSeed(this.currentSeed);
+    RandomService.getRenderRandom().setSeed(this.currentSeed ^ 0xDEADBEEF);
 
     this.setupLoop();
     this._registerKeyboardListeners();
@@ -189,8 +191,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
     if (seed !== undefined) {
       this.currentSeed = seed;
-      RandomService.setSeed(seed);
-      RandomService.getInstance("gameplay").setSeed(seed);
+      RandomService.getGameplayRandom().setSeed(this.currentSeed);
+      RandomService.getRenderRandom().setSeed(this.currentSeed ^ 0xDEADBEEF);
     }
 
     if (this.sceneManager.getCurrentScene()) {
@@ -277,6 +279,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   protected _onBeforeRestart(): void | Promise<void> {}
+
+  /**
+   * Genera una semilla externa al stream de gameplay para la inicialización.
+   * Evita consumir el stream de gameplay antes de que sea sembrado formalmente.
+   */
+  private _generateExternalSeed(): number {
+    return Math.floor(Math.random() * 0xFFFFFFFF);
+  }
 
   private _notifyListeners(): void {
     this._listeners.forEach(l => l(this));
