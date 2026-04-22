@@ -14,6 +14,7 @@ export class AIPongController {
   private lastUpdate = 0;
   private reactionDelay = 0; // ms
   private errorMargin = 0;   // pixels
+  private lastInputs: Partial<PongInput> = { p2Up: false, p2Down: false };
 
   constructor(difficulty: AIDifficulty = "medium") {
     this.difficulty = difficulty;
@@ -45,8 +46,8 @@ export class AIPongController {
    * Note: In a real game loop, we'd pass the world or a snapshot.
    * For this ECS, we'll assume the update method will be called by the game.
    */
-  public update(world: World, currentTime: number): void {
-    if (currentTime - this.lastUpdate < this.reactionDelay) return;
+  public update(world: World, currentTime: number): Partial<PongInput> {
+    if (currentTime - this.lastUpdate < this.reactionDelay) return this.lastInputs;
     this.lastUpdate = currentTime;
 
     const ball = world.query("Ball", "Transform", "Velocity")[0];
@@ -55,7 +56,7 @@ export class AIPongController {
         return tags.includes("right"); // AI usually controls P2
     });
 
-    if (!ball || !paddle) return;
+    if (!ball || !paddle) return this.lastInputs;
 
     const ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;
     const paddlePos = world.getComponent<TransformComponent>(paddle, "Transform")!;
@@ -70,6 +71,7 @@ export class AIPongController {
       else newState.p2Down = true;
     }
 
+    this.lastInputs = newState;
     return newState;
   }
 }
