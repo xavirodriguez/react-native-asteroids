@@ -229,14 +229,11 @@ export class SceneManager {
   }
 
   /**
-   * Reinicia la escena activa actual.
+   * Solicita el reinicio de la escena activa actual.
    *
    * @remarks
-   * Llama a `onRestartCleanup()` en la escena para limpiar recursos compartidos
-   * (como semillas de PRNG o suscripciones a eventos) antes de realizar una
-   * transición atómica hacia sí misma.
-   *
-   * @postcondition La escena vuelve a su estado inicial definido en `onEnter`.
+   * Invoca `onRestartCleanup()` en la escena antes de intentar una transición hacia sí misma,
+   * buscando restaurar el estado inicial.
    */
   public async restartCurrentScene(): Promise<void> {
     if (this.currentScene) {

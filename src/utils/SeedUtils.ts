@@ -1,6 +1,6 @@
 /**
  * Utilities for handling game seeds.
- * Seeds are represented as 32-bit unsigned integers.
+ * Seeds are typically represented as 32-bit unsigned integers.
  */
 
 /**
