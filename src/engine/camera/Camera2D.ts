@@ -169,25 +169,31 @@ export class Camera2D extends System {
 
   /**
    * Transforma una posición del mundo a coordenadas de pantalla.
+   *
+   * @remarks
+   * La vibración (shake) se aplica en píxeles de pantalla al final de la transformación.
    */
   public static worldToScreen(worldPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
     const shakeX = cam.shakeOffsetX || 0;
     const shakeY = cam.shakeOffsetY || 0;
     return {
-      x: (worldPos.x - cam.x + shakeX) * cam.zoom,
-      y: (worldPos.y - cam.y + shakeY) * cam.zoom,
+      x: (worldPos.x - cam.x) * cam.zoom + shakeX,
+      y: (worldPos.y - cam.y) * cam.zoom + shakeY,
     };
   }
 
   /**
    * Transforma una posición de pantalla a coordenadas del mundo.
+   *
+   * @remarks
+   * Realiza la operación inversa a {@link worldToScreen}.
    */
   public static screenToWorld(screenPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
     const shakeX = cam.shakeOffsetX || 0;
     const shakeY = cam.shakeOffsetY || 0;
     return {
-      x: screenPos.x / cam.zoom + cam.x - shakeX,
-      y: screenPos.y / cam.zoom + cam.y - shakeY,
+      x: (screenPos.x - shakeX) / cam.zoom + cam.x,
+      y: (screenPos.y - shakeY) / cam.zoom + cam.y,
     };
   }
 }

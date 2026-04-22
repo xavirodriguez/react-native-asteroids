@@ -87,11 +87,9 @@ describe("CanvasRenderer Camera & Culling", () => {
 
     renderer.renderSnapshot(snapshot, world);
 
-    // ctx.scale(zoom, zoom)
+    // Order matters: 1. Screen Shake, 2. Scale, 3. -Cam
+    expect(mockCtx.translate).toHaveBeenCalledWith(10, 20);
     expect(mockCtx.scale).toHaveBeenCalledWith(2, 2);
-    // ctx.translate(-camX + shakeX/zoom, -camY + shakeY/zoom)
-    // -100 + 10/2 = -95
-    // -200 + 20/2 = -190
-    expect(mockCtx.translate).toHaveBeenCalledWith(-95, -190);
+    expect(mockCtx.translate).toHaveBeenCalledWith(-100, -200);
   });
 });

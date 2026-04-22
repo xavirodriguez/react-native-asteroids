@@ -124,4 +124,46 @@ describe("Camera2D System", () => {
     cameraSystem.update(world, 1000);
     expect(cam.x).toBeCloseTo(10, 0);
   });
+
+  describe("Coordinate Mapping", () => {
+    it("should correctly map world to screen with zoom and shake", () => {
+      const cam: Camera2DComponent = {
+        type: "Camera2D",
+        x: 100,
+        y: 100,
+        zoom: 2,
+        shakeOffsetX: 10,
+        shakeOffsetY: 20,
+        targets: []
+      } as any;
+
+      const worldPos = { x: 150, y: 150 };
+      const screenPos = Camera2D.worldToScreen(worldPos, cam);
+
+      // (150 - 100) * 2 + 10 = 110
+      // (150 - 100) * 2 + 20 = 120
+      expect(screenPos.x).toBe(110);
+      expect(screenPos.y).toBe(120);
+    });
+
+    it("should correctly map screen to world with zoom and shake", () => {
+      const cam: Camera2DComponent = {
+        type: "Camera2D",
+        x: 100,
+        y: 100,
+        zoom: 2,
+        shakeOffsetX: 10,
+        shakeOffsetY: 20,
+        targets: []
+      } as any;
+
+      const screenPos = { x: 110, y: 120 };
+      const worldPos = Camera2D.screenToWorld(screenPos, cam);
+
+      // (110 - 10) / 2 + 100 = 150
+      // (120 - 20) / 2 + 100 = 150
+      expect(worldPos.x).toBe(150);
+      expect(worldPos.y).toBe(150);
+    });
+  });
 });

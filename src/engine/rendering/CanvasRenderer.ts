@@ -370,34 +370,38 @@ export class CanvasRenderer implements Renderer {
     this.commandBuffer.sort();
 
     this.clear();
+    // Background effects and pre-render hooks (Screen Space)
     ctx.save();
-
-    // Apply Camera Transformation
-    ctx.scale(snapshot.cameraZoom, snapshot.cameraZoom);
-    ctx.translate(-snapshot.cameraX + snapshot.shakeX / snapshot.cameraZoom, -snapshot.cameraY + snapshot.shakeY / snapshot.cameraZoom);
-
     for (let i = 0; i < this.backgroundEffects.length; i++) {
         this.backgroundEffects[i].drawer(ctx, snapshot, this.width, this.height, world);
     }
-
     for (let i = 0; i < this.preRenderHooks.length; i++) {
       this.preRenderHooks[i](ctx, snapshot, world);
     }
+    ctx.restore();
+
+    // World Space Rendering (Entities)
+    ctx.save();
+    // Apply Camera Transformation (including screen-space shake)
+    ctx.translate(snapshot.shakeX, snapshot.shakeY);
+    ctx.scale(snapshot.cameraZoom, snapshot.cameraZoom);
+    ctx.translate(-snapshot.cameraX, -snapshot.cameraY);
 
     const commands = this.commandBuffer.getCommands();
     const cmdCount = this.commandBuffer.getCount();
     for (let i = 0; i < cmdCount; i++) {
       this.executeCommand(ctx, commands[i], world, snapshot.elapsedTime);
     }
+    ctx.restore();
 
+    // Foreground effects and post-render hooks (Screen Space)
+    ctx.save();
     for (let i = 0; i < this.foregroundEffects.length; i++) {
         this.foregroundEffects[i].drawer(ctx, snapshot, this.width, this.height, world);
     }
-
     for (let i = 0; i < this.postRenderHooks.length; i++) {
       this.postRenderHooks[i](ctx, snapshot, world);
     }
-
     ctx.restore();
 
     this.renderUIFromSnapshot(ctx, snapshot);
