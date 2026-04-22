@@ -11,6 +11,7 @@ export class AssetLoader {
   private cache = new Map<string, AssetHandle>();
   private queue: AssetDescriptor[] = [];
   private refCounts = new Map<string, number>();
+  private singleReleaseArray: string[] = [""];
 
   /**
    * Enqueues assets for loading.
@@ -76,6 +77,18 @@ export class AssetLoader {
         return;
     }
     this.refCounts.set(id, count + 1);
+  }
+
+  /**
+   * Libera un recurso individual por su ID.
+   * Helper para simplificar la limpieza automática de activos.
+   *
+   * @remarks
+   * Reutiliza un array interno para cumplir con la restricción Zero-GC.
+   */
+  public release(id: string): void {
+    this.singleReleaseArray[0] = id;
+    this.unloadGroup(this.singleReleaseArray);
   }
 
   /**

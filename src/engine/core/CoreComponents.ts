@@ -368,3 +368,25 @@ export interface Star extends Component {
   twinkleSpeed: number;
   layer: number;
 }
+
+/**
+ * Componente que vincula una entidad con un recurso de imagen.
+ */
+export interface SpriteComponent extends Component {
+  type: "Sprite";
+  assetId: string;
+  width?: number;
+  height?: number;
+  flipX?: boolean;
+  flipY?: boolean;
+}
+
+/**
+ * Componente que vincula una entidad con un recurso de audio.
+ */
+export interface AudioComponent extends Component {
+  type: "Audio";
+  assetId: string;
+  volume: number;
+  loop: boolean;
+}

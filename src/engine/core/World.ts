@@ -54,6 +54,11 @@ export class World {
   private resources = new Map<string, unknown>();
   public version = 0;
   private commandBuffer = new WorldCommandBuffer();
+  private readOnlyProxy: World;
+
+  constructor() {
+    this.readOnlyProxy = new ReadOnlyWorld(this) as unknown as World;
+  }
 
   /**
    * Genera una instantánea serializable del estado del mundo para rollback o persistencia.
@@ -430,6 +435,11 @@ export class World {
       return;
     }
 
+    const eventBus = this.getResource<EventBus>("EventBus");
+    if (eventBus) {
+      eventBus.emit("entity:destroyed", { entity, world: this });
+    }
+
     this.removeEntityFromComponentMaps(entity);
     this.entityComponentSets.delete(entity);
     this.queries.forEach(query => query.remove(entity));
@@ -552,6 +562,41 @@ export class World {
   }
 
   /**
+   * Ejecuta los sistemas registrados que pertenecen a una fase específica.
+   *
+   * @param phase - La fase de sistemas a ejecutar.
+   * @param deltaTime - Tiempo transcurrido.
+   */
+  public executeSystemsInPhase(phase: SystemPhase | string, deltaTime: number): void {
+    if (this.systemsNeedSorting) this.sortSystems();
+
+    // Use pre-sorted systems and filter by phase efficiently
+    const worldToUse = (phase === SystemPhase.Presentation) ? this.readOnlyProxy : this;
+
+    this.isUpdating = true;
+    try {
+      for (let i = 0; i < this.systems.length; i++) {
+        const entry = this.systems[i];
+        if (entry.phase !== phase) continue;
+
+        const { system } = entry;
+        if (this.debugMode) {
+          let profiler = this.profilers.get(system);
+          if (!profiler) {
+            profiler = new SystemProfiler(system);
+            this.profilers.set(system, profiler);
+          }
+          profiler.update(worldToUse, deltaTime);
+        } else {
+          system.update(worldToUse, deltaTime);
+        }
+      }
+    } finally {
+      this.isUpdating = false;
+    }
+  }
+
+  /**
    * Ejecuta un ciclo completo de actualización para todos los sistemas registrados.
    *
    * @warning No se deben realizar mutaciones estructurales directas (createEntity, addComponent, etc.)
@@ -559,10 +604,11 @@ export class World {
    * diferir estos cambios al final del frame y evitar la invalidación de iteradores.
    *
    * @remarks
+   * Implementa un pipeline orientado al determinismo con fases estrictas:
    * 1. Re-ordena sistemas si es necesario.
-   * 2. Itera por fase (Input -> Simulation -> Collision -> GameRules -> Presentation).
-   * 3. Ejecuta cada sistema, opcionalmente midiendo su rendimiento si `debugMode` es true.
-   * 4. Aplica todos los cambios estructurales diferidos (creación/eliminación de entidades y componentes).
+   * 2. Ejecuta fases de simulación: Input, Simulation, Collision, GameRules.
+   * 3. Sincroniza el estado mediante {@link World.flush}.
+   * 4. Ejecuta fase de PRESENTATION bajo un contexto de solo lectura.
    *
    * @param deltaTime - Tiempo transcurrido en milisegundos.
    *
@@ -572,25 +618,17 @@ export class World {
   update(deltaTime: number): void {
     if (this.systemsNeedSorting) this.sortSystems();
 
-    this.isUpdating = true;
-    try {
-      this.sortedSystems.forEach((system) => {
-        if (this.debugMode) {
-          let profiler = this.profilers.get(system);
-          if (!profiler) {
-            profiler = new SystemProfiler(system);
-            this.profilers.set(system, profiler);
-          }
-          profiler.update(this, deltaTime);
-        } else {
-          system.update(this, deltaTime);
-        }
-      });
-    } finally {
-      this.isUpdating = false;
-    }
+    // Pipeline: Simulation Phases
+    this.executeSystemsInPhase(SystemPhase.Input, deltaTime);
+    this.executeSystemsInPhase(SystemPhase.Simulation, deltaTime);
+    this.executeSystemsInPhase(SystemPhase.Collision, deltaTime);
+    this.executeSystemsInPhase(SystemPhase.GameRules, deltaTime);
 
+    // Sync structural changes before presentation
     this.flush();
+
+    // Pipeline: Presentation Phase (ReadOnly)
+    this.executeSystemsInPhase(SystemPhase.Presentation, deltaTime);
   }
 
   getSystemTiming(system: System): number {
@@ -690,3 +728,74 @@ export class World {
 }
 
 const __DEV__ = process.env.NODE_ENV !== "production";
+
+/**
+ * Proxy de solo lectura para el Mundo ECS.
+ * Previene mutaciones accidentales durante fases sensibles como PRESENTATION.
+ */
+export class ReadOnlyWorld {
+  constructor(private world: World) {}
+
+  public getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
+    return this.world.getComponent(entity, type);
+  }
+
+  public hasComponent(entity: Entity, type: string): boolean {
+    return this.world.hasComponent(entity, type);
+  }
+
+  public query(...componentTypes: string[]): ReadonlyArray<Entity> {
+    return this.world.query(...componentTypes);
+  }
+
+  public getEntitiesWith(...componentTypes: string[]): ReadonlyArray<Entity> {
+    return this.world.getEntitiesWith(...componentTypes);
+  }
+
+  public getSingleton<T extends Component>(type: string): T | undefined {
+    // We avoid World.getSingleton because it might have side effects (cloning)
+    const [entity] = this.world.query(type);
+    if (entity === undefined) return undefined;
+    return this.world.getComponent<T>(entity, type);
+  }
+
+  public getResource<T>(name: string): T | undefined {
+    return this.world.getResource(name);
+  }
+
+  public hasResource(name: string): boolean {
+    return this.world.hasResource(name);
+  }
+
+  public getAllEntities(): ReadonlyArray<Entity> {
+    return this.world.getAllEntities();
+  }
+
+  public getEntityComponentTypes(entity: Entity): string[] {
+    return this.world.getEntityComponentTypes(entity);
+  }
+
+  public createEntity(): never {
+    throw new Error("ReadOnlyWorldViolation: Mutation 'createEntity' is not allowed in this phase.");
+  }
+
+  public addComponent(): never {
+    throw new Error("ReadOnlyWorldViolation: Mutation 'addComponent' is not allowed in this phase.");
+  }
+
+  public removeComponent(): never {
+    throw new Error("ReadOnlyWorldViolation: Mutation 'removeComponent' is not allowed in this phase.");
+  }
+
+  public removeEntity(): never {
+    throw new Error("ReadOnlyWorldViolation: Mutation 'removeEntity' is not allowed in this phase.");
+  }
+
+  public getCommandBuffer(): never {
+    throw new Error("ReadOnlyWorldViolation: Access to CommandBuffer is not allowed in this phase.");
+  }
+
+  public flush(): never {
+    throw new Error("ReadOnlyWorldViolation: Mutation 'flush' is not allowed in this phase.");
+  }
+}

@@ -1,4 +1,4 @@
-import { World } from "../core/World";
+import { World, ReadOnlyWorld } from "../core/World";
 import { GameLoop } from "./GameLoop";
 import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
 import { EventBus } from "./EventBus";
@@ -13,6 +13,9 @@ import { PaletteSystem } from "../systems/PaletteSystem";
 import { PlayerProfileService } from "../../services/PlayerProfileService";
 import { HierarchySystem } from "../systems/HierarchySystem";
 import { InterpolationPrepSystem } from "../systems/InterpolationPrepSystem";
+import { SystemPhase } from "./System";
+import { AssetCleanupSystem } from "../systems/AssetCleanupSystem";
+import { AssetLoader } from "../assets/AssetLoader";
 
 export interface BaseGameConfig {
   pauseKey?: string;
@@ -63,6 +66,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected _config: BaseGameConfig;
   protected hierarchySystem: HierarchySystem;
   protected interpolationPrepSystem: InterpolationPrepSystem;
+  protected readOnlyWorld: ReadOnlyWorld;
 
   public abstract initializeRenderer(renderer: import("../rendering/Renderer").Renderer<unknown>): void;
 
@@ -70,6 +74,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     const { isMultiplayer = false } = config;
     this.isMultiplayer = isMultiplayer;
     this.world = new World();
+    this.readOnlyWorld = new ReadOnlyWorld(this.world);
     this.gameLoop = new GameLoop();
     this.unifiedInput = new UnifiedInputSystem();
     this.eventBus = new EventBus();
@@ -97,39 +102,40 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     /**
      * Pipeline orientado al determinismo (Fixed Update Phase):
      *
-     * 1. PRE-UPDATE: Snapshot Transforms for Interpolation.
-     * 2. INPUT: Process raw inputs into semantic actions.
-     * 3. SIMULATION: Execute game logic and physics systems.
-     * 4. POST-UPDATE: Propagate transforms through hierarchy.
+     * 1. EVENT PROCESSING: Handle deferred events from the previous frame.
+     * 2. PRE-UPDATE: Snapshot Transforms for Interpolation.
+     * 3. INPUT: Process raw inputs into semantic actions.
+     * 4. SIMULATION: Execute game logic and physics systems.
+     * 5. POST-UPDATE: Propagate transforms through hierarchy and flush changes.
+     * 6. PRESENTATION: Read-only phase for visuals and audio.
      */
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (this._isPaused) return;
 
       const activeWorld = this.getWorld();
 
-      // 0. PRE-UPDATE: Snapshot for interpolation
+      // 1. EVENT PROCESSING
+      this.eventBus.processDeferred();
+
+      // 2. PRE-UPDATE: Snapshot for interpolation
       this.interpolationPrepSystem.update(activeWorld, deltaTime);
 
-      // 1. INPUT
+      // 3. INPUT
       if (this.isMultiplayer) {
         // Multiplayer input handling logic (if any)
       } else {
         this.unifiedInput.update(activeWorld, deltaTime);
       }
 
-      // 3. SIMULATION
+      // 4. SIMULATION & PRESENTATION
       if (this.sceneManager.getCurrentScene()) {
         this.sceneManager.update(deltaTime);
       } else {
-        this.world.update(deltaTime);
+        activeWorld.update(deltaTime);
       }
 
-      // 4. POST-UPDATE: Transform Propagation (Hierarchy)
-      // Must happen AFTER simulation but BEFORE rendering.
+      // 5. POST-UPDATE: Transform Propagation (Hierarchy)
       this.hierarchySystem.update(activeWorld, deltaTime);
-
-      // 5. FLUSH: Apply deferred structural changes
-      activeWorld.flush();
 
       this.currentTick++;
       this._notifyListeners();
@@ -258,9 +264,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   protected async registerEngineSystems(): Promise<void> {
-    this.world.addSystem(new XPSystem(this.eventBus));
+    this.world.addSystem(new XPSystem(this.eventBus), { phase: SystemPhase.GameRules });
     const profile = await PlayerProfileService.getProfile();
-    this.world.addSystem(new PaletteSystem(profile.activePalette));
+    this.world.addSystem(new PaletteSystem(profile.activePalette), { phase: SystemPhase.Presentation });
+
+    // Register AssetCleanupSystem if AssetLoader is available
+    const assetLoader = this.world.getResource<AssetLoader>("AssetLoader");
+    if (assetLoader) {
+      this.world.addSystem(new AssetCleanupSystem(assetLoader, this.eventBus), { phase: SystemPhase.Simulation });
+    }
   }
 
   protected shouldStallSimulation(): boolean {

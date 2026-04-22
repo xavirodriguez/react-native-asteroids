@@ -24,6 +24,9 @@ export type EventHandler<T = unknown> = (payload: T) => void;
  */
 export class EventBus {
   private handlers = new Map<string, Set<EventHandler<unknown>>>();
+  private deferredQueue: Array<{ event: string; payload: unknown }> = [];
+  private processingQueue: Array<{ event: string; payload: unknown }> = [];
+  private pool: Array<{ event: string; payload: unknown }> = [];
 
   /**
    * Suscribe un controlador a un evento específico o patrón.
@@ -86,6 +89,55 @@ export class EventBus {
       this.notify(`${namespace}:*`, payload);
     }
     this.notify("*", payload);
+  }
+
+  /**
+   * Encola un evento para ser procesado de forma diferida.
+   *
+   * @remarks
+   * Utiliza un pool de objetos interno para cumplir con la restricción de Zero-GC.
+   * Los eventos encolados se procesarán cuando se llame a {@link EventBus.processDeferred}.
+   *
+   * @param event - Nombre del evento.
+   * @param payload - Datos asociados al evento.
+   */
+  public emitDeferred<T = unknown>(event: string, payload?: T): void {
+    let entry = this.pool.pop();
+    if (!entry) {
+      entry = { event: "", payload: undefined };
+    }
+    entry.event = event;
+    entry.payload = payload;
+    this.deferredQueue.push(entry);
+  }
+
+  /**
+   * Procesa todos los eventos encolados mediante {@link EventBus.emitDeferred}.
+   *
+   * @remarks
+   * Intercambia las colas internamente para permitir que nuevos eventos diferidos
+   * generados durante el procesamiento se encolen para el siguiente ciclo,
+   * previniendo recursividad infinita y bloqueos de ejecución.
+   */
+  public processDeferred(): void {
+    if (this.deferredQueue.length === 0) return;
+
+    // Swap queues to safely process current events
+    const temp = this.processingQueue;
+    this.processingQueue = this.deferredQueue;
+    this.deferredQueue = temp;
+
+    for (let i = 0; i < this.processingQueue.length; i++) {
+      const item = this.processingQueue[i];
+      this.emit(item.event, item.payload);
+
+      // Return object to pool
+      item.event = "";
+      item.payload = undefined;
+      this.pool.push(item);
+    }
+
+    this.processingQueue.length = 0;
   }
 
   /**
