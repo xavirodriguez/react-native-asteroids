@@ -202,11 +202,11 @@ export class SkiaRenderer implements Renderer {
     canvas.save();
     canvas.translate(snapshot.shakeX, snapshot.shakeY);
 
+    this.preRenderHooks.forEach(hook => hook(canvas, world));
+
     this.backgroundEffects.forEach(effect => {
       effect.drawer(canvas, snapshot, this.width, this.height, world);
     });
-
-    this.preRenderHooks.forEach(hook => hook(canvas, world));
 
     const entities = world.query("Transform", "Render");
 

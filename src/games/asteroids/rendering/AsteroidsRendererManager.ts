@@ -50,7 +50,6 @@ export function initializeAsteroidsRenderer(renderer: Renderer): void {
       renderer.registerShape("bullet_shape", drawSkiaBullet);
       renderer.registerShape("particle", drawSkiaParticle);
       renderer.registerBackgroundEffect("starfield", skiaStarfieldEffect);
-      renderer.registerBackgroundEffect("screenshake", skiaScreenShakeEffect);
     } catch (e) {
       console.warn("Failed to load Skia visuals", e);
     }
