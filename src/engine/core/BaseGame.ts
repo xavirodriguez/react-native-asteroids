@@ -265,7 +265,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
         this.world.clear();
         this.initializeEntities();
       }
-      if (this._isPaused) this.resume();
+      this._isPaused = false;
       this._notifyListeners();
     } finally {
       this._transitionLock = null;
