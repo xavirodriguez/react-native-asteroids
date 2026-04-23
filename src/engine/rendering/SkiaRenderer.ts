@@ -219,17 +219,20 @@ export class SkiaRenderer implements Renderer {
 
     const snapshot = this.createSnapshot(world);
 
+    // 1. Background effects and pre-render hooks (Screen Space)
+    canvas.save();
+    this.preRenderHooks.forEach(hook => hook(canvas, world));
+    this.backgroundEffects.forEach(effect => {
+      effect.drawer(canvas, snapshot, this.width, this.height, world);
+    });
+    canvas.restore();
+
+    // 2. World Space Rendering (Entities)
     canvas.save();
     // Apply Camera Transformation (Shake -> Zoom -> Translate)
     canvas.translate(snapshot.shakeX, snapshot.shakeY);
     canvas.scale(snapshot.cameraZoom, snapshot.cameraZoom);
     canvas.translate(-snapshot.cameraX, -snapshot.cameraY);
-
-    this.preRenderHooks.forEach(hook => hook(canvas, world));
-
-    this.backgroundEffects.forEach(effect => {
-      effect.drawer(canvas, snapshot, this.width, this.height, world);
-    });
 
     const entities = world.query("Transform", "Render");
 
@@ -280,13 +283,16 @@ export class SkiaRenderer implements Renderer {
     });
 
     this.drawParticles(world);
+    canvas.restore();
 
+    // 3. Foreground effects (Screen Space)
+    canvas.save();
     this.foregroundEffects.forEach(effect => {
       effect.drawer(canvas, snapshot, this.width, this.height, world);
     });
-
     canvas.restore();
 
+    // 4. Post-render hooks
     this.postRenderHooks.forEach(hook => hook(canvas, world));
   }
 
