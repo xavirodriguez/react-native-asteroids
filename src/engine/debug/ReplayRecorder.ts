@@ -43,7 +43,7 @@ export class ReplayRecorder {
    * @param tick - El número de tick de la simulación.
    * @param inputs - Diccionario de inputs mapeados por ID de jugador/entidad.
    *
-   * @precondition La grabación debe estar activa (`isRecording === true`).
+   * @precondition La grabación debería estar activa (`isRecording === true`).
    * @postcondition Se añade un nuevo frame a la colección interna.
    */
   public recordTick(tick: number, inputs: Record<string, InputFrame[]>): void {

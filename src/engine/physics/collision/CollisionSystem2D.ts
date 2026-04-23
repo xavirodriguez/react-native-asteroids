@@ -49,8 +49,8 @@ export class CollisionSystem2D extends System {
    * Orchestrates the collision detection pipeline.
    *
    * @warning Los callbacks registrados (`onCollision`, `onTriggerEnter`, etc.) se ejecutan durante
-   * la fase de resolución. NO debe realizar mutaciones estructurales directas en el World
-   * dentro de estos callbacks; use el {@link WorldCommandBuffer} en su lugar.
+   * la fase de resolución. Se recomienda NO realizar mutaciones estructurales directas en el World
+   * dentro de estos callbacks con el fin de evitar la invalidación de iteradores; use el {@link WorldCommandBuffer} en su lugar.
    *
    * @remarks
    * 1. Resets per-frame collision/trigger events.
@@ -66,7 +66,7 @@ export class CollisionSystem2D extends System {
    * @param world - The ECS world instance.
    * @param _deltaTime - Time elapsed in milliseconds.
    *
-   * @precondition Se espera que el world esté en un estado estable para una detección precisa.
+   * @precondition El world debería estar en un estado estable para favorecer una detección precisa.
    */
   update(world: World, _deltaTime: number): void {
     const entities = world.query("Transform", "Collider2D");

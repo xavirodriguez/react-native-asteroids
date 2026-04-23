@@ -16,7 +16,7 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  * @responsibility Dibujar elementos de UI procedimentales (paneles, etiquetas, barras de progreso).
  *
  * @remarks
- * Es el renderizador estándar para la plataforma Web y entornos de desarrollo rápido.
+ * Es el renderizador para la plataforma Web y entornos de desarrollo rápido.
  * Utiliza una estrategia destinada a mitigar las alocaciones por frame mediante el reciclaje
  * de objetos snapshot y comandos, con la intención de reducir la presión sobre el recolector de basura (GC).
  *
@@ -593,8 +593,8 @@ export class CanvasRenderer implements Renderer {
    * @param world - El mundo ECS fuente de datos.
    * @param alpha - Factor de interpolación [0, 1] para suavizado de movimiento.
    *
-   * @precondition Se espera que el contexto `ctx` haya sido establecido mediante {@link CanvasRenderer.setContext}.
-   * @postcondition Se genera la imagen del frame actual en el Canvas con interpolación aplicada.
+   * @precondition El contexto `ctx` debería haber sido establecido mediante {@link CanvasRenderer.setContext}.
+   * @postcondition Se genera la imagen del frame actual en el Canvas con el fin de aplicar interpolación.
    */
   public render(world: World, alpha: number = 1): void {
     const snapshot = this.createSnapshot(world, alpha);

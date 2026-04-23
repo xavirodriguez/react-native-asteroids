@@ -92,9 +92,9 @@ export class SceneManager {
    * 3. Entra en la nueva escena (onEnter).
    * 4. Cambia el estado a ACTIVE.
    *
-   * @precondition El manager debe estar en un estado estable (IDLE o ACTIVE).
+   * @precondition El manager debería estar en un estado estable (IDLE o ACTIVE).
    * @postcondition La nueva escena es la única en la pila y es la escena activa.
-   * @sideEffect Incrementa la versión del mundo para forzar re-renders.
+   * @sideEffect Se espera un incremento en la versión del mundo que apoye el re-renderizado.
    */
   public async transitionTo(scene: Scene): Promise<void> {
     return this.enqueueTransition(async () => {

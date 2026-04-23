@@ -16,10 +16,11 @@ import { RandomService } from "../utils/RandomService";
  *
  * @remarks
  * Al igual que el {@link CanvasRenderer}, es extensible mediante el registro de shape drawers.
- * Es el renderizador preferido para iOS y Android por su rendimiento superior.
+ * Es el renderizador preferido para iOS y Android por su rendimiento en plataformas móviles.
  * La paridad visual con {@link CanvasRenderer} es un objetivo de diseño importante.
  *
- * @contract Interpolación: Usa el valor `alpha` del loop para interpolar entre `PreviousTransform` y `Transform`.
+ * @remarks
+ * Interpolación: Intenta usar el valor `alpha` del loop para interpolar entre `PreviousTransform` y `Transform`.
  * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia puede perderse
  * si la app pasa a segundo plano de forma prolongada.
  */
@@ -203,9 +204,9 @@ export class SkiaRenderer implements Renderer {
    * @param world - El mundo ECS que contiene las entidades a dibujar.
    * @param alpha - Factor de interpolación [0, 1].
    *
-   * @precondition El lienzo (SkCanvas) debe estar listo para recibir comandos.
-   * @postcondition Se genera la imagen del frame actual con interpolación aplicada.
-   * @warning No debe mutar componentes de simulación (e.g. Transform, Velocity) durante el renderizado.
+   * @precondition El lienzo (SkCanvas) debería estar listo para recibir comandos.
+   * @postcondition Se genera la imagen del frame actual con el fin de aplicar interpolación.
+   * @warning Se recomienda no mutar componentes de simulación (e.g. Transform, Velocity) durante el renderizado.
    * @sideEffect Limpia el lienzo con el color negro antes de dibujar.
    * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia
    * puede perderse si la app pasa a segundo plano de forma prolongada.
@@ -313,7 +314,7 @@ export class SkiaRenderer implements Renderer {
     const scaleX = (pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1)) + (offset?.scaleX ?? 0);
     const scaleY = (pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1)) + (offset?.scaleY ?? 0);
 
-    // Intenta calcular un tiempo transcurrido consistente a partir del estado del mundo
+    // Busca calcular un tiempo transcurrido consistente a partir del estado del mundo
     const gameState = world.getSingleton<GenericComponent>("GameState");
     const serverTick = gameState && gameState.serverTick !== undefined ? gameState.serverTick as number : null;
     const elapsedTime = serverTick !== null ? serverTick * (1000 / 60) : performance.now();

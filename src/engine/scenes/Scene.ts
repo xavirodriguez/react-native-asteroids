@@ -30,16 +30,16 @@ export abstract class Scene {
   /**
    * Llamado cuando la escena se convierte en la escena activa.
    * @param _world - Referencia al mundo de la escena.
-   * @contract Debe inicializar los sistemas y entidades necesarios.
-   * @conceptualRisk [ASYNC_INIT] Si es asíncrono, la lógica de actualización debe esperar a que se resuelva
-   * para evitar referencias nulas o sistemas incompletos.
+   * @remarks Se espera que inicialice los sistemas y entidades necesarios.
+   * @conceptualRisk [ASYNC_INIT] Si es asíncrono, se recomienda que la lógica de actualización espere a que se resuelva
+   * con el fin de mitigar el riesgo de referencias nulas o sistemas incompletos.
    */
   public onEnter(_world: World): void | Promise<void> {}
 
   /**
    * Llamado cuando la escena deja de ser la escena activa.
    * @param _world - Referencia al mundo de la escena.
-   * @contract Debe liberar recursos pesados o cancelar suscripciones pendientes.
+   * @remarks Se recomienda liberar recursos pesados o cancelar suscripciones pendientes.
    */
   public onExit(_world: World): void | Promise<void> {}
 

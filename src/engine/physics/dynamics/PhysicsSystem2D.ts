@@ -19,7 +19,7 @@ import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, C
  * @mutates {@link PhysicsBody2DComponent} - Updates velocities, resets accumulated forces/torque.
  * @mutates {@link TransformComponent} - Updates world positions and rotations.
  *
- * @executionOrder Simulation phase; must execute after {@link CollisionSystem2D} and before {@link HierarchySystem}.
+ * @executionOrder Simulation phase; se espera que se ejecute después de {@link CollisionSystem2D} y antes de {@link HierarchySystem}.
  */
 export class PhysicsSystem2D extends System {
   private gravityX = 0;
@@ -36,7 +36,7 @@ export class PhysicsSystem2D extends System {
    * @param world - The ECS world instance.
    * @param deltaTime - Time elapsed since last update in milliseconds.
    *
-   * @precondition Se espera que el world esté en un estado consistente.
+   * @precondition El world debería estar en un estado consistente.
    *
    * @remarks
    * At the end of each entity update, it attempts to reset the accumulated forces

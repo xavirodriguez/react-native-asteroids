@@ -9,8 +9,8 @@ import type { GameLoop } from "./GameLoop";
 export type UpdateListener<TGame> = (game: TGame) => void;
 
 /**
- * Interfaz genérica fundamental que debe implementar cualquier instancia de juego.
- * Define el contrato de ciclo de vida y comunicación entre el motor y la capa de presentación.
+ * Interfaz genérica fundamental para implementaciones de juegos.
+ * Define las expectativas de ciclo de vida y comunicación entre el motor y la capa de presentación.
  *
  * @responsibility Definir el contrato del ciclo de vida (start, stop, pause, destroy).
  * @responsibility Proveer acceso al estado del mundo y la lógica de finalización.
@@ -28,19 +28,19 @@ export type UpdateListener<TGame> = (game: TGame) => void;
 export interface IGame<TGame = unknown> {
   /**
    * Inicia la ejecución del bucle de juego.
-   * @contract Debe invocar a `GameLoop.start()`.
+   * @remarks Se espera que invoque a `GameLoop.start()`.
    */
   start(): void;
 
   /**
-   * Detiene por completo la ejecución y el renderizado.
-   * @contract Debe invocar a `GameLoop.stop()`.
+   * Detiene la ejecución y el renderizado.
+   * @remarks Se espera que invoque a `GameLoop.stop()`.
    */
   stop(): void;
 
   /**
-   * Pausa la simulación lógica manteniendo el estado actual.
-   * @contract Los sistemas de simulación deben ignorar el tick si `isPausedState()` es true.
+   * Solicita pausar la simulación lógica manteniendo el estado actual.
+   * @remarks Se espera que los sistemas de simulación ignoren el tick si `isPausedState()` es true.
    */
   pause(): void;
 
@@ -59,8 +59,8 @@ export interface IGame<TGame = unknown> {
   restart(seed?: number): void | Promise<void>;
 
   /**
-   * Libera recursos y desconecta listeners; debe llamarse al desmontar el juego.
-   * @contract Una vez destruido, cualquier llamada a `start()` o `update()` debe fallar o ser ignorada.
+   * Libera recursos y desconecta listeners; se recomienda llamar al desmontar el juego.
+   * @remarks Una vez destruido, el comportamiento de llamadas a `start()` o `update()` depende de la implementación.
    */
   destroy(): void;
 
@@ -112,7 +112,7 @@ export interface IGame<TGame = unknown> {
 
   /**
    * Returns the current gameplay seed.
-   * @contract Debe ser el mismo seed usado para inicializar RandomService en el canal 'gameplay'.
+   * @remarks Se espera que coincida con el seed usado para inicializar RandomService en el canal 'gameplay'.
    */
   getSeed(): number;
 
