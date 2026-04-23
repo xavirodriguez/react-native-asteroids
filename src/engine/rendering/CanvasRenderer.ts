@@ -275,7 +275,7 @@ export class CanvasRenderer implements Renderer {
       snap.data = render.data ?? null;
 
       // Frustum Culling: check if entity AABB intersects camera viewport in world space
-      const halfSize = render.size / 2;
+      const halfSize = render.size;
 
       const entityMinX = snap.x - halfSize;
       const entityMaxX = snap.x + halfSize;
