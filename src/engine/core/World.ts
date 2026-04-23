@@ -67,11 +67,18 @@ export class World {
   private freeEntities: Entity[] = [];
   private resources = new Map<string, unknown>();
   /** Incremented on structural changes (entity creation/destruction, component addition/removal). */
-  public structureVersion = 0;
+  private _structureVersion = 0;
   /** Incremented on data changes or manual notification. */
-  public stateVersion = 0;
+  private _stateVersion = 0;
   /** Current simulation tick. */
-  public tick = 0;
+  private _tick = 0;
+
+  /** Obtiene la versión actual de la estructura del mundo. */
+  public get structureVersion(): number { return this._structureVersion; }
+  /** Obtiene la versión actual de los datos del mundo. */
+  public get stateVersion(): number { return this._stateVersion; }
+  /** Obtiene el tick actual de simulación. */
+  public get tick(): number { return this._tick; }
   private _renderDirty = false;
   private commandBuffer = new WorldCommandBuffer();
 
@@ -80,7 +87,7 @@ export class World {
    * Combined version for backward compatibility.
    */
   public get version(): number {
-    return this.structureVersion + this.stateVersion;
+    return this._structureVersion + this._stateVersion;
   }
 
   /**
@@ -146,8 +153,8 @@ export class World {
       componentData,
       nextEntityId: this.nextEntityId,
       freeEntities: [...this.freeEntities].sort((a, b) => a - b),
-      structureVersion: this.structureVersion,
-      stateVersion: this.stateVersion,
+      structureVersion: this._structureVersion,
+      stateVersion: this._stateVersion,
       seed: gameplayRandom.getSeed()
     };
   }
@@ -172,8 +179,8 @@ export class World {
     this.activeEntities = new Set(state.entities);
     this.nextEntityId = state.nextEntityId;
     this.freeEntities = [...state.freeEntities];
-    this.structureVersion = state.structureVersion;
-    this.stateVersion = state.stateVersion;
+    this._structureVersion = state.structureVersion;
+    this._stateVersion = state.stateVersion;
 
     if (state.seed !== undefined) {
         RandomService.getInstance("gameplay").setSeed(state.seed);
@@ -255,7 +262,7 @@ export class World {
       this.nextEntityId = id + 1;
     }
 
-    this.structureVersion++;
+    this._structureVersion++;
     return entityId;
   }
 
@@ -269,7 +276,7 @@ export class World {
     this.systems = [];
     this.sortedSystems = [];
     this.systemsNeedSorting = false;
-    this.structureVersion++;
+    this._structureVersion++;
   }
 
   /**
@@ -326,9 +333,9 @@ export class World {
       }
       componentSet.add(type);
       this.notifyQueries(entity, componentSet, type);
-      this.structureVersion++;
+      this._structureVersion++;
     } else {
-      this.stateVersion++;
+      this._stateVersion++;
     }
 
     return component;
@@ -368,7 +375,7 @@ export class World {
    * @postcondition Se incrementa {@link World.stateVersion} y se marca el mundo como sucio para el render.
    */
   mutateComponent<T extends Component>(entity: Entity, type: string, mutator: (component: T) => void): void {
-    const component = this.getComponent<T>(entity, type) as T;
+    const component = this.componentMaps.get(type)?.get(entity) as T;
     if (component) {
       mutator(component);
       this.notifyStateChange();
@@ -425,7 +432,7 @@ export class World {
         componentSet.delete(type);
         this.notifyQueries(entity, componentSet, type);
       }
-      this.structureVersion++;
+      this._structureVersion++;
     }
   }
 
@@ -499,7 +506,7 @@ export class World {
 
     if (this.activeEntities.delete(entity)) {
       this.freeEntities.push(entity);
-      this.structureVersion++;
+      this._structureVersion++;
     }
   }
 
@@ -547,7 +554,7 @@ export class World {
     this.queriesByComponent.clear();
     this.resources.clear();
     this.commandBuffer.clear();
-    this.structureVersion++;
+    this._structureVersion++;
   }
 
   /**
@@ -632,7 +639,7 @@ export class World {
    * @postcondition El estado del mundo avanza y las mutaciones diferidas se consolidan al final.
    */
   update(deltaTime: number): void {
-    this.tick++;
+    this._tick++;
     if (this.systemsNeedSorting) this.sortSystems();
 
     this.isUpdating = true;
@@ -727,7 +734,7 @@ export class World {
    * para que los sistemas que observan `stateVersion` (como el Renderer) puedan reaccionar.
    */
   public notifyStateChange(): void {
-    this.stateVersion++;
+    this._stateVersion++;
     this._renderDirty = true;
   }
 
