@@ -25,6 +25,9 @@ export interface WorldSnapshot {
   componentData: ComponentDataSnapshot;
   nextEntityId: number;
   freeEntities: Entity[];
-  version: number;
+  /** Incremented on structural changes (add/remove entity or component type). */
+  structureVersion: number;
+  /** Incremented on data changes or visual updates. */
+  stateVersion: number;
   seed: number;
 }

@@ -65,8 +65,22 @@ export class World {
   /** @internal */
   private freeEntities: Entity[] = [];
   private resources = new Map<string, unknown>();
-  public version = 0;
+  /** Incremented on structural changes (entity creation/destruction, component addition/removal). */
+  public structureVersion = 0;
+  /** Incremented on data changes or manual notification. */
+  public stateVersion = 0;
+  /** Current simulation tick. */
+  public tick = 0;
+  private _renderDirty = false;
   private commandBuffer = new WorldCommandBuffer();
+
+  /**
+   * @deprecated Use structureVersion or stateVersion instead.
+   * Combined version for backward compatibility.
+   */
+  public get version(): number {
+    return this.structureVersion + this.stateVersion;
+  }
 
   /**
    * Genera una instantánea serializable del estado del mundo destinada a rollback o persistencia.
@@ -130,7 +144,8 @@ export class World {
       componentData,
       nextEntityId: this.nextEntityId,
       freeEntities: [...this.freeEntities].sort((a, b) => a - b),
-      version: this.version,
+      structureVersion: this.structureVersion,
+      stateVersion: this.stateVersion,
       seed: gameplayRandom.getSeed()
     };
   }
@@ -147,7 +162,7 @@ export class World {
    *
    * @precondition Se espera que el estado proporcionado sea una estructura válida y compatible con la versión del motor.
    * @postcondition El mundo refleja el estado serializable contenido en la instantánea.
-   * @postcondition {@link World.version} se sincroniza con el valor del estado restaurado.
+   * @postcondition Las versiones de estructura y estado se sincronizan con los valores restaurados.
    * @sideEffect Limpia todos los datos actuales del mundo antes de la restauración.
    * @sideEffect Re-inicializa la semilla de `RandomService("gameplay")`.
    */
@@ -155,7 +170,8 @@ export class World {
     this.activeEntities = new Set(state.entities);
     this.nextEntityId = state.nextEntityId;
     this.freeEntities = [...state.freeEntities];
-    this.version = state.version;
+    this.structureVersion = state.structureVersion;
+    this.stateVersion = state.stateVersion;
 
     if (state.seed !== undefined) {
         RandomService.getInstance("gameplay").setSeed(state.seed);
@@ -205,8 +221,6 @@ export class World {
             }
         });
     }
-
-    this.version++;
   }
 
   /**
@@ -214,7 +228,7 @@ export class World {
    *
    * @remarks
    * Utiliza un pool de IDs reciclados para mitigar la presión sobre el GC durante ciclos de vida frecuentes.
-   * Incrementa la versión del mundo para señalizar cambios estructurales a sistemas dependientes.
+   * Incrementa la versión de estructura del mundo para señalizar cambios topológicos.
    *
    * Si se llama durante {@link World.update}, la creación efectiva en los mapas de componentes se difiere
    * mediante un buffer de comandos hasta el final de la fase de simulación.
@@ -222,7 +236,7 @@ export class World {
    * @param id - ID opcional de la entidad. Reservado principalmente para restauraciones de estado o uso interno.
    * @returns Un identificador de {@link Entity}.
    * @postcondition La entidad se registra como activa o queda encolada para su activación.
-   * @sideEffect Incrementa {@link World.version}.
+   * @sideEffect Incrementa {@link World.structureVersion}.
    */
   public createEntity(id?: Entity): Entity {
     const entityId = id ?? (this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++);
@@ -239,7 +253,7 @@ export class World {
       this.nextEntityId = id + 1;
     }
 
-    this.version++;
+    this.structureVersion++;
     return entityId;
   }
 
@@ -247,13 +261,13 @@ export class World {
    * Elimina todos los sistemas registrados de todas las fases.
    *
    * @postcondition La lista de sistemas queda vacía.
-   * @sideEffect Incrementa {@link World.version}.
+   * @sideEffect Incrementa {@link World.structureVersion}.
    */
   clearSystems(): void {
     this.systems = [];
     this.sortedSystems = [];
     this.systemsNeedSorting = false;
-    this.version++;
+    this.structureVersion++;
   }
 
   /**
@@ -310,9 +324,11 @@ export class World {
       }
       componentSet.add(type);
       this.notifyQueries(entity, componentSet, type);
+      this.structureVersion++;
+    } else {
+      this.stateVersion++;
     }
 
-    this.version++;
     return component;
   }
 
@@ -379,7 +395,7 @@ export class World {
         componentSet.delete(type);
         this.notifyQueries(entity, componentSet, type);
       }
-      this.version++;
+      this.structureVersion++;
     }
   }
 
@@ -439,7 +455,7 @@ export class World {
    *
    * @param entity - La entidad a destruir.
    * @postcondition La entidad ya no existe en el mundo y sus componentes son inaccesibles.
-   * @sideEffect Incrementa {@link World.version}.
+   * @sideEffect Incrementa {@link World.structureVersion}.
    */
   public removeEntity(entity: Entity): void {
     if (this.isUpdating) {
@@ -453,7 +469,7 @@ export class World {
 
     if (this.activeEntities.delete(entity)) {
       this.freeEntities.push(entity);
-      this.version++;
+      this.structureVersion++;
     }
   }
 
@@ -490,7 +506,7 @@ export class World {
    * Útil para reinicios completos de nivel o cambios de escena drásticos.
    *
    * @postcondition El mundo queda en un estado inicial vacío.
-   * @sideEffect Incrementa {@link World.version}.
+   * @sideEffect Incrementa {@link World.structureVersion}.
    */
   public clear(): void {
     this.activeEntities.clear();
@@ -501,7 +517,7 @@ export class World {
     this.queriesByComponent.clear();
     this.resources.clear();
     this.commandBuffer.clear();
-    this.version++;
+    this.structureVersion++;
   }
 
   /**
@@ -586,6 +602,7 @@ export class World {
    * @postcondition El estado del mundo avanza y las mutaciones diferidas se consolidan al final.
    */
   update(deltaTime: number): void {
+    this.tick++;
     if (this.systemsNeedSorting) this.sortSystems();
 
     this.isUpdating = true;
@@ -672,27 +689,46 @@ export class World {
   }
 
   /**
+   * Notifica que el estado interno de algún componente ha cambiado.
+   *
+   * @remarks
+   * Debe llamarse cuando se mutan propiedades de componentes existentes de forma directa
+   * para que los sistemas que observan `stateVersion` (como el Renderer) puedan reaccionar.
+   */
+  public notifyStateChange(): void {
+    this.stateVersion++;
+    this._renderDirty = true;
+  }
+
+  /**
+   * Marca el mundo como sucio para el renderizado.
+   */
+  public setRenderDirty(dirty: boolean): void {
+    this._renderDirty = dirty;
+  }
+
+  /**
+   * Comprueba si el mundo tiene cambios pendientes de renderizar.
+   */
+  public isRenderDirty(): boolean {
+    return this._renderDirty;
+  }
+
+  /**
    * Intenta localizar el primer componente de un tipo dado, tratándolo como un Singleton.
    *
    * @remarks
    * Conveniente para componentes de instancia única (ej: estado global, configuración).
-   * Si el componente está congelado, se devuelve una copia superficial para permitir mutaciones,
-   * conforme a las expectativas de diseño del motor.
+   * A diferencia de versiones anteriores, esta operación es una lectura pura.
+   * Si el componente devuelto está congelado, el consumidor es responsable de manejarlo.
    *
    * @param type - El tipo de componente.
-   * @returns La instancia encontrada o una copia mutable si fuera necesario.
+   * @returns La instancia encontrada o `undefined`.
    */
   getSingleton<T extends Component>(type: string): T | undefined {
     const [entity] = this.query(type);
     if (entity === undefined) return undefined;
-    const component = this.getComponent<T>(entity, type);
-    if (!component) return undefined;
-    if (Object.isFrozen(component)) {
-      const mutableCopy = { ...component };
-      this.addComponent(entity, mutableCopy);
-      return mutableCopy;
-    }
-    return component;
+    return this.getComponent<T>(entity, type);
   }
 
   private ensureComponentStorage(type: string): void {
