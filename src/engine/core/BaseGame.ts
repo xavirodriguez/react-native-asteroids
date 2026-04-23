@@ -300,6 +300,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * @postcondition {@link BaseGame._status} se establece en `DESTROYED`.
    */
   public destroy(): void {
+    if (this._status === GameStatus.DESTROYED) {
+      return;
+    }
     this.stop();
     this.unifiedInput.cleanup();
     this._unregisterKeyboardListeners();
