@@ -55,6 +55,14 @@ describe("BaseGame Lifecycle", () => {
     expect(game.getStatus()).toBe(GameStatus.RUNNING);
   });
 
+  test("start() should be idempotent if already RUNNING", async () => {
+    await game.init();
+    game.start();
+    // Second call should do nothing
+    expect(() => game.start()).not.toThrow();
+    expect(game.getStatus()).toBe(GameStatus.RUNNING);
+  });
+
   test("should throw error on double init()", async () => {
     await game.init();
     await expect(game.init()).rejects.toThrow("BaseGame: Cannot initialize from state READY");
@@ -67,6 +75,21 @@ describe("BaseGame Lifecycle", () => {
     expect(game.getStatus()).toBe(GameStatus.STOPPED);
   });
 
+  test("stop() should be idempotent if already STOPPED", async () => {
+    await game.init();
+    game.start();
+    game.stop();
+    expect(game.getStatus()).toBe(GameStatus.STOPPED);
+    expect(() => game.stop()).not.toThrow();
+    expect(game.getStatus()).toBe(GameStatus.STOPPED);
+  });
+
+  test("stop() should do nothing if UNINITIALIZED or INITIALIZING", () => {
+    expect(game.getStatus()).toBe(GameStatus.UNINITIALIZED);
+    game.stop();
+    expect(game.getStatus()).toBe(GameStatus.UNINITIALIZED);
+  });
+
   test("should transition to DESTROYED after destroy()", async () => {
     await game.init();
     game.destroy();
@@ -77,6 +100,16 @@ describe("BaseGame Lifecycle", () => {
     await game.init();
     game.destroy();
     expect(() => game.start()).toThrow("BaseGame: Cannot start() on a destroyed game.");
+  });
+
+  test("restart() should throw error if UNINITIALIZED", async () => {
+    await expect(game.restart()).rejects.toThrow("BaseGame: Cannot restart() before init().");
+  });
+
+  test("restart() should throw error if DESTROYED", async () => {
+    await game.init();
+    game.destroy();
+    await expect(game.restart()).rejects.toThrow("BaseGame: Cannot restart() on a destroyed game.");
   });
 
   test("pause() and resume() should be idempotent and require RUNNING state", async () => {
