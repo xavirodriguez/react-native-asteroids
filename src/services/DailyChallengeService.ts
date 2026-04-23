@@ -19,7 +19,7 @@ export type DailyAttempt = z.infer<typeof DailyAttemptSchema>;
  */
 export class DailyChallengeService {
   /**
-   * Generates a deterministic seed for the given game and date.
+   * Generates a reproducible seed for a specific game and date.
    */
   public static getDailySeed(gameId: string): number {
     const now = new Date();

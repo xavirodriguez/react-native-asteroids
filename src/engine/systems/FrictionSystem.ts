@@ -14,11 +14,8 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * @executionOrder Fase: Simulation.
  *
  * @remarks
- * La fricción se aplica de forma multiplicativa cada frame. Es ideal para simular resistencia
- * al aire o rozamiento con el suelo en entornos arcade.
- *
- * @contract Amortiguación: La velocidad se reduce según `v = v * (1 - friction * dt)`.
- * @invariant No modifica la posición de la entidad.
+ * La fricción se aplica buscando reducir la velocidad cada frame, ideal para simular resistencia
+ * arcade. El cálculo intenta ser independiente del framerate delegando en {@link PhysicsUtils}.
  *
  * @conceptualRisk [DETERMINISM][MEDIUM] Al igual que `MovementSystem`, la fricción debe aplicarse
  * de forma idéntica en el cliente y en la predicción para evitar drift.

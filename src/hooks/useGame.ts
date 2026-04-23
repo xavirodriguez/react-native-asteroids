@@ -17,7 +17,11 @@ export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, T
 }
 
 /**
- * Generic hook to manage game lifecycle and state in React.
+ * Generic hook to manage game lifecycle and state in React components.
+ *
+ * @remarks
+ * Facilitates integration between the ECS engine and React's rendering system,
+ * managing asynchronous initialization, UI update throttling, and resource cleanup.
  */
 export function useGame<
   TGame extends BaseGame<TState, TInput>,
