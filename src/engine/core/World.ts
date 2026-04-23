@@ -20,11 +20,12 @@ interface RegisteredSystem {
  * @responsibility Mantener recursos compartidos globales del juego.
  *
  * @remarks
- * El `World` actúa como el núcleo de la arquitectura ECS. Utiliza un pool de entidades diseñado para reducir
- * la presión sobre el GC y emplea queries reactivas cacheadas para optimizar las consultas de sistemas.
+ * El `World` actúa como el núcleo de la arquitectura ECS. Está diseñado para reducir la presión sobre el GC
+ * mediante la reutilización de identificadores de entidades y emplea queries reactivas cacheadas
+ * para optimizar las consultas de sistemas.
  *
  * Invariantes (Expectativas de Diseño):
- * - **Principio 2**: Las estructuras jerárquicas (Transforms) deben ser válidas; el sistema intenta evitar el auto-parentesco.
+ * - **Principio 2**: Se espera que las estructuras jerárquicas (Transforms) sean válidas; el sistema intenta evitar el auto-parentesco.
  * - **Principio 6**: Los componentes singleton recuperados mediante {@link World.getSingleton} están
  * diseñados para ser mutables (se realiza una copia si están congelados).
  *
@@ -83,7 +84,7 @@ export class World {
   }
 
   /**
-   * Genera una instantánea serializable del estado del mundo destinada a rollback o persistencia.
+   * Genera una instantánea serializable del estado del mundo destinada a apoyar rollback o persistencia.
    *
    * @remarks
    * Captura entidades activas, datos serializables de componentes, contadores de IDs, versión del mundo
@@ -97,10 +98,11 @@ export class World {
    *
    * @precondition Se espera que el estado actual sea consistente; se recomienda evitar llamar durante un update de sistema
    * para favorecer una captura coherente del estado lógico.
-   * @postcondition Devuelve una copia profunda (vía `structuredClone`) de los datos serializables de cada componente.
+   * @postcondition Devuelve una copia profunda (vía `structuredClone`) de los datos serializables de cada componente
+   * compatibles con dicho algoritmo.
    *
    * @conceptualRisk [JSON_DETERMINISM][MEDIUM] La serialización no garantiza un orden determinista de las
-   * propiedades en todos los entornos, lo que puede afectar a la generación de hashes de estado.
+   * propiedades de los objetos en todos los entornos, lo que puede afectar a la generación de hashes de estado.
    * @conceptualRisk [GC_PRESSURE][MEDIUM] Las snapshots frecuentes, especialmente en mundos con alta densidad
    * de entidades, aumentarán la presión sobre el recolector de basura.
    * @returns El estado serializado del mundo.
@@ -154,7 +156,7 @@ export class World {
    * Intenta restaurar el estado del mundo a partir de una instantánea previamente capturada.
    *
    * @remarks
-   * Este método reconstruye los mapas de componentes e índices basándose en los datos serializados.
+   * Este método reconstruye los mapas de componentes e índices basándose en los datos serializados restaurables.
    * Intenta sincronizar las queries existentes para mantener la consistencia sin romper las referencias
    * a los objetos Query.
    *
@@ -163,7 +165,7 @@ export class World {
    * @precondition Se espera que el estado proporcionado sea una estructura válida y compatible con la versión del motor.
    * @postcondition El mundo refleja el estado serializable contenido en la instantánea.
    * @postcondition Las versiones de estructura y estado se sincronizan con los valores restaurados.
-   * @sideEffect Limpia todos los datos actuales del mundo antes de la restauración.
+   * @sideEffect Limpia el estado actual del mundo antes de la restauración.
    * @sideEffect Re-inicializa la semilla de `RandomService("gameplay")`.
    */
   public restore(state: WorldSnapshot): void {
@@ -224,10 +226,10 @@ export class World {
   }
 
   /**
-   * Solicita la creación de una nueva entidad en el mundo, intentando reutilizar IDs del pool.
+   * Solicita la creación de una nueva entidad en el mundo, intentando reutilizar IDs de entidades previamente eliminadas.
    *
    * @remarks
-   * Utiliza un pool de IDs reciclados para mitigar la presión sobre el GC durante ciclos de vida frecuentes.
+   * Utiliza un pool de IDs reciclados con el fin de reducir la presión sobre el GC durante ciclos de vida frecuentes.
    * Incrementa la versión de estructura del mundo para señalizar cambios topológicos.
    *
    * Si se llama durante {@link World.update}, la creación efectiva en los mapas de componentes se difiere
@@ -276,7 +278,7 @@ export class World {
    * @remarks
    * Si la entidad ya posee un componente del mismo tipo, se reemplaza.
    * Intenta validar la integridad jerárquica si el componente es de tipo 'Transform'.
-   * Notifica a las queries reactivas para actualizar sus índices de forma incremental.
+   * Notifica a las queries reactivas para apoyar la actualización de sus índices de forma incremental.
    *
    * Si se llama durante {@link World.update}, la operación se difiere mediante un buffer.
    *
@@ -415,7 +417,7 @@ export class World {
    * número de tipos.
    *
    * @precondition Se recomienda proporcionar al menos un tipo de componente para evitar consultas universales.
-   * @postcondition El array devuelto se mantiene ordenado por ID de entidad para favorecer la reproducibilidad.
+   * @postcondition El array devuelto se mantiene ordenado por ID de entidad con el fin de favorecer la reproducibilidad.
    */
   public query(...componentTypes: string[]): ReadonlyArray<Entity> {
     if (componentTypes.length === 0) return [];

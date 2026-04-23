@@ -38,13 +38,13 @@ export class PhysicsUtils {
    * Aplica integración lineal para actualizar la posición basada en la velocidad.
    * Soporta tanto componentes ECS estándar como objetos proxy (para predicción).
    *
-   * @param pos - Objeto de posición (debe tener x,y o worldX,worldY).
-   * @param vel - Objeto de velocidad (debe tener dx,dy o velocityX,velocityY).
+   * @param pos - Objeto de posición (se espera que tenga x,y o worldX,worldY).
+   * @param vel - Objeto de velocidad (se espera que tenga dx,dy o velocityX,velocityY).
    * @param deltaTimeInSeconds - Tiempo transcurrido en SEGUNDOS.
    *
-   * @precondition `deltaTimeInSeconds` debe ser un valor finito positivo.
+   * @precondition Se espera que `deltaTimeInSeconds` sea un valor finito positivo.
    * @postcondition Las coordenadas `x`/`y` (o `worldX`/`worldY`) de `pos` son actualizadas.
-   * @invariant No debe modificar el objeto `vel`.
+   * @remarks No se espera que modifique el objeto `vel`.
    * @sideEffect Muta el objeto `pos` directamente por referencia.
    * @conceptualRisk [PRECISION_LOSS][LOW] La acumulación de errores de punto flotante en integraciones
    * largas puede causar divergencias mínimas entre clientes.
@@ -84,7 +84,7 @@ export class PhysicsUtils {
    * @remarks
    * La amortiguación se aplica como una reducción de la velocidad buscando independencia de la tasa de frames.
    *
-   * @precondition `friction` debe estar preferiblemente en el rango [0, 1].
+   * @precondition Se recomienda que `friction` esté en el rango [0, 1].
    * @sideEffect Muta el objeto `vel` directamente por referencia.
    */
   public static applyFriction(vel: VelocityLike, friction: number, deltaTimeMs: number): void {
@@ -148,11 +148,11 @@ export class PhysicsUtils {
   }
 
   /**
-   * Actualiza las propiedades de masa e inercia de un cuerpo físico, manteniendo las inversas en sincronía.
+   * Actualiza las propiedades de masa e inercia de un cuerpo físico, buscando mantener las inversas en sincronía.
    *
    * @param body - El componente de cuerpo rígido a actualizar.
-   * @param mass - La nueva masa (debe ser > 0 para cuerpos dinámicos).
-   * @param inertia - El nuevo momento de inercia (debe ser > 0 para permitir rotación).
+   * @param mass - La nueva masa (debería ser > 0 para cuerpos dinámicos).
+   * @param inertia - El nuevo momento de inercia (debería ser > 0 para permitir rotación).
    *
    * @responsibility Mantener la sincronía de `inverseMass` e `inverseInertia` con la masa y la inercia.
    */

@@ -16,10 +16,10 @@ export interface TransformSnapshot {
  * Comandos emitidos por el `RenderSystem` para ser consumidos por el adaptador.
  *
  * @remarks
- * Representa una operación de dibujo atómica y agnóstica a la plataforma.
+ * Representa una operación de dibujo agnóstica a la plataforma.
  *
- * @conceptualRisk [ALLOCATION_FREE][HIGH] Estas interfaces deben ser implementadas
- * por objetos en un pool para evitar recolectores de basura durante el renderizado.
+ * @conceptualRisk [ALLOCATION_FREE][HIGH] Se recomienda que estas interfaces sean implementadas
+ * por objetos en un pool con el fin de reducir la presión del recolector de basura durante el renderizado.
  */
 export interface RenderCommand {
   type: string;

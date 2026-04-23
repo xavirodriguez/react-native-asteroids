@@ -22,7 +22,7 @@ export class StateHasher {
    * PERFORMANCE WARNING: Esta es una operación costosa O(E * C) donde E es el número de entidades
    * y C el promedio de componentes. Debe usarse con moderación, preferiblemente fuera del hot path de renderizado.
    *
-   * @precondition El mundo no debe estar en proceso de modificación (mitad de un update).
+   * @precondition El mundo no debería estar en proceso de modificación (mitad de un update).
    *
    * @conceptualRisk [PERFORMANCE] La concatenación masiva de strings y el uso de `JSON.stringify` genera
    * mucha presión sobre el recolector de basura (GC).

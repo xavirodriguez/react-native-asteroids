@@ -54,7 +54,7 @@ export abstract class System {
    *
    * @remarks
    * El sistema debe consultar entidades relevantes mediante {@link World.query} y aplicar
-   * transformaciones a sus componentes. Para favorecer la reproducibilidad y el soporte de rollback,
+   * transformaciones a sus componentes. Con el fin de favorecer la reproducibilidad y el soporte de rollback,
    * se recomienda minimizar el uso de estado mutable interno no serializable dentro del sistema.
    *
    * @warning Realizar mutaciones estructurales directas en el `world` (crear/eliminar entidades o componentes)

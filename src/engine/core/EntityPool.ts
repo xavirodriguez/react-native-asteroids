@@ -19,7 +19,7 @@ export class EntityPool {
    * Obtiene un ID de entidad disponible.
    *
    * @remarks
-   * Prioriza la reutilización de IDs en el pool interno. Si el pool está vacío, incrementa
+   * Intenta reutilizar IDs en el pool interno. Si el pool está vacío, incrementa
    * el contador global de IDs.
    *
    * @returns Un nuevo {@link Entity} (identificador numérico).
@@ -39,7 +39,7 @@ export class EntityPool {
    * Devuelve un ID de entidad al pool para su futura reutilización.
    *
    * @remarks
-   * El ID liberado estará disponible en la próxima llamada a {@link EntityPool.acquire}.
+   * El ID liberado se vuelve elegible para su reutilización en futuras llamadas a {@link EntityPool.acquire}.
    *
    * @param id - El identificador de la entidad a liberar.
    *
@@ -65,7 +65,7 @@ export class EntityPool {
    * Invalida todos los IDs de entidades creados anteriormente. Se recomienda usar con precaución,
    * generalmente solo durante el reinicio total del motor.
    *
-   * @precondition Se espera que el mundo ECS esté vacío para mitigar el riesgo de colisiones de IDs con entidades existentes.
+   * @precondition El mundo ECS debería estar vacío para mitigar el riesgo de colisiones de IDs con entidades existentes.
    * @postcondition {@link EntityPool.pool} queda vacío y `nextId` vuelve a 1.
    */
   public clear(): void {

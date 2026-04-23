@@ -9,7 +9,7 @@
  * pero cuyo uso directo no está recomendado para lógica de alto nivel.
  *
  * @remarks
- * El motor está diseñado con la intención de mitigar las alocaciones en hot-paths, aunque no garantiza
+ * El motor está diseñado con la intención de mitigar las alocaciones en hot-paths, aunque no pretende garantizar
  * un comportamiento "zero-allocation" absoluto. Se busca facilitar la reproducibilidad de la simulación
  * bajo condiciones operativas controladas.
  */

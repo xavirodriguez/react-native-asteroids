@@ -37,7 +37,7 @@ export enum GameStatus {
  * Orquestador principal del ciclo de vida y el estado del juego.
  *
  * @remarks
- * Diseñado para implementar un pipeline orientado a la reproducibilidad:
+ * Diseñado con la intención de implementar un pipeline orientado a la reproducibilidad:
  * 1. INPUT: Captura y procesamiento de comandos.
  * 2. SIMULATION: Ejecución de la lógica de juego y sistemas físicos (Fixed Step).
  * 3. TRANSFORM: Propagación de jerarquías espaciales.
@@ -160,7 +160,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    *
    * @throws Error - Si el juego no ha sido inicializado mediante {@link init}.
    * @throws Error - Si el juego ha sido destruido.
-   * @postcondition El {@link GameLoop} comienza a despachar eventos de actualización.
+   * @postcondition El {@link GameLoop} comienza a despachar eventos de actualización si las condiciones de estado se cumplen.
    */
   public start(): void {
     if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.INITIALIZING) {
@@ -174,8 +174,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Detiene el ciclo de ejecución del juego de forma inmediata.
-   * @postcondition El {@link GameLoop} cesa todas sus actividades.
+   * Detiene el ciclo de ejecución del juego.
+   * @postcondition El {@link GameLoop} cesa sus actividades de actualización.
    */
   public stop(): void {
     this.gameLoop.stop();
@@ -274,14 +274,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Libera todos los recursos y detiene el motor de forma definitiva.
+   * Libera recursos y detiene el motor.
    *
    * @remarks
-   * Detiene el loop, limpia los listeners de entrada (críticos para evitar fugas),
+   * Detiene el loop, limpia los listeners de entrada (con el fin de mitigar fugas),
    * elimina listeners de teclado globales y limpia suscriptores de UI.
-   * Una vez destruido, el motor no puede reiniciarse.
+   * Una vez destruido, el motor no está diseñado para reiniciarse.
    *
-   * @precondition Debe llamarse cuando el componente de React que aloja el juego se desmonte.
+   * @precondition Se recomienda llamar cuando el componente de React que aloja el juego se desmonte.
    * @postcondition {@link BaseGame._status} se establece en `DESTROYED`.
    */
   public destroy(): void {
@@ -311,12 +311,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Inicializa el juego y todos sus subsistemas de forma asíncrona.
+   * Inicializa el juego y sus subsistemas de forma asíncrona.
    *
    * @remarks
-   * Debe llamarse obligatoriamente antes de {@link BaseGame.start}.
-   * Las llamadas concurrentes se serializan. Si el juego ya está inicializado,
-   * la llamada lanza un error para prevenir re-inicializaciones accidentales.
+   * Se espera que se llame antes de {@link BaseGame.start}.
+   * Las llamadas concurrentes se serializan mediante un lock. Si el juego ya está inicializado,
+   * la llamada lanza un error con el fin de prevenir re-inicializaciones accidentales.
    *
    * @throws Error - Si el juego ya está inicializado o en proceso de inicialización.
    * @postcondition El {@link World} está configurado con sistemas y entidades iniciales.
