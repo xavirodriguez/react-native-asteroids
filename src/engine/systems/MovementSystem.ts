@@ -14,8 +14,8 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * @executionOrder Fase: {@link SystemPhase.Simulation}. Debe ejecutarse antes de Collision y Boundary.
  *
  * @remarks
- * Este sistema es el motor de movimiento principal para todas las entidades físicas no estáticas.
- * Utiliza {@link PhysicsUtils} para asegurar consistencia con el código de predicción.
+ * Este sistema es el motor de movimiento principal para las entidades físicas compatibles.
+ * Utiliza {@link PhysicsUtils} para ayudar a mantener la consistencia con el código de predicción.
  *
  * @conceptualRisk [DETERMINISM][CRITICAL] Existe lógica de integración duplicada entre este sistema
  * y los helpers de predicción (ej. `predictLocalPlayer` en Asteroids). Cualquier cambio en `PhysicsUtils`
@@ -30,12 +30,9 @@ export class MovementSystem extends System {
    * @param world - El mundo ECS que contiene las entidades.
    * @param deltaTime - Tiempo transcurrido desde el último tick en milisegundos.
    *
-   * @precondition Las entidades deben tener componentes {@link TransformComponent} y {@link VelocityComponent}.
-   * @postcondition Las coordenadas `x`, `y` y `rotation` del `Transform` se actualizan.
-   * @postcondition El flag `dirty` del `Transform` se marca como `true`.
-   *
-   * @contract La posición resultante es `p_new = p_old + (v * dt_seconds)`.
-   * @invariant No modifica los componentes de velocidad de la entidad.
+   * @remarks
+   * Actualiza las coordenadas `x`, `y` y `rotation` del `Transform`.
+   * El sistema marca el flag `dirty` del `Transform` para notificar cambios a otros sistemas dependientes.
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Transform", "Velocity");

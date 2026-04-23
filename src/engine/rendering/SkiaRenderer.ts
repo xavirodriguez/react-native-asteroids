@@ -7,7 +7,7 @@ import { RandomService } from "../utils/RandomService";
 
 /**
  * Implementación de Renderer basada en la API de Skia para React Native.
- * Proporciona renderizado acelerado por hardware óptimo para dispositivos móviles.
+ * Proporciona renderizado acelerado por hardware en dispositivos compatibles.
  *
  * @responsibility Dibujar el estado del mundo ECS utilizando el backend nativo de Skia.
  * @responsibility Gestionar la interpolación visual entre ticks físicos.
@@ -17,7 +17,7 @@ import { RandomService } from "../utils/RandomService";
  * @remarks
  * Al igual que el {@link CanvasRenderer}, es extensible mediante el registro de shape drawers.
  * Es el renderizador preferido para iOS y Android por su rendimiento superior.
- * Contrato de consistencia: Debe mantener paridad visual con {@link CanvasRenderer}.
+ * La paridad visual con {@link CanvasRenderer} es un objetivo de diseño importante.
  *
  * @contract Interpolación: Usa el valor `alpha` del loop para interpolar entre `PreviousTransform` y `Transform`.
  * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia puede perderse
@@ -170,6 +170,9 @@ export class SkiaRenderer implements Renderer {
       uiCount: 0,
       shakeX,
       shakeY,
+      cameraX: 0,
+      cameraY: 0,
+      cameraZoom: 1,
       elapsedTime
     };
   }
@@ -178,17 +181,17 @@ export class SkiaRenderer implements Renderer {
    * Ejecuta el pipeline de renderizado de Skia.
    *
    * @remarks
-   * A diferencia del {@link CanvasRenderer}, esta implementación actual realiza un dibujo
-   * más directo, aunque mantiene el soporte para interpolación visual. Se recomienda
-   * evolucionar hacia el modelo de snapshots para garantizar paridad visual total.
+   * A diferencia del {@link CanvasRenderer}, esta implementación realiza actualmente un dibujo
+   * directo desde el World, manteniendo soporte para la interpolación visual mediante el factor `alpha`.
+   * Se recomienda evolucionar hacia el modelo de snapshots para favorecer la consistencia visual total.
    *
    * @param world - El mundo ECS que contiene las entidades a dibujar.
    * @param alpha - Factor de interpolación [0, 1].
    *
    * @precondition El lienzo (SkCanvas) debe estar listo para recibir comandos.
    * @postcondition Se genera la imagen del frame actual con interpolación aplicada.
-   * @invariant No debe mutar componentes de simulación (Transform, Velocity).
-   * @sideEffect Limpia el lienzo con el color negro.
+   * @warning No debe mutar componentes de simulación (e.g. Transform, Velocity) durante el renderizado.
+   * @sideEffect Limpia el lienzo con el color negro antes de dibujar.
    * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia
    * puede perderse si la app pasa a segundo plano de forma prolongada.
    */
@@ -286,7 +289,7 @@ export class SkiaRenderer implements Renderer {
     const scaleX = (pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1)) + (offset?.scaleX ?? 0);
     const scaleY = (pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1)) + (offset?.scaleY ?? 0);
 
-    // Calculate deterministic elapsed time from world state if possible
+    // Intenta calcular un tiempo transcurrido consistente a partir del estado del mundo
     const gameState = world.getSingleton<GenericComponent>("GameState");
     const serverTick = gameState && gameState.serverTick !== undefined ? gameState.serverTick as number : null;
     const elapsedTime = serverTick !== null ? serverTick * (1000 / 60) : performance.now();

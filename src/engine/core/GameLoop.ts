@@ -11,18 +11,18 @@ export interface GameLoopConfig {
 
 /**
  * Motor de tiempo central que orquesta el ciclo de vida del juego.
- * Implementa un Fixed Timestep con interpolación para garantizar un comportamiento determinista.
+ * Implementa un Fixed Timestep con interpolación diseñado para mejorar la reproducibilidad y la fluidez.
  *
- * @responsibility Mantener una tasa de actualización constante (60Hz) para la simulación física.
+ * @responsibility Apuntar a una tasa de actualización constante (60Hz) para la simulación física.
  * @responsibility Calcular el factor de interpolación (alpha) para el renderizado visual.
  * @responsibility Notificar a los suscriptores en las fases de Input, Update y Render.
  *
  * @remarks
- * El determinismo es fundamental para el soporte de rollback y repeticiones.
- * El loop separa la lógica de simulación de la tasa de refresco del monitor, evitando que
- * variaciones en el rendimiento del renderizado afecten la integridad de la física.
+ * El loop desacopla la lógica de simulación de la tasa de refresco del monitor, buscando que
+ * variaciones en el rendimiento del renderizado minimicen su impacto en la integridad de la física.
+ * Bajo carga extrema, el sistema puede limitar las actualizaciones para preservar la estabilidad del hilo principal.
  *
- * @contract Fixed Update: La fase de simulación está diseñada para recibir incrementos constantes de 16.67ms (1/60s).
+ * @remarks La fase de simulación está diseñada para recibir incrementos constantes de 16.67ms (1/60s) en condiciones normales.
  *
  * @conceptualRisk [PERFORMANCE][HIGH] El loop de `GameLoop` puede disparar el "Spiral of Death"
  * si la simulación es consistentemente más lenta que el tiempo real, a pesar del límite `maxDeltaMs`.
@@ -68,9 +68,10 @@ export class GameLoop {
    * Suscribe un callback para la simulación física (Fixed Update).
    *
    * @remarks
-   * Esta es la fase orientada al determinismo del motor. El sistema intenta que el callback reciba un
-   * incremento de tiempo constante (16.67ms). Puede ejecutarse múltiples veces en un
-   * solo frame del navegador para "recuperar" tiempo si el rendimiento cae.
+   * Esta fase está orientada a la reproducibilidad de la simulación. El sistema está diseñado para que
+   * el callback reciba un incremento de tiempo constante (16.67ms). Puede ejecutarse múltiples veces
+   * en un solo frame del navegador para compensar el tiempo transcurrido, hasta un límite máximo
+   * definido en la configuración para evitar bloqueos.
    *
    * @param listener - Función que recibe el fixedDeltaTime (16.67ms).
    * @returns Una función para cancelar la suscripción.
@@ -149,8 +150,8 @@ export class GameLoop {
       if (updatesThisFrame >= this.maxUpdatesPerFrame) {
         /**
          * @warning Spiral of Death detected.
-         * Se descarta el tiempo acumulado sobrante para evitar bloquear el hilo principal.
-         * Esto rompe el determinismo temporal estricto en favor de la estabilidad operativa.
+         * Se descarta el tiempo acumulado sobrante para mitigar el bloqueo del hilo principal.
+         * Esto sacrifica la precisión temporal absoluta en favor de la estabilidad del entorno.
          */
         console.warn(`[GameLoop] Spiral of Death detected. Dropping remaining ticks for this frame. (Updates: ${updatesThisFrame})`);
         this.accumulator = 0;

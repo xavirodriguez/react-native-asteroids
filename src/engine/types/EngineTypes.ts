@@ -8,7 +8,7 @@ export * from "./CommonTypes";
 export { CollisionManifold } from "../physics/collision/CollisionTypes";
 
 /**
- * Represents a serialized component, containing only data and no functions or circular references.
+ * Represents a serialized component, intended to contain only flat, serializable data.
  */
 export type SerializedComponent = Record<string, unknown>;
 
@@ -18,7 +18,7 @@ export type SerializedComponent = Record<string, unknown>;
 export type ComponentDataSnapshot = Record<string, Record<Entity, SerializedComponent>>;
 
 /**
- * Represents a complete snapshot of the ECS world state.
+ * Represents a snapshot of the ECS world state intended for serialization and state restoration.
  */
 export interface WorldSnapshot {
   entities: Entity[];

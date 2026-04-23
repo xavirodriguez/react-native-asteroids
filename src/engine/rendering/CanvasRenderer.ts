@@ -1,7 +1,7 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TransformComponent, PreviousTransformComponent, GenericComponent } from "../core/CoreComponents";
+import { RenderComponent, TransformComponent, PreviousTransformComponent, GenericComponent, Camera2DComponent } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
 import { RenderSnapshot, UISnapshot } from "./RenderSnapshot";
 import { CommandBuffer, DrawCommand } from "./CommandBuffer";
@@ -17,8 +17,8 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  *
  * @remarks
  * Es el renderizador estándar para la plataforma Web y entornos de desarrollo rápido.
- * Utiliza una estrategia orientada a la reducción de alocaciones mediante el reciclaje de objetos snapshot
- * y comandos para minimizar la presión sobre el GC.
+ * Utiliza una estrategia destinada a mitigar las alocaciones por frame mediante el reciclaje
+ * de objetos snapshot y comandos, buscando reducir la presión sobre el recolector de basura (GC).
  *
  * @conceptualRisk [GC_PRESSURE][LOW] Aunque usa pools, el crecimiento de `entities` en el
  * snapshot más allá de `MAX_ENTITIES` (2000) causará pérdida de dibujo.
@@ -82,6 +82,9 @@ export class CanvasRenderer implements Renderer {
       uiCount: 0,
       shakeX: 0,
       shakeY: 0,
+      cameraX: 0,
+      cameraY: 0,
+      cameraZoom: 1,
       elapsedTime: 0
     };
   }
@@ -171,6 +174,27 @@ export class CanvasRenderer implements Renderer {
     this.swapSnapshots();
     const snapshot = this.currentSnapshot;
 
+    // 0. Camera selection and data
+    const cameras = world.query("Camera2D");
+    let mainCam: Camera2DComponent | null = null;
+    for (const camEntity of cameras) {
+      const cam = world.getComponent<Camera2DComponent>(camEntity, "Camera2D")!;
+      if (cam.isMain || !mainCam) {
+        mainCam = cam;
+        if (cam.isMain) break;
+      }
+    }
+
+    snapshot.cameraX = mainCam?.x ?? 0;
+    snapshot.cameraY = mainCam?.y ?? 0;
+    snapshot.cameraZoom = mainCam?.zoom ?? 1;
+
+    // Visual viewport for culling in world space
+    const cullMinX = snapshot.cameraX;
+    const cullMinY = snapshot.cameraY;
+    const cullMaxX = cullMinX + this.width / snapshot.cameraZoom;
+    const cullMaxY = cullMinY + this.height / snapshot.cameraZoom;
+
     // 1. Entities
     const entities = world.query("Transform", "Render");
     let count = 0;
@@ -187,6 +211,12 @@ export class CanvasRenderer implements Renderer {
         shakeX = (renderRandom.next() - 0.5) * screenShake.intensity;
         shakeY = (renderRandom.next() - 0.5) * screenShake.intensity;
       }
+    }
+
+    // Combine camera shake if present
+    if (mainCam && (mainCam.shakeOffsetX !== 0 || mainCam.shakeOffsetY !== 0)) {
+        shakeX += mainCam.shakeOffsetX;
+        shakeY += mainCam.shakeOffsetY;
     }
 
     snapshot.shakeX = shakeX;
@@ -243,6 +273,14 @@ export class CanvasRenderer implements Renderer {
       snap.vertices = render.vertices || null;
       snap.hitFlashFrames = render.hitFlashFrames || 0;
       snap.data = render.data ?? null;
+
+      // Frustum Culling: check if entity AABB intersects camera viewport
+      const size = render.size;
+      const margin = size * 2; // Extra margin for safe culling
+      if (snap.x + margin < cullMinX || snap.x - margin > cullMaxX ||
+          snap.y + margin < cullMinY || snap.y - margin > cullMaxY) {
+          continue;
+      }
 
       count++;
     }
@@ -332,8 +370,7 @@ export class CanvasRenderer implements Renderer {
     this.commandBuffer.sort();
 
     this.clear();
-
-    // 1. Background and Pre-render (Clean Screen Space)
+    // Background effects and pre-render hooks (Screen Space)
     ctx.save();
     for (let i = 0; i < this.backgroundEffects.length; i++) {
         this.backgroundEffects[i].drawer(ctx, snapshot, this.width, this.height, world);
@@ -343,18 +380,24 @@ export class CanvasRenderer implements Renderer {
     }
     ctx.restore();
 
-    // 2. Entities and World-Space (With Shake)
+    // World Space Rendering (Entities)
     ctx.save();
+    // Apply Camera Transformation (including screen-space shake)
     ctx.translate(snapshot.shakeX, snapshot.shakeY);
+    ctx.scale(snapshot.cameraZoom, snapshot.cameraZoom);
+    // World Space Rendering (Entities)
+    ctx.save();
+    // Apply Camera Transformation (including screen-space shake)
+    ctx.translate(snapshot.shakeX, snapshot.shakeY);
+    ctx.scale(snapshot.cameraZoom, snapshot.cameraZoom);
+    ctx.translate(-snapshot.cameraX, -snapshot.cameraY);
+
     const commands = this.commandBuffer.getCommands();
     const cmdCount = this.commandBuffer.getCount();
     for (let i = 0; i < cmdCount; i++) {
       this.executeCommand(ctx, commands[i], world, snapshot.elapsedTime);
     }
     ctx.restore();
-
-    // 3. Foreground and Post-render (Clean Screen Space)
-    ctx.save();
     for (let i = 0; i < this.foregroundEffects.length; i++) {
         this.foregroundEffects[i].drawer(ctx, snapshot, this.width, this.height, world);
     }
@@ -538,15 +581,15 @@ export class CanvasRenderer implements Renderer {
    * Ejecuta el pipeline de renderizado completo para el World actual.
    *
    * @remarks
-   * El proceso se divide en dos fases críticas:
+   * El proceso se divide en dos fases:
    * 1. **Captura (Capture)**: Crea un {@link RenderSnapshot} interpolado del World.
    * 2. **Dibujo (Draw)**: Ejecuta los comandos del snapshot en el contexto de Canvas.
    *
    * @param world - El mundo ECS fuente de datos.
-   * @param alpha - Factor de interpolación para movimiento suave.
+   * @param alpha - Factor de interpolación [0, 1] para suavizado de movimiento.
    *
    * @precondition El contexto `ctx` debe haber sido establecido mediante {@link CanvasRenderer.setContext}.
-   * @postcondition Se genera una imagen completa en el Canvas.
+   * @postcondition Se genera la imagen del frame actual en el Canvas con interpolación aplicada.
    */
   public render(world: World, alpha: number = 1): void {
     const snapshot = this.createSnapshot(world, alpha);

@@ -56,7 +56,7 @@ export interface UISnapshot {
  *
  * @remarks
  * Esta estructura desacopla la fase de captura (que lee del World) de la fase de dibujo.
- * Permite que el renderizado sea determinista y evita problemas de concurrencia o
+ * Ayuda a que el renderizado sea consistente y busca evitar efectos secundarios de
  * mutaciones del World durante el dibujo.
  */
 export interface RenderSnapshot {
@@ -72,6 +72,12 @@ export interface RenderSnapshot {
   shakeX: number;
   /** Desplazamiento vertical acumulado por efectos de Screen Shake. */
   shakeY: number;
+  /** Posición X de la cámara en el mundo. */
+  cameraX: number;
+  /** Posición Y de la cámara en el mundo. */
+  cameraY: number;
+  /** Nivel de zoom de la cámara. */
+  cameraZoom: number;
   /** Tiempo transcurrido (ms) desde el inicio de la simulación. */
   elapsedTime: number;
   /** Datos arbitrarios para efectos de fondo. */

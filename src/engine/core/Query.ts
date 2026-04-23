@@ -6,12 +6,12 @@ import { Entity } from "../types/EngineTypes";
  *
  * @responsibility Mantener una lista filtrada y cacheada de entidades que cumplen una firma.
  * @responsibility Responder de forma reactiva a cambios estructurales en el World.
- * @responsibility Proporcionar acceso de alto rendimiento O(1) a grupos de entidades.
+ * @responsibility Proporcionar acceso eficiente a grupos de entidades filtrados por componentes.
  *
  * @remarks
- * Las queries eliminan la necesidad de iterar sobre todas las entidades del mundo en cada frame.
- * El {@link World} notifica a las queries relevantes solo cuando hay cambios estructurales
- * (add/remove componente), permitiendo una complejidad O(1) para obtener entidades activas.
+ * Las queries reducen la necesidad de iterar sobre todas las entidades del mundo en cada frame.
+ * El {@link World} notifica a las queries relevantes cuando ocurren cambios estructurales,
+ * permitiendo un acceso rápido a las entidades que coinciden con la firma.
  *
  * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] Si un consumidor modifica el array devuelto
  * (e.g., mediante `.push()` o `.sort()` in-place), corromperá el estado interno de la Query.
@@ -69,19 +69,19 @@ export class Query {
   }
 
   /**
-   * Devuelve la lista de entidades que coinciden con la query.
-   * Devuelve un array cacheado para minimizar la presión del GC.
+   * Proporciona la lista de entidades que coinciden actualmente con la firma de la query.
+   * Emplea un array cacheado para mitigar la presión sobre el recolector de basura.
    *
    * @remarks
-   * El array devuelto es una referencia a un caché interno por razones de rendimiento.
-   * Se devuelve como `ReadonlyArray` para señalizar que NO debe ser modificado.
+   * El array devuelto es una referencia al caché interno. Se entrega como `ReadonlyArray`
+   * para desaconsejar mutaciones externas que corromperían el estado de la query.
    *
    * @returns Un array de solo lectura de IDs de {@link Entity}.
    *
-   * @precondition No se debe realizar casting de este array a uno mutable ni utilizar
-   * métodos in-place (sort, push, splice).
-   * @postcondition El array devuelto refleja el estado actual del {@link World} para esta firma.
-   * @postcondition Las entidades en el array están siempre ordenadas por ID de forma ascendente.
+   * @warning No se debe realizar casting de este array a uno mutable ni utilizar métodos
+   * in-place (sort, push, splice), ya que esto invalidaría el caché interno.
+   * @postcondition El array devuelto refleja el estado del {@link World} para esta firma en el momento de la consulta.
+   * @postcondition Las entidades en el array se entregan ordenadas por ID de forma ascendente para favorecer la consistencia.
    *
    * @conceptualRisk [MEMORY][MEDIUM] Fuga de caché mutable en Queries. Los sistemas reciben
    * una referencia al array interno de la query y pueden corromperlo si realizan casting forzado.
@@ -101,7 +101,7 @@ export class Query {
    *
    * @remarks
    * La clave es una cadena separada por comas y ordenada alfabéticamente de los tipos
-   * de componentes, garantizando que el orden de entrada no genere duplicados.
+   * de componentes, buscando que el orden de entrada no genere duplicados.
    */
   public get key(): string {
     return [...this.componentTypes].sort().join(",");

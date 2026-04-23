@@ -1,8 +1,8 @@
 import { InputFrame } from "../../multiplayer/NetTypes";
 
 /**
- * Manages and synchronizes input frames for deterministic lockstep networking.
- * Buffers local and remote inputs to ensure they are applied at the correct tick.
+ * Input frame synchronization manager for lockstep-style networking.
+ * Designed to buffer local and remote inputs, aiming to ensure they are applied at the correct tick.
  */
 export class InputBuffer {
   private localBuffer: Map<number, InputFrame> = new Map();

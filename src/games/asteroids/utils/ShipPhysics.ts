@@ -63,7 +63,10 @@ export const ShipPhysics = {
 
   /**
    * Unified ship simulation tick.
-   * Ensures identical physics and action logic between ECS systems and prediction.
+   *
+   * @remarks
+   * Designed to centralize physics and action logic aiming for consistency
+   * between ECS systems and network prediction.
    */
   simulateShipTick(
     world: World,

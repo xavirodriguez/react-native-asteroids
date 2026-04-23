@@ -1,11 +1,11 @@
 import { AssetDescriptor, AssetHandle } from "./AssetTypes";
 
 /**
- * AssetLoader for managing game assets with caching and reference counting.
+ * AssetLoader intended to manage game assets with caching and reference counting.
  *
  * @remarks
- * Implements a strict ownership model where scenes or systems must increment/decrement
- * reference counts. Includes debug assertions to detect leaks or double-unloads.
+ * Implements an ownership model where scenes or systems are expected to manage
+ * reference count increments and decrements to help control memory usage.
  */
 export class AssetLoader {
   private cache = new Map<string, AssetHandle>();
@@ -95,8 +95,8 @@ export class AssetLoader {
    * Decrements reference counts and unloads assets if they reach zero.
    *
    * @remarks
-   * Enforces symmetry in load/unload operations.
-   * @throws Error if a reference count underflow is detected (debug only).
+   * Designed to encourage symmetry in load/unload operations.
+   * @throws {Error} If a reference count underflow is detected (debug/dev mode only).
    */
   public unloadGroup(ids: string[]): void {
     for (let i = 0; i < ids.length; i++) {

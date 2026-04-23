@@ -112,17 +112,17 @@ export class UnifiedInputSystem extends System {
    * Sincroniza el estado de las entradas activas con el componente `InputState` en el mundo.
    *
    * @remarks
-   * Combina el estado real del hardware con los overrides programáticos.
-   * Si no existe un componente `InputState`, lo crea como un singleton.
+   * Combina el estado detectado del hardware con los overrides programáticos configurados.
+   * Si no existe un componente `InputState` en el mundo, el sistema intenta crearlo como un singleton.
    *
    * @param world - El mundo donde reside el componente de entrada.
    * @param _deltaTime - Tiempo transcurrido (en ms).
    *
-   * @precondition El `world` debe ser válido.
-   * @postcondition El componente singleton {@link InputStateComponent} está actualizado
-   * con las acciones activas en el hardware o mediante overrides.
-   * @sideEffect Puede crear una nueva entidad si el singleton `InputState` no existe.
-   * @mutates world - Crea o actualiza el componente `InputState`.
+   * @precondition El `world` debe ser una instancia válida de World.
+   * @postcondition El componente singleton {@link InputStateComponent} refleja las acciones
+   * activas capturadas por el sistema.
+   * @sideEffect Puede crear una nueva entidad si el singleton `InputState` no está presente.
+   * @mutates world - Registra o actualiza el componente `InputState`.
    */
   public update(world: World, _deltaTime: number): void {
     let inputState = world.getSingleton<InputStateComponent>("InputState");

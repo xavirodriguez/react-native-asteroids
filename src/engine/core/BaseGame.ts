@@ -25,10 +25,22 @@ export interface BaseGameConfig {
 }
 
 /**
+ * Representa los estados posibles del ciclo de vida del motor.
+ */
+export enum GameStatus {
+  UNINITIALIZED = "UNINITIALIZED",
+  INITIALIZING = "INITIALIZING",
+  READY = "READY",
+  RUNNING = "RUNNING",
+  STOPPED = "STOPPED",
+  DESTROYED = "DESTROYED",
+}
+
+/**
  * Orquestador principal del ciclo de vida y el estado del juego.
  *
  * @remarks
- * Diseñado para implementar un pipeline orientado al determinismo:
+ * Diseñado para implementar un pipeline orientado a la reproducibilidad:
  * 1. INPUT: Captura y procesamiento de comandos.
  * 2. SIMULATION: Ejecución de la lógica de juego y sistemas físicos (Fixed Step).
  * 3. TRANSFORM: Propagación de jerarquías espaciales.
@@ -60,6 +72,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected currentSeed: number = 0;
   public isMultiplayer: boolean;
 
+  private _status: GameStatus = GameStatus.UNINITIALIZED;
+  private _transitionLock: Promise<void> | null = null;
   private _isPaused = false;
   private _listeners = new Set<UpdateListener<BaseGame<TState, TInput>>>();
   private _globalKeyHandler = (e: KeyboardEvent) => this._handleGlobalKey(e);
@@ -130,32 +144,70 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
   /**
    * Inicia el ciclo de ejecución del juego.
+   *
+   * @throws Error - Si el juego no ha sido inicializado mediante {@link init}.
+   * @throws Error - Si el juego ha sido destruido.
    * @postcondition El {@link GameLoop} comienza a despachar eventos de actualización.
    */
-  public start(): void { this.gameLoop.start(); }
+  public start(): void {
+    if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.INITIALIZING) {
+      throw new Error("BaseGame: Cannot start() before init().");
+    }
+    if (this._status === GameStatus.DESTROYED) {
+      throw new Error("BaseGame: Cannot start() on a destroyed game.");
+    }
+    this.gameLoop.start();
+    this._status = GameStatus.RUNNING;
+  }
 
   /**
    * Detiene el ciclo de ejecución del juego de forma inmediata.
    * @postcondition El {@link GameLoop} cesa todas sus actividades.
    */
-  public stop(): void { this.gameLoop.stop(); }
+  public stop(): void {
+    this.gameLoop.stop();
+    if (this._status !== GameStatus.DESTROYED) {
+      this._status = GameStatus.STOPPED;
+    }
+  }
 
   /**
    * Pausa la simulación lógica manteniendo el renderizado activo.
+   *
+   * @remarks
+   * El método es idempotente. Solo surte efecto si el juego está en estado `RUNNING`.
+   *
    * @postcondition {@link BaseGame._isPaused} se establece en `true`.
    * @sideEffect Notifica a la escena actual y a los suscriptores externos.
    */
-  public pause(): void { this._isPaused = true; this.sceneManager.pause(); this._notifyListeners(); }
+  public pause(): void {
+    if (this._status !== GameStatus.RUNNING || this._isPaused) return;
+    this._isPaused = true;
+    this.sceneManager.pause();
+    this._notifyListeners();
+  }
 
   /**
    * Reanuda la simulación lógica tras una pausa.
+   *
+   * @remarks
+   * El método es idempotente. Solo surte efecto si el juego estaba previamente pausado.
+   *
    * @postcondition {@link BaseGame._isPaused} se establece en `false`.
    * @sideEffect Notifica a la escena actual y a los suscriptores externos.
    */
-  public resume(): void { this._isPaused = false; this.sceneManager.resume(); this._notifyListeners(); }
+  public resume(): void {
+    if (this._status !== GameStatus.RUNNING || !this._isPaused) return;
+    this._isPaused = false;
+    this.sceneManager.resume();
+    this._notifyListeners();
+  }
 
   /** Consulta si el juego se encuentra en estado de pausa. */
   public isPausedState(): boolean { return this._isPaused; }
+
+  /** Obtiene el estado actual del ciclo de vida del juego. */
+  public getStatus(): GameStatus { return this._status; }
 
   /** Proporciona acceso al {@link GameLoop} para suscripciones directas. */
   public getGameLoop(): GameLoop { return this.gameLoop; }
@@ -164,37 +216,48 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * Reinicia el estado del juego, opcionalmente con una nueva semilla aleatoria.
    *
    * @remarks
+   * Las llamadas a este método se serializan mediante un lock interno para evitar
+   * condiciones de carrera durante la re-inicialización asíncrona.
    * Realiza una limpieza previa mediante `_onBeforeRestart`. Si hay escenas activas,
    * reinicia la escena actual invocando `onRestartCleanup()`; de lo contrario, limpia
    * el mundo y re-inicializa las entidades.
    *
-   * @param seed - Semilla opcional para garantizar repetibilidad en la simulación.
+   * @param seed - Semilla opcional para favorecer la repetibilidad en la simulación.
    * @postcondition El juego intenta volver a su estado inicial de simulación.
    * @sideEffect Reinicia el tick de simulación y el estado de pausa.
    * @sideEffect Actualiza la semilla global en {@link RandomService}.
    */
   public async restart(seed?: number): Promise<void> {
-    await this._onBeforeRestart();
+    if (this._status === GameStatus.DESTROYED) return;
 
-    if (seed !== undefined) {
-      this.currentSeed = seed;
-      RandomService.getGameplayRandom().setSeed(this.currentSeed);
-      RandomService.getRenderRandom().setSeed(this.currentSeed ^ 0xDEADBEEF);
+    while (this._transitionLock) {
+      await this._transitionLock;
     }
 
-    if (this.sceneManager.getCurrentScene()) {
-      await this.sceneManager.restartCurrentScene();
-    } else {
-      this.world.clear();
-      // Skip system re-registration during restart because systems survive world.clear().
-      // We only need to re-register the resources that were cleared.
-      this.registerEssentialSystems(this.world, { skipSystems: true });
-      this.registerGameResources(this.world);
-      this.initializeEntities();
-    }
+    let resolveLock: () => void;
+    this._transitionLock = new Promise((resolve) => { resolveLock = resolve; });
 
-    this._isPaused = false;
-    this._notifyListeners();
+    try {
+      await this._onBeforeRestart();
+
+      if (seed !== undefined) {
+        this.currentSeed = seed;
+        RandomService.getGameplayRandom().setSeed(this.currentSeed);
+        RandomService.getRenderRandom().setSeed(this.currentSeed ^ 0xDEADBEEF);
+      }
+
+      if (this.sceneManager.getCurrentScene()) {
+        await this.sceneManager.restartCurrentScene();
+      } else {
+        this.world.clear();
+        this.initializeEntities();
+      }
+      this._isPaused = false;
+      this._notifyListeners();
+    } finally {
+      this._transitionLock = null;
+      resolveLock!();
+    }
   }
 
   /**
@@ -203,14 +266,17 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * @remarks
    * Detiene el loop, limpia los listeners de entrada (críticos para evitar fugas),
    * elimina listeners de teclado globales y limpia suscriptores de UI.
+   * Una vez destruido, el motor no puede reiniciarse.
    *
    * @precondition Debe llamarse cuando el componente de React que aloja el juego se desmonte.
+   * @postcondition {@link BaseGame._status} se establece en `DESTROYED`.
    */
   public destroy(): void {
     this.stop();
     this.unifiedInput.cleanup();
     this._unregisterKeyboardListeners();
     this._listeners.clear();
+    this._status = GameStatus.DESTROYED;
   }
 
   /**
@@ -235,18 +301,41 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * Inicializa el juego y todos sus subsistemas de forma asíncrona.
    *
    * @remarks
-   * Debe llamarse obligatoriamente antes de {@link BaseGame.start}. Registra los sistemas
-   * core del motor (XP, Paleta), los sistemas específicos del juego mediante {@link BaseGame.registerSystems}
-   * e inicializa las entidades base mediante {@link BaseGame.initializeEntities}.
+   * Debe llamarse obligatoriamente antes de {@link BaseGame.start}.
+   * Las llamadas concurrentes se serializan. Si el juego ya está inicializado,
+   * la llamada lanza un error para prevenir re-inicializaciones accidentales.
    *
+   * @throws Error - Si el juego ya está inicializado o en proceso de inicialización.
    * @postcondition El {@link World} está configurado con sistemas y entidades iniciales.
-   * @conceptualRisk [ASYNC_RACE][MEDIUM] Llamar a `start()` antes de que la promesa de `init()`
-   * se resuelva puede resultar en una simulación sin sistemas o entidades.
+   * @postcondition {@link BaseGame._status} pasa de `UNINITIALIZED` a `READY`.
    */
   public async init(): Promise<void> {
-    await this.registerEngineSystems();
-    this.registerSystems();
-    this.initializeEntities();
+    if (this._status !== GameStatus.UNINITIALIZED) {
+      throw new Error(`BaseGame: Cannot initialize from state ${this._status}`);
+    }
+
+    // El lock aquí protege contra llamadas concurrentes antes de que el status cambie.
+    if (this._transitionLock) {
+      await this._transitionLock;
+      return;
+    }
+
+    let resolveLock: () => void;
+    this._transitionLock = new Promise((resolve) => { resolveLock = resolve; });
+
+    try {
+      this._status = GameStatus.INITIALIZING;
+      await this.registerEngineSystems();
+      this.registerSystems();
+      this.initializeEntities();
+      this._status = GameStatus.READY;
+    } catch (error) {
+      this._status = GameStatus.UNINITIALIZED;
+      throw error;
+    } finally {
+      this._transitionLock = null;
+      resolveLock!();
+    }
   }
 
   protected async registerEngineSystems(): Promise<void> {
