@@ -8,14 +8,16 @@ export enum CommandType {
   CREATE_ENTITY = "createEntity",
   REMOVE_ENTITY = "removeEntity",
   ADD_COMPONENT = "addComponent",
-  REMOVE_COMPONENT = "removeComponent"
+  REMOVE_COMPONENT = "removeComponent",
+  MUTATE_COMPONENT = "mutateComponent"
 }
 
 type Command =
   | { type: CommandType.CREATE_ENTITY, entity?: Entity, callback?: (entity: Entity) => void }
   | { type: CommandType.REMOVE_ENTITY, entity: Entity }
   | { type: CommandType.ADD_COMPONENT, entity: Entity, component: Component }
-  | { type: CommandType.REMOVE_COMPONENT, entity: Entity, componentType: string };
+  | { type: CommandType.REMOVE_COMPONENT, entity: Entity, componentType: string }
+  | { type: CommandType.MUTATE_COMPONENT, entity: Entity, componentType: string, mutator: (component: any) => void };
 
 /**
  * Buffer de comandos para diferir mutaciones estructurales del mundo ECS.
@@ -71,6 +73,16 @@ export class WorldCommandBuffer {
   }
 
   /**
+   * Graba una mutación de un componente.
+   * @param entity - ID de la entidad.
+   * @param componentType - Tipo de componente.
+   * @param mutator - Función de mutación.
+   */
+  public mutateComponent<T extends Component>(entity: Entity, componentType: string, mutator: (component: T) => void): void {
+    this.commands.push({ type: CommandType.MUTATE_COMPONENT, entity, componentType, mutator });
+  }
+
+  /**
    * Aplica todos los comandos grabados sobre el mundo proporcionado y limpia el buffer.
    * @param world - La instancia del mundo sobre la que aplicar los cambios.
    */
@@ -95,6 +107,9 @@ export class WorldCommandBuffer {
             break;
           case CommandType.REMOVE_COMPONENT:
             world.removeComponent(command.entity, command.componentType);
+            break;
+          case CommandType.MUTATE_COMPONENT:
+            world.mutateComponent(command.entity, command.componentType, command.mutator);
             break;
         }
       }

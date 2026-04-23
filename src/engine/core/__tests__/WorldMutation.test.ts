@@ -130,4 +130,56 @@ describe("World Structural Mutation Safety", () => {
       expect(entities).toContain(reservedId);
       expect(entities.length).toBe(1);
   });
+
+  it("should allow immediate component mutation with notifyStateChange", () => {
+    const entity = world.createEntity();
+    const component: TestComponent = { type: "Test", value: 10 };
+    world.addComponent(entity, component);
+    world.flush();
+
+    const initialStateVersion = world.stateVersion;
+
+    world.mutateComponent<TestComponent>(entity, "Test", (c) => {
+      c.value = 20;
+    });
+
+    expect(world.getComponent<TestComponent>(entity, "Test")?.value).toBe(20);
+    expect(world.stateVersion).toBeGreaterThan(initialStateVersion);
+    expect(world.isRenderDirty()).toBe(true);
+  });
+
+  it("should allow deferred component mutation via CommandBuffer", () => {
+    const entity = world.createEntity();
+    const component: TestComponent = { type: "Test", value: 10 };
+    world.addComponent(entity, component);
+    world.flush();
+
+    const initialStateVersion = world.stateVersion;
+    const buffer = world.getCommandBuffer();
+
+    buffer.mutateComponent<TestComponent>(entity, "Test", (c) => {
+      c.value = 30;
+    });
+
+    // Not applied yet
+    expect(world.getComponent<TestComponent>(entity, "Test")?.value).toBe(10);
+    expect(world.stateVersion).toBe(initialStateVersion);
+
+    world.flush();
+
+    expect(world.getComponent<TestComponent>(entity, "Test")?.value).toBe(30);
+    expect(world.stateVersion).toBeGreaterThan(initialStateVersion);
+  });
+
+  it("should allow mutating singletons", () => {
+    const entity = world.createEntity();
+    world.addComponent(entity, { type: "Test", value: 100 } as TestComponent);
+    world.flush();
+
+    world.mutateSingleton<TestComponent>("Test", (c) => {
+      c.value = 200;
+    });
+
+    expect(world.getSingleton<TestComponent>("Test")?.value).toBe(200);
+  });
 });

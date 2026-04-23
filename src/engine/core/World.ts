@@ -337,14 +337,42 @@ export class World {
   /**
    * Recupera un componente de una entidad por su tipo.
    *
+   * @remarks
+   * El componente devuelto debe tratarse como de solo lectura. Para modificar
+   * los datos de un componente, utilice {@link World.mutateComponent} con el fin de
+   * garantizar que el sistema de versionado y reactividad del mundo se notifique correctamente.
+   *
    * @param entity - La entidad a consultar.
    * @param type - El nombre discriminador del componente.
-   * @returns La instancia del componente o `undefined` si no existe.
+   * @returns La instancia del componente (Readonly) o `undefined` si no existe.
    * @queries componentMaps
    * @precondition La entidad debe ser un ID válido.
    */
-  getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
+  getComponent<T extends Component>(entity: Entity, type: string): Readonly<T> | undefined {
     return this.componentMaps.get(type)?.get(entity) as T;
+  }
+
+  /**
+   * Ejecuta una mutación sobre un componente de forma inmediata.
+   *
+   * @remarks
+   * Es la vía recomendada para modificar datos de componentes. Notifica automáticamente
+   * los cambios de estado incrementando {@link World.stateVersion}.
+   * Si se llama durante un update de sistema, considere si la mutación debe ser
+   * inmediata o diferida mediante el CommandBuffer.
+   *
+   * @param entity - La entidad que posee el componente.
+   * @param type - El tipo de componente a mutar.
+   * @param mutator - Callback que recibe la instancia del componente para su modificación.
+   *
+   * @postcondition Se incrementa {@link World.stateVersion} y se marca el mundo como sucio para el render.
+   */
+  mutateComponent<T extends Component>(entity: Entity, type: string, mutator: (component: T) => void): void {
+    const component = this.getComponent<T>(entity, type) as T;
+    if (component) {
+      mutator(component);
+      this.notifyStateChange();
+    }
   }
 
   /**
@@ -722,16 +750,33 @@ export class World {
    *
    * @remarks
    * Conveniente para componentes de instancia única (ej: estado global, configuración).
-   * A diferencia de versiones anteriores, esta operación es una lectura pura.
-   * Si el componente devuelto está congelado, el consumidor es responsable de manejarlo.
+   * El componente devuelto debe tratarse como de solo lectura. Para mutaciones,
+   * utilice {@link World.mutateSingleton}.
    *
    * @param type - El tipo de componente.
-   * @returns La instancia encontrada o `undefined`.
+   * @returns La instancia encontrada (Readonly) o `undefined`.
    */
-  getSingleton<T extends Component>(type: string): T | undefined {
+  getSingleton<T extends Component>(type: string): Readonly<T> | undefined {
     const [entity] = this.query(type);
     if (entity === undefined) return undefined;
     return this.getComponent<T>(entity, type);
+  }
+
+  /**
+   * Ejecuta una mutación sobre un componente Singleton de forma inmediata.
+   *
+   * @remarks
+   * Wrapper de conveniencia sobre {@link World.mutateComponent} para tipos
+   * que se sabe que son únicos en el mundo.
+   *
+   * @param type - El tipo de componente singleton.
+   * @param mutator - Callback de mutación.
+   */
+  mutateSingleton<T extends Component>(type: string, mutator: (component: T) => void): void {
+    const [entity] = this.query(type);
+    if (entity !== undefined) {
+      this.mutateComponent<T>(entity, type, mutator);
+    }
   }
 
   private ensureComponentStorage(type: string): void {
