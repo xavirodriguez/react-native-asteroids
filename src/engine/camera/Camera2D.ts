@@ -18,7 +18,7 @@ export interface CameraConfig {
  * @responsibility Manejar efectos de vibración (screen shake) con decaimiento controlado.
  *
  * @remarks
- * Utiliza interpolación exponencial para el suavizado, con la intención de ofrecer una respuesta
+ * Utiliza interpolación exponencial para el suavizado (Lerp), con la intención de ofrecer una respuesta
  * fluida bajo diversas tasas de refresco (30, 60, 120+ FPS).
  * Las coordenadas de la cámara representan la esquina superior izquierda de la vista en el espacio del mundo.
  */
@@ -45,21 +45,34 @@ export class Camera2D extends System {
   public update(world: World, deltaTime: number): void {
     const cameras = world.query("Camera2D");
     const dtSeconds = deltaTime / 1000;
+    const buffer = world.getCommandBuffer();
 
     for (let i = 0; i < cameras.length; i++) {
       const camEntity = cameras[i];
-      const cam = world.getComponent<Camera2DComponent>(camEntity, "Camera2D")!;
+      const cam = { ...world.getComponent<Camera2DComponent>(camEntity, "Camera2D")! };
 
-      if (cam.targets && cam.targets.length > 0) {
+      // Determine targets (combine targetEntity and targets array)
+      const targets: Entity[] = [];
+      if (cam.targetEntity !== undefined) {
+        targets.push(cam.targetEntity);
+      }
+      if (cam.targets) {
+        for (const t of cam.targets) {
+          if (!targets.includes(t)) targets.push(t);
+        }
+      }
+
+      if (targets.length > 0) {
         let avgX = 0;
         let avgY = 0;
         let validTargets = 0;
 
-        for (const targetId of cam.targets) {
+        for (const targetId of targets) {
           const targetPos = world.getComponent<TransformComponent>(targetId, "Transform");
           if (targetPos) {
-            avgX += targetPos.x;
-            avgY += targetPos.y;
+            // Use world coordinates if available for accurate tracking in hierarchies
+            avgX += targetPos.worldX ?? targetPos.x;
+            avgY += targetPos.worldY ?? targetPos.y;
             validTargets++;
           }
         }
@@ -75,13 +88,12 @@ export class Camera2D extends System {
           let targetCamY = focalY - viewH / 2 + cam.offset.y;
 
           if (cam.deadzone) {
-            // Centro actual de la cámara en el espacio del mundo
-            const currentCenterX = cam.x + viewW / 2 - cam.offset.x;
-            const currentCenterY = cam.y + viewH / 2 - cam.offset.y;
+            // Deadzone logic: Only move camera if focal point exceeds deadzone bounds relative to center
+            const centerX = cam.x + viewW / 2 - cam.offset.x;
+            const centerY = cam.y + viewH / 2 - cam.offset.y;
 
-            // Posición relativa del punto focal respecto al centro de la cámara (en píxeles de pantalla)
-            const relX = (focalX - currentCenterX) * cam.zoom;
-            const relY = (focalY - currentCenterY) * cam.zoom;
+            const relX = (focalX - centerX) * cam.zoom;
+            const relY = (focalY - centerY) * cam.zoom;
 
             let moveX = 0;
             let moveY = 0;
@@ -92,21 +104,22 @@ export class Camera2D extends System {
             if (relY < cam.deadzone.minY) moveY = relY - cam.deadzone.minY;
             else if (relY > cam.deadzone.maxY) moveY = relY - cam.deadzone.maxY;
 
-            // Ajustar la posición objetivo solo si el foco sale de la zona muerta
             targetCamX = cam.x + moveX / cam.zoom;
             targetCamY = cam.y + moveY / cam.zoom;
           }
 
-          // Suavizado exponencial: t = 1 - exp(-lambda * dt)
-          const lambda = (cam.smoothing ?? 0.1) * 60;
-          const t = 1 - Math.exp(-lambda * dtSeconds);
+          // Exponential Smoothing (Lerp-like behavior over time)
+          // t = 1 - exp(-lambda * dt)
+          const smoothingFactor = cam.smoothing > 0 ? cam.smoothing : 1;
+          const lambda = smoothingFactor * 60;
+          const t = smoothingFactor >= 1 ? 1 : 1 - Math.exp(-lambda * dtSeconds);
 
           cam.x += (targetCamX - cam.x) * t;
           cam.y += (targetCamY - cam.y) * t;
         }
       }
 
-      // Aplicar límites (bounds)
+      // Apply bounds constraints
       if (cam.bounds) {
         const viewW = this.viewport.width / cam.zoom;
         const viewH = this.viewport.height / cam.zoom;
@@ -114,13 +127,13 @@ export class Camera2D extends System {
         cam.y = Math.max(cam.bounds.minY, Math.min(cam.bounds.maxY - viewH, cam.y));
       }
 
-      // Procesar decaimiento de vibración
+      // Process Screen Shake decay
       if (cam.shakeIntensity > 0) {
         const renderRandom = RandomService.getInstance("render");
         cam.shakeOffsetX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
         cam.shakeOffsetY = (renderRandom.next() - 0.5) * cam.shakeIntensity;
 
-        const decayLambda = 5.0;
+        const decayLambda = 5.0; // Decay rate
         cam.shakeIntensity *= Math.exp(-decayLambda * dtSeconds);
 
         if (cam.shakeIntensity < 0.1) {
@@ -132,6 +145,9 @@ export class Camera2D extends System {
         cam.shakeOffsetX = 0;
         cam.shakeOffsetY = 0;
       }
+
+      // Defer state update using WorldCommandBuffer
+      buffer.addComponent(camEntity, cam);
     }
   }
 
@@ -141,7 +157,9 @@ export class Camera2D extends System {
   public static follow(world: World, target: Entity): void {
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
     if (cam) {
-      cam.targets = [target];
+      const [camEntity] = world.query("Camera2D");
+      const updatedCam = { ...cam, targetEntity: target, targets: [] };
+      world.getCommandBuffer().addComponent(camEntity, updatedCam);
     }
   }
 
@@ -152,7 +170,9 @@ export class Camera2D extends System {
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
     if (cam) {
       if (!cam.targets.includes(target)) {
-        cam.targets.push(target);
+        const [camEntity] = world.query("Camera2D");
+        const updatedCam = { ...cam, targets: [...cam.targets, target] };
+        world.getCommandBuffer().addComponent(camEntity, updatedCam);
       }
     }
   }
@@ -163,15 +183,14 @@ export class Camera2D extends System {
   public static shake(world: World, intensity: number): void {
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
     if (cam) {
-      cam.shakeIntensity = intensity;
+      const [camEntity] = world.query("Camera2D");
+      const updatedCam = { ...cam, shakeIntensity: intensity };
+      world.getCommandBuffer().addComponent(camEntity, updatedCam);
     }
   }
 
   /**
    * Transforma una posición del mundo a coordenadas de pantalla.
-   *
-   * @remarks
-   * La vibración (shake) se aplica en píxeles de pantalla al final de la transformación.
    */
   public static worldToScreen(worldPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
     const shakeX = cam.shakeOffsetX || 0;
@@ -184,9 +203,6 @@ export class Camera2D extends System {
 
   /**
    * Transforma una posición de pantalla a coordenadas del mundo.
-   *
-   * @remarks
-   * Realiza la operación inversa a {@link worldToScreen}.
    */
   public static screenToWorld(screenPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
     const shakeX = cam.shakeOffsetX || 0;

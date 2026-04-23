@@ -644,7 +644,8 @@ export class World {
       [SystemPhase.Simulation]: 1,
       [SystemPhase.Collision]: 2,
       [SystemPhase.GameRules]: 3,
-      [SystemPhase.Presentation]: 4,
+      [SystemPhase.Transform]: 4,
+      [SystemPhase.Presentation]: 5,
     };
     const getPhaseWeight = (phase: string) => phaseOrder[phase] ?? 999;
     this.systems.sort((a, b) => {

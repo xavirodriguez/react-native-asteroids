@@ -16,6 +16,7 @@ export enum SystemPhase {
   Simulation = "Simulation",
   Collision = "Collision",
   GameRules = "GameRules",
+  Transform = "Transform",
   Presentation = "Presentation",
 }
 

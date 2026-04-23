@@ -146,6 +146,16 @@ export class SkiaRenderer implements Renderer {
    * Genera una instantánea ligera del estado visual para efectos y UI.
    */
   public createSnapshot(world: World): import("./RenderSnapshot").RenderSnapshot {
+    const cameras = world.query("Camera2D");
+    let mainCam: import("../core/CoreComponents").Camera2DComponent | null = null;
+    for (const camEntity of cameras) {
+      const cam = world.getComponent<import("../core/CoreComponents").Camera2DComponent>(camEntity, "Camera2D")!;
+      if (cam.isMain || !mainCam) {
+        mainCam = cam;
+        if (cam.isMain) break;
+      }
+    }
+
     const gameStateEntity = world.query("GameState")[0];
     const gameState = gameStateEntity ? world.getComponent<GenericComponent>(gameStateEntity, "GameState") : null;
 
@@ -160,6 +170,11 @@ export class SkiaRenderer implements Renderer {
       }
     }
 
+    if (mainCam && (mainCam.shakeOffsetX !== 0 || mainCam.shakeOffsetY !== 0)) {
+        shakeX += mainCam.shakeOffsetX;
+        shakeY += mainCam.shakeOffsetY;
+    }
+
     const serverTick = gameState && (gameState as Record<string, unknown>).serverTick !== undefined ? (gameState as Record<string, unknown>).serverTick as number : null;
     const elapsedTime = serverTick !== null ? serverTick * (1000 / 60) : performance.now();
 
@@ -170,9 +185,9 @@ export class SkiaRenderer implements Renderer {
       uiCount: 0,
       shakeX,
       shakeY,
-      cameraX: 0,
-      cameraY: 0,
-      cameraZoom: 1,
+      cameraX: mainCam?.x ?? 0,
+      cameraY: mainCam?.y ?? 0,
+      cameraZoom: mainCam?.zoom ?? 1,
       elapsedTime
     };
   }
@@ -204,14 +219,20 @@ export class SkiaRenderer implements Renderer {
 
     const snapshot = this.createSnapshot(world);
 
+    // 1. Background effects and pre-render hooks (Screen Space)
     canvas.save();
-    canvas.translate(snapshot.shakeX, snapshot.shakeY);
-
     this.preRenderHooks.forEach(hook => hook(canvas, world));
-
     this.backgroundEffects.forEach(effect => {
       effect.drawer(canvas, snapshot, this.width, this.height, world);
     });
+    canvas.restore();
+
+    // 2. World Space Rendering (Entities)
+    canvas.save();
+    // Apply Camera Transformation (Shake -> Zoom -> Translate)
+    canvas.translate(snapshot.shakeX, snapshot.shakeY);
+    canvas.scale(snapshot.cameraZoom, snapshot.cameraZoom);
+    canvas.translate(-snapshot.cameraX, -snapshot.cameraY);
 
     const entities = world.query("Transform", "Render");
 
@@ -262,13 +283,16 @@ export class SkiaRenderer implements Renderer {
     });
 
     this.drawParticles(world);
+    canvas.restore();
 
+    // 3. Foreground effects (Screen Space)
+    canvas.save();
     this.foregroundEffects.forEach(effect => {
       effect.drawer(canvas, snapshot, this.width, this.height, world);
     });
-
     canvas.restore();
 
+    // 4. Post-render hooks
     this.postRenderHooks.forEach(hook => hook(canvas, world));
   }
 
