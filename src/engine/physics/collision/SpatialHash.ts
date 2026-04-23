@@ -14,7 +14,7 @@ import { ObjectPool } from "../../utils/ObjectPool";
 export class SpatialHash {
   /**
    * Mapa de celdas indexado por claves de coordenadas string "x,y".
-   * @invariant Las celdas en el mapa solo contienen entidades activas durante el frame actual.
+   * @remarks Se espera que las celdas en el mapa solo contengan entidades activas durante el frame actual.
    */
   private grid = new Map<string, Entity[]>();
 
@@ -30,7 +30,7 @@ export class SpatialHash {
 
   /**
    * @param cellSize - El tamaño de cada celda cuadrada en unidades del mundo.
-   * @precondition cellSize \> 0
+   * @precondition Se espera que cellSize \> 0.
    */
   constructor(public cellSize: number) {}
 
@@ -87,7 +87,7 @@ export class SpatialHash {
 
   /**
    * Limpia la cuadrícula y devuelve todas las listas de celdas al pool.
-   * @contract Debe llamarse al inicio de cada frame antes de re-insertar entidades.
+   * @remarks Se recomienda llamar al inicio de cada frame antes de re-insertar entidades.
    * @mutates grid, cellPool
    */
   public clear(): void {
@@ -104,7 +104,7 @@ export class SpatialHash {
   /**
    * Verifica la integridad estructural de la cuadrícula.
    * Principle 2: Enforces hierarchical and structural invariants.
-   * @contract Lanza un error si la cuadrícula no está vacía (usado tras clear() en dev).
+   * @remarks Lanza un error si la cuadrícula no está vacía (usado tras clear() en dev).
    */
   public assertValid(): void {
     if (this.grid.size > 0) {

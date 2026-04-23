@@ -57,11 +57,11 @@ export abstract class System {
    * se recomienda minimizar el uso de estado mutable interno no serializable dentro del sistema.
    *
    * @warning Realizar mutaciones estructurales directas en el `world` (crear/eliminar entidades o componentes)
-   * durante la iteración de sistemas puede invalidar los iteradores de las queries activas. Use
-   * {@link World.getCommandBuffer} para diferir estas operaciones de forma segura.
+   * durante la iteración de sistemas puede invalidar los iteradores de las queries activas. Se recomienda usar
+   * {@link World.getCommandBuffer} para diferir estas operaciones.
    *
-   * @precondition El `world` debe estar en un estado consistente al inicio del ciclo.
-   * @postcondition Las mutaciones realizadas deben respetar los contratos definidos por los componentes.
+   * @precondition Se espera que el `world` esté en un estado consistente al inicio del ciclo.
+   * @postcondition Se recomienda que las mutaciones realizadas respeten los contratos definidos por los componentes.
    * @sideEffect Puede crear/eliminar entidades, añadir/quitar componentes o emitir eventos.
    * @conceptualRisk [UNIT_CONSISTENCY][LOW] `deltaTime` se entrega en milisegundos. Algunos
    * cálculos físicos (como integraciones de velocidad) pueden esperar segundos, lo que

@@ -65,6 +65,8 @@ export class CollisionSystem2D extends System {
    *
    * @param world - The ECS world instance.
    * @param _deltaTime - Time elapsed in milliseconds.
+   *
+   * @precondition Se espera que el world esté en un estado estable para una detección precisa.
    */
   update(world: World, _deltaTime: number): void {
     const entities = world.query("Transform", "Collider2D");

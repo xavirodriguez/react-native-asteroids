@@ -31,7 +31,7 @@ function resetResult(): CCDResult {
  *
  * @remarks
  * Estas utilidades están destinadas a predecir colisiones entre ticks de simulación
- * basándose en la velocidad lineal relativa, ayudando a reducir el efecto de "tunneling".
+ * basándose en la velocidad lineal relativa, con la intención de reducir el efecto de "tunneling".
  * Los algoritmos asumen trayectorias lineales constantes durante el frame y no consideran
  * la rotación de las formas durante el barrido.
  */

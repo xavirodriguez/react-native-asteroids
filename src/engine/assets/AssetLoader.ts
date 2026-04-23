@@ -5,7 +5,7 @@ import { AssetDescriptor, AssetHandle } from "./AssetTypes";
  *
  * @remarks
  * Implements an ownership model where scenes or systems are expected to manage
- * reference count increments and decrements to help control memory usage.
+ * reference count increments and decrements with the intention to control memory usage.
  */
 export class AssetLoader {
   private cache = new Map<string, AssetHandle>();

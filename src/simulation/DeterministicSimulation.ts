@@ -25,9 +25,9 @@ const ASTEROID_SPLIT_CONFIG: Record<
  * Game simulation orchestrator designed for reproducibility.
  *
  * @remarks
- * This class consolidates update logic to aim for consistent operation
+ * This class consolidates update logic with the intention to support consistent operation
  * sequence between server and clients. It relies on controlled `RandomService`
- * usage to help prevent divergences.
+ * usage with the goal to mitigate divergences.
  */
 export class DeterministicSimulation {
     public static update(world: World, deltaTime: number, ctx: SimulationContext) {

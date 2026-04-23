@@ -37,7 +37,7 @@ export class PongRoom extends Room<PongStateSchema> {
       tickInputs.set(client.sessionId, message.input);
 
       // If we have inputs from both players for this tick, we can broadcast them
-      // In a strict lockstep, we wait for all. In an optimistic relay, we just forward.
+      // In a lockstep-like approach, we wait for all. In an optimistic relay, we just forward.
       // Here we act as a relay:
       this.broadcast("input_relay", {
         tick: message.tick,

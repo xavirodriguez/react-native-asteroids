@@ -43,7 +43,7 @@ export class EntityPool {
    *
    * @param id - El identificador de la entidad a liberar.
    *
-   * @precondition El ID debe haber sido obtenido previamente mediante {@link EntityPool.acquire}.
+   * @precondition Se espera que el ID haya sido obtenido previamente mediante {@link EntityPool.acquire}.
    * @postcondition El ID se añade a la pila de IDs disponibles.
    * @conceptualRisk [ENTITY_REUSE][FIXED] Se ha implementado una validación mediante `pooledSet`
    * para evitar el "double-release" (liberar el mismo ID dos veces), previniendo la corrupción
@@ -62,10 +62,10 @@ export class EntityPool {
    * Reinicia el pool y el contador de IDs.
    *
    * @remarks
-   * Invalida todos los IDs de entidades creados anteriormente. Debe usarse con precaución,
+   * Invalida todos los IDs de entidades creados anteriormente. Se recomienda usar con precaución,
    * generalmente solo durante el reinicio total del motor.
    *
-   * @precondition El mundo ECS debe estar vacío para evitar colisiones de IDs con entidades existentes.
+   * @precondition Se espera que el mundo ECS esté vacío para mitigar el riesgo de colisiones de IDs con entidades existentes.
    * @postcondition {@link EntityPool.pool} queda vacío y `nextId` vuelve a 1.
    */
   public clear(): void {

@@ -45,7 +45,7 @@ export class Query {
    *
    * @param entity - La entidad a añadir.
    *
-   * @precondition La entidad debe cumplir la firma de la query.
+   * @precondition Se espera que la entidad cumpla la firma de la query.
    * @postcondition Si la entidad era nueva, marca {@link Query.needsUpdateArray} como `true`.
    */
   public add(entity: Entity): void {

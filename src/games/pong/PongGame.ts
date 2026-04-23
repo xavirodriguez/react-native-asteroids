@@ -103,7 +103,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
 
   protected shouldStallSimulation(): boolean {
     if (this.networkController) {
-      // Access the internal tick of PongInputSystem would be ideal,
+      // Accessing the internal tick of PongInputSystem is the intended approach,
       // but for simplicity we check if any future input is missing.
       // A more robust implementation would pass the current simulation tick.
       const inputSystem = (this.world as unknown as { systems: unknown[] }).systems?.find((s): s is PongInputSystem => s instanceof PongInputSystem);
