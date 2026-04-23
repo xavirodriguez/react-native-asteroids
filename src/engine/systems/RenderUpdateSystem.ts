@@ -7,14 +7,14 @@ import { RenderComponent, TransformComponent, TrailComponent } from "../core/Cor
  *
  * @responsibility Gestionar efectos visuales temporales como estelas (trails) y destellos (flashes).
  * @responsibility Actualizar la rotación cosmética basada en la velocidad angular.
- * @responsibility Sincronizar la versión del mundo para disparar re-renders en la UI.
+ * @responsibility Sincronizar la versión de estado del mundo para disparar re-renders en la UI.
  * @queries Transform, Render, Trail
- * @mutates Trail.points, Trail.currentIndex, Trail.count, Render.rotation, Render.hitFlashFrames, World.version
+ * @mutates Trail.points, Trail.currentIndex, Trail.count, Render.rotation, Render.hitFlashFrames, World.stateVersion
  * @executionOrder Fase: Presentation. Ejecutar al final del pipeline de simulación.
  *
  * @remarks
  * Este sistema prepara datos visuales para el renderizado.
- * Incrementa {@link World.version} para notificar que existen cambios que podrían
+ * Incrementa {@link World.stateVersion} para notificar que existen cambios que podrían
  * requerir una actualización de la UI.
  *
  * @conceptualRisk [GC_PRESSURE][FIXED] El crecimiento ilimitado de estelas fue resuelto
@@ -38,13 +38,13 @@ export class RenderUpdateSystem extends System {
    *
    * @precondition El mundo debe estar inicializado y contener entidades con Render.
    * @postcondition Se actualizan estelas, rotaciones cosméticas y contadores de flashes.
-   * @sideEffect Incrementa {@link World.version} para disparar re-renderizado.
+   * @sideEffect Incrementa {@link World.stateVersion} para disparar re-renderizado.
    */
   public update(world: World, deltaTime: number): void {
     this.updateTrails(world);
     this.updateRotation(world, deltaTime);
     this.updateHitFlashes(world);
-    world.version++;
+    world.notifyStateChange();
   }
 
   /**
