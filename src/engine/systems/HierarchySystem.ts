@@ -21,7 +21,7 @@ type Mat3 = [number, number, number, number, number, number];
  * la posición local y antes del renderizado.
  *
  * @remarks
- * Implementa una propagación top-down buscando que los hijos se calculen
+ * Implementa una propagación top-down para asegurar que los hijos siempre se calculen
  * después de sus padres. Utiliza matrices 3x3 para composición de transformaciones.
  *
  * @conceptualRisk [LAYOUT_CASCADE][MEDIUM] Una jerarquía muy profunda puede causar un

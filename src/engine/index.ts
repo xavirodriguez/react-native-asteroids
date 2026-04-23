@@ -7,11 +7,6 @@
  *
  * @warning Algunas exportaciones pueden incluir componentes internos necesarios para la extensibilidad,
  * pero cuyo uso directo no está recomendado para lógica de alto nivel.
- *
- * @remarks
- * El motor está diseñado para minimizar las alocaciones en hot-paths, aunque no garantiza
- * el "zero-allocation" absoluto. Se busca la reproducibilidad de la simulación bajo
- * condiciones controladas.
  */
 
 // --- CORE ECS ---
@@ -42,13 +37,12 @@ export { BroadPhase } from './physics/collision/BroadPhase';
 export { ContinuousCollision, type CCDResult } from './physics/collision/ContinuousCollision';
 export { type CollisionManifold } from './physics/collision/CollisionTypes';
 export * from './physics/shapes/ShapeTypes';
-export type { Shape, CircleShape, AABBShape, CapsuleShape, PolygonShape, ShapeType } from './physics/shapes/ShapeTypes';
 export * from './physics/shapes/ShapeFactory';
 export * from './physics/query/QueryTypes';
 
 // --- RENDERING ---
 export * from './rendering/RenderTypes';
-export type { TransformSnapshot, RenderCommand } from './rendering/RenderTypes';
+export type { TransformSnapshot } from './rendering/RenderTypes';
 export { type Renderer, type ShapeDrawer, type EffectDrawer } from './rendering/Renderer';
 export { CanvasRenderer } from './rendering/CanvasRenderer';
 export { SkiaRenderer } from './rendering/SkiaRenderer';

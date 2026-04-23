@@ -1,15 +1,18 @@
 /**
- * Servicio de aleatoriedad diseñado para la reproducibilidad (PRNG).
- * Proporciona instancias segregadas para simulación y efectos visuales para ayudar a prevenir
+ * Servicio de aleatoriedad determinista (PRNG).
+ * Proporciona instancias segregadas para simulación y efectos visuales para prevenir
  * la deriva de la semilla (seed drift).
  *
- * @responsibility Proveer números aleatorios reproducibles basados en semillas bajo condiciones controladas.
+ * @responsibility Proveer números aleatorios reproducibles basados en semillas.
  * @responsibility Segregar el estado del PRNG entre simulación y presentación.
  *
  * @remarks
- * Se recomienda utilizar `getGameplayRandom()` para lógica que afecte el estado del juego (IA, spawn, daño)
- * para favorecer la reproducibilidad y el soporte de replay. Para efectos puramente estéticos
- * (partículas, flashes), se sugiere el uso de `getRenderRandom()`.
+ * Es altamente recomendado utilizar `getGameplayRandom()` para cualquier lógica que afecte
+ * el estado del juego (IA, spawn, daño) para facilitar el determinismo y el soporte de replay.
+ * Para efectos puramente estéticos (partículas, flashes), se debe usar `getRenderRandom()`.
+ *
+ * @invariant Dos instancias con la misma semilla y el mismo número de llamadas a next() deben
+ * retornar exactamente la misma secuencia de valores.
  * @conceptualRisk [SEED_COLLISION] El uso de la misma semilla en múltiples instancias "named"
  * no coordinadas puede resultar en patrones de aleatoriedad idénticos.
  */
@@ -145,14 +148,15 @@ export class RandomService {
   }
 
   /**
-   * Intenta generar un número aleatorio de punto flotante en el rango [0, 1).
-   * Utiliza el algoritmo Mulberry32 buscando ofrecer un comportamiento reproducible.
+   * Genera un número aleatorio de punto flotante en el rango [0, 1).
+   * Utiliza el algoritmo Mulberry32 para garantizar determinismo.
    *
    * @remarks
-   * Cada llamada actualiza la semilla interna de la instancia.
+   * Cada llamada muta la semilla interna de la instancia.
    *
    * @returns Un valor aleatorio entre 0 (inclusive) y 1 (exclusive).
-   * @sideEffect Actualiza `this.seed`.
+   * @sideEffect Muta `this.seed`.
+   * @invariant El mismo estado inicial (semilla) produce siempre la misma secuencia.
    */
   public next(): number {
     let t = (this.seed = (this.seed + 0x6d2b79f5) | 0);

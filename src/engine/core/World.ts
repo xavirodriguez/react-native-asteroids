@@ -23,10 +23,10 @@ interface RegisteredSystem {
  * El `World` actúa como el núcleo de la arquitectura ECS. Utiliza un pool de entidades para minimizar
  * la presión sobre el GC y emplea queries reactivas cacheadas para optimizar las consultas de sistemas.
  *
- * Invariantes (Expectativas de Diseño):
- * - **Principio 2**: Las estructuras jerárquicas (Transforms) deben ser válidas; se intenta evitar el auto-parentesco.
+ * Invariantes:
+ * - **Principio 2**: Las estructuras jerárquicas (Transforms) deben ser válidas; no se permite el auto-parentesco.
  * - **Principio 6**: Los componentes singleton recuperados mediante {@link World.getSingleton} están
- * diseñados para ser mutables (se realiza una copia si están congelados).
+ * garantizados como mutables (se realiza una copia si están congelados).
  *
  * @conceptualRisk [PERFORMANCE][MEDIUM] Las consultas (queries) sin caché pueden volverse costosas
  * si se realizan múltiples veces por frame en mundos con miles de entidades.
@@ -36,33 +36,20 @@ interface RegisteredSystem {
  * Potencial overflow en sesiones de juego extremadamente largas.
  */
 export class World {
-  /** @internal */
   private activeEntities = new Set<Entity>();
-  /** @internal */
   private isUpdating = false;
-  /** @internal */
   private componentMaps = new Map<string, Map<Entity, Component>>();
-  /** @internal */
   private componentIndex = new Map<string, Set<Entity>>();
-  /** @internal */
   private entityComponentSets = new Map<Entity, Set<string>>();
-  /** @internal */
   private queries = new Map<string, Query>();
-  /** @internal */
   private queriesByComponent = new Map<string, Set<Query>>();
-  /** @internal */
   private systems: RegisteredSystem[] = [];
-  /** @internal */
   private sortedSystems: System[] = [];
-  /** @internal */
   private systemsNeedSorting = false;
-  /** @internal */
   private profilers: Map<System, SystemProfiler> = new Map();
   /** Whether system profiling is enabled. */
   public debugMode = false;
-  /** @internal */
   private nextEntityId = 1;
-  /** @internal */
   private freeEntities: Entity[] = [];
   private resources = new Map<string, unknown>();
   public version = 0;
@@ -75,20 +62,17 @@ export class World {
   }
 
   /**
-   * Intenta generar una instantánea serializable del estado del mundo para rollback o persistencia.
+   * Genera una instantánea serializable del estado del mundo para rollback o persistencia.
    *
    * @remarks
    * Captura entidades activas, datos serializables de componentes, contadores de IDs, versión del mundo
    * y la semilla actual del generador de números aleatorios de gameplay.
-   * Las entidades se devuelven ordenadas por ID para favorecer la consistencia.
+   * Las entidades se devuelven en orden de inserción del Set (no necesariamente ordenadas por ID).
    *
-   * @returns Un objeto plano que contiene el estado reconstruible (serializable) del mundo.
+   * @returns Un objeto plano que contiene el estado reconstruible del mundo.
    *
-   * @warning La serialización se limita a propiedades que no sean funciones. Referencias a objetos complejos
-   * pueden no restaurarse exactamente si no son POJOs.
-   *
-   * @precondition El estado actual debe ser consistente; se recomienda evitar llamar durante un update de sistema.
-   * @postcondition Devuelve una copia de los datos serializables de cada componente.
+   * @precondition El estado actual debe ser consistente; no se recomienda llamar durante un update de sistema.
+   * @postcondition Devuelve una copia profunda de cada componente, omitiendo funciones.
    *
    * @conceptualRisk [JSON_DETERMINISM][MEDIUM] La serialización no garantiza el orden de las
    * propiedades, lo que puede afectar a la generación de hashes de estado.
@@ -141,17 +125,17 @@ export class World {
   }
 
   /**
-   * Intenta restaurar el estado del mundo a partir de una instantánea previamente capturada.
+   * Restaura el estado del mundo a partir de una instantánea previamente capturada.
    *
    * @remarks
-   * Este método reconstruye los mapas de componentes e índices basándose en los datos serializados.
-   * Intenta sincronizar las queries existentes para mantener la consistencia sin romper las referencias
-   * a los objetos Query.
+   * Este método reconstruye todos los mapas de componentes e índices basándose en los datos serializados.
+   * También garantiza que las queries existentes se invaliden y reconstruyan para mantener la
+   * consistencia de los resultados sin romper las referencias a los objetos Query.
    *
    * @param state - El objeto de estado obtenido de {@link World.snapshot}.
    *
-   * @precondition El estado proporcionado debe ser una estructura válida y compatible con la versión del motor.
-   * @postcondition El mundo refleja el estado serializable contenido en la instantánea.
+   * @precondition El estado proporcionado debe ser una estructura válida generada por el motor.
+   * @postcondition El mundo refleja el estado contenido en la instantánea (limitado a propiedades serializables).
    * @postcondition {@link World.version} se sincroniza con el valor del estado restaurado.
    * @sideEffect Limpia todos los datos actuales del mundo antes de la restauración.
    * @sideEffect Re-inicializa la semilla de `RandomService("gameplay")`.
@@ -215,18 +199,19 @@ export class World {
   }
 
   /**
-   * Solicita la creación de una nueva entidad en el mundo, posiblemente reutilizando IDs.
+   * Crea una nueva entidad única en el mundo utilizando el pool de entidades.
    *
    * @remarks
-   * Diseñado para reutilizar IDs de un pool interno para reducir la presión sobre el GC.
-   * Incrementa la versión del mundo para señalizar cambios estructurales.
+   * Intenta reutilizar un ID del pool de entidades libres antes de generar uno nuevo.
+   * Incrementa la versión del mundo para invalidar cachés estructurales.
    *
-   * Si se llama durante {@link World.update}, la creación efectiva se difiere al final del frame,
-   * aunque el ID se reserva y devuelve inmediatamente para su uso en la lógica actual.
+   * Si se llama durante {@link World.update}, la creación se difiere al final del frame,
+   * pero el ID se reserva y devuelve inmediatamente.
    *
-   * @param id - ID opcional de la entidad. Reservado para uso interno o restauraciones.
-   * @returns Un identificador de {@link Entity}.
-   * @postcondition La entidad se considera activa o programada para activación en el mundo.
+   * @param id - ID opcional de la entidad. Usado internamente por el buffer de comandos.
+   * @returns Un nuevo identificador de {@link Entity}.
+   * @postcondition La entidad devuelta es considerada activa en el mundo.
+   * @postcondition El ID devuelto es un entero positivo único en el estado actual.
    * @sideEffect Incrementa {@link World.version}.
    */
   public createEntity(id?: Entity): Entity {
@@ -262,22 +247,23 @@ export class World {
   }
 
   /**
-   * Registra o actualiza un componente en una entidad específica.
+   * Adjunta o reemplaza un componente en una entidad específica.
    *
    * @remarks
-   * Si la entidad ya posee un componente del mismo tipo, se reemplaza.
-   * Intenta validar la integridad jerárquica si el componente es de tipo 'Transform'.
-   * Notifica a las queries reactivas para actualizar sus índices de forma incremental.
+   * Si la entidad ya poseía un componente del mismo tipo, este será sobrescrito.
+   * Realiza validaciones de integridad jerárquica para componentes de tipo 'Transform'.
+   * Notifica a las queries interesadas sobre el cambio estructural.
    *
-   * Si se llama durante {@link World.update}, la operación se difiere mediante un buffer.
+   * Si se llama durante {@link World.update}, la adición se difiere al final del frame.
    *
    * @param entity - El ID de la entidad destino.
-   * @param component - La instancia del componente (POJO).
-   * @returns El componente añadido.
+   * @param component - La instancia del componente a añadir.
+   * @returns El componente añadido para facilitar el encadenamiento.
    *
-   * @precondition La entidad debe ser válida en el contexto del mundo actual.
-   * @postcondition El componente es accesible a través de las APIs de consulta del mundo.
-   * @postcondition Si el tipo es 'Transform', se intenta mantener la validez de la jerarquía.
+   * @precondition La entidad debe existir o ser un ID válido manejado por el motor.
+   * @precondition El componente debe tener una propiedad `type` válida.
+   * @postcondition El componente es accesible vía {@link World.getComponent}.
+   * @postcondition Si el tipo es 'Transform', se garantiza la validez de la jerarquía.
    * @throws {Error} Si se intenta asignar una entidad como su propio padre en un Transform.
    * @sideEffect Incrementa {@link World.version}.
    * @mutates componentMaps, componentIndex, entityComponentSets
@@ -389,21 +375,20 @@ export class World {
   }
 
   /**
-   * Proporciona acceso a un conjunto de entidades que poseen la firma de componentes indicada.
+   * Realiza una consulta reactiva de entidades que poseen todos los tipos de componentes indicados.
    *
    * @remarks
-   * Emplea un sistema de caché reactivo para minimizar el coste de las consultas. Si la consulta
-   * ya existe, el resultado se sirve desde el caché. Los resultados se mantienen actualizados
-   * ante cambios estructurales (añadir/quitar componentes).
+   * Utiliza un sistema de caché basado en {@link Query}. Si la consulta ya existe y el
+   * mundo no ha cambiado estructuralmente, devuelve el resultado cacheado instantáneamente.
+   * Las queries son sensibles al orden alfabético de los tipos para maximizar la reutilización.
    *
    * @param componentTypes - Lista de tipos que definen la firma de la consulta.
-   * @returns Un array de solo lectura con los IDs de las entidades coincidentes.
+   * @returns Un array de solo lectura con las entidades coincidentes.
    *
-   * @warning Evite crear queries dinámicas (con arrays generados al vuelo) dentro de bucles calientes,
-   * ya que esto puede impactar el rendimiento de la caché de queries.
-   *
-   * @precondition Se recomienda proporcionar al menos un tipo de componente.
-   * @postcondition El array devuelto suele estar ordenado por ID de entidad.
+   * @precondition Debe proporcionarse al menos un tipo de componente.
+   * @postcondition El array devuelto está ordenado por ID de entidad.
+   * @conceptualRisk [PERFORMANCE][MEDIUM] Crear queries de muchos tipos en cada frame es costoso.
+   * Se deben definir las firmas de consulta de forma estática siempre que sea posible.
    */
   public query(...componentTypes: string[]): ReadonlyArray<Entity> {
     if (componentTypes.length === 0) return [];
@@ -723,15 +708,17 @@ export class World {
   }
 
   /**
-   * Intenta localizar el primer componente de un tipo dado, tratándolo como un Singleton.
+   * Busca y devuelve el primer componente encontrado de un tipo específico (patrón Singleton).
    *
    * @remarks
-   * Conveniente para componentes de instancia única (ej: estado global, configuración).
-   * Si el componente está congelado, se devuelve una copia superficial para permitir mutaciones,
-   * conforme a las expectativas de diseño del motor.
+   * Útil para componentes que se sabe que solo tienen una instancia (ej: `InputState`, `EventBus`).
+   * Si el componente está congelado (`Object.isFrozen`), se devuelve una copia mutable para
+   * cumplir con el Principio de Mutabilidad de Singletons.
    *
-   * @param type - El tipo de componente.
-   * @returns La instancia encontrada o una copia mutable si fuera necesario.
+   * @param type - El tipo de componente a buscar.
+   * @returns La instancia (o copia) del componente, o `undefined`.
+   * @queries query, getComponent
+   * @sideEffect Puede llamar a {@link World.addComponent} si el componente original estaba congelado.
    */
   getSingleton<T extends Component>(type: string): T | undefined {
     const [entity] = this.query(type);
@@ -836,27 +823,8 @@ export class ReadOnlyWorld {
   public getCommandBuffer(): never {
     throw new Error("ReadOnlyWorldViolation: Access to CommandBuffer is not allowed in this phase.");
   }
+
   public flush(): never {
     throw new Error("ReadOnlyWorldViolation: Mutation 'flush' is not allowed in this phase.");
-  }
-
-  public setResource(): never {
-    throw new Error("ReadOnlyWorldViolation: Mutation 'setResource' is not allowed in this phase.");
-  }
-
-  public removeResource(): never {
-    throw new Error("ReadOnlyWorldViolation: Mutation 'removeResource' is not allowed in this phase.");
-  }
-
-  public addSystem(): never {
-    throw new Error("ReadOnlyWorldViolation: Mutation 'addSystem' is not allowed in this phase.");
-  }
-
-  public clear(): never {
-    throw new Error("ReadOnlyWorldViolation: Mutation 'clear' is not allowed in this phase.");
-  }
-
-  public restore(): never {
-    throw new Error("ReadOnlyWorldViolation: Mutation 'restore' is not allowed in this phase.");
   }
 }

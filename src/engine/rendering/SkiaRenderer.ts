@@ -17,7 +17,7 @@ import { RandomService } from "../utils/RandomService";
  * @remarks
  * Al igual que el {@link CanvasRenderer}, es extensible mediante el registro de shape drawers.
  * Es el renderizador preferido para iOS y Android por su rendimiento superior.
- * La paridad visual con {@link CanvasRenderer} es un objetivo de diseño importante.
+ * Contrato de consistencia: Debe mantener paridad visual con {@link CanvasRenderer}.
  *
  * @contract Interpolación: Usa el valor `alpha` del loop para interpolar entre `PreviousTransform` y `Transform`.
  * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia puede perderse
@@ -170,9 +170,6 @@ export class SkiaRenderer implements Renderer {
       uiCount: 0,
       shakeX,
       shakeY,
-      cameraX: 0,
-      cameraY: 0,
-      cameraZoom: 1,
       elapsedTime
     };
   }
@@ -183,7 +180,7 @@ export class SkiaRenderer implements Renderer {
    * @remarks
    * A diferencia del {@link CanvasRenderer}, esta implementación actual realiza un dibujo
    * más directo, aunque mantiene el soporte para interpolación visual. Se recomienda
-   * evolucionar hacia el modelo de snapshots para favorecer la paridad visual total.
+   * evolucionar hacia el modelo de snapshots para garantizar paridad visual total.
    *
    * @param world - El mundo ECS que contiene las entidades a dibujar.
    * @param alpha - Factor de interpolación [0, 1].
@@ -289,7 +286,7 @@ export class SkiaRenderer implements Renderer {
     const scaleX = (pos.worldScaleX !== undefined ? pos.worldScaleX : (pos.scaleX ?? 1)) + (offset?.scaleX ?? 0);
     const scaleY = (pos.worldScaleY !== undefined ? pos.worldScaleY : (pos.scaleY ?? 1)) + (offset?.scaleY ?? 0);
 
-    // Intenta calcular un tiempo transcurrido consistente a partir del estado del mundo
+    // Calculate deterministic elapsed time from world state if possible
     const gameState = world.getSingleton<GenericComponent>("GameState");
     const serverTick = gameState && gameState.serverTick !== undefined ? gameState.serverTick as number : null;
     const elapsedTime = serverTick !== null ? serverTick * (1000 / 60) : performance.now();

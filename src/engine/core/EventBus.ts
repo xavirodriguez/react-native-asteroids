@@ -8,13 +8,13 @@
 export type EventHandler<T = unknown> = (payload: T) => void;
 
 /**
- * Sistema de mensajería diseñado para la comunicación síncrona basada en el patrón Pub/Sub.
+ * Sistema de mensajería síncrona basado en el patrón Pub/Sub.
  *
  * @remarks
- * El EventBus facilita el desacoplamiento entre sistemas. Soporta nombres de eventos
- * jerárquicos y comodines.
+ * El EventBus facilita el desacoplamiento entre sistemas que no necesitan conocerse
+ * directamente. Soporta nombres de eventos jerárquicos y comodines.
  *
- * @responsibility Despachar notificaciones a los subscriptores registrados.
+ * @responsibility Despachar notificaciones síncronas a subscriptores registrados.
  * @responsibility Aislar errores de listeners individuales mediante bloques try-catch.
  *
  * @conceptualRisk [ORDER][MEDIUM] El orden de ejecución de los handlers para un mismo evento
@@ -70,10 +70,10 @@ export class EventBus {
   }
 
   /**
-   * Emite un evento y notifica a los subscriptores que coincidan con el nombre o patrón.
+   * Emite un evento y notifica a todos los subscriptores relevantes.
    *
    * @remarks
-   * La notificación se realiza de forma síncrona. Primero se notifican los subscriptores exactos,
+   * La notificación es síncrona. Primero se notifican los subscriptores exactos,
    * luego los de espacio de nombres (ej: "game:*") y finalmente el comodín global ("*").
    *
    * @param event - Nombre del evento.
@@ -129,6 +129,9 @@ export class EventBus {
 
     for (let i = 0; i < this.processingQueue.length; i++) {
       const item = this.processingQueue[i];
+      // Prevent clearQueue from returning this item to the pool if clear() is called during emit
+      this.processingQueue[i] = null as any;
+
       this.emit(item.event, item.payload);
 
       // Return object to pool
@@ -174,6 +177,7 @@ export class EventBus {
     if (!pattern) {
       while (queue.length > 0) {
         const item = queue.pop()!;
+        if (!item) continue;
         item.event = "";
         item.payload = undefined;
         this.pool.push(item);
@@ -186,6 +190,8 @@ export class EventBus {
 
     for (let i = queue.length - 1; i >= 0; i--) {
       const item = queue[i];
+      if (!item) continue;
+
       const matches = isWildcard ? item.event.startsWith(prefix) : item.event === pattern;
 
       if (matches) {

@@ -11,15 +11,15 @@ export interface GameLoopConfig {
 
 /**
  * Motor de tiempo central que orquesta el ciclo de vida del juego.
- * Implementa un Fixed Timestep con interpolación diseñado para favorecer la reproducibilidad y la fluidez.
+ * Implementa un Fixed Timestep con interpolación para garantizar un comportamiento determinista.
  *
- * @responsibility Intentar mantener una tasa de actualización constante (60Hz) para la simulación física.
+ * @responsibility Mantener una tasa de actualización constante (60Hz) para la simulación física.
  * @responsibility Calcular el factor de interpolación (alpha) para el renderizado visual.
  * @responsibility Notificar a los suscriptores en las fases de Input, Update y Render.
  *
  * @remarks
- * La estabilidad temporal es clave para el soporte de rollback y repeticiones.
- * El loop desacopla la lógica de simulación de la tasa de refresco del monitor, buscando que
+ * El determinismo es fundamental para el soporte de rollback y repeticiones.
+ * El loop separa la lógica de simulación de la tasa de refresco del monitor, evitando que
  * variaciones en el rendimiento del renderizado afecten la integridad de la física.
  *
  * @contract Fixed Update: La fase de simulación está diseñada para recibir incrementos constantes de 16.67ms (1/60s).
@@ -68,8 +68,8 @@ export class GameLoop {
    * Suscribe un callback para la simulación física (Fixed Update).
    *
    * @remarks
-   * Esta fase está orientada a la consistencia de la simulación. El sistema intenta que el callback
-   * reciba un incremento de tiempo constante (16.67ms). Puede ejecutarse múltiples veces en un
+   * Esta es la fase orientada al determinismo del motor. El sistema intenta que el callback reciba un
+   * incremento de tiempo constante (16.67ms). Puede ejecutarse múltiples veces en un
    * solo frame del navegador para "recuperar" tiempo si el rendimiento cae.
    *
    * @param listener - Función que recibe el fixedDeltaTime (16.67ms).

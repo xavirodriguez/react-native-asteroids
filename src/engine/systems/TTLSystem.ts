@@ -16,8 +16,11 @@ import { TTLComponent, ReclaimableComponent } from "../types/EngineTypes";
  * @executionOrder Fase: Simulation. Normalmente al final de la fase física.
  *
  * @remarks
- * El sistema intenta invocar el callback `onComplete` definido en el componente antes de
- * solicitar la eliminación de la entidad del mundo.
+ * El sistema invoca el callback `onComplete` definido en el componente antes de
+ * proceder con la eliminación de la entidad del mundo.
+ *
+ * @contract Destrucción: Una entidad es eliminada SI Y SOLO SI `remaining <= 0`.
+ * @invariant No modifica otros componentes de la entidad (e.g., Transform, Velocity).
  */
 export class TTLSystem extends System {
   /**

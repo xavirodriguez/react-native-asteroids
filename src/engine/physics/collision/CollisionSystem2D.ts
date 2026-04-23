@@ -13,8 +13,8 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
  * Sistema de detección de colisiones 2D.
  *
  * @responsibility Selección de fase ancha híbrida (Spatial Hash / Sweep and Prune).
- * @responsibility Detección de fase estrecha (AABB, Círculo, Polígono) y generación de manifolds.
- * @responsibility Proporcionar soporte experimental para Continuous Collision Detection (CCD).
+ * @responsibility Detección de fase estrecha (AABB, Círculo) y generación de manifolds.
+ * @responsibility Implementar Continuous Collision Detection (CCD) para objetos rápidos.
  *
  * @queries Transform, Collider2D, CollisionEvents, ContinuousCollider, Velocity
  * @mutates {@link CollisionEventsComponent} - Limpia y repuebla los buffers de eventos por frame.
@@ -23,8 +23,8 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
  * @executionOrder Fase: {@link SystemPhase.Collision}.
  *
  * @remarks
- * Este sistema orquesta la detección de colisiones. Puede utilizar un Spatial Hash para optimizar
- * la búsqueda en mundos con alta densidad de entidades. Los eventos de colisión se almacenan en componentes
+ * Este sistema orquesta la interacción física entre entidades. Utiliza un Spatial Hash para optimizar
+ * mundos con alta densidad de entidades. Los eventos de colisión se almacenan en componentes
  * para ser consumidos por sistemas de GameRules (ej: DamageSystem).
  *
  * @conceptualRisk [MUTATION_SAFETY][HIGH] Los callbacks de colisión se ejecutan durante la

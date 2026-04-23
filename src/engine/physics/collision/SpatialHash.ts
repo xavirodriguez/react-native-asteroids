@@ -61,9 +61,9 @@ export class SpatialHash {
   }
 
   /**
-   * Consulta las entidades en las celdas que solapan con el AABB dado.
+   * Consulta todas las entidades en las celdas que solapan con el AABB dado.
    * @param aabb - Área de búsqueda.
-   * @param result - Set donde se añadirán los candidatos encontrados (ayuda a garantizar la unicidad).
+   * @param result - Set donde se añadirán los candidatos (garantiza unicidad).
    * @queries grid
    */
   public query(aabb: AABB, result: Set<Entity>): void {

@@ -34,9 +34,9 @@ export interface SystemConfig {
  * Clase base abstracta para todos los sistemas en la arquitectura ECS.
  *
  * @remarks
- * Los sistemas encapsulan la lógica y el comportamiento del juego. Generalmente operan sobre
- * conjuntos de componentes filtrados mediante queries, y aunque se recomienda que sean
- * mayoritariamente stateless, pueden mantener cachés internos o estado de coordinación limitado.
+ * Los sistemas son los poseedores de la lógica y el comportamiento del juego. A diferencia de
+ * las entidades y componentes, los sistemas no almacenan estado propio (stateless), sino que
+ * actúan sobre conjuntos de componentes filtrados mediante queries en el {@link World}.
  *
  * El orden de ejecución es crítico y se gestiona mediante {@link SystemPhase} y prioridades.
  *

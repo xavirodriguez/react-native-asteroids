@@ -41,10 +41,10 @@ export interface DrawCommandOptions {
 }
 
 /**
- * Persistent command buffer designed to minimize per-frame allocations.
+ * Persistently pooled command buffer to eliminate per-frame allocations.
  *
  * @remarks
- * Uses a fixed-size array with pre-allocated command objects.
+ * Uses a fixed-size array of pre-allocated command objects.
  * Employs a stable, in-place sort to maintain render order with minimal overhead.
  */
 export class CommandBuffer {
@@ -123,8 +123,8 @@ export class CommandBuffer {
   }
 
   /**
-   * In-place insertion sort. Efficient for nearly-sorted arrays (typical for Z-indices).
-   * Aims to preserve stability to avoid visual flickering.
+   * In-place insertion sort. Efficient for nearly-sorted arrays typical of Z-indices.
+   * Stability is preserved to prevent flickering.
    */
   public sort(): void {
     for (let i = 1; i < this.activeCount; i++) {

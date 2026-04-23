@@ -7,12 +7,6 @@ import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, C
  *
  * @responsibility Rigid body dynamics integration using linear Euler and impulse-based collision response.
  *
- * @remarks
- * This system manages rigid body dynamics. It uses linear Euler integration,
- * which is efficient but may exhibit "tunneling" at high speeds or low refresh rates.
- * The use of CCD (Continuous Collision Detection) is recommended to mitigate these
- * cases for critical objects.
- *
  * @conceptualRisk [FPS_DEPENDENCE] Uses linear Euler integration which can lead to tunneling at high speeds or low framerates.
  * @conceptualRisk [STABILITY] Sequential impulse solver may jitter in complex resting contacts or deep stacks.
  *
@@ -36,9 +30,7 @@ export class PhysicsSystem2D extends System {
    * @param world - The ECS world instance.
    * @param deltaTime - Time elapsed since last update in milliseconds.
    *
-   * @remarks
-   * At the end of each entity update, it attempts to reset the accumulated forces
-   * and torque for the next tick.
+   * @invariant Forces and torque are always reset to zero at the end of each entity update.
    */
   update(world: World, deltaTime: number): void {
     const dt = deltaTime / 1000;

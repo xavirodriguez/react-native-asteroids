@@ -19,8 +19,8 @@ export interface ParticleParams {
 
 /**
  * Sistema encargado de gestionar emisores de partículas declarativos.
- * Utiliza un {@link PrefabPool} diseñado para instanciar partículas reduciendo
- * las alocaciones por frame y la presión sobre el recolector de basura.
+ * Utiliza un {@link PrefabPool} para instanciar partículas de forma eficiente,
+ * minimizando la fragmentación de memoria y la presión sobre el GC.
  *
  * @responsibility Orquestar la emisión continua y por ráfagas (burst) según la configuración.
  * @responsibility Delegar la creación física de entidades de partícula al pool.
@@ -36,7 +36,7 @@ export interface ParticleParams {
  * muy alta puede saturar el {@link World} con entidades de corta duración, degradando el rendimiento
  * de todas las queries del motor.
  * @conceptualRisk [DETERMINISM][LOW] Utiliza `RandomService.getRenderRandom()` para las propiedades
- * de la partícula, buscando que la simulación de gameplay no se vea afectada por efectos visuales.
+ * de la partícula, lo que garantiza que la simulación de gameplay no se vea afectada por efectos visuales.
  */
 export class ParticleSystem extends System {
   private particlePool: PrefabPool<Record<string, Component>, ParticleParams>;

@@ -18,7 +18,7 @@ export type UpdateListener<TGame> = (game: TGame) => void;
  *
  * @remarks
  * Esta interfaz permite que componentes de React o sistemas externos interactúen con cualquier juego
- * de forma unificada, facilitando el intercambio de escenas y la integración multijugador.
+ * sin conocer su lógica interna, facilitando el intercambio de escenas y la integración multijugador.
  *
  * @typeParam TGame - El tipo concreto de la clase de juego que implementa la interfaz.
  *
@@ -52,9 +52,7 @@ export interface IGame<TGame = unknown> {
   /**
    * Reinicia el juego a su estado inicial. Puede ser una operación asíncrona si carga recursos.
    * @param seed - Semilla opcional para inicializar el generador de números aleatorios.
-   *
-   * @remarks
-   * Se espera que el juego realice la limpieza del {@link World} anterior antes de la re-inicialización.
+   * @contract Debe garantizar la limpieza del {@link World} anterior antes de re-inicializar.
    */
   restart(seed?: number): void | Promise<void>;
 
@@ -81,13 +79,13 @@ export interface IGame<TGame = unknown> {
   isGameOver(): boolean;
 
   /**
-   * Intenta actualizar el estado de las acciones de entrada (e.g., "shoot", "moveUp").
-   * @mutates El estado de entrada consumido por la lógica de juego.
+   * Establece el estado de las acciones de entrada (e.g., "shoot", "moveUp").
+   * @mutates El componente de estado de entrada global o el sistema de entrada unificado.
    */
   setInput(input: Record<string, boolean>): void;
 
   /**
-   * Suscribe un listener que se notificará tras cada actualización lógica.
+   * Suscribe un listener que se ejecutará en cada tick de actualización.
    * @param listener - Callback que recibe la instancia del juego.
    * @returns Función para cancelar la suscripción.
    */
@@ -99,14 +97,10 @@ export interface IGame<TGame = unknown> {
   getGameLoop(): GameLoop;
 
   /**
-   * Intenta obtener un snapshot del estado actual del juego.
+   * Devuelve un snapshot del estado actual del juego.
    * Cada implementación debe sobrescribir el tipo de retorno con su estado específico.
-   *
-   * @remarks
-   * Para soporte de red/rollback, el objeto devuelto debe ser serializable (sin funciones ni
-   * referencias circulares).
-   *
-   * @returns El estado serializable capturado.
+   * @contract El objeto devuelto debe ser serializable para soportar rollback/red.
+   * @conceptualRisk [SERIALIZATION] Si el estado contiene referencias circulares o funciones, fallará en red.
    */
   getGameState(): unknown;
 

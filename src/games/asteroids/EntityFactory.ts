@@ -29,11 +29,8 @@ import {
  * Factoría para la creación de entidades del juego Asteroids.
  *
  * @responsibility Centralizar la instanciación de naves, asteroides y UFOs con sus componentes iniciales.
- *
- * @remarks
- * Se recomienda el uso de `RandomService.getInstance("gameplay")` para favorecer que la generación
- * procedimental sea consistente en entornos multijugador.
- *
+ * @conceptualRisk [DETERMINISM] El uso de `RandomService.getInstance("gameplay")` es obligatorio para
+ * garantizar que la generación procedimental sea idéntica en todos los clientes del sistema multiplayer.
  * @packageDocumentation
  */
 
@@ -131,11 +128,9 @@ export const createBullet = ({ world, x, y, angle }: { world: World; x: number; 
 };
 
 /**
- * Intenta crear un asteroide con forma procedimental.
- *
- * @remarks
- * Utiliza `gameplayRandom` buscando que la forma y velocidad sean consistentes
- * en el buffer de predicción.
+ * Crea un asteroide con forma procedimental determinista.
+ * @conceptualRisk [PRNG_USAGE] Utiliza `gameplayRandom` para asegurar que la forma y velocidad
+ * sean consistentes en el buffer de predicción.
  */
 export const createAsteroid = ({ world, x, y, size }: { world: World; x: number; y: number; size: "large" | "medium" | "small" }) => {
   const asteroid = world.createEntity();

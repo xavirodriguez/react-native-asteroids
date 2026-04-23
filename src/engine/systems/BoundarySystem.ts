@@ -20,8 +20,12 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * @executionOrder Fase: Simulation. Debe ejecutarse después de MovementSystem.
  *
  * @remarks
- * Este sistema está diseñado para gestionar entidades que salen del área de juego definida.
- * Soporta comportamientos de teletransporte (wrap), rebote (bounce) o eliminación (destroy).
+ * Este sistema garantiza que ninguna entidad con {@link BoundaryComponent} se pierda fuera del área de
+ * juego. Es esencial para proyectiles con TTL y para el movimiento cíclico en Asteroids.
+ *
+ * @contract Wrap: Si `x > width`, `x = 0` y viceversa. Mismo comportamiento para `y` y `height`.
+ * @contract Bounce: Invierte el componente de velocidad correspondiente y mantiene la entidad en el borde.
+ * @contract Destroy: Elimina la entidad invocando su pool de reciclaje si existe.
  */
 export class BoundarySystem extends System {
   public update(world: World, deltaTime: number): void {

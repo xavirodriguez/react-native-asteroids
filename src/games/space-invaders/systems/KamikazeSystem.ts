@@ -78,7 +78,7 @@ export class KamikazeSystem extends System {
 
   private spawnKamikaze(world: World, invaders: ReadonlyArray<number>, gameState: GameStateComponent): void {
     if (invaders.length === 0) return;
-    /** @conceptualRisk [DETERMINISM][FIXED] Se utiliza RandomService("gameplay") para favorecer la reproducibilidad. */
+    /** @conceptualRisk [DETERMINISM][FIXED] Se utiliza RandomService("gameplay") para garantizar determinismo. */
     const randomIndex = RandomService.getInstance("gameplay").nextInt(0, invaders.length);
     const invader = invaders[randomIndex];
     const pos = world.getComponent<TransformComponent>(invader, "Transform");

@@ -56,7 +56,7 @@ export interface UISnapshot {
  *
  * @remarks
  * Esta estructura desacopla la fase de captura (que lee del World) de la fase de dibujo.
- * Ayuda a que el renderizado sea consistente y busca evitar efectos secundarios de
+ * Permite que el renderizado sea determinista y evita problemas de concurrencia o
  * mutaciones del World durante el dibujo.
  */
 export interface RenderSnapshot {

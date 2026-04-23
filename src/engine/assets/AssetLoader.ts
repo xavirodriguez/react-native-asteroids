@@ -1,11 +1,11 @@
 import { AssetDescriptor, AssetHandle } from "./AssetTypes";
 
 /**
- * AssetLoader designed to manage game assets with caching and reference counting.
+ * AssetLoader for managing game assets with caching and reference counting.
  *
  * @remarks
- * Implements an ownership model where scenes or systems are expected to manage
- * reference count increments and decrements.
+ * Implements a strict ownership model where scenes or systems must increment/decrement
+ * reference counts. Includes debug assertions to detect leaks or double-unloads.
  */
 export class AssetLoader {
   private cache = new Map<string, AssetHandle>();

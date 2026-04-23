@@ -92,4 +92,22 @@ describe("EventBus Deferred", () => {
     expect(handler1).not.toHaveBeenCalled();
     expect(handler2).toHaveBeenCalled();
   });
+
+  it("should not double-release to pool if clear() is called during processDeferred()", () => {
+    const bus = new EventBus();
+    const handler = jest.fn(() => {
+      bus.clear();
+    });
+    bus.on("test", handler);
+
+    bus.emitDeferred("test");
+
+    // This should not throw or cause aliasing issues in the pool
+    expect(() => bus.processDeferred()).not.toThrow();
+
+    // Verify pool is still healthy by emitting again
+    bus.on("test2", () => {});
+    bus.emitDeferred("test2");
+    expect(() => bus.processDeferred()).not.toThrow();
+  });
 });

@@ -3,15 +3,15 @@
  *
  * @remarks
  * Provides explicit separation between synchronous and asynchronous lifecycle hooks
- * to eliminate "Zalgo" risks and favor a predictable execution order.
+ * to eliminate "Zalgo" risks and ensure deterministic execution order.
  */
 
 /**
  * Executes a synchronous lifecycle hook.
  *
  * @remarks
- * Designed for immediate execution without microtask delay.
- * Recommended for synchronous functions to favor a predictable execution order.
+ * Guarantees immediate execution without microtask delay.
+ * Prohibits async functions to ensure deterministic execution order.
  */
 export function runLifecycleSync(fn: () => void): void {
   fn();

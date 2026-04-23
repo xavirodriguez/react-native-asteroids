@@ -17,8 +17,8 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  *
  * @remarks
  * Es el renderizador estándar para la plataforma Web y entornos de desarrollo rápido.
- * Utiliza una estrategia diseñada para minimizar las alocaciones por frame mediante el reciclaje
- * de objetos snapshot y comandos, buscando reducir la presión sobre el recolector de basura (GC).
+ * Utiliza una estrategia orientada a la reducción de alocaciones mediante el reciclaje de objetos snapshot
+ * y comandos para minimizar la presión sobre el GC.
  *
  * @conceptualRisk [GC_PRESSURE][LOW] Aunque usa pools, el crecimiento de `entities` en el
  * snapshot más allá de `MAX_ENTITIES` (2000) causará pérdida de dibujo.

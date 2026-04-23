@@ -1,4 +1,4 @@
-import { InputController } from "./InputController";
+import { InputController } from "../../../engine/legacy/InputController";
 import { PongInput } from "../types";
 
 export interface InputFrame {

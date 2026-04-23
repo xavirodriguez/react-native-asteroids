@@ -13,9 +13,9 @@ import { RenderComponent, TransformComponent, TrailComponent } from "../core/Cor
  * @executionOrder Fase: Presentation. Ejecutar al final del pipeline de simulación.
  *
  * @remarks
- * Este sistema prepara datos visuales para el renderizado.
- * Incrementa {@link World.version} para notificar que existen cambios que podrían
- * requerir una actualización de la UI.
+ * Este sistema actúa como un puente entre la simulación física y la presentación visual.
+ * Incrementa {@link World.version} para asegurar que los componentes de React/UI se
+ * actualicen con el estado más reciente del motor.
  *
  * @conceptualRisk [GC_PRESSURE][FIXED] El crecimiento ilimitado de estelas fue resuelto
  * mediante `TrailComponent` y un buffer circular pre-asignado.
