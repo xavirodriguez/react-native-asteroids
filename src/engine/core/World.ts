@@ -823,8 +823,27 @@ export class ReadOnlyWorld {
   public getCommandBuffer(): never {
     throw new Error("ReadOnlyWorldViolation: Access to CommandBuffer is not allowed in this phase.");
   }
-
   public flush(): never {
     throw new Error("ReadOnlyWorldViolation: Mutation 'flush' is not allowed in this phase.");
+  }
+
+  public setResource(): never {
+    throw new Error("ReadOnlyWorldViolation: Mutation 'setResource' is not allowed in this phase.");
+  }
+
+  public removeResource(): never {
+    throw new Error("ReadOnlyWorldViolation: Mutation 'removeResource' is not allowed in this phase.");
+  }
+
+  public addSystem(): never {
+    throw new Error("ReadOnlyWorldViolation: Mutation 'addSystem' is not allowed in this phase.");
+  }
+
+  public clear(): never {
+    throw new Error("ReadOnlyWorldViolation: Mutation 'clear' is not allowed in this phase.");
+  }
+
+  public restore(): never {
+    throw new Error("ReadOnlyWorldViolation: Mutation 'restore' is not allowed in this phase.");
   }
 }
