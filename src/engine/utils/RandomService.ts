@@ -1,9 +1,9 @@
 /**
- * Servicio de aleatoriedad diseñado para la reproducibilidad (PRNG).
- * Proporciona instancias segregadas para simulación y efectos visuales para ayudar a prevenir
+ * Servicio de aleatoriedad destinado a mejorar la reproducibilidad (PRNG).
+ * Proporciona instancias segregadas para simulación y efectos visuales para ayudar a mitigar
  * la deriva de la semilla (seed drift).
  *
- * @responsibility Proveer números aleatorios reproducibles basados en semillas bajo condiciones controladas.
+ * @responsibility Proveer números aleatorios basados en semillas bajo condiciones controladas.
  * @responsibility Segregar el estado del PRNG entre simulación y presentación.
  *
  * @remarks
@@ -46,7 +46,7 @@ export class RandomService {
   /**
    * Returns a named instance of the RandomService, creating it if it doesn't exist.
    *
-   * @throws Error si se intenta acceder a "render" o "global" mientras lockGameplayContext es true.
+   * @throws {Error} Si se intenta acceder a "render" o "global" mientras lockGameplayContext es true.
    */
   public static getInstance(name: RandomStream = "global", initialSeed: number = 12345): RandomService {
     if (this.lockGameplayContext && (name === "render" || name === "global")) {
@@ -145,8 +145,8 @@ export class RandomService {
   }
 
   /**
-   * Intenta generar un número aleatorio de punto flotante en el rango [0, 1).
-   * Utiliza el algoritmo Mulberry32 buscando ofrecer un comportamiento reproducible.
+   * Genera un número aleatorio de punto flotante en el rango [0, 1).
+   * Utiliza el algoritmo Mulberry32 buscando ofrecer un comportamiento reproducible en la misma plataforma.
    *
    * @remarks
    * Cada llamada actualiza la semilla interna de la instancia.

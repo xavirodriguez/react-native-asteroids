@@ -17,7 +17,7 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  *
  * @remarks
  * Es el renderizador estándar para la plataforma Web y entornos de desarrollo rápido.
- * Utiliza una estrategia diseñada para minimizar las alocaciones por frame mediante el reciclaje
+ * Utiliza una estrategia destinada a mitigar las alocaciones por frame mediante el reciclaje
  * de objetos snapshot y comandos, buscando reducir la presión sobre el recolector de basura (GC).
  *
  * @conceptualRisk [GC_PRESSURE][LOW] Aunque usa pools, el crecimiento de `entities` en el
@@ -579,15 +579,15 @@ export class CanvasRenderer implements Renderer {
    * Ejecuta el pipeline de renderizado completo para el World actual.
    *
    * @remarks
-   * El proceso se divide en dos fases críticas:
+   * El proceso se divide en dos fases:
    * 1. **Captura (Capture)**: Crea un {@link RenderSnapshot} interpolado del World.
    * 2. **Dibujo (Draw)**: Ejecuta los comandos del snapshot en el contexto de Canvas.
    *
    * @param world - El mundo ECS fuente de datos.
-   * @param alpha - Factor de interpolación para movimiento suave.
+   * @param alpha - Factor de interpolación [0, 1] para suavizado de movimiento.
    *
    * @precondition El contexto `ctx` debe haber sido establecido mediante {@link CanvasRenderer.setContext}.
-   * @postcondition Se genera una imagen completa en el Canvas.
+   * @postcondition Se genera la imagen del frame actual en el Canvas con interpolación aplicada.
    */
   public render(world: World, alpha: number = 1): void {
     const snapshot = this.createSnapshot(world, alpha);

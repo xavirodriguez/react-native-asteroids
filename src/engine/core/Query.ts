@@ -70,7 +70,7 @@ export class Query {
 
   /**
    * Proporciona la lista de entidades que coinciden actualmente con la firma de la query.
-   * Emplea un array cacheado para reducir la presión sobre el recolector de basura.
+   * Emplea un array cacheado para mitigar la presión sobre el recolector de basura.
    *
    * @remarks
    * El array devuelto es una referencia al caché interno. Se entrega como `ReadonlyArray`
@@ -78,10 +78,10 @@ export class Query {
    *
    * @returns Un array de solo lectura de IDs de {@link Entity}.
    *
-   * @precondition No se debe realizar casting de este array a uno mutable ni utilizar
-   * métodos in-place (sort, push, splice).
-   * @postcondition El array devuelto refleja el estado actual del {@link World} para esta firma.
-   * @postcondition Las entidades en el array se entregan ordenadas por ID de forma ascendente.
+   * @warning No se debe realizar casting de este array a uno mutable ni utilizar métodos
+   * in-place (sort, push, splice), ya que esto invalidaría el caché interno.
+   * @postcondition El array devuelto refleja el estado del {@link World} para esta firma en el momento de la consulta.
+   * @postcondition Las entidades en el array se entregan ordenadas por ID de forma ascendente para favorecer la consistencia.
    *
    * @conceptualRisk [MEMORY][MEDIUM] Fuga de caché mutable en Queries. Los sistemas reciben
    * una referencia al array interno de la query y pueden corromperlo si realizan casting forzado.

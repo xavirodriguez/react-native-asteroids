@@ -9,9 +9,9 @@
  * pero cuyo uso directo no está recomendado para lógica de alto nivel.
  *
  * @remarks
- * El motor está diseñado para minimizar las alocaciones en hot-paths, aunque no garantiza
- * el "zero-allocation" absoluto. Se busca la reproducibilidad de la simulación bajo
- * condiciones controladas.
+ * El motor está diseñado para mitigar las alocaciones en hot-paths, aunque no garantiza
+ * un comportamiento "zero-allocation" absoluto. Se busca facilitar la reproducibilidad de la simulación
+ * bajo condiciones operativas controladas.
  */
 
 // --- CORE ECS ---
