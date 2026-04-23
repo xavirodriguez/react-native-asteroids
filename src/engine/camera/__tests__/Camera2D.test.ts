@@ -41,6 +41,8 @@ describe("Camera2D System", () => {
 
     // Update with large deltaTime to reach target almost immediately due to smoothing 1
     cameraSystem.update(world, 1000);
+    world.flush();
+    world.flush();
 
     const cam = world.getComponent<Camera2DComponent>(cameraEntity, "Camera2D")!;
     // Target is at 1000,1000. Viewport is 800x600.
@@ -74,6 +76,7 @@ describe("Camera2D System", () => {
     } as Camera2DComponent);
 
     cameraSystem.update(world, 1000);
+    world.flush();
 
     const cam = world.getComponent<Camera2DComponent>(cameraEntity, "Camera2D")!;
     // Focal point is (500, 500).
@@ -107,6 +110,7 @@ describe("Camera2D System", () => {
     // relX = (400 - (0 + 400)) = 0. relY = (300 - (0 + 300)) = 0.
     // Within deadzone (-50 to 50).
     cameraSystem.update(world, 16);
+    world.flush();
     let cam = world.getComponent<Camera2DComponent>(cameraEntity, "Camera2D")!;
     expect(cam.x).toBe(0);
     expect(cam.y).toBe(0);
@@ -115,6 +119,8 @@ describe("Camera2D System", () => {
     const trans = world.getComponent<TransformComponent>(target, "Transform")!;
     trans.x = 440; // relX = 440 - 400 = 40. < 50.
     cameraSystem.update(world, 16);
+    world.flush();
+    cam = world.getComponent<Camera2DComponent>(cameraEntity, "Camera2D")!;
     expect(cam.x).toBe(0);
 
     // Move target outside deadzone
@@ -122,6 +128,8 @@ describe("Camera2D System", () => {
     // moveX = 60 - 50 = 10.
     // targetCamX = 0 + 10 = 10.
     cameraSystem.update(world, 1000);
+    world.flush();
+    cam = world.getComponent<Camera2DComponent>(cameraEntity, "Camera2D")!;
     expect(cam.x).toBeCloseTo(10, 0);
   });
 

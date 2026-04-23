@@ -274,11 +274,18 @@ export class CanvasRenderer implements Renderer {
       snap.hitFlashFrames = render.hitFlashFrames || 0;
       snap.data = render.data ?? null;
 
-      // Frustum Culling: check if entity AABB intersects camera viewport
-      const size = render.size;
-      const margin = size * 2; // Extra margin for safe culling
-      if (snap.x + margin < cullMinX || snap.x - margin > cullMaxX ||
-          snap.y + margin < cullMinY || snap.y - margin > cullMaxY) {
+      // Frustum Culling: check if entity AABB intersects camera viewport in world space
+      const halfSize = render.size / 2;
+
+      const entityMinX = snap.x - halfSize;
+      const entityMaxX = snap.x + halfSize;
+      const entityMinY = snap.y - halfSize;
+      const entityMaxY = snap.y + halfSize;
+
+      const isVisible = !(entityMaxX < cullMinX || entityMinX > cullMaxX ||
+                          entityMaxY < cullMinY || entityMinY > cullMaxY);
+
+      if (!isVisible) {
           continue;
       }
 
@@ -382,7 +389,7 @@ export class CanvasRenderer implements Renderer {
 
     // World Space Rendering (Entities)
     ctx.save();
-    // Apply Camera Transformation (including screen-space shake)
+    // Apply Camera Transformation (Shake -> Zoom -> Translate)
     ctx.translate(snapshot.shakeX, snapshot.shakeY);
     ctx.scale(snapshot.cameraZoom, snapshot.cameraZoom);
     ctx.translate(-snapshot.cameraX, -snapshot.cameraY);

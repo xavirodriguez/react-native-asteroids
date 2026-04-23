@@ -331,6 +331,7 @@ export interface Camera2DComponent extends Component {
   bounds: AABB | null;
   deadzone: AABB | null;
   targets: Entity[];
+  targetEntity?: Entity;
   isMain?: boolean;
 }
 
