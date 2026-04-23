@@ -371,3 +371,19 @@ export interface Star extends Component {
   twinkleSpeed: number;
   layer: number;
 }
+
+/**
+ * Representa un sprite visual vinculado a un recurso.
+ */
+export interface SpriteComponent extends Component {
+  type: "Sprite";
+  assetId: string;
+}
+
+/**
+ * Representa un efecto de sonido o música vinculado a un recurso.
+ */
+export interface AudioComponent extends Component {
+  type: "Audio";
+  assetId: string;
+}

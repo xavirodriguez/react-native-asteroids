@@ -1,5 +1,6 @@
 import { World } from "../core/World";
 import { Scene } from "./Scene";
+import { SystemPhase } from "../core/System";
 import { runLifecycleSync, runLifecycleAsync } from "../utils/LifecycleUtils";
 
 export enum SceneState {
@@ -205,9 +206,9 @@ export class SceneManager {
   /**
    * Updates the current scene.
    */
-  public update(deltaTime: number): void {
+  public update(deltaTime: number, phaseFilter?: SystemPhase, excludePhase?: SystemPhase): void {
     if (this.state === SceneState.ACTIVE && this.currentScene) {
-      this.currentScene.update(deltaTime);
+      this.currentScene.update(deltaTime, phaseFilter, excludePhase);
     }
   }
 

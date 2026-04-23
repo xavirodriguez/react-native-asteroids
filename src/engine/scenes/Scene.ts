@@ -1,4 +1,5 @@
 import { World } from "../core/World";
+import { SystemPhase } from "../core/System";
 
 /**
  * Clase base abstracta para todas las escenas del juego.
@@ -73,16 +74,18 @@ export abstract class Scene {
    *
    * @param dt - Tiempo transcurrido en milisegundos (fixedDeltaTime).
    * @param world - El mundo {@link World} asociado a la escena.
+   * @param phaseFilter - Opcional. Filtra los sistemas a ejecutar por fase.
+   * @param excludePhase - Opcional. Excluye los sistemas de esta fase.
    *
    * @remarks
-   * Por defecto, delega la actualización al `world.update(dt)`. Las escenas
+   * Por defecto, delega la actualización al `world.update(dt, phaseFilter, excludePhase)`. Las escenas
    * pueden sobrescribir este método para añadir lógica de orquestación previa
    * o posterior a la ejecución de los sistemas.
    *
    * @executionOrder Típicamente llamado por el {@link SceneManager} dentro del {@link GameLoop}.
    */
-  public onUpdate(dt: number, world: World): void {
-    world.update(dt);
+  public onUpdate(dt: number, world: World, phaseFilter?: SystemPhase, excludePhase?: SystemPhase): void {
+    world.update(dt, phaseFilter, excludePhase);
   }
 
   /**
@@ -103,8 +106,8 @@ export abstract class Scene {
    * Métodos de reenvío públicos para compatibilidad con versiones anteriores.
    * @deprecated Usar el flujo de SceneManager u onUpdate directamente.
    */
-  public update(dt: number): void {
-    this.onUpdate(dt, this.world);
+  public update(dt: number, phaseFilter?: SystemPhase, excludePhase?: SystemPhase): void {
+    this.onUpdate(dt, this.world, phaseFilter, excludePhase);
   }
 
   /**

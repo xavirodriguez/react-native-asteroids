@@ -4,6 +4,7 @@ import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
 import { WorldCommandBuffer } from "./WorldCommandBuffer";
+import type { EventBus } from "./EventBus";
 
 interface RegisteredSystem {
   system: System;
@@ -73,6 +74,20 @@ export class World {
   public tick = 0;
   private _renderDirty = false;
   private commandBuffer = new WorldCommandBuffer();
+
+  /** @internal */
+  private destructionPayload: { entity: Entity; world: World } = { entity: 0 as Entity, world: this };
+  /** @internal */
+  private readOnlyProxy: World;
+  /** @internal */
+  private simulationProxy: World;
+  /** @internal */
+  private systemPhases = new Map<System, string>();
+
+  constructor() {
+    this.readOnlyProxy = createReadOnlyProxy(this, "Presentation", true);
+    this.simulationProxy = createReadOnlyProxy(this, "Simulation", false);
+  }
 
   /**
    * @deprecated Use structureVersion or stateVersion instead.
@@ -463,6 +478,13 @@ export class World {
       return;
     }
 
+    // Emit entity:destroyed event before full removal to allow systems to cleanup
+    const eventBus = this.getResource<EventBus>("EventBus");
+    if (eventBus) {
+      this.destructionPayload.entity = entity;
+      eventBus.emit("entity:destroyed", this.destructionPayload);
+    }
+
     this.removeEntityFromComponentMaps(entity);
     this.entityComponentSets.delete(entity);
     this.queries.forEach(query => query.remove(entity));
@@ -581,6 +603,7 @@ export class World {
     const phase = config.phase ?? SystemPhase.Simulation;
     const priority = config.priority ?? 0;
     this.systems.push({ system, phase, priority });
+    this.systemPhases.set(system, phase);
     this.systemsNeedSorting = true;
   }
 
@@ -598,32 +621,53 @@ export class World {
    * efectos secundarios en los iteradores de las queries.
    *
    * @param deltaTime - Tiempo transcurrido para este paso de simulación (ms).
+   * @param phaseFilter - Opcional. Si se proporciona, solo se ejecutan los sistemas de esa fase.
+   * @param excludePhase - Opcional. Si se proporciona, se ejecutan todas las fases EXCEPTO esta.
    *
-   * @postcondition El estado del mundo avanza y las mutaciones diferidas se consolidan al final.
+   * @postcondition El estado del mundo avanza y las mutaciones diferidas se consolidan al final si no se filtra por fases.
    */
-  update(deltaTime: number): void {
+  update(deltaTime: number, phaseFilter?: SystemPhase, excludePhase?: SystemPhase): void {
     this.tick++;
     if (this.systemsNeedSorting) this.sortSystems();
 
     this.isUpdating = true;
     try {
-      this.sortedSystems.forEach((system) => {
+      for (let i = 0; i < this.sortedSystems.length; i++) {
+        const system = this.sortedSystems[i];
+        const phase = this.systemPhases.get(system) as SystemPhase;
+
+        if (phaseFilter && phase !== phaseFilter) continue;
+        if (excludePhase && phase === excludePhase) continue;
+
+        let activeWorld: World = this;
+        if (phase === SystemPhase.Presentation) {
+          activeWorld = this.readOnlyProxy;
+        } else if (phase === SystemPhase.Simulation || phase === SystemPhase.Collision || phase === SystemPhase.GameRules) {
+          activeWorld = this.simulationProxy;
+        }
+
         if (this.debugMode) {
           let profiler = this.profilers.get(system);
           if (!profiler) {
             profiler = new SystemProfiler(system);
             this.profilers.set(system, profiler);
           }
-          profiler.update(this, deltaTime);
+          profiler.update(activeWorld, deltaTime);
         } else {
-          system.update(this, deltaTime);
+          system.update(activeWorld, deltaTime);
         }
-      });
+      }
     } finally {
       this.isUpdating = false;
     }
 
-    this.flush();
+    // Only flush if we are running the full loop or the last phase (Presentation)
+    // or if no phaseFilter/excludePhase is provided.
+    const isFullLoop = !phaseFilter && !excludePhase;
+    const isLastPhase = phaseFilter === SystemPhase.Presentation;
+    if (isFullLoop || isLastPhase) {
+      this.flush();
+    }
   }
 
   getSystemTiming(system: System): number {
@@ -738,6 +782,39 @@ export class World {
       this.componentIndex.set(type, new Set());
     }
   }
+}
+
+/**
+ * Crea un proxy restrictivo para el Mundo ECS.
+ */
+function createReadOnlyProxy(world: World, phaseName: string, absolute: boolean): World {
+  const structuralMutations = new Set([
+    "createEntity",
+    "removeEntity",
+    "addComponent",
+    "removeComponent",
+    "flush",
+    "clear",
+    "clearSystems",
+    "setResource",
+    "removeResource"
+  ]);
+
+  return new Proxy(world, {
+    get(target, prop, receiver) {
+      if (typeof prop === "string" && structuralMutations.has(prop)) {
+        return (..._args: any[]) => {
+          if (absolute) {
+            throw new Error(`ReadOnlyWorld: Mutating method '${prop}' called during ${phaseName} phase.`);
+          } else {
+            throw new Error(`SimulationSafety: Direct mutation '${prop}' forbidden. Use CommandBuffer during ${phaseName} phase.`);
+          }
+        };
+      }
+      const value = Reflect.get(target, prop, receiver);
+      return typeof value === "function" ? value.bind(target) : value;
+    }
+  });
 }
 
 const __DEV__ = process.env.NODE_ENV !== "production";

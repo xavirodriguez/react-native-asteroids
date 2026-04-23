@@ -10,9 +10,11 @@ import { RandomService } from "../utils/RandomService";
 import type { IGame, UpdateListener } from "./IGame";
 import { XPSystem } from "../systems/XPSystem";
 import { PaletteSystem } from "../systems/PaletteSystem";
+import { AssetCleanupSystem } from "../systems/AssetCleanupSystem";
 import { PlayerProfileService } from "../../services/PlayerProfileService";
 import { HierarchySystem } from "../systems/HierarchySystem";
 import { InterpolationPrepSystem } from "../systems/InterpolationPrepSystem";
+import { SystemPhase } from "./System";
 
 export interface BaseGameConfig {
   pauseKey?: string;
@@ -121,29 +123,40 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
       const activeWorld = this.getWorld();
 
-      // 0. PRE-UPDATE: Snapshot for interpolation
+      // 0. PROCESS DEFERRED EVENTS
+      this.eventBus.processDeferred();
+
+      // 0.1 PRE-UPDATE: Snapshot for interpolation
       this.interpolationPrepSystem.update(activeWorld, deltaTime);
 
-      // 1. INPUT
+      // 1. INPUT & SIMULATION (Excluding Presentation)
+      // Enforce CommandBuffer by running these phases with SimulationProxy
       if (this.isMultiplayer) {
         // Multiplayer input handling logic (if any)
       } else {
         this.unifiedInput.update(activeWorld, deltaTime);
       }
 
-      // 3. SIMULATION
+      // 3. SIMULATION, COLLISION, GAME RULES
       if (this.sceneManager.getCurrentScene()) {
-        this.sceneManager.update(deltaTime);
+        this.sceneManager.update(deltaTime, undefined, SystemPhase.Presentation);
       } else {
-        this.world.update(deltaTime);
+        this.world.update(deltaTime, undefined, SystemPhase.Presentation);
       }
 
       // 4. POST-UPDATE: Transform Propagation (Hierarchy)
-      // Must happen AFTER simulation but BEFORE rendering.
+      // Must happen AFTER simulation but BEFORE rendering/presentation.
       this.hierarchySystem.update(activeWorld, deltaTime);
 
-      // 5. FLUSH: Apply deferred structural changes
+      // 5. FLUSH: Apply deferred structural changes before Presentation phase
       activeWorld.flush();
+
+      // 6. PRESENTATION: Read-only phase for visuals and sound
+      if (this.sceneManager.getCurrentScene()) {
+        this.sceneManager.update(deltaTime, SystemPhase.Presentation);
+      } else {
+        this.world.update(deltaTime, SystemPhase.Presentation);
+      }
 
       this.currentTick++;
       this._notifyListeners();
@@ -353,6 +366,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
   protected async registerEngineSystems(): Promise<void> {
     this.world.addSystem(new XPSystem(this.eventBus));
+    this.world.addSystem(new AssetCleanupSystem(this.eventBus));
     const profile = await PlayerProfileService.getProfile();
     this.world.addSystem(new PaletteSystem(profile.activePalette));
   }

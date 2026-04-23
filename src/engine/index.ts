@@ -76,6 +76,7 @@ export { runLifecycleSync, runLifecycleAsync } from './utils/LifecycleUtils';
 
 // --- SYSTEMS ---
 export { HierarchySystem } from './systems/HierarchySystem';
+export { AssetCleanupSystem } from './systems/AssetCleanupSystem';
 export { MovementSystem } from './systems/MovementSystem';
 export { FrictionSystem } from './systems/FrictionSystem';
 export { BoundarySystem } from './systems/BoundarySystem';

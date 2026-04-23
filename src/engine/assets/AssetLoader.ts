@@ -159,6 +159,28 @@ export class AssetLoader {
   }
 
   /**
+   * Decrements the reference count for an asset. Alias for unloadGroup with a single ID.
+   * Optimized for Zero-GC.
+   */
+  public release(id: string): void {
+    const currentCount = this.refCounts.get(id);
+
+    if (currentCount === undefined) {
+      return;
+    }
+
+    const newCount = currentCount - 1;
+
+    if (newCount <= 0) {
+      this.disposeAsset(id);
+      this.cache.delete(id);
+      this.refCounts.delete(id);
+    } else {
+      this.refCounts.set(id, newCount);
+    }
+  }
+
+  /**
    * Debug helper to detect memory leaks.
    */
   public assertNoLeaks(): void {

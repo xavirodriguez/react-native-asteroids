@@ -7,8 +7,13 @@
  */
 export type EventHandler<T = unknown> = (payload: T) => void;
 
+interface DeferredEvent {
+  event: string;
+  payload: unknown;
+}
+
 /**
- * Sistema de mensajería diseñado para la comunicación síncrona basada en el patrón Pub/Sub.
+ * Sistema de mensajería diseñado para la comunicación síncrona y diferida basada en el patrón Pub/Sub.
  *
  * @remarks
  * El EventBus facilita el desacoplamiento entre sistemas. Soporta nombres de eventos
@@ -24,6 +29,9 @@ export type EventHandler<T = unknown> = (payload: T) => void;
  */
 export class EventBus {
   private handlers = new Map<string, Set<EventHandler<unknown>>>();
+  private deferredQueue: DeferredEvent[] = [];
+  private eventPool: DeferredEvent[] = [];
+  private processingQueue: DeferredEvent[] = [];
 
   /**
    * Suscribe un controlador a un evento específico o patrón.
@@ -89,11 +97,55 @@ export class EventBus {
   }
 
   /**
+   * Encola un evento para ser procesado de forma diferida mediante {@link processDeferred}.
+   * Diseñado para evitar "Event Storms" y recursividad infinita en el frame actual.
+   *
+   * @param event - Nombre del evento.
+   * @param payload - Datos asociados.
+   */
+  public emitDeferred<T = unknown>(event: string, payload?: T): void {
+    const deferred = this.eventPool.pop() || { event: "", payload: null };
+    deferred.event = event;
+    deferred.payload = payload;
+    this.deferredQueue.push(deferred);
+  }
+
+  /**
+   * Procesa todos los eventos encolados de forma diferida.
+   * Se recomienda llamar a este método al inicio de cada frame.
+   *
+   * @remarks
+   * Implementa una estrategia Zero-GC reutilizando objetos de evento mediante un pool interno.
+   */
+  public processDeferred(): void {
+    if (this.deferredQueue.length === 0) return;
+
+    // Swap queues to allow emitDeferred during processing
+    const temp = this.processingQueue;
+    this.processingQueue = this.deferredQueue;
+    this.deferredQueue = temp;
+
+    for (let i = 0; i < this.processingQueue.length; i++) {
+      const { event, payload } = this.processingQueue[i];
+      this.emit(event, payload);
+
+      // Clean and return to pool
+      this.processingQueue[i].event = "";
+      this.processingQueue[i].payload = null;
+      this.eventPool.push(this.processingQueue[i]);
+    }
+
+    this.processingQueue.length = 0;
+  }
+
+  /**
    * Clears handlers matching a pattern or all if none provided.
    */
   public clear(pattern?: string): void {
     if (!pattern) {
       this.handlers.clear();
+      this.deferredQueue.length = 0;
+      this.processingQueue.length = 0;
       return;
     }
 
