@@ -3,15 +3,15 @@ import { World } from "../../core/World";
 import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, CollisionEvent } from "../../types/EngineTypes";
 
 /**
- * Built-in 2D Physics System for rigid body dynamics.
+ * Built-in 2D Physics System for stable rigid body dynamics.
  *
  * @responsibility Rigid body dynamics integration using linear Euler and impulse-based collision response.
  *
  * @remarks
- * This system manages rigid body dynamics. It uses semi-implicit linear Euler integration,
- * which is efficient but may exhibit "tunneling" at high speeds relative to the frame rate.
- * Using CCD (Continuous Collision Detection) in the {@link CollisionSystem2D} is recommended
- * to mitigate tunneling for fast-moving entities.
+ * This system manages rigid body dynamics. It uses linear Euler integration,
+ * which is efficient but may exhibit "tunneling" at high speeds or low refresh rates.
+ * The use of CCD (Continuous Collision Detection) is recommended to mitigate these
+ * cases for critical objects.
  *
  * @conceptualRisk [FPS_DEPENDENCE] Uses linear Euler integration which can lead to tunneling at high speeds or low framerates.
  * @conceptualRisk [STABILITY] Sequential impulse solver may jitter in complex resting contacts or deep stacks.

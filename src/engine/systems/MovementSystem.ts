@@ -15,7 +15,7 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  *
  * @remarks
  * Este sistema es el motor de movimiento principal para las entidades físicas compatibles.
- * Utiliza {@link PhysicsUtils} para ayudar a mantener la consistencia con el código de predicción.
+ * Utiliza {@link PhysicsUtils} para favorecer la consistencia con el código de predicción.
  *
  * @conceptualRisk [DETERMINISM][CRITICAL] Existe lógica de integración duplicada entre este sistema
  * y los helpers de predicción (ej. `predictLocalPlayer` en Asteroids). Cualquier cambio en `PhysicsUtils`
@@ -31,8 +31,8 @@ export class MovementSystem extends System {
    * @param deltaTime - Tiempo transcurrido desde el último tick en milisegundos.
    *
    * @remarks
-   * Actualiza las coordenadas `x`, `y` y `rotation` del `Transform`.
-   * El sistema marca el flag `dirty` del `Transform` para notificar cambios a otros sistemas dependientes.
+   * Intenta actualizar las coordenadas `x`, `y` y `rotation` del `Transform`.
+   * Se espera que el flag `dirty` del `Transform` se marque como `true` para notificar a otros sistemas.
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Transform", "Velocity");

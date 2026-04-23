@@ -27,13 +27,12 @@ function resetResult(): CCDResult {
 }
 
 /**
- * Utilidades para la detección de colisiones continuas (CCD) mediante barrido lineal.
+ * Utilidades para la detección de colisiones continuas (CCD).
  *
  * @remarks
- * Estas utilidades están destinadas a predecir colisiones entre ticks de simulación
- * basándose en la velocidad lineal relativa, ayudando a reducir el efecto de "tunneling".
- * Los algoritmos asumen trayectorias lineales constantes durante el frame y no consideran
- * la rotación de las formas durante el barrido.
+ * Estas utilidades están diseñadas para predecir colisiones entre ticks de simulación
+ * basándose en la velocidad lineal, ayudando a prevenir el efecto de "tunneling".
+ * Los algoritmos asumen trayectorias lineales y no consideran la rotación en el barrido.
  */
 export class ContinuousCollision {
   static sweptCircleVsCircle(

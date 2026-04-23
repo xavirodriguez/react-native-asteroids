@@ -20,11 +20,11 @@ interface RegisteredSystem {
  * @responsibility Mantener recursos compartidos globales del juego.
  *
  * @remarks
- * El `World` actúa como el núcleo de la arquitectura ECS. Utiliza un pool de entidades para reducir
+ * El `World` actúa como el núcleo de la arquitectura ECS. Utiliza un pool de entidades para minimizar
  * la presión sobre el GC y emplea queries reactivas cacheadas para optimizar las consultas de sistemas.
  *
  * Invariantes (Expectativas de Diseño):
- * - **Principio 2**: Las estructuras jerárquicas (Transforms) deben ser válidas; el sistema intenta evitar el auto-parentesco.
+ * - **Principio 2**: Las estructuras jerárquicas (Transforms) deben ser válidas; se intenta evitar el auto-parentesco.
  * - **Principio 6**: Los componentes singleton recuperados mediante {@link World.getSingleton} están
  * diseñados para ser mutables (se realiza una copia si están congelados).
  *
@@ -69,26 +69,25 @@ export class World {
   private commandBuffer = new WorldCommandBuffer();
 
   /**
-   * Genera una instantánea serializable del estado del mundo destinada a rollback o persistencia.
+   * Intenta generar una instantánea serializable del estado del mundo para rollback o persistencia.
    *
    * @remarks
    * Captura entidades activas, datos serializables de componentes, contadores de IDs, versión del mundo
    * y la semilla actual del generador de números aleatorios de gameplay.
-   * Las entidades se devuelven ordenadas por ID para favorecer la consistencia en la reconstrucción.
+   * Las entidades se devuelven ordenadas por ID para favorecer la consistencia.
    *
-   * @returns Un objeto plano que contiene el estado serializable capturado del mundo.
+   * @returns Un objeto plano que contiene el estado reconstruible (serializable) del mundo.
    *
-   * @warning La serialización se limita a propiedades que no sean funciones ni símbolos. Referencias a objetos complejos
-   * (clases, mapas, sets) no se restaurarán fielmente si no son POJOs serializables.
+   * @warning La serialización se limita a propiedades que no sean funciones. Referencias a objetos complejos
+   * pueden no restaurarse exactamente si no son POJOs.
    *
-   * @precondition El estado actual debe ser consistente; se recomienda evitar llamar durante un update de sistema
-   * si se requiere una captura atómica del estado lógico.
-   * @postcondition Devuelve una copia profunda (vía `structuredClone`) de los datos serializables de cada componente.
+   * @precondition El estado actual debe ser consistente; se recomienda evitar llamar durante un update de sistema.
+   * @postcondition Devuelve una copia de los datos serializables de cada componente.
    *
-   * @conceptualRisk [JSON_DETERMINISM][MEDIUM] La serialización no garantiza un orden determinista de las
-   * propiedades en todos los entornos, lo que puede afectar a la generación de hashes de estado.
-   * @conceptualRisk [GC_PRESSURE][MEDIUM] Las snapshots frecuentes, especialmente en mundos con alta densidad
-   * de entidades, aumentarán la presión sobre el recolector de basura.
+   * @conceptualRisk [JSON_DETERMINISM][MEDIUM] La serialización no garantiza el orden de las
+   * propiedades, lo que puede afectar a la generación de hashes de estado.
+   * @conceptualRisk [GC_PRESSURE][MEDIUM] Las snapshots frecuentes en juegos con miles de entidades
+   * generarán una presión significativa en el recolector de basura.
    * @returns El estado serializado del mundo.
    */
   public snapshot(): WorldSnapshot {
@@ -210,18 +209,18 @@ export class World {
   }
 
   /**
-   * Solicita la creación de una nueva entidad en el mundo, intentando reutilizar IDs del pool.
+   * Solicita la creación de una nueva entidad en el mundo, posiblemente reutilizando IDs.
    *
    * @remarks
-   * Utiliza un pool de IDs reciclados para mitigar la presión sobre el GC durante ciclos de vida frecuentes.
-   * Incrementa la versión del mundo para señalizar cambios estructurales a sistemas dependientes.
+   * Diseñado para reutilizar IDs de un pool interno para reducir la presión sobre el GC.
+   * Incrementa la versión del mundo para señalizar cambios estructurales.
    *
-   * Si se llama durante {@link World.update}, la creación efectiva en los mapas de componentes se difiere
-   * mediante un buffer de comandos hasta el final de la fase de simulación.
+   * Si se llama durante {@link World.update}, la creación efectiva se difiere al final del frame,
+   * aunque el ID se reserva y devuelve inmediatamente para su uso en la lógica actual.
    *
-   * @param id - ID opcional de la entidad. Reservado principalmente para restauraciones de estado o uso interno.
+   * @param id - ID opcional de la entidad. Reservado para uso interno o restauraciones.
    * @returns Un identificador de {@link Entity}.
-   * @postcondition La entidad se registra como activa o queda encolada para su activación.
+   * @postcondition La entidad se considera activa o programada para activación en el mundo.
    * @sideEffect Incrementa {@link World.version}.
    */
   public createEntity(id?: Entity): Entity {
@@ -387,19 +386,18 @@ export class World {
    * Proporciona acceso a un conjunto de entidades que poseen la firma de componentes indicada.
    *
    * @remarks
-   * Emplea un sistema de caché reactivo para reducir el coste de las consultas recurrentes. Si la firma
-   * ya tiene una consulta asociada, el resultado se sirve desde el caché. Los resultados se actualizan
-   * de forma incremental ante cambios estructurales (añadir/quitar componentes).
+   * Emplea un sistema de caché reactivo para minimizar el coste de las consultas. Si la consulta
+   * ya existe, el resultado se sirve desde el caché. Los resultados se mantienen actualizados
+   * ante cambios estructurales (añadir/quitar componentes).
    *
    * @param componentTypes - Lista de tipos que definen la firma de la consulta.
    * @returns Un array de solo lectura con los IDs de las entidades coincidentes.
    *
-   * @warning Evite crear queries dinámicas (e.g. usando `world.query(...types)`) dentro de bucles de
-   * actualización, ya que la generación de la clave de caché tiene un coste O(N log N) respecto al
-   * número de tipos.
+   * @warning Evite crear queries dinámicas (con arrays generados al vuelo) dentro de bucles calientes,
+   * ya que esto puede impactar el rendimiento de la caché de queries.
    *
-   * @precondition Se recomienda proporcionar al menos un tipo de componente para evitar consultas universales.
-   * @postcondition El array devuelto se mantiene ordenado por ID de entidad para favorecer la reproducibilidad.
+   * @precondition Se recomienda proporcionar al menos un tipo de componente.
+   * @postcondition El array devuelto suele estar ordenado por ID de entidad.
    */
   public query(...componentTypes: string[]): ReadonlyArray<Entity> {
     if (componentTypes.length === 0) return [];

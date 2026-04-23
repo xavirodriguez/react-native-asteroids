@@ -31,9 +31,9 @@ export type EffectDrawer<TContext> = (
  * @responsibility Abstraer el backend de renderizado (Canvas, Skia) de la lógica de simulación.
  *
  * @remarks
- * Los renderizadores están diseñados como consumidores de solo lectura del {@link World}.
- * El proceso de dibujo no debe mutar componentes de simulación. El sistema fomenta una arquitectura
- * basada en snapshots para facilitar la interpolación y el desacoplamiento entre la simulación y el renderizado.
+ * Los renderizadores son consumidores de solo lectura del {@link World}. No deben mutar componentes
+ * de simulación durante el proceso de dibujo. El renderizado está diseñado para basarse en snapshots,
+ * permitiendo la interpolación y el desacoplamiento del frame rate de simulación.
  */
 export interface Renderer<TContext = unknown> {
   /** Discriminador del tipo de renderer (e.g., 'canvas', 'skia'). */

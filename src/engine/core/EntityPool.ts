@@ -4,8 +4,8 @@ import { Entity } from "../types/EngineTypes";
  * Gestor de reciclaje de identificadores de entidades.
  *
  * @remarks
- * Proporciona una estrategia destinada a reducir las alocaciones durante la creación y destrucción de entidades.
- * Al reutilizar IDs numéricos, se busca mitigar la presión sobre el recolector de basura (GC) en rutas críticas.
+ * Proporciona una estrategia diseñada para reducir las alocaciones durante la creación y destrucción de entidades.
+ * Al reutilizar IDs numéricos, se busca minimizar la presión sobre el recolector de basura (GC).
  */
 export class EntityPool {
   /** @internal */

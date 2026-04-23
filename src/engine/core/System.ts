@@ -34,11 +34,10 @@ export interface SystemConfig {
  *
  * @remarks
  * Los sistemas encapsulan la lógica y el comportamiento del juego. Generalmente operan sobre
- * conjuntos de componentes filtrados mediante queries. Aunque se recomienda que la lógica sea
- * mayoritariamente dependiente del estado del mundo, los sistemas pueden mantener cachés internos
- * o estados de coordinación específicos si es necesario.
+ * conjuntos de componentes filtrados mediante queries, y aunque se recomienda que sean
+ * mayoritariamente stateless, pueden mantener cachés internos o estado de coordinación limitado.
  *
- * El orden de ejecución se gestiona mediante {@link SystemPhase} y prioridades dentro de cada fase.
+ * El orden de ejecución es crítico y se gestiona mediante {@link SystemPhase} y prioridades.
  *
  * @responsibility Encapsular la lógica de comportamiento del juego de forma desacoplada.
  * @responsibility Transformar el estado del mundo basándose en el avance del tiempo (ticks).
@@ -53,15 +52,11 @@ export abstract class System {
    *
    * @remarks
    * El sistema debe consultar entidades relevantes mediante {@link World.query} y aplicar
-   * transformaciones a sus componentes. Para favorecer la reproducibilidad y el soporte de rollback,
-   * se recomienda minimizar el uso de estado mutable interno no serializable dentro del sistema.
+   * transformaciones a sus componentes. Se recomienda no almacenar estado mutable dentro
+   * del sistema para facilitar el soporte de multijugador y rebobinado.
    *
-   * @warning Realizar mutaciones estructurales directas en el `world` (crear/eliminar entidades o componentes)
-   * durante la iteración de sistemas puede invalidar los iteradores de las queries activas. Use
-   * {@link World.getCommandBuffer} para diferir estas operaciones de forma segura.
-   *
-   * @precondition El `world` debe estar en un estado consistente al inicio del ciclo.
-   * @postcondition Las mutaciones realizadas deben respetar los contratos definidos por los componentes.
+   * @precondition El `world` debe estar en un estado consistente.
+   * @postcondition Las mutaciones realizadas deben mantener los invariantes de los componentes.
    * @sideEffect Puede crear/eliminar entidades, añadir/quitar componentes o emitir eventos.
    * @conceptualRisk [UNIT_CONSISTENCY][LOW] `deltaTime` se entrega en milisegundos. Algunos
    * cálculos físicos (como integraciones de velocidad) pueden esperar segundos, lo que

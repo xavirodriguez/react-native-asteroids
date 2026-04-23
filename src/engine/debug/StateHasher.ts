@@ -5,7 +5,7 @@ import { World } from "../core/World";
  * Fundamental para ayudar en la detección de desincronización (desync) en entornos multijugador o replay.
  *
  * @responsibility Serializar y hashear el estado serializable de todas las entidades y componentes activos.
- * @conceptualRisk [JSON_DETERMINISM] `JSON.stringify` no garantiza un orden determinista de las propiedades de los objetos.
+ * @conceptualRisk [JSON_DETERMINISM] `JSON.stringify` no garantiza el orden de las propiedades de los objetos.
  * Si dos clientes tienen los mismos datos pero las propiedades del objeto se insertaron en orden distinto,
  * los hashes diferirán (falso positivo de desync).
  * @conceptualRisk [FLOAT_PRECISION] Diferencias minúsculas en cálculos de punto flotante entre arquitecturas

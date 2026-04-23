@@ -14,14 +14,14 @@ type Mat3 = [number, number, number, number, number, number];
  * @responsibility Calcular coordenadas de mundo (worldX, worldY, worldRotation, worldScale)
  * a partir de coordenadas locales y la relación con el padre.
  * @responsibility Propagar cambios de transformación mediante un sistema de flags 'dirty'
- * para mejorar el rendimiento.
+ * para optimizar el rendimiento.
  * @queries Transform
  * @mutates Transform (worldX, worldY, worldRotation, worldScaleX, worldScaleY, dirty)
  * @executionOrder Fase: Simulation/Presentation. Debe ejecutarse tras los sistemas que mutan
  * la posición local y antes del renderizado.
  *
  * @remarks
- * Implementa una propagación top-down destinada a asegurar que los hijos se calculen
+ * Implementa una propagación top-down buscando que los hijos se calculen
  * después de sus padres. Utiliza matrices 3x3 para composición de transformaciones.
  *
  * @conceptualRisk [LAYOUT_CASCADE][MEDIUM] Una jerarquía muy profunda puede causar un
@@ -40,12 +40,10 @@ export class HierarchySystem extends System {
    * @param world - El mundo ECS.
    * @param _deltaTime - Tiempo transcurrido (ignorado).
    *
-   * @remarks
-   * El orden de ejecución recomendado debe ser posterior a los sistemas que mutan
-   * la posición local para evitar lag de un frame en la jerarquía visual.
-   *
-   * @postcondition Las entidades con `Transform` marcadas como `dirty` (o con padres `dirty`)
-   * tendrán sus coordenadas `world*` actualizadas en este frame.
+   * @precondition El orden de ejecución debe ser posterior a los sistemas que mutan
+   * la posición local.
+   * @postcondition Todas las entidades con `Transform` tienen sus coordenadas `world*`
+   * actualizadas si ellas o sus padres estaban marcados como `dirty`.
    * @sideEffect Resetea el flag `dirty` de los componentes `Transform`.
    */
   public update(world: World, _deltaTime: number): void {
