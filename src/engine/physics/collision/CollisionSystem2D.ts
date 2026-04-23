@@ -14,21 +14,22 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
  *
  * @responsibility Selección de fase ancha híbrida (Spatial Hash / Sweep and Prune).
  * @responsibility Detección de fase estrecha (AABB, Círculo, Polígono) y generación de manifolds.
- * @responsibility Proporcionar soporte experimental para Continuous Collision Detection (CCD).
+ * @responsibility Proporcionar soporte para Continuous Collision Detection (CCD) lineal.
  *
  * @queries Transform, Collider2D, CollisionEvents, ContinuousCollider, Velocity
  * @mutates {@link CollisionEventsComponent} - Limpia y repuebla los buffers de eventos por frame.
- * @mutates {@link TransformComponent} - Puede ajustar posiciones cuando CCD detecta impactos.
+ * @mutates {@link TransformComponent} - Puede ajustar posiciones cuando se detectan impactos vía CCD.
  * @emits Datos de manifold de colisión y eventos de ciclo de vida de Trigger (Enter, Stay, Exit).
  * @executionOrder Fase: {@link SystemPhase.Collision}.
  *
  * @remarks
- * Este sistema orquesta la detección de colisiones. Puede utilizar un Spatial Hash para optimizar
- * la búsqueda en mundos con alta densidad de entidades. Los eventos de colisión se almacenan en componentes
- * para ser consumidos por sistemas de GameRules (ej: DamageSystem).
+ * Este sistema orquesta la detección de colisiones. Emplea un Spatial Hash opcional o Sweep and Prune
+ * para optimizar la fase ancha. Los eventos de colisión se consolidan en componentes para su
+ * procesamiento posterior por otros sistemas.
  *
- * @conceptualRisk [MUTATION_SAFETY][HIGH] Los callbacks de colisión se ejecutan durante la
- * iteración. Modificar el World (añadir/quitar entidades) en estos callbacks es peligroso.
+ * @warning Modificar la estructura del World (añadir/quitar entidades o componentes) directamente
+ * dentro de los callbacks de colisión o trigger puede invalidar la iteración actual. Se recomienda
+ * utilizar el {@link WorldCommandBuffer}.
  * @conceptualRisk [SPATIAL_HASH_TUNING][MEDIUM] El tamaño de celda del hash debe estar
  * equilibrado con el tamaño promedio de los objetos para evitar saturación de celdas.
  */

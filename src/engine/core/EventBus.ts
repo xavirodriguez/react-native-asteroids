@@ -18,7 +18,7 @@ export type EventHandler<T = unknown> = (payload: T) => void;
  * @responsibility Aislar errores de listeners individuales mediante bloques try-catch.
  *
  * @conceptualRisk [ORDER][MEDIUM] El orden de ejecución de los handlers para un mismo evento
- * no está garantizado. No se debe depender del orden de registro.
+ * no es determinista y no se debe depender del orden de registro.
  * @conceptualRisk [RECURSION][LOW] No hay protección contra bucles infinitos de eventos
  * (ej: Evento A dispara Evento B, que dispara de nuevo Evento A).
  */
