@@ -169,6 +169,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     if (this._status === GameStatus.DESTROYED) {
       throw new Error("BaseGame: Cannot start() on a destroyed game.");
     }
+    if (this._status === GameStatus.RUNNING) {
+      return;
+    }
     this.gameLoop.start();
     this._status = GameStatus.RUNNING;
   }
@@ -178,6 +181,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * @postcondition El {@link GameLoop} cesa sus actividades de actualización.
    */
   public stop(): void {
+    if (
+      this._status === GameStatus.UNINITIALIZED ||
+      this._status === GameStatus.INITIALIZING ||
+      this._status === GameStatus.STOPPED
+    ) {
+      return;
+    }
     this.gameLoop.stop();
     if (this._status !== GameStatus.DESTROYED) {
       this._status = GameStatus.STOPPED;
@@ -241,7 +251,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * @sideEffect Actualiza la semilla global en {@link RandomService}.
    */
   public async restart(seed?: number): Promise<void> {
-    if (this._status === GameStatus.DESTROYED) return;
+    if (this._status === GameStatus.DESTROYED) {
+      throw new Error("BaseGame: Cannot restart() on a destroyed game.");
+    }
+    if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.INITIALIZING) {
+      throw new Error("BaseGame: Cannot restart() before init().");
+    }
 
     while (this._transitionLock) {
       await this._transitionLock;
