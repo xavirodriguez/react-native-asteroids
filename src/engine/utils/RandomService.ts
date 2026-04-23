@@ -8,7 +8,7 @@
  *
  * @remarks
  * Se recomienda utilizar `getGameplayRandom()` para lógica que afecte el estado del juego (IA, spawn, daño)
- * para favorecer la reproducibilidad y el soporte de replay. Para efectos puramente estéticos
+ * con la intención de favorecer la reproducibilidad y el soporte de replay. Para efectos puramente estéticos
  * (partículas, flashes), se sugiere el uso de `getRenderRandom()`.
  * @conceptualRisk [SEED_COLLISION] El uso de la misma semilla en múltiples instancias "named"
  * no coordinadas puede resultar en patrones de aleatoriedad idénticos.
@@ -46,7 +46,7 @@ export class RandomService {
   /**
    * Returns a named instance of the RandomService, creating it if it doesn't exist.
    *
-   * @throws {Error} Si se intenta acceder a "render" o "global" mientras lockGameplayContext es true.
+   * @remarks Se intenta lanzar un error si se accede a "render" o "global" mientras lockGameplayContext es true.
    */
   public static getInstance(name: RandomStream = "global", initialSeed: number = 12345): RandomService {
     if (this.lockGameplayContext && (name === "render" || name === "global")) {
@@ -146,7 +146,7 @@ export class RandomService {
 
   /**
    * Genera un número aleatorio de punto flotante en el rango [0, 1).
-   * Utiliza el algoritmo Mulberry32 buscando ofrecer un comportamiento reproducible en la misma plataforma.
+   * Utiliza el algoritmo Mulberry32 con la intención de ofrecer un comportamiento reproducible en la misma plataforma.
    *
    * @remarks
    * Cada llamada actualiza la semilla interna de la instancia.

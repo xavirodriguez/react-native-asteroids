@@ -118,7 +118,7 @@ export class UnifiedInputSystem extends System {
    * @param world - El mundo donde reside el componente de entrada.
    * @param _deltaTime - Tiempo transcurrido (en ms).
    *
-   * @precondition El `world` debe ser una instancia válida de World.
+   * @precondition Se espera que el `world` sea una instancia válida de World.
    * @postcondition El componente singleton {@link InputStateComponent} refleja las acciones
    * activas capturadas por el sistema.
    * @sideEffect Puede crear una nueva entidad si el singleton `InputState` no está presente.
@@ -178,7 +178,7 @@ export class UnifiedInputSystem extends System {
   /**
    * Limpia los listeners de eventos globales registrados en `window`.
    *
-   * @precondition Debe llamarse cuando el motor se destruye para evitar fugas de memoria.
+   * @precondition Se recomienda llamar a este método cuando el motor se destruye con la intención de mitigar el riesgo de fugas de memoria.
    */
   public cleanup(): void {
     if (typeof window === "undefined" || typeof window.removeEventListener !== "function") return;

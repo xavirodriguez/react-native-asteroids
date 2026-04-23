@@ -20,7 +20,7 @@ interface RegisteredSystem {
  * @responsibility Mantener recursos compartidos globales del juego.
  *
  * @remarks
- * El `World` actúa como el núcleo de la arquitectura ECS. Utiliza un pool de entidades para reducir
+ * El `World` actúa como el núcleo de la arquitectura ECS. Utiliza un pool de entidades diseñado para reducir
  * la presión sobre el GC y emplea queries reactivas cacheadas para optimizar las consultas de sistemas.
  *
  * Invariantes (Expectativas de Diseño):
@@ -81,8 +81,8 @@ export class World {
    * @warning La serialización se limita a propiedades que no sean funciones ni símbolos. Referencias a objetos complejos
    * (clases, mapas, sets) no se restaurarán fielmente si no son POJOs serializables.
    *
-   * @precondition El estado actual debe ser consistente; se recomienda evitar llamar durante un update de sistema
-   * si se requiere una captura atómica del estado lógico.
+   * @precondition Se espera que el estado actual sea consistente; se recomienda evitar llamar durante un update de sistema
+   * para favorecer una captura coherente del estado lógico.
    * @postcondition Devuelve una copia profunda (vía `structuredClone`) de los datos serializables de cada componente.
    *
    * @conceptualRisk [JSON_DETERMINISM][MEDIUM] La serialización no garantiza un orden determinista de las
@@ -145,7 +145,7 @@ export class World {
    *
    * @param state - El objeto de estado obtenido de {@link World.snapshot}.
    *
-   * @precondition El estado proporcionado debe ser una estructura válida y compatible con la versión del motor.
+   * @precondition Se espera que el estado proporcionado sea una estructura válida y compatible con la versión del motor.
    * @postcondition El mundo refleja el estado serializable contenido en la instantánea.
    * @postcondition {@link World.version} se sincroniza con el valor del estado restaurado.
    * @sideEffect Limpia todos los datos actuales del mundo antes de la restauración.
@@ -270,7 +270,7 @@ export class World {
    * @param component - La instancia del componente (POJO).
    * @returns El componente añadido.
    *
-   * @precondition La entidad debe ser válida en el contexto del mundo actual.
+   * @precondition Se espera que la entidad sea válida en el contexto del mundo actual.
    * @postcondition El componente es accesible a través de las APIs de consulta del mundo.
    * @postcondition Si el tipo es 'Transform', se intenta mantener la validez de la jerarquía.
    * @throws {Error} Si se intenta asignar una entidad como su propio padre en un Transform.
@@ -359,7 +359,7 @@ export class World {
    * @param entity - La entidad destino.
    * @param type - El tipo de componente a eliminar.
    *
-   * @precondition La entidad debe existir en el mundo.
+   * @precondition Se espera que la entidad exista en el mundo.
    * @postcondition La entidad ya no posee el componente especificado.
    * @postcondition Las queries que dependían de este componente ya no incluirán a la entidad.
    * @sideEffect Incrementa {@link World.version}.
@@ -514,7 +514,7 @@ export class World {
    * @param name - Identificador único del recurso.
    * @param resource - La instancia u objeto del recurso.
    *
-   * @precondition El nombre del recurso debe ser único para evitar sobrescritura accidental.
+   * @precondition Se recomienda que el nombre del recurso sea único para evitar sobrescritura accidental.
    * @postcondition El recurso es accesible mediante {@link World.getResource}.
    * @sideEffect Sobrescribe cualquier recurso previo con el mismo nombre.
    */
@@ -557,7 +557,7 @@ export class World {
    * @param system - Instancia del sistema que extiende {@link System}.
    * @param config - Configuración de fase y prioridad.
    *
-   * @precondition El sistema debe ser una instancia válida de {@link System}.
+   * @precondition Se espera que el sistema sea una instancia válida de {@link System}.
    * @postcondition El sistema se añade a la cola de ejecución en la fase correspondiente.
    * @sideEffect Activa {@link World.systemsNeedSorting} para la siguiente actualización.
    */

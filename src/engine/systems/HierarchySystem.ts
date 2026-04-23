@@ -44,8 +44,8 @@ export class HierarchySystem extends System {
    * El orden de ejecución recomendado debe ser posterior a los sistemas que mutan
    * la posición local para evitar lag de un frame en la jerarquía visual.
    *
-   * @postcondition Las entidades con `Transform` marcadas como `dirty` (o con padres `dirty`)
-   * tendrán sus coordenadas `world*` actualizadas en este frame.
+ * @postcondition Se intenta que las entidades con `Transform` marcadas como `dirty` (o con padres `dirty`)
+ * tengan sus coordenadas `world*` actualizadas en este frame.
    * @sideEffect Resetea el flag `dirty` de los componentes `Transform`.
    */
   public update(world: World, _deltaTime: number): void {

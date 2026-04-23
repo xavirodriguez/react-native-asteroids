@@ -11,18 +11,18 @@ export interface GameLoopConfig {
 
 /**
  * Motor de tiempo central que orquesta el ciclo de vida del juego.
- * Implementa un Fixed Timestep con interpolación diseñado para mejorar la reproducibilidad y la fluidez.
+ * Implementa un Fixed Timestep con interpolación diseñado para favorecer la reproducibilidad y la fluidez.
  *
  * @responsibility Apuntar a una tasa de actualización constante (60Hz) para la simulación física.
  * @responsibility Calcular el factor de interpolación (alpha) para el renderizado visual.
  * @responsibility Notificar a los suscriptores en las fases de Input, Update y Render.
  *
  * @remarks
- * El loop desacopla la lógica de simulación de la tasa de refresco del monitor, buscando que
- * variaciones en el rendimiento del renderizado minimicen su impacto en la integridad de la física.
+ * El loop desacopla la lógica de simulación de la tasa de refresco del monitor, con la intención de que
+ * variaciones en el rendimiento del renderizado reduzcan su impacto en la integridad de la física.
  * Bajo carga extrema, el sistema puede limitar las actualizaciones para preservar la estabilidad del hilo principal.
  *
- * @remarks La fase de simulación está diseñada para recibir incrementos constantes de 16.67ms (1/60s) en condiciones normales.
+ * @remarks La fase de simulación está diseñada para recibir incrementos constantes de 16.67ms (1/60s) bajo condiciones operativas normales.
  *
  * @conceptualRisk [PERFORMANCE][HIGH] El loop de `GameLoop` puede disparar el "Spiral of Death"
  * si la simulación es consistentemente más lenta que el tiempo real, a pesar del límite `maxDeltaMs`.
@@ -68,7 +68,7 @@ export class GameLoop {
    * Suscribe un callback para la simulación física (Fixed Update).
    *
    * @remarks
-   * Esta fase está orientada a la reproducibilidad de la simulación. El sistema está diseñado para que
+   * Esta fase está orientada a la reproducibilidad de la simulación. El sistema está diseñado con la intención de que
    * el callback reciba un incremento de tiempo constante (16.67ms). Puede ejecutarse múltiples veces
    * en un solo frame del navegador para compensar el tiempo transcurrido, hasta un límite máximo
    * definido en la configuración para evitar bloqueos.

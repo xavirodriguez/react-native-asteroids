@@ -73,7 +73,7 @@ export class AsteroidsGame
    * Performs local player movement prediction using the shared simulation.
    *
    * @remarks
-   * Aims to maintain visual consistency by preemptively executing simulation logic on the client.
+   * Aims to support visual consistency by preemptively executing simulation logic on the client.
    */
   public predictLocalPlayer(input: InputFrame, deltaTime: number) {
     this.inputHistory.push(input);

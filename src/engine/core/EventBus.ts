@@ -18,7 +18,7 @@ export type EventHandler<T = unknown> = (payload: T) => void;
  * @responsibility Aislar errores de listeners individuales mediante bloques try-catch.
  *
  * @conceptualRisk [ORDER][MEDIUM] El orden de ejecución de los handlers para un mismo evento
- * no es determinista y no se debe depender del orden de registro.
+ * no está garantizado y no se debe depender del orden de registro.
  * @conceptualRisk [RECURSION][LOW] No hay protección contra bucles infinitos de eventos
  * (ej: Evento A dispara Evento B, que dispara de nuevo Evento A).
  */
@@ -46,7 +46,7 @@ export class EventBus {
    * @param event - Nombre del evento.
    * @param handler - Función callback.
    *
-   * @postcondition El handler se eliminará automáticamente tras la primera ejecución exitosa.
+   * @postcondition Se intenta eliminar el handler automáticamente tras la primera ejecución exitosa.
    */
   public once<T = unknown>(event: string, handler: EventHandler<T>): void {
     const onceHandler: EventHandler<T> = (payload) => {

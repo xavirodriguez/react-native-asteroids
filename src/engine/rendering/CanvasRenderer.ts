@@ -18,7 +18,7 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  * @remarks
  * Es el renderizador estándar para la plataforma Web y entornos de desarrollo rápido.
  * Utiliza una estrategia destinada a mitigar las alocaciones por frame mediante el reciclaje
- * de objetos snapshot y comandos, buscando reducir la presión sobre el recolector de basura (GC).
+ * de objetos snapshot y comandos, con la intención de reducir la presión sobre el recolector de basura (GC).
  *
  * @conceptualRisk [GC_PRESSURE][LOW] Aunque usa pools, el crecimiento de `entities` en el
  * snapshot más allá de `MAX_ENTITIES` (2000) causará pérdida de dibujo.
@@ -305,7 +305,7 @@ export class CanvasRenderer implements Renderer {
         snap.visible = el.visible;
         snap.zIndex = el.zIndex;
 
-        // Clone UI styles/data to prevent reference leaks and ensure pure rendering
+        // Clone UI styles/data with the intention to prevent reference leaks and favor clean rendering
         const style = world.getComponent<UIStyleComponent>(entity, "UIStyle");
         if (style) {
             snap.style = { ...style };
@@ -586,7 +586,7 @@ export class CanvasRenderer implements Renderer {
    * @param world - El mundo ECS fuente de datos.
    * @param alpha - Factor de interpolación [0, 1] para suavizado de movimiento.
    *
-   * @precondition El contexto `ctx` debe haber sido establecido mediante {@link CanvasRenderer.setContext}.
+   * @precondition Se espera que el contexto `ctx` haya sido establecido mediante {@link CanvasRenderer.setContext}.
    * @postcondition Se genera la imagen del frame actual en el Canvas con interpolación aplicada.
    */
   public render(world: World, alpha: number = 1): void {

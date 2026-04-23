@@ -135,8 +135,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
 
     // 4. Update full world state for clients (for rollback)
     // Only send full snapshot every 3 ticks to reduce bandwidth,
-    // but in a strict rollback system we might need it every tick if we don't have delta-sync.
-    // For now, we update it every tick as required for the current implementation.
+    // but in a lockstep-like or rollback system we might need it every tick if we don't have delta-sync.
+    // For now, we update it every tick as intended for the current implementation.
     this.state.fullWorldState = JSON.stringify(this.world.snapshot());
 
     // 5. Record for Replay

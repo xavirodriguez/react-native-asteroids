@@ -18,8 +18,8 @@ export interface CameraConfig {
  * @responsibility Manejar efectos de vibración (screen shake) con decaimiento controlado.
  *
  * @remarks
- * Utiliza interpolación exponencial para el suavizado, diseñada para ofrecer una respuesta
- * fluida en diversas tasas de refresco (30, 60, 120+ FPS).
+ * Utiliza interpolación exponencial para el suavizado, con la intención de ofrecer una respuesta
+ * fluida bajo diversas tasas de refresco (30, 60, 120+ FPS).
  * Las coordenadas de la cámara representan la esquina superior izquierda de la vista en el espacio del mundo.
  */
 export class Camera2D extends System {

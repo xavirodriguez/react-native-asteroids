@@ -5,7 +5,7 @@ import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, C
 /**
  * Built-in 2D Physics System for rigid body dynamics.
  *
- * @responsibility Rigid body dynamics integration using linear Euler and impulse-based collision response.
+ * @responsibility Rigid body dynamics integration designed around linear Euler and impulse-based collision response.
  *
  * @remarks
  * This system manages rigid body dynamics. It uses semi-implicit linear Euler integration,
@@ -35,6 +35,8 @@ export class PhysicsSystem2D extends System {
    *
    * @param world - The ECS world instance.
    * @param deltaTime - Time elapsed since last update in milliseconds.
+   *
+   * @precondition Se espera que el world esté en un estado consistente.
    *
    * @remarks
    * At the end of each entity update, it attempts to reset the accumulated forces
