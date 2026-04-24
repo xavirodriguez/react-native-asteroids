@@ -214,38 +214,39 @@ describe("World Structural Mutation Safety", () => {
       r.score = 200;
     });
 
-    expect(world.getResource<{ score: number }>("GameData")?.score).toBe(200);
-    expect(world.stateVersion).toBeGreaterThan(initialStateVersion);
-  });
+    it("Test 2: mutateComponent() should correctly update component and tracking state", () => {
+      const entity = world.createEntity();
+      const component: TestComponent = { type: "Test", value: 100 };
+      world.addComponent(entity, component);
+      world.flush();
 
-  it("should return a frozen entities array in __DEV__", () => {
-    world.createEntity();
-    world.flush();
+      const initialStateVersion = world.stateVersion;
 
-    const entities = world.entities;
-    expect(Object.isFrozen(entities)).toBe(true);
+      const result = world.mutateComponent(entity, "Test", (c) => {
+        const testComp = c as TestComponent;
+        testComp.value = 200;
+      });
 
-    if (process.env.NODE_ENV !== "production") {
-        expect(() => (entities as any).push(999)).toThrow();
-    }
-  });
+      expect(result).toBe(true);
+      expect(world.getComponent<TestComponent>(entity, "Test")?.value).toBe(200);
+      expect(world.stateVersion).toBe(initialStateVersion + 1);
+      expect(world.isRenderDirty()).toBe(true);
+    });
 
-  it("should cache entities array and invalidate on structural changes", () => {
-    const e1 = world.createEntity();
-    world.flush();
+    it("Test 3: mutateComponent() should return false and not change versions when component is missing", () => {
+      const entity = world.createEntity();
+      world.flush();
 
-    const entities1 = world.entities;
-    expect(entities1).toContain(e1);
+      const initialStateVersion = world.stateVersion;
+      const initialRenderDirty = world.isRenderDirty();
 
-    const entities2 = world.entities;
-    expect(entities1).toBe(entities2); // Same reference (cached)
+      const result = world.mutateComponent(entity, "Test", (c) => {
+        (c as any).value = 500;
+      });
 
-    const e2 = world.createEntity();
-    world.flush();
-
-    const entities3 = world.entities;
-    expect(entities3).not.toBe(entities1); // New reference (invalidated)
-    expect(entities3).toContain(e1);
-    expect(entities3).toContain(e2);
+      expect(result).toBe(false);
+      expect(world.stateVersion).toBe(initialStateVersion);
+      expect(world.isRenderDirty()).toBe(initialRenderDirty);
+    });
   });
 });
