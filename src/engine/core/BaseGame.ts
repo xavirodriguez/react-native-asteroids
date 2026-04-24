@@ -390,12 +390,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   public setInput(input: Record<string, unknown>): void {
+    if (this._status === GameStatus.DESTROYED) return;
     Object.entries(input).forEach(([action, pressed]) => {
       this.unifiedInput.setOverride(action, !!pressed);
     });
   }
 
   public subscribe(listener: UpdateListener<BaseGame<TState, TInput>>): () => void {
+    if (this._status === GameStatus.DESTROYED) return () => {};
     this._listeners.add(listener);
     return () => this._listeners.delete(listener);
   }
