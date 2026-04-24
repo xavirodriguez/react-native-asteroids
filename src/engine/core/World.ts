@@ -1,5 +1,74 @@
-import { Component, Entity, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../types/EngineTypes";
+import {
+  Component,
+  Entity,
+  WorldSnapshot,
+  ComponentDataSnapshot,
+  SerializedComponent,
+  TransformComponent,
+  ManualMovementComponent,
+  PreviousTransformComponent,
+  VelocityComponent,
+  FrictionComponent,
+  BoundaryComponent,
+  TagComponent,
+  TTLComponent,
+  Collider2DComponent,
+  CollisionEventsComponent,
+  ContinuousColliderComponent,
+  PhysicsBody2DComponent,
+  RenderComponent,
+  HealthComponent,
+  ReclaimableComponent,
+  InputStateComponent,
+  EventBusComponent,
+  AnimatorComponent,
+  StateMachineComponent,
+  ParticleEmitterComponent,
+  TilemapComponent,
+  Camera2DComponent,
+  ScreenShakeComponent,
+  VisualOffsetComponent,
+  TrailComponent,
+  Star
+} from "../types/EngineTypes";
 import { System, SystemConfig, SystemPhase } from "./System";
+
+/** Union of all core components for type inference. */
+type AnyCoreComponent =
+  | TransformComponent
+  | ManualMovementComponent
+  | PreviousTransformComponent
+  | VelocityComponent
+  | FrictionComponent
+  | BoundaryComponent
+  | TagComponent
+  | TTLComponent
+  | Collider2DComponent
+  | CollisionEventsComponent
+  | ContinuousColliderComponent
+  | PhysicsBody2DComponent
+  | RenderComponent
+  | HealthComponent
+  | ReclaimableComponent
+  | InputStateComponent
+  | EventBusComponent
+  | AnimatorComponent
+  | StateMachineComponent
+  | ParticleEmitterComponent
+  | TilemapComponent
+  | Camera2DComponent
+  | ScreenShakeComponent
+  | VisualOffsetComponent
+  | TrailComponent
+  | Star;
+
+/** Discriminant type for core components. */
+type AnyCoreComponentType = AnyCoreComponent["type"];
+
+/**
+ * Helper to extract the concrete component type from the union based on its 'type' discriminator.
+ */
+type ComponentOf<TType extends string> = Extract<AnyCoreComponent, { type: TType }>;
 import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
@@ -391,44 +460,65 @@ export class World {
   }
 
   /**
-   * Recupera un componente de una entidad por su tipo.
+   * Retrieves a component from an entity by its type.
    *
    * @remarks
-   * El componente devuelto debe tratarse como de solo lectura. Para modificar
-   * los datos de un componente, utilice {@link World.mutateComponent} con el fin de
-   * garantizar que el sistema de versionado y reactividad del mundo se notifique correctamente.
+   * Returns the live mutable component reference stored in the World.
+   * Direct mutations bypass state tracking.
+   * Use {@link World.mutateComponent} for controlled mutations that update versioning.
    *
-   * @param entity - La entidad a consultar.
-   * @param type - El nombre discriminador del componente.
-   * @returns La instancia del componente (Readonly) o `undefined` si no existe.
+   * @param entity - The entity to query.
+   * @param type - The discriminator name of the component.
+   * @returns The component instance or `undefined` if it doesn't exist.
    * @queries componentMaps
-   * @precondition La entidad debe ser un ID válido.
+   * @precondition The entity must be a valid ID.
    */
-  getComponent<T extends Component>(entity: Entity, type: string): Readonly<T> | undefined {
-    return this.componentMaps.get(type)?.get(entity) as T;
+  public getComponent<TType extends AnyCoreComponentType>(entity: Entity, type: TType): ComponentOf<TType> | undefined;
+  public getComponent<T extends Component>(entity: Entity, type: string): T | undefined;
+  public getComponent(entity: Entity, type: string): Component | undefined {
+    return this.componentMaps.get(type)?.get(entity);
   }
 
   /**
-   * Ejecuta una mutación sobre un componente de forma inmediata.
+   * Performs an immediate mutation on a component.
    *
    * @remarks
-   * Es la vía recomendada para modificar datos de componentes. Notifica automáticamente
-   * los cambios de estado incrementando {@link World.stateVersion}.
-   * Si se llama durante un update de sistema, considere si la mutación debe ser
-   * inmediata o diferida mediante el CommandBuffer.
+   * This is the official and recommended way for controlled mutations.
+   * It automatically notifies state changes by incrementing {@link World.stateVersion}
+   * and marking the world as dirty for rendering ({@link World.isRenderDirty}).
    *
-   * @param entity - La entidad que posee el componente.
-   * @param type - El tipo de componente a mutar.
-   * @param mutator - Callback que recibe la instancia del componente para su modificación.
+   * If called during a system update, consider whether the mutation should be
+   * immediate or deferred via the {@link WorldCommandBuffer}.
    *
-   * @postcondition Se incrementa {@link World.stateVersion} y se marca el mundo como sucio para el render.
+   * @param entity - The entity that owns the component.
+   * @param type - The type discriminator of the component.
+   * @param updater - Callback that receives the component instance for modification.
+   * @returns `true` if the component exists and was mutated, `false` otherwise.
+   *
+   * @postcondition Increments {@link World.stateVersion} and sets `_renderDirty = true`.
    */
-  mutateComponent<T extends Component>(entity: Entity, type: string, mutator: (component: T) => void): void {
-    const component = this.componentMaps.get(type)?.get(entity) as T;
-    if (component) {
-      mutator(component);
-      this.notifyStateChange();
-    }
+  public mutateComponent<TType extends AnyCoreComponentType>(
+    entity: Entity,
+    type: TType,
+    updater: (component: ComponentOf<TType>) => void
+  ): boolean;
+  public mutateComponent<T extends Component>(
+    entity: Entity,
+    type: string,
+    updater: (component: T) => void
+  ): boolean;
+  public mutateComponent(
+    entity: Entity,
+    type: string,
+    updater: (component: Component) => void
+  ): boolean {
+    const component = this.componentMaps.get(type)?.get(entity);
+    if (!component) return false;
+
+    updater(component);
+    this._stateVersion++;
+    this._renderDirty = true;
+    return true;
   }
 
   /**
@@ -824,36 +914,42 @@ export class World {
   }
 
   /**
-   * Intenta localizar el primer componente de un tipo dado, tratándolo como un Singleton.
+   * Tries to locate the first component of a given type, treating it as a Singleton.
    *
    * @remarks
-   * Conveniente para componentes de instancia única (ej: estado global, configuración).
-   * El componente devuelto debe tratarse como de solo lectura. Para mutaciones,
-   * utilice {@link World.mutateSingleton}.
+   * Convenient for single-instance components (e.g., global state, config).
+   * Use {@link World.mutateSingleton} for controlled mutations.
    *
-   * @param type - El tipo de componente.
-   * @returns La instancia encontrada (Readonly) o `undefined`.
+   * @param type - The component type.
+   * @returns The found instance or `undefined`.
    */
-  getSingleton<T extends Component>(type: string): Readonly<T> | undefined {
+  public getSingleton<TType extends AnyCoreComponentType>(type: TType): ComponentOf<TType> | undefined;
+  public getSingleton<T extends Component>(type: string): T | undefined;
+  public getSingleton(type: string): Component | undefined {
     const [entity] = this.query(type);
     if (entity === undefined) return undefined;
-    return this.getComponent<T>(entity, type);
+    return this.getComponent(entity, type);
   }
 
   /**
-   * Ejecuta una mutación sobre un componente Singleton de forma inmediata.
+   * Performs an immediate mutation on a Singleton component.
    *
    * @remarks
-   * Wrapper de conveniencia sobre {@link World.mutateComponent} para tipos
-   * que se sabe que son únicos en el mundo.
+   * Convenience wrapper over {@link World.mutateComponent} for types
+   * known to be unique in the world.
    *
-   * @param type - El tipo de componente singleton.
-   * @param mutator - Callback de mutación.
+   * @param type - The singleton component type.
+   * @param mutator - Mutation callback.
    */
-  mutateSingleton<T extends Component>(type: string, mutator: (component: T) => void): void {
+  public mutateSingleton<TType extends AnyCoreComponentType>(
+    type: TType,
+    mutator: (component: ComponentOf<TType>) => void
+  ): void;
+  public mutateSingleton<T extends Component>(type: string, mutator: (component: T) => void): void;
+  public mutateSingleton(type: string, mutator: (component: Component) => void): void {
     const [entity] = this.query(type);
     if (entity !== undefined) {
-      this.mutateComponent<T>(entity, type, mutator);
+      this.mutateComponent(entity, type, mutator);
     }
   }
 
