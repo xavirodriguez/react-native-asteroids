@@ -1,8 +1,8 @@
-import { World } from "../../engine/core/World";
+import { World } from "../../engine";
 import { PONG_CONFIG, PongState } from "./types";
-import { Component, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, BoundaryComponent, TagComponent } from "../../engine/types/EngineTypes";
-import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
-import { RandomService } from "../../engine/utils/RandomService";
+import { Component, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, BoundaryComponent, TagComponent } from "../../engine/EngineTypes";
+import { CollisionLayers } from "../../engine/physics2d/CollisionLayers";
+import { RandomService } from "../../engine/RandomService";
 
 export interface BallComponent extends Component {
   type: "Ball";

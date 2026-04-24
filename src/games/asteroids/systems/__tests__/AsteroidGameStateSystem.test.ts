@@ -1,7 +1,7 @@
-import { World } from "../../../../engine/core/World";
+import { World } from "../../../../engine/World";
 import { AsteroidGameStateSystem } from "../AsteroidGameStateSystem";
 import { createGameState, createAsteroid, createShip } from "../../EntityFactory";
-import { HealthComponent } from "../../../../engine/types/EngineTypes";
+import { HealthComponent } from "../../../../engine/EngineTypes";
 import { type GameStateComponent } from "../../types/AsteroidTypes";
 
 describe("AsteroidGameStateSystem", () => {

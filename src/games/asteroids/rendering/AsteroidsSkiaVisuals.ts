@@ -1,7 +1,7 @@
-import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { TransformComponent, HealthComponent, TTLComponent, Star } from "../../../engine/types/EngineTypes";
+import { ShapeDrawer, EffectDrawer } from "../../../engine/presentation";
+import { TransformComponent, HealthComponent, TTLComponent, Star } from "../../../engine/EngineTypes";
 import { Platform } from "react-native";
-import { RandomService } from "../../../engine/utils/RandomService";
+import { RandomService } from "../../../engine/RandomService";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 import type { SkCanvas } from "@shopify/react-native-skia";
 

@@ -1,4 +1,4 @@
-import { World } from "../../../../engine/core/World";
+import { World } from "../../../../engine/World";
 import { SpaceInvadersGameStateSystem } from "../SpaceInvadersGameStateSystem";
 import { createGameState } from "../../EntityFactory";
 import { GameStateComponent } from "../../types/SpaceInvadersTypes";

@@ -1,10 +1,10 @@
-import { World } from "../../engine/core/World";
-import { Entity } from "../../engine/types/EngineTypes";
+import { World } from "../../engine";
+import { Entity } from "../../engine/EngineTypes";
 import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
-import { createEmitter } from "../../engine/systems/ParticleSystem";
-import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
-import { Collider2DComponent, BoundaryComponent } from "../../engine/core/CoreComponents";
+import { createEmitter } from "../../engine/ParticleSystem";
+import { CollisionLayers } from "../../engine/physics2d/CollisionLayers";
+import { Collider2DComponent, BoundaryComponent } from "../../engine";
 
 /**
  * Creates the player entity.

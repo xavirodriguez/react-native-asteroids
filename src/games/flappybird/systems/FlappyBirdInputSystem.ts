@@ -1,11 +1,11 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { VelocityComponent, InputStateComponent } from "../../../engine/types/EngineTypes";
+import { System } from "../../../engine/System";
+import { World } from "../../../engine";
+import { VelocityComponent, InputStateComponent } from "../../../engine/EngineTypes";
 import { FlappyBirdInputComponent, BirdComponent, FLAPPY_CONFIG } from "../types/FlappyBirdTypes";
-import { Juice } from "../../../engine/utils/Juice";
+import { Juice } from "../../../engine/Juice";
 import { hapticShoot } from "../../../utils/haptics";
-import { InputBufferSystem } from "../../../engine/systems/InputBufferSystem";
-import { InputUtils } from "../../../engine/utils/ComponentUtils";
+import { InputBufferSystem } from "../../../engine/InputBufferSystem";
+import { InputUtils } from "../../../engine/ComponentUtils";
 
 /**
  * System that handles player input and bird flap mechanics.

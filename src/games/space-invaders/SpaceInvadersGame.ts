@@ -1,11 +1,11 @@
-import { World } from "../../engine/core/World";
-import { GameLoop } from "../../engine/core/GameLoop";
-import { BaseGame } from "../../engine/core/BaseGame";
+import { World } from "../../engine";
+import { GameLoop } from "../../engine/app";
+import { BaseGame } from "../../engine/app";
 import { GameStateComponent, InputState, GAME_CONFIG, INITIAL_GAME_STATE } from "./types/SpaceInvadersTypes";
 import { ISpaceInvadersGame } from "./types/GameInterfaces";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
 import { SpaceInvadersGameScene } from "./scenes/SpaceInvadersGameScene";
-import { Renderer } from "../../engine/rendering/Renderer";
+import { Renderer } from "../../engine/presentation";
 import {
   drawSpaceInvadersPlayer,
   drawSpaceInvadersInvader,
@@ -96,9 +96,9 @@ export class SpaceInvadersGame
       Object.values(state.players).forEach((player: unknown) => {
         const p = world.createEntity();
         const playerState = player as { x: number, y: number, alive: boolean };
-        world.addComponent(p, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-        world.addComponent(p, { type: "Render", shape: "player_ship", size: 20, color: playerState.alive ? "green" : "red", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
-        world.addComponent(p, { type: "Player" } as import("../../engine/types/EngineTypes").Component);
+        world.addComponent(p, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/EngineTypes").TransformComponent);
+        world.addComponent(p, { type: "Render", shape: "player_ship", size: 20, color: playerState.alive ? "green" : "red", rotation: 0 } as import("../../engine/EngineTypes").RenderComponent);
+        world.addComponent(p, { type: "Player" } as import("../../engine/EngineTypes").Component);
       });
     }
 
@@ -107,8 +107,8 @@ export class SpaceInvadersGame
         const invaderState = invader as { x: number, y: number, alive: boolean };
         if (!invaderState.alive) return;
         const i = world.createEntity();
-        world.addComponent(i, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-        world.addComponent(i, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+        world.addComponent(i, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/EngineTypes").TransformComponent);
+        world.addComponent(i, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 } as import("../../engine/EngineTypes").RenderComponent);
         world.addComponent(i, { type: "Invader", row: 0, col: 0, points: 10 } as import("./types/SpaceInvadersTypes").InvaderComponent);
       });
     }

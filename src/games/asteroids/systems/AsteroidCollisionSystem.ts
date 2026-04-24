@@ -1,5 +1,5 @@
-import { World } from "../../../engine/core/World";
-import { System } from "../../../engine/core/System";
+import { World } from "../../../engine";
+import { System } from "../../../engine/System";
 import {
   type AsteroidComponent,
   type HealthComponent,
@@ -7,15 +7,15 @@ import {
   TransformComponent,
   RenderComponent,
   CollisionEventsComponent,
-} from "../../../engine/types/EngineTypes";
+} from "../../../engine/EngineTypes";
 
 import { createAsteroid, createParticle } from "../EntityFactory";
 import { type GameStateComponent, GAME_CONFIG } from "../types/AsteroidTypes";
-import { ScreenShakeComponent } from "../../../engine/types/EngineTypes";
+import { ScreenShakeComponent } from "../../../engine/EngineTypes";
 import { hapticDamage, hapticDeath } from "../../../utils/haptics";
 import { ParticlePool } from "../EntityPool";
-import { RandomService } from "../../../engine/utils/RandomService";
-import { EventBus } from "../../../engine/core/EventBus";
+import { RandomService } from "../../../engine/RandomService";
+import { EventBus } from "../../../engine/EventBus";
 
 const ASTEROID_SPLIT_CONFIG: Record<
   AsteroidComponent["size"],

@@ -1,6 +1,6 @@
-import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { TTLComponent, HealthComponent, VelocityComponent, TrailComponent } from "../../../engine/types/EngineTypes";
-import { RandomService } from "../../../engine/utils/RandomService";
+import { ShapeDrawer, EffectDrawer } from "../../../engine/presentation";
+import { TTLComponent, HealthComponent, VelocityComponent, TrailComponent } from "../../../engine/EngineTypes";
+import { RandomService } from "../../../engine/RandomService";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 
 export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, _elapsedTime, render, world) => {

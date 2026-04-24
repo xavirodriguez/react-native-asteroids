@@ -1,6 +1,6 @@
-import { IGame } from "../../../engine/core/IGame";
+import { IGame } from "../../../engine/IGame";
 import { FlappyBirdState, FlappyBirdInput } from "./FlappyBirdTypes";
-import { Renderer } from "../../../engine/rendering/Renderer";
+import { Renderer } from "../../../engine/presentation";
 
 /**
  * Public interface for the Flappy Bird game controller.

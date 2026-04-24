@@ -1,6 +1,6 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { HealthComponent, RenderComponent } from "../../../engine/types/EngineTypes";
+import { System } from "../../../engine/System";
+import { World } from "../../../engine";
+import { HealthComponent, RenderComponent } from "../../../engine/EngineTypes";
 
 /**
  * System that handles specific render updates for Space Invaders.

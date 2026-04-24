@@ -1,10 +1,10 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent, RenderComponent, Component, Collider2DComponent } from "../../../engine/types/EngineTypes";
+import { System } from "../../../engine/System";
+import { World } from "../../../engine";
+import { TransformComponent, RenderComponent, Component, Collider2DComponent } from "../../../engine/EngineTypes";
 import { GameStateComponent, GAME_CONFIG } from "../types/SpaceInvadersTypes";
-import { createEmitter } from "../../../engine/systems/ParticleSystem";
-import { CollisionLayers } from "../../../engine/physics/collision/CollisionLayers";
-import { Juice } from "../../../engine/utils/Juice";
+import { createEmitter } from "../../../engine/ParticleSystem";
+import { CollisionLayers } from "../../../engine/physics2d/CollisionLayers";
+import { Juice } from "../../../engine/Juice";
 
 export interface BossComponent extends Component {
   type: "Boss";
@@ -95,7 +95,7 @@ export class BossSystem extends System {
     });
     Juice.shake(world, 10, 1000);
     gameState.score += 5000;
-    const eventBus = world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
+    const eventBus = world.getResource<import("../../../engine/EventBus").EventBus>("EventBus");
     if (eventBus) eventBus.emit("si:boss_defeated");
     world.removeEntity(entity);
   }

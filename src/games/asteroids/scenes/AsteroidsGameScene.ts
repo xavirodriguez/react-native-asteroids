@@ -1,13 +1,13 @@
-import { Scene } from "../../../engine/scenes/Scene";
-import { World } from "../../../engine/core/World";
-import { MovementSystem } from "../../../engine/systems/MovementSystem";
-import { BoundarySystem } from "../../../engine/systems/BoundarySystem";
-import { FrictionSystem } from "../../../engine/systems/FrictionSystem";
-import { ScreenShakeSystem } from "../../../engine/systems/ScreenShakeSystem";
-import { TTLSystem } from "../../../engine/systems/TTLSystem";
+import { Scene } from "../../../engine/app";
+import { World } from "../../../engine";
+import { MovementSystem } from "../../../engine/physics2d";
+import { BoundarySystem } from "../../../engine/physics2d";
+import { FrictionSystem } from "../../../engine/physics2d";
+import { ScreenShakeSystem } from "../../../engine/presentation";
+import { TTLSystem } from "../../../engine/gameplay";
 import { AsteroidCollisionSystem } from "../systems/AsteroidCollisionSystem";
 import { AsteroidInputSystem } from "../systems/AsteroidInputSystem";
-import { CollisionSystem2D } from "../../../engine/physics/collision/CollisionSystem2D";
+import { CollisionSystem2D } from "../../../engine/physics2d/CollisionSystem2D";
 import { UfoSystem } from "../systems/UfoSystem";
 import { AsteroidRenderSystem } from "../systems/AsteroidRenderSystem";
 import { IGameStateSystem } from "../types/GameInterfaces";
@@ -15,7 +15,7 @@ import { createShip, spawnAsteroidWave, createGameState } from "../EntityFactory
 import { GAME_CONFIG } from "../types/AsteroidTypes";
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { IAsteroidsGame } from "../types/GameInterfaces";
-import { RandomService } from "../../../engine/utils/RandomService";
+import { RandomService } from "../../../engine/RandomService";
 
 export class AsteroidsGameScene extends Scene {
   private game: IAsteroidsGame;
@@ -65,7 +65,7 @@ export class AsteroidsGameScene extends Scene {
     const gameplayRandom = RandomService.getInstance("gameplay");
     gameplayRandom.setSeed(this.game.getSeed());
 
-    const eventBus = this.world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
+    const eventBus = this.world.getResource<import("../../../engine/EventBus").EventBus>("EventBus");
     if (eventBus) {
         eventBus.clear();
     }

@@ -1,7 +1,7 @@
-import { World } from "../../../../engine/core/World";
+import { World } from "../../../../engine/World";
 import { AIPongController } from "../AIPongController";
 import { PongEntityFactory } from "../../EntityFactory";
-import { TransformComponent } from "../../../../engine/types/EngineTypes";
+import { TransformComponent } from "../../../../engine/EngineTypes";
 
 describe("AIPongController", () => {
   let world: World;
@@ -18,7 +18,7 @@ describe("AIPongController", () => {
   it("should signal move up when ball is above paddle", () => {
     const ball = world.query("Ball", "Transform")[0];
     const paddle = world.query("Paddle", "Transform").find(e =>
-        world.getComponent<import("../../../../engine/types/EngineTypes").TagComponent>(e, "Tag")!.tags.includes("right")
+        world.getComponent<import("../../../../engine/EngineTypes").TagComponent>(e, "Tag")!.tags.includes("right")
     )!;
 
     const ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;
@@ -36,7 +36,7 @@ describe("AIPongController", () => {
   it("should signal move down when ball is below paddle", () => {
     const ball = world.query("Ball", "Transform")[0];
     const paddle = world.query("Paddle", "Transform").find(e =>
-        world.getComponent<import("../../../../engine/types/EngineTypes").TagComponent>(e, "Tag")!.tags.includes("right")
+        world.getComponent<import("../../../../engine/EngineTypes").TagComponent>(e, "Tag")!.tags.includes("right")
     )!;
 
     const ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;

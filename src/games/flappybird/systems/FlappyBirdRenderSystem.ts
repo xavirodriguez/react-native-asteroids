@@ -1,6 +1,6 @@
-import { World } from "../../../engine/core/World";
-import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
-import { RenderComponent } from "../../../engine/types/EngineTypes";
+import { World } from "../../../engine";
+import { RenderUpdateSystem } from "../../../engine/RenderUpdateSystem";
+import { RenderComponent } from "../../../engine/EngineTypes";
 import { BirdComponent } from "../types/FlappyBirdTypes";
 
 /**

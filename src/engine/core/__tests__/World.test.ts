@@ -38,10 +38,10 @@ describe("World", () => {
       expect(e1).not.toBe(e2);
     });
 
-    it("should increment structureVersion when creating an entity", () => {
-      const initialVersion = world.structureVersion;
+    it("should increment version when creating an entity", () => {
+      const initialVersion = world.version;
       world.createEntity();
-      expect(world.structureVersion).toBeGreaterThan(initialVersion);
+      expect(world.version).toBeGreaterThan(initialVersion);
     });
 
     it("should return all active entities", () => {
@@ -53,12 +53,12 @@ describe("World", () => {
       expect(entities.length).toBe(2);
     });
 
-    it("should remove an entity and increment structureVersion", () => {
+    it("should remove an entity and increment version", () => {
       const e1 = world.createEntity();
-      const initialVersion = world.structureVersion;
+      const initialVersion = world.version;
       world.removeEntity(e1);
       expect(world.getAllEntities()).not.toContain(e1);
-      expect(world.structureVersion).toBeGreaterThan(initialVersion);
+      expect(world.version).toBeGreaterThan(initialVersion);
     });
 
     it("should clean up components when an entity is removed", () => {
@@ -92,33 +92,21 @@ describe("World", () => {
       expect(world.getComponent<TransformComponent>(entity, "Transform")).toBe(pos2);
     });
 
-    it("should increment structureVersion when adding a NEW component type", () => {
+    it("should increment version when adding a component", () => {
       const entity = world.createEntity();
-      const initialVersion = world.structureVersion;
+      const initialVersion = world.version;
       world.addComponent(entity, { type: "Transform", x: 10, y: 20 } as TransformComponent);
-      expect(world.structureVersion).toBeGreaterThan(initialVersion);
+      expect(world.version).toBeGreaterThan(initialVersion);
     });
 
-    it("should increment stateVersion when updating an EXISTING component", () => {
+    it("should remove a component and increment version", () => {
       const entity = world.createEntity();
       world.addComponent(entity, { type: "Transform", x: 10, y: 20 } as TransformComponent);
-      const initialStructureVersion = world.structureVersion;
-      const initialStateVersion = world.stateVersion;
-
-      world.addComponent(entity, { type: "Transform", x: 20, y: 30 } as TransformComponent);
-
-      expect(world.structureVersion).toBe(initialStructureVersion);
-      expect(world.stateVersion).toBeGreaterThan(initialStateVersion);
-    });
-
-    it("should remove a component and increment structureVersion", () => {
-      const entity = world.createEntity();
-      world.addComponent(entity, { type: "Transform", x: 10, y: 20 } as TransformComponent);
-      const versionAfterAdd = world.structureVersion;
+      const versionAfterAdd = world.version;
 
       world.removeComponent(entity, "Transform");
       expect(world.hasComponent(entity, "Transform")).toBe(false);
-      expect(world.structureVersion).toBeGreaterThan(versionAfterAdd);
+      expect(world.version).toBeGreaterThan(versionAfterAdd);
     });
   });
 
@@ -150,9 +138,9 @@ describe("World", () => {
       expect(world.query("NonExistent")).toEqual([]);
     });
 
-    it("should return an empty array if query is empty", () => {
+    it("should throw if query is empty", () => {
       world.createEntity();
-      expect(world.query()).toEqual([]);
+      expect(() => world.query()).toThrow("Query signature cannot be empty.");
     });
   });
 
@@ -214,10 +202,10 @@ describe("World", () => {
       expect(entities).toEqual([e1, e2, e3].sort((a, b) => a - b));
     });
 
-    it("should increment structureVersion on clear", () => {
-      const initialVersion = world.structureVersion;
+    it("should increment version on clear", () => {
+      const initialVersion = world.version;
       world.clear();
-      expect(world.structureVersion).toBeGreaterThan(initialVersion);
+      expect(world.version).toBeGreaterThan(initialVersion);
     });
   });
 });

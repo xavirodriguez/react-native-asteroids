@@ -1,7 +1,7 @@
-import { World } from "../../../engine/core/World";
+import { World } from "../../../engine";
 import { ShipPhysics } from "../utils/ShipPhysics";
 import { DeterministicSimulation } from "../../../simulation/DeterministicSimulation";
-import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/EngineTypes";
 import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 
 describe("Prediction vs ECS Determinism", () => {

@@ -1,9 +1,9 @@
-import { World } from "../../../../engine/core/World";
+import { World } from "../../../../engine/World";
 import { FlappyBirdGame } from "../../FlappyBirdGame";
 import { FlappyBirdGameStateSystem } from "../FlappyBirdGameStateSystem";
 import { createGameState } from "../../EntityFactory";
 import { FlappyBirdState } from "../../types/FlappyBirdTypes";
-import { BaseGame } from "../../../../engine/core/BaseGame";
+import { BaseGame } from "../../../../engine/BaseGame";
 
 describe("FlappyBirdGameStateSystem", () => {
   let world: World;

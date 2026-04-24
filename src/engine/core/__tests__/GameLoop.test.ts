@@ -1,4 +1,4 @@
-import { GameLoop } from "../GameLoop";
+import { GameLoop } from "../../app/GameLoop";
 
 describe("GameLoop", () => {
   let requestAnimationFrameSpy: jest.SpyInstance;

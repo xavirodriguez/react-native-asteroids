@@ -1,4 +1,4 @@
-import { Component } from "../../../engine/types/EngineTypes";
+import { Component } from "../../../engine/EngineTypes";
 
 /**
  * Represents the current state of user inputs for Space Invaders.

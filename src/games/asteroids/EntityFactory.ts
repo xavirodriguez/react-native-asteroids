@@ -1,4 +1,4 @@
-import { World } from "../../engine/core/World";
+import { World } from "../../engine";
 import { GAME_CONFIG, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import {
     TransformComponent,
@@ -11,11 +11,11 @@ import {
     HealthComponent,
     ManualMovementComponent,
     TrailComponent
-} from "../../engine/core/CoreComponents";
-import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
-import { createEmitter } from "../../engine/systems/ParticleSystem";
-import { generateStarField } from "../../engine/rendering/StarField";
-import { RandomService } from "../../engine/utils/RandomService";
+} from "../../engine";
+import { CollisionLayers } from "../../engine/physics2d/CollisionLayers";
+import { createEmitter } from "../../engine/ParticleSystem";
+import { generateStarField } from "../../engine/presentation";
+import { RandomService } from "../../engine/RandomService";
 import {
     ShipComponent,
     InputComponent,
@@ -29,11 +29,8 @@ import {
  * Factoría para la creación de entidades del juego Asteroids.
  *
  * @responsibility Centralizar la instanciación de naves, asteroides y UFOs con sus componentes iniciales.
- *
- * @remarks
- * Se recomienda el uso de `RandomService.getInstance("gameplay")` para favorecer que la generación
- * procedimental sea consistente en entornos multijugador.
- *
+ * @conceptualRisk [DETERMINISM] El uso de `RandomService.getInstance("gameplay")` es obligatorio para
+ * garantizar que la generación procedimental sea idéntica en todos los clientes del sistema multiplayer.
  * @packageDocumentation
  */
 
@@ -131,11 +128,9 @@ export const createBullet = ({ world, x, y, angle }: { world: World; x: number; 
 };
 
 /**
- * Intenta crear un asteroide con forma procedimental.
- *
- * @remarks
- * Utiliza `gameplayRandom` buscando que la forma y velocidad sean consistentes
- * en el buffer de predicción.
+ * Crea un asteroide con forma procedimental determinista.
+ * @conceptualRisk [PRNG_USAGE] Utiliza `gameplayRandom` para asegurar que la forma y velocidad
+ * sean consistentes en el buffer de predicción.
  */
 export const createAsteroid = ({ world, x, y, size }: { world: World; x: number; y: number; size: "large" | "medium" | "small" }) => {
   const asteroid = world.createEntity();

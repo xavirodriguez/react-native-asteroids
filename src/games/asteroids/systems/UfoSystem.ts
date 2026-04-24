@@ -1,6 +1,6 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
+import { System } from "../../../engine/System";
+import { World } from "../../../engine";
+import { TransformComponent, VelocityComponent } from "../../../engine/EngineTypes";
 import { UfoComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 
 /**

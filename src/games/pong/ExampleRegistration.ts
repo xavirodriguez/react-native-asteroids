@@ -1,7 +1,7 @@
-import { World } from "../../engine/core/World";
-import { BaseGame } from "../../engine/core/BaseGame";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { CollisionSystem } from "../../engine/systems/CollisionSystem";
+import { World } from "../../engine";
+import { BaseGame } from "../../engine/app";
+import { MovementSystem } from "../../engine/physics2d";
+import { CollisionSystem } from "../../engine/CollisionSystem";
 
 type PongState = { score: number };
 type PongInput = { up: boolean, down: boolean };

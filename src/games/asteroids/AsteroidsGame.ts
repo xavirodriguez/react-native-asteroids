@@ -1,21 +1,21 @@
-import { World } from "../../engine/core/World";
-import { GameLoop } from "../../engine/core/GameLoop";
-import { BaseGame } from "../../engine/core/BaseGame";
+import { World } from "../../engine";
+import { GameLoop } from "../../engine/app";
+import { BaseGame } from "../../engine/app";
 import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
 import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
 import { AsteroidComboSystem } from "./systems/AsteroidComboSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { UfoSystem } from "./systems/UfoSystem";
-import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { BoundarySystem } from "../../engine/systems/BoundarySystem";
-import { FrictionSystem } from "../../engine/systems/FrictionSystem";
-import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
+import { RenderUpdateSystem } from "../../engine/presentation";
+import { MovementSystem } from "../../engine/physics2d";
+import { BoundarySystem } from "../../engine/physics2d";
+import { FrictionSystem } from "../../engine/physics2d";
+import { ScreenShakeSystem } from "../../engine/presentation";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { ShipControlSystem } from "./systems/ShipControlSystem";
-import { TTLSystem } from "../../engine/systems/TTLSystem";
-import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
+import { TTLSystem } from "../../engine/gameplay";
+import { CollisionSystem2D } from "../../engine/physics2d";
 import { DeterministicSimulation } from "../../simulation/DeterministicSimulation";
 import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { MutatorService } from "../../services/MutatorService";
@@ -23,7 +23,7 @@ import { InputFrame } from "../../multiplayer/NetTypes";
 import { InterpolationBuffer } from "../../multiplayer/InterpolationSystem";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
-import { Renderer } from "../../engine/rendering/Renderer";
+import { Renderer } from "../../engine/presentation";
 import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManager";
 
 /**
@@ -41,7 +41,7 @@ export class AsteroidsGame
   private entityInterpolationBuffers = new Map<string, InterpolationBuffer>();
   private serverEntities = new Map<string, number>();
   private inputHistory: InputFrame[] = [];
-  private stateHistory = new Map<number, import("../../engine/types/EngineTypes").WorldSnapshot>();
+  private stateHistory = new Map<number, import("../../engine/EngineTypes").WorldSnapshot>();
   private lastAuthoritativeTick = 0;
   public readonly gameId = "asteroids";
   private config: typeof GAME_CONFIG;
@@ -70,10 +70,7 @@ export class AsteroidsGame
   }
 
   /**
-   * Performs local player movement prediction using the shared simulation.
-   *
-   * @remarks
-   * Aims to support visual consistency by preemptively executing simulation logic on the client.
+   * Predicts local player movement using the shared deterministic simulation.
    */
   public predictLocalPlayer(input: InputFrame, deltaTime: number) {
     this.inputHistory.push(input);
@@ -92,7 +89,7 @@ export class AsteroidsGame
 
     DeterministicSimulation.update(this.world, deltaTime, { isResimulating: false });
 
-    // Attempts to capture state after simulation for potential reconciliation
+    // Save state after simulation of this tick
     this.stateHistory.set(input.tick, this.world.snapshot());
 
     // Keep history manageable
@@ -107,7 +104,7 @@ export class AsteroidsGame
     if (serverTick <= this.lastAuthoritativeTick) return;
     this.lastAuthoritativeTick = serverTick;
 
-    const authoritativeSnapshot = JSON.parse(serverState.fullWorldState as string) as import("../../engine/types/EngineTypes").WorldSnapshot;
+    const authoritativeSnapshot = JSON.parse(serverState.fullWorldState as string) as import("../../engine/EngineTypes").WorldSnapshot;
     const predicted = this.stateHistory.get(serverTick);
 
     let needsRollback = false;
@@ -161,7 +158,7 @@ export class AsteroidsGame
               return ship && ship.sessionId === localSessionId;
           });
           if (localPlayerEntity !== undefined) {
-              this.world.addComponent(localPlayerEntity, { type: "LocalPlayer" } as import("../../engine/core/Component").Component);
+              this.world.addComponent(localPlayerEntity, { type: "LocalPlayer" } as import("../../engine").Component);
           }
       }
 

@@ -1,10 +1,10 @@
-import { World } from "../../../engine/core/World";
-import { System } from "../../../engine/core/System";
-import { Entity, TransformComponent, VelocityComponent, CollisionEventsComponent } from "../../../engine/types/EngineTypes";
+import { World } from "../../../engine";
+import { System } from "../../../engine/System";
+import { Entity, TransformComponent, VelocityComponent, CollisionEventsComponent } from "../../../engine/EngineTypes";
 import { PONG_CONFIG } from "../types";
-import { Juice } from "../../../engine/utils/Juice";
-import { createEmitter } from "../../../engine/systems/ParticleSystem";
-import { EventBus } from "../../../engine/core/EventBus";
+import { Juice } from "../../../engine/Juice";
+import { createEmitter } from "../../../engine/ParticleSystem";
+import { EventBus } from "../../../engine/EventBus";
 
 export class PongCollisionSystem extends System {
   public update(world: World, _deltaTime: number): void {

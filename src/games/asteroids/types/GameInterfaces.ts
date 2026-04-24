@@ -1,5 +1,5 @@
-import type { IGame, UpdateListener } from "../../../engine/core/IGame";
-import type { World } from "../../../engine/core/World";
+import type { IGame, UpdateListener } from "../../../engine/IGame";
+import type { World } from "../../../engine/World";
 import type { GameStateComponent, InputState } from "./AsteroidTypes";
 
 // Re-export with strong typing for Asteroids

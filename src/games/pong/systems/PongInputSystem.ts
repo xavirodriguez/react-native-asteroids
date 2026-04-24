@@ -1,8 +1,8 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { VelocityComponent, TagComponent, InputStateComponent } from "../../../engine/types/EngineTypes";
+import { System } from "../../../engine/System";
+import { World } from "../../../engine";
+import { VelocityComponent, TagComponent, InputStateComponent } from "../../../engine/EngineTypes";
 import { PONG_CONFIG, type PongInput } from "../types";
-import { InputUtils } from "../../../engine/utils/ComponentUtils";
+import { InputUtils } from "../../../engine/ComponentUtils";
 import { AIPongController } from "../input/AIPongController";
 
 /**

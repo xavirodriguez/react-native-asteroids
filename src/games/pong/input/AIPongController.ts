@@ -1,5 +1,5 @@
-import { World } from "../../../engine/core/World";
-import { TransformComponent } from "../../../engine/types/EngineTypes";
+import { World } from "../../../engine";
+import { TransformComponent } from "../../../engine/EngineTypes";
 import { PongInput } from "../types";
 
 export type AIDifficulty = "easy" | "medium" | "hard";
@@ -52,7 +52,7 @@ export class AIPongController {
 
     const ball = world.query("Ball", "Transform", "Velocity")[0];
     const paddle = world.query("Paddle", "Transform", "Tag").find(e => {
-        const tags = world.getComponent<import("../../../engine/types/EngineTypes").TagComponent>(e, "Tag")!.tags;
+        const tags = world.getComponent<import("../../../engine/EngineTypes").TagComponent>(e, "Tag")!.tags;
         return tags.includes("right"); // AI usually controls P2
     });
 

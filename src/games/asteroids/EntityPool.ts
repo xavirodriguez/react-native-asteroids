@@ -1,6 +1,6 @@
-import { PrefabPool } from "../../engine/utils/PrefabPool";
-import { World } from "../../engine/core/World";
-import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
+import { PrefabPool } from "../../engine/PrefabPool";
+import { World } from "../../engine";
+import { CollisionLayers } from "../../engine/physics2d/CollisionLayers";
 import {
   type Entity,
   type Component,
@@ -10,7 +10,7 @@ import {
   type Collider2DComponent,
   type TTLComponent,
   type ReclaimableComponent
-} from "../../engine/types/EngineTypes";
+} from "../../engine/EngineTypes";
 
 /**
  * Interface for pooled component data.

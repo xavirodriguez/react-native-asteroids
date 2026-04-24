@@ -1,4 +1,4 @@
-import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
+import { RenderUpdateSystem } from "../../../engine/RenderUpdateSystem";
 import {
   GAME_CONFIG,
 } from "../../../types/GameTypes";

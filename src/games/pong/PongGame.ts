@@ -1,20 +1,20 @@
-import { BaseGame } from "../../engine/core/BaseGame";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { BoundarySystem } from "../../engine/systems/BoundarySystem";
-import { JuiceSystem } from "../../engine/systems/JuiceSystem";
-import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
-import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
+import { BaseGame } from "../../engine/app";
+import { MovementSystem } from "../../engine/physics2d";
+import { BoundarySystem } from "../../engine/physics2d";
+import { JuiceSystem } from "../../engine/JuiceSystem";
+import { ScreenShakeSystem } from "../../engine/presentation";
+import { RenderUpdateSystem } from "../../engine/presentation";
 import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { PongCollisionSystem } from "./systems/PongCollisionSystem";
 import { PongGameStateSystem } from "./systems/PongGameStateSystem";
 import { PongInputSystem } from "./systems/PongInputSystem";
-import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
+import { CollisionSystem2D } from "../../engine/physics2d";
 import { PongSpinSystem } from "./systems/PongSpinSystem";
 import { PongEntityFactory } from "./EntityFactory";
 import { AIPongController } from "./input/AIPongController";
 import { NetworkController } from "./input/NetworkController";
 import { PONG_CONFIG, type PongState, type PongInput } from "./types";
-import { Renderer } from "../../engine/rendering/Renderer";
+import { Renderer } from "../../engine/presentation";
 import { drawPongBall } from "./rendering/PongCanvasVisuals";
 import { MutatorService } from "../../services/MutatorService";
 
@@ -103,7 +103,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
 
   protected shouldStallSimulation(): boolean {
     if (this.networkController) {
-      // Accessing the internal tick of PongInputSystem is the intended approach,
+      // Access the internal tick of PongInputSystem would be ideal,
       // but for simplicity we check if any future input is missing.
       // A more robust implementation would pass the current simulation tick.
       const inputSystem = (this.world as unknown as { systems: unknown[] }).systems?.find((s): s is PongInputSystem => s instanceof PongInputSystem);

@@ -1,10 +1,10 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent, InputStateComponent } from "../../../engine/types/EngineTypes";
+import { System } from "../../../engine/System";
+import { World } from "../../../engine";
+import { TransformComponent, VelocityComponent, InputStateComponent } from "../../../engine/EngineTypes";
 import { InputComponent, GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { PlayerBulletPool } from "../EntityPool";
 import { createPlayerBullet } from "../EntityFactory";
-import { InputUtils } from "../../../engine/utils/ComponentUtils";
+import { InputUtils } from "../../../engine/ComponentUtils";
 
 /**
  * System that handles player input and movement.

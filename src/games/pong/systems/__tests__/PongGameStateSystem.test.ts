@@ -1,7 +1,7 @@
-import { World } from "../../../../engine/core/World";
+import { World } from "../../../../engine/World";
 import { PongGameStateSystem } from "../PongGameStateSystem";
 import { PongState, PONG_CONFIG } from "../../types";
-import { TransformComponent, VelocityComponent } from "../../../../engine/types/EngineTypes";
+import { TransformComponent, VelocityComponent } from "../../../../engine/EngineTypes";
 
 describe("PongGameStateSystem", () => {
   let world: World;

@@ -1,6 +1,6 @@
-import { World } from "../../engine/core/World";
-import { GameLoop } from "../../engine/core/GameLoop";
-import { BaseGame } from "../../engine/core/BaseGame";
+import { World } from "../../engine";
+import { GameLoop } from "../../engine/app";
+import { BaseGame } from "../../engine/app";
 import { FlappyBirdState, FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE } from "./types/FlappyBirdTypes";
 import { IFlappyBirdGame } from "./types/GameInterfaces";
 import { FlappyBirdInputSystem } from "./systems/FlappyBirdInputSystem";
@@ -8,11 +8,11 @@ import { FlappyBirdCollisionSystem } from "./systems/FlappyBirdCollisionSystem";
 import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
 import { FlappyBirdRenderSystem } from "./systems/FlappyBirdRenderSystem";
 import { FlappyBirdGlideSystem } from "./systems/FlappyBirdGlideSystem";
-import { InputBufferSystem } from "../../engine/systems/InputBufferSystem";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
-import { JuiceSystem } from "../../engine/systems/JuiceSystem";
-import { Renderer } from "../../engine/rendering/Renderer";
+import { InputBufferSystem } from "../../engine/InputBufferSystem";
+import { MovementSystem } from "../../engine/physics2d";
+import { CollisionSystem2D } from "../../engine/physics2d";
+import { JuiceSystem } from "../../engine/JuiceSystem";
+import { Renderer } from "../../engine/presentation";
 import {
   createBird,
   createGameState,
@@ -88,8 +88,8 @@ export class FlappyBirdGame
     if (state.players && Array.isArray(state.players)) {
         state.players.forEach((player: { x: number, y: number, alive: boolean, velocityY: number }) => {
             const b = this.world.createEntity();
-            this.world.addComponent(b, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-            this.world.addComponent(b, { type: "Render", shape: "bird", size: 15, color: player.alive ? "yellow" : "gray", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+            this.world.addComponent(b, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/EngineTypes").TransformComponent);
+            this.world.addComponent(b, { type: "Render", shape: "bird", size: 15, color: player.alive ? "yellow" : "gray", rotation: 0 } as import("../../engine/EngineTypes").RenderComponent);
             this.world.addComponent(b, {
                 type: "Bird",
                 velocityY: player.velocityY,
@@ -103,8 +103,8 @@ export class FlappyBirdGame
     if (state.pipes && Array.isArray(state.pipes)) {
         state.pipes.forEach((pipe: { x: number, gapY: number }) => {
             const p = this.world.createEntity();
-            this.world.addComponent(p, { type: "Transform", x: pipe.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-            this.world.addComponent(p, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+            this.world.addComponent(p, { type: "Transform", x: pipe.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/EngineTypes").TransformComponent);
+            this.world.addComponent(p, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 } as import("../../engine/EngineTypes").RenderComponent);
             this.world.addComponent(p, { type: "Pipe", gapY: pipe.gapY, gapSize: 140, scored: false } as import("./EntityFactory").PipeComponent);
         });
     }

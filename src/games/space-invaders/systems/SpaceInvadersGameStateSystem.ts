@@ -1,5 +1,5 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
+import { System } from "../../../engine/System";
+import { World } from "../../../engine";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
 import { spawnInvaderWave } from "../EntityFactory";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";

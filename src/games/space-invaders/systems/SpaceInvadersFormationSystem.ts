@@ -1,10 +1,10 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent } from "../../../engine/types/EngineTypes";
+import { System } from "../../../engine/System";
+import { World } from "../../../engine";
+import { TransformComponent } from "../../../engine/EngineTypes";
 import { FormationComponent, InvaderComponent, GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { EnemyBulletPool } from "../EntityPool";
 import { createEnemyBullet } from "../EntityFactory";
-import { RandomService } from "../../../engine/utils/RandomService";
+import { RandomService } from "../../../engine/RandomService";
 
 /**
  * System that manages the movement and firing of the invader formation.

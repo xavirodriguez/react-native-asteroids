@@ -1,10 +1,10 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
+import { System } from "../../../engine/System";
+import { World } from "../../../engine";
+import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/EngineTypes";
 import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 import { ShipPhysics } from "../utils/ShipPhysics";
 import { hapticShoot } from "../../../utils/haptics";
-import { EventBus } from "../../../engine/core/EventBus";
+import { EventBus } from "../../../engine/EventBus";
 
 /**
  * System that applies physical forces and actions based on the ship's input intent.
@@ -35,7 +35,7 @@ export class ShipControlSystem extends System {
         this.config,
         (bullet) => {
           // Listen for TTL destruction (miss)
-          const ttl = world.getComponent<import("../../../engine/core/CoreComponents").TTLComponent>(bullet, "TTL");
+          const ttl = world.getComponent<import("../../../engine/CoreComponents").TTLComponent>(bullet, "TTL");
           if (ttl) {
             const originalOnComplete = ttl.onComplete;
             ttl.onComplete = () => {

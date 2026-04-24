@@ -1,5 +1,5 @@
-import { World } from "../../../engine/core/World";
-import { TransformComponent } from "../../../engine/types/EngineTypes";
+import { World } from "../../../engine";
+import { TransformComponent } from "../../../engine/EngineTypes";
 import {
   PipeComponent,
   FLAPPY_CONFIG,
@@ -7,16 +7,16 @@ import {
 } from "../types/FlappyBirdTypes";
 import { IFlappyBirdGame, IFlappyStateSystem } from "../types/GameInterfaces";
 import { createPipe } from "../EntityFactory";
-import { RandomService } from "../../../engine/utils/RandomService";
-import { EventBus } from "../../../engine/core/EventBus";
-import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
+import { RandomService } from "../../../engine/RandomService";
+import { EventBus } from "../../../engine/EventBus";
+import { BaseGameStateSystem } from "../../../engine/BaseGameStateSystem";
 
 /**
  * System that manages game logic: scores, spawner, and game over condition.
  */
 export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdState> implements IFlappyStateSystem {
   constructor(game: IFlappyBirdGame, private config: typeof FLAPPY_CONFIG = FLAPPY_CONFIG) {
-    super(game as unknown as IFlappyBirdGame & import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, boolean>>);
+    super(game as unknown as IFlappyBirdGame & import("../../../engine/BaseGame").BaseGame<unknown, Record<string, boolean>>);
   }
 
   protected updateGameState(world: World, gameState: FlappyBirdState, deltaTime: number): void {

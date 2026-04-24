@@ -1,15 +1,15 @@
-import { Scene } from "../../../engine/scenes/Scene";
-import { World } from "../../../engine/core/World";
-import { MovementSystem } from "../../../engine/systems/MovementSystem";
-import { TTLSystem } from "../../../engine/systems/TTLSystem";
-import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
-import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
+import { Scene } from "../../../engine/app";
+import { World } from "../../../engine";
+import { MovementSystem } from "../../../engine/physics2d";
+import { TTLSystem } from "../../../engine/gameplay";
+import { JuiceSystem } from "../../../engine/JuiceSystem";
+import { RenderUpdateSystem } from "../../../engine/RenderUpdateSystem";
 import { SpaceInvadersInputSystem } from "../systems/SpaceInvadersInputSystem";
-import { BoundarySystem } from "../../../engine/systems/BoundarySystem";
+import { BoundarySystem } from "../../../engine/physics2d";
 import { SpaceInvadersFormationSystem } from "../systems/SpaceInvadersFormationSystem";
 import { SpaceInvadersCollisionSystem } from "../systems/SpaceInvadersCollisionSystem";
 import { SpaceInvadersGameStateSystem } from "../systems/SpaceInvadersGameStateSystem";
-import { CollisionSystem2D } from "../../../engine/physics/collision/CollisionSystem2D";
+import { CollisionSystem2D } from "../../../engine/physics2d/CollisionSystem2D";
 import { SpaceInvadersRenderSystem } from "../systems/SpaceInvadersRenderSystem";
 import { KamikazeSystem } from "../systems/KamikazeSystem";
 import { BossSystem } from "../systems/BossSystem";
@@ -53,7 +53,7 @@ export class SpaceInvadersGameScene extends Scene {
 
   public onEnter(): void {
     // Inject EventBus and other engine resources into the scene world
-    const eventBus = (this.game as unknown as { eventBus: import("../../../engine/core/EventBus").EventBus }).eventBus;
+    const eventBus = (this.game as unknown as { eventBus: import("../../../engine/EventBus").EventBus }).eventBus;
     if (eventBus) {
       this.world.setResource("EventBus", eventBus);
     }
@@ -62,7 +62,7 @@ export class SpaceInvadersGameScene extends Scene {
     const inputSys = new SpaceInvadersInputSystem(this.playerBulletPool);
     if (this.game.isMultiplayer) inputSys.setMultiplayerMode(true);
 
-    this.world.addSystem((this.game as unknown as import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, any>>).unifiedInput);
+    this.world.addSystem((this.game as unknown as import("../../../engine/BaseGame").BaseGame<unknown, Record<string, any>>).unifiedInput);
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new JuiceSystem());

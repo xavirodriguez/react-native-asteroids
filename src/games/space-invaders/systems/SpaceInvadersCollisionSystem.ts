@@ -1,12 +1,12 @@
-import { World } from "../../../engine/core/World";
-import { System } from "../../../engine/core/System";
-import { Entity, CollisionEventsComponent } from "../../../engine/types/EngineTypes";
-import { EventBus } from "../../../engine/core/EventBus";
+import { World } from "../../../engine";
+import { System } from "../../../engine/System";
+import { Entity, CollisionEventsComponent } from "../../../engine/EngineTypes";
+import { EventBus } from "../../../engine/EventBus";
 import {
   TransformComponent,
   HealthComponent,
   RenderComponent,
-} from "../../../engine/types/EngineTypes";
+} from "../../../engine/EngineTypes";
 import {
   GameStateComponent,
   InvaderComponent,
@@ -16,8 +16,8 @@ import {
 import { BossComponent } from "./BossSystem";
 import { ParticlePool } from "../EntityPool";
 import { createParticle } from "../EntityFactory";
-import { RandomService } from "../../../engine/utils/RandomService";
-import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
+import { RandomService } from "../../../engine/RandomService";
+import { JuiceSystem } from "../../../engine/JuiceSystem";
 
 /**
  * System that handles all game collisions by reacting to events from CollisionSystem2D.

@@ -1,6 +1,6 @@
-import { ComponentSetPool } from "../../engine/utils/ComponentSetPool";
-import { World } from "../../engine/core/World";
-import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
+import { ComponentSetPool } from "../../engine/ComponentSetPool";
+import { World } from "../../engine";
+import { CollisionLayers } from "../../engine/physics2d/CollisionLayers";
 import {
   Entity,
   TransformComponent,
@@ -11,8 +11,8 @@ import {
   TTLComponent,
   ReclaimableComponent,
   Component
-} from "../../engine/types/EngineTypes";
-import { CircleShape } from "../../engine/physics/shapes/ShapeTypes";
+} from "../../engine/EngineTypes";
+import { CircleShape } from "../../engine/physics2d/ShapeTypes";
 import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 
 interface BulletComponents {

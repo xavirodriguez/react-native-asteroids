@@ -1,13 +1,13 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
+import { System } from "../../../engine/System";
+import { World } from "../../../engine";
 import {
   type InputComponent,
   type InputStateComponent,
   GAME_CONFIG,
-} from "../../../engine/types/EngineTypes";
+} from "../../../engine/EngineTypes";
 import { type InputState } from "../types/AsteroidTypes";
 import { BulletPool, ParticlePool } from "../EntityPool";
-import { InputUtils } from "../../../engine/utils/ComponentUtils";
+import { InputUtils } from "../../../engine/ComponentUtils";
 
 /**
  * System responsible for processing user input and applying it to the ship's state.

@@ -1,6 +1,6 @@
-import { IGame } from "../../../engine/core/IGame";
+import { IGame } from "../../../engine/IGame";
 import { GameStateComponent, InputState } from "./SpaceInvadersTypes";
-import { Renderer } from "../../../engine/rendering/Renderer";
+import { Renderer } from "../../../engine/presentation";
 
 /**
  * Public interface for the Space Invaders game controller.

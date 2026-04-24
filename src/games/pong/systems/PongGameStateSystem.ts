@@ -1,9 +1,9 @@
-import { World } from "../../../engine/core/World";
+import { World } from "../../../engine";
 import { PongState, PONG_CONFIG } from "../types";
-import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
-import { RandomService } from "../../../engine/utils/RandomService";
-import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
-import { EventBus } from "../../../engine/core/EventBus";
+import { BaseGameStateSystem } from "../../../engine/BaseGameStateSystem";
+import { RandomService } from "../../../engine/RandomService";
+import { TransformComponent, VelocityComponent } from "../../../engine/EngineTypes";
+import { EventBus } from "../../../engine/EventBus";
 
 export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
   private state: PongState = { type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1 };

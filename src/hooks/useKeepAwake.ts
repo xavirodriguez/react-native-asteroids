@@ -2,13 +2,12 @@ import { useEffect } from "react";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 
 /**
- * Hook to attempt keeping the screen active in a symmetric and encapsulated way.
+ * Hook to manage keep-awake state in a symmetric and encapsulated way.
  *
- * @remarks
- * Implements the Resource acquisition/release principle. On the Web platform,
- * it depends on the availability of the WakeLock API and a secure context (HTTPS).
+ * Principle 4: Symmetric Resource Acquisition/Release
+ * Encapsulates the activation and deactivation of keep-awake within a useEffect cleanup.
  *
- * @param enabled - Whether to request keeping the device active.
+ * @param enabled - Whether the device should stay awake.
  */
 /**
  * Interface extension for Navigator to include experimental WakeLock API.
@@ -27,15 +26,15 @@ export function useKeepAwake(enabled: boolean = true): void {
 
 
     // WakeLock is only available in secure contexts (HTTPS) and supported browsers
-    const supportsWakeLock = isWeb &&
+    const supportsWakeLock = isWeb && nav &&
       'wakeLock' in nav &&
       nav.wakeLock !== undefined &&
       nav.wakeLock !== null;
 
     if (!enabled) return;
 
-    // On the Web platform, if WakeLock is not supported, execution is aborted
-    // to avoid potential exceptions in non-secure contexts.
+    // On web, if WakeLock is not supported, we don't even try to call Expo's API
+    // as it might attempt to access navigator.wakeLock and throw.
     if (isWeb && !supportsWakeLock) {
       return;
     }

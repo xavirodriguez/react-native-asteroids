@@ -1,5 +1,5 @@
-import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { HealthComponent } from "../../../engine/types/EngineTypes";
+import { ShapeDrawer, EffectDrawer } from "../../../engine/presentation";
+import { HealthComponent } from "../../../engine/EngineTypes";
 import { FLAPPY_CONFIG, FlappyBirdState } from "../types/FlappyBirdTypes";
 
 /**

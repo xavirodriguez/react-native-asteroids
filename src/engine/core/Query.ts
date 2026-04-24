@@ -1,25 +1,75 @@
 import { Entity } from "../types/EngineTypes";
 
 /**
+ * Vista de solo lectura e iterable sobre los resultados de una {@link Query}.
+ *
+ * @responsibility Proporcionar acceso seguro a las entidades sin exponer el array interno.
+ * @responsibility Implementar el protocolo iterable para su uso en bucles `for...of`.
+ */
+export class QueryView implements Iterable<Entity> {
+  constructor(private query: Query) {}
+
+  /**
+   * Devuelve un iterador sobre las entidades que coinciden con la query.
+   */
+  [Symbol.iterator](): Iterator<Entity> {
+    return this.query.getEntities()[Symbol.iterator]();
+  }
+
+  /**
+   * Devuelve el número de entidades que coinciden con la query.
+   */
+  public get length(): number {
+    return this.query.getEntities().length;
+  }
+
+  /**
+   * Devuelve la entidad en el índice especificado.
+   */
+  public at(index: number): Entity | undefined {
+    return this.query.getEntities()[index];
+  }
+
+  /**
+   * Ejecuta una función para cada entidad en la vista.
+   */
+  public forEach(callback: (entity: Entity) => void): void {
+    this.query.getEntities().forEach(callback);
+  }
+
+  /**
+   * Devuelve un array con los resultados de aplicar una función a cada entidad.
+   */
+  public map<T>(callback: (entity: Entity) => T): T[] {
+    return this.query.getEntities().map(callback);
+  }
+
+  /**
+   * Comprueba si la vista está vacía.
+   */
+  public get isEmpty(): boolean {
+    return this.query.getEntities().length === 0;
+  }
+}
+
+/**
  * Consulta reactiva que mantiene un índice actualizado de entidades con una firma de
  * componentes específica.
  *
  * @responsibility Mantener una lista filtrada y cacheada de entidades que cumplen una firma.
  * @responsibility Responder de forma reactiva a cambios estructurales en el World.
- * @responsibility Proporcionar acceso eficiente a grupos de entidades filtrados por componentes.
+ * @responsibility Proporcionar acceso de alto rendimiento O(1) a grupos de entidades.
  *
  * @remarks
- * Las queries reducen la necesidad de iterar sobre todas las entidades del mundo en cada frame.
- * El {@link World} notifica a las queries relevantes cuando ocurren cambios estructurales,
- * permitiendo un acceso rápido a las entidades que coinciden con la firma.
- *
- * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] Si un consumidor modifica el array devuelto
- * (e.g., mediante `.push()` o `.sort()` in-place), corromperá el estado interno de la Query.
+ * Las queries eliminan la necesidad de iterar sobre todas las entidades del mundo en cada frame.
+ * El {@link World} notifica a las queries relevantes solo cuando hay cambios estructurales
+ * (add/remove componente), permitiendo una complejidad O(1) para obtener entidades activas.
  */
 export class Query {
   private entities: Set<Entity> = new Set();
   private entityArray: Entity[] = [];
   private needsUpdateArray = false;
+  private view: QueryView;
 
   /**
    * Inicializa una query para una firma de componentes determinada.
@@ -28,7 +78,9 @@ export class Query {
    *
    * @precondition Debe proporcionarse al menos un tipo de componente.
    */
-  constructor(public readonly componentTypes: string[]) {}
+  constructor(public readonly componentTypes: string[]) {
+    this.view = new QueryView(this);
+  }
 
   /**
    * Comprueba si una entidad debe formar parte de esta query basado en sus componentes.
@@ -45,7 +97,7 @@ export class Query {
    *
    * @param entity - La entidad a añadir.
    *
-   * @precondition Se espera que la entidad cumpla la firma de la query.
+   * @precondition La entidad debe cumplir la firma de la query.
    * @postcondition Si la entidad era nueva, marca {@link Query.needsUpdateArray} como `true`.
    */
   public add(entity: Entity): void {
@@ -69,24 +121,12 @@ export class Query {
   }
 
   /**
-   * Proporciona la lista de entidades que coinciden actualmente con la firma de la query.
-   * Emplea un array cacheado para mitigar la presión sobre el recolector de basura.
+   * Devuelve la lista de entidades que coinciden con la query.
+   * Devuelve un array cacheado para minimizar la presión del GC.
    *
-   * @remarks
-   * El array devuelto es una referencia al caché interno. Se entrega como `ReadonlyArray`
-   * para desaconsejar mutaciones externas que corromperían el estado de la query.
+   * @internal Use {@link Query.getView} for public access.
    *
    * @returns Un array de solo lectura de IDs de {@link Entity}.
-   *
-   * @warning No se debe realizar casting de este array a uno mutable ni utilizar métodos
-   * in-place (sort, push, splice), ya que esto invalidaría el caché interno.
-   * @postcondition El array devuelto refleja el estado del {@link World} para esta firma en el momento de la consulta.
-   * @postcondition Las entidades en el array se entregan ordenadas por ID de forma ascendente para favorecer la consistencia.
-   *
-   * @conceptualRisk [MEMORY][MEDIUM] Fuga de caché mutable en Queries. Los sistemas reciben
-   * una referencia al array interno de la query y pueden corromperlo si realizan casting forzado.
-   * @conceptualRisk [GC_PRESSURE][LOW] Generación frecuente de nuevos arrays internos cuando
-   * `needsUpdateArray` es true. Se mitiga mediante el sistema de cacheado incremental.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.needsUpdateArray) {
@@ -97,11 +137,14 @@ export class Query {
   }
 
   /**
+   * Devuelve una vista segura y eficiente de los resultados de la query.
+   */
+  public getView(): QueryView {
+    return this.view;
+  }
+
+  /**
    * Devuelve la clave única para esta query basada en los tipos de componentes.
-   *
-   * @remarks
-   * La clave es una cadena separada por comas y ordenada alfabéticamente de los tipos
-   * de componentes, buscando que el orden de entrada no genere duplicados.
    */
   public get key(): string {
     return [...this.componentTypes].sort().join(",");
@@ -109,13 +152,9 @@ export class Query {
 
   /**
    * Reconstruye los resultados de la query desde cero.
-   * Utilizado durante la restauración del mundo para asegurar la consistencia sin romper referencias.
    *
    * @param allEntities - Conjunto de todas las entidades activas.
    * @param entityComponentSets - Mapa de conjuntos de componentes por entidad.
-   *
-   * @postcondition {@link Query.entities} refleja el estado actual proporcionado.
-   * @postcondition Marca {@link Query.needsUpdateArray} como `true`.
    */
   public rebuild(allEntities: Set<Entity>, entityComponentSets: Map<Entity, Set<string>>): void {
     this.entities.clear();

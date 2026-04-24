@@ -1,5 +1,5 @@
-import { World } from "../../../../engine/core/World";
-import { CollisionSystem2D } from "../../../../engine/physics/collision/CollisionSystem2D";
+import { World } from "../../../../engine/World";
+import { CollisionSystem2D } from "../../../../engine/physics2d/CollisionSystem2D";
 import { AsteroidCollisionSystem } from "../AsteroidCollisionSystem";
 import { ParticlePool } from "../../EntityPool";
 import { createAsteroid, createShip, createBullet, createGameState } from "../../EntityFactory";

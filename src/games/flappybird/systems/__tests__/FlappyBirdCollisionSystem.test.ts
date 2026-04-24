@@ -1,5 +1,5 @@
-import { World } from "../../../../engine/core/World";
-import { CollisionSystem2D } from "../../../../engine/physics/collision/CollisionSystem2D";
+import { World } from "../../../../engine/World";
+import { CollisionSystem2D } from "../../../../engine/physics2d/CollisionSystem2D";
 import { FlappyBirdCollisionSystem } from "../FlappyBirdCollisionSystem";
 import { createBird, createPipe, createGameState } from "../../EntityFactory";
 import { FlappyBirdState } from "../../types/FlappyBirdTypes";

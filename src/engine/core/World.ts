@@ -3,7 +3,7 @@ import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
-import { WorldCommandBuffer } from "./WorldCommandBuffer";
+import { StructuralCommandBuffer } from "./StructuralCommandBuffer";
 
 interface RegisteredSystem {
   system: System;
@@ -20,13 +20,13 @@ interface RegisteredSystem {
  * @responsibility Mantener recursos compartidos globales del juego.
  *
  * @remarks
- * El `World` actúa como el núcleo de la arquitectura ECS. Utiliza un pool de entidades diseñado para reducir
+ * El `World` actúa como el núcleo de la arquitectura ECS. Utiliza un pool de entidades para minimizar
  * la presión sobre el GC y emplea queries reactivas cacheadas para optimizar las consultas de sistemas.
  *
- * Invariantes (Expectativas de Diseño):
- * - **Principio 2**: Las estructuras jerárquicas (Transforms) deben ser válidas; el sistema intenta evitar el auto-parentesco.
+ * Invariantes:
+ * - **Principio 2**: Las estructuras jerárquicas (Transforms) deben ser válidas; no se permite el auto-parentesco.
  * - **Principio 6**: Los componentes singleton recuperados mediante {@link World.getSingleton} están
- * diseñados para ser mutables (se realiza una copia si están congelados).
+ * garantizados como mutables (se realiza una copia si están congelados).
  *
  * @conceptualRisk [PERFORMANCE][MEDIUM] Las consultas (queries) sin caché pueden volverse costosas
  * si se realizan múltiples veces por frame en mundos con miles de entidades.
@@ -36,73 +36,61 @@ interface RegisteredSystem {
  * Potencial overflow en sesiones de juego extremadamente largas.
  */
 export class World {
-  /** @internal */
   private activeEntities = new Set<Entity>();
-  /** @internal */
   private isUpdating = false;
-  /** @internal */
   private componentMaps = new Map<string, Map<Entity, Component>>();
-  /** @internal */
   private componentIndex = new Map<string, Set<Entity>>();
-  /** @internal */
   private entityComponentSets = new Map<Entity, Set<string>>();
-  /** @internal */
   private queries = new Map<string, Query>();
-  /** @internal */
   private queriesByComponent = new Map<string, Set<Query>>();
-  /** @internal */
   private systems: RegisteredSystem[] = [];
-  /** @internal */
   private sortedSystems: System[] = [];
-  /** @internal */
   private systemsNeedSorting = false;
-  /** @internal */
   private profilers: Map<System, SystemProfiler> = new Map();
   /** Whether system profiling is enabled. */
   public debugMode = false;
-  /** @internal */
   private nextEntityId = 1;
-  /** @internal */
   private freeEntities: Entity[] = [];
   private resources = new Map<string, unknown>();
-  /** Incremented on structural changes (entity creation/destruction, component addition/removal). */
-  public structureVersion = 0;
-  /** Incremented on data changes or manual notification. */
+
+  /** Versión del estado de los componentes. Se incrementa en cada mutación de datos. */
   public stateVersion = 0;
-  /** Current simulation tick. */
+  /** Versión de la topología del mundo. Se incrementa al añadir/eliminar entidades o componentes. */
+  public structureVersion = 0;
+  /** Marca si el mundo necesita un nuevo renderizado. */
+  public renderDirty = false;
+  /** El tick actual de la simulación. */
   public tick = 0;
-  private _renderDirty = false;
-  private commandBuffer = new WorldCommandBuffer();
+
+  /** @deprecated Usar structureVersion o stateVersion según corresponda. */
+  public get version(): number { return this.structureVersion + this.stateVersion; }
+
+  private commandBuffer = new StructuralCommandBuffer();
 
   /**
-   * @deprecated Use structureVersion or stateVersion instead.
-   * Combined version for backward compatibility.
+   * Buffer de comandos para mutaciones estructurales seguras.
    */
-  public get version(): number {
-    return this.structureVersion + this.stateVersion;
+  public get commands(): StructuralCommandBuffer {
+    return this.commandBuffer;
   }
 
   /**
-   * Genera una instantánea serializable del estado del mundo destinada a rollback o persistencia.
+   * Genera una instantánea serializable del estado completo del mundo para rollback o persistencia.
    *
    * @remarks
-   * Captura entidades activas, datos serializables de componentes, contadores de IDs, versión del mundo
+   * Captura entidades activas, datos de componentes, contadores de IDs, versión del mundo
    * y la semilla actual del generador de números aleatorios de gameplay.
-   * Las entidades se devuelven ordenadas por ID para favorecer la consistencia en la reconstrucción.
+   * Las entidades se devuelven en orden de inserción del Set (no necesariamente ordenadas por ID).
    *
-   * @returns Un objeto plano que contiene el estado serializable capturado del mundo.
+   * @returns Un objeto plano que contiene el estado reconstruible del mundo.
    *
-   * @warning La serialización se limita a propiedades que no sean funciones ni símbolos. Referencias a objetos complejos
-   * (clases, mapas, sets) no se restaurarán fielmente si no son POJOs serializables.
+   * @precondition El estado actual debe ser consistente; no se recomienda llamar durante un update de sistema.
+   * @postcondition Devuelve una copia profunda de cada componente, omitiendo funciones.
    *
-   * @precondition Se espera que el estado actual sea consistente; se recomienda evitar llamar durante un update de sistema
-   * para favorecer una captura coherente del estado lógico.
-   * @postcondition Devuelve una copia profunda (vía `structuredClone`) de los datos serializables de cada componente.
-   *
-   * @conceptualRisk [JSON_DETERMINISM][MEDIUM] La serialización no garantiza un orden determinista de las
-   * propiedades en todos los entornos, lo que puede afectar a la generación de hashes de estado.
-   * @conceptualRisk [GC_PRESSURE][MEDIUM] Las snapshots frecuentes, especialmente en mundos con alta densidad
-   * de entidades, aumentarán la presión sobre el recolector de basura.
+   * @conceptualRisk [JSON_DETERMINISM][MEDIUM] La serialización no garantiza el orden de las
+   * propiedades, lo que puede afectar a la generación de hashes de estado.
+   * @conceptualRisk [GC_PRESSURE][MEDIUM] Las snapshots frecuentes en juegos con miles de entidades
+   * generarán una presión significativa en el recolector de basura.
    * @returns El estado serializado del mundo.
    */
   public snapshot(): WorldSnapshot {
@@ -144,25 +132,24 @@ export class World {
       componentData,
       nextEntityId: this.nextEntityId,
       freeEntities: [...this.freeEntities].sort((a, b) => a - b),
-      structureVersion: this.structureVersion,
-      stateVersion: this.stateVersion,
+      version: this.structureVersion, // Use structureVersion as the base for snapshot versioning
       seed: gameplayRandom.getSeed()
     };
   }
 
   /**
-   * Intenta restaurar el estado del mundo a partir de una instantánea previamente capturada.
+   * Restaura el estado del mundo a partir de una instantánea previamente capturada.
    *
    * @remarks
-   * Este método reconstruye los mapas de componentes e índices basándose en los datos serializados.
-   * Intenta sincronizar las queries existentes para mantener la consistencia sin romper las referencias
-   * a los objetos Query.
+   * Este método reconstruye todos los mapas de componentes e índices. También garantiza
+   * que las queries existentes se invaliden y reconstruyan para mantener la consistencia
+   * de los resultados sin romper las referencias a los objetos Query.
    *
    * @param state - El objeto de estado obtenido de {@link World.snapshot}.
    *
-   * @precondition Se espera que el estado proporcionado sea una estructura válida y compatible con la versión del motor.
-   * @postcondition El mundo refleja el estado serializable contenido en la instantánea.
-   * @postcondition Las versiones de estructura y estado se sincronizan con los valores restaurados.
+   * @precondition El estado proporcionado debe ser una estructura válida generada por el motor.
+   * @postcondition El mundo refleja exactamente el estado contenido en la instantánea.
+   * @postcondition {@link World.version} se sincroniza con el valor del estado restaurado.
    * @sideEffect Limpia todos los datos actuales del mundo antes de la restauración.
    * @sideEffect Re-inicializa la semilla de `RandomService("gameplay")`.
    */
@@ -170,8 +157,9 @@ export class World {
     this.activeEntities = new Set(state.entities);
     this.nextEntityId = state.nextEntityId;
     this.freeEntities = [...state.freeEntities];
-    this.structureVersion = state.structureVersion;
-    this.stateVersion = state.stateVersion;
+    this.structureVersion = state.version;
+    this.stateVersion = 0;
+    this.renderDirty = true;
 
     if (state.seed !== undefined) {
         RandomService.getInstance("gameplay").setSeed(state.seed);
@@ -221,22 +209,25 @@ export class World {
             }
         });
     }
+
+    this.structureVersion++;
   }
 
   /**
-   * Solicita la creación de una nueva entidad en el mundo, intentando reutilizar IDs del pool.
+   * Crea una nueva entidad única en el mundo utilizando el pool de entidades.
    *
    * @remarks
-   * Utiliza un pool de IDs reciclados para mitigar la presión sobre el GC durante ciclos de vida frecuentes.
-   * Incrementa la versión de estructura del mundo para señalizar cambios topológicos.
+   * Intenta reutilizar un ID del pool de entidades libres antes de generar uno nuevo.
+   * Incrementa la versión del mundo para invalidar cachés estructurales.
    *
-   * Si se llama durante {@link World.update}, la creación efectiva en los mapas de componentes se difiere
-   * mediante un buffer de comandos hasta el final de la fase de simulación.
+   * Si se llama durante {@link World.update}, la creación se difiere al final del frame,
+   * pero el ID se reserva y devuelve inmediatamente.
    *
-   * @param id - ID opcional de la entidad. Reservado principalmente para restauraciones de estado o uso interno.
-   * @returns Un identificador de {@link Entity}.
-   * @postcondition La entidad se registra como activa o queda encolada para su activación.
-   * @sideEffect Incrementa {@link World.structureVersion}.
+   * @param id - ID opcional de la entidad. Usado internamente por el buffer de comandos.
+   * @returns Un nuevo identificador de {@link Entity}.
+   * @postcondition La entidad devuelta es considerada activa en el mundo.
+   * @postcondition El ID devuelto es un entero positivo único en el estado actual.
+   * @sideEffect Incrementa {@link World.version}.
    */
   public createEntity(id?: Entity): Entity {
     const entityId = id ?? (this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++);
@@ -261,7 +252,7 @@ export class World {
    * Elimina todos los sistemas registrados de todas las fases.
    *
    * @postcondition La lista de sistemas queda vacía.
-   * @sideEffect Incrementa {@link World.structureVersion}.
+   * @sideEffect Incrementa {@link World.version}.
    */
   clearSystems(): void {
     this.systems = [];
@@ -271,22 +262,23 @@ export class World {
   }
 
   /**
-   * Registra o actualiza un componente en una entidad específica.
+   * Adjunta o reemplaza un componente en una entidad específica.
    *
    * @remarks
-   * Si la entidad ya posee un componente del mismo tipo, se reemplaza.
-   * Intenta validar la integridad jerárquica si el componente es de tipo 'Transform'.
-   * Notifica a las queries reactivas para actualizar sus índices de forma incremental.
+   * Si la entidad ya poseía un componente del mismo tipo, este será sobrescrito.
+   * Realiza validaciones de integridad jerárquica para componentes de tipo 'Transform'.
+   * Notifica a las queries interesadas sobre el cambio estructural.
    *
-   * Si se llama durante {@link World.update}, la operación se difiere mediante un buffer.
+   * Si se llama durante {@link World.update}, la adición se difiere al final del frame.
    *
    * @param entity - El ID de la entidad destino.
-   * @param component - La instancia del componente (POJO).
-   * @returns El componente añadido.
+   * @param component - La instancia del componente a añadir.
+   * @returns El componente añadido para facilitar el encadenamiento.
    *
-   * @precondition Se espera que la entidad sea válida en el contexto del mundo actual.
-   * @postcondition El componente es accesible a través de las APIs de consulta del mundo.
-   * @postcondition Si el tipo es 'Transform', se intenta mantener la validez de la jerarquía.
+   * @precondition La entidad debe existir o ser un ID válido manejado por el motor.
+   * @precondition El componente debe tener una propiedad `type` válida.
+   * @postcondition El componente es accesible vía {@link World.getComponent}.
+   * @postcondition Si el tipo es 'Transform', se garantiza la validez de la jerarquía.
    * @throws {Error} Si se intenta asignar una entidad como su propio padre en un Transform.
    * @sideEffect Incrementa {@link World.version}.
    * @mutates componentMaps, componentIndex, entityComponentSets
@@ -324,25 +316,48 @@ export class World {
       }
       componentSet.add(type);
       this.notifyQueries(entity, componentSet, type);
-      this.structureVersion++;
-    } else {
-      this.stateVersion++;
     }
 
+    this.structureVersion++;
     return component;
   }
 
   /**
-   * Recupera un componente de una entidad por su tipo.
+   * Recupera un componente de una entidad por su tipo para lectura de solo lectura.
    *
    * @param entity - La entidad a consultar.
    * @param type - El nombre discriminador del componente.
    * @returns La instancia del componente o `undefined` si no existe.
    * @queries componentMaps
-   * @precondition La entidad debe ser un ID válido.
+   */
+  public readComponent<T extends Component>(entity: Entity, type: string): T | undefined {
+    const comp = this.componentMaps.get(type)?.get(entity) as T;
+    if (__DEV__ && comp && !Object.isFrozen(comp)) {
+        // En desarrollo, podríamos congelar para forzar el uso de mutateComponent,
+        // pero esto rompería la compatibilidad actual si no se hace con cuidado.
+    }
+    return comp;
+  }
+
+  /**
+   * Alias de {@link World.readComponent}.
+   * @deprecated Usar {@link World.readComponent} para claridad.
    */
   getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
-    return this.componentMaps.get(type)?.get(entity) as T;
+    return this.readComponent<T>(entity, type);
+  }
+
+  /**
+   * Obtiene un componente para mutación.
+   * Incrementa {@link World.stateVersion} y marca {@link World.renderDirty}.
+   */
+  public mutateComponent<T extends Component>(entity: Entity, type: string): T | undefined {
+    const comp = this.componentMaps.get(type)?.get(entity) as T;
+    if (comp) {
+        this.stateVersion++;
+        this.renderDirty = true;
+    }
+    return comp;
   }
 
   /**
@@ -375,7 +390,7 @@ export class World {
    * @param entity - La entidad destino.
    * @param type - El tipo de componente a eliminar.
    *
-   * @precondition Se espera que la entidad exista en el mundo.
+   * @precondition La entidad debe existir en el mundo.
    * @postcondition La entidad ya no posee el componente especificado.
    * @postcondition Las queries que dependían de este componente ya no incluirán a la entidad.
    * @sideEffect Incrementa {@link World.version}.
@@ -400,25 +415,34 @@ export class World {
   }
 
   /**
-   * Proporciona acceso a un conjunto de entidades que poseen la firma de componentes indicada.
+   * Realiza una consulta reactiva de entidades que poseen todos los tipos de componentes indicados.
    *
    * @remarks
-   * Emplea un sistema de caché reactivo para reducir el coste de las consultas recurrentes. Si la firma
-   * ya tiene una consulta asociada, el resultado se sirve desde el caché. Los resultados se actualizan
-   * de forma incremental ante cambios estructurales (añadir/quitar componentes).
+   * Utiliza un sistema de caché basado en {@link Query}. Si la consulta ya existe y el
+   * mundo no ha cambiado estructuralmente, devuelve el resultado cacheado instantáneamente.
+   * Las queries son sensibles al orden alfabético de los tipos para maximizar la reutilización.
    *
    * @param componentTypes - Lista de tipos que definen la firma de la consulta.
-   * @returns Un array de solo lectura con los IDs de las entidades coincidentes.
+   * @returns Un array de solo lectura con las entidades coincidentes.
    *
-   * @warning Evite crear queries dinámicas (e.g. usando `world.query(...types)`) dentro de bucles de
-   * actualización, ya que la generación de la clave de caché tiene un coste O(N log N) respecto al
-   * número de tipos.
-   *
-   * @precondition Se recomienda proporcionar al menos un tipo de componente para evitar consultas universales.
-   * @postcondition El array devuelto se mantiene ordenado por ID de entidad para favorecer la reproducibilidad.
+   * @precondition Debe proporcionarse al menos un tipo de componente.
+   * @postcondition El array devuelto está ordenado por ID de entidad.
+   * @conceptualRisk [PERFORMANCE][MEDIUM] Crear queries de muchos tipos en cada frame es costoso.
+   * Se deben definir las firmas de consulta de forma estática siempre que sea posible.
    */
   public query(...componentTypes: string[]): ReadonlyArray<Entity> {
-    if (componentTypes.length === 0) return [];
+    return this.getQuery(...componentTypes).getEntities();
+  }
+
+  /**
+   * Obtiene una vista de consulta para los tipos de componentes indicados.
+   */
+  public queryView(...componentTypes: string[]): import("./Query").QueryView {
+    return this.getQuery(...componentTypes).getView();
+  }
+
+  private getQuery(...componentTypes: string[]): Query {
+    if (componentTypes.length === 0) throw new Error("Query signature cannot be empty.");
     const key = componentTypes.length === 1 ? componentTypes[0] : [...componentTypes].sort().join(",");
     let query = this.queries.get(key);
 
@@ -441,7 +465,7 @@ export class World {
       });
     }
 
-    return query.getEntities();
+    return query;
   }
 
   /**
@@ -455,7 +479,7 @@ export class World {
    *
    * @param entity - La entidad a destruir.
    * @postcondition La entidad ya no existe en el mundo y sus componentes son inaccesibles.
-   * @sideEffect Incrementa {@link World.structureVersion}.
+   * @sideEffect Incrementa {@link World.version}.
    */
   public removeEntity(entity: Entity): void {
     if (this.isUpdating) {
@@ -480,9 +504,10 @@ export class World {
    * Se recomienda encarecidamente utilizar este buffer durante la actualización de sistemas
    * para evitar problemas de invalidación de iteradores en las Queries.
    *
-   * @returns La instancia de WorldCommandBuffer del mundo.
+   * @returns La instancia de StructuralCommandBuffer del mundo.
    */
-  public getCommandBuffer(): WorldCommandBuffer {
+  /** @deprecated Usar world.commands */
+  public getCommandBuffer(): StructuralCommandBuffer {
     return this.commandBuffer;
   }
 
@@ -506,7 +531,7 @@ export class World {
    * Útil para reinicios completos de nivel o cambios de escena drásticos.
    *
    * @postcondition El mundo queda en un estado inicial vacío.
-   * @sideEffect Incrementa {@link World.structureVersion}.
+   * @sideEffect Incrementa {@link World.version}.
    */
   public clear(): void {
     this.activeEntities.clear();
@@ -530,7 +555,7 @@ export class World {
    * @param name - Identificador único del recurso.
    * @param resource - La instancia u objeto del recurso.
    *
-   * @precondition Se recomienda que el nombre del recurso sea único para evitar sobrescritura accidental.
+   * @precondition El nombre del recurso debe ser único para evitar sobrescritura accidental.
    * @postcondition El recurso es accesible mediante {@link World.getResource}.
    * @sideEffect Sobrescribe cualquier recurso previo con el mismo nombre.
    */
@@ -573,7 +598,7 @@ export class World {
    * @param system - Instancia del sistema que extiende {@link System}.
    * @param config - Configuración de fase y prioridad.
    *
-   * @precondition Se espera que el sistema sea una instancia válida de {@link System}.
+   * @precondition El sistema debe ser una instancia válida de {@link System}.
    * @postcondition El sistema se añade a la cola de ejecución en la fase correspondiente.
    * @sideEffect Activa {@link World.systemsNeedSorting} para la siguiente actualización.
    */
@@ -585,24 +610,20 @@ export class World {
   }
 
   /**
-   * Orquesta un ciclo de actualización ejecutando los sistemas registrados por fases.
+   * Ejecuta un ciclo completo de actualización para todos los sistemas registrados.
    *
    * @remarks
-   * El ciclo sigue este orden:
-   * 1. Re-ordenación de sistemas si la lista ha cambiado.
-   * 2. Ejecución secuencial por fase (Input, Simulation, Collision, GameRules, Presentation).
-   * 3. Procesamiento de mutaciones diferidas a través del buffer de comandos.
+   * 1. Re-ordena sistemas si es necesario.
+   * 2. Itera por fase (Input -> Simulation -> Collision -> GameRules -> Presentation).
+   * 3. Ejecuta cada sistema, opcionalmente midiendo su rendimiento si `debugMode` es true.
+   * 4. Aplica todos los cambios estructurales diferidos (creación/eliminación de entidades y componentes).
    *
-   * @warning Se recomienda encarecidamente utilizar el {@link WorldCommandBuffer} para realizar
-   * mutaciones estructurales (crear/eliminar entidades) durante el update para evitar
-   * efectos secundarios en los iteradores de las queries.
+   * @param deltaTime - Tiempo transcurrido en milisegundos.
    *
-   * @param deltaTime - Tiempo transcurrido para este paso de simulación (ms).
-   *
-   * @postcondition El estado del mundo avanza y las mutaciones diferidas se consolidan al final.
+   * @precondition El mundo no debe estar en proceso de restauración o snapshotting.
+   * @postcondition El estado del mundo ha avanzado un paso de simulación.
    */
   update(deltaTime: number): void {
-    this.tick++;
     if (this.systemsNeedSorting) this.sortSystems();
 
     this.isUpdating = true;
@@ -624,6 +645,7 @@ export class World {
     }
 
     this.flush();
+    this.tick++;
   }
 
   getSystemTiming(system: System): number {
@@ -644,8 +666,7 @@ export class World {
       [SystemPhase.Simulation]: 1,
       [SystemPhase.Collision]: 2,
       [SystemPhase.GameRules]: 3,
-      [SystemPhase.Transform]: 4,
-      [SystemPhase.Presentation]: 5,
+      [SystemPhase.Presentation]: 4,
     };
     const getPhaseWeight = (phase: string) => phaseOrder[phase] ?? 999;
     this.systems.sort((a, b) => {
@@ -690,46 +711,53 @@ export class World {
   }
 
   /**
-   * Notifica que el estado interno de algún componente ha cambiado.
+   * Busca y devuelve el primer componente encontrado de un tipo específico (lectura pura).
    *
-   * @remarks
-   * Debe llamarse cuando se mutan propiedades de componentes existentes de forma directa
-   * para que los sistemas que observan `stateVersion` (como el Renderer) puedan reaccionar.
+   * @param type - El tipo de componente a buscar.
+   * @returns La instancia del componente, o `undefined`.
    */
-  public notifyStateChange(): void {
-    this.stateVersion++;
-    this._renderDirty = true;
+  public readSingleton<T extends Component>(type: string): T | undefined {
+    const [entity] = this.query(type);
+    if (entity === undefined) return undefined;
+    return this.readComponent<T>(entity, type);
   }
 
   /**
-   * Marca el mundo como sucio para el renderizado.
+   * Busca el singleton y permite su mutación.
    */
-  public setRenderDirty(dirty: boolean): void {
-    this._renderDirty = dirty;
+  public mutateSingleton<T extends Component>(type: string): T | undefined {
+    const [entity] = this.query(type);
+    if (entity === undefined) return undefined;
+    return this.mutateComponent<T>(entity, type);
   }
 
   /**
-   * Comprueba si el mundo tiene cambios pendientes de renderizar.
-   */
-  public isRenderDirty(): boolean {
-    return this._renderDirty;
-  }
-
-  /**
-   * Intenta localizar el primer componente de un tipo dado, tratándolo como un Singleton.
-   *
-   * @remarks
-   * Conveniente para componentes de instancia única (ej: estado global, configuración).
-   * A diferencia de versiones anteriores, esta operación es una lectura pura.
-   * Si el componente devuelto está congelado, el consumidor es responsable de manejarlo.
-   *
-   * @param type - El tipo de componente.
-   * @returns La instancia encontrada o `undefined`.
+   * @deprecated Usar readSingleton o mutateSingleton.
    */
   getSingleton<T extends Component>(type: string): T | undefined {
     const [entity] = this.query(type);
     if (entity === undefined) return undefined;
-    return this.getComponent<T>(entity, type);
+    const component = this.readComponent<T>(entity, type);
+    if (!component) return undefined;
+    if (Object.isFrozen(component)) {
+      const mutableCopy = { ...component };
+      this.addComponent(entity, mutableCopy);
+      return mutableCopy;
+    }
+    return component;
+  }
+
+  /**
+   * Asegura que exista una entidad con el componente singleton indicado.
+   */
+  public ensureSingleton<T extends Component>(type: string, factory: () => T): T {
+    let comp = this.mutateSingleton<T>(type);
+    if (!comp) {
+        const entity = this.createEntity();
+        comp = factory();
+        this.addComponent(entity, comp);
+    }
+    return comp;
   }
 
   private ensureComponentStorage(type: string): void {

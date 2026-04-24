@@ -1,8 +1,8 @@
-import { World } from "../../../../engine/core/World";
+import { World } from "../../../../engine/World";
 import { PongInputSystem } from "../PongInputSystem";
 import { PongEntityFactory } from "../../EntityFactory";
 import { PONG_CONFIG } from "../../types";
-import { VelocityComponent, TagComponent, InputStateComponent } from "../../../../engine/types/EngineTypes";
+import { VelocityComponent, TagComponent, InputStateComponent } from "../../../../engine/EngineTypes";
 
 describe("PongInputSystem", () => {
   let world: World;

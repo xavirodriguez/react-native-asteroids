@@ -1,9 +1,9 @@
-import { World } from "../../../engine/core/World";
+import { World } from "../../../engine";
 import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 import { spawnAsteroidWave, createUfo } from "../EntityFactory";
 import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
-import { RandomService } from "../../../engine/utils/RandomService";
-import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
+import { RandomService } from "../../../engine/RandomService";
+import { BaseGameStateSystem } from "../../../engine/BaseGameStateSystem";
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.
@@ -11,7 +11,7 @@ import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem
 export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateComponent> implements IGameStateSystem {
 
   constructor(gameInstance?: IAsteroidsGame) {
-    super(gameInstance as unknown as IAsteroidsGame & import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, boolean>>);
+    super(gameInstance as unknown as IAsteroidsGame & import("../../../engine/BaseGame").BaseGame<unknown, Record<string, boolean>>);
   }
 
   /**

@@ -1,12 +1,12 @@
-import { World } from "../../../engine/core/World";
-import { System } from "../../../engine/core/System";
-import { Entity, TransformComponent, CollisionEventsComponent, Collider2DComponent, RenderComponent } from "../../../engine/types/EngineTypes";
+import { World } from "../../../engine";
+import { System } from "../../../engine/System";
+import { Entity, TransformComponent, CollisionEventsComponent, Collider2DComponent, RenderComponent } from "../../../engine/EngineTypes";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
 import { FlappyBirdState, BirdComponent } from "../types/FlappyBirdTypes";
-import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
-import { Juice } from "../../../engine/utils/Juice";
-import { createEmitter } from "../../../engine/systems/ParticleSystem";
-import { EventBus } from "../../../engine/core/EventBus";
+import { JuiceSystem } from "../../../engine/JuiceSystem";
+import { Juice } from "../../../engine/Juice";
+import { createEmitter } from "../../../engine/ParticleSystem";
+import { EventBus } from "../../../engine/EventBus";
 
 /**
  * System that reacts to collision events between the bird and pipes or ground.

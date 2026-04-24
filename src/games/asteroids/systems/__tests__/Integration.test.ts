@@ -1,8 +1,8 @@
-import { World } from "../../../../engine/core/World";
-import { CollisionSystem2D } from "../../../../engine/physics/collision/CollisionSystem2D";
+import { World } from "../../../../engine/World";
+import { CollisionSystem2D } from "../../../../engine/physics2d/CollisionSystem2D";
 import { AsteroidCollisionSystem } from "../AsteroidCollisionSystem";
 import { AsteroidGameStateSystem } from "../AsteroidGameStateSystem";
-import { MovementSystem } from "../../../../engine/systems/MovementSystem";
+import { MovementSystem } from "../../../../engine/MovementSystem";
 import { ParticlePool, BulletPool } from "../../EntityPool";
 import { createBullet, createGameState } from "../../EntityFactory";
 import { GAME_CONFIG, type GameStateComponent } from "../../types/AsteroidTypes";
@@ -53,7 +53,7 @@ describe("Asteroids Gameplay Integration", () => {
     // 1. Find an asteroid and spawn a bullet on top of it
     const asteroids = world.query("Asteroid", "Transform");
     const targetAsteroid = asteroids[0];
-    const pos = world.getComponent<import("../../../../engine/types/EngineTypes").TransformComponent>(targetAsteroid, "Transform")!;
+    const pos = world.getComponent<import("../../../../engine/EngineTypes").TransformComponent>(targetAsteroid, "Transform")!;
 
     createBullet({
       world,

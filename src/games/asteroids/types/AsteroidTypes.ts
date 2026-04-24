@@ -1,4 +1,4 @@
-import { Component } from "../../../engine/types/EngineTypes";
+import { Component } from "../../../engine/EngineTypes";
 
 /**
  * Represents the current state of user inputs for Asteroids.
@@ -54,7 +54,7 @@ export interface AsteroidComponent extends Component {
   size: "large" | "medium" | "small";
 }
 
-import { Star, ScreenShakeComponent } from "../../../engine/index";
+import { Star, Legacy } from "../../../engine/index";
 
 /**
  * Component to track global game progress and state.
@@ -71,7 +71,7 @@ export interface GameStateComponent extends Component {
   lastBulletHit: boolean;
   serverTick: number;
   stars?: Star[];
-  screenShake?: ScreenShakeComponent | null;
+  screenShake?: Legacy.LegacyScreenShake | null;
   debugCRT?: boolean;
 }
 

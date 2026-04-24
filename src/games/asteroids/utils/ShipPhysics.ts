@@ -1,8 +1,8 @@
-import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
+import { World } from "../../../engine";
+import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/EngineTypes";
 import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
-import { PhysicsUtils } from "../../../engine/utils/PhysicsUtils";
-import { RandomService } from "../../../engine/utils/RandomService";
+import { PhysicsUtils } from "../../../engine/PhysicsUtils";
+import { RandomService } from "../../../engine/RandomService";
 import { createParticle, createBullet } from "../EntityFactory";
 import { SimulationContext } from "../../../simulation/DeterministicSimulation";
 
@@ -63,10 +63,7 @@ export const ShipPhysics = {
 
   /**
    * Unified ship simulation tick.
-   *
-   * @remarks
-   * Designed to centralize physics and action logic aiming for consistency
-   * between ECS systems and network prediction.
+   * Ensures identical physics and action logic between ECS systems and prediction.
    */
   simulateShipTick(
     world: World,
@@ -77,7 +74,7 @@ export const ShipPhysics = {
     deltaTime: number,
     ctx?: SimulationContext,
     config: typeof GAME_CONFIG = GAME_CONFIG,
-    onShoot?: (bullet: import("../../../engine/core/Entity").Entity) => void
+    onShoot?: (bullet: import("../../../engine/Entity").Entity) => void
   ): void {
     const dtSeconds = deltaTime / 1000;
 

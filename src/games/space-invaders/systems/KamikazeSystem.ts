@@ -1,7 +1,7 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent, RenderComponent, Component } from "../../../engine/types/EngineTypes";
-import { RandomService } from "../../../engine/utils/RandomService";
+import { System } from "../../../engine/System";
+import { World } from "../../../engine";
+import { TransformComponent, VelocityComponent, RenderComponent, Component } from "../../../engine/EngineTypes";
+import { RandomService } from "../../../engine/RandomService";
 import { GameStateComponent, GAME_CONFIG } from "../types/SpaceInvadersTypes";
 
 export interface KamikazeComponent extends Component {
@@ -78,7 +78,7 @@ export class KamikazeSystem extends System {
 
   private spawnKamikaze(world: World, invaders: ReadonlyArray<number>, gameState: GameStateComponent): void {
     if (invaders.length === 0) return;
-    /** @conceptualRisk [DETERMINISM][FIXED] Se utiliza RandomService("gameplay") para favorecer la reproducibilidad. */
+    /** @conceptualRisk [DETERMINISM][FIXED] Se utiliza RandomService("gameplay") para garantizar determinismo. */
     const randomIndex = RandomService.getInstance("gameplay").nextInt(0, invaders.length);
     const invader = invaders[randomIndex];
     const pos = world.getComponent<TransformComponent>(invader, "Transform");

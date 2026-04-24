@@ -1,4 +1,4 @@
-import { ShapeDrawer } from "../../../engine/rendering/Renderer";
+import { ShapeDrawer } from "../../../engine/presentation";
 import { BallComponent } from "../systems/PongSpinSystem";
 
 /**
