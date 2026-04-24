@@ -13,8 +13,8 @@ import { Entity } from "../types/EngineTypes";
  * El {@link World} notifica a las queries relevantes cuando ocurren cambios estructurales,
  * permitiendo un acceso rápido a las entidades que coinciden con la firma.
  *
- * @conceptualRisk [MUTABLE_CACHE_LEAK][MEDIUM] Si un consumidor modifica el array devuelto
- * (e.g., mediante `.push()` o `.sort()` in-place), corromperá el estado interno de la Query.
+ * @conceptualRisk [MUTABLE_CACHE_LEAK][MITIGATED] El método `getEntities()` devuelve una copia
+ * defensiva para prevenir la corrupción del estado interno desde el exterior.
  */
 export class Query {
   private entities: Set<Entity> = new Set();
@@ -69,31 +69,28 @@ export class Query {
   }
 
   /**
-   * Proporciona la lista de entidades que coinciden actualmente con la firma de la query.
-   * Emplea un array cacheado para mitigar la presión sobre el recolector de basura.
+   * Proporciona una instantánea (defensive copy) de las entidades que coinciden con la firma de la query.
    *
    * @remarks
-   * El array devuelto es una referencia al caché interno. Se entrega como `ReadonlyArray`
-   * para desaconsejar mutaciones externas que corromperían el estado de la query.
+   * A diferencia de versiones anteriores, este método devuelve una copia del array interno.
+   * Esto garantiza que los consumidores no puedan corromper el caché de la query mediante
+   * casting forzado a tipos mutables.
    *
    * @returns Un array de solo lectura de IDs de {@link Entity}.
    *
-   * @warning No se debe realizar casting de este array a uno mutable ni utilizar métodos
-   * in-place (sort, push, splice), ya que esto invalidaría el caché interno.
-   * @postcondition El array devuelto refleja el estado del {@link World} para esta firma en el momento de la consulta.
-   * @postcondition Las entidades en el array se entregan ordenadas por ID de forma ascendente para favorecer la consistencia.
+   * @postcondition El array devuelto es una copia independiente del estado actual.
+   * @postcondition Las entidades en el array se entregan ordenadas por ID de forma ascendente.
    *
-   * @conceptualRisk [MEMORY][MEDIUM] Fuga de caché mutable en Queries. Los sistemas reciben
-   * una referencia al array interno de la query y pueden corromperlo si realizan casting forzado.
-   * @conceptualRisk [GC_PRESSURE][LOW] Generación frecuente de nuevos arrays internos cuando
-   * `needsUpdateArray` es true. Se mitiga mediante el sistema de cacheado incremental.
+   * @conceptualRisk [GC_PRESSURE][MEDIUM] Cada llamada genera una nueva asignación de array.
+   * Los sistemas de alta frecuencia deben considerar cachear el resultado localmente si
+   * no hay cambios estructurales en el mundo (ver `world.structureVersion`).
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.needsUpdateArray) {
       this.entityArray = Array.from(this.entities).sort((a, b) => a - b);
       this.needsUpdateArray = false;
     }
-    return this.entityArray as ReadonlyArray<Entity>;
+    return [...this.entityArray];
   }
 
   /**
