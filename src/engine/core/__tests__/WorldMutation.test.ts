@@ -182,4 +182,62 @@ describe("World Structural Mutation Safety", () => {
 
     expect(world.getSingleton<TestComponent>("Test")?.value).toBe(200);
   });
+
+  describe("Strong Typing & Versioning (P2)", () => {
+    it("Test 1: getComponent() should return live reference and direct mutation works without changing stateVersion", () => {
+      const entity = world.createEntity();
+      const component: TestComponent = { type: "Test", value: 10 };
+      world.addComponent(entity, component);
+      world.flush();
+
+      const initialStateVersion = world.stateVersion;
+
+      // Retrieve component
+      const retrieved = world.getComponent(entity, "Test") as TestComponent;
+      expect(retrieved).toBe(component); // Identity check
+
+      // Direct mutation
+      retrieved.value = 20;
+
+      // Verify state
+      expect(world.getComponent<TestComponent>(entity, "Test")?.value).toBe(20);
+      expect(world.stateVersion).toBe(initialStateVersion); // Bypasses tracking
+      expect(world.isRenderDirty()).toBe(false);
+    });
+
+    it("Test 2: mutateComponent() should correctly update component and tracking state", () => {
+      const entity = world.createEntity();
+      const component: TestComponent = { type: "Test", value: 100 };
+      world.addComponent(entity, component);
+      world.flush();
+
+      const initialStateVersion = world.stateVersion;
+
+      const result = world.mutateComponent(entity, "Test", (c) => {
+        const testComp = c as TestComponent;
+        testComp.value = 200;
+      });
+
+      expect(result).toBe(true);
+      expect(world.getComponent<TestComponent>(entity, "Test")?.value).toBe(200);
+      expect(world.stateVersion).toBe(initialStateVersion + 1);
+      expect(world.isRenderDirty()).toBe(true);
+    });
+
+    it("Test 3: mutateComponent() should return false and not change versions when component is missing", () => {
+      const entity = world.createEntity();
+      world.flush();
+
+      const initialStateVersion = world.stateVersion;
+      const initialRenderDirty = world.isRenderDirty();
+
+      const result = world.mutateComponent(entity, "Test", (c) => {
+        (c as any).value = 500;
+      });
+
+      expect(result).toBe(false);
+      expect(world.stateVersion).toBe(initialStateVersion);
+      expect(world.isRenderDirty()).toBe(initialRenderDirty);
+    });
+  });
 });
