@@ -139,13 +139,25 @@ describe("World Structural Mutation Safety", () => {
 
     const initialStateVersion = world.stateVersion;
 
-    world.mutateComponent<TestComponent>(entity, "Test", (c) => {
+    const success = world.mutateComponent<TestComponent>(entity, "Test", (c) => {
       c.value = 20;
     });
 
+    expect(success).toBe(true);
     expect(world.getComponent<TestComponent>(entity, "Test")?.value).toBe(20);
     expect(world.stateVersion).toBeGreaterThan(initialStateVersion);
     expect(world.isRenderDirty()).toBe(true);
+  });
+
+  it("should return false when mutating a non-existent component", () => {
+    const entity = world.createEntity();
+    world.flush();
+
+    const success = world.mutateComponent<TestComponent>(entity, "NonExistent", (c) => {
+      c.value = 20;
+    });
+
+    expect(success).toBe(false);
   });
 
   it("should allow deferred component mutation via CommandBuffer", () => {
@@ -176,33 +188,30 @@ describe("World Structural Mutation Safety", () => {
     world.addComponent(entity, { type: "Test", value: 100 } as TestComponent);
     world.flush();
 
-    world.mutateSingleton<TestComponent>("Test", (c) => {
+    const success = world.mutateSingleton<TestComponent>("Test", (c) => {
       c.value = 200;
     });
 
+    expect(success).toBe(true);
     expect(world.getSingleton<TestComponent>("Test")?.value).toBe(200);
   });
 
-  describe("Strong Typing & Versioning (P2)", () => {
-    it("Test 1: getComponent() should return live reference and direct mutation works without changing stateVersion", () => {
-      const entity = world.createEntity();
-      const component: TestComponent = { type: "Test", value: 10 };
-      world.addComponent(entity, component);
-      world.flush();
+  it("should return false when mutating a non-existent singleton", () => {
+    const success = world.mutateSingleton<TestComponent>("NonExistent", (c) => {
+      c.value = 200;
+    });
 
-      const initialStateVersion = world.stateVersion;
+    expect(success).toBe(false);
+  });
 
-      // Retrieve component
-      const retrieved = world.getComponent(entity, "Test") as TestComponent;
-      expect(retrieved).toBe(component); // Identity check
+  it("should allow mutating resources via mutateResource", () => {
+    const resource = { score: 100 };
+    world.setResource("GameData", resource);
 
-      // Direct mutation
-      retrieved.value = 20;
+    const initialStateVersion = world.stateVersion;
 
-      // Verify state
-      expect(world.getComponent<TestComponent>(entity, "Test")?.value).toBe(20);
-      expect(world.stateVersion).toBe(initialStateVersion); // Bypasses tracking
-      expect(world.isRenderDirty()).toBe(false);
+    world.mutateResource<{ score: number }>("GameData", (r) => {
+      r.score = 200;
     });
 
     it("Test 2: mutateComponent() should correctly update component and tracking state", () => {
