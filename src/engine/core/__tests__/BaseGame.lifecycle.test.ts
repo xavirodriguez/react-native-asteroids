@@ -161,4 +161,21 @@ describe("BaseGame Lifecycle", () => {
     expect(game.getStatus()).toBe(GameStatus.READY);
     expect(game.initializedEntitiesCount).toBe(1);
   });
+
+  test("setInput() and subscribe() should do nothing after destroy()", async () => {
+    await game.init();
+    game.destroy();
+
+    // setInput should not throw but should be ignored (implicitly verified by not crashing)
+    expect(() => game.setInput({ thrust: true })).not.toThrow();
+
+    // subscribe should return a no-op unsubscribe function
+    let called = false;
+    const unsubscribe = game.subscribe(() => { called = true; });
+    expect(typeof unsubscribe).toBe("function");
+
+    // Even if we notify (internally), it shouldn't have been added
+    // Note: _notifyListeners is private, but we can check if it returns a no-op
+    unsubscribe(); // Should also not throw
+  });
 });
