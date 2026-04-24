@@ -1,4 +1,5 @@
 import { Entity, Component } from "../types/EngineTypes";
+import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
 import type { World } from "./World";
 
 /**
@@ -78,6 +79,8 @@ export class WorldCommandBuffer {
    * @param componentType - Tipo de componente.
    * @param mutator - Función de mutación.
    */
+  public mutateComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, componentType: TType, mutator: (component: ComponentOf<TType>) => void): void;
+  public mutateComponent<T extends Component>(entity: Entity, componentType: string, mutator: (component: T) => void): void;
   public mutateComponent<T extends Component>(entity: Entity, componentType: string, mutator: (component: T) => void): void {
     this.commands.push({ type: CommandType.MUTATE_COMPONENT, entity, componentType, mutator });
   }

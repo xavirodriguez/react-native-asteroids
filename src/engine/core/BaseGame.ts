@@ -261,12 +261,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     while (this._transitionLock) {
       await this._transitionLock;
     }
+    if (this._status === GameStatus.DESTROYED) return;
 
     let resolveLock: () => void;
     this._transitionLock = new Promise((resolve) => { resolveLock = resolve; });
 
     try {
       await this._onBeforeRestart();
+      if (this._status === GameStatus.DESTROYED) return;
 
       if (seed !== undefined) {
         this.currentSeed = seed;
@@ -280,6 +282,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
         this.world.clear();
         this.initializeEntities();
       }
+
+      if (this._status === GameStatus.DESTROYED) return;
+
       this._isPaused = false;
       this._notifyListeners();
     } finally {
@@ -348,8 +353,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     // El lock aquí protege contra llamadas concurrentes antes de que el status cambie.
     if (this._transitionLock) {
       await this._transitionLock;
-      return;
     }
+    if (this._status !== GameStatus.UNINITIALIZED) return;
 
     let resolveLock: () => void;
     this._transitionLock = new Promise((resolve) => { resolveLock = resolve; });
@@ -357,11 +362,16 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     try {
       this._status = GameStatus.INITIALIZING;
       await this.registerEngineSystems();
+
+      if (this._status === GameStatus.DESTROYED) return;
+
       this.registerSystems();
       this.initializeEntities();
       this._status = GameStatus.READY;
     } catch (error) {
-      this._status = GameStatus.UNINITIALIZED;
+      if (this._status !== GameStatus.DESTROYED) {
+        this._status = GameStatus.UNINITIALIZED;
+      }
       throw error;
     } finally {
       this._transitionLock = null;

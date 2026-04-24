@@ -139,13 +139,25 @@ describe("World Structural Mutation Safety", () => {
 
     const initialStateVersion = world.stateVersion;
 
-    world.mutateComponent<TestComponent>(entity, "Test", (c) => {
+    const success = world.mutateComponent<TestComponent>(entity, "Test", (c) => {
       c.value = 20;
     });
 
+    expect(success).toBe(true);
     expect(world.getComponent<TestComponent>(entity, "Test")?.value).toBe(20);
     expect(world.stateVersion).toBeGreaterThan(initialStateVersion);
     expect(world.isRenderDirty()).toBe(true);
+  });
+
+  it("should return false when mutating a non-existent component", () => {
+    const entity = world.createEntity();
+    world.flush();
+
+    const success = world.mutateComponent<TestComponent>(entity, "NonExistent", (c) => {
+      c.value = 20;
+    });
+
+    expect(success).toBe(false);
   });
 
   it("should allow deferred component mutation via CommandBuffer", () => {
@@ -176,11 +188,20 @@ describe("World Structural Mutation Safety", () => {
     world.addComponent(entity, { type: "Test", value: 100 } as TestComponent);
     world.flush();
 
-    world.mutateSingleton<TestComponent>("Test", (c) => {
+    const success = world.mutateSingleton<TestComponent>("Test", (c) => {
       c.value = 200;
     });
 
+    expect(success).toBe(true);
     expect(world.getSingleton<TestComponent>("Test")?.value).toBe(200);
+  });
+
+  it("should return false when mutating a non-existent singleton", () => {
+    const success = world.mutateSingleton<TestComponent>("NonExistent", (c) => {
+      c.value = 200;
+    });
+
+    expect(success).toBe(false);
   });
 
   it("should allow mutating resources via mutateResource", () => {

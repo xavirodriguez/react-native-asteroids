@@ -371,3 +371,39 @@ export interface Star extends Component {
   twinkleSpeed: number;
   layer: number;
 }
+
+/**
+ * Unión de todos los componentes base del motor para endurecimiento de tipos.
+ */
+export type AnyCoreComponent =
+  | TransformComponent
+  | ManualMovementComponent
+  | PreviousTransformComponent
+  | VelocityComponent
+  | FrictionComponent
+  | BoundaryComponent
+  | TagComponent
+  | TTLComponent
+  | Collider2DComponent
+  | CollisionEventsComponent
+  | ContinuousColliderComponent
+  | PhysicsBody2DComponent
+  | RenderComponent
+  | HealthComponent
+  | ReclaimableComponent
+  | InputStateComponent
+  | EventBusComponent
+  | AnimatorComponent
+  | StateMachineComponent
+  | ParticleEmitterComponent
+  | TilemapComponent
+  | Camera2DComponent
+  | ScreenShakeComponent
+  | VisualOffsetComponent
+  | TrailComponent
+  | Star;
+
+/**
+ * Auxiliar para inferir el tipo concreto de un componente a partir de su discriminador.
+ */
+export type ComponentOf<TType extends AnyCoreComponent["type"]> = Extract<AnyCoreComponent, { type: TType }>;

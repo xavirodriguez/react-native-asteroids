@@ -1,4 +1,5 @@
 import { Component, Entity, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../types/EngineTypes";
+import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
 import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
@@ -404,6 +405,8 @@ export class World {
    * @queries componentMaps
    * @precondition La entidad debe ser un ID válido.
    */
+  getComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): Readonly<ComponentOf<TType>> | undefined;
+  getComponent<T extends Component>(entity: Entity, type: string): Readonly<T> | undefined;
   getComponent<T extends Component>(entity: Entity, type: string): Readonly<T> | undefined {
     return this.componentMaps.get(type)?.get(entity) as T;
   }
@@ -421,14 +424,19 @@ export class World {
    * @param type - El tipo de componente a mutar.
    * @param mutator - Callback que recibe la instancia del componente para su modificación.
    *
+   * @returns `true` si el componente existía y fue mutado, `false` en caso contrario.
    * @postcondition Se incrementa {@link World.stateVersion} y se marca el mundo como sucio para el render.
    */
-  mutateComponent<T extends Component>(entity: Entity, type: string, mutator: (component: T) => void): void {
+  mutateComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType, mutator: (component: ComponentOf<TType>) => void): boolean;
+  mutateComponent<T extends Component>(entity: Entity, type: string, mutator: (component: T) => void): boolean;
+  mutateComponent<T extends Component>(entity: Entity, type: string, mutator: (component: T) => void): boolean {
     const component = this.componentMaps.get(type)?.get(entity) as T;
     if (component) {
       mutator(component);
       this.notifyStateChange();
+      return true;
     }
+    return false;
   }
 
   /**
@@ -834,6 +842,8 @@ export class World {
    * @param type - El tipo de componente.
    * @returns La instancia encontrada (Readonly) o `undefined`.
    */
+  getSingleton<TType extends AnyCoreComponent["type"]>(type: TType): Readonly<ComponentOf<TType>> | undefined;
+  getSingleton<T extends Component>(type: string): Readonly<T> | undefined;
   getSingleton<T extends Component>(type: string): Readonly<T> | undefined {
     const [entity] = this.query(type);
     if (entity === undefined) return undefined;
@@ -849,12 +859,17 @@ export class World {
    *
    * @param type - El tipo de componente singleton.
    * @param mutator - Callback de mutación.
+   *
+   * @returns `true` si el componente existía y fue mutado, `false` en caso contrario.
    */
-  mutateSingleton<T extends Component>(type: string, mutator: (component: T) => void): void {
+  mutateSingleton<TType extends AnyCoreComponent["type"]>(type: TType, mutator: (component: ComponentOf<TType>) => void): boolean;
+  mutateSingleton<T extends Component>(type: string, mutator: (component: T) => void): boolean;
+  mutateSingleton<T extends Component>(type: string, mutator: (component: T) => void): boolean {
     const [entity] = this.query(type);
     if (entity !== undefined) {
-      this.mutateComponent<T>(entity, type, mutator);
+      return this.mutateComponent<T>(entity, type, mutator);
     }
+    return false;
   }
 
   private ensureComponentStorage(type: string): void {
