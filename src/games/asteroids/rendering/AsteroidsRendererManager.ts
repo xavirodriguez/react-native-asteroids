@@ -6,7 +6,7 @@ import { GAME_CONFIG } from "../../../types/GameTypes";
 /**
  * Default renderer initialization for Asteroids (Native/Universal).
  */
-export function initializeAsteroidsRenderer(renderer: Renderer): void {
+export function initializeAsteroidsRenderer(renderer: Renderer<any>): void {
   if (renderer.type === "canvas") {
     const canvasRenderer = renderer as import("../../../engine/rendering/CanvasRenderer").CanvasRenderer;
 
@@ -51,7 +51,7 @@ export function initializeAsteroidsRenderer(renderer: Renderer): void {
       renderer.registerShape("particle", drawSkiaParticle);
       renderer.registerBackgroundEffect("starfield", skiaStarfieldEffect);
     } catch (e) {
-      console.warn("Failed to load Skia visuals", e);
+      console.warn("Failed to load Skia visuals:", e instanceof Error ? e.stack : String(e));
     }
   }
 }
