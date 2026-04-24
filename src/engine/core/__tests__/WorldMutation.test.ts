@@ -182,4 +182,49 @@ describe("World Structural Mutation Safety", () => {
 
     expect(world.getSingleton<TestComponent>("Test")?.value).toBe(200);
   });
+
+  it("should allow mutating resources via mutateResource", () => {
+    const resource = { score: 100 };
+    world.setResource("GameData", resource);
+
+    const initialStateVersion = world.stateVersion;
+
+    world.mutateResource<{ score: number }>("GameData", (r) => {
+      r.score = 200;
+    });
+
+    expect(world.getResource<{ score: number }>("GameData")?.score).toBe(200);
+    expect(world.stateVersion).toBeGreaterThan(initialStateVersion);
+  });
+
+  it("should return a frozen entities array in __DEV__", () => {
+    world.createEntity();
+    world.flush();
+
+    const entities = world.entities;
+    expect(Object.isFrozen(entities)).toBe(true);
+
+    if (process.env.NODE_ENV !== "production") {
+        expect(() => (entities as any).push(999)).toThrow();
+    }
+  });
+
+  it("should cache entities array and invalidate on structural changes", () => {
+    const e1 = world.createEntity();
+    world.flush();
+
+    const entities1 = world.entities;
+    expect(entities1).toContain(e1);
+
+    const entities2 = world.entities;
+    expect(entities1).toBe(entities2); // Same reference (cached)
+
+    const e2 = world.createEntity();
+    world.flush();
+
+    const entities3 = world.entities;
+    expect(entities3).not.toBe(entities1); // New reference (invalidated)
+    expect(entities3).toContain(e1);
+    expect(entities3).toContain(e2);
+  });
 });
