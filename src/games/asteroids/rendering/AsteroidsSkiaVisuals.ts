@@ -66,7 +66,7 @@ export const drawSkiaShip: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, elapse
         shipPath.close();
 
         p.setColor(Skia.Color("#DDDDDD"));
-        p.setStyle(PaintStyle.Fill);
+        p.setStyle(Skia.PaintStyle.Fill);
         canvas.drawPath(shipPath, p);
 
         p.setColor(Skia.Color(render.color));
@@ -76,7 +76,7 @@ export const drawSkiaShip: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, elapse
 
         // Details
         p.setColor(Skia.Color("#FF0000"));
-        p.setStyle(PaintStyle.Fill);
+        p.setStyle(Skia.PaintStyle.Fill);
         canvas.drawRect(Skia.XYWHRect(-size / 2, size / 6, size / 6, size / 8), p);
         canvas.drawRect(Skia.XYWHRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8), p);
     } catch (_e) {
@@ -104,11 +104,11 @@ export const drawSkiaUfo: ShapeDrawer<SkCanvas> = (canvas, _entity, _pos, _elaps
 
         p.setAlphaf(1.0);
         p.setColor(Skia.Color("#999"));
-        p.setStyle(PaintStyle.Fill);
+        p.setStyle(Skia.PaintStyle.Fill);
         canvas.drawOval(Skia.XYWHRect(-size, -size / 2, size * 2, size), p);
 
         p.setColor(Skia.Color(color));
-        p.setStyle(PaintStyle.Stroke);
+        p.setStyle(Skia.PaintStyle.Stroke);
         canvas.drawOval(Skia.XYWHRect(-size, -size / 2, size * 2, size), p);
 
         p.setColor(Skia.Color("#00ffff"));
@@ -144,7 +144,7 @@ export const skiaStarfieldEffect: EffectDrawer<SkCanvas> = (canvas, snapshot, wi
             if (!shipPos) return;
 
             p.setColor(Skia.Color("white"));
-            p.setStyle(PaintStyle.Fill);
+            p.setStyle(Skia.PaintStyle.Fill);
 
             gameState.stars.forEach((star: Star) => {
               const parallaxX = (star.x - (shipPos.worldX ?? shipPos.x) * (0.05 * (star.layer + 1)) + width) % width;
@@ -195,7 +195,7 @@ export const drawSkiaParticle: ShapeDrawer<SkCanvas> = (canvas, entity, _pos, _e
 
         p.setColor(Skia.Color(`hsl(${hue}, 100%, ${lightness}%)`));
         p.setAlphaf(lifeRatio);
-        p.setStyle(PaintStyle.Fill);
+        p.setStyle(Skia.PaintStyle.Fill);
 
         const size = render.size * lifeRatio;
         canvas.drawCircle(0, 0, size, p);
@@ -222,7 +222,7 @@ export const drawSkiaBullet: ShapeDrawer<SkCanvas> = (canvas, _entity, _pos, _el
         p.setMaskFilter(null);
         p.setAlphaf(1.0);
         p.setColor(Skia.Color("#FFFFFF"));
-        p.setStyle(PaintStyle.Fill);
+        p.setStyle(Skia.PaintStyle.Fill);
         canvas.drawCircle(0, 0, size, p);
         canvas.restore();
     } catch (_e) { /* ignore */ }

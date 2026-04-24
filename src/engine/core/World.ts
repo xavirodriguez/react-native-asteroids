@@ -127,6 +127,8 @@ export class World {
   /** @internal */
   private systemsNeedSorting = false;
   /** @internal */
+  private _systemsVersion = 0;
+  /** @internal */
   private profilers: Map<System, SystemProfiler> = new Map();
   /** Whether system profiling is enabled. */
   public debugMode = false;
@@ -137,6 +139,10 @@ export class World {
   private resources = new Map<string, unknown>();
   /** Incremented on structural changes (entity creation/destruction, component addition/removal). */
   private _structureVersion = 0;
+  /** @internal */
+  private _entitiesCache: Entity[] = [];
+  /** @internal */
+  private _entitiesCacheVersion = -1;
   /** Incremented on data changes or manual notification. */
   private _stateVersion = 0;
   /** Current simulation tick. */
@@ -157,6 +163,48 @@ export class World {
    */
   public get version(): number {
     return this._structureVersion + this._stateVersion;
+  }
+
+  /**
+   * Obtiene una lista ordenada de todas las entidades activas.
+   *
+   * @remarks
+   * Utiliza un sistema de caché reactivo basado en {@link World.structureVersion} para
+   * evitar re-ordenaciones costosas. En entornos de desarrollo, el array devuelto
+   * está congelado para prevenir mutaciones accidentales.
+   *
+   * @returns Un array de solo lectura de {@link Entity}.
+   */
+  public get entities(): ReadonlyArray<Entity> {
+    if (this._entitiesCacheVersion !== this._structureVersion) {
+      this._entitiesCache = Array.from(this.activeEntities).sort((a, b) => a - b);
+      if (__DEV__) {
+        Object.freeze(this._entitiesCache);
+      }
+      this._entitiesCacheVersion = this._structureVersion;
+    }
+    return this._entitiesCache;
+  }
+
+  /**
+   * Obtiene la lista de sistemas registrados ordenados por fase y prioridad.
+   *
+   * @remarks
+   * Utiliza un caché interno que se invalida cuando cambia la composición o el
+   * orden de los sistemas. En __DEV__, el array está congelado.
+   *
+   * @returns Un array de solo lectura de {@link System}.
+   */
+  public get systemsList(): ReadonlyArray<System> {
+    if (this.systemsNeedSorting) {
+      this.sortSystems();
+    }
+    if (__DEV__) {
+      if (!Object.isFrozen(this.sortedSystems)) {
+        Object.freeze(this.sortedSystems);
+      }
+    }
+    return this.sortedSystems;
   }
 
   /**
@@ -345,6 +393,7 @@ export class World {
     this.systems = [];
     this.sortedSystems = [];
     this.systemsNeedSorting = false;
+    this._systemsVersion++;
     this._structureVersion++;
   }
 
@@ -369,7 +418,7 @@ export class World {
    * @sideEffect Incrementa {@link World.version}.
    * @mutates componentMaps, componentIndex, entityComponentSets
    */
-  addComponent<T extends Component>(entity: Entity, component: T): T {
+  addComponent<T extends Component>(entity: Entity, component: T): Readonly<T> {
     if (this.isUpdating) {
       this.commandBuffer.addComponent(entity, component);
       return component;
@@ -669,11 +718,31 @@ export class World {
    * Recupera un recurso global previamente registrado.
    *
    * @param name - Nombre del recurso.
-   * @returns El recurso o `undefined` si no existe.
+   * @returns El recurso (Readonly) o `undefined` si no existe.
    * @queries resources
    */
-  getResource<T>(name: string): T | undefined {
+  getResource<T>(name: string): Readonly<T> | undefined {
     return this.resources.get(name) as T;
+  }
+
+  /**
+   * Ejecuta una mutación controlada sobre un recurso global.
+   *
+   * @remarks
+   * Es la vía recomendada para modificar el estado de un recurso singleton.
+   * Notifica automáticamente los cambios incrementando {@link World.stateVersion}.
+   *
+   * @param name - Nombre del recurso a mutar.
+   * @param mutator - Callback que recibe la instancia del recurso.
+   *
+   * @postcondition Se incrementa {@link World.stateVersion}.
+   */
+  mutateResource<T>(name: string, mutator: (resource: T) => void): void {
+    const resource = this.resources.get(name) as T;
+    if (resource) {
+      mutator(resource);
+      this.notifyStateChange();
+    }
   }
 
   /**
@@ -709,6 +778,7 @@ export class World {
     const priority = config.priority ?? 0;
     this.systems.push({ system, phase, priority });
     this.systemsNeedSorting = true;
+    this._systemsVersion++;
   }
 
   /**
@@ -785,8 +855,9 @@ export class World {
     this.systemsNeedSorting = false;
   }
 
+  /** @deprecated Usar el getter `entities`. */
   getAllEntities(): ReadonlyArray<Entity> {
-    return Array.from(this.activeEntities).sort((a, b) => a - b);
+    return this.entities;
   }
 
   getEntityComponentTypes(entity: Entity): string[] {
