@@ -31,4 +31,25 @@ describe("Query Immutability", () => {
     // Internal state remains [1, 2]
     expect(query.getEntities()).toEqual([1, 2]);
   });
+
+  it("should provide runtime safety against forced mutation via casting", () => {
+    const query = new Query(["ComponentA"]);
+    query.add(1 as Entity);
+    query.add(2 as Entity);
+
+    const entities = query.getEntities();
+
+    // Forced mutation (simulating bad actor)
+    (entities as Entity[]).push(3 as Entity);
+    (entities as Entity[])[0] = 99 as Entity;
+
+    // A second call must return the original state, untainted
+    const entities2 = query.getEntities();
+    expect(entities2).toEqual([1, 2]);
+    expect(entities2).not.toContain(3);
+    expect(entities2[0]).toBe(1);
+
+    // Verify it's a different reference
+    expect(entities).not.toBe(entities2);
+  });
 });
