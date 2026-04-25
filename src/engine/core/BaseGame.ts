@@ -88,13 +88,11 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.unifiedInput = new UnifiedInputSystem();
     this.eventBus = new EventBus();
     this.sceneManager = new SceneManager(this.world);
+    this.sceneManager.onWorldCreated = (world) => this.registerEssentialSystems(world);
     this.inputBuffer = new InputBuffer();
     this.replayRecorder = new ReplayRecorder();
     this.hierarchySystem = new HierarchySystem();
     this.interpolationPrepSystem = new InterpolationPrepSystem();
-
-    this.world.setResource("EventBus", this.eventBus);
-    this.world.setResource("UnifiedInputSystem", this.unifiedInput);
 
     this._config = config;
     this.currentSeed = (config.gameOptions?.seed as number) ?? this._generateExternalSeed();
@@ -184,14 +182,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     if (
       this._status === GameStatus.UNINITIALIZED ||
       this._status === GameStatus.INITIALIZING ||
-      this._status === GameStatus.STOPPED
+      this._status === GameStatus.STOPPED ||
+      this._status === GameStatus.DESTROYED
     ) {
       return;
     }
     this.gameLoop.stop();
-    if (this._status !== GameStatus.DESTROYED) {
-      this._status = GameStatus.STOPPED;
-    }
+    this._status = GameStatus.STOPPED;
   }
 
   /**
@@ -280,6 +277,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
         await this.sceneManager.restartCurrentScene();
       } else {
         this.world.clear();
+        await this.registerEssentialSystems(this.world);
         this.initializeEntities();
       }
 
@@ -361,7 +359,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
     try {
       this._status = GameStatus.INITIALIZING;
-      await this.registerEngineSystems();
+      await this.registerEssentialSystems(this.world);
 
       if (this._status === GameStatus.DESTROYED) return;
 
@@ -379,10 +377,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     }
   }
 
-  protected async registerEngineSystems(): Promise<void> {
-    this.world.addSystem(new XPSystem(this.eventBus));
+  protected async registerEssentialSystems(world: World): Promise<void> {
+    world.setResource("EventBus", this.eventBus);
+    world.setResource("UnifiedInputSystem", this.unifiedInput);
+
+    world.addSystem(new XPSystem(this.eventBus));
     const profile = await PlayerProfileService.getProfile();
-    this.world.addSystem(new PaletteSystem(profile.activePalette));
+    world.addSystem(new PaletteSystem(profile.activePalette));
   }
 
   protected shouldStallSimulation(): boolean {

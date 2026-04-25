@@ -90,14 +90,6 @@ export class World {
   private commandBuffer = new WorldCommandBuffer();
 
   /**
-   * @deprecated Use structureVersion or stateVersion instead.
-   * Combined version for backward compatibility.
-   */
-  public get version(): number {
-    return this._structureVersion + this._stateVersion;
-  }
-
-  /**
    * Obtiene una lista ordenada de todas las entidades activas.
    *
    * @remarks
@@ -459,14 +451,6 @@ export class World {
   }
 
   /**
-   * Alias de {@link World.query} para obtener entidades con una firma específica.
-   * @deprecated Usar {@link World.query} directamente.
-   */
-  public getEntitiesWith(...componentTypes: string[]): ReadonlyArray<Entity> {
-    return this.query(...componentTypes);
-  }
-
-  /**
    * Elimina un componente de una entidad.
    *
    * @remarks
@@ -699,6 +683,11 @@ export class World {
    * @sideEffect Activa {@link World.systemsNeedSorting} para la siguiente actualización.
    */
   addSystem(system: System, config: SystemConfig = {}): void {
+    // Evitar duplicados del mismo objeto de sistema
+    for (let i = 0; i < this.systems.length; i++) {
+      if (this.systems[i].system === system) return;
+    }
+
     const phase = config.phase ?? SystemPhase.Simulation;
     const priority = config.priority ?? 0;
     this.systems.push({ system, phase, priority });
@@ -778,11 +767,6 @@ export class World {
     });
     this.sortedSystems = this.systems.map((s) => s.system);
     this.systemsNeedSorting = false;
-  }
-
-  /** @deprecated Usar el getter `entities`. */
-  getAllEntities(): ReadonlyArray<Entity> {
-    return this.entities;
   }
 
   getEntityComponentTypes(entity: Entity): string[] {
@@ -892,6 +876,31 @@ export class World {
       this.componentMaps.set(type, new Map());
       this.componentIndex.set(type, new Set());
     }
+  }
+
+  // ==========================================================================
+  // LEGACY COMPATIBILITY
+  // ==========================================================================
+
+  /**
+   * @deprecated Use structureVersion or stateVersion instead.
+   * Combined version for backward compatibility.
+   */
+  public get version(): number {
+    return this._structureVersion + this._stateVersion;
+  }
+
+  /**
+   * Alias de {@link World.query} para obtener entidades con una firma específica.
+   * @deprecated Usar {@link World.query} directamente.
+   */
+  public getEntitiesWith(...componentTypes: string[]): ReadonlyArray<Entity> {
+    return this.query(...componentTypes);
+  }
+
+  /** @deprecated Usar el getter `entities`. */
+  public getAllEntities(): ReadonlyArray<Entity> {
+    return this.entities;
   }
 }
 

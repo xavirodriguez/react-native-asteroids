@@ -70,6 +70,9 @@ export { runLifecycleSync, runLifecycleAsync } from './utils/LifecycleUtils';
 
 // --- SYSTEMS ---
 export { HierarchySystem } from './systems/HierarchySystem';
+
+// --- LEGACY (Transitional Compatibility) ---
+export * as Legacy from './legacy';
 export { MovementSystem } from './systems/MovementSystem';
 export { FrictionSystem } from './systems/FrictionSystem';
 export { BoundarySystem } from './systems/BoundarySystem';
