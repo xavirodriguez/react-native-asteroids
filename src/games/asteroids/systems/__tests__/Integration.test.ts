@@ -2,7 +2,7 @@ import { World } from "../../../../engine/core/World";
 import { CollisionSystem2D } from "../../../../engine/physics/collision/CollisionSystem2D";
 import { AsteroidCollisionSystem } from "../AsteroidCollisionSystem";
 import { AsteroidGameStateSystem } from "../AsteroidGameStateSystem";
-import { MovementSystem } from "../../../../engine/systems/MovementSystem";
+import { MovementSystem } from "../../../../engine/physics/systems/MovementSystem";
 import { ParticlePool, BulletPool } from "../../EntityPool";
 import { createBullet, createGameState } from "../../EntityFactory";
 import { GAME_CONFIG, type GameStateComponent } from "../../types/AsteroidTypes";

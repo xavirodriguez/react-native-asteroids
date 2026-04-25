@@ -1,6 +1,6 @@
 import { World } from "../../engine/core/World";
 import { BaseGame } from "../../engine/core/BaseGame";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
+import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
 import { CollisionSystem } from "../../engine/systems/CollisionSystem";
 
 type PongState = { score: number };

@@ -1,8 +1,8 @@
 import { Scene } from "../../../engine/scenes/Scene";
 import { World } from "../../../engine/core/World";
-import { MovementSystem } from "../../../engine/systems/MovementSystem";
-import { BoundarySystem } from "../../../engine/systems/BoundarySystem";
-import { FrictionSystem } from "../../../engine/systems/FrictionSystem";
+import { MovementSystem } from "../../../engine/physics/systems/MovementSystem";
+import { BoundarySystem } from "../../../engine/physics/systems/BoundarySystem";
+import { FrictionSystem } from "../../../engine/physics/systems/FrictionSystem";
 import { ScreenShakeSystem } from "../../../engine/systems/ScreenShakeSystem";
 import { TTLSystem } from "../../../engine/systems/TTLSystem";
 import { AsteroidCollisionSystem } from "../systems/AsteroidCollisionSystem";

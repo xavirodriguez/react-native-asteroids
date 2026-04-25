@@ -1,6 +1,6 @@
-import { System } from "../core/System";
-import { World } from "../core/World";
-import { TransformComponent, VelocityComponent } from "../types/EngineTypes";
+import { System } from "../../core/System";
+import { World } from "../../core/World";
+import { TransformComponent, VelocityComponent } from "../../types/EngineTypes";
 import { PhysicsUtils } from "../utils/PhysicsUtils";
 
 /**

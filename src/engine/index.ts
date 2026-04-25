@@ -31,6 +31,7 @@ export * from './types/EngineTypes';
 export type { AABB } from './types/CommonTypes';
 
 // --- PHYSICS & COLLISION ---
+export { PhysicsUtils } from './physics/utils/PhysicsUtils';
 export { PhysicsSystem2D } from './physics/dynamics/PhysicsSystem2D';
 export { CollisionSystem2D, type CollisionCallback, type TriggerCallback } from './physics/collision/CollisionSystem2D';
 export type { CollisionEvent } from './core/CoreComponents';
@@ -41,6 +42,9 @@ export * from './physics/shapes/ShapeTypes';
 export type { Shape, CircleShape, AABBShape, CapsuleShape, PolygonShape, ShapeType } from './physics/shapes/ShapeTypes';
 export * from './physics/shapes/ShapeFactory';
 export * from './physics/query/QueryTypes';
+export { MovementSystem } from './physics/systems/MovementSystem';
+export { FrictionSystem } from './physics/systems/FrictionSystem';
+export { BoundarySystem } from './physics/systems/BoundarySystem';
 
 // --- RENDERING ---
 export * from './rendering/RenderTypes';
@@ -63,7 +67,6 @@ export * from './assets/AssetTypes';
 export { AssetLoader } from './assets/AssetLoader';
 
 // --- UTILS ---
-export * from './utils/PhysicsUtils';
 export { RandomService } from './utils/RandomService';
 export { PrefabPool } from './utils/PrefabPool';
 export { runLifecycleSync, runLifecycleAsync } from './utils/LifecycleUtils';
@@ -73,9 +76,6 @@ export { HierarchySystem } from './systems/HierarchySystem';
 
 // --- LEGACY (Transitional Compatibility) ---
 export * as Legacy from './legacy';
-export { MovementSystem } from './systems/MovementSystem';
-export { FrictionSystem } from './systems/FrictionSystem';
-export { BoundarySystem } from './systems/BoundarySystem';
 export { TTLSystem } from './systems/TTLSystem';
 export { JuiceSystem } from './systems/JuiceSystem';
 export { ParticleSystem } from './systems/ParticleSystem';

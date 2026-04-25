@@ -1,12 +1,12 @@
-import { System } from "../core/System";
-import { World } from "../core/World";
+import { System } from "../../core/System";
+import { World } from "../../core/World";
 import {
   TransformComponent,
   VelocityComponent,
   BoundaryComponent,
   Entity,
   ReclaimableComponent,
-} from "../types/EngineTypes";
+} from "../../types/EngineTypes";
 import { PhysicsUtils } from "../utils/PhysicsUtils";
 
 /**
