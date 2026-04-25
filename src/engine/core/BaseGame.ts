@@ -384,9 +384,20 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected async registerEssentialSystems(world: World): Promise<void> {
     world.setResource("EventBus", this.eventBus);
     world.setResource("UnifiedInputSystem", this.unifiedInput);
-    world.addSystem(new XPSystem(this.eventBus));
-    const profile = await PlayerProfileService.getProfile();
-    world.addSystem(new PaletteSystem(profile.activePalette));
+
+    // Prevent accumulation of systems during restarts if they already exist in this world instance
+    const existingSystems = world.systemsList;
+    const hasXP = existingSystems.some(s => s instanceof XPSystem);
+    const hasPalette = existingSystems.some(s => s instanceof PaletteSystem);
+
+    if (!hasXP) {
+      world.addSystem(new XPSystem(this.eventBus));
+    }
+
+    if (!hasPalette) {
+      const profile = await PlayerProfileService.getProfile();
+      world.addSystem(new PaletteSystem(profile.activePalette));
+    }
   }
 
   protected shouldStallSimulation(): boolean {

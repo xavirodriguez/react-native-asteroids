@@ -699,6 +699,11 @@ export class World {
    * @sideEffect Activa {@link World.systemsNeedSorting} para la siguiente actualización.
    */
   addSystem(system: System, config: SystemConfig = {}): void {
+    // Prevent duplicate system instances
+    for (const reg of this.systems) {
+      if (reg.system === system) return;
+    }
+
     const phase = config.phase ?? SystemPhase.Simulation;
     const priority = config.priority ?? 0;
     this.systems.push({ system, phase, priority });
