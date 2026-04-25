@@ -207,7 +207,7 @@ export class SceneManager {
    */
   public update(deltaTime: number): void {
     if (this.state === SceneState.ACTIVE && this.currentScene) {
-      this.currentScene.update(deltaTime);
+      this.currentScene.onUpdate(deltaTime, this.currentScene.getWorld());
     }
   }
 

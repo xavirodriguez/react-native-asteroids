@@ -1,3 +1,4 @@
+import { World } from "../../../engine/core/World";
 import { AsteroidsGameScene } from "./AsteroidsGameScene";
 import { GameStateComponent } from "../types/AsteroidTypes";
 
@@ -7,10 +8,10 @@ import { GameStateComponent } from "../types/AsteroidTypes";
 export class RogueSteroidsScene extends AsteroidsGameScene {
   private waveCount = 0;
 
-  public override update(deltaTime: number): void {
-    super.update(deltaTime);
+  public override onUpdate(deltaTime: number, world: World): void {
+    super.onUpdate(deltaTime, world);
 
-    const gameState = this.world.getSingleton<GameStateComponent>("GameState");
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
     if (gameState && gameState.asteroidsRemaining === 0) {
       this.waveCount++;
       this.presentUpgradeChoice();
