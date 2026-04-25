@@ -20,9 +20,7 @@ class TestGame extends BaseGame<any, any> {
 
   // Sobrescribir para evitar dependencias de AsyncStorage en tests unitarios del core
   protected async registerEssentialSystems(world: World): Promise<void> {
-    // Registramos solo lo mínimo necesario para que los tests no dependan de servicios externos
-    world.setResource("EventBus", (this as any).eventBus);
-    world.setResource("UnifiedInputSystem", (this as any).unifiedInput);
+    // No-op para tests
   }
 }
 
@@ -179,5 +177,16 @@ describe("BaseGame Lifecycle", () => {
     // Even if we notify (internally), it shouldn't have been added
     // Note: _notifyListeners is private, but we can check if it returns a no-op
     unsubscribe(); // Should also not throw
+  });
+
+  test("restart() should not accumulate duplicate systems", async () => {
+    await game.init();
+    const initialSystems = game.getWorld().systemsList.length;
+
+    await game.restart();
+    expect(game.getWorld().systemsList.length).toBe(initialSystems);
+
+    await game.restart();
+    expect(game.getWorld().systemsList.length).toBe(initialSystems);
   });
 });

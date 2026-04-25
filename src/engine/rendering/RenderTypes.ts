@@ -1,4 +1,4 @@
-import { Entity } from "../index";
+import { Entity } from "../core/Entity";
 
 /**
  * Representa el estado transformado de una entidad listo para renderizado.

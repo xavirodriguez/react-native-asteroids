@@ -683,9 +683,9 @@ export class World {
    * @sideEffect Activa {@link World.systemsNeedSorting} para la siguiente actualización.
    */
   addSystem(system: System, config: SystemConfig = {}): void {
-    // Evitar duplicados del mismo objeto de sistema
-    for (let i = 0; i < this.systems.length; i++) {
-      if (this.systems[i].system === system) return;
+    // Prevent duplicate system instances
+    for (const reg of this.systems) {
+      if (reg.system === system) return;
     }
 
     const phase = config.phase ?? SystemPhase.Simulation;

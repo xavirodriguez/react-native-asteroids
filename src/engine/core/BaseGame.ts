@@ -258,14 +258,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     while (this._transitionLock) {
       await this._transitionLock;
     }
-    if (this._status === GameStatus.DESTROYED) return;
+    if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
 
     let resolveLock: () => void;
     this._transitionLock = new Promise((resolve) => { resolveLock = resolve; });
 
     try {
       await this._onBeforeRestart();
-      if (this._status === GameStatus.DESTROYED) return;
+      if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
 
       if (seed !== undefined) {
         this.currentSeed = seed;
@@ -277,11 +277,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
         await this.sceneManager.restartCurrentScene();
       } else {
         this.world.clear();
+        this.world.clearSystems();
         await this.registerEssentialSystems(this.world);
+        this.registerSystems();
         this.initializeEntities();
       }
 
-      if (this._status === GameStatus.DESTROYED) return;
+      if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
 
       this._isPaused = false;
       this._notifyListeners();
@@ -361,13 +363,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       this._status = GameStatus.INITIALIZING;
       await this.registerEssentialSystems(this.world);
 
-      if (this._status === GameStatus.DESTROYED) return;
+      if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
 
       this.registerSystems();
       this.initializeEntities();
       this._status = GameStatus.READY;
     } catch (error) {
-      if (this._status !== GameStatus.DESTROYED) {
+      if ((this._status as GameStatus) !== GameStatus.DESTROYED) {
         this._status = GameStatus.UNINITIALIZED;
       }
       throw error;
@@ -381,9 +383,19 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     world.setResource("EventBus", this.eventBus);
     world.setResource("UnifiedInputSystem", this.unifiedInput);
 
-    world.addSystem(new XPSystem(this.eventBus));
-    const profile = await PlayerProfileService.getProfile();
-    world.addSystem(new PaletteSystem(profile.activePalette));
+    // Prevent accumulation of systems during restarts if they already exist in this world instance
+    const existingSystems = world.systemsList;
+    const hasXP = existingSystems.some(s => s instanceof XPSystem);
+    const hasPalette = existingSystems.some(s => s instanceof PaletteSystem);
+
+    if (!hasXP) {
+      world.addSystem(new XPSystem(this.eventBus));
+    }
+
+    if (!hasPalette) {
+      const profile = await PlayerProfileService.getProfile();
+      world.addSystem(new PaletteSystem(profile.activePalette));
+    }
   }
 
   protected shouldStallSimulation(): boolean {
