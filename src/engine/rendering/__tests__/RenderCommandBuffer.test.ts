@@ -1,9 +1,9 @@
-import { CommandBuffer } from "../CommandBuffer";
+import { RenderCommandBuffer } from "../RenderCommandBuffer";
 import { Entity } from "../../core/Entity";
 
-describe("CommandBuffer", () => {
+describe("RenderCommandBuffer", () => {
   it("should add and retrieve commands correctly", () => {
-    const buffer = new CommandBuffer(10);
+    const buffer = new RenderCommandBuffer(10);
     buffer.addCommand({
       type: "test",
       x: 10,
@@ -28,7 +28,7 @@ describe("CommandBuffer", () => {
   });
 
   it("should sort commands by zIndex", () => {
-    const buffer = new CommandBuffer(10);
+    const buffer = new RenderCommandBuffer(10);
     buffer.addCommand({ type: "high", x: 0, y: 0, zIndex: 10, entityId: 1 as Entity });
     buffer.addCommand({ type: "low", x: 0, y: 0, zIndex: 1, entityId: 2 as Entity });
 

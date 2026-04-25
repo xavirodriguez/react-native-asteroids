@@ -53,7 +53,7 @@ export { type Renderer, type ShapeDrawer, type EffectDrawer } from './rendering/
 export { CanvasRenderer } from './rendering/CanvasRenderer';
 export { SkiaRenderer } from './rendering/SkiaRenderer';
 export { RenderSnapshot } from './rendering/RenderSnapshot';
-export { CommandBuffer, type DrawCommand, type DrawCommandOptions, type CommandType } from './rendering/CommandBuffer';
+export { RenderCommandBuffer, type DrawCommand, type DrawCommandOptions, type CommandType } from './rendering/RenderCommandBuffer';
 export { Camera2D } from './camera/Camera2D';
 
 // --- INPUT ---
