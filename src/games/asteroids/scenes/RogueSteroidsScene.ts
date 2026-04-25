@@ -1,6 +1,7 @@
 import { World } from "../../../engine/core/World";
 import { AsteroidsGameScene } from "./AsteroidsGameScene";
 import { GameStateComponent } from "../types/AsteroidTypes";
+import { World } from "../../../engine/core/World";
 
 /**
  * Experimental scene implementing "Rogue-Steroids" mechanics.
