@@ -4,7 +4,7 @@ import { Entity } from "../core/Entity";
 import { RenderComponent, TransformComponent, PreviousTransformComponent, GenericComponent, Camera2DComponent } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
 import { RenderSnapshot, UISnapshot } from "./RenderSnapshot";
-import { CommandBuffer, DrawCommand } from "./CommandBuffer";
+import { RenderCommandBuffer, DrawCommand } from "./RenderCommandBuffer";
 import { UIElementComponent, UIStyleComponent, UITextComponent, UIProgressBarComponent, UIButtonStateComponent } from "../ui/UITypes";
 import { TextRenderer } from "../ui/text/TextRenderer";
 
@@ -36,7 +36,7 @@ export class CanvasRenderer implements Renderer {
   private backgroundEffects: { name: string, drawer: EffectDrawer<CanvasRenderingContext2D> }[] = [];
   private foregroundEffects: { name: string, drawer: EffectDrawer<CanvasRenderingContext2D> }[] = [];
 
-  private commandBuffer = new CommandBuffer();
+  private commandBuffer = new RenderCommandBuffer();
   private readonly MAX_ENTITIES = 2000;
   private readonly MAX_UI = 200;
 
