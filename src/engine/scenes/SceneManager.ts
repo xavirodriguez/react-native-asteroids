@@ -246,6 +246,9 @@ export class SceneManager {
    */
   public async restartCurrentScene(): Promise<void> {
     if (this.currentScene) {
+        const world = this.currentScene.getWorld();
+        world.clear();
+        world.clearSystems();
         this.currentScene.onRestartCleanup();
         await this.transitionTo(this.currentScene);
     }
