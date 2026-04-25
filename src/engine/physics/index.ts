@@ -3,6 +3,7 @@ export { CollisionSystem2D, type CollisionCallback, type TriggerCallback } from 
 export { CollisionLayers } from './collision/CollisionLayers';
 export { SpatialHash } from './collision/SpatialHash';
 export { PhysicsQuery } from './query/PhysicsQuery';
+export * from './PhysicsComponents';
 export { NarrowPhase } from './collision/NarrowPhase';
 export { BroadPhase } from './collision/BroadPhase';
 export { ContinuousCollision, type CCDResult } from './collision/ContinuousCollision';

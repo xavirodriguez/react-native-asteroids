@@ -77,6 +77,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected _config: BaseGameConfig;
   protected hierarchySystem: HierarchySystem;
   protected interpolationPrepSystem: InterpolationPrepSystem;
+  protected xpSystem: XPSystem;
+  protected paletteSystem?: PaletteSystem;
 
   public abstract initializeRenderer(renderer: import("../rendering/Renderer").Renderer<unknown>): void;
 
@@ -93,6 +95,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.replayRecorder = new ReplayRecorder();
     this.hierarchySystem = new HierarchySystem();
     this.interpolationPrepSystem = new InterpolationPrepSystem();
+    this.xpSystem = new XPSystem(this.eventBus);
 
     this._config = config;
     this.currentSeed = (config.gameOptions?.seed as number) ?? this._generateExternalSeed();
@@ -381,9 +384,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     world.setResource("EventBus", this.eventBus);
     world.setResource("UnifiedInputSystem", this.unifiedInput);
 
-    world.addSystem(new XPSystem(this.eventBus));
-    const profile = await PlayerProfileService.getProfile();
-    world.addSystem(new PaletteSystem(profile.activePalette));
+    world.addSystem(this.xpSystem);
+
+    if (!this.paletteSystem) {
+      const profile = await PlayerProfileService.getProfile();
+      this.paletteSystem = new PaletteSystem(profile.activePalette);
+    }
+    world.addSystem(this.paletteSystem);
   }
 
   protected shouldStallSimulation(): boolean {

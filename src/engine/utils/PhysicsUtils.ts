@@ -163,4 +163,48 @@ export class PhysicsUtils {
     mutableBody.inertia = inertia;
     mutableBody.inverseInertia = inertia > 0 ? 1 / inertia : 0;
   }
+
+  /**
+   * Realiza la integración de un cuerpo rígido (Euler semi-implícito).
+   *
+   * @param transform - Componente de transformación.
+   * @param body - Componente de cuerpo físico.
+   * @param gravity - Gravedad actual ({x, y}).
+   * @param dt - Delta time en segundos.
+   *
+   * @remarks
+   * 1. Actualiza velocidades basadas en fuerzas acumuladas y gravedad.
+   * 2. Actualiza posición y rotación basadas en la nueva velocidad.
+   * 3. Resetea fuerzas y torque para el siguiente tick.
+   *
+   * @sideEffect Muta `transform` y `body`.
+   */
+  public static integrateRigidBody(
+    transform: TransformComponent,
+    body: PhysicsBody2DComponent,
+    gravity: { x: number; y: number },
+    dt: number
+  ): void {
+    if (body.bodyType === "static") return;
+
+    // 1. Integrar velocidades (aceleración -> velocidad)
+    if (body.bodyType === "dynamic") {
+      body.velocityX += (body.forceX * body.inverseMass + gravity.x * body.gravityScale) * dt;
+      body.velocityY += (body.forceY * body.inverseMass + gravity.y * body.gravityScale) * dt;
+
+      if (!body.fixedRotation) {
+        body.angularVelocity += (body.torque * body.inverseInertia) * dt;
+      }
+    }
+
+    // 2. Integrar posiciones (velocidad -> posición)
+    transform.x += body.velocityX * dt;
+    transform.y += body.velocityY * dt;
+    transform.rotation += body.angularVelocity * dt;
+
+    // 3. Resetear fuerzas acumuladas
+    body.forceX = 0;
+    body.forceY = 0;
+    body.torque = 0;
+  }
 }

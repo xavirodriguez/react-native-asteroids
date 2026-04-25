@@ -1,6 +1,7 @@
 import { System } from "../../core/System";
 import { World } from "../../core/World";
 import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, CollisionEvent } from "../../types/EngineTypes";
+import { PhysicsUtils } from "../../utils/PhysicsUtils";
 
 /**
  * Built-in 2D Physics System for rigid body dynamics.
@@ -49,32 +50,13 @@ export class PhysicsSystem2D extends System {
     const entities = world.query("Transform", "PhysicsBody2D");
 
     // 1. Integration phase
+    const gravity = { x: this.gravityX, y: this.gravityY };
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
       const body = world.getComponent<PhysicsBody2DComponent>(entity, "PhysicsBody2D")!;
-      if (body.bodyType === "static") continue;
-
       const transform = world.getComponent<TransformComponent>(entity, "Transform")!;
 
-      // Apply forces (including gravity)
-      if (body.bodyType === "dynamic") {
-        body.velocityX += (body.forceX * body.inverseMass + this.gravityX * body.gravityScale) * dt;
-        body.velocityY += (body.forceY * body.inverseMass + this.gravityY * body.gravityScale) * dt;
-
-        if (!body.fixedRotation) {
-            body.angularVelocity += (body.torque * body.inverseInertia) * dt;
-        }
-      }
-
-      // Update positions
-      transform.x += body.velocityX * dt;
-      transform.y += body.velocityY * dt;
-      transform.rotation += body.angularVelocity * dt;
-
-      // Reset forces
-      body.forceX = 0;
-      body.forceY = 0;
-      body.torque = 0;
+      PhysicsUtils.integrateRigidBody(transform, body, gravity, dt);
     }
 
     // 2. Collision Response phase
