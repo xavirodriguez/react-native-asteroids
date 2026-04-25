@@ -31,23 +31,15 @@ export * from './types/EngineTypes';
 export type { AABB } from './types/CommonTypes';
 
 // --- PHYSICS & COLLISION ---
-export { PhysicsSystem2D } from './physics/dynamics/PhysicsSystem2D';
-export { CollisionSystem2D, type CollisionCallback, type TriggerCallback } from './physics/collision/CollisionSystem2D';
-export type { CollisionEvent } from './core/CoreComponents';
-export { CollisionLayers } from './physics/collision/CollisionLayers';
-export { PhysicsQuery } from './physics/query/PhysicsQuery';
 export { type CollisionManifold } from './physics/collision/CollisionTypes';
 export * from './physics/shapes/ShapeTypes';
 export type { Shape, CircleShape, AABBShape, CapsuleShape, PolygonShape, ShapeType } from './physics/shapes/ShapeTypes';
-export * from './physics/shapes/ShapeFactory';
 export * from './physics/query/QueryTypes';
 
 // --- RENDERING ---
 export * from './rendering/RenderTypes';
 export type { TransformSnapshot, RenderCommand } from './rendering/RenderTypes';
 export { type Renderer, type ShapeDrawer, type EffectDrawer } from './rendering/Renderer';
-export { RenderSnapshot } from './rendering/RenderSnapshot';
-export { RenderCommandBuffer, type DrawCommand, type DrawCommandOptions, type CommandType } from './rendering/RenderCommandBuffer';
 export { Camera2D } from './camera/Camera2D';
 
 // --- INPUT ---
@@ -67,18 +59,3 @@ export * from './utils/PhysicsUtils';
 export { RandomService } from './utils/RandomService';
 export { PrefabPool } from './utils/PrefabPool';
 export { runLifecycleSync, runLifecycleAsync } from './utils/LifecycleUtils';
-
-// --- SYSTEMS ---
-export { HierarchySystem } from './systems/HierarchySystem';
-export { MovementSystem } from './systems/MovementSystem';
-export { FrictionSystem } from './systems/FrictionSystem';
-export { BoundarySystem } from './systems/BoundarySystem';
-export { TTLSystem } from './systems/TTLSystem';
-export { JuiceSystem } from './systems/JuiceSystem';
-export { ParticleSystem } from './systems/ParticleSystem';
-export { ScreenShakeSystem } from './systems/ScreenShakeSystem';
-export type { ScreenShakeComponent } from './core/CoreComponents';
-export { RenderUpdateSystem } from './systems/RenderUpdateSystem';
-export { AnimationSystem } from './systems/AnimationSystem';
-export { StateMachineSystem } from './systems/StateMachineSystem';
-export { TilemapRenderSystem } from './systems/TilemapRenderSystem';

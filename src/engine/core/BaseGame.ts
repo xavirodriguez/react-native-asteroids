@@ -88,6 +88,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.unifiedInput = new UnifiedInputSystem();
     this.eventBus = new EventBus();
     this.sceneManager = new SceneManager(this.world);
+    this.sceneManager.onWorldCreated = (world) => this.registerEssentialSystems(world);
     this.inputBuffer = new InputBuffer();
     this.replayRecorder = new ReplayRecorder();
     this.hierarchySystem = new HierarchySystem();
@@ -261,14 +262,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     while (this._transitionLock) {
       await this._transitionLock;
     }
-    if (this._status === GameStatus.DESTROYED) return;
+    if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
 
     let resolveLock: () => void;
     this._transitionLock = new Promise((resolve) => { resolveLock = resolve; });
 
     try {
       await this._onBeforeRestart();
-      if (this._status === GameStatus.DESTROYED) return;
+      if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
 
       if (seed !== undefined) {
         this.currentSeed = seed;
@@ -280,10 +281,11 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
         await this.sceneManager.restartCurrentScene();
       } else {
         this.world.clear();
+        await this.registerEssentialSystems(this.world);
         this.initializeEntities();
       }
 
-      if (this._status === GameStatus.DESTROYED) return;
+      if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
 
       this._isPaused = false;
       this._notifyListeners();
@@ -361,15 +363,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
     try {
       this._status = GameStatus.INITIALIZING;
-      await this.registerEngineSystems();
+      await this.registerEssentialSystems(this.world);
 
-      if (this._status === GameStatus.DESTROYED) return;
+      if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
 
       this.registerSystems();
       this.initializeEntities();
       this._status = GameStatus.READY;
     } catch (error) {
-      if (this._status !== GameStatus.DESTROYED) {
+      if ((this._status as GameStatus) !== GameStatus.DESTROYED) {
         this._status = GameStatus.UNINITIALIZED;
       }
       throw error;
@@ -379,10 +381,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     }
   }
 
-  protected async registerEngineSystems(): Promise<void> {
-    this.world.addSystem(new XPSystem(this.eventBus));
+  protected async registerEssentialSystems(world: World): Promise<void> {
+    world.setResource("EventBus", this.eventBus);
+    world.setResource("UnifiedInputSystem", this.unifiedInput);
+    world.addSystem(new XPSystem(this.eventBus));
     const profile = await PlayerProfileService.getProfile();
-    this.world.addSystem(new PaletteSystem(profile.activePalette));
+    world.addSystem(new PaletteSystem(profile.activePalette));
   }
 
   protected shouldStallSimulation(): boolean {

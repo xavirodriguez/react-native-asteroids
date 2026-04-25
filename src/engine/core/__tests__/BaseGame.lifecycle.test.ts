@@ -19,7 +19,7 @@ class TestGame extends BaseGame<any, any> {
   }
 
   // Sobrescribir para evitar dependencias de AsyncStorage en tests unitarios del core
-  protected async registerEngineSystems(): Promise<void> {
+  protected async registerEssentialSystems(world: World): Promise<void> {
     // No-op para tests
   }
 }
