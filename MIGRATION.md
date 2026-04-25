@@ -58,5 +58,13 @@ Para endurecer la API pública, las implementaciones específicas de plataforma 
   - `NarrowPhase`, `BroadPhase`, `ContinuousCollision`, `SpatialHash` -> Disponibles en `src/engine/physics`.
   - `CanvasRenderer`, `SkiaRenderer` -> Disponibles en `src/engine/rendering`.
 
+## 7. Espacio de Nombres Legacy
+
+Para facilitar la transición y mantener el root barrel limpio, los shims de compatibilidad se han movido a un espacio de nombres explícito.
+
+- **NUEVO**: Use `import { Legacy } from 'tiny-aster-engine'` para acceder a:
+  - `Legacy.CommandBuffer` (ahora alias de `RenderCommandBuffer`).
+  - `Legacy.LegacyRandom` (para métodos estáticos de RandomService).
+
 ---
 *Nota: Los símbolos marcados como @deprecated se mantendrán por compatibilidad transitoria pero serán eliminados en futuras versiones mayores.*

@@ -84,6 +84,16 @@ describe("RandomService", () => {
   });
 
   describe("Guardrails", () => {
+    let consoleSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      consoleSpy.mockRestore();
+    });
+
     it("should throw when accessing 'render' during gameplay lock", () => {
       RandomService.lockGameplayContext = true;
       expect(() => RandomService.getInstance("render")).toThrow(/Deterministic violation/);
