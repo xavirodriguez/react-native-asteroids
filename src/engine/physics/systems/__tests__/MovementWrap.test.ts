@@ -1,7 +1,7 @@
-import { World } from "../../core/World";
+import { World } from "../../../core/World";
 import { MovementSystem } from "../MovementSystem";
 import { BoundarySystem } from "../BoundarySystem";
-import { TransformComponent, VelocityComponent, BoundaryComponent } from "../../types/EngineTypes";
+import { TransformComponent, VelocityComponent, BoundaryComponent } from "../../../types/EngineTypes";
 
 describe("Movement and Boundary Systems", () => {
   let world: World;

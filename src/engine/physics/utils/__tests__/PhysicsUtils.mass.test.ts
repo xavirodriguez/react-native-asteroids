@@ -1,4 +1,4 @@
-import { PhysicsBody2DComponent } from "../../types/EngineTypes";
+import { PhysicsBody2DComponent } from "../../../types/EngineTypes";
 import { PhysicsUtils } from "../PhysicsUtils";
 
 describe("PhysicsUtils.updateBodyMassProperties", () => {

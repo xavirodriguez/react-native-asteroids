@@ -1,4 +1,4 @@
-import { TransformComponent, PhysicsBody2DComponent } from "../types/EngineTypes";
+import { TransformComponent, PhysicsBody2DComponent } from "../../types/EngineTypes";
 
 /**
  * Interface mínima para objetos que representan una posición.

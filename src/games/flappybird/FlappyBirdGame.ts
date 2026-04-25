@@ -9,7 +9,7 @@ import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
 import { FlappyBirdRenderSystem } from "./systems/FlappyBirdRenderSystem";
 import { FlappyBirdGlideSystem } from "./systems/FlappyBirdGlideSystem";
 import { InputBufferSystem } from "../../engine/systems/InputBufferSystem";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
+import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
 import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
 import { JuiceSystem } from "../../engine/systems/JuiceSystem";
 import { Renderer } from "../../engine/rendering/Renderer";

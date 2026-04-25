@@ -1,7 +1,7 @@
 import { World } from "../../../engine/core/World";
 import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
 import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
-import { PhysicsUtils } from "../../../engine/utils/PhysicsUtils";
+import { PhysicsUtils } from "../../../engine/physics/utils/PhysicsUtils";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { createParticle, createBullet } from "../EntityFactory";
 import { SimulationContext } from "../../../simulation/DeterministicSimulation";

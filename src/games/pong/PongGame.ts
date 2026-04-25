@@ -1,6 +1,6 @@
 import { BaseGame } from "../../engine/core/BaseGame";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { BoundarySystem } from "../../engine/systems/BoundarySystem";
+import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
+import { BoundarySystem } from "../../engine/physics/systems/BoundarySystem";
 import { JuiceSystem } from "../../engine/systems/JuiceSystem";
 import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
 import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
