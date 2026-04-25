@@ -1,43 +1,6 @@
 import { Component, Entity, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../types/EngineTypes";
 import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
 import { System, SystemConfig, SystemPhase } from "./System";
-
-/** Union of all core components for type inference. */
-type AnyCoreComponent =
-  | TransformComponent
-  | ManualMovementComponent
-  | PreviousTransformComponent
-  | VelocityComponent
-  | FrictionComponent
-  | BoundaryComponent
-  | TagComponent
-  | TTLComponent
-  | Collider2DComponent
-  | CollisionEventsComponent
-  | ContinuousColliderComponent
-  | PhysicsBody2DComponent
-  | RenderComponent
-  | HealthComponent
-  | ReclaimableComponent
-  | InputStateComponent
-  | EventBusComponent
-  | AnimatorComponent
-  | StateMachineComponent
-  | ParticleEmitterComponent
-  | TilemapComponent
-  | Camera2DComponent
-  | ScreenShakeComponent
-  | VisualOffsetComponent
-  | TrailComponent
-  | Star;
-
-/** Discriminant type for core components. */
-type AnyCoreComponentType = AnyCoreComponent["type"];
-
-/**
- * Helper to extract the concrete component type from the union based on its 'type' discriminator.
- */
-type ComponentOf<TType extends string> = Extract<AnyCoreComponent, { type: TType }>;
 import { RandomService } from "../utils/RandomService";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
@@ -429,8 +392,6 @@ export class World {
   }
 
   /**
-   * Retrieves a component from an entity by its type.
-   *
    * @remarks
    * Returns the live mutable component reference stored in the World.
    * Direct mutations bypass state tracking.
@@ -442,9 +403,9 @@ export class World {
    * @queries componentMaps
    * @precondition The entity must be a valid ID.
    */
-  getComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): Readonly<ComponentOf<TType>> | undefined;
-  getComponent<T extends Component>(entity: Entity, type: string): Readonly<T> | undefined;
-  getComponent<T extends Component>(entity: Entity, type: string): Readonly<T> | undefined {
+  public getComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): ComponentOf<TType> | undefined;
+  public getComponent<T extends Component>(entity: Entity, type: string): T | undefined;
+  public getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
     return this.componentMaps.get(type)?.get(entity) as T;
   }
 
@@ -456,27 +417,33 @@ export class World {
    * It automatically notifies state changes by incrementing {@link World.stateVersion}
    * and marking the world as dirty for rendering ({@link World.isRenderDirty}).
    *
-   * If called during a system update, consider whether the mutation should be
-   * immediate or deferred via the {@link WorldCommandBuffer}.
-   *
    * @param entity - The entity that owns the component.
    * @param type - The type discriminator of the component.
    * @param updater - Callback that receives the component instance for modification.
    * @returns `true` if the component exists and was mutated, `false` otherwise.
-   *
-   * @returns `true` si el componente existía y fue mutado, `false` en caso contrario.
-   * @postcondition Se incrementa {@link World.stateVersion} y se marca el mundo como sucio para el render.
    */
-  mutateComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType, mutator: (component: ComponentOf<TType>) => void): boolean;
-  mutateComponent<T extends Component>(entity: Entity, type: string, mutator: (component: T) => void): boolean;
-  mutateComponent<T extends Component>(entity: Entity, type: string, mutator: (component: T) => void): boolean {
+  public mutateComponent<TType extends AnyCoreComponent["type"]>(
+    entity: Entity,
+    type: TType,
+    updater: (component: ComponentOf<TType>) => void
+  ): boolean;
+  public mutateComponent<T extends Component>(
+    entity: Entity,
+    type: string,
+    updater: (component: T) => void
+  ): boolean;
+  public mutateComponent<T extends Component>(
+    entity: Entity,
+    type: string,
+    updater: (component: T) => void
+  ): boolean {
     const component = this.componentMaps.get(type)?.get(entity) as T;
-    if (component) {
-      mutator(component);
-      this.notifyStateChange();
-      return true;
-    }
-    return false;
+    if (component === undefined) return false;
+
+    updater(component);
+    this._stateVersion++;
+    this._renderDirty = true;
+    return true;
   }
 
   /**
@@ -881,9 +848,9 @@ export class World {
    * @param type - The component type.
    * @returns The found instance or `undefined`.
    */
-  getSingleton<TType extends AnyCoreComponent["type"]>(type: TType): Readonly<ComponentOf<TType>> | undefined;
-  getSingleton<T extends Component>(type: string): Readonly<T> | undefined;
-  getSingleton<T extends Component>(type: string): Readonly<T> | undefined {
+  public getSingleton<TType extends AnyCoreComponent["type"]>(type: TType): ComponentOf<TType> | undefined;
+  public getSingleton<T extends Component>(type: string): T | undefined;
+  public getSingleton<T extends Component>(type: string): T | undefined {
     const [entity] = this.query(type);
     if (entity === undefined) return undefined;
     return this.getComponent(entity, type);
@@ -896,17 +863,26 @@ export class World {
    * Convenience wrapper over {@link World.mutateComponent} for types
    * known to be unique in the world.
    *
-   * @param type - El tipo de componente singleton.
-   * @param mutator - Callback de mutación.
+   * @param type - The component type.
+   * @param updater - Callback for mutation.
    *
-   * @returns `true` si el componente existía y fue mutado, `false` en caso contrario.
+   * @returns `true` if the component existed and was mutated, `false` otherwise.
    */
-  mutateSingleton<TType extends AnyCoreComponent["type"]>(type: TType, mutator: (component: ComponentOf<TType>) => void): boolean;
-  mutateSingleton<T extends Component>(type: string, mutator: (component: T) => void): boolean;
-  mutateSingleton<T extends Component>(type: string, mutator: (component: T) => void): boolean {
+  public mutateSingleton<TType extends AnyCoreComponent["type"]>(
+    type: TType,
+    updater: (component: ComponentOf<TType>) => void
+  ): boolean;
+  public mutateSingleton<T extends Component>(
+    type: string,
+    updater: (component: T) => void
+  ): boolean;
+  public mutateSingleton<T extends Component>(
+    type: string,
+    updater: (component: T) => void
+  ): boolean {
     const [entity] = this.query(type);
     if (entity !== undefined) {
-      return this.mutateComponent<T>(entity, type, mutator);
+      return this.mutateComponent<T>(entity, type, updater);
     }
     return false;
   }

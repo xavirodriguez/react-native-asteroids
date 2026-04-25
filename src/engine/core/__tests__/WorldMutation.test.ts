@@ -253,3 +253,59 @@ describe("World Structural Mutation Safety", () => {
     expect(world.isRenderDirty()).toBe(initialRenderDirty);
   });
 });
+
+describe("Mandatory World Mutation API Tests", () => {
+  let world: World;
+  const entity = 1 as Entity;
+
+  beforeEach(() => {
+    world = new World();
+    // Simulate entity creation for Test 1 & 2
+    (world as any).activeEntities.add(entity);
+    world.addComponent(entity, { type: "Test", value: 100 } as TestComponent);
+    // Reset versions
+    (world as any)._stateVersion = 0;
+    (world as any)._renderDirty = false;
+  });
+
+  it("Test 1 — getComponent() should return live reference and direct mutation should not change stateVersion", () => {
+    const component = world.getComponent<TestComponent>(entity, "Test");
+    expect(component).toBeDefined();
+
+    const initialStateVersion = world.stateVersion;
+    if (component) {
+      (component as any).value = 999;
+    }
+
+    const updatedComponent = world.getComponent<TestComponent>(entity, "Test");
+    expect(updatedComponent?.value).toBe(999);
+    expect(world.stateVersion).toBe(initialStateVersion);
+  });
+
+  it("Test 2 — mutateComponent() success contract", () => {
+    const initialStateVersion = world.stateVersion;
+    const initialRenderDirty = world.isRenderDirty();
+
+    const success = world.mutateComponent<TestComponent>(entity, "Test", (c) => {
+      c.value = 500;
+    });
+
+    expect(success).toBe(true);
+    expect(world.getComponent<TestComponent>(entity, "Test")?.value).toBe(500);
+    expect(world.stateVersion).toBe(initialStateVersion + 1);
+    expect(world.isRenderDirty()).toBe(true);
+  });
+
+  it("Test 3 — mutateComponent() absent component case", () => {
+    const initialStateVersion = world.stateVersion;
+    const initialRenderDirty = world.isRenderDirty();
+
+    const success = world.mutateComponent<TestComponent>(entity, "NonExistent", (c) => {
+      c.value = 1000;
+    });
+
+    expect(success).toBe(false);
+    expect(world.stateVersion).toBe(initialStateVersion);
+    expect(world.isRenderDirty()).toBe(initialRenderDirty);
+  });
+});
