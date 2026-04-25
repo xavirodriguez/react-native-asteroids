@@ -277,7 +277,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
         await this.sceneManager.restartCurrentScene();
       } else {
         this.world.clear();
-        this.registerEssentialSystems(this.world);
+        await this.registerEssentialSystems(this.world);
         this.initializeEntities();
       }
 
