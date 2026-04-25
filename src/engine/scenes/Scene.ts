@@ -99,6 +99,10 @@ export abstract class Scene {
     return this.world;
   }
 
+  // ==========================================================================
+  // LEGACY COMPATIBILITY
+  // ==========================================================================
+
   /**
    * Métodos de reenvío públicos para compatibilidad con versiones anteriores.
    * @deprecated Usar el flujo de SceneManager u onUpdate directamente.

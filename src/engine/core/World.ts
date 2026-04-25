@@ -90,14 +90,6 @@ export class World {
   private commandBuffer = new WorldCommandBuffer();
 
   /**
-   * @deprecated Use structureVersion or stateVersion instead.
-   * Combined version for backward compatibility.
-   */
-  public get version(): number {
-    return this._structureVersion + this._stateVersion;
-  }
-
-  /**
    * Obtiene una lista ordenada de todas las entidades activas.
    *
    * @remarks
@@ -459,14 +451,6 @@ export class World {
   }
 
   /**
-   * Alias de {@link World.query} para obtener entidades con una firma específica.
-   * @deprecated Usar {@link World.query} directamente.
-   */
-  public getEntitiesWith(...componentTypes: string[]): ReadonlyArray<Entity> {
-    return this.query(...componentTypes);
-  }
-
-  /**
    * Elimina un componente de una entidad.
    *
    * @remarks
@@ -785,11 +769,6 @@ export class World {
     this.systemsNeedSorting = false;
   }
 
-  /** @deprecated Usar el getter `entities`. */
-  getAllEntities(): ReadonlyArray<Entity> {
-    return this.entities;
-  }
-
   getEntityComponentTypes(entity: Entity): string[] {
     const set = this.entityComponentSets.get(entity);
     return set ? Array.from(set) : [];
@@ -897,6 +876,31 @@ export class World {
       this.componentMaps.set(type, new Map());
       this.componentIndex.set(type, new Set());
     }
+  }
+
+  // ==========================================================================
+  // LEGACY COMPATIBILITY
+  // ==========================================================================
+
+  /**
+   * @deprecated Use structureVersion or stateVersion instead.
+   * Combined version for backward compatibility.
+   */
+  public get version(): number {
+    return this._structureVersion + this._stateVersion;
+  }
+
+  /**
+   * Alias de {@link World.query} para obtener entidades con una firma específica.
+   * @deprecated Usar {@link World.query} directamente.
+   */
+  public getEntitiesWith(...componentTypes: string[]): ReadonlyArray<Entity> {
+    return this.query(...componentTypes);
+  }
+
+  /** @deprecated Usar el getter `entities`. */
+  public getAllEntities(): ReadonlyArray<Entity> {
+    return this.entities;
   }
 }
 

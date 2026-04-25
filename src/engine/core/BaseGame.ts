@@ -94,9 +94,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.hierarchySystem = new HierarchySystem();
     this.interpolationPrepSystem = new InterpolationPrepSystem();
 
-    this.world.setResource("EventBus", this.eventBus);
-    this.world.setResource("UnifiedInputSystem", this.unifiedInput);
-
     this._config = config;
     this.currentSeed = (config.gameOptions?.seed as number) ?? this._generateExternalSeed();
 
@@ -185,14 +182,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     if (
       this._status === GameStatus.UNINITIALIZED ||
       this._status === GameStatus.INITIALIZING ||
-      this._status === GameStatus.STOPPED
+      this._status === GameStatus.STOPPED ||
+      this._status === GameStatus.DESTROYED
     ) {
       return;
     }
     this.gameLoop.stop();
-    if (this._status !== GameStatus.DESTROYED) {
-      this._status = GameStatus.STOPPED;
-    }
+    this._status = GameStatus.STOPPED;
   }
 
   /**
