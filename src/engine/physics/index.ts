@@ -1,0 +1,12 @@
+export { PhysicsSystem2D } from './dynamics/PhysicsSystem2D';
+export { CollisionSystem2D, type CollisionCallback, type TriggerCallback } from './collision/CollisionSystem2D';
+export { CollisionLayers } from './collision/CollisionLayers';
+export { SpatialHash } from './collision/SpatialHash';
+export { PhysicsQuery } from './query/PhysicsQuery';
+export { NarrowPhase } from './collision/NarrowPhase';
+export { BroadPhase } from './collision/BroadPhase';
+export { ContinuousCollision, type CCDResult } from './collision/ContinuousCollision';
+export { type CollisionManifold } from './collision/CollisionTypes';
+export * from './shapes/ShapeTypes';
+export * from './shapes/ShapeFactory';
+export * from './query/QueryTypes';
