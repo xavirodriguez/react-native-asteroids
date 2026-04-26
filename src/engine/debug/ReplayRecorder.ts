@@ -23,6 +23,7 @@ export class ReplayRecorder {
 
   public startRecording(): void {
     this.frames = [];
+    this.head = 0;
     this.isRecording = true;
     this.currentTick = 0;
   }
@@ -35,7 +36,7 @@ export class ReplayRecorder {
       roomId: "recorded-session",
       startTick: firstTick,
       endTick: this.currentTick,
-      frames: [...this.frames]
+      frames: orderedFrames
     };
   }
 
