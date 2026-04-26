@@ -6,7 +6,7 @@ import { GAME_CONFIG } from "../../../types/GameTypes";
 /**
  * Default renderer initialization for Asteroids (Native/Universal).
  */
-export function initializeAsteroidsRenderer(renderer: Renderer<any>): void {
+export function initializeAsteroidsRenderer(renderer: Renderer<unknown>): void {
   if (renderer.type === "canvas") {
     const canvasRenderer = renderer as unknown as import("../../../engine/rendering/CanvasRenderer").CanvasRenderer;
 
@@ -21,7 +21,7 @@ export function initializeAsteroidsRenderer(renderer: Renderer<any>): void {
     // Register custom hooks for Asteroids
     canvasRenderer.addPreRenderHook((ctx: CanvasRenderingContext2D, snapshot: import("../../../engine/rendering/RenderSnapshot").RenderSnapshot, world: import("../../../engine/core/World").World) => {
       const gameStateEntity = world.query("GameState")[0];
-      const gameState = gameStateEntity ? (world.getComponent<any>(gameStateEntity, "GameState")) : null;
+      const gameState = gameStateEntity ? (world.getComponent<Record<string, unknown>>(gameStateEntity, "GameState")) : null;
       if (gameState?.stars) {
         drawAsteroidStarField(ctx, gameState.stars as unknown as import("../../../engine/types/EngineTypes").Star[], GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT, world, snapshot.elapsedTime);
       }
@@ -29,22 +29,22 @@ export function initializeAsteroidsRenderer(renderer: Renderer<any>): void {
 
     canvasRenderer.addPostRenderHook((ctx: CanvasRenderingContext2D, _snapshot: unknown, world: import("../../../engine/core/World").World) => {
       const gameStateEntity = world.query("GameState")[0];
-      const gameState = gameStateEntity ? (world.getComponent<any>(gameStateEntity, "GameState")) : null;
+      const gameState = gameStateEntity ? (world.getComponent<Record<string, unknown>>(gameStateEntity, "GameState")) : null;
       if (gameState?.debugCRT !== false) {
         drawAsteroidCRTEffect(ctx, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
       }
     });
 
-    renderer.registerShape("bullet_shape", drawAsteroidsBullet as any);
-    renderer.registerShape("particle", drawAsteroidsParticle as any);
-    renderer.registerShape("polygon", drawAsteroidsAsteroid as any);
+    renderer.registerShape("bullet_shape", drawAsteroidsBullet as unknown as (ctx: unknown, ...args: unknown[]) => void);
+    renderer.registerShape("particle", drawAsteroidsParticle as unknown as (ctx: unknown, ...args: unknown[]) => void);
+    renderer.registerShape("polygon", drawAsteroidsAsteroid as unknown as (ctx: unknown, ...args: unknown[]) => void);
     // These might be redundant now but I'll keep them if they are used elsewhere
     // renderer.registerBackgroundEffect("starfield", asteroidsStarfieldEffect);
     // renderer.registerForegroundEffect("crt", asteroidsCRTEffect);
   } else if (renderer.type === "skia") {
     try {
 
-      const { drawSkiaShip, drawSkiaUfo, skiaStarfieldEffect, skiaScreenShakeEffect, drawSkiaBullet, drawSkiaParticle } = require("./AsteroidsSkiaVisuals");
+      const { drawSkiaShip, drawSkiaUfo, skiaStarfieldEffect, skiaScreenShakeEffect: _skiaScreenShakeEffect, drawSkiaBullet, drawSkiaParticle } = require("./AsteroidsSkiaVisuals");
       renderer.registerShape("triangle", drawSkiaShip);
       renderer.registerShape("ufo", drawSkiaUfo);
       renderer.registerShape("bullet_shape", drawSkiaBullet);

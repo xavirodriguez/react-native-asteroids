@@ -18,6 +18,7 @@ type Command =
   | { type: CommandType.REMOVE_ENTITY, entity: Entity }
   | { type: CommandType.ADD_COMPONENT, entity: Entity, component: Component }
   | { type: CommandType.REMOVE_COMPONENT, entity: Entity, componentType: string }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- La mutación es polimórfica sobre diferentes tipos de Component
   | { type: CommandType.MUTATE_COMPONENT, entity: Entity, componentType: string, mutator: (component: any) => void };
 
 /**

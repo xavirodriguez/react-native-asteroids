@@ -143,7 +143,7 @@ describe("Camera2D System", () => {
         shakeOffsetX: 10,
         shakeOffsetY: 20,
         targets: []
-      } as any;
+      } as unknown as Camera2DComponent;
 
       const worldPos = { x: 150, y: 150 };
       const screenPos = Camera2D.worldToScreen(worldPos, cam);
@@ -163,7 +163,7 @@ describe("Camera2D System", () => {
         shakeOffsetX: 10,
         shakeOffsetY: 20,
         targets: []
-      } as any;
+      } as unknown as Camera2DComponent;
 
       const screenPos = { x: 110, y: 120 };
       const worldPos = Camera2D.screenToWorld(screenPos, cam);

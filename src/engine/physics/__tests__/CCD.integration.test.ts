@@ -12,7 +12,7 @@ describe("CCD Integration", () => {
     collisionSystem = new CollisionSystem2D();
   });
 
-  function createEntity(world: World, x: number, y: number, shape: any) {
+  function createEntity(world: World, x: number, y: number, shape: unknown) {
     const e = world.createEntity();
     world.addComponent(e, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
     world.addComponent(e, { type: "Collider2D", shape, offsetX: 0, offsetY: 0, isTrigger: false, layer: 1, mask: 1, enabled: true } as Collider2DComponent);
@@ -21,7 +21,7 @@ describe("CCD Integration", () => {
   }
 
   it("should detect CCD collision between overlapping candidates and move to TOI", () => {
-    const wall = createEntity(world, 100, 0, ShapeFactory.aabb(10, 200));
+    const _wall = createEntity(world, 100, 0, ShapeFactory.aabb(10, 200));
     const bullet = createEntity(world, 94, 0, ShapeFactory.circle(2));
     world.addComponent(bullet, { type: "ContinuousCollider", enabled: true, velocityThreshold: 0 } as ContinuousColliderComponent);
     world.addComponent(bullet, { type: "Velocity", dx: 1000, dy: 0 } as VelocityComponent);

@@ -2,12 +2,12 @@ import { BaseGame, GameStatus } from "../BaseGame";
 import { World } from "../World";
 
 // Implementación mínima para tests
-class TestGame extends BaseGame<any, any> {
+class TestGame extends BaseGame<unknown, unknown> {
   public initializedEntitiesCount = 0;
   public registeredSystemsCount = 0;
 
   public initializeRenderer(): void {}
-  public getGameState(): any { return {}; }
+  public getGameState(): unknown { return {}; }
   public isGameOver(): boolean { return false; }
 
   protected registerSystems(): void {
@@ -19,7 +19,7 @@ class TestGame extends BaseGame<any, any> {
   }
 
   // Sobrescribir para evitar dependencias de AsyncStorage en tests unitarios del core
-  protected async registerEssentialSystems(world: World): Promise<void> {
+  protected async registerEssentialSystems(_world: World): Promise<void> {
     // No-op para tests
   }
 }
@@ -170,8 +170,8 @@ describe("BaseGame Lifecycle", () => {
     expect(() => game.setInput({ thrust: true })).not.toThrow();
 
     // subscribe should return a no-op unsubscribe function
-    let called = false;
-    const unsubscribe = game.subscribe(() => { called = true; });
+    let _called = false;
+    const unsubscribe = game.subscribe(() => { _called = true; });
     expect(typeof unsubscribe).toBe("function");
 
     // Even if we notify (internally), it shouldn't have been added
@@ -206,12 +206,12 @@ describe("BaseGame Lifecycle", () => {
     // We can't easily hook into the middle of init() from here,
     // but the implementation allows it now.
     await game.init();
-    let called = false;
-    game.subscribe(() => { called = true; });
+    let _called = false;
+    game.subscribe(() => { _called = true; });
 
     // Trigger notification manually or via state change if possible
     // For now, init() success is enough to prove it didn't return no-op
     // if we can check the listeners set size
-    expect((game as any)._listeners.size).toBe(1);
+    expect((game as unknown as { _listeners: Set<unknown> })._listeners.size).toBe(1);
   });
 });

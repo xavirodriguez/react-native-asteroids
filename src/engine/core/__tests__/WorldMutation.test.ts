@@ -245,7 +245,7 @@ describe("World Structural Mutation Safety", () => {
     const initialRenderDirty = world.isRenderDirty();
 
     const result = world.mutateComponent(entity, "Test", (c) => {
-      (c as any).value = 500;
+      (c as TestComponent).value = 500;
     });
 
     expect(result).toBe(false);
@@ -258,7 +258,7 @@ describe("World Structural Mutation Safety", () => {
     // but we can at least check it runs correctly.
     const testEntity = world.createEntity();
     world.flush();
-    world.addComponent(testEntity, { type: "Transform", x: 1, y: 2, rotation: 0, scaleX: 1, scaleY: 1 } as any);
+    world.addComponent(testEntity, { type: "Transform", x: 1, y: 2, rotation: 0, scaleX: 1, scaleY: 1 } as unknown as import("../CoreComponents").TransformComponent);
 
     const success = world.mutateComponent(testEntity, "Transform", (component) => {
         // @ts-expect-error - value does not exist on TransformComponent
@@ -282,8 +282,8 @@ describe("Mandatory World Mutation API Tests", () => {
     world.flush();
     world.addComponent(testEntity, { type: "Test", value: 100 } as TestComponent);
     // Reset versions for clean test start
-    (world as any)._stateVersion = 0;
-    (world as any)._renderDirty = false;
+    (world as unknown as { _stateVersion: number })._stateVersion = 0;
+    (world as unknown as { _renderDirty: boolean })._renderDirty = false;
   });
 
   it("Test 1 — getComponent() should return live reference and direct mutation should not change stateVersion", () => {
@@ -294,7 +294,7 @@ describe("Mandatory World Mutation API Tests", () => {
     // 2. Mutar directamente
     const initialStateVersion = world.stateVersion;
     if (component) {
-      (component as any).value = 999;
+      (component as TestComponent).value = 999;
     }
 
     // 3. Verificar que la referencia es real (cambio persiste) pero la versión no cambió

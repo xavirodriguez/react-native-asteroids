@@ -1,7 +1,9 @@
-const fs = require("fs");
-const path = require("path");
-const { promisify } = require("util");
-const glob = promisify(require("glob")); // Necesitarás instalar glob: npm install glob
+import * as fs from "fs";
+import { promisify } from "util";
+// @ts-expect-error glob might not have default export or types
+import glob from "glob";
+
+const globAsync = promisify(glob); // Necesitarás instalar glob: npm install glob
 
 async function fixTSDoc() {
   // 1. Definir los patrones a buscar y sus reemplazos (escapado)
@@ -13,7 +15,7 @@ async function fixTSDoc() {
   ];
 
   // 2. Buscar todos los archivos .d.ts en la carpeta temp/declarations
-  const files = await glob("temp/declarations/**/*.d.ts");
+  const files = await globAsync("temp/declarations/**/*.d.ts");
 
   files.forEach((filePath) => {
     let content = fs.readFileSync(filePath, "utf8");
