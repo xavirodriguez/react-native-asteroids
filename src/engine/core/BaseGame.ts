@@ -391,6 +391,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       this.registerSystems();
       this.initializeEntities();
       await this.onPreloadAssets();
+
+      if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
+
       this._status = GameStatus.READY;
     } catch (error) {
       if ((this._status as GameStatus) !== GameStatus.DESTROYED) {
