@@ -204,12 +204,24 @@ export class CanvasRenderer implements Renderer {
 
     let shakeX = 0;
     let shakeY = 0;
+
+    // Aggregate all ScreenShake components in the world
+    const shakeEntities = world.query("ScreenShake");
+    const renderRandom = RandomService.getInstance("render");
+
+    for (let i = 0; i < shakeEntities.length; i++) {
+        const shake = world.getComponent<import("../core/CoreComponents").ScreenShakeComponent>(shakeEntities[i], "ScreenShake")!;
+        if (shake.remaining > 0 || shake.duration > 0) {
+            shakeX += (renderRandom.next() - 0.5) * shake.intensity;
+            shakeY += (renderRandom.next() - 0.5) * shake.intensity;
+        }
+    }
+
     if (gameState?.screenShake) {
       const screenShake = gameState.screenShake as Record<string, number>;
       if (screenShake.remaining > 0 || screenShake.duration > 0) {
-        const renderRandom = RandomService.getInstance("render");
-        shakeX = (renderRandom.next() - 0.5) * screenShake.intensity;
-        shakeY = (renderRandom.next() - 0.5) * screenShake.intensity;
+        shakeX += (renderRandom.next() - 0.5) * screenShake.intensity;
+        shakeY += (renderRandom.next() - 0.5) * screenShake.intensity;
       }
     }
 

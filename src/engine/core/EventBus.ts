@@ -19,11 +19,13 @@ export type EventHandler<T = unknown> = (payload: T) => void;
  *
  * @conceptualRisk [ORDER][MEDIUM] El orden de ejecución de los handlers para un mismo evento
  * no está garantizado y no se debe depender del orden de registro.
- * @conceptualRisk [RECURSION][LOW] No hay protección contra bucles infinitos de eventos
- * (ej: Evento A dispara Evento B, que dispara de nuevo Evento A).
+ * @conceptualRisk [RECURSION][LOW] Protegido mediante un límite de recursión máxima
+ * para evitar desbordamiento de pila en bucles infinitos.
  */
 export class EventBus {
   private handlers = new Map<string, Set<EventHandler<unknown>>>();
+  private emitDepth = 0;
+  private readonly MAX_RECURSION = 10;
 
   /**
    * Suscribe un controlador a un evento específico o patrón.
@@ -77,15 +79,25 @@ export class EventBus {
    * @param payload - Datos asociados al evento.
    */
   public emit<T = unknown>(event: string, payload?: T): void {
-    // Notify exact matches
-    this.notify(event, payload);
-
-    // Notify wildcards (e.g., "game:*" matches "game:start")
-    if (event.includes(":")) {
-      const namespace = event.split(":")[0];
-      this.notify(`${namespace}:*`, payload);
+    if (this.emitDepth >= this.MAX_RECURSION) {
+      console.warn(`EventBus: Maximum recursion depth (${this.MAX_RECURSION}) reached for event "${event}". Blocking further emission.`);
+      return;
     }
-    this.notify("*", payload);
+
+    this.emitDepth++;
+    try {
+      // Notify exact matches
+      this.notify(event, payload);
+
+      // Notify wildcards (e.g., "game:*" matches "game:start")
+      if (event.includes(":")) {
+        const namespace = event.split(":")[0];
+        this.notify(`${namespace}:*`, payload);
+      }
+      this.notify("*", payload);
+    } finally {
+      this.emitDepth--;
+    }
   }
 
   /**

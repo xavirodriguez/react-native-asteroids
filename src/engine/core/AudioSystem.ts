@@ -23,7 +23,9 @@ export class AudioSystem {
   constructor() {
     if (typeof window !== "undefined") {
       const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      this.ctx = new AudioContextClass();
+      if (AudioContextClass) {
+        this.ctx = new AudioContextClass();
+      }
     }
   }
 

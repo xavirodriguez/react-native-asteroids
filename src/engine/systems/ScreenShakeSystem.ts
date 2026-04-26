@@ -23,19 +23,21 @@ import { ScreenShakeComponent } from "../types/EngineTypes";
  */
 export class ScreenShakeSystem extends System {
   /**
-   * Updates screen shake timer.
+   * Updates screen shake timers for all active shake sources.
    */
   public update(world: World, deltaTime: number): void {
-    const shakeEntity = world.query("ScreenShake")[0];
-    if (shakeEntity === undefined) return;
+    const shakeEntities = world.query("ScreenShake");
 
-    const shake = world.getComponent<ScreenShakeComponent>(shakeEntity, "ScreenShake");
-    if (!shake) return;
+    for (let i = 0; i < shakeEntities.length; i++) {
+      const entity = shakeEntities[i];
+      const shake = world.getComponent<ScreenShakeComponent>(entity, "ScreenShake");
+      if (!shake) continue;
 
-    if (shake.remaining > 0) {
-      shake.remaining -= deltaTime;
-    } else {
-      world.removeComponent(shakeEntity, "ScreenShake");
+      if (shake.remaining > 0) {
+        shake.remaining -= deltaTime;
+      } else {
+        world.removeComponent(entity, "ScreenShake");
+      }
     }
   }
 }

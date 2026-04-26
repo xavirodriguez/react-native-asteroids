@@ -10,8 +10,8 @@ import { ReplayData, ReplayFrame, InputFrame } from "../../multiplayer/NetTypes"
  * @responsibility Almacenar la secuencia de inputs asociados a cada tick.
  * @responsibility Generar un objeto `ReplayData` compatible con el sistema de transporte.
  *
- * @conceptualRisk [MEMORY_LEAK][HIGH] La grabación continua sin límites puede
- * agotar la memoria disponible en sesiones largas.
+ * @conceptualRisk [MEMORY_LEAK][LOW] Mitigado mediante un límite máximo de frames
+ * (buffer circular) para evitar el agotamiento de memoria.
  * @conceptualRisk [DETERMINISM][MEDIUM] Si el estado inicial del mundo no se captura
  * junto con los inputs, el replay no será fiel.
  */
@@ -19,6 +19,7 @@ export class ReplayRecorder {
   private frames: ReplayFrame[] = [];
   private isRecording: boolean = false;
   private currentTick: number = 0;
+  private readonly MAX_FRAMES = 10000;
 
   public startRecording(): void {
     this.frames = [];
@@ -55,5 +56,9 @@ export class ReplayRecorder {
       inputs,
       events: [] // Events could be recorded here too
     });
+
+    if (this.frames.length > this.MAX_FRAMES) {
+      this.frames.shift();
+    }
   }
 }
