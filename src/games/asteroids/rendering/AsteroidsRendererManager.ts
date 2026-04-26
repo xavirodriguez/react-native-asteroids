@@ -6,7 +6,7 @@ import { GAME_CONFIG } from "../../../types/GameTypes";
 /**
  * Default renderer initialization for Asteroids (Native/Universal).
  */
-export function initializeAsteroidsRenderer<T>(renderer: Renderer<T>): void {
+export function initializeAsteroidsRenderer(renderer: Renderer<any>): void {
   if (renderer.type === "canvas") {
     const canvasRenderer = renderer as unknown as import("../../../engine/rendering/CanvasRenderer").CanvasRenderer;
 
