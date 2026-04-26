@@ -185,6 +185,14 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
     enabled: true
   } as Collider2DComponent);
   world.addComponent(asteroid, { type: "Asteroid", size } as AsteroidComponent);
+  world.addComponent(asteroid, {
+    type: "Boundary",
+    x: 0,
+    y: 0,
+    width: GAME_CONFIG.SCREEN_WIDTH,
+    height: GAME_CONFIG.SCREEN_HEIGHT,
+    behavior: "wrap",
+  } as BoundaryComponent);
   return asteroid;
 };
 

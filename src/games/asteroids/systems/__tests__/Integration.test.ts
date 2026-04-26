@@ -4,8 +4,9 @@ import { AsteroidCollisionSystem } from "../AsteroidCollisionSystem";
 import { AsteroidGameStateSystem } from "../AsteroidGameStateSystem";
 import { MovementSystem } from "../../../../engine/physics/systems/MovementSystem";
 import { ParticlePool, BulletPool } from "../../EntityPool";
-import { createBullet, createGameState } from "../../EntityFactory";
+import { createBullet, createGameState, createAsteroid } from "../../EntityFactory";
 import { GAME_CONFIG, type GameStateComponent } from "../../types/AsteroidTypes";
+import { BoundaryComponent } from "../../../../engine/core/CoreComponents";
 
 describe("Asteroids Gameplay Integration", () => {
   let world: World;
@@ -42,6 +43,16 @@ describe("Asteroids Gameplay Integration", () => {
     const asteroids = world.query("Asteroid");
     expect(asteroids.length).toBeGreaterThan(0);
     expect(world.getSingleton<GameStateComponent>("GameState")!.asteroidsRemaining).toBeGreaterThan(0);
+  });
+
+  it("should verify that asteroids have BoundaryComponent", () => {
+    const asteroid = createAsteroid({ world, x: 100, y: 100, size: "large" });
+    const boundary = world.getComponent<BoundaryComponent>(asteroid, "Boundary");
+
+    expect(boundary).toBeDefined();
+    expect(boundary?.behavior).toBe("wrap");
+    expect(boundary?.width).toBe(GAME_CONFIG.SCREEN_WIDTH);
+    expect(boundary?.height).toBe(GAME_CONFIG.SCREEN_HEIGHT);
   });
 
   it("should complete a full destruction cycle: spawn -> collision -> split -> score", () => {
