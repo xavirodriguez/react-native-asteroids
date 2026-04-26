@@ -2,7 +2,7 @@ import { Skia, SkCanvas, SkPaint, PaintStyle } from "@shopify/react-native-skia"
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TransformComponent, PreviousTransformComponent, Component, GenericComponent } from "../core/CoreComponents";
+import { RenderComponent, TransformComponent, PreviousTransformComponent, Component, GenericComponent, ScreenShakeComponent } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
 
 /**
@@ -168,20 +168,13 @@ export class SkiaRenderer implements Renderer {
     const renderRandom = RandomService.getInstance("render");
 
     for (let i = 0; i < shakeEntities.length; i++) {
-        const shake = world.getComponent<import("../core/CoreComponents").ScreenShakeComponent>(shakeEntities[i], "ScreenShake")!;
-        if (shake.remaining > 0 || shake.duration > 0) {
-            shakeX += (renderRandom.next() - 0.5) * shake.intensity;
-            shakeY += (renderRandom.next() - 0.5) * shake.intensity;
-        }
-    }
-
-    if (gameState?.screenShake) {
-      const screenShake = gameState.screenShake as Record<string, number>;
-      if (screenShake.remaining > 0 || screenShake.duration > 0) {
-        shakeX += (renderRandom.next() - 0.5) * screenShake.intensity;
-        shakeY += (renderRandom.next() - 0.5) * screenShake.intensity;
+      const shake = world.getComponent<ScreenShakeComponent>(shakeEntities[i], "ScreenShake")!;
+      if (shake.remaining > 0 || shake.duration > 0) {
+        shakeX += (renderRandom.next() - 0.5) * shake.intensity;
+        shakeY += (renderRandom.next() - 0.5) * shake.intensity;
       }
     }
+
 
     if (mainCam && (mainCam.shakeOffsetX !== 0 || mainCam.shakeOffsetY !== 0)) {
         shakeX += mainCam.shakeOffsetX;

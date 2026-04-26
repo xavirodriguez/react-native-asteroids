@@ -400,12 +400,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
       this.registerSystems();
       this.initializeEntities();
-      await this.onPreloadAssets();
       this._status = GameStatus.READY;
     } catch (error) {
       if ((this._status as GameStatus) !== GameStatus.DESTROYED) {
-        this.world.clear();
-        this.world.clearSystems();
         this._status = GameStatus.UNINITIALIZED;
       }
       throw error;
@@ -459,11 +456,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this._listeners.add(listener);
     return () => this._listeners.delete(listener);
   }
-
-  /**
-   * Hook for pre-loading assets during initialization.
-   */
-  protected async onPreloadAssets(): Promise<void> {}
 
   protected _onBeforeRestart(): void | Promise<void> {}
 

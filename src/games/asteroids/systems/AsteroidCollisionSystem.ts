@@ -97,6 +97,11 @@ export class AsteroidCollisionSystem extends System {
       render.hitFlashFrames = 8;
     }
 
+    const eventBus = world.getResource<EventBus>("EventBus");
+    if (eventBus) {
+      eventBus.emit("audio:play_sfx", { name: "explosion" });
+    }
+
     this.handleAsteroidDestructionLogic(world, asteroid, bullet);
   }
 
@@ -165,9 +170,16 @@ export class AsteroidCollisionSystem extends System {
     if (health.current <= 0) {
       hapticDeath();
       const eventBus = world.getResource<EventBus>("EventBus");
-      if (eventBus) eventBus.emit("game:over");
+      if (eventBus) {
+        eventBus.emit("audio:play_sfx", { name: "game_over" });
+        eventBus.emit("game:over");
+      }
     } else {
       hapticDamage();
+      const eventBus = world.getResource<EventBus>("EventBus");
+      if (eventBus) {
+        eventBus.emit("audio:play_sfx", { name: "hit" });
+      }
     }
   }
 

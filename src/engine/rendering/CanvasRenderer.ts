@@ -1,7 +1,7 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TransformComponent, PreviousTransformComponent, GenericComponent, Camera2DComponent } from "../core/CoreComponents";
+import { RenderComponent, TransformComponent, PreviousTransformComponent, GenericComponent, Camera2DComponent, ScreenShakeComponent } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
 import { RenderSnapshot, UISnapshot } from "./RenderSnapshot";
 import { RenderCommandBuffer, DrawCommand } from "./RenderCommandBuffer";
@@ -216,20 +216,13 @@ export class CanvasRenderer implements Renderer {
     const renderRandom = RandomService.getInstance("render");
 
     for (let i = 0; i < shakeEntities.length; i++) {
-        const shake = world.getComponent<import("../core/CoreComponents").ScreenShakeComponent>(shakeEntities[i], "ScreenShake")!;
-        if (shake.remaining > 0 || shake.duration > 0) {
-            shakeX += (renderRandom.next() - 0.5) * shake.intensity;
-            shakeY += (renderRandom.next() - 0.5) * shake.intensity;
-        }
-    }
-
-    if (gameState?.screenShake) {
-      const screenShake = gameState.screenShake as Record<string, number>;
-      if (screenShake.remaining > 0 || screenShake.duration > 0) {
-        shakeX += (renderRandom.next() - 0.5) * screenShake.intensity;
-        shakeY += (renderRandom.next() - 0.5) * screenShake.intensity;
+      const shake = world.getComponent<ScreenShakeComponent>(shakeEntities[i], "ScreenShake")!;
+      if (shake.remaining > 0 || shake.duration > 0) {
+        shakeX += (renderRandom.next() - 0.5) * shake.intensity;
+        shakeY += (renderRandom.next() - 0.5) * shake.intensity;
       }
     }
+
 
     // Combine camera shake if present
     if (mainCam && (mainCam.shakeOffsetX !== 0 || mainCam.shakeOffsetY !== 0)) {
