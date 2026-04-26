@@ -106,6 +106,7 @@ export class EventBus {
   public clear(pattern?: string): void {
     if (!pattern) {
       this.handlers.clear();
+      this.deferredQueue = [];
       return;
     }
 

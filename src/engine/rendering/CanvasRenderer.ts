@@ -199,9 +199,6 @@ export class CanvasRenderer implements Renderer {
     const entities = world.query("Transform", "Render");
     let count = 0;
 
-    const gameStateEntity = world.query("GameState")[0];
-    const gameState = gameStateEntity ? world.getComponent<GenericComponent>(gameStateEntity, "GameState") : null;
-
     let shakeX = 0;
     let shakeY = 0;
 
