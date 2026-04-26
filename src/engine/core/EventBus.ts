@@ -5,7 +5,7 @@
  * @remarks
  * Los eventos pueden ser específicos (ej: `player:hit`) o genéricos mediante asterisco (ej: `player:*` o `*`).
  */
-export type EventHandler<T = unknown> = (payload: T) => void;
+export type EventHandler<T = unknown> = (payload: T, event: string) => void;
 
 /**
  * Sistema de mensajería diseñado para la comunicación síncrona basada en el patrón Pub/Sub.
@@ -51,9 +51,9 @@ export class EventBus {
    * @postcondition Se intenta eliminar el handler automáticamente tras la primera ejecución exitosa.
    */
   public once<T = unknown>(event: string, handler: EventHandler<T>): void {
-    const onceHandler: EventHandler<T> = (payload) => {
+    const onceHandler: EventHandler<T> = (payload, eventName) => {
       this.off(event, onceHandler);
-      handler(payload);
+      handler(payload, eventName);
     };
     this.on(event, onceHandler);
   }
@@ -87,14 +87,14 @@ export class EventBus {
     this.emitDepth++;
     try {
       // Notify exact matches
-      this.notify(event, payload);
+      this.notify(event, payload, event);
 
       // Notify wildcards (e.g., "game:*" matches "game:start")
       if (event.includes(":")) {
         const namespace = event.split(":")[0];
-        this.notify(`${namespace}:*`, payload);
+        this.notify(`${namespace}:*`, payload, event);
       }
-      this.notify("*", payload);
+      this.notify("*", payload, event);
     } finally {
       this.emitDepth--;
     }
@@ -122,14 +122,14 @@ export class EventBus {
     }
   }
 
-  private notify(event: string, payload: unknown): void {
-    const set = this.handlers.get(event);
+  private notify(subscriptionKey: string, payload: unknown, originalEvent: string): void {
+    const set = this.handlers.get(subscriptionKey);
     if (set) {
       set.forEach(handler => {
         try {
-          handler(payload);
+          handler(payload, originalEvent);
         } catch (e) {
-          console.error(`Error in EventBus handler for event "${event}":`, e);
+          console.error(`Error in EventBus handler for event "${originalEvent}" (subscribed as "${subscriptionKey}"):`, e);
         }
       });
     }

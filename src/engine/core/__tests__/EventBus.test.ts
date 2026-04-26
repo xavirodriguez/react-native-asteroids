@@ -11,7 +11,7 @@ describe("EventBus", () => {
     const handler = jest.fn();
     bus.on("test", handler);
     bus.emit("test", { data: 123 });
-    expect(handler).toHaveBeenCalledWith({ data: 123 });
+    expect(handler).toHaveBeenCalledWith({ data: 123 }, "test");
   });
 
   it("should handle multiple handlers for the same event", () => {
@@ -20,8 +20,8 @@ describe("EventBus", () => {
     bus.on("test", h1);
     bus.on("test", h2);
     bus.emit("test", "foo");
-    expect(h1).toHaveBeenCalledWith("foo");
-    expect(h2).toHaveBeenCalledWith("foo");
+    expect(h1).toHaveBeenCalledWith("foo", "test");
+    expect(h2).toHaveBeenCalledWith("foo", "test");
   });
 
   it("should handle once subcriptions", () => {
@@ -30,7 +30,7 @@ describe("EventBus", () => {
     bus.emit("test", 1);
     bus.emit("test", 2);
     expect(handler).toHaveBeenCalledTimes(1);
-    expect(handler).toHaveBeenCalledWith(1);
+    expect(handler).toHaveBeenCalledWith(1, "test");
   });
 
   it("should handle off (unsubscribe)", () => {
@@ -50,8 +50,8 @@ describe("EventBus", () => {
 
     bus.emit("game:start", { level: 1 });
 
-    expect(exactHandler).toHaveBeenCalledWith({ level: 1 });
-    expect(wildcardHandler).toHaveBeenCalledWith({ level: 1 });
+    expect(exactHandler).toHaveBeenCalledWith({ level: 1 }, "game:start");
+    expect(wildcardHandler).toHaveBeenCalledWith({ level: 1 }, "game:start");
   });
 
   it("should handle global wildcard emissions", () => {
@@ -59,7 +59,7 @@ describe("EventBus", () => {
     bus.on("*", globalHandler);
 
     bus.emit("anything", "payload");
-    expect(globalHandler).toHaveBeenCalledWith("payload");
+    expect(globalHandler).toHaveBeenCalledWith("payload", "anything");
   });
 
   it("should clear handlers by pattern", () => {
