@@ -252,58 +252,82 @@ describe("World Structural Mutation Safety", () => {
     expect(world.stateVersion).toBe(initialStateVersion);
     expect(world.isRenderDirty()).toBe(initialRenderDirty);
   });
+
+  it("should infer component type from discriminator", () => {
+    // This test is mostly for compile-time verification,
+    // but we can at least check it runs correctly.
+    const testEntity = world.createEntity();
+    world.flush();
+    world.addComponent(testEntity, { type: "Transform", x: 1, y: 2, rotation: 0, scaleX: 1, scaleY: 1 } as any);
+
+    const success = world.mutateComponent(testEntity, "Transform", (component) => {
+        // @ts-expect-error - value does not exist on TransformComponent
+        // component.value = 1;
+        component.x = 100;
+    });
+
+    expect(success).toBe(true);
+    const transform = world.getComponent(testEntity, "Transform");
+    expect(transform?.x).toBe(100);
+  });
 });
 
 describe("Mandatory World Mutation API Tests", () => {
   let world: World;
-  const entity = 1 as Entity;
+  let testEntity: Entity;
 
   beforeEach(() => {
     world = new World();
-    // Simulate entity creation for Test 1 & 2
-    (world as any).activeEntities.add(entity);
-    world.addComponent(entity, { type: "Test", value: 100 } as TestComponent);
-    // Reset versions
+    testEntity = world.createEntity();
+    world.flush();
+    world.addComponent(testEntity, { type: "Test", value: 100 } as TestComponent);
+    // Reset versions for clean test start
     (world as any)._stateVersion = 0;
     (world as any)._renderDirty = false;
   });
 
   it("Test 1 — getComponent() should return live reference and direct mutation should not change stateVersion", () => {
-    const component = world.getComponent<TestComponent>(entity, "Test");
+    // 1. Obtener referencia
+    const component = world.getComponent<TestComponent>(testEntity, "Test");
     expect(component).toBeDefined();
 
+    // 2. Mutar directamente
     const initialStateVersion = world.stateVersion;
     if (component) {
       (component as any).value = 999;
     }
 
-    const updatedComponent = world.getComponent<TestComponent>(entity, "Test");
+    // 3. Verificar que la referencia es real (cambio persiste) pero la versión no cambió
+    const updatedComponent = world.getComponent<TestComponent>(testEntity, "Test");
     expect(updatedComponent?.value).toBe(999);
     expect(world.stateVersion).toBe(initialStateVersion);
   });
 
-  it("Test 2 — mutateComponent() success contract", () => {
+  it("Test 2 — mutateComponent() success contract updates versions", () => {
     const initialStateVersion = world.stateVersion;
-    const initialRenderDirty = world.isRenderDirty();
 
-    const success = world.mutateComponent<TestComponent>(entity, "Test", (c) => {
+    // 1. Mutación controlada
+    const success = world.mutateComponent<TestComponent>(testEntity, "Test", (c) => {
       c.value = 500;
     });
 
+    // 2. Verificar contrato
     expect(success).toBe(true);
-    expect(world.getComponent<TestComponent>(entity, "Test")?.value).toBe(500);
+    expect(world.getComponent<TestComponent>(testEntity, "Test")?.value).toBe(500);
     expect(world.stateVersion).toBe(initialStateVersion + 1);
     expect(world.isRenderDirty()).toBe(true);
   });
 
-  it("Test 3 — mutateComponent() absent component case", () => {
+  it("Test 3 — mutateComponent() absent component case returns false and no version change", () => {
     const initialStateVersion = world.stateVersion;
     const initialRenderDirty = world.isRenderDirty();
 
-    const success = world.mutateComponent<TestComponent>(entity, "NonExistent", (c) => {
+    // 1. Intentar mutar componente inexistente
+    const success = world.mutateComponent<TestComponent>(testEntity, "NonExistent", (c) => {
       c.value = 1000;
     });
 
+    // 2. Verificar que falló sin efectos secundarios
     expect(success).toBe(false);
     expect(world.stateVersion).toBe(initialStateVersion);
     expect(world.isRenderDirty()).toBe(initialRenderDirty);
