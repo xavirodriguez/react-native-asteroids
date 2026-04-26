@@ -23,7 +23,7 @@ import { ScreenShakeComponent } from "../types/EngineTypes";
  */
 export class ScreenShakeSystem extends System {
   /**
-   * Updates screen shake timer.
+   * Updates screen shake timers for all active shake sources.
    */
   public update(world: World, deltaTime: number): void {
     const shakeEntities = world.query("ScreenShake");
