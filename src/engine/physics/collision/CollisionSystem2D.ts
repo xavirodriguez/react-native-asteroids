@@ -149,12 +149,20 @@ export class CollisionSystem2D extends System {
               if (ccdResult?.hit && ccdResult.timeOfImpact < 1) {
                   // Resolve by moving both entities to TOI
                   if (velA) {
-                      transA.x += velA.dx * dtSeconds * ccdResult.timeOfImpact;
-                      transA.y += velA.dy * dtSeconds * ccdResult.timeOfImpact;
+                      const moveX = velA.dx * dtSeconds * ccdResult.timeOfImpact;
+                      const moveY = velA.dy * dtSeconds * ccdResult.timeOfImpact;
+                      world.mutateComponent(entityA, "Transform", t => {
+                        t.x += moveX;
+                        t.y += moveY;
+                      });
                   }
                   if (velB) {
-                      transB.x += velB.dx * dtSeconds * ccdResult.timeOfImpact;
-                      transB.y += velB.dy * dtSeconds * ccdResult.timeOfImpact;
+                      const moveX = velB.dx * dtSeconds * ccdResult.timeOfImpact;
+                      const moveY = velB.dy * dtSeconds * ccdResult.timeOfImpact;
+                      world.mutateComponent(entityB, "Transform", t => {
+                        t.x += moveX;
+                        t.y += moveY;
+                      });
                   }
               }
           }

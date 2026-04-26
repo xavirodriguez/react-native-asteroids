@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useKeepAwake } from "./useKeepAwake";
 import type { BaseGame } from "../engine/core/BaseGame";
+import type { DebugManager } from "../engine/debug/DebugManager";
 
 // Constructor type - accepts any class that extends BaseGame
 type GameConstructor<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, unknown>> =
@@ -62,13 +63,15 @@ export function useGame<
     let lastUpdateTime = 0;
     const UI_UPDATE_INTERVAL = 1000 / 15; // Throttled to 15 FPS for UI components
 
+    const isPausedRef = useRef(false);
     const unsubscribe = gameInstance.subscribe((updatedGame) => {
       const state = updatedGame.getGameState() as TState;
       gameStateRef.current = state;
 
       const now = performance.now();
       const isPausedNow = updatedGame.isPausedState();
-      if (isPausedNow !== isPaused || now - lastUpdateTime >= UI_UPDATE_INTERVAL) {
+      if (isPausedNow !== isPausedRef.current || now - lastUpdateTime >= UI_UPDATE_INTERVAL) {
+        isPausedRef.current = isPausedNow;
         setGameState(state);
         setIsPaused(isPausedNow);
         forceUpdate((v) => v + 1);
@@ -114,3 +117,30 @@ export function useGame<
     restart,
   };
 }
+
+/**
+ * Hook to manage the DebugManager lifecycle.
+ */
+export function useDebugManager(game: BaseGame<any, any> | null): DebugManager | null {
+  const [manager, setManager] = useState<DebugManager | null>(null);
+
+  useEffect(() => {
+    if (!game || !__DEV__) {
+      setManager(null);
+      return;
+    }
+
+    const { DebugManager: DebugManagerClass } = require("../engine/debug/DebugManager");
+    const debugManager = DebugManagerClass.getInstance();
+    debugManager.attach(game);
+    setManager(debugManager);
+
+    return () => {
+      debugManager.detach();
+    };
+  }, [game]);
+
+  return manager;
+}
+
+const __DEV__ = process.env.NODE_ENV !== "production";
