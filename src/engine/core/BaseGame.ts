@@ -393,6 +393,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       this._status = GameStatus.READY;
     } catch (error) {
       if ((this._status as GameStatus) !== GameStatus.DESTROYED) {
+        this.world.clear();
+        this.world.clearSystems();
         this._status = GameStatus.UNINITIALIZED;
       }
       throw error;
