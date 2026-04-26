@@ -115,7 +115,7 @@ export class PhysicsUtils {
    */
   public static bounceBoundary(
     pos: TransformComponent,
-    vel: import("../core/CoreComponents").VelocityComponent,
+    vel: import("../../core/CoreComponents").VelocityComponent,
     width: number,
     height: number,
     minX: number = 0,
