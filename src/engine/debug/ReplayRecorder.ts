@@ -29,10 +29,11 @@ export class ReplayRecorder {
 
   public stopRecording(): ReplayData {
     this.isRecording = false;
+    const firstTick = this.frames.length > 0 ? this.frames[0].tick : 0;
     return {
       version: 1,
       roomId: "recorded-session",
-      startTick: 0,
+      startTick: firstTick,
       endTick: this.currentTick,
       frames: [...this.frames]
     };
