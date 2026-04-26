@@ -26,8 +26,6 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
   const trail = world.getComponent<TrailComponent>(entity, "Trail");
   if (trail && trail.count > 0) {
     ctx.save();
-    // We need to draw in global coordinates. Since drawEntity already translated/rotated, we reset.
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
     const speed = vel ? Math.sqrt(vel.dx * vel.dx + vel.dy * vel.dy) : 0;
@@ -36,18 +34,35 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
     if (speed > 150) trailColor = "#FFFFFF"; // Plasma white
     else if (speed > 50) trailColor = "#88AAFF"; // Light blue
 
+    const cos = Math.cos(-_pos.rotation);
+    const sin = Math.sin(-_pos.rotation);
+
     for (let i = 0; i < trail.count; i++) {
         const index = (trail.currentIndex - (trail.count - 1) + i + trail.maxLength) % trail.maxLength;
         const p = trail.points[index];
         if (!p) continue;
 
+        // BUG 1 Fix: Transform world point p to local space to avoid destroying camera with setTransform
+        const dx = p.x - _pos.x;
+        const dy = p.y - _pos.y;
+        const lx = (dx * cos - dy * sin) / (_pos.scaleX || 1);
+        const ly = (dx * sin + dy * cos) / (_pos.scaleY || 1);
+
         const alpha = (i / trail.count) * 0.6;
         ctx.globalAlpha = alpha;
         ctx.fillStyle = trailColor;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+        ctx.arc(lx, ly, 1, 0, Math.PI * 2);
         ctx.fill();
     }
+
+    // Synthetic point to close the gap (BUG 3)
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = trailColor;
+    ctx.beginPath();
+    ctx.arc(0, 0, 1, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.restore();
   }
 
