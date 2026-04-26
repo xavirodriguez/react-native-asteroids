@@ -360,21 +360,6 @@ export interface TrailComponent extends Component {
   maxLength: number;
 }
 
-export interface Modifier {
-  id: string;
-  targetProp: string;
-  multiplier: number;
-  duration: number; // in milliseconds
-}
-
-/**
- * Stores a stack of active modifiers (status effects) for an entity.
- */
-export interface ModifierStackComponent extends Component {
-  type: "ModifierStack";
-  active: Modifier[];
-}
-
 export interface Star extends Component {
   type: "Star";
   x: number;
@@ -385,6 +370,25 @@ export interface Star extends Component {
   twinklePhase: number;
   twinkleSpeed: number;
   layer: number;
+}
+
+/**
+ * Represents a discrete modifier applied to an entity.
+ */
+export interface Modifier {
+  id: string;
+  type: string;
+  value: number;
+  duration: number; // in milliseconds
+  remaining: number;
+}
+
+/**
+ * Component that holds a stack of active modifiers (Status Effects).
+ */
+export interface ModifierStackComponent extends Component {
+  type: "ModifierStack";
+  modifiers: Modifier[];
 }
 
 /**
@@ -416,8 +420,8 @@ export type AnyCoreComponent =
   | ScreenShakeComponent
   | VisualOffsetComponent
   | TrailComponent
-  | ModifierStackComponent
-  | Star;
+  | Star
+  | ModifierStackComponent;
 
 /**
  * Auxiliar para inferir el tipo concreto de un componente a partir de su discriminador.

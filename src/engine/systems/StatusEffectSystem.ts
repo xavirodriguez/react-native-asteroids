@@ -1,21 +1,20 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { ModifierStackComponent, Modifier } from "../core/CoreComponents";
+import { ModifierStackComponent } from "../core/CoreComponents";
 
 /**
- * System responsible for managing the lifecycle of status effects (modifiers).
+ * System responsible for managing the lifecycle of Status Effects (Modifiers).
  *
- * @responsibility Decrement the duration of active modifiers.
- * @responsibility Remove expired modifiers from the stack.
+ * @responsibility Decrement remaining duration of all active modifiers.
+ * @responsibility Remove modifiers that have expired.
+ * @responsibility Clean up the ModifierStack component if it becomes empty.
+ *
  * @queries ModifierStack
- * @mutates ModifierStack.active
+ * @mutates ModifierStack.modifiers
  */
 export class StatusEffectSystem extends System {
   /**
-   * Updates durations and cleans up expired modifiers.
-   *
-   * @param world - The ECS world instance.
-   * @param deltaTime - Time elapsed since last frame in milliseconds.
+   * Updates modifier durations and prunes expired ones.
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("ModifierStack");
@@ -23,26 +22,22 @@ export class StatusEffectSystem extends System {
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
 
-      world.mutateComponent<ModifierStackComponent>(entity, "ModifierStack", (stack) => {
-        if (stack.active.length === 0) return;
-
+      world.mutateComponent(entity, "ModifierStack", (stack: ModifierStackComponent) => {
         let changed = false;
-        const remainingModifiers: Modifier[] = [];
 
-        for (let j = 0; j < stack.active.length; j++) {
-          const modifier = stack.active[j];
-          modifier.duration -= deltaTime;
+        for (let j = stack.modifiers.length - 1; j >= 0; j--) {
+          const mod = stack.modifiers[j];
+          mod.remaining -= deltaTime;
 
-          if (modifier.duration > 0) {
-            remainingModifiers.push(modifier);
-          } else {
+          if (mod.remaining <= 0) {
+            stack.modifiers.splice(j, 1);
             changed = true;
           }
         }
 
-        if (changed) {
-          stack.active = remainingModifiers;
-        }
+        // If all modifiers are gone, we could remove the component,
+        // but often it's better to keep it if the entity is a frequent target.
+        // For now, we just let it be empty.
       });
     }
   }

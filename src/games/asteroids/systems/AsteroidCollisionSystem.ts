@@ -156,11 +156,21 @@ export class AsteroidCollisionSystem extends System {
       if (render) render.hitFlashFrames = 6;
     }
 
-    const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
-    if (shake) {
-      shake.intensity = GAME_CONFIG.SHAKE_INTENSITY_IMPACT;
-      shake.remaining = GAME_CONFIG.SHAKE_DURATION_IMPACT;
-    }
+    // Create an additive screen shake entity instead of modifying a singleton
+    const shakeEntity = world.createEntity();
+    world.addComponent(shakeEntity, {
+      type: "ScreenShake",
+      intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,
+      duration: GAME_CONFIG.SHAKE_DURATION_IMPACT,
+      remaining: GAME_CONFIG.SHAKE_DURATION_IMPACT,
+    } as ScreenShakeComponent);
+
+    // Add TTL to handle entity cleanup automatically
+    world.addComponent(shakeEntity, {
+      type: "TTL",
+      remaining: GAME_CONFIG.SHAKE_DURATION_IMPACT * 16.66, // Roughly duration in ms if duration is frames
+      total: GAME_CONFIG.SHAKE_DURATION_IMPACT * 16.66
+    } as import("../../../engine/types/EngineTypes").TTLComponent);
 
     if (health.current <= 0) {
       hapticDeath();

@@ -35,7 +35,9 @@ export class ScreenShakeSystem extends System {
 
       if (shake.remaining > 0) {
         shake.remaining -= deltaTime;
-      } else {
+      }
+
+      if (shake.remaining <= 0) {
         world.removeComponent(entity, "ScreenShake");
       }
     }

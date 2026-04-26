@@ -17,20 +17,37 @@ import { ReplayData, ReplayFrame, InputFrame } from "../../multiplayer/NetTypes"
  */
 export class ReplayRecorder {
   private frames: ReplayFrame[] = [];
+  private head: number = 0;
+  private count: number = 0;
+  private readonly MAX_FRAMES = 3600 * 5; // 18,000 frames (5 minutes at 60fps)
   private isRecording: boolean = false;
   private currentTick: number = 0;
   private readonly MAX_FRAMES = 10000;
 
   public startRecording(): void {
-    this.frames = [];
+    this.frames = new Array(this.MAX_FRAMES);
     this.head = 0;
+    this.count = 0;
     this.isRecording = true;
     this.currentTick = 0;
   }
 
   public stopRecording(): ReplayData {
     this.isRecording = false;
-    const firstTick = this.frames.length > 0 ? this.frames[0].tick : 0;
+
+    // Reconstruct frames in chronological order from the circular buffer
+    const orderedFrames: ReplayFrame[] = new Array(this.count);
+    if (this.count < this.MAX_FRAMES) {
+      for (let i = 0; i < this.count; i++) {
+        orderedFrames[i] = this.frames[i];
+      }
+    } else {
+      for (let i = 0; i < this.MAX_FRAMES; i++) {
+        orderedFrames[i] = this.frames[(this.head + i) % this.MAX_FRAMES];
+      }
+    }
+
+    const startTick = orderedFrames.length > 0 ? orderedFrames[0].tick : 0;
     return {
       version: 1,
       roomId: "recorded-session",
@@ -52,15 +69,16 @@ export class ReplayRecorder {
   public recordTick(tick: number, inputs: Record<string, InputFrame[]>): void {
     if (!this.isRecording) return;
 
-    this.currentTick = tick;
-    this.frames.push({
+    // O(1) insertion in circular buffer
+    this.frames[this.head] = {
       tick,
       inputs,
-      events: [] // Events could be recorded here too
-    });
+      events: []
+    };
 
-    if (this.frames.length > this.MAX_FRAMES) {
-      this.frames.shift();
+    this.head = (this.head + 1) % this.MAX_FRAMES;
+    if (this.count < this.MAX_FRAMES) {
+      this.count++;
     }
   }
 }
