@@ -1,4 +1,4 @@
-import { TransformComponent, PhysicsBody2DComponent } from "../../types/EngineTypes";
+import { TransformComponent, PhysicsBody2DComponent, VelocityComponent } from "../../types/EngineTypes";
 
 /**
  * Interface mínima para objetos que representan una posición.
@@ -115,7 +115,7 @@ export class PhysicsUtils {
    */
   public static bounceBoundary(
     pos: TransformComponent,
-    vel: import("../../core/CoreComponents").VelocityComponent,
+    vel: VelocityComponent,
     width: number,
     height: number,
     minX: number = 0,

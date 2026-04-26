@@ -170,8 +170,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     if (this._status === GameStatus.RUNNING) {
       return;
     }
-    this.gameLoop.start();
     this._status = GameStatus.RUNNING;
+    this.gameLoop.start();
   }
 
   /**
@@ -251,7 +251,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     if (this._status === GameStatus.DESTROYED) {
       throw new Error("BaseGame: Cannot restart() on a destroyed game.");
     }
-    if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.INITIALIZING) {
+    if (this._status === GameStatus.UNINITIALIZED) {
       throw new Error("BaseGame: Cannot restart() before init().");
     }
 
@@ -259,11 +259,19 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       await this._transitionLock;
     }
     if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
+    if ((this._status as GameStatus) === GameStatus.UNINITIALIZED) {
+      throw new Error("BaseGame: Cannot restart() before init().");
+    }
+
+    const previousStatus = this._status;
+    const previousPaused = this._isPaused;
 
     let resolveLock: () => void;
     this._transitionLock = new Promise((resolve) => { resolveLock = resolve; });
-
     try {
+      this._status = GameStatus.INITIALIZING;
+      this._isPaused = true;
+
       await this._onBeforeRestart();
       if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
 
@@ -285,8 +293,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
       if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
 
+      this._status = previousStatus;
       this._isPaused = false;
       this._notifyListeners();
+    } catch (error) {
+      if ((this._status as GameStatus) !== GameStatus.DESTROYED) {
+        this._status = previousStatus;
+        this._isPaused = previousPaused;
+      }
+      throw error;
     } finally {
       this._transitionLock = null;
       resolveLock!();
@@ -403,7 +418,11 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   public setInput(input: Record<string, unknown>): void {
-    if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.DESTROYED) {
+    if (
+      this._status === GameStatus.UNINITIALIZED ||
+      this._status === GameStatus.INITIALIZING ||
+      this._status === GameStatus.DESTROYED
+    ) {
       return;
     }
     Object.entries(input).forEach(([action, pressed]) => {
@@ -412,7 +431,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   public subscribe(listener: UpdateListener<BaseGame<TState, TInput>>): () => void {
-    if (this._status === GameStatus.DESTROYED) {
+    if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.DESTROYED) {
       return () => {};
     }
     this._listeners.add(listener);

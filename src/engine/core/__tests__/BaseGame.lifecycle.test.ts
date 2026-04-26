@@ -190,16 +190,31 @@ describe("BaseGame Lifecycle", () => {
     expect(game.getWorld().systemsList.length).toBe(initialSystems);
   });
 
-  test("setInput() should be guarded when UNINITIALIZED", () => {
+  test("setInput() should be guarded when UNINITIALIZED or INITIALIZING", async () => {
     expect(game.getStatus()).toBe(GameStatus.UNINITIALIZED);
 
-    // Mock unifiedInput.setOverride to see if it's called
     const setOverrideSpy = jest.spyOn(game.unifiedInput, "setOverride");
 
     game.setInput({ fire: true });
     expect(setOverrideSpy).not.toHaveBeenCalled();
 
+    // Test during INITIALIZING (via restart or init)
+    const initPromise = game.init();
+    expect(game.getStatus()).toBe(GameStatus.INITIALIZING);
+    game.setInput({ fire: true });
+    expect(setOverrideSpy).not.toHaveBeenCalled();
+
+    await initPromise;
     setOverrideSpy.mockRestore();
+  });
+
+  test("subscribe() should be guarded when UNINITIALIZED", () => {
+    expect(game.getStatus()).toBe(GameStatus.UNINITIALIZED);
+
+    let called = false;
+    const unsubscribe = game.subscribe(() => { called = true; });
+    expect((game as any)._listeners.size).toBe(0);
+    expect(typeof unsubscribe).toBe("function");
   });
 
   test("subscribe() should work during init()", async () => {
