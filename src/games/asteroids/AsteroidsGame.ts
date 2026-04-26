@@ -240,7 +240,6 @@ export class AsteroidsGame
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new UfoSystem());
-    this.world.addSystem(new StatusEffectSystem());
     this.world.addSystem(new ScreenShakeSystem());
     this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
     this.world.addSystem(new AsteroidRenderSystem()); // Handle trails
