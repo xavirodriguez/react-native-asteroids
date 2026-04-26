@@ -392,22 +392,19 @@ export class World {
    * @param entity - The entity to query.
    * @param type - The discriminator name of the component.
    * @returns The component instance or `undefined` if it doesn't exist.
-   * @queries componentMaps
-   * @precondition The entity must be a valid ID.
    */
   public getComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): ComponentOf<TType> | undefined;
   public getComponent<T extends Component>(entity: Entity, type: string): T | undefined;
   public getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
-    return this.componentMaps.get(type)?.get(entity) as T;
+    return this.componentMaps.get(type)?.get(entity) as T | undefined;
   }
 
   /**
    * Performs an immediate mutation on a component.
    *
    * @remarks
-   * This is the official and recommended way for controlled mutations.
-   * It automatically notifies state changes by incrementing {@link World.stateVersion}
-   * and marking the world as dirty for rendering ({@link World.isRenderDirty}).
+   * Official way for controlled mutations.
+   * Updates {@link World.stateVersion} and marks {@link World.isRenderDirty}.
    *
    * @param entity - The entity that owns the component.
    * @param type - The type discriminator of the component.
@@ -429,7 +426,7 @@ export class World {
     type: string,
     updater: (component: T) => void
   ): boolean {
-    const component = this.componentMaps.get(type)?.get(entity) as T;
+    const component = this.componentMaps.get(type)?.get(entity) as T | undefined;
     if (component === undefined) return false;
 
     updater(component);
@@ -844,12 +841,12 @@ export class World {
    * Performs an immediate mutation on a Singleton component.
    *
    * @remarks
-   * Convenience wrapper over {@link World.mutateComponent} for types
-   * known to be unique in the world.
+   * This is the official and recommended way for controlled mutations of unique components.
+   * It automatically notifies state changes by incrementing {@link World.stateVersion}
+   * and marking the world as dirty for rendering ({@link World.isRenderDirty}).
    *
    * @param type - The component type.
-   * @param updater - Callback for mutation.
-   *
+   * @param updater - Callback that receives the component instance for modification.
    * @returns `true` if the component existed and was mutated, `false` otherwise.
    */
   public mutateSingleton<TType extends AnyCoreComponent["type"]>(
