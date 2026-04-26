@@ -24,6 +24,10 @@ export type EventHandler<T = unknown> = (payload: T) => void;
  */
 export class EventBus {
   private handlers = new Map<string, Set<EventHandler<unknown>>>();
+  private recursionDepth = 0;
+  private readonly MAX_RECURSION_DEPTH = 10;
+  private deferredQueue: { event: string; payload: unknown }[] = [];
+  private isProcessingDeferred = false;
 
   /**
    * Suscribe un controlador a un evento específico o patrón.
@@ -77,15 +81,61 @@ export class EventBus {
    * @param payload - Datos asociados al evento.
    */
   public emit<T = unknown>(event: string, payload?: T): void {
-    // Notify exact matches
-    this.notify(event, payload);
-
-    // Notify wildcards (e.g., "game:*" matches "game:start")
-    if (event.includes(":")) {
-      const namespace = event.split(":")[0];
-      this.notify(`${namespace}:*`, payload);
+    if (this.recursionDepth >= this.MAX_RECURSION_DEPTH) {
+      console.warn(`[EventBus] Max recursion depth reached (${this.MAX_RECURSION_DEPTH}). Deferring event: ${event}`);
+      this.emitDeferred(event, payload);
+      return;
     }
-    this.notify("*", payload);
+
+    this.recursionDepth++;
+    try {
+      // Notify exact matches
+      this.notify(event, payload);
+
+      // Notify wildcards (e.g., "game:*" matches "game:start")
+      if (event.includes(":")) {
+        const namespace = event.split(":")[0];
+        this.notify(`${namespace}:*`, payload);
+      }
+      this.notify("*", payload);
+    } finally {
+      this.recursionDepth--;
+      if (this.recursionDepth === 0) {
+        this.processDeferred();
+      }
+    }
+  }
+
+  /**
+   * Encola un evento para ser procesado al final del ciclo de emisión actual o en el siguiente frame.
+   */
+  public emitDeferred<T = unknown>(event: string, payload?: T): void {
+    this.deferredQueue.push({ event, payload });
+  }
+
+  /**
+   * Procesa la cola de eventos diferidos.
+   */
+  private processDeferred(): void {
+    if (this.isProcessingDeferred || this.deferredQueue.length === 0) return;
+
+    this.isProcessingDeferred = true;
+    let processedCount = 0;
+    const MAX_DEFERRED_ITERATIONS = 100;
+
+    try {
+      while (this.deferredQueue.length > 0 && processedCount < MAX_DEFERRED_ITERATIONS) {
+        const item = this.deferredQueue.shift()!;
+        processedCount++;
+        this.emit(item.event, item.payload);
+      }
+
+      if (this.deferredQueue.length > 0) {
+        console.warn(`[EventBus] Max deferred iterations reached (${MAX_DEFERRED_ITERATIONS}). Remaining events in queue: ${this.deferredQueue.length}`);
+      }
+    } finally {
+      this.isProcessingDeferred = false;
+    }
   }
 
   /**
@@ -94,6 +144,7 @@ export class EventBus {
   public clear(pattern?: string): void {
     if (!pattern) {
       this.handlers.clear();
+      this.deferredQueue = [];
       return;
     }
 
