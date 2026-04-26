@@ -19,8 +19,8 @@ export type EventHandler<T = unknown> = (payload: T) => void;
  *
  * @conceptualRisk [ORDER][MEDIUM] El orden de ejecución de los handlers para un mismo evento
  * no está garantizado y no se debe depender del orden de registro.
- * @conceptualRisk [RECURSION][LOW] Protegido mediante un límite de recursión máxima
- * para evitar desbordamiento de pila en bucles infinitos.
+ * @conceptualRisk [RECURSION][LOW] No hay protección contra bucles infinitos de eventos
+ * (ej: Evento A dispara Evento B, que dispara de nuevo Evento A).
  */
 export class EventBus {
   private handlers = new Map<string, Set<EventHandler<unknown>>>();
@@ -106,7 +106,6 @@ export class EventBus {
   public clear(pattern?: string): void {
     if (!pattern) {
       this.handlers.clear();
-      this.deferredQueue = [];
       return;
     }
 

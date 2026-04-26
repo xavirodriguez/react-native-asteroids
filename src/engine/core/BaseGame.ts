@@ -8,7 +8,6 @@ import { ReplayRecorder } from "../debug/ReplayRecorder";
 import { AudioSystem } from "./AudioSystem";
 import { SceneManager } from "../scenes/SceneManager";
 import { RandomService } from "../utils/RandomService";
-import { AudioSystem } from "./AudioSystem";
 import type { IGame, UpdateListener } from "./IGame";
 import { XPSystem } from "../systems/XPSystem";
 import { PaletteSystem } from "../systems/PaletteSystem";
@@ -63,7 +62,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected gameLoop: GameLoop;
   public readonly unifiedInput: UnifiedInputSystem;
   protected eventBus: EventBus;
-  protected audioSystem: AudioSystem;
   protected sceneManager: SceneManager;
   protected inputBuffer: InputBuffer;
   protected networkTransport?: NetworkTransport;
@@ -91,7 +89,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.gameLoop = new GameLoop();
     this.unifiedInput = new UnifiedInputSystem();
     this.eventBus = new EventBus();
-    this.audioSystem = new AudioSystem();
     this.sceneManager = new SceneManager(this.world);
     this.sceneManager.onWorldCreated = (world) => this.registerEssentialSystems(world);
     this.inputBuffer = new InputBuffer();
@@ -102,11 +99,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
     this._config = config;
     this.currentSeed = (config.gameOptions?.seed as number) ?? this._generateExternalSeed();
-
-    // Register audio event bridge once
-    this.eventBus.on("audio:play_sfx", (payload: { name: string }) => {
-      this.audioSystem.playSFX(payload.name);
-    });
 
     // Initialize streams
     RandomService.getGameplayRandom().setSeed(this.currentSeed);
@@ -422,7 +414,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
   protected async registerEssentialSystems(world: World): Promise<void> {
     world.setResource("EventBus", this.eventBus);
-    world.setResource("AudioSystem", this.audioSystem);
     world.setResource("UnifiedInputSystem", this.unifiedInput);
     world.setResource("AudioSystem", this.audio);
 
