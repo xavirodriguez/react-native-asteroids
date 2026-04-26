@@ -25,8 +25,8 @@ describe("Prediction vs ECS Determinism", () => {
     world1.addComponent(ship1, vel1);
     world1.addComponent(ship1, render1);
     world1.addComponent(ship1, input1);
-    world1.addComponent(ship1, { type: "Ship" } as any);
-    world1.addComponent(ship1, { type: "ManualMovement" } as any);
+    world1.addComponent(ship1, { type: "Ship" } as unknown as import("../../../engine/core/Component").Component);
+    world1.addComponent(ship1, { type: "ManualMovement" } as unknown as import("../../../engine/core/Component").Component);
 
     // --- Setup manual simulation (Manual Path) ---
     const pos2: TransformComponent = { type: "Transform", x: 100, y: 100, rotation: 0, scaleX: 1, scaleY: 1, dirty: true };

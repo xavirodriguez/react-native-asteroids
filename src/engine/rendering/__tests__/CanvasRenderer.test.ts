@@ -39,7 +39,7 @@ describe("CanvasRenderer Camera & Culling", () => {
       shakeOffsetX: 0,
       shakeOffsetY: 0,
       targets: []
-    } as any);
+    } as unknown as import("../../core/CoreComponents").Camera2DComponent);
 
     const snapshot = renderer.createSnapshot(world, 1);
     expect(snapshot.cameraX).toBe(100);
@@ -59,17 +59,17 @@ describe("CanvasRenderer Camera & Culling", () => {
       shakeOffsetX: 0,
       shakeOffsetY: 0,
       targets: []
-    } as any);
+    } as unknown as import("../../core/CoreComponents").Camera2DComponent);
 
     // Entity inside
     const e1 = world.createEntity();
-    world.addComponent(e1, { type: "Transform", x: 400, y: 300, rotation: 0 } as any);
-    world.addComponent(e1, { type: "Render", shape: "circle", size: 10, color: "red" } as any);
+    world.addComponent(e1, { type: "Transform", x: 400, y: 300, rotation: 0 } as unknown as import("../../core/CoreComponents").TransformComponent);
+    world.addComponent(e1, { type: "Render", shape: "circle", size: 10, color: "red" } as unknown as import("../../core/CoreComponents").RenderComponent);
 
     // Entity outside
     const e2 = world.createEntity();
-    world.addComponent(e2, { type: "Transform", x: 1000, y: 1000, rotation: 0 } as any);
-    world.addComponent(e2, { type: "Render", shape: "circle", size: 10, color: "blue" } as any);
+    world.addComponent(e2, { type: "Transform", x: 1000, y: 1000, rotation: 0 } as unknown as import("../../core/CoreComponents").TransformComponent);
+    world.addComponent(e2, { type: "Render", shape: "circle", size: 10, color: "blue" } as unknown as import("../../core/CoreComponents").RenderComponent);
 
     const snapshot = renderer.createSnapshot(world, 1);
     expect(snapshot.entityCount).toBe(1);
