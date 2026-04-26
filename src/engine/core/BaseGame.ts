@@ -259,6 +259,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       await this._transitionLock;
     }
     if ((this._status as GameStatus) === GameStatus.DESTROYED) return;
+    if ((this._status as GameStatus) === GameStatus.UNINITIALIZED) {
+      throw new Error("BaseGame: Cannot restart() before init().");
+    }
 
     const previousStatus = this._status;
     const previousPaused = this._isPaused;
