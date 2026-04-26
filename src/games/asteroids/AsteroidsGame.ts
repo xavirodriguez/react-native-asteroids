@@ -13,7 +13,6 @@ import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
 import { BoundarySystem } from "../../engine/physics/systems/BoundarySystem";
 import { FrictionSystem } from "../../engine/physics/systems/FrictionSystem";
 import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
-import { StatusEffectSystem } from "../../engine/systems/StatusEffectSystem";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { ShipControlSystem } from "./systems/ShipControlSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
@@ -236,10 +235,10 @@ export class AsteroidsGame
     this.world.addSystem(new CollisionSystem2D());
     this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
     this.world.addSystem(comboSys);
-    this.world.addSystem(new StatusEffectSystem());
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new UfoSystem());
+    this.world.addSystem(new StatusEffectSystem());
     this.world.addSystem(new ScreenShakeSystem());
     this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
     this.world.addSystem(new AsteroidRenderSystem()); // Handle trails
@@ -269,20 +268,6 @@ export class AsteroidsGame
    */
   public initializeRenderer(renderer: Renderer<unknown>): void {
     initializeAsteroidsRenderer(renderer);
-  }
-
-  protected override async onPreloadAssets(): Promise<void> {
-    await super.onPreloadAssets();
-
-    // Preload essential SFX to avoid latency on first play
-    const sfx = [
-        { name: "explosion", url: "/assets/audio/explosion.wav" },
-        { name: "hit", url: "/assets/audio/hit.wav" },
-        { name: "game_over", url: "/assets/audio/game_over.wav" },
-        { name: "shoot", url: "/assets/audio/shoot.wav" }
-    ];
-
-    await Promise.all(sfx.map(asset => this.audioSystem.loadSFX(asset.name, asset.url)));
   }
 
   protected _onBeforeRestart(): void {

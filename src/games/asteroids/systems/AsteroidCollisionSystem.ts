@@ -168,6 +168,13 @@ export class AsteroidCollisionSystem extends System {
       remaining: GAME_CONFIG.SHAKE_DURATION_IMPACT,
     } as ScreenShakeComponent);
 
+    // Add TTL to handle entity cleanup automatically
+    world.addComponent(shakeEntity, {
+      type: "TTL",
+      remaining: GAME_CONFIG.SHAKE_DURATION_IMPACT * 16.66, // Roughly duration in ms if duration is frames
+      total: GAME_CONFIG.SHAKE_DURATION_IMPACT * 16.66
+    } as import("../../../engine/types/EngineTypes").TTLComponent);
+
     const eventBus = world.getResource<EventBus>("EventBus");
     if (health.current <= 0) {
       hapticDeath();
