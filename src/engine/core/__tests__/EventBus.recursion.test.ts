@@ -60,4 +60,20 @@ describe("EventBus Recursion and Deferred Emission", () => {
 
     expect(totalCalls).toBe(16); // 0 to 15 = 16 calls
   });
+
+  it("should clear deferredQueue when clear() is called", () => {
+    const bus = new EventBus();
+    let callCount = 0;
+    bus.on("test", () => callCount++);
+
+    bus.emitDeferred("test");
+    bus.clear();
+
+    // We need a way to trigger processDeferred or just check if it's empty.
+    // In our implementation, processDeferred is private and called at the end of emit.
+    // If we emit something else, it shouldn't trigger the cleared deferred event.
+    bus.emit("other");
+
+    expect(callCount).toBe(0);
+  });
 });
