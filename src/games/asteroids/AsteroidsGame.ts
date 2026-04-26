@@ -7,6 +7,7 @@ import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
 import { AsteroidComboSystem } from "./systems/AsteroidComboSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { UfoSystem } from "./systems/UfoSystem";
+import { StatusEffectSystem } from "../../engine/systems/StatusEffectSystem";
 import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
 import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
 import { BoundarySystem } from "../../engine/physics/systems/BoundarySystem";
@@ -62,7 +63,25 @@ export class AsteroidsGame
       ? mutators.reduce((cfg, m) => m.apply(cfg), { ...GAME_CONFIG })
       : { ...GAME_CONFIG };
 
+    await this.onPreloadAssets();
     await super.init();
+  }
+
+  /**
+   * Preloads game assets (SFX) into the AudioSystem to prevent cold-start latency.
+   */
+  private async onPreloadAssets(): Promise<void> {
+    const audio = this.audioSystem;
+    try {
+      await Promise.all([
+        audio.loadSFX("explosion", "/assets/audio/explosion.wav"),
+        audio.loadSFX("hit", "/assets/audio/hit.wav"),
+        audio.loadSFX("shoot", "/assets/audio/shoot.wav"),
+        audio.loadSFX("game_over", "/assets/audio/game_over.wav"),
+      ]);
+    } catch (e) {
+      console.warn("[Asteroids] Asset preloading failed. Audio may lag on first play.", e);
+    }
   }
 
   public setMultiplayerMode(active: boolean) {
@@ -219,6 +238,7 @@ export class AsteroidsGame
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new UfoSystem());
+    this.world.addSystem(new StatusEffectSystem());
     this.world.addSystem(new ScreenShakeSystem());
     this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
     this.world.addSystem(new AsteroidRenderSystem()); // Handle trails

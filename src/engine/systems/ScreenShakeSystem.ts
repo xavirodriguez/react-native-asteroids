@@ -35,8 +35,15 @@ export class ScreenShakeSystem extends System {
 
       if (shake.remaining > 0) {
         shake.remaining -= deltaTime;
-      } else {
-        world.removeComponent(entity, "ScreenShake");
+      }
+
+      if (shake.remaining <= 0) {
+        // If it's a dedicated shake entity (no other major components), remove the entity
+        if (world.getEntityComponentTypes(entity).length <= 2) { // ScreenShake + potentially Tag or Transform
+           world.removeEntity(entity);
+        } else {
+           world.removeComponent(entity, "ScreenShake");
+        }
       }
     }
   }

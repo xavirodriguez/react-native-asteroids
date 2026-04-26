@@ -159,11 +159,14 @@ export class AsteroidCollisionSystem extends System {
       if (render) render.hitFlashFrames = 6;
     }
 
-    const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
-    if (shake) {
-      shake.intensity = GAME_CONFIG.SHAKE_INTENSITY_IMPACT;
-      shake.remaining = GAME_CONFIG.SHAKE_DURATION_IMPACT;
-    }
+    // Create an additive screen shake entity instead of modifying a singleton
+    const shakeEntity = world.createEntity();
+    world.addComponent(shakeEntity, {
+      type: "ScreenShake",
+      intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,
+      duration: GAME_CONFIG.SHAKE_DURATION_IMPACT,
+      remaining: GAME_CONFIG.SHAKE_DURATION_IMPACT,
+    } as ScreenShakeComponent);
 
     const eventBus = world.getResource<EventBus>("EventBus");
     if (health.current <= 0) {

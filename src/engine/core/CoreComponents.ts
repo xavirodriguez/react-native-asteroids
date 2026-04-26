@@ -373,6 +373,25 @@ export interface Star extends Component {
 }
 
 /**
+ * Represents a discrete modifier applied to an entity.
+ */
+export interface Modifier {
+  id: string;
+  type: string;
+  value: number;
+  duration: number; // in milliseconds
+  remaining: number;
+}
+
+/**
+ * Component that holds a stack of active modifiers (Status Effects).
+ */
+export interface ModifierStackComponent extends Component {
+  type: "ModifierStack";
+  modifiers: Modifier[];
+}
+
+/**
  * Unión de todos los componentes base del motor para endurecimiento de tipos.
  */
 export type AnyCoreComponent =
@@ -401,7 +420,8 @@ export type AnyCoreComponent =
   | ScreenShakeComponent
   | VisualOffsetComponent
   | TrailComponent
-  | Star;
+  | Star
+  | ModifierStackComponent;
 
 /**
  * Auxiliar para inferir el tipo concreto de un componente a partir de su discriminador.
