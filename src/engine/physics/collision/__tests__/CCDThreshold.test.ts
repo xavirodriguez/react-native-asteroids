@@ -1,6 +1,6 @@
 import { World } from "../../../core/World";
 import { CollisionSystem2D } from "../CollisionSystem2D";
-import { Entity, TransformComponent, Collider2DComponent, ContinuousColliderComponent, VelocityComponent, CollisionEventsComponent } from "../../../types/EngineTypes";
+import { TransformComponent, Collider2DComponent, ContinuousColliderComponent, VelocityComponent, CollisionEventsComponent } from "../../../types/EngineTypes";
 
 describe("CollisionSystem2D CCD Threshold", () => {
   it("should skip CCD if relative velocity is below threshold", () => {

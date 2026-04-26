@@ -11,8 +11,7 @@ import {
   drawSpaceInvadersInvader,
   drawSpaceInvadersBullet,
   drawSpaceInvadersShield,
-  drawSpaceInvadersParticle,
-  spaceInvadersScreenShakeEffect
+  drawSpaceInvadersParticle
 } from "./rendering/SpaceInvadersCanvasVisuals";
 import { MutatorService } from "../../services/MutatorService";
 

@@ -1,6 +1,5 @@
 import { World } from "../../core/World";
 import { CanvasRenderer } from "../CanvasRenderer";
-import { Camera2DComponent, RenderComponent, TransformComponent } from "../../core/CoreComponents";
 
 describe("CanvasRenderer Camera & Culling", () => {
   let world: World;
