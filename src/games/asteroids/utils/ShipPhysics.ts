@@ -99,6 +99,12 @@ export const ShipPhysics = {
       const bullet = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation });
       input.shootCooldownRemaining = config.BULLET_SHOOT_COOLDOWN;
       if (onShoot) onShoot(bullet);
+
+      // Play shoot SFX
+      const eventBus = world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
+      if (eventBus) {
+        eventBus.emit("audio:play_sfx", { name: "shoot" });
+      }
     }
   }
 };

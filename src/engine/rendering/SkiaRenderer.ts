@@ -157,23 +157,24 @@ export class SkiaRenderer implements Renderer {
       }
     }
 
-    const gameStateEntity = world.query("GameState")[0];
-    const gameState = gameStateEntity ? world.getComponent<GenericComponent>(gameStateEntity, "GameState") : null;
-
     let shakeX = 0;
     let shakeY = 0;
 
-    // Aggregate all ScreenShake components in the world
+    // Aggregate Screen Shake from all entities with ScreenShakeComponent
     const shakeEntities = world.query("ScreenShake");
     const renderRandom = RandomService.getInstance("render");
 
     for (let i = 0; i < shakeEntities.length; i++) {
-        const shake = world.getComponent<import("../core/CoreComponents").ScreenShakeComponent>(shakeEntities[i], "ScreenShake")!;
-        if (shake.remaining > 0 || shake.duration > 0) {
+        const shake = world.getComponent<import("../core/CoreComponents").ScreenShakeComponent>(shakeEntities[i], "ScreenShake");
+        if (shake && (shake.remaining > 0 || shake.duration > 0)) {
             shakeX += (renderRandom.next() - 0.5) * shake.intensity;
             shakeY += (renderRandom.next() - 0.5) * shake.intensity;
         }
     }
+
+    // Support legacy ScreenShake in GameState for backward compatibility
+    const gameStateEntity = world.query("GameState")[0];
+    const gameState = gameStateEntity ? world.getComponent<GenericComponent>(gameStateEntity, "GameState") : null;
 
     if (gameState?.screenShake) {
       const screenShake = gameState.screenShake as Record<string, number>;

@@ -116,7 +116,10 @@ export class AsteroidCollisionSystem extends System {
     world.removeEntity(bullet);
 
     const eventBus = world.getResource<EventBus>("EventBus");
-    if (eventBus) eventBus.emit("asteroid:destroyed", { size });
+    if (eventBus) {
+        eventBus.emit("asteroid:destroyed", { size });
+        eventBus.emit("audio:play_sfx", { name: "explosion" });
+    }
   }
 
   private spawnExplosion(world: World, position: TransformComponent, count: number): void {
@@ -168,16 +171,20 @@ export class AsteroidCollisionSystem extends System {
     // Add TTL to handle entity cleanup automatically
     world.addComponent(shakeEntity, {
       type: "TTL",
-      remaining: GAME_CONFIG.SHAKE_DURATION_IMPACT * 16.66, // Roughly duration in ms if duration is frames
-      total: GAME_CONFIG.SHAKE_DURATION_IMPACT * 16.66
+      remaining: GAME_CONFIG.SHAKE_DURATION_IMPACT,
+      total: GAME_CONFIG.SHAKE_DURATION_IMPACT
     } as import("../../../engine/types/EngineTypes").TTLComponent);
 
+    const eventBus = world.getResource<EventBus>("EventBus");
     if (health.current <= 0) {
       hapticDeath();
-      const eventBus = world.getResource<EventBus>("EventBus");
-      if (eventBus) eventBus.emit("game:over");
+      if (eventBus) {
+          eventBus.emit("game:over");
+          eventBus.emit("audio:play_sfx", { name: "game_over" });
+      }
     } else {
       hapticDamage();
+      if (eventBus) eventBus.emit("audio:play_sfx", { name: "hit" });
     }
   }
 

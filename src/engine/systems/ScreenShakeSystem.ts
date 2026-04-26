@@ -23,7 +23,7 @@ import { ScreenShakeComponent } from "../types/EngineTypes";
  */
 export class ScreenShakeSystem extends System {
   /**
-   * Updates screen shake timers for all active shake sources.
+   * Updates screen shake timer.
    */
   public update(world: World, deltaTime: number): void {
     const shakeEntities = world.query("ScreenShake");
@@ -35,9 +35,7 @@ export class ScreenShakeSystem extends System {
 
       if (shake.remaining > 0) {
         shake.remaining -= deltaTime;
-      }
-
-      if (shake.remaining <= 0) {
+      } else {
         world.removeComponent(entity, "ScreenShake");
       }
     }

@@ -189,40 +189,34 @@ export class CanvasRenderer implements Renderer {
     snapshot.cameraY = mainCam?.y ?? 0;
     snapshot.cameraZoom = mainCam?.zoom ?? 1;
 
-    // 1. Game State and Time
-    const gameStateEntity = world.query("GameState")[0];
-    const gameState = gameStateEntity ? world.getComponent<GenericComponent>(gameStateEntity, "GameState") : null;
-
-    // Use serverTick from GameState singleton if available, otherwise fallback to performance.now()
-    // We access serverTick generically to avoid coupling engine to game types
-    const serverTick = gameState && (gameState as Record<string, unknown>).serverTick !== undefined ? (gameState as Record<string, unknown>).serverTick as number : null;
-    snapshot.elapsedTime = serverTick !== null ? serverTick * (1000 / 60) : performance.now();
-
     // Visual viewport for culling in world space
     const cullMinX = snapshot.cameraX;
     const cullMinY = snapshot.cameraY;
     const cullMaxX = cullMinX + this.width / snapshot.cameraZoom;
     const cullMaxY = cullMinY + this.height / snapshot.cameraZoom;
 
-    // 2. Entities
+    // 1. Entities
     const entities = world.query("Transform", "Render");
     let count = 0;
 
     let shakeX = 0;
     let shakeY = 0;
 
-    // Aggregate all ScreenShake components in the world
+    // Aggregate Screen Shake from all entities with ScreenShakeComponent
     const shakeEntities = world.query("ScreenShake");
     const renderRandom = RandomService.getInstance("render");
 
     for (let i = 0; i < shakeEntities.length; i++) {
-        const shake = world.getComponent<import("../core/CoreComponents").ScreenShakeComponent>(shakeEntities[i], "ScreenShake")!;
-        if (shake.remaining > 0 || shake.duration > 0) {
+        const shake = world.getComponent<import("../core/CoreComponents").ScreenShakeComponent>(shakeEntities[i], "ScreenShake");
+        if (shake && (shake.remaining > 0 || shake.duration > 0)) {
             shakeX += (renderRandom.next() - 0.5) * shake.intensity;
             shakeY += (renderRandom.next() - 0.5) * shake.intensity;
         }
     }
 
+    // Support legacy ScreenShake in GameState for backward compatibility
+    const gameStateEntity = world.query("GameState")[0];
+    const gameState = gameStateEntity ? world.getComponent<GenericComponent>(gameStateEntity, "GameState") : null;
     if (gameState?.screenShake) {
       const screenShake = gameState.screenShake as Record<string, number>;
       if (screenShake.remaining > 0 || screenShake.duration > 0) {
@@ -239,6 +233,11 @@ export class CanvasRenderer implements Renderer {
 
     snapshot.shakeX = shakeX;
     snapshot.shakeY = shakeY;
+
+    // Use serverTick from GameState singleton if available, otherwise fallback to performance.now()
+    // We access serverTick generically to avoid coupling engine to game types
+    const serverTick = gameState && (gameState as Record<string, unknown>).serverTick !== undefined ? (gameState as Record<string, unknown>).serverTick as number : null;
+    snapshot.elapsedTime = serverTick !== null ? serverTick * (1000 / 60) : performance.now();
 
     for (let i = 0; i < entities.length; i++) {
       if (count >= this.MAX_ENTITIES) break;

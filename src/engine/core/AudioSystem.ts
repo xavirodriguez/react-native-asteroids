@@ -21,11 +21,9 @@ export class AudioSystem {
   private musicVolume: number = 1.0;
 
   constructor() {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && (window.AudioContext || (window as any).webkitAudioContext)) {
       const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioContextClass) {
-        this.ctx = new AudioContextClass();
-      }
+      this.ctx = new AudioContextClass();
     }
   }
 
