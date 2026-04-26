@@ -360,6 +360,21 @@ export interface TrailComponent extends Component {
   maxLength: number;
 }
 
+export interface Modifier {
+  id: string;
+  targetProp: string;
+  multiplier: number;
+  duration: number; // in milliseconds
+}
+
+/**
+ * Stores a stack of active modifiers (status effects) for an entity.
+ */
+export interface ModifierStackComponent extends Component {
+  type: "ModifierStack";
+  active: Modifier[];
+}
+
 export interface Star extends Component {
   type: "Star";
   x: number;
