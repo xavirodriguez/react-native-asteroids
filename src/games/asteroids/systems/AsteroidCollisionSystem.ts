@@ -116,10 +116,7 @@ export class AsteroidCollisionSystem extends System {
     world.removeEntity(bullet);
 
     const eventBus = world.getResource<EventBus>("EventBus");
-    if (eventBus) {
-        eventBus.emit("asteroid:destroyed", { size });
-        eventBus.emit("audio:play_sfx", { name: "explosion" });
-    }
+    if (eventBus) eventBus.emit("asteroid:destroyed", { size });
   }
 
   private spawnExplosion(world: World, position: TransformComponent, count: number): void {
@@ -175,16 +172,12 @@ export class AsteroidCollisionSystem extends System {
       total: GAME_CONFIG.SHAKE_DURATION_IMPACT * 16.66
     } as import("../../../engine/types/EngineTypes").TTLComponent);
 
-    const eventBus = world.getResource<EventBus>("EventBus");
     if (health.current <= 0) {
       hapticDeath();
-      if (eventBus) {
-          eventBus.emit("game:over");
-          eventBus.emit("audio:play_sfx", { name: "game_over" });
-      }
+      const eventBus = world.getResource<EventBus>("EventBus");
+      if (eventBus) eventBus.emit("game:over");
     } else {
       hapticDamage();
-      if (eventBus) eventBus.emit("audio:play_sfx", { name: "hit" });
     }
   }
 

@@ -5,9 +5,9 @@ import { EventBus } from "./EventBus";
 import { InputBuffer } from "../network/InputBuffer";
 import { NetworkTransport } from "../network/NetworkTransport";
 import { ReplayRecorder } from "../debug/ReplayRecorder";
+import { AudioSystem } from "./AudioSystem";
 import { SceneManager } from "../scenes/SceneManager";
 import { RandomService } from "../utils/RandomService";
-import { AudioSystem } from "./AudioSystem";
 import type { IGame, UpdateListener } from "./IGame";
 import { XPSystem } from "../systems/XPSystem";
 import { PaletteSystem } from "../systems/PaletteSystem";
@@ -62,11 +62,11 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected gameLoop: GameLoop;
   public readonly unifiedInput: UnifiedInputSystem;
   protected eventBus: EventBus;
-  protected audioSystem: AudioSystem;
   protected sceneManager: SceneManager;
   protected inputBuffer: InputBuffer;
   protected networkTransport?: NetworkTransport;
   protected replayRecorder: ReplayRecorder;
+  public readonly audio: AudioSystem;
   protected currentTick: number = 0;
   protected currentSeed: number = 0;
   public isMultiplayer: boolean;
@@ -89,21 +89,16 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.gameLoop = new GameLoop();
     this.unifiedInput = new UnifiedInputSystem();
     this.eventBus = new EventBus();
-    this.audioSystem = new AudioSystem();
     this.sceneManager = new SceneManager(this.world);
     this.sceneManager.onWorldCreated = (world) => this.registerEssentialSystems(world);
     this.inputBuffer = new InputBuffer();
     this.replayRecorder = new ReplayRecorder();
+    this.audio = new AudioSystem();
     this.hierarchySystem = new HierarchySystem();
     this.interpolationPrepSystem = new InterpolationPrepSystem();
 
     this._config = config;
     this.currentSeed = (config.gameOptions?.seed as number) ?? this._generateExternalSeed();
-
-    // Register audio event bridge once
-    this.eventBus.on("audio:play_sfx", (payload: { name: string }) => {
-      this.audioSystem.playSFX(payload.name);
-    });
 
     // Initialize streams
     RandomService.getGameplayRandom().setSeed(this.currentSeed);
@@ -111,6 +106,21 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
     this.setupLoop();
     this._registerKeyboardListeners();
+    this._setupAudioListeners();
+  }
+
+  private _setupAudioListeners(): void {
+    this.eventBus.on("audio:play_sfx", (payload: { name: string }) => {
+      this.audio.playSFX(payload.name);
+    });
+
+    this.eventBus.on("audio:play_music", (payload: { name: string; loop?: boolean; volume?: number }) => {
+      this.audio.playMusic(payload.name, payload);
+    });
+
+    this.eventBus.on("audio:stop_music", () => {
+      this.audio.stopMusic();
+    });
   }
 
   private setupLoop(): void {
@@ -406,8 +416,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
   protected async registerEssentialSystems(world: World): Promise<void> {
     world.setResource("EventBus", this.eventBus);
-    world.setResource("AudioSystem", this.audioSystem);
     world.setResource("UnifiedInputSystem", this.unifiedInput);
+    world.setResource("AudioSystem", this.audio);
 
     // Prevent accumulation of systems during restarts if they already exist in this world instance
     const existingSystems = world.systemsList;
