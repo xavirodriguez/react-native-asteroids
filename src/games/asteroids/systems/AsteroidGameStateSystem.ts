@@ -38,9 +38,11 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
     }
   }
 
-  private updateAsteroidsCount(world: World, gameState: GameStateComponent): void {
+  private updateAsteroidsCount(world: World, _gameState: GameStateComponent): void {
     const asteroids = world.query("Asteroid");
-    gameState.asteroidsRemaining = asteroids.length;
+    world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+        gs.asteroidsRemaining = asteroids.length;
+    });
   }
 
   private manageWaveProgression(world: World, gameState: GameStateComponent): void {
@@ -52,7 +54,9 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
   private advanceLevelAndSpawnWave(world: World, gameState: GameStateComponent): void {
     const asteroidCount = this.calculateWaveCount(gameState.level);
     spawnAsteroidWave({ world, count: asteroidCount });
-    gameState.level++;
+    world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+        gs.level++;
+    });
     // Recount immediately so next step or subscriber sees updated count
     this.updateAsteroidsCount(world, gameState);
   }
@@ -70,13 +74,17 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
     const health = world.getComponent<HealthComponent>(shipEntity, "Health");
     if (!health) return;
 
-    this.updateInvulnerability(health, deltaTime);
-    gameState.lives = health.current;
+    this.updateInvulnerability(health, deltaTime, world, shipEntity);
+    world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+        gs.lives = health.current;
+    });
   }
 
-  private updateInvulnerability(health: HealthComponent, deltaTime: number): void {
+  private updateInvulnerability(health: HealthComponent, deltaTime: number, world: World, shipEntity: number): void {
     if (health.invulnerableRemaining > 0) {
-      health.invulnerableRemaining -= deltaTime;
+      world.mutateComponent(shipEntity, "Health", (h: HealthComponent) => {
+          h.invulnerableRemaining -= deltaTime;
+      });
     }
   }
 

@@ -47,10 +47,9 @@ export class DeterministicSimulation {
         const dtSeconds = deltaTime / 1000;
 
         // 0. Update server tick in GameState
-        const gameState = world.getSingleton<GameStateComponent>("GameState");
-        if (gameState) {
-            gameState.serverTick++;
-        }
+        world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+            gs.serverTick++;
+        });
 
         // 1. Process Inputs & Ship Physics (Includes Integration & Boundary for Ships)
         this.updateShips(world, deltaTime, ctx);
@@ -78,11 +77,15 @@ export class DeterministicSimulation {
           const ufo = world.getComponent<UfoComponent>(entity, "Ufo");
 
           if (pos && ufo) {
-            ufo.time += dtSeconds;
+            world.mutateComponent(entity, "Ufo", (u: UfoComponent) => {
+                u.time += dtSeconds;
+            });
 
             // Update vertical position with sine wave oscillation
             // Oscillation amplitude: 30, frequency: 2 rad/s
-            pos.y = ufo.baseY + Math.sin(ufo.time * 2) * 30;
+            world.mutateComponent(entity, "Transform", (t: TransformComponent) => {
+                t.y = ufo.baseY + Math.sin(ufo.time * 2) * 30;
+            });
 
             // UFOs that go off-screen horizontally are removed
             if (pos.x < -50 || pos.x > GAME_CONFIG.SCREEN_WIDTH + 50) {
@@ -103,6 +106,7 @@ export class DeterministicSimulation {
             if (pos && vel && render && input) {
                 ShipPhysics.simulateShipTick(
                     world,
+                    entity,
                     pos,
                     vel,
                     render,
@@ -124,14 +128,16 @@ export class DeterministicSimulation {
             const pos = world.getComponent<TransformComponent>(entity, "Transform");
             const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
             if (pos && vel) {
-                PhysicsUtils.integrateMovement(pos, vel, dtSeconds);
+                world.mutateComponent(entity, "Transform", (t: TransformComponent) => {
+                    PhysicsUtils.integrateMovement(t, vel, dtSeconds);
 
-                const boundary = world.getComponent<BoundaryComponent>(entity, "Boundary");
-                if (boundary) {
-                    PhysicsUtils.wrapBoundary(pos, boundary.width, boundary.height);
-                } else {
-                     PhysicsUtils.wrapBoundary(pos, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
-                }
+                    const boundary = world.getComponent<BoundaryComponent>(entity, "Boundary");
+                    if (boundary) {
+                        PhysicsUtils.wrapBoundary(t, boundary.width, boundary.height);
+                    } else {
+                         PhysicsUtils.wrapBoundary(t, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
+                    }
+                });
             }
         });
     }
@@ -141,7 +147,9 @@ export class DeterministicSimulation {
         ttls.forEach(entity => {
             const ttl = world.getComponent<TTLComponent>(entity, "TTL");
             if (ttl) {
-                ttl.remaining -= deltaTime;
+                world.mutateComponent(entity, "TTL", (t: TTLComponent) => {
+                    t.remaining -= deltaTime;
+                });
                 if (ttl.remaining <= 0) {
                     world.removeEntity(entity);
                 }
@@ -155,8 +163,10 @@ export class DeterministicSimulation {
         ships.forEach(ship => {
             const sHealth = world.getComponent<HealthComponent>(ship, "Health")!;
             if (sHealth.invulnerableRemaining > 0) {
-                sHealth.invulnerableRemaining -= deltaTime;
-                if (sHealth.invulnerableRemaining < 0) sHealth.invulnerableRemaining = 0;
+                world.mutateComponent(ship, "Health", (h: HealthComponent) => {
+                    h.invulnerableRemaining -= deltaTime;
+                    if (h.invulnerableRemaining < 0) h.invulnerableRemaining = 0;
+                });
             }
         });
 
@@ -227,26 +237,29 @@ export class DeterministicSimulation {
         this.splitAsteroid(world, asteroid);
         world.removeEntity(bullet);
 
-        const gameState = world.getSingleton<GameStateComponent>("GameState");
-        if (gameState) {
-            gameState.score += GAME_CONFIG.ASTEROID_SCORE;
-        }
+        world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+            gs.score += GAME_CONFIG.ASTEROID_SCORE;
+        });
     }
 
     private static handleShipAsteroidCollision(world: World, ship: Entity, _asteroid: Entity, ctx: SimulationContext) {
-        const health = world.getComponent<HealthComponent>(ship, "Health")!;
-        health.current--;
-        health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+        let isDead = false;
+        world.mutateComponent(ship, "Health", (h: HealthComponent) => {
+            h.current--;
+            h.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+            if (h.current <= 0) isDead = true;
+        });
 
         if (!ctx.isResimulating) {
-             const shake = world.getSingleton<ScreenShakeComponent>("ScreenShake");
-             if (shake) {
+             world.mutateSingleton<ScreenShakeComponent>("ScreenShake", (shake) => {
                  shake.intensity = GAME_CONFIG.SHAKE_INTENSITY_IMPACT;
                  shake.remaining = GAME_CONFIG.SHAKE_DURATION_IMPACT;
-             }
+             });
+             const eventBus = world.getResource<EventBus>("EventBus");
+             if (eventBus) eventBus.emit("ship:hit");
         }
 
-        if (health.current <= 0) {
+        if (isDead) {
              const eventBus = world.getResource<EventBus>("EventBus");
              if (eventBus) eventBus.emit("game:over");
         }

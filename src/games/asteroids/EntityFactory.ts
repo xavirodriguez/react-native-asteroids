@@ -185,6 +185,17 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
     enabled: true
   } as Collider2DComponent);
   world.addComponent(asteroid, { type: "Asteroid", size } as AsteroidComponent);
+
+  // Add LootTable based on asteroid size
+  const lootTable: import("../../engine/core/CoreComponents").LootTableComponent = {
+    type: "LootTable",
+    drops: [
+      { type: "triple_shot", chance: size === "large" ? 0.2 : 0.05, config: { duration: 8000 } },
+      { type: "shield", chance: 0.05, config: { duration: 5000 } }
+    ]
+  };
+  world.addComponent(asteroid, lootTable);
+
   world.addComponent(asteroid, {
     type: "Boundary",
     x: 0,

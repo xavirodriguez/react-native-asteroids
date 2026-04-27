@@ -18,11 +18,15 @@ export class UfoSystem extends System {
       const ufo = world.getComponent<UfoComponent>(entity, "Ufo");
 
       if (pos && vel && ufo) {
-        ufo.time += dt;
+        world.mutateComponent(entity, "Ufo", (u: UfoComponent) => {
+          u.time += dt;
+        });
 
         // Update vertical position with sine wave oscillation
         // Oscillation amplitude: 30, frequency: 2 rad/s
-        pos.y = ufo.baseY + Math.sin(ufo.time * 2) * 30;
+        world.mutateComponent(entity, "Transform", (t: TransformComponent) => {
+          t.y = ufo.baseY + Math.sin(ufo.time * 2) * 30;
+        });
 
         // UFOs that go off-screen horizontally are removed
         if (pos.x < -50 || pos.x > GAME_CONFIG.SCREEN_WIDTH + 50) {

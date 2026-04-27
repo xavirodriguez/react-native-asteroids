@@ -18,23 +18,24 @@ export class AsteroidComboSystem extends System {
     if (!gameState) return;
 
     if (gameState.lastBulletHit) {
-      gameState.comboCount++;
-      const oldMultiplier = gameState.comboMultiplier;
-      gameState.comboMultiplier = Math.min(Math.floor(gameState.comboCount / 3) + 1, 8);
-      gameState.lastBulletHit = false; // Reset after processing
+      world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+        gs.comboCount++;
+        const oldMultiplier = gs.comboMultiplier;
+        gs.comboMultiplier = Math.min(Math.floor(gs.comboCount / 3) + 1, 8);
+        gs.lastBulletHit = false; // Reset after processing
 
-      if (gameState.comboMultiplier !== oldMultiplier) {
-        const eventBus = world.getResource<EventBus>("EventBus");
-        if (eventBus) eventBus.emit("asteroid:combo_changed", { multiplier: gameState.comboMultiplier });
-      }
+        if (gs.comboMultiplier !== oldMultiplier) {
+          const eventBus = world.getResource<EventBus>("EventBus");
+          if (eventBus) eventBus.emit("asteroid:combo_changed", { multiplier: gs.comboMultiplier });
+        }
+      });
     }
   }
 
   public onBulletMissed(world: World): void {
-    const gameState = world.getSingleton<GameStateComponent>("GameState");
-    if (gameState) {
-      gameState.comboCount = 0;
-      gameState.comboMultiplier = 1;
-    }
+    world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+      gs.comboCount = 0;
+      gs.comboMultiplier = 1;
+    });
   }
 }
