@@ -27,6 +27,11 @@ export class LootSystem extends System {
   }
 
   private registerListeners(world: World): void {
+    // Ensure we don't have multiple listeners if this system is re-added
+    // Although the system instance check in World.addSystem and BaseGame.eventBus.clear()
+    // handle most cases, we also check a internal flag.
+    if ((this as any)._listenersRegistered) return;
+
     const eventBus = world.getResource<EventBus>("EventBus");
     if (eventBus) {
       // We listen for a generic destruction event that games should emit
@@ -40,6 +45,8 @@ export class LootSystem extends System {
            this.handleEntityDestruction(world, payload.entity);
         }
       });
+
+      (this as any)._listenersRegistered = true;
     }
   }
 

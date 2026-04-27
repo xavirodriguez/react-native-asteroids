@@ -320,6 +320,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       if (this.sceneManager.getCurrentScene()) {
         await this.sceneManager.restartCurrentScene();
       } else {
+        this.eventBus.clear();
+        this._setupAudioListeners();
         this.world.clear();
         this.world.clearSystems();
         await this.registerEssentialSystems(this.world);

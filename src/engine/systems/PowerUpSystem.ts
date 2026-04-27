@@ -39,7 +39,7 @@ export class PowerUpSystem extends System {
     // Apply the modifier
     world.mutateComponent(shipEntity, "ModifierStack", (stack: ModifierStackComponent) => {
       const modifier: Modifier = {
-        id: `powerup_${powerUp.powerUpType}_${world.tick}_${entity}`,
+        id: `powerup_${powerUp.powerUpType}_${Date.now()}`,
         type: powerUp.powerUpType,
         value: powerUp.value,
         duration: powerUp.duration,
