@@ -14,9 +14,7 @@ export class PowerUpSystem extends System {
       const events = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
       if (!events) continue;
 
-      for (const collision of events.collisions) {
-        const other = collision.otherEntity;
-
+      for (const other of events.triggersEntered) {
         // Only ships can collect power-ups
         if (world.hasComponent(other, "Ship")) {
           this.collectPowerUp(world, entity, other);
@@ -34,27 +32,21 @@ export class PowerUpSystem extends System {
     if (!world.hasComponent(shipEntity, "ModifierStack")) {
       world.addComponent(shipEntity, {
         type: "ModifierStack",
-        modifiers: [{
-          id: `powerup_${powerUp.powerUpType}_${Date.now()}`,
-          type: powerUp.powerUpType,
-          value: powerUp.value,
-          duration: powerUp.duration,
-          remaining: powerUp.duration
-        }]
+        modifiers: []
       } as ModifierStackComponent);
-    } else {
-      // Apply the modifier
-      world.mutateComponent(shipEntity, "ModifierStack", (stack: ModifierStackComponent) => {
-        const modifier: Modifier = {
-          id: `powerup_${powerUp.powerUpType}_${Date.now()}`,
-          type: powerUp.powerUpType,
-          value: powerUp.value,
-          duration: powerUp.duration,
-          remaining: powerUp.duration
-        };
-        stack.modifiers.push(modifier);
-      });
     }
+
+    // Apply the modifier
+    world.mutateComponent(shipEntity, "ModifierStack", (stack: ModifierStackComponent) => {
+      const modifier: Modifier = {
+        id: `powerup_${powerUp.powerUpType}_${Date.now()}`,
+        type: powerUp.powerUpType,
+        value: powerUp.value,
+        duration: powerUp.duration,
+        remaining: powerUp.duration
+      };
+      stack.modifiers.push(modifier);
+    });
 
     // Notify collection
     const eventBus = world.getResource<EventBus>("EventBus");

@@ -88,8 +88,8 @@ export class LootSystem extends System {
       type: "Collider2D",
       shape: { type: "circle", radius: 10 },
       offsetX: 0, offsetY: 0,
-      layer: 0x0004, // PowerUp layer
-      mask: 0x0002,  // Collides with Ship
+      layer: 0b01000000, // CollisionLayers.PICKUP
+      mask: 0b00000010,  // CollisionLayers.PLAYER
       isTrigger: true,
       enabled: true
     } as Collider2DComponent);

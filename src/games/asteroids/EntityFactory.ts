@@ -70,7 +70,7 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
     type: "Collider2D",
     shape: { type: "circle", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS },
     layer: CollisionLayers.PLAYER,
-    mask: CollisionLayers.ENEMY | CollisionLayers.DEBRIS, // Asteroids are usually ENEMY or DEBRIS
+    mask: CollisionLayers.ENEMY | CollisionLayers.DEBRIS | CollisionLayers.PICKUP, // Asteroids are usually ENEMY or DEBRIS
     offsetX: 0,
     offsetY: 0,
     isTrigger: false,
