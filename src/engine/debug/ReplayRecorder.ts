@@ -68,6 +68,8 @@ export class ReplayRecorder {
   public recordTick(tick: number, inputs: Record<string, InputFrame[]>): void {
     if (!this.isRecording) return;
 
+    this.currentTick = tick;
+
     // O(1) insertion in circular buffer
     this.frames[this.head] = {
       tick,
