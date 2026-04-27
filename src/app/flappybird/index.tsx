@@ -6,6 +6,7 @@ import { CanvasRenderer } from "@/components/CanvasRenderer";
 import { ComboDisplay } from "@/components/ComboDisplay";
 import { FlappyBirdUI } from "@/components/FlappyBirdUI";
 import { FlappyBirdControls } from "@/components/FlappyBirdControls";
+import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { useFlappyBirdGame } from "@/hooks/useFlappyBirdGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
 import { SeedWidget } from "@/components/SeedWidget";
@@ -137,6 +138,8 @@ export default function FlappyBirdScreen() {
         <FlappyBirdControls
           onFlap={(pressed) => handleMultiplayerInput({ flap: pressed })}
         />
+
+        <DebugOverlay game={game} />
 
         {showDailyResults && seed !== undefined && (
           <View style={styles.overlay}>

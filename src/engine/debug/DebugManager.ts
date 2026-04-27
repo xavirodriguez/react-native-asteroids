@@ -33,6 +33,10 @@ export interface ColliderShapeInfo {
   isTrigger: boolean;
 }
 
+/**
+ * DebugManager singleton that attaches to a BaseGame instance to provide
+ * deep inspection of the ECS world, systems, events, and performance.
+ */
 export class DebugManager {
   private static instance: DebugManager | null = null;
   private game: BaseGame<any, any> | null = null;
@@ -66,6 +70,9 @@ export class DebugManager {
     return DebugManager.instance;
   }
 
+  /**
+   * Connects the manager to a game instance.
+   */
   public attach(game: BaseGame<any, any>): void {
     if (this.game === game) return;
     this.detach();
@@ -74,6 +81,9 @@ export class DebugManager {
     this.enable();
   }
 
+  /**
+   * Disconnects from the current game instance and cleans up.
+   */
   public detach(): void {
     this.disable();
     this.game = null;
@@ -82,6 +92,9 @@ export class DebugManager {
     this.lastDiff = [];
   }
 
+  /**
+   * Enables debug data collection.
+   */
   public enable(): void {
     if (this.enabled || !this.game) return;
     this.enabled = true;
@@ -99,6 +112,9 @@ export class DebugManager {
     this.unsubscribeRender = this.game.getGameLoop().subscribeRender(this.updateFrameStats);
   }
 
+  /**
+   * Disables debug data collection without destroying current state.
+   */
   public disable(): void {
     if (!this.enabled || !this.game) return;
     this.enabled = false;
@@ -117,7 +133,7 @@ export class DebugManager {
     }
   }
 
-  private handleEvent = (payload: unknown, event?: string): void => {
+  private handleEvent = (payload: unknown, event: string): void => {
     this.eventLog.push({
       timestamp: performance.now() - this.startTime,
       event: event || "unknown",
@@ -198,9 +214,13 @@ export class DebugManager {
     return diffs;
   }
 
+  /**
+   * ECS Inspector: Returns a snapshot of all active entities and their components.
+   */
   public getEntitySnapshot(): Array<{ id: Entity; components: Record<string, unknown> }> {
     if (!this.game) return [];
     const world = this.game.getWorld();
+    // Use world.entities (getter) instead of getAllEntities()
     return world.entities.map(entity => {
       const types = world.getEntityComponentTypes(entity);
       const components: Record<string, unknown> = {};
@@ -211,11 +231,17 @@ export class DebugManager {
     });
   }
 
+  /**
+   * System Profiler: Returns timing data for all registered systems.
+   */
   public getSystemTimings(): Record<string, number> {
     if (!this.game) return {};
     return this.game.getWorld().getAllSystemTimings();
   }
 
+  /**
+   * Event Logger: Returns the circular buffer of captured events.
+   */
   public getEventLog(): EventLogEntry[] {
     return [...this.eventLog];
   }
@@ -224,14 +250,23 @@ export class DebugManager {
     this.eventLog = [];
   }
 
+  /**
+   * Frame Stats: Returns real-time FPS and frame timing metrics.
+   */
   public getFrameStats(): FrameStats {
     return { ...this.frameStats };
   }
 
+  /**
+   * State Diff: Returns the differences detected in the last diff cycle.
+   */
   public getLastDiff(): StateDiff[] {
     return [...this.lastDiff];
   }
 
+  /**
+   * Collision Debug: Returns shapes and positions of all active colliders.
+   */
   public getColliderShapes(): ColliderShapeInfo[] {
     if (!this.game) return [];
     const world = this.game.getWorld();

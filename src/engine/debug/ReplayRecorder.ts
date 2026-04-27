@@ -19,10 +19,9 @@ export class ReplayRecorder {
   private frames: ReplayFrame[] = [];
   private head: number = 0;
   private count: number = 0;
-  private readonly MAX_FRAMES = 3600 * 5; // 18,000 frames (5 minutes at 60fps)
+  private readonly MAX_FRAMES = 10000; // 10,000 frames (~2.7 minutes at 60fps)
   private isRecording: boolean = false;
   private currentTick: number = 0;
-  private readonly MAX_FRAMES = 10000;
 
   public startRecording(): void {
     this.frames = new Array(this.MAX_FRAMES);
@@ -51,7 +50,7 @@ export class ReplayRecorder {
     return {
       version: 1,
       roomId: "recorded-session",
-      startTick: firstTick,
+      startTick: startTick,
       endTick: this.currentTick,
       frames: orderedFrames
     };
