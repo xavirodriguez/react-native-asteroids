@@ -6,6 +6,7 @@ import { CanvasRenderer } from "@/components/CanvasRenderer";
 import { ComboDisplay } from "@/components/ComboDisplay";
 import { SpaceInvadersUI } from "@/components/SpaceInvadersUI";
 import { SpaceInvadersControls } from "@/components/SpaceInvadersControls";
+import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { useSpaceInvadersGame } from "@/hooks/useSpaceInvadersGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
 import { SeedWidget } from "@/components/SeedWidget";
@@ -138,6 +139,8 @@ export default function SpaceInvadersScreen() {
           onMoveRight={(pressed) => handleMultiplayerInput({ moveRight: pressed })}
           onShoot={(pressed) => handleMultiplayerInput({ shoot: pressed })}
         />
+
+        <DebugOverlay game={game} />
 
         {showDailyResults && seed !== undefined && (
           <View style={styles.overlay}>

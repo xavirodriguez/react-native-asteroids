@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -7,11 +7,10 @@ import {
   ScrollView,
   FlatList,
   TextInput,
-  Dimensions,
   Platform
 } from 'react-native';
 import { BaseGame } from '../../engine/core/BaseGame';
-import type { DebugManager, EventLogEntry, FrameStats, StateDiff, ColliderShapeInfo } from '../../engine/debug/DebugManager';
+import type { DebugManager, EventLogEntry, FrameStats, ColliderShapeInfo } from '../../engine/debug/DebugManager';
 import { useDebugManager } from '../../hooks/useGame';
 import Svg, { Circle, Rect } from 'react-native-svg';
 
@@ -21,13 +20,17 @@ interface DebugOverlayProps {
 
 type TabType = 'Frame' | 'Systems' | 'Entities' | 'Events' | 'Colliders';
 
+/**
+ * DebugOverlay component that renders a floating panel with real-time engine metrics.
+ * Designed to be tree-shakeable and only active in development environments.
+ */
 export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
   if (!__DEV__) return null;
 
   const debugManager = useDebugManager(game);
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('Frame');
-  const [lastUpdate, setLastUpdate] = useState(0);
+  const [_lastUpdate, setLastUpdate] = useState(0);
 
   // Data states
   const [frameStats, setFrameStats] = useState<FrameStats | null>(null);
@@ -38,9 +41,9 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
   const [showCollidersOverlay, setShowCollidersOverlay] = useState(false);
   const [entityFilter, setEntityFilter] = useState('');
 
-  // Update loop (10 FPS)
+  // Update loop throttled to 10 FPS (100ms interval) to minimize performance impact
   useEffect(() => {
-    if (!debugManager || !isOpen && !showCollidersOverlay) return;
+    if (!debugManager || (!isOpen && !showCollidersOverlay)) return;
 
     const interval = setInterval(() => {
       if (isOpen) {
@@ -84,7 +87,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
         <Text style={styles.statText}>Frame Time: {frameStats.frameTime.toFixed(2)}ms</Text>
         <Text style={styles.statText}>Tick: {frameStats.tick}</Text>
         <View style={styles.progressContainer}>
-          <Text style={styles.statLabel}>Alpha: {frameStats.alpha.toFixed(2)}</Text>
+          <Text style={styles.statLabel}>Alpha (Interpolation): {frameStats.alpha.toFixed(2)}</Text>
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: `${frameStats.alpha * 100}%` }]} />
           </View>
@@ -122,7 +125,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
     <View style={styles.tabContent}>
       <TextInput
         style={styles.filterInput}
-        placeholder="Filter by component..."
+        placeholder="Filter by component type..."
         placeholderTextColor="#666"
         value={entityFilter}
         onChangeText={setEntityFilter}
@@ -145,7 +148,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
       </TouchableOpacity>
       <FlatList
         data={[...eventLog].reverse().slice(0, 50)}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(_item, index) => index.toString()}
         renderItem={({ item }) => (
           <View style={styles.eventItem}>
             <Text style={styles.eventTime}>T+{(item.timestamp / 1000).toFixed(3)}s</Text>
@@ -169,6 +172,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
         <Text style={styles.checkboxLabel}>Show Colliders Overlay</Text>
       </TouchableOpacity>
       <Text style={styles.countText}>Active Colliders: {colliders.length}</Text>
+      <Text style={styles.statLabel}>Green = Trigger, Red = Solid</Text>
     </View>
   );
 
@@ -178,7 +182,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <Svg style={StyleSheet.absoluteFill}>
             {colliders.map((c, i) => {
-              const color = c.isTrigger ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)';
+              const color = c.isTrigger ? 'rgba(0, 255, 0, 0.7)' : 'rgba(255, 0, 0, 0.7)';
               if (c.type === 'circle') {
                 return (
                   <Circle
@@ -275,12 +279,12 @@ const styles = StyleSheet.create({
   },
   toggleButton: {
     position: 'absolute',
-    top: 40,
+    top: 50,
     right: 20,
-    width: 50,
-    height: 50,
+    width: 44,
+    height: 44,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 25,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -289,16 +293,16 @@ const styles = StyleSheet.create({
   toggleButtonText: {
     color: '#00ff00',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 12,
   },
   panel: {
     position: 'absolute',
-    top: 100,
+    top: 110,
     right: 20,
     left: 20,
-    bottom: 40,
+    bottom: 50,
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    borderRadius: 10,
+    borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#333',
@@ -336,20 +340,20 @@ const styles = StyleSheet.create({
   },
   statText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   warningText: {
     color: '#ff4444',
   },
   progressContainer: {
-    marginTop: 10,
+    marginTop: 8,
   },
   statLabel: {
     color: '#aaa',
-    fontSize: 14,
-    marginBottom: 5,
+    fontSize: 12,
+    marginBottom: 4,
   },
   progressBar: {
     height: 6,
@@ -362,7 +366,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#00ff00',
   },
   systemItem: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   systemHeader: {
     flexDirection: 'row',
@@ -371,30 +375,30 @@ const styles = StyleSheet.create({
   },
   systemName: {
     color: '#eee',
-    fontSize: 14,
+    fontSize: 12,
   },
   systemTime: {
     color: '#aaa',
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   filterInput: {
     backgroundColor: '#222',
     color: '#fff',
-    padding: 10,
-    borderRadius: 5,
+    padding: 8,
+    borderRadius: 4,
     marginBottom: 10,
-    fontSize: 14,
+    fontSize: 13,
   },
   countText: {
     color: '#666',
-    fontSize: 12,
-    marginBottom: 10,
+    fontSize: 11,
+    marginBottom: 8,
   },
   entityItem: {
     backgroundColor: '#1a1a1a',
-    borderRadius: 5,
-    marginBottom: 8,
+    borderRadius: 4,
+    marginBottom: 6,
     overflow: 'hidden',
   },
   entityHeader: {
@@ -406,11 +410,11 @@ const styles = StyleSheet.create({
     color: '#00ff00',
     fontWeight: 'bold',
     marginRight: 10,
-    width: 50,
+    fontSize: 12,
   },
   entityTypes: {
     color: '#aaa',
-    fontSize: 12,
+    fontSize: 11,
     flex: 1,
   },
   entityDetails: {
@@ -420,54 +424,54 @@ const styles = StyleSheet.create({
     borderTopColor: '#333',
   },
   componentDetail: {
-    marginBottom: 10,
+    marginBottom: 8,
   },
   componentType: {
     color: '#4a90e2',
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 11,
     marginBottom: 2,
   },
   componentValue: {
     color: '#ccc',
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   clearButton: {
     alignSelf: 'flex-end',
-    padding: 5,
-    marginBottom: 10,
+    padding: 4,
+    marginBottom: 8,
   },
   clearButtonText: {
     color: '#4a90e2',
-    fontSize: 12,
+    fontSize: 11,
   },
   eventItem: {
     borderBottomWidth: 1,
     borderBottomColor: '#222',
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   eventTime: {
     color: '#555',
-    fontSize: 10,
+    fontSize: 9,
   },
   eventName: {
     color: '#00ff00',
     fontWeight: 'bold',
-    fontSize: 13,
+    fontSize: 12,
   },
   eventPayload: {
     color: '#aaa',
-    fontSize: 11,
+    fontSize: 10,
   },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 12,
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: 18,
+    height: 18,
     borderRadius: 4,
     borderWidth: 2,
     borderColor: '#444',
@@ -479,7 +483,7 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
   },
 });
 

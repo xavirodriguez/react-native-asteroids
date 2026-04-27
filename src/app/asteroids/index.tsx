@@ -6,6 +6,7 @@ import { CanvasRenderer } from "@/components/CanvasRenderer";
 import { ComboDisplay } from "@/components/ComboDisplay";
 import { GameUI } from "@/components/GameUI";
 import { GameControls } from "@/components/GameControls";
+import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { useAsteroidsGame } from "@/hooks/useAsteroidsGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
 import { SeedWidget } from "@/components/SeedWidget";
@@ -154,6 +155,8 @@ export default function AsteroidsScreen() {
           onShoot={(pressed) => handleMultiplayerInput({ shoot: pressed })}
           onHyperspace={(pressed) => handleMultiplayerInput({ hyperspace: pressed })}
         />
+
+        <DebugOverlay game={game} />
 
         {showDailyResults && seed !== undefined && (
           <View style={styles.overlay}>

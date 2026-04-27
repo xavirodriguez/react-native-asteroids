@@ -39,6 +39,7 @@ export function useGame<
   const gameStateRef = useRef<TState | null>(initialState);
   const [gameState, setGameState] = useState<TState | null>(initialState);
   const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(false);
   const [, forceUpdate] = useState(0);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -63,7 +64,6 @@ export function useGame<
     let lastUpdateTime = 0;
     const UI_UPDATE_INTERVAL = 1000 / 15; // Throttled to 15 FPS for UI components
 
-    const isPausedRef = useRef(false);
     const unsubscribe = gameInstance.subscribe((updatedGame) => {
       const state = updatedGame.getGameState() as TState;
       gameStateRef.current = state;

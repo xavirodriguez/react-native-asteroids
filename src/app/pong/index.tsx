@@ -4,6 +4,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
 import { PongControls } from "@/components/PongControls";
+import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { usePongGame } from "@/hooks/usePongGame";
 
 export default function PongScreen() {
@@ -60,6 +61,8 @@ export default function PongScreen() {
           onP2Up={(pressed) => handleInput({ p2Up: pressed })}
           onP2Down={(pressed) => handleInput({ p2Down: pressed })}
         />
+
+        <DebugOverlay game={game} />
 
         {gameState?.isGameOver && (
             <View style={styles.overlay}>
