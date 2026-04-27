@@ -26,6 +26,7 @@ export class ShipControlSystem extends System {
 
       ShipPhysics.simulateShipTick(
         world,
+        entity,
         pos,
         vel,
         render,

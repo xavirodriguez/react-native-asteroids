@@ -28,28 +28,46 @@ describe("Prediction vs ECS Determinism", () => {
     world1.addComponent(ship1, { type: "Ship" } as unknown as import("../../../engine/core/Component").Component);
     world1.addComponent(ship1, { type: "ManualMovement" } as unknown as import("../../../engine/core/Component").Component);
 
-    // --- Setup manual simulation (Manual Path) ---
+    // --- Setup World 2 (Manual Path but using ECS correctly) ---
+    const world2 = new World();
+    const ship2 = world2.createEntity();
     const pos2: TransformComponent = { type: "Transform", x: 100, y: 100, rotation: 0, scaleX: 1, scaleY: 1, dirty: true };
     const vel2: VelocityComponent = { type: "Velocity", dx: 0, dy: 0 };
     const render2: RenderComponent = { type: "Render", shape: "triangle", size: 10, color: "white", rotation: 0 };
     const input2: InputComponent = { type: "Input", thrust: true, rotateLeft: true, rotateRight: false, shoot: false, hyperspace: false, shootCooldownRemaining: 0 };
-    const world2 = new World(); // Just for createBullet if needed
+
+    world2.addComponent(ship2, pos2);
+    world2.addComponent(ship2, vel2);
+    world2.addComponent(ship2, render2);
+    world2.addComponent(ship2, input2);
 
     for (let i = 0; i < ticks; i++) {
         // Update ECS
         DeterministicSimulation.update(world1, dt, { isResimulating: false });
 
-        // Update Manual
-        ShipPhysics.simulateShipTick(world2, pos2, vel2, render2, input2, dt, { isResimulating: false }, GAME_CONFIG);
+        // Update Manual (calling simulateShipTick directly on world2 components)
+        ShipPhysics.simulateShipTick(
+            world2,
+            ship2,
+            world2.getComponent<TransformComponent>(ship2, "Transform")!,
+            world2.getComponent<VelocityComponent>(ship2, "Velocity")!,
+            world2.getComponent<RenderComponent>(ship2, "Render")!,
+            world2.getComponent<InputComponent>(ship2, "Input")!,
+            dt,
+            { isResimulating: false },
+            GAME_CONFIG
+        );
     }
 
     const pos1Final = world1.getComponent<TransformComponent>(ship1, "Transform")!;
     const vel1Final = world1.getComponent<VelocityComponent>(ship1, "Velocity")!;
+    const pos2Final = world2.getComponent<TransformComponent>(ship2, "Transform")!;
+    const vel2Final = world2.getComponent<VelocityComponent>(ship2, "Velocity")!;
 
-    expect(pos1Final.x).toBeCloseTo(pos2.x, 5);
-    expect(pos1Final.y).toBeCloseTo(pos2.y, 5);
-    expect(pos1Final.rotation).toBeCloseTo(pos2.rotation, 5);
-    expect(vel1Final.dx).toBeCloseTo(vel2.dx, 5);
-    expect(vel1Final.dy).toBeCloseTo(vel2.dy, 5);
+    expect(pos1Final.x).toBeCloseTo(pos2Final.x, 5);
+    expect(pos1Final.y).toBeCloseTo(pos2Final.y, 5);
+    expect(pos1Final.rotation).toBeCloseTo(pos2Final.rotation, 5);
+    expect(vel1Final.dx).toBeCloseTo(vel2Final.dx, 5);
+    expect(vel1Final.dy).toBeCloseTo(vel2Final.dy, 5);
   });
 });

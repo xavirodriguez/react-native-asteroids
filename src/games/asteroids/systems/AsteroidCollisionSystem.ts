@@ -94,29 +94,29 @@ export class AsteroidCollisionSystem extends System {
     }
 
     if (render) {
-      render.hitFlashFrames = 8;
+      world.mutateComponent(asteroid, "Render", (r: RenderComponent) => {
+        r.hitFlashFrames = 8;
+      });
     }
 
     this.handleAsteroidDestructionLogic(world, asteroid, bullet);
   }
 
   private handleAsteroidDestructionLogic(world: World, asteroid: Entity, bullet: Entity): void {
+    const transform = world.getComponent<TransformComponent>(asteroid, "Transform");
     const asteroidComp = world.getComponent<AsteroidComponent>(asteroid, "Asteroid");
     const size = asteroidComp?.size || "small";
 
-    const gameState = world.getSingleton<GameStateComponent>("GameState");
-    if (gameState) {
+    world.mutateSingleton<GameStateComponent>("GameState", (gameState) => {
       gameState.lastBulletHit = true;
       this.addScore(world, GAME_CONFIG.ASTEROID_SCORE * (gameState.comboMultiplier || 1));
-    } else {
-      this.addScore(world, GAME_CONFIG.ASTEROID_SCORE);
-    }
+    });
 
     this.splitAsteroid(world, asteroid);
     world.removeEntity(bullet);
 
     const eventBus = world.getResource<EventBus>("EventBus");
-    if (eventBus) eventBus.emit("asteroid:destroyed", { size });
+    if (eventBus) eventBus.emit("asteroid:destroyed", { entity: asteroid, size, x: transform?.x, y: transform?.y });
   }
 
   private spawnExplosion(world: World, position: TransformComponent, count: number): void {
@@ -137,7 +137,7 @@ export class AsteroidCollisionSystem extends System {
     const health = world.getComponent<HealthComponent>(shipEntity, "Health");
 
     if (this.canShipTakeDamage(health)) {
-      this.applyDamageToShip(world, health);
+      this.applyDamageToShip(world, shipEntity);
     }
   }
 
@@ -145,16 +145,23 @@ export class AsteroidCollisionSystem extends System {
     return !!health && health.invulnerableRemaining <= 0;
   }
 
-  private applyDamageToShip(world: World, health: HealthComponent): void {
-    health.current--;
-    health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+  private applyDamageToShip(world: World, shipEntity: Entity): void {
+    world.mutateComponent(shipEntity, "Health", (health: HealthComponent) => {
+      health.current--;
+      health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+    });
 
     const ships = world.query("Ship", "Render");
     for (let i = 0; i < ships.length; i++) {
       const entity = ships[i];
-      const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (render) render.hitFlashFrames = 6;
+      world.mutateComponent(entity, "Render", (render: RenderComponent) => {
+        render.hitFlashFrames = 6;
+      });
     }
+
+    const health = world.getComponent<HealthComponent>(shipEntity, "Health")!;
+    const eventBus = world.getResource<EventBus>("EventBus");
+    if (eventBus) eventBus.emit("ship:hit");
 
     // Create an additive screen shake entity instead of modifying a singleton
     const shakeEntity = world.createEntity();
@@ -215,16 +222,16 @@ export class AsteroidCollisionSystem extends System {
     const spawns = [a1, a2];
     for (let i = 0; i < spawns.length; i++) {
       const entity = spawns[i];
-      const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (render) render.hitFlashFrames = 10;
+      world.mutateComponent(entity, "Render", (render: RenderComponent) => {
+        render.hitFlashFrames = 10;
+      });
     }
   }
 
   private addScore(world: World, points: number): void {
-    const gameState = world.getSingleton<GameStateComponent>("GameState");
-    if (gameState) {
+    world.mutateSingleton<GameStateComponent>("GameState", (gameState) => {
       gameState.score += points;
-    }
+    });
   }
 
   private matchPair<T1 extends string, T2 extends string>(

@@ -8,6 +8,8 @@ import { AsteroidComboSystem } from "./systems/AsteroidComboSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { UfoSystem } from "./systems/UfoSystem";
 import { StatusEffectSystem } from "../../engine/systems/StatusEffectSystem";
+import { LootSystem } from "../../engine/systems/LootSystem";
+import { PowerUpSystem } from "../../engine/systems/PowerUpSystem";
 import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
 import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
 import { BoundarySystem } from "../../engine/physics/systems/BoundarySystem";
@@ -240,6 +242,8 @@ export class AsteroidsGame
     this.world.addSystem(new UfoSystem());
     this.world.addSystem(new StatusEffectSystem());
     this.world.addSystem(new ScreenShakeSystem());
+    this.world.addSystem(new LootSystem());
+    this.world.addSystem(new PowerUpSystem());
     this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
     this.world.addSystem(new AsteroidRenderSystem()); // Handle trails
   }

@@ -392,6 +392,28 @@ export interface ModifierStackComponent extends Component {
 }
 
 /**
+ * Define probabilities for dropping loot when an entity is destroyed.
+ */
+export interface LootTableComponent extends Component {
+  type: "LootTable";
+  drops: Array<{
+    type: string;
+    chance: number;
+    config?: Record<string, unknown>;
+  }>;
+}
+
+/**
+ * Represents a collectible power-up in the world.
+ */
+export interface PowerUpComponent extends Component {
+  type: "PowerUp";
+  powerUpType: string;
+  value: number;
+  duration: number;
+}
+
+/**
  * Unión de todos los componentes base del motor para endurecimiento de tipos.
  */
 export type AnyCoreComponent =
@@ -421,7 +443,9 @@ export type AnyCoreComponent =
   | VisualOffsetComponent
   | TrailComponent
   | Star
-  | ModifierStackComponent;
+  | ModifierStackComponent
+  | LootTableComponent
+  | PowerUpComponent;
 
 /**
  * Auxiliar para inferir el tipo concreto de un componente a partir de su discriminador.

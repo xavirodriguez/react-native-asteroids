@@ -121,6 +121,27 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.eventBus.on("audio:stop_music", () => {
       this.audio.stopMusic();
     });
+
+    // Semantic Audio Bridge: Mapping game events to audio effects
+    this.eventBus.on("asteroid:destroyed", () => {
+      this.eventBus.emit("audio:play_sfx", { name: "explosion" });
+    });
+
+    this.eventBus.on("ship:shoot", () => {
+      this.eventBus.emit("audio:play_sfx", { name: "shoot" });
+    });
+
+    this.eventBus.on("ship:hit", () => {
+      this.eventBus.emit("audio:play_sfx", { name: "hit" });
+    });
+
+    this.eventBus.on("game:over", () => {
+      this.eventBus.emit("audio:play_sfx", { name: "game_over" });
+    });
+
+    this.eventBus.on("powerup:collected", () => {
+        this.eventBus.emit("audio:play_sfx", { name: "hit" }); // Reusing hit for collection feedback
+    });
   }
 
   private setupLoop(): void {
@@ -299,6 +320,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       if (this.sceneManager.getCurrentScene()) {
         await this.sceneManager.restartCurrentScene();
       } else {
+        this.eventBus.clear();
+        this._setupAudioListeners();
         this.world.clear();
         this.world.clearSystems();
         await this.registerEssentialSystems(this.world);
