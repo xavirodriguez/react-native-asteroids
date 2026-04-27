@@ -149,8 +149,10 @@ export const ShipPhysics = {
           i.shootCooldownRemaining = config.BULLET_SHOOT_COOLDOWN;
       });
 
-      const eventBus = world.getResource<EventBus>("EventBus");
-      if (eventBus) eventBus.emit("ship:shoot");
+      if (!ctx?.isResimulating) {
+        const eventBus = world.getResource<EventBus>("EventBus");
+        if (eventBus) eventBus.emit("ship:shoot");
+      }
     }
   }
 };
