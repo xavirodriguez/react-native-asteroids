@@ -10,7 +10,8 @@ import {
     BoundaryComponent,
     HealthComponent,
     ManualMovementComponent,
-    TrailComponent
+    TrailComponent,
+    SpatialNodeComponent
 } from "../../engine/core/CoreComponents";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
@@ -87,6 +88,7 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
   world.addComponent(ship, { type: "Input", thrust: false, rotateLeft: false, rotateRight: false, shoot: false, hyperspace: false, shootCooldownRemaining: 0 } as InputComponent);
   world.addComponent(ship, { type: "Health", current: 3, max: 3, invulnerableRemaining: GAME_CONFIG.INVULNERABILITY_DURATION } as HealthComponent);
   world.addComponent(ship, { type: "ManualMovement" } as ManualMovementComponent);
+  world.addComponent(ship, { type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
 
   // Tutorialization particles
   createEmitter(world, {
@@ -127,6 +129,7 @@ export const createBullet = ({ world, x, y, angle }: { world: World; x: number; 
   } as Collider2DComponent);
   world.addComponent(bullet, { type: "TTL", remaining: GAME_CONFIG.BULLET_TTL, total: GAME_CONFIG.BULLET_TTL } as TTLComponent);
   world.addComponent(bullet, { type: "Bullet" } as BulletComponent);
+  world.addComponent(bullet, { type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
   return bullet;
 };
 
@@ -185,6 +188,7 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
     enabled: true
   } as Collider2DComponent);
   world.addComponent(asteroid, { type: "Asteroid", size } as AsteroidComponent);
+  world.addComponent(asteroid, { type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
 
   // Add LootTable based on asteroid size
   const lootTable: import("../../engine/core/CoreComponents").LootTableComponent = {
@@ -247,6 +251,7 @@ export const createUfo = ({ world }: { world: World }) => {
     enabled: true
   } as Collider2DComponent);
   world.addComponent(ufo, { type: "Ufo", baseY: y, time: 0 } as UfoComponent);
+  world.addComponent(ufo, { type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
   return ufo;
 };
 

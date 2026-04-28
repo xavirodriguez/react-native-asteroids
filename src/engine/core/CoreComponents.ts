@@ -414,6 +414,16 @@ export interface PowerUpComponent extends Component {
 }
 
 /**
+ * Tracks entity occupancy in the global SpatialGrid for simulation culling.
+ */
+export interface SpatialNodeComponent extends Component {
+  type: "SpatialNode";
+  lastCellKeys: string[];
+  active: boolean;
+  isStatic?: boolean;
+}
+
+/**
  * Unión de todos los componentes base del motor para endurecimiento de tipos.
  */
 export type AnyCoreComponent =
@@ -445,7 +455,8 @@ export type AnyCoreComponent =
   | Star
   | ModifierStackComponent
   | LootTableComponent
-  | PowerUpComponent;
+  | PowerUpComponent
+  | SpatialNodeComponent;
 
 /**
  * Auxiliar para inferir el tipo concreto de un componente a partir de su discriminador.

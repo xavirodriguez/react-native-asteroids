@@ -1,6 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { ParticleEmitterComponent, ParticleEmitterConfig, Entity, Component } from "../types/EngineTypes";
+import { ParticleEmitterComponent, ParticleEmitterConfig, Entity, Component, SpatialNodeComponent } from "../types/EngineTypes";
 import { PrefabPool } from "../utils/PrefabPool";
 import { RandomService } from "../utils/RandomService";
 
@@ -52,6 +52,11 @@ export class ParticleSystem extends System {
 
     for (let i = 0; i < emitters.length; i++) {
       const entity = emitters[i];
+
+      // Simulation Culling: Skip if SpatialNode exists and is inactive
+      const node = world.getComponent<SpatialNodeComponent>(entity, "SpatialNode");
+      if (node && !node.active) continue;
+
       const emitter = world.getComponent<ParticleEmitterComponent>(entity, "ParticleEmitter")!;
       if (!emitter.active) continue;
 

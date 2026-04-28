@@ -1,6 +1,6 @@
 import { System } from "../../core/System";
 import { World } from "../../core/World";
-import { TransformComponent, VelocityComponent } from "../../types/EngineTypes";
+import { TransformComponent, VelocityComponent, SpatialNodeComponent } from "../../types/EngineTypes";
 import { PhysicsUtils } from "../utils/PhysicsUtils";
 
 /**
@@ -40,6 +40,11 @@ export class MovementSystem extends System {
 
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
+
+      // Simulation Culling: Skip if SpatialNode exists and is inactive
+      const node = world.getComponent<SpatialNodeComponent>(entity, "SpatialNode");
+      if (node && !node.active) continue;
+
       const pos = world.getComponent<TransformComponent>(entity, "Transform");
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
 

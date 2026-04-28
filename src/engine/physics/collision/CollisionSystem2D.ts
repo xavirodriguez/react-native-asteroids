@@ -4,7 +4,7 @@ import { Entity, TransformComponent, Collider2DComponent, CollisionEventsCompone
 import { BroadPhase } from "./BroadPhase";
 import { NarrowPhase } from "./NarrowPhase";
 import { ContinuousCollision, CCDResult } from "./ContinuousCollision";
-import { SpatialHash } from "./SpatialHash";
+import { SpatialGrid } from "../utils/SpatialGrid";
 
 export type CollisionCallback = (world: World, entityA: Entity, entityB: Entity, manifold: CollisionManifold) => void;
 export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) => void;
@@ -38,9 +38,10 @@ export class CollisionSystem2D extends System {
   private onTriggerEnterCallbacks: TriggerCallback[] = [];
   private onTriggerExitCallbacks: TriggerCallback[] = [];
   private activePairs = new Set<string>();
-  private spatialHash: SpatialHash | null = null;
+  private _useSpatialGrid = false;
+  private _potentialBSet = new Set<Entity>();
 
-  useSpatialHash(cellSize: number): void { this.spatialHash = new SpatialHash(cellSize); }
+  useSpatialHash(_cellSize: number): void { this._useSpatialGrid = true; }
   onCollision(callback: CollisionCallback): void { this.onCollisionCallbacks.push(callback); }
   onTriggerEnter(callback: TriggerCallback): void { this.onTriggerEnterCallbacks.push(callback); }
   onTriggerExit(callback: TriggerCallback): void { this.onTriggerExitCallbacks.push(callback); }
@@ -79,14 +80,19 @@ export class CollisionSystem2D extends System {
     }
 
     let candidates: Array<[Entity, Entity]>;
-    if (this.spatialHash) {
-      this.spatialHash.clear();
+    const grid = world.getResource<SpatialGrid>("SpatialGrid");
+
+    if (this._useSpatialGrid && grid) {
       const entityBoundsMap = new Map<Entity, import("../../types/EngineTypes").AABB>();
       for (let i = 0; i < entities.length; i++) {
         const entity = entities[i];
         const bounds = BroadPhase.getShapeBounds(world.getComponent<TransformComponent>(entity, "Transform")!, world.getComponent<Collider2DComponent>(entity, "Collider2D")!);
         entityBoundsMap.set(entity, bounds);
-        this.spatialHash!.insert(entity, bounds);
+
+        // Fallback for entities with Collider2D but without SpatialNode (indexed on-demand for collisions)
+        if (!world.hasComponent(entity, "SpatialNode")) {
+            grid.insert(entity, bounds);
+        }
       }
       candidates = [];
       for (let i = 0; i < entities.length; i++) {
@@ -94,9 +100,9 @@ export class CollisionSystem2D extends System {
         const boundsA = entityBoundsMap.get(entityA);
         if (!boundsA) continue;
 
-        const potentials = new Set<Entity>();
-        this.spatialHash!.query(boundsA, potentials);
-        potentials.forEach(entityB => {
+        this._potentialBSet.clear();
+        grid.query(boundsA, this._potentialBSet);
+        this._potentialBSet.forEach(entityB => {
           if (entityA < entityB) {
             candidates.push([entityA, entityB]);
           }
@@ -107,9 +113,9 @@ export class CollisionSystem2D extends System {
     }
 
     for (const [entityA, entityB] of candidates) {
-      const colA = world.getComponent<Collider2DComponent>(entityA, "Collider2D")!;
-      const colB = world.getComponent<Collider2DComponent>(entityB, "Collider2D")!;
-      if (!colA.enabled || !colB.enabled) continue;
+      const colA = world.getComponent<Collider2DComponent>(entityA, "Collider2D");
+      const colB = world.getComponent<Collider2DComponent>(entityB, "Collider2D");
+      if (!colA || !colB || !colA.enabled || !colB.enabled) continue;
       if (!this.shouldCollide(colA, colB)) continue;
 
       const transA = world.getComponent<TransformComponent>(entityA, "Transform")!;
