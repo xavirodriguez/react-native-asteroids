@@ -33,8 +33,8 @@ export class SpatialPartitioningSystem extends System {
     }
 
     // Default viewport if no camera (e.g. 800x600 centered at 0,0)
-    const viewX = mainCam?.x ?? -400;
-    const viewY = mainCam?.y ?? -300;
+    const viewX = mainCam?.x ?? 0;
+    const viewY = mainCam?.y ?? 0;
     const viewW = 800 / (mainCam?.zoom ?? 1);
     const viewH = 600 / (mainCam?.zoom ?? 1);
     const padding = grid.cellSize * 2;
