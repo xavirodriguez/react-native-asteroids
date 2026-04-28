@@ -9,6 +9,7 @@ import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFact
 import { InputComponent, ShipComponent } from "../../src/games/asteroids/types/AsteroidTypes";
 import { InterestManagementSystem } from "../../src/engine/systems/InterestManagementSystem";
 import { SpatialPartitioningSystem } from "../../src/engine/systems/SpatialPartitioningSystem";
+import { SpatialGrid } from "../../src/engine/physics/utils/SpatialGrid";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
@@ -69,6 +70,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
 
     // Initialized ECS world
     this.world = new World();
+    this.world.setResource("SpatialGrid", new SpatialGrid());
     this.world.addComponent(this.world.createEntity(), { type: "GameState", score: 0 } as Component);
     this.world.addSystem(new SpatialPartitioningSystem());
     this.world.addSystem(new InterestManagementSystem());
@@ -141,6 +143,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     // 2. Run Shared Deterministic Simulation
     DeterministicSimulation.update(this.world, this.fixedTimeStep, { isResimulating: false });
 
+    // 2.1 Run server-only systems (Spatial Partitioning, Interest Management)
+    // We call world.update(0) to execute registered systems without advancing tick (already handled)
+    this.world.update(0);
+
     // 3. Sync ECS World back to Colyseus Schema
     this.syncWorldToSchema();
 
@@ -158,9 +164,11 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         });
     });
 
-    // We still keep fullWorldState for NEW clients or major reconciliations,
-    // but we can reduce its update frequency if needed.
-    this.state.fullWorldState = JSON.stringify(this.world.snapshot());
+    // Optimization: Only update fullWorldState occasionally for late joiners
+    // to avoid broadcasting large strings every tick.
+    if (this.state.serverTick % 60 === 0) {
+        this.state.fullWorldState = JSON.stringify(this.world.snapshot());
+    }
 
     // 5. Record for Replay
     this.replayFrames.push({

@@ -12,6 +12,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
   const localTickRef = useRef(0);
   const serverTickRef = useRef(0);
   const lastProcessedTickRef = useRef(0);
+  const lastAckedVersionRef = useRef(0);
   const inputBufferRef = useRef<InputFrame[]>([]);
 
   useEffect(() => {
@@ -53,7 +54,23 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
             console.log(`Synced tick: server=${data.serverTick}, local=${localTickRef.current}, rtt=${rtt}`);
         });
 
-        joinedRoom.send("sync_tick", { timestamp: Date.now() });
+        joinedRoom.onMessage("world_delta", (data: { tick: number, delta: string }) => {
+            // Forward delta to the game via serverState update
+            setServerState({ ...joinedRoom.state, delta: data.delta, tick: data.tick });
+
+            // Extract stateVersion if present in the JSON string
+            try {
+                const deltaObj = JSON.parse(data.delta);
+                if (deltaObj.stateVersion !== undefined) {
+                    lastAckedVersionRef.current = deltaObj.stateVersion;
+                }
+            } catch (e) {}
+        });
+
+        joinedRoom.send("sync_tick", {
+            timestamp: Date.now(),
+            lastAckedVersion: lastAckedVersionRef.current
+        });
 
         joinedRoom.onLeave((_code) => {
           setConnected(false);
@@ -77,6 +94,14 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
 
   const sendInput = useCallback((input: Record<string, boolean>) => {
     if (!room || !connected) return null;
+
+    // Periodically sync tick and ack version
+    if (localTickRef.current % 60 === 0) {
+        room.send("sync_tick", {
+            timestamp: Date.now(),
+            lastAckedVersion: lastAckedVersionRef.current
+        });
+    }
 
     localTickRef.current++;
     const actions: string[] = [];
