@@ -53,7 +53,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
             console.log(`Synced tick: server=${data.serverTick}, local=${localTickRef.current}, rtt=${rtt}`);
         });
 
-        joinedRoom.send("sync_tick");
+        joinedRoom.send("sync_tick", { timestamp: Date.now() });
 
         joinedRoom.onLeave((_code) => {
           setConnected(false);

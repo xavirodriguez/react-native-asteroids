@@ -48,10 +48,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       this.inputBuffers.set(client.sessionId, buffer);
     });
 
-    this.onMessage("sync_tick", (client) => {
+    this.onMessage("sync_tick", (client, data) => {
       client.send("sync_tick", {
         serverTick: this.state.serverTick,
-        timestamp: Date.now()
+        timestamp: data?.timestamp ?? 0
       });
     });
 
