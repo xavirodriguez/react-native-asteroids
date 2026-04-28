@@ -136,13 +136,16 @@ export class AsteroidCollisionSystem extends System {
   private handleShipAsteroidCollision(world: World, shipEntity: Entity): void {
     const health = world.getComponent<HealthComponent>(shipEntity, "Health");
 
-    if (this.canShipTakeDamage(health)) {
+    if (this.canShipTakeDamage(world, shipEntity, health)) {
       this.applyDamageToShip(world, shipEntity);
     }
   }
 
-  private canShipTakeDamage(health: HealthComponent | undefined): health is HealthComponent {
-    return !!health && health.invulnerableRemaining <= 0;
+  private canShipTakeDamage(world: World, shipEntity: Entity, health: HealthComponent | undefined): health is HealthComponent {
+    const modifiers = world.getComponent<import("../../../engine/core/CoreComponents").ModifierStackComponent>(shipEntity, "ModifierStack")?.modifiers || [];
+    const hasShield = modifiers.some(m => m.type === "shield");
+
+    return !!health && health.invulnerableRemaining <= 0 && !hasShield;
   }
 
   private applyDamageToShip(world: World, shipEntity: Entity): void {

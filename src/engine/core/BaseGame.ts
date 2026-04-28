@@ -126,24 +126,25 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     });
 
     // Semantic Audio Bridge: Mapping game events to audio effects
+    // Uses emitDeferred to decouple from simulation
     this.eventBus.on("asteroid:destroyed", () => {
-      this.eventBus.emit("audio:play_sfx", { name: "explosion" });
+      this.eventBus.emitDeferred("audio:play_sfx", { name: "explosion" });
     });
 
     this.eventBus.on("ship:shoot", () => {
-      this.eventBus.emit("audio:play_sfx", { name: "shoot" });
+      this.eventBus.emitDeferred("audio:play_sfx", { name: "shoot" });
     });
 
     this.eventBus.on("ship:hit", () => {
-      this.eventBus.emit("audio:play_sfx", { name: "hit" });
+      this.eventBus.emitDeferred("audio:play_sfx", { name: "hit" });
     });
 
     this.eventBus.on("game:over", () => {
-      this.eventBus.emit("audio:play_sfx", { name: "game_over" });
+      this.eventBus.emitDeferred("audio:play_sfx", { name: "game_over" });
     });
 
     this.eventBus.on("powerup:collected", () => {
-        this.eventBus.emit("audio:play_sfx", { name: "hit" }); // Reusing hit for collection feedback
+        this.eventBus.emitDeferred("audio:play_sfx", { name: "hit" }); // Reusing hit for collection feedback
     });
   }
 
@@ -181,6 +182,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       // 4. POST-UPDATE: Transform Propagation (Hierarchy)
       // Must happen AFTER simulation but BEFORE rendering.
       this.hierarchySystem.update(activeWorld, deltaTime);
+
+      // 5. REPLAY RECORDING
+      this.replayRecorder.recordTick(this.currentTick, {});
+
+      // 6. DEFERRED EVENTS
+      this.eventBus.processDeferred();
 
       this.currentTick++;
       this._notifyListeners();
