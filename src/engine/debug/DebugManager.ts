@@ -42,9 +42,12 @@ export class DebugManager {
   private game: BaseGame<any, any> | null = null;
   private enabled = false;
   private startTime = performance.now();
+  private lastWorld: World | null = null;
 
   // Event Log
-  private eventLog: EventLogEntry[] = [];
+  private eventLog: (EventLogEntry | null)[] = new Array(100).fill(null);
+  private eventLogHead = 0;
+  private eventLogCount = 0;
   private readonly MAX_EVENTS = 100;
 
   // Frame Stats
@@ -87,7 +90,7 @@ export class DebugManager {
   public detach(): void {
     this.disable();
     this.game = null;
-    this.eventLog = [];
+    this.clearEventLog();
     this.lastSnapshot = null;
     this.lastDiff = [];
   }
@@ -99,14 +102,7 @@ export class DebugManager {
     if (this.enabled || !this.game) return;
     this.enabled = true;
 
-    const world = this.game.getWorld();
-    world.debugMode = true;
-
-    // Event Bus logging
-    const eventBus = world.getResource<EventBus>("EventBus");
-    if (eventBus) {
-      eventBus.on("*", this.handleEvent);
-    }
+    this.handleWorldChange(this.game.getWorld());
 
     // Frame Stats subscription
     this.unsubscribeRender = this.game.getGameLoop().subscribeRender(this.updateFrameStats);
@@ -119,12 +115,13 @@ export class DebugManager {
     if (!this.enabled || !this.game) return;
     this.enabled = false;
 
-    const world = this.game.getWorld();
-    world.debugMode = false;
-
-    const eventBus = world.getResource<EventBus>("EventBus");
-    if (eventBus) {
-      eventBus.off("*", this.handleEvent);
+    if (this.lastWorld) {
+      this.lastWorld.debugMode = false;
+      const eventBus = this.lastWorld.getResource<EventBus>("EventBus");
+      if (eventBus) {
+        eventBus.off("*", this.handleEvent);
+      }
+      this.lastWorld = null;
     }
 
     if (this.unsubscribeRender) {
@@ -133,21 +130,43 @@ export class DebugManager {
     }
   }
 
+  private handleWorldChange(newWorld: World): void {
+    if (this.lastWorld && this.lastWorld !== newWorld) {
+      this.lastWorld.debugMode = false;
+      const oldEventBus = this.lastWorld.getResource<EventBus>("EventBus");
+      if (oldEventBus) {
+        oldEventBus.off("*", this.handleEvent);
+      }
+    }
+
+    newWorld.debugMode = true;
+    const newEventBus = newWorld.getResource<EventBus>("EventBus");
+    if (newEventBus) {
+      newEventBus.on("*", this.handleEvent);
+    }
+    this.lastWorld = newWorld;
+  }
+
   private handleEvent = (payload: unknown, event: string): void => {
-    this.eventLog.push({
+    this.eventLog[this.eventLogHead] = {
       timestamp: performance.now() - this.startTime,
       event: event || "unknown",
       payload: payload
-    });
+    };
 
-    if (this.eventLog.length > this.MAX_EVENTS) {
-      this.eventLog.shift();
+    this.eventLogHead = (this.eventLogHead + 1) % this.MAX_EVENTS;
+    if (this.eventLogCount < this.MAX_EVENTS) {
+      this.eventLogCount++;
     }
   };
 
   private updateFrameStats = (alpha: number, dt: number): void => {
     if (!this.game) return;
     const world = this.game.getWorld();
+
+    if (world !== this.lastWorld) {
+      this.handleWorldChange(world);
+    }
 
     this.frameCount++;
     const now = performance.now();
@@ -243,11 +262,19 @@ export class DebugManager {
    * Event Logger: Returns the circular buffer of captured events.
    */
   public getEventLog(): EventLogEntry[] {
-    return [...this.eventLog];
+    const result: EventLogEntry[] = [];
+    for (let i = 0; i < this.eventLogCount; i++) {
+      const index = (this.eventLogHead - this.eventLogCount + i + this.MAX_EVENTS) % this.MAX_EVENTS;
+      const entry = this.eventLog[index];
+      if (entry) result.push(entry);
+    }
+    return result;
   }
 
   public clearEventLog(): void {
-    this.eventLog = [];
+    this.eventLog.fill(null);
+    this.eventLogHead = 0;
+    this.eventLogCount = 0;
   }
 
   /**
@@ -262,6 +289,10 @@ export class DebugManager {
    */
   public getLastDiff(): StateDiff[] {
     return [...this.lastDiff];
+  }
+
+  public setDiffInterval(interval: number): void {
+    this.diffInterval = Math.max(1, interval);
   }
 
   /**
