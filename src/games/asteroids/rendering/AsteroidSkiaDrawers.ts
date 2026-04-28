@@ -57,10 +57,16 @@ export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, ren
     canvas.drawRect(Skia.XYWHRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8), paint);
 };
 
-export const drawSkiaAsteroidShipTrailDrawer = (canvas: SkCanvas, entity: Entity, world: World, _render: RenderComponent, paint: SkPaint) => {
+let trailPaint: any = null;
+
+export const drawSkiaAsteroidShipTrailDrawer = (canvas: SkCanvas, entity: Entity, pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number }, _elapsedTime: number, render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null }, world: World) => {
     const trail = world.getComponent<TrailComponent>(entity, "Trail");
     if (trail) {
-        drawSkiaAsteroidShipTrail(canvas, trail, paint);
+        const { Skia } = require("@shopify/react-native-skia");
+        if (!trailPaint) {
+            trailPaint = Skia.Paint();
+        }
+        drawSkiaAsteroidShipTrail(canvas, trail, trailPaint, pos.x, pos.y);
     }
 };
 
@@ -129,12 +135,18 @@ export function drawSkiaAsteroidStarField(canvas: SkCanvas, stars: Star[], width
     });
 }
 
-export function drawSkiaAsteroidShipTrail(canvas: SkCanvas, trail: TrailComponent, paint: SkPaint): void {
+export function drawSkiaAsteroidShipTrail(canvas: SkCanvas, trail: TrailComponent, paint: SkPaint, headX?: number, headY?: number): void {
+    const { Skia } = require("@shopify/react-native-skia");
     paint.setColor(Skia.Color("cyan"));
     paint.setStyle(Skia.PaintStyle.Fill);
     for (let i = 0; i < trail.count; i++) {
         const index = (trail.currentIndex - (trail.count - 1) + i + trail.maxLength) % trail.maxLength;
-        const p = trail.points[index];
+
+        // Use interpolated head position for the most recent point if provided
+        const p = (i === trail.count - 1 && headX !== undefined && headY !== undefined)
+          ? { x: headX, y: headY }
+          : trail.points[index];
+
         if (!p) continue;
         paint.setAlphaf((i / trail.count) * 0.4);
         canvas.drawCircle(p.x, p.y, 1.5, paint);
