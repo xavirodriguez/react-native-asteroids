@@ -48,6 +48,7 @@ export class AsteroidsGame
   private inputHistory: InputFrame[] = [];
   private stateHistory = new Map<number, import("../../engine/types/EngineTypes").WorldSnapshot>();
   private lastAuthoritativeTick = 0;
+  private lastProcessedFullStateVersion = -1;
   public readonly gameId = "asteroids";
   private config: typeof GAME_CONFIG;
 
@@ -127,14 +128,12 @@ export class AsteroidsGame
   public updateFromServer(serverState: Record<string, unknown>, localSessionId?: string) {
     if (!this.isMultiplayer || !serverState) return;
 
-    // Handle full snapshot if present (initial sync or major reset)
-    if (serverState.fullWorldState) {
-        this.handleFullServerUpdate(serverState, localSessionId);
-    }
-
-    // Handle partial delta snapshot
+    // Prefer delta update if available (more frequent and granular)
     if (serverState.delta) {
         this.handleDeltaServerUpdate(serverState, localSessionId);
+    } else if (serverState.fullWorldState) {
+        // Fallback to full snapshot only if no delta is present
+        this.handleFullServerUpdate(serverState, localSessionId);
     }
   }
 
@@ -172,11 +171,16 @@ export class AsteroidsGame
   }
 
   private handleFullServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
+    const authoritativeSnapshot = JSON.parse(serverState.fullWorldState as string) as import("../../engine/types/EngineTypes").WorldSnapshot;
+
+    // Skip if this full snapshot hasn't changed since last processing
+    if (authoritativeSnapshot.stateVersion === this.lastProcessedFullStateVersion) return;
+    this.lastProcessedFullStateVersion = authoritativeSnapshot.stateVersion;
+
     const serverTick = serverState.serverTick as number;
     if (serverTick <= this.lastAuthoritativeTick) return;
     this.lastAuthoritativeTick = serverTick;
 
-    const authoritativeSnapshot = JSON.parse(serverState.fullWorldState as string) as import("../../engine/types/EngineTypes").WorldSnapshot;
     const predicted = this.stateHistory.get(serverTick);
 
     let needsRollback = false;

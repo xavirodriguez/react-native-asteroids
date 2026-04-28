@@ -56,7 +56,8 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
 
         joinedRoom.onMessage("world_delta", (data: { tick: number, delta: string }) => {
             // Forward delta to the game via serverState update
-            setServerState({ ...joinedRoom.state, delta: data.delta, tick: data.tick });
+            // We only send delta and tick to ensure the game identifies this as a delta update
+            setServerState({ delta: data.delta, tick: data.tick });
 
             // Extract stateVersion if present in the JSON string
             try {

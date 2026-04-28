@@ -144,8 +144,9 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     DeterministicSimulation.update(this.world, this.fixedTimeStep, { isResimulating: false });
 
     // 2.1 Run server-only systems (Spatial Partitioning, Interest Management)
-    // We call world.update(0) to execute registered systems without advancing tick (already handled)
-    this.world.update(0);
+    // We execute systems manually to avoid advancing world.tick (already incremented by loop)
+    this.world.systemsList.forEach(system => system.update(this.world, 0));
+    this.world.flush();
 
     // 3. Sync ECS World back to Colyseus Schema
     this.syncWorldToSchema();
