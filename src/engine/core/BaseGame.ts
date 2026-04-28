@@ -184,7 +184,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       this.hierarchySystem.update(activeWorld, deltaTime);
 
       // 5. REPLAY RECORDING
-      this.replayRecorder.recordTick(this.currentTick, {});
+      const currentInput = this.unifiedInput.getInputState();
+      const inputFrame = {
+        tick: this.currentTick,
+        timestamp: Date.now(),
+        actions: currentInput.actions,
+        axes: currentInput.axes
+      };
+      this.replayRecorder.recordTick(this.currentTick, { "local": [inputFrame] });
 
       // 6. DEFERRED EVENTS
       this.eventBus.processDeferred();

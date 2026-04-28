@@ -144,8 +144,10 @@ export class EventBus {
           this.handlers.delete(event);
         }
       }
+      this.deferredQueue = this.deferredQueue.filter(item => !item.event.startsWith(prefix));
     } else {
       this.handlers.delete(pattern);
+      this.deferredQueue = this.deferredQueue.filter(item => item.event !== pattern);
     }
   }
 
