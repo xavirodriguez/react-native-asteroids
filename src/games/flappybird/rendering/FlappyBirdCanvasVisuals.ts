@@ -12,7 +12,6 @@ export const drawFlappyBird: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entit
     if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) {
       ctx.globalAlpha = 0.3;
     }
-    color = "white";
   }
 
   const health = world.getComponent<HealthComponent>(entity, "Health");
