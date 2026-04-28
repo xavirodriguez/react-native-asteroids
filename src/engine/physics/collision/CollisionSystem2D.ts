@@ -113,9 +113,9 @@ export class CollisionSystem2D extends System {
     }
 
     for (const [entityA, entityB] of candidates) {
-      const colA = world.getComponent<Collider2DComponent>(entityA, "Collider2D")!;
-      const colB = world.getComponent<Collider2DComponent>(entityB, "Collider2D")!;
-      if (!colA.enabled || !colB.enabled) continue;
+      const colA = world.getComponent<Collider2DComponent>(entityA, "Collider2D");
+      const colB = world.getComponent<Collider2DComponent>(entityB, "Collider2D");
+      if (!colA || !colB || !colA.enabled || !colB.enabled) continue;
       if (!this.shouldCollide(colA, colB)) continue;
 
       const transA = world.getComponent<TransformComponent>(entityA, "Transform")!;
