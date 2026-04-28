@@ -57,17 +57,22 @@ export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, ren
     canvas.drawRect(Skia.XYWHRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8), paint);
 };
 
+import { Platform } from "react-native";
+
 let trailPaint: any = null;
 
 export const drawSkiaAsteroidShipTrailDrawer = (canvas: SkCanvas, entity: Entity, pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number }, _elapsedTime: number, render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null }, world: World) => {
-    const trail = world.getComponent<TrailComponent>(entity, "Trail");
-    if (trail) {
-        const { Skia } = require("@shopify/react-native-skia");
-        if (!trailPaint) {
-            trailPaint = Skia.Paint();
+    if (Platform.OS === "web") return;
+    try {
+        if (typeof Skia === "undefined" || !Skia.Paint) return;
+        const trail = world.getComponent<TrailComponent>(entity, "Trail");
+        if (trail) {
+            if (!trailPaint) {
+                trailPaint = Skia.Paint();
+            }
+            drawSkiaAsteroidShipTrail(canvas, trail, trailPaint, render.size, pos.x, pos.y);
         }
-        drawSkiaAsteroidShipTrail(canvas, trail, trailPaint, pos.x, pos.y);
-    }
+    } catch (_e) { /* ignore */ }
 };
 
 export const drawSkiaUfo = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => {
@@ -135,8 +140,8 @@ export function drawSkiaAsteroidStarField(canvas: SkCanvas, stars: Star[], width
     });
 }
 
-export function drawSkiaAsteroidShipTrail(canvas: SkCanvas, trail: TrailComponent, paint: SkPaint, headX?: number, headY?: number): void {
-    const { Skia } = require("@shopify/react-native-skia");
+export function drawSkiaAsteroidShipTrail(canvas: SkCanvas, trail: TrailComponent, paint: SkPaint, shipSize: number, headX?: number, headY?: number): void {
+    if (typeof Skia === "undefined" || !Skia.Color) return;
     paint.setColor(Skia.Color("cyan"));
     paint.setStyle(Skia.PaintStyle.Fill);
     for (let i = 0; i < trail.count; i++) {
@@ -148,7 +153,9 @@ export function drawSkiaAsteroidShipTrail(canvas: SkCanvas, trail: TrailComponen
           : trail.points[index];
 
         if (!p) continue;
-        paint.setAlphaf((i / trail.count) * 0.4);
-        canvas.drawCircle(p.x, p.y, 1.5, paint);
+        const ratio = i / trail.count;
+        paint.setAlphaf(ratio * 0.4);
+        const currentSize = 1 + ratio * (shipSize / 3);
+        canvas.drawCircle(p.x, p.y, currentSize, paint);
     }
 }

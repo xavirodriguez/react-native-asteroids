@@ -51,8 +51,8 @@ export function initializeAsteroidsRenderer(renderer: Renderer<unknown>): void {
       skiaRenderer.registerShape("triangle", drawSkiaShip);
       skiaRenderer.registerShape("ufo", drawSkiaUfo);
       skiaRenderer.registerPostEntityDrawer("triangle", drawSkiaAsteroidShipTrailDrawer);
-      renderer.registerShape("bullet_shape", drawSkiaBullet);
-      renderer.registerShape("particle", drawSkiaParticle);
+      skiaRenderer.registerShape("bullet_shape", drawSkiaBullet);
+      skiaRenderer.registerShape("particle", drawSkiaParticle);
       renderer.registerBackgroundEffect("starfield", skiaStarfieldEffect);
     } catch (e) {
       console.warn("Failed to load Skia visuals:", e instanceof Error ? e.stack : String(e));
