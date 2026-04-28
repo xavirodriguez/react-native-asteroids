@@ -24,6 +24,7 @@ export type EventHandler<T = unknown> = (payload: T, event: string) => void;
  */
 export class EventBus {
   private handlers = new Map<string, Set<EventHandler<unknown>>>();
+  private deferredQueue: Array<{ event: string; payload?: unknown }> = [];
   private emitDepth = 0;
   private readonly MAX_RECURSION = 10;
 
@@ -101,11 +102,37 @@ export class EventBus {
   }
 
   /**
+   * Enqueues an event to be processed later via processDeferred().
+   *
+   * @param event - Event name.
+   * @param payload - Event data.
+   */
+  public emitDeferred<T = unknown>(event: string, payload?: T): void {
+    this.deferredQueue.push({ event, payload });
+  }
+
+  /**
+   * Processes all events currently in the deferred queue.
+   */
+  public processDeferred(): void {
+    if (this.deferredQueue.length === 0) return;
+
+    const queue = this.deferredQueue;
+    this.deferredQueue = [];
+
+    for (let i = 0; i < queue.length; i++) {
+      const item = queue[i];
+      this.emit(item.event, item.payload);
+    }
+  }
+
+  /**
    * Clears handlers matching a pattern or all if none provided.
    */
   public clear(pattern?: string): void {
     if (!pattern) {
       this.handlers.clear();
+      this.deferredQueue = [];
       return;
     }
 
@@ -117,8 +144,10 @@ export class EventBus {
           this.handlers.delete(event);
         }
       }
+      this.deferredQueue = this.deferredQueue.filter(item => !item.event.startsWith(prefix));
     } else {
       this.handlers.delete(pattern);
+      this.deferredQueue = this.deferredQueue.filter(item => item.event !== pattern);
     }
   }
 

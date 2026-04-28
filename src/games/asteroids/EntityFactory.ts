@@ -195,7 +195,8 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
     type: "LootTable",
     drops: [
       { type: "triple_shot", chance: size === "large" ? 0.2 : 0.05, config: { duration: 8000 } },
-      { type: "shield", chance: 0.05, config: { duration: 5000 } }
+      { type: "shield", chance: 0.05, config: { duration: 5000 } },
+      { type: "speed", chance: 0.05, config: { duration: 6000 } }
     ]
   };
   world.addComponent(asteroid, lootTable);

@@ -74,7 +74,7 @@ export class AsteroidsGame
    * Preloads game assets (SFX) into the AudioSystem to prevent cold-start latency.
    */
   private async onPreloadAssets(): Promise<void> {
-    const audio = this.audioSystem;
+    const audio = this.audio;
     try {
       await Promise.all([
         audio.loadSFX("explosion", "/assets/audio/explosion.wav"),

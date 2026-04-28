@@ -14,15 +14,19 @@ import { ModifierStackComponent } from "../../../engine/core/CoreComponents";
  */
 export const ShipPhysics = {
   applyRotation(world: World, entity: number, pos: TransformComponent, input: InputComponent, dtSeconds: number, config: typeof GAME_CONFIG = GAME_CONFIG): void {
+    const modifiers = world.getComponent<ModifierStackComponent>(entity, "ModifierStack")?.modifiers || [];
+    const speedMod = modifiers.find(m => m.type === "speed");
+    const rotationMultiplier = speedMod ? 1.5 : 1.0;
+
     if (input.rotateLeft) {
       world.mutateComponent(entity, "Transform", (t: TransformComponent) => {
-        t.rotation -= config.SHIP_ROTATION_SPEED * dtSeconds;
+        t.rotation -= config.SHIP_ROTATION_SPEED * rotationMultiplier * dtSeconds;
         t.dirty = true;
       });
     }
     if (input.rotateRight) {
       world.mutateComponent(entity, "Transform", (t: TransformComponent) => {
-        t.rotation += config.SHIP_ROTATION_SPEED * dtSeconds;
+        t.rotation += config.SHIP_ROTATION_SPEED * rotationMultiplier * dtSeconds;
         t.dirty = true;
       });
     }
@@ -30,9 +34,13 @@ export const ShipPhysics = {
 
   applyThrust(world: World, entity: number, position: TransformComponent, velocity: VelocityComponent, input: InputComponent, dtSeconds: number, ctx?: SimulationContext, config: typeof GAME_CONFIG = GAME_CONFIG): void {
     if (input.thrust) {
+      const modifiers = world.getComponent<ModifierStackComponent>(entity, "ModifierStack")?.modifiers || [];
+      const speedMod = modifiers.find(m => m.type === "speed");
+      const thrustMultiplier = speedMod ? 2.0 : 1.0;
+
       world.mutateComponent(entity, "Velocity", (v: VelocityComponent) => {
-        v.dx += Math.cos(position.rotation) * config.SHIP_THRUST * dtSeconds;
-        v.dy += Math.sin(position.rotation) * config.SHIP_THRUST * dtSeconds;
+        v.dx += Math.cos(position.rotation) * config.SHIP_THRUST * thrustMultiplier * dtSeconds;
+        v.dy += Math.sin(position.rotation) * config.SHIP_THRUST * thrustMultiplier * dtSeconds;
       });
 
       if (ctx?.isResimulating) return;
