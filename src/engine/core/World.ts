@@ -392,10 +392,9 @@ export class World {
       componentSet.add(type);
       this.notifyQueries(entity, componentSet, type);
       this._structureVersion++;
-    } else {
-      this._stateVersion++;
     }
 
+    this._stateVersion++;
     this.updateComponentVersion(entity, type);
     return component;
   }
