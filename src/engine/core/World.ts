@@ -661,6 +661,7 @@ export class World {
     this.activeEntities.clear();
     this.componentMaps.clear();
     this.componentIndex.clear();
+    this.componentVersions.clear();
     this.entityComponentSets.clear();
     this.queries.clear();
     this.queriesByComponent.clear();
@@ -856,6 +857,7 @@ export class World {
     this.componentMaps.forEach((componentMap, type) => {
       if (componentMap.delete(entity)) {
         this.componentIndex.get(type)?.delete(entity);
+        this.componentVersions.get(type)?.delete(entity);
       }
     });
   }

@@ -214,7 +214,7 @@ export class AsteroidsGame
       if (localPlayerId !== undefined) {
           const currentTrans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(localPlayerId, "Transform");
           if (currentTrans) {
-              visualMismatches.set(localPlayerId, { x: currentTrans.x, y: currentTrans.y } as any);
+              visualMismatches.set(localPlayerId, { dx: currentTrans.x, dy: currentTrans.y });
           }
       }
 
@@ -240,10 +240,11 @@ export class AsteroidsGame
           if (lp !== undefined) {
             const inputComp = this.world.getComponent<import("./types/AsteroidTypes").InputComponent>(lp, "Input");
             if (inputComp) {
-              inputComp.rotateLeft = input.actions.includes("rotateLeft");
-              inputComp.rotateRight = input.actions.includes("rotateRight");
-              inputComp.thrust = input.actions.includes("thrust");
+              inputComp.rotateLeft = input.actions.includes("rotateLeft") || (input.axes?.rotate_left ?? 0) > 0;
+              inputComp.rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;
+              inputComp.thrust = input.actions.includes("thrust") || (input.axes?.thrust ?? 0) > 0;
               inputComp.shoot = input.actions.includes("shoot");
+              inputComp.hyperspace = input.actions.includes("hyperspace");
             }
           }
           DeterministicSimulation.update(this.world, 16.66, { isResimulating: true });
