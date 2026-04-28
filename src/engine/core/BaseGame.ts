@@ -6,6 +6,7 @@ import { InputBuffer } from "../network/InputBuffer";
 import { NetworkTransport } from "../network/NetworkTransport";
 import { ReplayRecorder } from "../debug/ReplayRecorder";
 import { AudioSystem } from "./AudioSystem";
+import { SpatialGrid } from "../physics/utils/SpatialGrid";
 import { SceneManager } from "../scenes/SceneManager";
 import { RandomService } from "../utils/RandomService";
 import type { IGame, UpdateListener } from "./IGame";
@@ -67,6 +68,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected networkTransport?: NetworkTransport;
   protected replayRecorder: ReplayRecorder;
   public readonly audio: AudioSystem;
+  public readonly spatialGrid: SpatialGrid;
   protected currentTick: number = 0;
   protected currentSeed: number = 0;
   public isMultiplayer: boolean;
@@ -94,6 +96,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.inputBuffer = new InputBuffer();
     this.replayRecorder = new ReplayRecorder();
     this.audio = new AudioSystem();
+    this.spatialGrid = new SpatialGrid(100);
     this.hierarchySystem = new HierarchySystem();
     this.interpolationPrepSystem = new InterpolationPrepSystem();
 
@@ -438,6 +441,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     world.setResource("EventBus", this.eventBus);
     world.setResource("UnifiedInputSystem", this.unifiedInput);
     world.setResource("AudioSystem", this.audio);
+    world.setResource("SpatialGrid", this.spatialGrid);
 
     // Prevent accumulation of systems during restarts if they already exist in this world instance
     const existingSystems = world.systemsList;

@@ -1,6 +1,7 @@
 import { World } from "../../../core/World";
 import { CollisionSystem2D } from "../CollisionSystem2D";
 import { TransformComponent, Collider2DComponent, ContinuousColliderComponent, VelocityComponent, CollisionEventsComponent } from "../../../types/EngineTypes";
+import { SpatialGrid } from "../../utils/SpatialGrid";
 
 describe("CollisionSystem2D CCD Threshold", () => {
   it("should skip CCD if relative velocity is below threshold", () => {
@@ -30,6 +31,9 @@ describe("CollisionSystem2D CCD Threshold", () => {
 
   it("should trigger CCD if relative velocity is above threshold", () => {
     const world = new World();
+    const grid = new SpatialGrid(100);
+    world.setResource("SpatialGrid", grid);
+
     const system = new CollisionSystem2D();
     system.useSpatialHash(100); // Force candidates
 
@@ -45,6 +49,10 @@ describe("CollisionSystem2D CCD Threshold", () => {
     world.addComponent(entityB, { type: "Collider2D", shape: { type: "circle", radius: 10 }, offsetX: 0, offsetY: 0, layer: 1, mask: 1, isTrigger: false, enabled: true } as Collider2DComponent);
     world.addComponent(entityB, { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent);
     world.addComponent(entityB, { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] } as CollisionEventsComponent);
+
+    // Populate grid manually since we don't have SpatialPartitioningSystem running here
+    grid.insert(entityA, { minX: -10, minY: -10, maxX: 10, maxY: 10 });
+    grid.insert(entityB, { minX: 15, minY: -10, maxX: 35, maxY: 10 });
 
     const transA = world.getComponent<TransformComponent>(entityA, "Transform")!;
 

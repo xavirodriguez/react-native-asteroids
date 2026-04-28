@@ -1,33 +1,31 @@
 ## 🔍 Cuello de botella actual
 
-**Inercia Funcional y Falta de Profundidad Sistémica (Engagement Depth).**
+**Sobrecarga de Comunicación y Sincronización en Red (Network Jitter & Bandwidth).**
 
-Tras la implementación del Status Effect System (SES) y las mejoras en estabilidad, el motor ha superado sus bloqueos estructurales inmediatos. Sin embargo, se ha detectado que la "profundidad de juego" es limitada debido a la falta de interacción dinámica del jugador con el mundo y un feedback sensorial incompleto.
+Tras optimizar la simulación mediante **Unified Spatial Simulation Culling (USSC)**, el motor es capaz de procesar miles de entidades localmente. Sin embargo, en entornos multijugador, el envío del estado completo del mundo (`WorldSnapshot`) por cada tick es insostenible. La falta de un sistema de **Snapshot Delta** y **Entity Interest Management** satura el ancho de banda y provoca latencia perceptible (jitter) incluso con un número moderado de entidades activas.
 
-## 🛠️ Solución propuesta (FASE: REFORZAMIENTO Y ECONOMÍA)
+## 🛠️ Solución propuesta (FASE: ESCALABILIDAD Y RED)
 
-1.  **Framework de Power-ups "Loot-Driven"**: Implementación de `LootSystem` y `PowerUpSystem`. Aprovecha el `ModifierStack` existente para permitir que la destrucción de asteroides genere recompensas tácticas (disparo triple, escudos, velocidad).
-2.  **Middleware de Audio Semántico**: Centralización del feedback auditivo en `BaseGame`. Se mapean eventos abstractos (`asteroid:destroyed`, `ship:shoot`) a efectos sonoros concretos, desacoplando la lógica de juego del motor de audio.
-3.  **Disciplina ECS (Seguimiento de Estado)**: Migración masiva hacia `mutateComponent`. Se garantiza que cualquier cambio en los datos de un componente incremente el `_stateVersion` del `World`, habilitando optimizaciones en el Renderer y trazabilidad total en herramientas de depuración.
+1.  **Unified Spatial Simulation Culling (USSC) [IMPLEMENTADO]**: Integración de `SpatialGrid` como recurso global y `SpatialPartitioningSystem`. Los sistemas de física y partículas ahora son proporcionales al área visible, permitiendo densidades masivas de entidades.
+2.  **Snapshot Delta Compression**: Implementación de un sistema de serialización diferencial que solo envíe los componentes mutados (detectados vía `stateVersion`) en lugar de snapshots completos.
+3.  **Interest Management Espacial**: Utilizar el `SpatialGrid` para filtrar qué entidades se envían a cada cliente, basándose en su proximidad espacial, reduciendo drásticamente el tráfico de red innecesario.
 
-## ⚙️ Diseño técnico
+## ⚙️ Diseño técnico (Próximo Hito)
 
 -   **Componentes**:
-    -   `LootTableComponent`: Define probabilidades de drop.
-    -   `PowerUpComponent`: Metadatos del ítem recolectable.
+    -   `NetworkReplicationComponent`: Marca qué propiedades deben sincronizarse y su prioridad.
 -   **Sistemas**:
-    -   `LootSystem`: Escucha eventos de destrucción y spawnea entidades con `TTLComponent`.
-    -   `PowerUpSystem`: Detecta colisiones jugador-ítem e inyecta modificadores en el `ModifierStack`.
--   **Integración de Audio**: El `BaseGame` actúa como puente semántico, escuchando el `EventBus` global y despachando comandos al `AudioSystem`.
+    -   `NetworkDeltaSystem`: Compara el estado actual con el último ACK del cliente y genera un paquete de cambios (diff).
+    -   `InterestManagerSystem`: Consulta el `SpatialGrid` para calcular el conjunto de entidades relevantes para cada socket de jugador.
 
 ## 🎮 Impacto en el juego
 
--   **Game Feel**: El audio síncrono y la variabilidad de mecánicas mediante power-ups transforman la experiencia de "demo técnica" a "juego sólido".
--   **Trazabilidad**: La disciplina de mutación permite que el `StateHasher` y el `DebugOverlay` detecten cambios de forma reactiva y determinista.
--   **Mantenibilidad**: Los nuevos efectos se definen como datos (`Modifiers`), no como código nuevo en sistemas de física.
+-   **Rendimiento Local**: La CPU se libera de procesar lógica invisible, manteniendo 60 FPS estables incluso con miles de asteroides/partículas en el "universo" extendido.
+-   **Experiencia Online**: Reducción del uso de banda de ~80%, permitiendo partidas con más jugadores y proyectiles sin lag.
+-   **Game Feel**: La consistencia entre lo que se simula y lo que se ve mejora gracias a la reducción de paquetes perdidos o retrasados.
 
 ## 🚀 Qué desbloquea después
 
-**Simulación de Alta Densidad (Spatial Culling para Simulación).**
+**IA de Enjambre (Swarm AI) de Larga Distancia.**
 
-Con un bucle de juego divertido y mecánicamente completo, el siguiente límite es el volumen de entidades. El avance hacia el **Culling Espacial Global** es el próximo hito: optimizar no solo las colisiones, sino la simulación misma (`MovementSystem`, `ParticleSystem`) para que solo procese entidades en celdas activas, permitiendo miles de fragmentos de asteroides simultáneos a 60 FPS.
+Con una red eficiente y simulación culleada, el motor podrá gestionar naves enemigas con comportamientos complejos que operan en "sectores" distantes del mundo, permitiendo un diseño de niveles abierto y persistente.
