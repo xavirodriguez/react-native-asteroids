@@ -77,6 +77,8 @@ export class World {
   private _entitiesCacheVersion = -1;
   /** Incremented on data changes or manual notification. */
   private _stateVersion = 0;
+  /** @internal */
+  private componentVersions = new Map<string, Map<Entity, number>>();
   /** Current simulation tick. */
   private _tick = 0;
 
@@ -129,6 +131,15 @@ export class World {
       }
     }
     return this.sortedSystems;
+  }
+
+  private updateComponentVersion(entity: Entity, type: string): void {
+    let typeMap = this.componentVersions.get(type);
+    if (!typeMap) {
+      typeMap = new Map();
+      this.componentVersions.set(type, typeMap);
+    }
+    typeMap.set(entity, this._stateVersion);
   }
 
   /**
@@ -232,17 +243,22 @@ export class World {
     this.componentIndex.clear();
     this.entityComponentSets.clear();
 
+    this.componentVersions.clear();
+
     for (const type in state.componentData) {
       const storage = new Map<Entity, Component>();
       const index = new Set<Entity>();
+      const versions = new Map<Entity, number>();
       this.componentMaps.set(type, storage);
       this.componentIndex.set(type, index);
+      this.componentVersions.set(type, versions);
 
       for (const entityIdStr in state.componentData[type]) {
         const entityId = parseInt(entityIdStr);
         const component = state.componentData[type][entityId] as unknown as Component;
         storage.set(entityId, component);
         index.add(entityId);
+        versions.set(entityId, this._stateVersion);
 
         let componentSet = this.entityComponentSets.get(entityId);
         if (!componentSet) {
@@ -376,10 +392,10 @@ export class World {
       componentSet.add(type);
       this.notifyQueries(entity, componentSet, type);
       this._structureVersion++;
-    } else {
-      this._stateVersion++;
     }
 
+    this._stateVersion++;
+    this.updateComponentVersion(entity, type);
     return component;
   }
 
@@ -431,6 +447,7 @@ export class World {
 
     updater(component);
     this._stateVersion++;
+    this.updateComponentVersion(entity, type);
     this._renderDirty = true;
     return true;
   }
@@ -472,6 +489,7 @@ export class World {
     const componentMap = this.componentMaps.get(type);
     if (componentMap && componentMap.delete(entity)) {
       this.componentIndex.get(type)?.delete(entity);
+      this.componentVersions.get(type)?.delete(entity);
       const componentSet = this.entityComponentSets.get(entity);
       if (componentSet) {
         componentSet.delete(type);
@@ -581,6 +599,54 @@ export class World {
   }
 
   /**
+   * Genera un snapshot parcial que solo contiene los cambios ocurridos desde una versión específica.
+   *
+   * @param sinceVersion - La versión del estado a partir de la cual se calculan los cambios.
+   * @param filterEntities - Opcional. Un conjunto de entidades a las que limitar el snapshot (Culling/Interés).
+   * @returns Un objeto con los datos de componentes modificados y metadatos básicos.
+   */
+  public deltaSnapshot(sinceVersion: number, filterEntities?: Set<Entity>): Partial<WorldSnapshot> {
+    const componentData: ComponentDataSnapshot = {};
+
+    this.componentMaps.forEach((map, type) => {
+      const typeVersions = this.componentVersions.get(type);
+      if (!typeVersions) return;
+
+      const typeData: Record<Entity, SerializedComponent> = {};
+      let hasData = false;
+
+      map.forEach((component, entity) => {
+        // Apply interest filter if provided
+        if (filterEntities && !filterEntities.has(entity)) return;
+
+        const version = typeVersions.get(entity) ?? 0;
+        if (version > sinceVersion) {
+          const serializedComp: SerializedComponent = {};
+          const compAsRecord = component as unknown as Record<string, unknown>;
+
+          for (const key in compAsRecord) {
+            if (typeof compAsRecord[key] !== "function") {
+              serializedComp[key] = compAsRecord[key];
+            }
+          }
+          typeData[entity] = structuredClone(serializedComp) as SerializedComponent;
+          hasData = true;
+        }
+      });
+
+      if (hasData) {
+        componentData[type] = typeData;
+      }
+    });
+
+    return {
+      componentData,
+      stateVersion: this._stateVersion,
+      structureVersion: this._structureVersion
+    };
+  }
+
+  /**
    * Limpia el estado completo del mundo, incluyendo entidades, componentes y queries.
    *
    * @remarks
@@ -594,6 +660,7 @@ export class World {
     this.activeEntities.clear();
     this.componentMaps.clear();
     this.componentIndex.clear();
+    this.componentVersions.clear();
     this.entityComponentSets.clear();
     this.queries.clear();
     this.queriesByComponent.clear();
@@ -789,6 +856,7 @@ export class World {
     this.componentMaps.forEach((componentMap, type) => {
       if (componentMap.delete(entity)) {
         this.componentIndex.get(type)?.delete(entity);
+        this.componentVersions.get(type)?.delete(entity);
       }
     });
   }

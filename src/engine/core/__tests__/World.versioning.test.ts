@@ -17,15 +17,17 @@ describe("World Versioning (Semantic Split)", () => {
 
     world.addComponent(1, { type: "NewComponent" });
     expect(world.structureVersion).toBe(initialStructure + 2);
-    expect(world.stateVersion).toBe(initialState);
+    expect(world.stateVersion).toBe(initialState + 1);
 
     world.removeComponent(1, "NewComponent");
     expect(world.structureVersion).toBe(initialStructure + 3);
-    expect(world.stateVersion).toBe(initialState);
+    // stateVersion is NOT incremented on removeComponent (it's a structural change)
+    expect(world.stateVersion).toBe(initialState + 1);
 
     world.removeEntity(1);
     expect(world.structureVersion).toBe(initialStructure + 4);
-    expect(world.stateVersion).toBe(initialState);
+    // stateVersion is NOT incremented on removeEntity
+    expect(world.stateVersion).toBe(initialState + 1);
   });
 
   it("should increment stateVersion only on component updates or manual notification", () => {

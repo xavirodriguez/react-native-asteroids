@@ -7,12 +7,16 @@ import { DeterministicSimulation } from "../../src/simulation/DeterministicSimul
 import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "../../src/engine/core/CoreComponents";
 import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
 import { InputComponent, ShipComponent } from "../../src/games/asteroids/types/AsteroidTypes";
+import { InterestManagementSystem } from "../../src/engine/systems/InterestManagementSystem";
+import { SpatialPartitioningSystem } from "../../src/engine/systems/SpatialPartitioningSystem";
+import { SpatialGrid } from "../../src/engine/physics/utils/SpatialGrid";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
   private fixedTimeStep = 16.66; // 60 FPS
   private inputBuffers = new Map<string, InputFrame[]>();
   private stateHistory = new Map<number, Map<string, EntitySnapshot>>();
+  private clientAcks = new Map<string, number>(); // sessionId -> lastAckedStateVersion
   private replayFrames: ReplayFrame[] = [];
   private world: World;
   private playerEntities = new Map<string, number>();
@@ -49,6 +53,9 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     });
 
     this.onMessage("sync_tick", (client, data) => {
+      if (data?.lastAckedVersion !== undefined) {
+        this.clientAcks.set(client.sessionId, data.lastAckedVersion);
+      }
       client.send("sync_tick", {
         serverTick: this.state.serverTick,
         timestamp: data?.timestamp ?? 0
@@ -63,7 +70,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
 
     // Initialized ECS world
     this.world = new World();
+    this.world.setResource("SpatialGrid", new SpatialGrid());
     this.world.addComponent(this.world.createEntity(), { type: "GameState", score: 0 } as Component);
+    this.world.addSystem(new SpatialPartitioningSystem());
+    this.world.addSystem(new InterestManagementSystem());
   }
 
   onJoin(client: Client, options: { name?: string }) {
@@ -99,6 +109,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     } catch (_err) {
       this.state.players.delete(client.sessionId);
       this.inputBuffers.delete(client.sessionId);
+      this.clientAcks.delete(client.sessionId);
     }
   }
 
@@ -132,11 +143,33 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     // 2. Run Shared Deterministic Simulation
     DeterministicSimulation.update(this.world, this.fixedTimeStep, { isResimulating: false });
 
+    // 2.1 Run server-only systems (Spatial Partitioning, Interest Management)
+    // We execute systems manually to avoid advancing world.tick (already incremented by loop)
+    this.world.systemsList.forEach(system => system.update(this.world, 0));
+    this.world.flush();
+
     // 3. Sync ECS World back to Colyseus Schema
     this.syncWorldToSchema();
 
-    // 4. Update full world state for clients (for rollback)
-    this.state.fullWorldState = JSON.stringify(this.world.snapshot());
+    // 4. Update per-client delta snapshots (Interest-based)
+    const interestMap = this.world.getResource<Map<string, Set<number>>>("InterestMap");
+    this.clients.forEach(client => {
+        const lastAck = this.clientAcks.get(client.sessionId) ?? 0;
+        const interest = interestMap?.get(client.sessionId);
+        const delta = this.world.deltaSnapshot(lastAck, interest);
+
+        // We send the delta specifically to this client
+        client.send("world_delta", {
+            tick: this.state.serverTick,
+            delta: JSON.stringify(delta)
+        });
+    });
+
+    // Optimization: Only update fullWorldState occasionally for late joiners
+    // to avoid broadcasting large strings every tick.
+    if (this.state.serverTick % 60 === 0) {
+        this.state.fullWorldState = JSON.stringify(this.world.snapshot());
+    }
 
     // 5. Record for Replay
     this.replayFrames.push({
