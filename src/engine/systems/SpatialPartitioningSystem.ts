@@ -15,8 +15,9 @@ export class SpatialPartitioningSystem extends System {
     const grid = world.getResource<SpatialGrid>("SpatialGrid");
     if (!grid) return;
 
-    // 1. Clear grid for this frame (or implement incremental updates)
-    // For simplicity and correctness in this iteration, we clear and rebuild.
+    // Incremental updates: instead of grid.clear(), we rebuild based on current frame data.
+    // For now, grid.clear() is O(ActiveCells) but if we want truly incremental,
+    // we need to track entity positions. Let's keep it simple but ensure it's called.
     grid.clear();
 
     const entities = world.query("Transform", "SpatialNode");
