@@ -80,7 +80,9 @@ export class SpatialPartitioningSystem extends System {
       }
 
       // Update last known cells
-      node.lastCellKeys = grid.getIntersectingCells(aabb);
+      world.mutateComponent(entity, "SpatialNode", n => {
+          n.lastCellKeys = grid.getIntersectingCells(aabb);
+      });
     }
   }
 }
