@@ -166,6 +166,7 @@ export class DebugManager {
 
     if (world !== this.lastWorld) {
       this.handleWorldChange(world);
+      this.lastSnapshot = null;
     }
 
     this.frameCount++;
