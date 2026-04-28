@@ -43,12 +43,16 @@ export function initializeAsteroidsRenderer(renderer: Renderer<unknown>): void {
     // renderer.registerForegroundEffect("crt", asteroidsCRTEffect);
   } else if (renderer.type === "skia") {
     try {
-
+      const { drawSkiaAsteroidShipTrailDrawer } = require("./AsteroidSkiaDrawers");
       const { drawSkiaShip, drawSkiaUfo, skiaStarfieldEffect, skiaScreenShakeEffect: _skiaScreenShakeEffect, drawSkiaBullet, drawSkiaParticle } = require("./AsteroidsSkiaVisuals");
-      renderer.registerShape("triangle", drawSkiaShip);
-      renderer.registerShape("ufo", drawSkiaUfo);
-      renderer.registerShape("bullet_shape", drawSkiaBullet);
-      renderer.registerShape("particle", drawSkiaParticle);
+
+      const skiaRenderer = renderer as unknown as import("../../../engine/rendering/SkiaRenderer").SkiaRenderer;
+
+      skiaRenderer.registerShape("triangle", drawSkiaShip);
+      skiaRenderer.registerShape("ufo", drawSkiaUfo);
+      skiaRenderer.registerPostEntityDrawer("triangle", drawSkiaAsteroidShipTrailDrawer);
+      skiaRenderer.registerShape("bullet_shape", drawSkiaBullet);
+      skiaRenderer.registerShape("particle", drawSkiaParticle);
       renderer.registerBackgroundEffect("starfield", skiaStarfieldEffect);
     } catch (e) {
       console.warn("Failed to load Skia visuals:", e instanceof Error ? e.stack : String(e));

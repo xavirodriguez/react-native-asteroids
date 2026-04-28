@@ -145,7 +145,7 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
   const radius = GAME_CONFIG.ASTEROID_RADII[size];
   const gameplayRandom = RandomService.getInstance("gameplay");
   const angle = gameplayRandom.next() * Math.PI * 2;
-  const speed = gameplayRandom.nextRange(20, 70) * (size === "large" ? 1 : size === "medium" ? 1.5 : 2);
+  const speed = gameplayRandom.nextRange(60, 160) * (size === "large" ? 1 : size === "medium" ? 1.5 : 2);
 
   const vertices = [];
   const vertexCount = 8 + gameplayRandom.nextInt(0, 5);
@@ -173,7 +173,7 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
     size: radius,
     color: colors[size],
     rotation: gameplayRandom.next() * Math.PI * 2,
-    angularVelocity: (gameplayRandom.next() - 0.5) * 0.04,
+    angularVelocity: (gameplayRandom.next() - 0.5) * 0.12,
     vertices,
     data: { internalLines }
   } as RenderComponent);
