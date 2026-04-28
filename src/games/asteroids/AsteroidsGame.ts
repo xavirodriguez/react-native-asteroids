@@ -208,7 +208,7 @@ export class AsteroidsGame
     }
 
     // Cleanup history
-    this.inputHistory = this.inputHistory.filter(i => i.tick >= serverTick);
+    this.inputHistory = this.inputHistory.filter(i => i.tick > serverTick);
   }
 
   protected registerSystems(): void {

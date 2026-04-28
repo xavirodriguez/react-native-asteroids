@@ -25,7 +25,10 @@ export function sendInput(type: string, input: unknown) {
 
 export function getRoom() { return room; }
 
-export function disconnect() {
+export function disconnect(options?: { resetClient?: boolean }) {
     room?.leave();
     room = null;
+    if (options?.resetClient) {
+        client = null;
+    }
 }

@@ -16,6 +16,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private replayFrames: ReplayFrame[] = [];
   private world: World;
   private playerEntities = new Map<string, number>();
+  private nextPlayerNumber = 1;
 
   private spawnAsteroids(count: number) {
     const gameplayRandom = RandomService.getInstance("gameplay");
@@ -47,14 +48,15 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       this.inputBuffers.set(client.sessionId, buffer);
     });
 
-    this.onMessage("sync_tick", (client) => {
+    this.onMessage("sync_tick", (client, data) => {
       client.send("sync_tick", {
         serverTick: this.state.serverTick,
-        timestamp: 0 // Date.now() removed for determinism, if needed use tick
+        timestamp: data?.timestamp ?? 0
       });
     });
 
     this.onMessage("start_game", () => {
+      if (this.state.gameStarted) return;
       this.state.gameStarted = true;
       this.spawnAsteroids(6);
     });
@@ -68,7 +70,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     const gameplayRandom = RandomService.getInstance("gameplay");
     const player = new Player();
     player.sessionId = client.sessionId;
-    player.name = options.name || `Player ${this.clients.length}`;
+    player.name = options.name || `Player ${this.nextPlayerNumber++}`;
     player.x = gameplayRandom.nextRange(100, 700);
     player.y = gameplayRandom.nextRange(100, 500);
     player.angle = 0;
@@ -90,7 +92,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     } as ShipComponent);
   }
 
-  async onLeave(client: Client, _code: number) {
+  async onLeave(client: Client, code: number) {
     try {
       if (code === CloseCode.CONSENTED) throw new Error("consented leave");
       await this.allowReconnection(client, 10);
@@ -105,7 +107,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.state.serverTick++;
     this.state.lastProcessedTick = this.state.serverTick;
 
-    // 1. Update Inputs in ECS from buffers
+    // 1. Collect and Update Inputs in ECS from buffers
+    const currentInputs: Record<string, InputFrame[]> = {};
     this.state.players.forEach((_player: Player, sessionId: string) => {
       const entity = this.playerEntities.get(sessionId);
       if (entity === undefined) return;
@@ -121,9 +124,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
             input.thrust = frame.actions.includes("thrust") || (frame.axes?.thrust ?? 0) > 0;
             input.shoot = frame.actions.includes("shoot");
             input.hyperspace = frame.actions.includes("hyperspace");
+            currentInputs[sessionId] = [frame];
         }
-        // Cleanup old frames
-        this.inputBuffers.set(sessionId, buffer.filter(f => f.tick >= this.state.serverTick));
       }
     });
 
@@ -134,20 +136,9 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.syncWorldToSchema();
 
     // 4. Update full world state for clients (for rollback)
-    // Only send full snapshot every 3 ticks to reduce bandwidth,
-    // but in a lockstep-like or rollback system we might need it every tick if we don't have delta-sync.
-    // For now, we update it every tick as intended for the current implementation.
     this.state.fullWorldState = JSON.stringify(this.world.snapshot());
 
     // 5. Record for Replay
-    const currentInputs: Record<string, InputFrame[]> = {};
-    this.state.players.forEach((_player: Player, sessionId: string) => {
-        const buffer = this.inputBuffers.get(sessionId);
-        if (buffer) {
-            currentInputs[sessionId] = buffer.filter(f => f.tick === this.state.serverTick);
-        }
-    });
-
     this.replayFrames.push({
         tick: this.state.serverTick,
         inputs: currentInputs,
@@ -159,7 +150,15 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         this.replayFrames.shift();
     }
 
-    // 6. Store history for lag compensation
+    // 6. Cleanup input buffers (processed ticks)
+    this.state.players.forEach((_player: Player, sessionId: string) => {
+      const buffer = this.inputBuffers.get(sessionId);
+      if (buffer) {
+        this.inputBuffers.set(sessionId, buffer.filter(f => f.tick > this.state.serverTick));
+      }
+    });
+
+    // 7. Store history for lag compensation
     const snapshot = new Map<string, EntitySnapshot>();
     this.state.players.forEach((p: Player, id: string) => {
         snapshot.set(id, { tick: this.state.serverTick, x: p.x, y: p.y, angle: p.angle, timestamp: 0 });
@@ -168,12 +167,12 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         snapshot.set(id, { tick: this.state.serverTick, x: a.x, y: a.y, timestamp: 0 });
     });
     this.stateHistory.set(this.state.serverTick, snapshot);
-    if (this.stateHistory.size > 60) {
-        const oldestTick = this.state.serverTick - 60;
+    while (this.stateHistory.size > 60) {
+        const oldestTick = Math.min(...this.stateHistory.keys());
         this.stateHistory.delete(oldestTick);
     }
 
-    // 7. Check Game Over to broadcast replay
+    // 8. Check Game Over to broadcast replay
     if (this.state.gameOver && this.replayFrames.length > 0) {
         this.broadcast("replay", {
             version: 1,
@@ -236,7 +235,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         asteroid.size = asteroidComp.size === "large" ? 3 : asteroidComp.size === "medium" ? 2 : 1;
     });
     // Cleanup removed asteroids
-    this.state.asteroids.forEach((_, id) => {
+    this.state.asteroids.forEach((_: Asteroid, id: string) => {
         if (!currentAsteroidIds.has(id)) this.state.asteroids.delete(id);
     });
 
@@ -255,8 +254,9 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         }
         bullet.x = pos.x;
         bullet.y = pos.y;
+        // TODO: assign bullet.ownerId once projectile owner is tracked in ECS.
     });
-    this.state.bullets.forEach((_, id) => {
+    this.state.bullets.forEach((_: Bullet, id: string) => {
         if (!currentBulletIds.has(id)) this.state.bullets.delete(id);
     });
 
@@ -264,7 +264,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     if (gameState && this.state.players.size > 0) {
         // Simple game over check
         let anyAlive = false;
-        this.state.players.forEach(p => { if (p.alive) anyAlive = true; });
+        this.state.players.forEach((p: Player) => { if (p.alive) anyAlive = true; });
         if (!anyAlive && this.state.gameStarted) this.state.gameOver = true;
     }
   }
