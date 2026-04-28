@@ -195,6 +195,16 @@ export class World {
             delete (serializedComp as SerializedComponent).onReclaim;
         }
 
+        if (type === "Juice") {
+          const juiceComp = serializedComp as any;
+          if (Array.isArray(juiceComp.animations)) {
+            juiceComp.animations = juiceComp.animations.map((anim: any) => {
+              const { onComplete, ...rest } = anim;
+              return rest;
+            });
+          }
+        }
+
         // structuredClone is much faster and safer than JSON.parse(JSON.stringify)
         componentData[type][entity] = structuredClone(serializedComp) as SerializedComponent;
       }

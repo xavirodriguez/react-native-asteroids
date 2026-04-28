@@ -1,5 +1,6 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
+import { RandomService } from "../../../engine/utils/RandomService";
 import { BirdComponent, FLAPPY_CONFIG, FlappyBirdInputComponent } from "../types/FlappyBirdTypes";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
 import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
