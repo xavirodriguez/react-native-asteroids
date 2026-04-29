@@ -6,7 +6,7 @@ import { World } from "../../src/engine/core/World";
 import { DeterministicSimulation } from "../../src/simulation/DeterministicSimulation";
 import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "../../src/engine/core/CoreComponents";
 import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
-import { InputComponent, ShipComponent } from "../../src/games/asteroids/types/AsteroidTypes";
+import { InputComponent, ShipComponent, BulletComponent } from "../../src/games/asteroids/types/AsteroidTypes";
 import { InterestManagementSystem } from "../../src/engine/systems/InterestManagementSystem";
 import { SpatialPartitioningSystem } from "../../src/engine/systems/SpatialPartitioningSystem";
 import { SpatialGrid } from "../../src/engine/physics/utils/SpatialGrid";
@@ -287,7 +287,11 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         }
         bullet.x = pos.x;
         bullet.y = pos.y;
-        // TODO: assign bullet.ownerId once projectile owner is tracked in ECS.
+
+        const bulletComp = this.world.getComponent<BulletComponent>(entity, "Bullet");
+        if (bulletComp?.ownerId) {
+            bullet.ownerId = bulletComp.ownerId;
+        }
     });
     this.state.bullets.forEach((_: Bullet, id: string) => {
         if (!currentBulletIds.has(id)) this.state.bullets.delete(id);
