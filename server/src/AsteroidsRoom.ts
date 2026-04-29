@@ -58,7 +58,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       }
       client.send("sync_tick", {
         serverTick: this.state.serverTick,
-        timestamp: Date.now()
+        timestamp: data?.timestamp ?? 0
       });
     });
 
