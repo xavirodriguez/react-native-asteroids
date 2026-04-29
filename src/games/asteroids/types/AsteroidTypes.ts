@@ -25,6 +25,7 @@ export interface InputComponent extends Component, InputState {
  */
 export interface BulletComponent extends Component {
   type: "Bullet";
+  ownerId?: string;
 }
 
 /**

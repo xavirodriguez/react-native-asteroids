@@ -142,14 +142,16 @@ export const ShipPhysics = {
     if (input.shoot && input.shootCooldownRemaining <= 0) {
       const modifiers = world.getComponent<ModifierStackComponent>(entity, "ModifierStack")?.modifiers || [];
       const isTripleShot = modifiers.some(m => m.type === "triple_shot");
+      const shipComp = world.getComponent<import("../types/AsteroidTypes").ShipComponent>(entity, "Ship");
+      const ownerId = shipComp?.sessionId;
 
       if (isTripleShot) {
-        const b1 = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation });
-        const b2 = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation - 0.2 });
-        const b3 = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation + 0.2 });
+        const b1 = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation, ownerId });
+        const b2 = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation - 0.2, ownerId });
+        const b3 = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation + 0.2, ownerId });
         if (onShoot) { onShoot(b1); onShoot(b2); onShoot(b3); }
       } else {
-        const bullet = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation });
+        const bullet = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation, ownerId });
         if (onShoot) onShoot(bullet);
       }
 

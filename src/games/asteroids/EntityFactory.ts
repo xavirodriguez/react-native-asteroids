@@ -109,7 +109,7 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
 /**
  * Crea un proyectil con velocidad inicial basada en el ángulo de disparo.
  */
-export const createBullet = ({ world, x, y, angle }: { world: World; x: number; y: number; angle: number }) => {
+export const createBullet = ({ world, x, y, angle, ownerId }: { world: World; x: number; y: number; angle: number; ownerId?: string }) => {
   const bullet = world.createEntity();
   const dx = Math.cos(angle) * GAME_CONFIG.BULLET_SPEED;
   const dy = Math.sin(angle) * GAME_CONFIG.BULLET_SPEED;
@@ -128,7 +128,7 @@ export const createBullet = ({ world, x, y, angle }: { world: World; x: number; 
     enabled: true
   } as Collider2DComponent);
   world.addComponent(bullet, { type: "TTL", remaining: GAME_CONFIG.BULLET_TTL, total: GAME_CONFIG.BULLET_TTL } as TTLComponent);
-  world.addComponent(bullet, { type: "Bullet" } as BulletComponent);
+  world.addComponent(bullet, { type: "Bullet", ownerId } as BulletComponent);
   world.addComponent(bullet, { type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
   return bullet;
 };

@@ -4,7 +4,6 @@ import { RandomService } from "../../../engine/utils/RandomService";
 import { BirdComponent, FLAPPY_CONFIG, FlappyBirdInputComponent } from "../types/FlappyBirdTypes";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
 import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
-import { RandomService } from "@/src/engine/utils/RandomService";
 
 export class FlappyBirdGlideSystem extends System {
   public update(world: World, deltaTime: number): void {
