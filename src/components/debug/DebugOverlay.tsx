@@ -10,7 +10,7 @@ import {
   Platform
 } from 'react-native';
 import { BaseGame } from '../../engine/core/BaseGame';
-import type { DebugManager, EventLogEntry, FrameStats, ColliderShapeInfo } from '../../engine/debug/DebugManager';
+import type { EventLogEntry, FrameStats, ColliderShapeInfo } from '../../engine/debug/DebugManager';
 import { useDebugManager } from '../../hooks/useGame';
 import Svg, { Circle, Rect } from 'react-native-svg';
 
