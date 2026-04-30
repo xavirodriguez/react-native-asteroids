@@ -59,20 +59,21 @@ export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, ren
 
 import { Platform } from "react-native";
 
-let trailPaint: any = null;
-
-export const drawSkiaAsteroidShipTrailDrawer = (canvas: SkCanvas, entity: Entity, pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number }, _elapsedTime: number, render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null }, world: World) => {
-    if (Platform.OS === "web") return;
-    try {
-        if (typeof Skia === "undefined" || !Skia.Paint) return;
-        const trail = world.getComponent<TrailComponent>(entity, "Trail");
-        if (trail) {
-            if (!trailPaint) {
-                trailPaint = Skia.Paint();
+export const createSkiaAsteroidShipTrailDrawer = () => {
+    let trailPaint: any = null;
+    return (canvas: SkCanvas, entity: Entity, pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number }, _elapsedTime: number, render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null }, world: World) => {
+        if (Platform.OS === "web") return;
+        try {
+            if (typeof Skia === "undefined" || !Skia.Paint) return;
+            const trail = world.getComponent<TrailComponent>(entity, "Trail");
+            if (trail) {
+                if (!trailPaint) {
+                    trailPaint = Skia.Paint();
+                }
+                drawSkiaAsteroidShipTrail(canvas, trail, trailPaint, render.size, pos.x, pos.y);
             }
-            drawSkiaAsteroidShipTrail(canvas, trail, trailPaint, render.size, pos.x, pos.y);
-        }
-    } catch (_e) { /* ignore */ }
+        } catch (_e) { /* ignore */ }
+    };
 };
 
 export const drawSkiaUfo = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => {
