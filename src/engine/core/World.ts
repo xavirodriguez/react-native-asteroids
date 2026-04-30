@@ -463,6 +463,16 @@ export class World {
   }
 
   /**
+   * Comprueba si una entidad existe y está activa en el mundo.
+   *
+   * @param entity - El ID de la entidad a comprobar.
+   * @returns `true` si la entidad existe, `false` en caso contrario.
+   */
+  public hasEntity(entity: Entity): boolean {
+    return this.activeEntities.has(entity);
+  }
+
+  /**
    * Comprueba la existencia de un componente en una entidad de forma eficiente.
    *
    * @param entity - La entidad a consultar.
