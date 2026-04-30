@@ -48,6 +48,7 @@ export class AsteroidsGame
   private inputHistory: InputFrame[] = [];
   private stateHistory = new Map<number, import("../../engine/types/EngineTypes").WorldSnapshot>();
   private lastAuthoritativeTick = 0;
+  private lastDeltaTick = 0;
   private lastProcessedFullStateVersion = -1;
   public readonly gameId = "asteroids";
   private config: typeof GAME_CONFIG;
@@ -139,8 +140,8 @@ export class AsteroidsGame
 
   private handleDeltaServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
     const serverTick = serverState.tick as number;
-    if (serverTick <= this.lastAuthoritativeTick) return;
-    this.lastAuthoritativeTick = serverTick;
+    if (serverTick <= this.lastDeltaTick) return;
+    this.lastDeltaTick = serverTick;
 
     const delta = JSON.parse(serverState.delta as string);
 
@@ -175,11 +176,12 @@ export class AsteroidsGame
 
     // Skip if this full snapshot hasn't changed since last processing
     if (authoritativeSnapshot.stateVersion === this.lastProcessedFullStateVersion) return;
-    this.lastProcessedFullStateVersion = authoritativeSnapshot.stateVersion;
 
     const serverTick = serverState.serverTick as number;
     if (serverTick <= this.lastAuthoritativeTick) return;
+
     this.lastAuthoritativeTick = serverTick;
+    this.lastProcessedFullStateVersion = authoritativeSnapshot.stateVersion;
 
     const predicted = this.stateHistory.get(serverTick);
 
@@ -252,6 +254,7 @@ export class AsteroidsGame
             }
           }
           DeterministicSimulation.update(this.world, 16.66, { isResimulating: true });
+          this.stateHistory.set(input.tick, this.world.snapshot());
         });
 
       // Apply Visual Smoothing (Smooth Error Correction)
