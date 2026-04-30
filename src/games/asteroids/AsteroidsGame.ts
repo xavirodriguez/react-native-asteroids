@@ -79,10 +79,10 @@ export class AsteroidsGame
     const audio = this.audio;
     try {
       await Promise.all([
-        audio.loadSFX("explosion", "/assets/audio/explosion.wav"),
-        audio.loadSFX("hit", "/assets/audio/hit.wav"),
-        audio.loadSFX("shoot", "/assets/audio/shoot.wav"),
-        audio.loadSFX("game_over", "/assets/audio/game_over.wav"),
+        audio.loadSFX("explosion", "/assets/audio/explosion.mp3"),
+        audio.loadSFX("hit", "/assets/audio/hit.mp3"),
+        audio.loadSFX("shoot", "/assets/audio/shoot.mp3"),
+        audio.loadSFX("game_over", "/assets/audio/game_over.mp3"),
       ]);
     } catch (e) {
       console.warn("[Asteroids] Asset preloading failed. Audio may lag on first play.", e);
