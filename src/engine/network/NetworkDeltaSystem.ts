@@ -3,6 +3,7 @@ import { Entity } from "../types/EngineTypes";
 import { ReplicationStateTracker } from "./ReplicationStateTracker";
 import { DeltaPacket, EntityPayload, EntityDeltaPayload } from "./types/ReplicationTypes";
 import { ReplicationPolicy } from "./ReplicationPolicy";
+import { Quantization } from "./Quantization";
 
 /**
  * @responsibility Generate delta packets for clients based on interest and last known state.
@@ -106,6 +107,13 @@ export class NetworkDeltaSystem {
   }
 
   private serializeComponent(component: any): any {
+    if (component.type === "Transform") {
+        return {
+            type: "Transform",
+            ...Quantization.quantizeTransform(component.x, component.y, component.rotation)
+        };
+    }
+
     const serialized: any = {};
     for (const key in component) {
       if (typeof component[key] !== "function" && key !== "onReclaim") {

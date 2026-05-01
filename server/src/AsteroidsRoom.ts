@@ -15,6 +15,7 @@ import { ReplicationStateTracker } from "../../src/engine/network/ReplicationSta
 import { ClientAckTracker } from "../../src/engine/network/ClientAckTracker";
 import { NetworkDeltaSystem } from "../../src/engine/network/NetworkDeltaSystem";
 import { NetworkBudgetManager } from "../../src/engine/network/NetworkBudgetManager";
+import { BinaryCompression } from "../../src/engine/network/BinaryCompression";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
@@ -201,11 +202,13 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
             forceFull
         );
 
-        const serializedPacket = JSON.stringify(deltaPacket);
-        totalSerializationMs += (Date.now() - serializationStart);
-        totalBytesSentThisTick += serializedPacket.length;
+        // Iteration 5: Binary Compression
+        const binaryPacket = BinaryCompression.pack(deltaPacket);
 
-        client.send("world_delta", deltaPacket);
+        totalSerializationMs += (Date.now() - serializationStart);
+        totalBytesSentThisTick += binaryPacket.length;
+
+        client.send("world_delta_bin", binaryPacket);
     });
 
     // Optimization: Only update fullWorldState occasionally for late joiners
