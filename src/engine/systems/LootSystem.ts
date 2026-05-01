@@ -2,8 +2,20 @@
  * System that manages item drops from destroyed entities.
  *
  * This system decouples the destruction of an entity from the spawning of loot.
- * It listens for specific game events (e.g., `asteroid:destroyed`) and uses
- * `LootTableComponent` to determine if and what should be spawned.
+ * It listens for specific game events and uses the `LootTableComponent` to
+ * determine if and what should be spawned.
+ *
+ * @remarks
+ * ### Event Contract
+ * The system expects events to carry the source entity's ID and coordinates:
+ * - `entity:destroyed`: `{ entity: Entity, type: string }`
+ * - `asteroid:destroyed`: `{ entity: Entity, x: number, y: number }`
+ *
+ * ### Spawning Logic
+ * 1. An entity is destroyed.
+ * 2. `LootSystem` retrieves its `LootTableComponent`.
+ * 3. For each entry in `drops`, it rolls a PRNG check against `drop.chance`.
+ * 4. If successful, it creates a new "PowerUp" entity with a `TTLComponent`.
  *
  * @packageDocumentation
  */

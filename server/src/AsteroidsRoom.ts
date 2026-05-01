@@ -18,6 +18,23 @@ import { NetworkBudgetManager } from "../../src/engine/network/NetworkBudgetMana
 import { BinaryCompression } from "../../src/engine/network/BinaryCompression";
 
 /**
+ * Authoritative Game Room for Asteroids.
+ *
+ * This room orchestrates the multiplayer lifecycle, including client synchronization,
+ * input processing, deterministic simulation, and optimized state replication.
+ *
+ * @responsibility Orchestrate the multiplayer game loop on the server.
+ * @responsibility Synchronize the ECS World state with the Colyseus Schema.
+ * @responsibility Implement advanced replication modes (Interest, Delta, Binary).
+ * @responsibility Manage input buffers and state history for lag compensation.
+ *
+ * @remarks
+ * ### Server Update Loop
+ * 1. **Collect Inputs**: Extract pending input frames from client buffers.
+ * 2. **Simulate**: Execute the shared {@link DeterministicSimulation}.
+ * 3. **Sync Schema**: Update the Colyseus schema (Players, Asteroids, Bullets) from ECS.
+ * 4. **Replicate**: Generate and send updates to clients based on the active `REPLICATION_MODE`.
+ * 5. **Cleanup**: Discard processed inputs and manage history buffers.
  * Habitación Colyseus para el juego Asteroids.
  *
  * Gestiona el ciclo de vida del servidor, la recolección de inputs de múltiples clientes,
@@ -151,6 +168,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   }
 
   /**
+   * Main server-side update loop.
+   * Runs at a fixed interval (16.66ms / 60 FPS).
    * Bucle principal de actualización del servidor.
    *
    * @remarks
@@ -340,6 +359,11 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     }
   }
 
+  /**
+   * Synchronizes the authoritative ECS World state into the Colyseus Schema.
+   * This is necessary because the Schema is the source of truth for the clients
+   * that use standard Colyseus state synchronization.
+   */
   private syncWorldToSchema() {
     // Sync Players
     this.playerEntities.forEach((entity, sessionId) => {

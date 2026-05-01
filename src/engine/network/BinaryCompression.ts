@@ -1,6 +1,20 @@
 import { Packr, unpack } from "msgpackr";
 
 /**
+ * Utility for high-performance binary serialization.
+ *
+ * Uses MessagePack (via `msgpackr`) to convert complex JavaScript objects
+ * into compact `Uint8Array` payloads for network transmission.
+ *
+ * @responsibility Handle binary serialization of network packets using MessagePack.
+ * @remarks
+ * ### Serialization Strategy
+ * - **MessagePack**: Chosen for its balance between performance and compression ratio
+ *   compared to Protobuf (no schema required) or JSON (text-based).
+ * - **structuredClone**: Enabled to support complex data types and circular references
+ *   within the object tree.
+ * - **useRecords: false**: Disables record-style optimization to ensure maximum
+ *   compatibility across different versions of the packr library and clients.
  * Utilidad de compresión y serialización binaria basada en MessagePack.
  *
  * @responsibility Transformar objetos JavaScript (snapshots/deltas) en buffers binarios compactos.

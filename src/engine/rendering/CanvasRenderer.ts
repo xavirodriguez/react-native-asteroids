@@ -596,12 +596,23 @@ export class CanvasRenderer implements Renderer {
   }
 
   /**
-   * Ejecuta el pipeline de renderizado completo para el World actual.
+   * Main rendering pipeline using a Decoupled Snapshot strategy.
    *
    * @remarks
-   * El proceso se divide en dos fases:
-   * 1. **Captura (Capture)**: Crea un {@link RenderSnapshot} interpolado del World.
-   * 2. **Dibujo (Draw)**: Ejecuta los comandos del snapshot en el contexto de Canvas.
+   * The pipeline consists of two primary phases:
+   *
+   * ### 1. Capture Phase (`createSnapshot`)
+   * - Reads active entities with `Transform` and `Render` components.
+   * - Calculates visual interpolation using `PreviousTransform` and the `alpha` factor.
+   * - Aggregates global effects like screen shake from all sources.
+   * - Performs **Frustum Culling**: Entities outside the camera viewport are excluded from the snapshot.
+   * - Recycles pre-allocated snapshot objects to avoid GC pressure.
+   *
+   * ### 2. Draw Phase (`renderSnapshot`)
+   * - Sorts the snapshot commands by `zIndex` using a stable sort to prevent flickering.
+   * - Translates and scales the context based on camera and shake offsets.
+   * - Dispatches commands to specialized `ShapeDrawer` callbacks.
+   * - Draws the procedural UI system from its own snapshot.
    *
    * @param world - El mundo ECS fuente de datos.
    * @param alpha - Factor de interpolación [0, 1] para suavizado de movimiento.

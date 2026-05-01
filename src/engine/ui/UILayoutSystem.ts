@@ -11,6 +11,11 @@ import { Entity } from "../core/Entity";
 import { GenericComponent } from "../core/CoreComponents";
 
 /**
+ * UI Layout Engine.
+ *
+ * Resolves positions and dimensions for user interface elements using a hierarchical
+ * constraint system. Supports anchors, relative units (%), flex-like containers,
+ * and world-space attachments.
  * Sistema que resuelve el posicionamiento y dimensionamiento de elementos de interfaz (UI).
  *
  * @responsibility Calcular las coordenadas finales (`computedX`, `computedY`) y dimensiones (`computedWidth`, `computedHeight`) de la UI.
@@ -91,11 +96,19 @@ export class UILayoutSystem extends System {
   }
 
   /**
-   * Resuelve de forma recursiva la posición y tamaño de un elemento y sus hijos.
+   * Recursively resolves the position and size of an element and its children.
+   *
+   * @remarks
+   * ### Layout Hierarchy
+   * 1. **Root Elements**: Positioned relative to the viewport using `anchor` and `offset`.
+   * 2. **Child Elements**: Inherit their parent's computed position and scale their
+   *    relative dimensions (%) based on the parent's `computedWidth/Height`.
+   * 3. **Containers**: Automatically arrange children horizontally or vertically
+   *    with support for alignment and gaps.
    *
    * @param world - El mundo ECS.
    * @param entity - La entidad UI a procesar.
-   * @param childrenByParent - Mapa de relaciones jerárquicas pre-calculado.
+   * @param childrenByParent - Pre-calculated hierarchical mapping.
    *
    * @conceptualRisk [ZALGO_MAPPING] Si `childrenByParent` no incluye a todos los miembros de `uiEntities` de `update()`, algunos elementos quedarán huérfanos.
    */

@@ -65,8 +65,13 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
 
         /**
          * Clock synchronization logic.
-         * Calculates Round Trip Time (RTT) to align client simulation tick with server.
-         * The client stays ahead of the server to ensure inputs arrive before their tick.
+         *
+         * @remarks
+         * Calculates Round Trip Time (RTT) to align client simulation tick with the server.
+         * The client maintains a "lead" (TICK_BUFFER) ahead of the server to ensure
+         * that local inputs arrive at the server before they need to be processed.
+         *
+         * Local Tick = Server Tick + (RTT / 2 / FrameDuration) + Buffer
          */
         joinedRoom.onMessage("sync_tick", (data: { serverTick: number, timestamp: number }) => {
             const now = Date.now();
@@ -80,6 +85,10 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
             console.log(`Synced tick: server=${data.serverTick}, local=${localTickRef.current}, rtt=${rtt}`);
         });
 
+        /**
+         * Handles JSON-based delta state updates.
+         * Extracts the world state version for acknowledgment.
+         */
         joinedRoom.onMessage("world_delta", (data: { tick: number, delta: string }) => {
             // Forward delta to the game via serverState update
             // We only send delta and tick to ensure the game identifies this as a delta update

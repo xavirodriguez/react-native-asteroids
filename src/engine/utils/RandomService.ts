@@ -7,9 +7,16 @@
  * @responsibility Segregar el estado del PRNG entre simulación y presentación.
  *
  * @remarks
- * Se recomienda utilizar `getGameplayRandom()` para lógica que afecte el estado del juego (IA, spawn, daño)
- * con la intención de favorecer la reproducibilidad y el soporte de replay. Para efectos puramente estéticos
- * (partículas, flashes), se sugiere el uso de `getRenderRandom()`.
+ * ### PRNG Streams
+ * 1. **gameplay**: Reserved for state-altering logic (spawn positions, AI decisions).
+ *    Must be perfectly synced between server and client.
+ * 2. **render**: Used for purely cosmetic effects (particle colors, screen shake).
+ *    Does not require synchronization and does not affect the game state.
+ *
+ * ### Determinism Rules
+ * Systems MUST use the appropriate stream. Using the `gameplay` stream for visual
+ * effects will cause desyncs during rollback/reconciliation cycles.
+ *
  * @conceptualRisk [SEED_COLLISION] El uso de la misma semilla en múltiples instancias "named"
  * no coordinadas puede resultar en patrones de aleatoriedad idénticos.
  */

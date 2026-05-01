@@ -45,17 +45,16 @@ export class ContinuousCollision {
    * Predice la colisión entre un círculo en movimiento y un círculo estático.
    *
    * @remarks
-   * Resuelve la ecuación cuadrática que representa la distancia entre los dos centros
-   * a lo largo del tiempo: |(P_a + V_a * t) - P_b|^2 = (r_a + r_b)^2
+   * Solves the quadratic equation representing the distance between the two centers
+   * over time: `|(P_a + V_a * t) - P_b|^2 = (r_a + r_b)^2`
    *
-   * Donde:
-   * - P_a es la posición inicial de A.
-   * - V_a es el vector de movimiento (velocidad * deltaTime).
-   * - P_b es la posición de B.
-   * - t es el tiempo normalizado [0, 1].
-   *
-   * @conceptualRisk [TUNNELLING] Aunque CCD mitiga el tunnelling lineal, la falta de CCD rotacional
-   * puede seguir causando fallos en objetos muy largos que rotan a alta velocidad.
+   * Let `D = P_a - P_b` and `V = V_a`.
+   * Expanding the equation: `(D + V*t) . (D + V*t) = R^2`
+   * Leads to `(V.V)t^2 + 2(V.D)t + (D.D - R^2) = 0`
+   * Where:
+   * - `a = V.V`
+   * - `b = 2(V.D)`
+   * - `c = D.D - R^2`
    *
    * @param posAX - Initial X position of circle A.
    * @param posAY - Initial Y position of circle A.
@@ -126,8 +125,11 @@ export class ContinuousCollision {
    * Predicts collision between a moving circle and a static AABB.
    *
    * @remarks
-   * Simplifies the problem by expanding the AABB by the circle's radius (Minkowski Sum)
-   * and then performing a raycast against the expanded AABB.
+   * Utilizes the Minkowski Sum principle:
+   * 1. Expands the target AABB by the radius of the moving circle.
+   * 2. This reduces the problem to a raycast (line segment) against the expanded AABB.
+   * 3. Calculates the entry time (`tmin`) and exit time (`tmax`) for the ray.
+   * 4. If `tmax >= tmin` and `tmin` is within [0, 1], an impact occurs.
    */
   static sweptCircleVsAABB(
     posAX: number, posAY: number, velAX: number, velAY: number, radiusA: number,
@@ -184,7 +186,11 @@ export class ContinuousCollision {
    * Predicts collision between two AABBs.
    *
    * @remarks
-   * Uses Minkowski difference to convert the AABB-vs-AABB sweep into a point-vs-AABB sweep.
+   * Employs the Minkowski Difference:
+   * 1. Creates a new AABB whose dimensions are the sum of both input AABBs.
+   * 2. This reduces the problem to checking if a ray (relative velocity vector)
+   *    intersects this combined AABB.
+   * 3. Uses the Slab Method (intersecting intervals) to find the entry time `tmin`.
    */
   static sweptAABBVsAABB(
       posAX: number, posAY: number, velAX: number, velAY: number, hwA: number, hhA: number,
