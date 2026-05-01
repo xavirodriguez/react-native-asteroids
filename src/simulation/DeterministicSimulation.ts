@@ -53,15 +53,25 @@ const ASTEROID_SPLIT_CONFIG: Record<
 };
 
 /**
- * Game simulation orchestrator designed for reproducibility.
+ * Orquestador de la simulación del juego diseñado para la reproducibilidad (Determinismo).
  *
  * @remarks
- * Consolidates the fixed-step update loop for the Asteroids game domain.
- * It coordinates movement, collisions, spawning, and life-cycle management.
+ * Este módulo centraliza el bucle de actualización de paso fijo (Fixed Step) para Asteroids.
+ * Coordina el movimiento, colisiones, spawning y gestión del ciclo de vida de forma que,
+ * dada una misma semilla y una secuencia de inputs, el estado final sea idéntico en
+ * cualquier cliente o servidor.
+ *
+ * Invariantes de Determinismo:
+ * 1. El orden de ejecución de los sistemas debe ser constante.
+ * 2. El uso de `RandomService.getInstance("gameplay")` es obligatorio para lógica de estado.
+ * 3. `deltaTime` debe ser constante (típicamente 16.66ms).
+ *
+ * @conceptualRisk [PRECISION_DRIFT][MEDIUM] El uso de acumulaciones de punto flotante en
+ * sesiones extremadamente largas puede derivar en desincronización entre arquitecturas (JS IEEE 754).
  */
 export class DeterministicSimulation {
     /**
-     * Entry point for a single simulation tick.
+     * Punto de entrada para un tick de simulación individual.
      *
      * @remarks
      * Manages the PRNG context locking. During resimulation (rollback), the gameplay
@@ -71,6 +81,9 @@ export class DeterministicSimulation {
      * @param world - The ECS world to update.
      * @param deltaTime - Fixed time step in milliseconds (expected to be 16.66ms).
      * @param ctx - Execution context (Forward vs Resimulation).
+     * @param world - El mundo ECS a actualizar.
+     * @param deltaTime - Paso de tiempo fijo en milisegundos (16.66ms @ 60fps).
+     * @param ctx - Contexto de ejecución (Forward vs Resimulation/Rollback).
      */
     public static update(world: World, deltaTime: number, ctx: SimulationContext) {
         // Only lock gameplay context during resimulation.
@@ -86,33 +99,47 @@ export class DeterministicSimulation {
     }
 
     /**
-     * Internal sequence of simulation phases.
-     * The order of these calls is critical for deterministic behavior.
+     * Secuencia interna de fases de simulación.
+     *
+     * @remarks
+     * EL ORDEN ES CRÍTICO. Cambiar el orden de estas fases romperá la compatibilidad
+     * con replays anteriores y causará desincronización inmediata en multijugador.
+     *
+     * Pipeline:
+     * 1. Sincronización de Tick (Autoridad temporal).
+     * 2. Intención del Jugador (Física de Naves).
+     * 3. Cinemática (Integración de movimiento).
+     * 4. Ciclo de Vida (TTL).
+     * 5. Resolución de Conflictos (Colisiones).
+     * 6. Lógica de Nivel (UFO/Waves).
      */
     private static internalUpdate(world: World, deltaTime: number, ctx: SimulationContext) {
         const dtSeconds = deltaTime / 1000;
 
-        // 0. Update server tick in GameState
+        // 0. Sincronización del tick del servidor en el singleton GameState.
+        // Actúa como la referencia temporal absoluta para el netcode.
         world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
             gs.serverTick++;
         });
 
-        // 1. Process Inputs & Ship Physics (Includes Integration & Boundary for Ships)
+        // 1. Procesar Inputs y Física de Naves (Incluye Integración y Límites para naves).
+        // Se ejecuta primero para permitir la predicción inmediata en el cliente.
         this.updateShips(world, deltaTime, ctx);
 
-        // 2. Integration & Boundary Wrapping (For Non-Ship entities)
+        // 2. Integración de Movimiento y Envoltura de Límites (Para entidades que no son naves).
         this.integrateMovement(world, dtSeconds);
 
-        // 3. TTL (Time To Live)
+        // 3. TTL (Time To Live) - Eliminación de proyectiles y partículas expiradas.
         this.updateTTL(world, deltaTime);
 
-        // 4. Collision Detection & Resolution
+        // 4. Detección y Resolución de Colisiones.
+        // Debe ocurrir después del movimiento para resolver el estado final del tick.
         this.updateCollisions(world, ctx, deltaTime);
 
-        // 5. UFO logic
+        // 5. Lógica de comportamiento de UFOs (IA simple).
         this.updateUfos(world, dtSeconds);
 
-        // 6. Spawn Logic (UFO, Asteroid Waves)
+        // 6. Lógica de Spawning (Oleadas de asteroides y UFOs aleatorios).
         this.updateSpawning(world, ctx);
     }
 
@@ -127,9 +154,9 @@ export class DeterministicSimulation {
                 u.time += dtSeconds;
             });
 
-            // Update vertical position with sine wave oscillation
-            // Amplitude: 30 pixels, Frequency: 2 rad/s
-            // These values are currently hardcoded heuristics for UFO flight patterns.
+            // Actualizar posición vertical con oscilación sinusoidal
+            // Amplitud: 30 píxeles, Frecuencia: 2 rad/s
+            // Estos valores son heurísticas de diseño para el patrón de vuelo del UFO.
             const UFO_OSCILLATION_AMPLITUDE = 30;
             const UFO_OSCILLATION_FREQUENCY = 2;
 

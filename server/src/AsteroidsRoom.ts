@@ -35,10 +35,26 @@ import { BinaryCompression } from "../../src/engine/network/BinaryCompression";
  * 3. **Sync Schema**: Update the Colyseus schema (Players, Asteroids, Bullets) from ECS.
  * 4. **Replicate**: Generate and send updates to clients based on the active `REPLICATION_MODE`.
  * 5. **Cleanup**: Discard processed inputs and manage history buffers.
+ * Habitación Colyseus para el juego Asteroids.
+ *
+ * Gestiona el ciclo de vida del servidor, la recolección de inputs de múltiples clientes,
+ * la ejecución de la simulación autoritativa y la replicación optimizada del estado.
+ *
+ * Estrategias de Replicación (REPLICATION_MODE):
+ * - 'legacy': Envía el snapshot completo del mundo cada tick (Alto ancho de banda).
+ * - 'interest': Filtra entidades por proximidad espacial (USSC).
+ * - 'delta': Envía solo componentes mutados detectados vía stateVersion.
+ * - 'budget': Limita el número de entidades y bytes por paquete según prioridad.
+ * - 'binary': Utiliza MessagePack para comprimir deltas (Máxima eficiencia).
+ *
+ * @conceptualRisk [BANDWIDTH][HIGH] El modo legacy puede saturar la red con >50 entidades.
+ * @conceptualRisk [TICK_DRIFT] Desajustes entre el simulationInterval y el patchRate pueden
+ * causar jitter visual en el cliente si no hay buffer de interpolación.
  */
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
-  private fixedTimeStep = 16.66; // 60 FPS
+  /** Paso de tiempo fijo para el motor ECS (60Hz). */
+  private fixedTimeStep = 16.66;
   private inputBuffers = new Map<string, InputFrame[]>();
   private stateHistory = new Map<number, Map<string, EntitySnapshot>>();
   private clientAcks = new Map<string, number>(); // sessionId -> lastAckedStateVersion
@@ -154,6 +170,16 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   /**
    * Main server-side update loop.
    * Runs at a fixed interval (16.66ms / 60 FPS).
+   * Bucle principal de actualización del servidor.
+   *
+   * @remarks
+   * Sigue un pipeline estricto para mantener la autoridad del estado:
+   * 1. Sincronización de Tick.
+   * 2. Aplicación de Inputs del buffer (Reconciliación).
+   * 3. Simulación ECS (Lógica Compartida).
+   * 4. Post-procesamiento de Servidor (Culling/Interés).
+   * 5. Sincronización a Schema (Colyseus).
+   * 6. Replicación Delta/Binaria a clientes.
    */
   update(_dt: number) {
     if (!this.state.gameStarted) return;

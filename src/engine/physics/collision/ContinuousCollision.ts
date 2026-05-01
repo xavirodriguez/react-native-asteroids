@@ -27,23 +27,22 @@ function resetResult(): CCDResult {
 }
 
 /**
- * Provides utilities for Continuous Collision Detection (CCD) using linear sweeping.
+ * Utilidades para Continuous Collision Detection (CCD) mediante barrido lineal (Linear Sweeping).
  *
- * CCD is used to prevent "tunneling," where fast-moving objects skip past obstacles
- * between discrete simulation steps. These algorithms calculate the exact Time of Impact (TOI)
- * within a frame's duration.
+ * El CCD se utiliza para prevenir el "tunnelling", un fenómeno donde objetos que se mueven rápido
+ * saltan a través de obstáculos entre pasos de simulación discretos. Estos algoritmos calculan
+ * el Tiempo de Impacto exacto (TOI - Time of Impact) dentro de la duración de un frame.
  *
  * @remarks
- * - Assumes constant linear velocity throughout the frame.
- * - Does not account for rotational movement during the sweep.
- * - Optimized using shared result objects to minimize GC pressure.
- * - Implementation uses quadratic equations for circle-vs-circle and Minkowski difference for AABB-vs-AABB.
+ * - Asume velocidad lineal constante durante el frame (Integración de Euler).
+ * - No tiene en cuenta el movimiento rotacional durante el barrido.
+ * - Optimizado mediante el uso de objetos de resultado compartidos para reducir la presión sobre el GC.
  *
  * @packageDocumentation
  */
 export class ContinuousCollision {
   /**
-   * Predicts collision between a moving circle and a static circle.
+   * Predice la colisión entre un círculo en movimiento y un círculo estático.
    *
    * @remarks
    * Solves the quadratic equation representing the distance between the two centers
@@ -89,17 +88,20 @@ export class ContinuousCollision {
       return result;
     }
 
-    // Quadratic coefficients for relative motion
+    // Coeficientes de la ecuación cuadrática at^2 + bt + c = 0
+    // Derivada de expandir la ecuación de distancia entre dos esferas en movimiento relativo.
     const a = vx * vx + vy * vy;
-    if (a < 0.0001) return result; // No relative movement
+    if (a < 0.0001) return result; // Sin movimiento relativo apreciable
 
     const b = -2 * (vx * dx + vy * dy);
     const c = dx * dx + dy * dy - radiusSumSq;
 
+    // El discriminante (b^2 - 4ac) determina si existen raíces reales (intersecciones).
     const discriminant = b * b - 4 * a * c;
-    if (discriminant < 0) return result; // No possible intersection
+    if (discriminant < 0) return result; // No hay intersección posible en la trayectoria
 
-    // Calculate time of first impact
+    // Calculamos el tiempo del primer impacto (la raíz más pequeña)
+    // t = (-b - sqrt(D)) / 2a
     const t = (-b - Math.sqrt(discriminant)) / (2 * a);
 
     if (t >= 0 && t <= 1) {

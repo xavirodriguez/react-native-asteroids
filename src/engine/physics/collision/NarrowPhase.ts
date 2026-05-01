@@ -73,12 +73,28 @@ const staticAABBPoly: PolygonShape = {
     normals: [{x:0,y:-1}, {x:1,y:0}, {x:0,y:1}, {x:-1,y:0}]
 };
 
+/**
+ * Implementación de algoritmos de detección de colisiones de Fase Estrecha (Narrow Phase).
+ *
+ * Proporciona detección precisa entre primitivas geométricas mediante el Teorema del Eje Separador (SAT)
+ * y comprobaciones basadas en distancia. Genera un {@link CollisionManifold} con normales, profundidad
+ * y puntos de contacto.
+ *
+ * @remarks
+ * El sistema está optimizado para minimizar la presión sobre el GC mediante el uso de manifolds compartidos
+ * y pools de vértices, asumiendo una simulación de alta frecuencia (60Hz+).
+ *
+ * @conceptualRisk [FLOAT_PRECISION][MEDIUM] Los productos cruzados y normalizaciones dependen de un épsilon (0.0001)
+ * para evitar divisiones por cero en colisiones casi perfectas.
+ * @conceptualRisk [GC_PRESSURE][LOW] Aunque usa pools, el manifold devuelto es una referencia compartida;
+ * debe procesarse inmediatamente o copiarse si se requiere persistencia.
+ */
 export class NarrowPhase {
   /**
-   * Main entry point for narrow phase testing between two shapes.
-   * Dispatches to specific primitive-vs-primitive tests based on shape types.
+   * Punto de entrada principal para la fase estrecha entre dos formas.
+   * Despacha a tests específicos según el tipo de primitiva.
    *
-   * @param shapeA - Geometric definition of the first shape.
+   * @param shapeA - Definición geométrica de la primera forma.
    * @param posXA - World X coordinate of shape A.
    * @param posYA - World Y coordinate of shape A.
    * @param rotA - World rotation of shape A in radians.
@@ -333,7 +349,7 @@ export class NarrowPhase {
   }
 
   /**
-   * Collision detection between two convex polygons using Separating Axis Theorem (SAT).
+   * Detección de colisiones entre polígonos convexos usando el Teorema del Eje Separador (SAT).
    *
    * @remarks
    * For two convex shapes to be colliding, their projections must overlap on ALL potential axes.
@@ -348,12 +364,21 @@ export class NarrowPhase {
    *    - If `overlap <= 0`, exit early (no collision).
    * 4. Identify the axis of minimum overlap (MTV - Minimum Translation Vector).
    * 5. Ensure the normal points from A to B.
+   * El algoritmo SAT establece que dos objetos convexos NO colisionan si existe un eje
+   * en el cual sus proyecciones no se solapan. Para polígonos, basta con probar las normales
+   * de cada una de sus caras como ejes potenciales de separación.
+   *
+   * @conceptualRisk [CONVEX_ONLY] Este método NO funciona con polígonos cóncavos.
+   * @conceptualRisk [PERFORMANCE] Complejidad O(N+M) donde N y M son el número de vértices.
    */
   static polygonVsPolygon(a: PolygonShape, ax: number, ay: number, ar: number, b: PolygonShape, bx: number, by: number, br: number): CollisionManifold {
     const manifold = resetManifold();
+
+    // 1. Transformar vértices locales a coordenadas de mundo (incluyendo rotación)
     this.populateGlobalVertices(a, ax, ay, ar, worldVerticesA);
     this.populateGlobalVertices(b, bx, by, br, worldVerticesB);
 
+    // 2. Generar todos los ejes candidatos (normales de las caras de ambos polígonos)
     axesCache.length = 0;
     this.populateGlobalNormals(a, ar, axesCache);
     this.populateGlobalNormals(b, br, axesCache);
@@ -362,17 +387,21 @@ export class NarrowPhase {
     let smallestAxisX = 0;
     let smallestAxisY = 0;
 
-    // Test each axis for separation
+    // 3. Probar cada eje para encontrar una separación
     for (let i = 0; i < axesCache.length; i++) {
       const axis = axesCache[i];
+
+      // Proyectar ambos polígonos sobre el eje actual
       const projectionA = this.projectPolygon(worldVerticesA, axis);
       const projectionB = this.projectPolygon(worldVerticesB, axis);
 
+      // Calcular el solapamiento en este eje
       const overlap = Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min);
 
-      // If there is NO overlap on any single axis, the polygons are NOT colliding
+      // Si en ALGÚN eje no hay solapamiento, el SAT garantiza que NO hay colisión (Teorema del Eje Separador)
       if (overlap <= 0) return resetManifold();
 
+      // Guardar el eje con el solapamiento mínimo (MTV - Minimum Translation Vector)
       if (overlap < minOverlap) {
         minOverlap = overlap;
         smallestAxisX = axis.x;
@@ -380,10 +409,11 @@ export class NarrowPhase {
       }
     }
 
+    // 4. Si llegamos aquí, hay solapamiento en todos los ejes -> Colisión confirmada
     manifold.colliding = true;
     manifold.depth = minOverlap;
 
-    // Ensure normal points from A towards B
+    // Garantizar que la normal siempre apunte desde el objeto A hacia el B
     const dot = (bx - ax) * smallestAxisX + (by - ay) * smallestAxisY;
     if (dot < 0) {
       manifold.normalX = -smallestAxisX;

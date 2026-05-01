@@ -16,8 +16,16 @@ import { GenericComponent } from "../core/CoreComponents";
  * Resolves positions and dimensions for user interface elements using a hierarchical
  * constraint system. Supports anchors, relative units (%), flex-like containers,
  * and world-space attachments.
+ * Sistema que resuelve el posicionamiento y dimensionamiento de elementos de interfaz (UI).
  *
  * @responsibility Calcular las coordenadas finales (`computedX`, `computedY`) y dimensiones (`computedWidth`, `computedHeight`) de la UI.
+ *
+ * @remarks
+ * Implementa un motor de layout jerárquico que soporta:
+ * 1. **Anclajes (Anchors)**: Posicionamiento relativo a la pantalla (Top-Left, Center, etc.).
+ * 2. **Unidades Relativas (%)**: Dimensiones basadas en el tamaño del padre o del viewport.
+ * 3. **Contenedores (Flow)**: Distribución automática horizontal/vertical con espaciado (gap) y alineación.
+ * 4. **Mundo (World Attach)**: Proyección de coordenadas de simulación a coordenadas de pantalla (ej: barras de vida sobre naves).
  * @queries `UIElement`, `UIContainer`, `UIWorldAttach`, `Transform`, `Position`, `GameState` (Singleton).
  * @mutates `UIElementComponent`.
  * @dependsOn `UIElementComponent`, `UIContainerComponent`, `UIWorldAttachComponent`.
@@ -55,8 +63,14 @@ export class UILayoutSystem extends System {
   /**
    * Ejecuta la resolución de layout para todas las entidades con `UIElement`.
    *
+   * @remarks
+   * El proceso se realiza en dos pasadas:
+   * 1. **Mapeo**: Agrupa elementos por su relación padre-hijo.
+   * 2. **Resolución Recursiva**: Calcula las posiciones desde la raíz hacia las hojas para
+   * propagar dimensiones y offsets correctamente.
+   *
    * @param world - El mundo ECS.
-   * @param deltaTime - Tiempo del frame (ignorado por este sistema ya que es puramente posicional).
+   * @param _deltaTime - Tiempo del frame (ignorado).
    *
    * @sideEffect Actualiza las propiedades `computed*` de los componentes `UIElement`.
    */
@@ -145,6 +159,13 @@ export class UILayoutSystem extends System {
     }
   }
 
+  /**
+   * Calcula el layout de los hijos dentro de un contenedor (Flow Layout).
+   *
+   * @remarks
+   * Los hijos se ordenan por su propiedad `zIndex` antes de calcular su posición en el flujo,
+   * asegurando un comportamiento de apilado predecible tanto visual como lógicamente.
+   */
   private layoutContainerChildren(
     world: World,
     parentEntity: Entity,
