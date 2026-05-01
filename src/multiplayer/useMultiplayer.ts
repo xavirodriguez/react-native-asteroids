@@ -81,25 +81,43 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
         });
 
         joinedRoom.onMessage("world_delta", (data: { tick: number, delta: string }) => {
-            // Forward delta to the game via serverState update
-            // We only send delta and tick to ensure the game identifies this as a delta update
-            setServerState({ delta: data.delta, tick: data.tick });
-
-            // Extract stateVersion if present in the JSON string
             try {
                 const deltaObj = JSON.parse(data.delta);
-                if (deltaObj.stateVersion !== undefined) {
+                let versionChanged = false;
+                if (deltaObj.stateVersion !== undefined && deltaObj.stateVersion !== lastAckedVersionRef.current) {
                     lastAckedVersionRef.current = deltaObj.stateVersion;
+                    versionChanged = true;
                 }
-            } catch (e) {}
+                // Forward parsed delta to avoid double parsing in the game
+                setServerState({ delta: deltaObj, tick: data.tick });
+
+                // Acknowledge version if it changed
+                if (versionChanged) {
+                    joinedRoom.send("sync_tick", {
+                        timestamp: Date.now(),
+                        lastAckedVersion: lastAckedVersionRef.current
+                    });
+                }
+            } catch (e) {
+                console.error("[useMultiplayer] Failed to parse world_delta:", e);
+            }
         });
 
         joinedRoom.onMessage("world_delta_bin", (data: Uint8Array) => {
             try {
                 const deltaPacket = BinaryCompression.unpack<any>(data);
-                setServerState({ delta: JSON.stringify(deltaPacket), tick: deltaPacket.tick || serverTickRef.current });
-                if (deltaPacket.stateVersion !== undefined) {
+                let versionChanged = false;
+                if (deltaPacket.stateVersion !== undefined && deltaPacket.stateVersion !== lastAckedVersionRef.current) {
                     lastAckedVersionRef.current = deltaPacket.stateVersion;
+                    versionChanged = true;
+                }
+                setServerState({ delta: deltaPacket, tick: deltaPacket.tick || serverTickRef.current });
+
+                if (versionChanged) {
+                    joinedRoom.send("sync_tick", {
+                        timestamp: Date.now(),
+                        lastAckedVersion: lastAckedVersionRef.current
+                    });
                 }
             } catch (e) {
                 console.error("[useMultiplayer] Failed to unpack binary delta:", e);

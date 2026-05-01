@@ -48,7 +48,6 @@ export class AsteroidsGame
   private inputHistory: InputFrame[] = [];
   private stateHistory = new Map<number, import("../../engine/types/EngineTypes").WorldSnapshot>();
   private lastAuthoritativeTick = 0;
-  private lastDeltaTick = 0;
   private lastProcessedFullStateVersion = -1;
   public readonly gameId = "asteroids";
   private config: typeof GAME_CONFIG;
@@ -140,49 +139,117 @@ export class AsteroidsGame
 
   private handleDeltaServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
     const serverTick = serverState.tick as number;
-    if (serverTick <= this.lastDeltaTick) return;
-    this.lastDeltaTick = serverTick;
+    if (serverTick <= this.lastAuthoritativeTick) return;
 
-    const delta = JSON.parse(serverState.delta as string);
+    const delta = typeof serverState.delta === "string" ? JSON.parse(serverState.delta) : serverState.delta;
 
-    // Apply delta to the world
-    // Note: Delta doesn't contain the full list of entities, only modified components
-    const componentData = delta.componentData;
-    for (const type in componentData) {
-        for (const entityIdStr in componentData[type]) {
-            const entityId = parseInt(entityIdStr);
-            const component = componentData[type][entityId];
+    let authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot;
 
-            // If entity doesn't exist, we might need to create it (simplified here)
-            if (!this.world.entities.includes(entityId)) {
-                this.world.createEntity(entityId);
-            }
-
-            this.world.addComponent(entityId, component);
-        }
+    if (delta.created || delta.updated || delta.removed) {
+      // DeltaPacket format: Apply to the best available baseline snapshot
+      const baseSnapshot = this.stateHistory.get(this.lastAuthoritativeTick) ?? this.world.snapshot();
+      authoritativeSnapshot = structuredClone(baseSnapshot);
+      this.applyDeltaToSnapshot(authoritativeSnapshot, delta);
+    } else {
+      // Filtered WorldSnapshot format (Interest Management mode)
+      authoritativeSnapshot = delta;
     }
+
+    this.lastAuthoritativeTick = serverTick;
+    this.performReconciliation(serverTick, authoritativeSnapshot, localSessionId);
 
     // Acknowledge the received state version to the server
     const eventBus = this.world.getResource<import("../../engine/core/EventBus").EventBus>("EventBus");
     if (eventBus && delta.stateVersion !== undefined) {
-        // This usually goes through the transport layer
-        // For now we assume the NetworkController or similar handles sending this back
-        eventBus.emit("net:ack_version", { version: delta.stateVersion, tick: serverTick });
+      eventBus.emit("net:ack_version", { version: delta.stateVersion, tick: serverTick });
     }
   }
 
   private handleFullServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
-    const authoritativeSnapshot = JSON.parse(serverState.fullWorldState as string) as import("../../engine/types/EngineTypes").WorldSnapshot;
+    const authoritativeSnapshot = typeof serverState.fullWorldState === "string"
+      ? JSON.parse(serverState.fullWorldState)
+      : serverState.fullWorldState;
 
     // Skip if this full snapshot hasn't changed since last processing
     if (authoritativeSnapshot.stateVersion === this.lastProcessedFullStateVersion) return;
 
     const serverTick = serverState.serverTick as number;
-    if (serverTick <= this.lastAuthoritativeTick) return;
+    // We only skip if we already processed a MORE RECENT authoritative state.
+    // Full snapshots should take precedence if they correspond to the same tick as a previous delta.
+    if (serverTick < this.lastAuthoritativeTick) return;
 
     this.lastAuthoritativeTick = serverTick;
     this.lastProcessedFullStateVersion = authoritativeSnapshot.stateVersion;
 
+    this.performReconciliation(serverTick, authoritativeSnapshot, localSessionId);
+  }
+
+  private applyDeltaToSnapshot(snapshot: import("../../engine/types/EngineTypes").WorldSnapshot, delta: any) {
+    const entitySet = new Set(snapshot.entities);
+
+    if (delta.created || delta.updated || delta.removed) {
+      // DeltaPacket format (Iteration 3+)
+      if (delta.created) {
+        delta.created.forEach((payload: any) => {
+          const entityId = payload.entityId;
+          if (!entitySet.has(entityId)) {
+            entitySet.add(entityId);
+            snapshot.entities.push(entityId);
+          }
+          for (const type in payload.components) {
+            if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
+            snapshot.componentData[type][entityId] = payload.components[type];
+          }
+        });
+      }
+      if (delta.updated) {
+        delta.updated.forEach((payload: any) => {
+          const entityId = payload.entityId;
+          for (const type in payload.components) {
+            if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
+            snapshot.componentData[type][entityId] = payload.components[type];
+          }
+        });
+      }
+      if (delta.removed) {
+        delta.removed.forEach((entityId: number) => {
+          const index = snapshot.entities.indexOf(entityId);
+          if (index !== -1) snapshot.entities.splice(index, 1);
+          entitySet.delete(entityId);
+          for (const type in snapshot.componentData) {
+            delete snapshot.componentData[type][entityId];
+          }
+        });
+      }
+      snapshot.entities.sort((a, b) => a - b);
+    } else if (delta.componentData) {
+      // Handle partial WorldSnapshot format (used in 'interest' mode or older delta)
+      const componentData = delta.componentData;
+      let entitiesAdded = false;
+      for (const type in componentData) {
+        if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
+        for (const entityIdStr in componentData[type]) {
+          const entityId = parseInt(entityIdStr);
+          const component = componentData[type][entityId];
+
+          if (!entitySet.has(entityId)) {
+            entitySet.add(entityId);
+            snapshot.entities.push(entityId);
+            entitiesAdded = true;
+          }
+
+          snapshot.componentData[type][entityId] = component;
+        }
+      }
+      if (entitiesAdded) snapshot.entities.sort((a, b) => a - b);
+    }
+
+    if (delta.stateVersion !== undefined) {
+      snapshot.stateVersion = delta.stateVersion;
+    }
+  }
+
+  private performReconciliation(serverTick: number, authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot, localSessionId?: string) {
     const predicted = this.stateHistory.get(serverTick);
 
     let needsRollback = false;
@@ -218,10 +285,10 @@ export class AsteroidsGame
       // Before restoring, capture current predicted visuals for smoothing
       const visualMismatches = new Map<number, { dx: number, dy: number }>();
       if (localPlayerId !== undefined) {
-          const currentTrans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(localPlayerId, "Transform");
-          if (currentTrans) {
-              visualMismatches.set(localPlayerId, { dx: currentTrans.x, dy: currentTrans.y });
-          }
+        const currentTrans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(localPlayerId, "Transform");
+        if (currentTrans) {
+          visualMismatches.set(localPlayerId, { dx: currentTrans.x, dy: currentTrans.y });
+        }
       }
 
       this.world.restore(authoritativeSnapshot);
@@ -259,34 +326,34 @@ export class AsteroidsGame
 
       // Apply Visual Smoothing (Smooth Error Correction)
       visualMismatches.forEach((prevPos, id) => {
-          const newTrans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(id, "Transform");
-          if (newTrans) {
-              const errX = prevPos.dx - newTrans.x;
-              const errY = prevPos.dy - newTrans.y;
+        const newTrans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(id, "Transform");
+        if (newTrans) {
+          const errX = prevPos.dx - newTrans.x;
+          const errY = prevPos.dy - newTrans.y;
 
-              // Apply the error to VisualOffset and LERP it back in JuiceSystem
-              this.world.addComponent(id, {
-                  type: "VisualOffset",
-                  x: errX,
-                  y: errY,
-                  rotation: 0,
-                  scaleX: 0,
-                  scaleY: 0
-              } as import("../../engine/core/CoreComponents").VisualOffsetComponent);
+          // Apply the error to VisualOffset and LERP it back in JuiceSystem
+          this.world.addComponent(id, {
+            type: "VisualOffset",
+            x: errX,
+            y: errY,
+            rotation: 0,
+            scaleX: 0,
+            scaleY: 0
+          } as import("../../engine/core/CoreComponents").VisualOffsetComponent);
 
-              JuiceSystem.add(this.world, id, {
-                  property: "x",
-                  target: 0,
-                  duration: 150,
-                  easing: "easeOut"
-              });
-              JuiceSystem.add(this.world, id, {
-                  property: "y",
-                  target: 0,
-                  duration: 150,
-                  easing: "easeOut"
-              });
-          }
+          JuiceSystem.add(this.world, id, {
+            property: "x",
+            target: 0,
+            duration: 150,
+            easing: "easeOut"
+          });
+          JuiceSystem.add(this.world, id, {
+            property: "y",
+            target: 0,
+            duration: 150,
+            easing: "easeOut"
+          });
+        }
       });
     }
 
