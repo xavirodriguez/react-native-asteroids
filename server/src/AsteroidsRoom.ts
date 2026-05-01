@@ -10,6 +10,7 @@ import { InputComponent, ShipComponent, BulletComponent } from "../../src/games/
 import { InterestManagementSystem } from "../../src/engine/systems/InterestManagementSystem";
 import { SpatialPartitioningSystem } from "../../src/engine/systems/SpatialPartitioningSystem";
 import { SpatialGrid } from "../../src/engine/physics/utils/SpatialGrid";
+import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
@@ -21,6 +22,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private world: World;
   private playerEntities = new Map<string, number>();
   private nextPlayerNumber = 1;
+  private networkMetrics = new NetworkMetricsCollector();
 
   private spawnAsteroids(count: number) {
     const gameplayRandom = RandomService.getInstance("gameplay");
@@ -66,6 +68,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       if (this.state.gameStarted) return;
       this.state.gameStarted = true;
       this.spawnAsteroids(6);
+    });
+
+    this.onMessage("metrics", (client) => {
+      client.send("metrics", this.networkMetrics.getMetrics());
     });
 
     // Initialized ECS world
@@ -152,24 +158,45 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.syncWorldToSchema();
 
     // 4. Update per-client delta snapshots (Interest-based)
+    let totalBytesSentThisTick = 0;
+    let totalSerializationMs = 0;
+    const startTime = Date.now();
+
     const interestMap = this.world.getResource<Map<string, Set<number>>>("InterestMap");
     this.clients.forEach(client => {
         const lastAck = this.clientAcks.get(client.sessionId) ?? 0;
         const interest = interestMap?.get(client.sessionId);
+
+        const serializationStart = Date.now();
         const delta = this.world.deltaSnapshot(lastAck, interest);
+        const serializedDelta = JSON.stringify(delta);
+        totalSerializationMs += (Date.now() - serializationStart);
+
+        totalBytesSentThisTick += serializedDelta.length;
 
         // We send the delta specifically to this client
         client.send("world_delta", {
             tick: this.state.serverTick,
-            delta: JSON.stringify(delta)
+            delta: serializedDelta
         });
     });
 
     // Optimization: Only update fullWorldState occasionally for late joiners
     // to avoid broadcasting large strings every tick.
     if (this.state.serverTick % 60 === 0) {
-        this.state.fullWorldState = JSON.stringify(this.world.snapshot());
+        const fullSerializationStart = Date.now();
+        const snapshot = this.world.snapshot();
+        const serialized = JSON.stringify(snapshot);
+        totalSerializationMs += (Date.now() - fullSerializationStart);
+
+        this.state.fullWorldState = serialized;
+        // Note: we don't count fullWorldState in per-tick bytes sent
+        // as it's a schema field synchronized via Colyseus's own patch rate
     }
+
+    // Record metrics every tick
+    const totalEntities = this.world.entities.length;
+    this.networkMetrics.recordTick(totalBytesSentThisTick, totalEntities, totalSerializationMs, this.clients.length);
 
     // 5. Record for Replay
     this.replayFrames.push({
