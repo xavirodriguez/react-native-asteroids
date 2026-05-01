@@ -32,6 +32,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private ackTracker = new ClientAckTracker();
   private budgetManager = new NetworkBudgetManager();
   private deltaSystem = new NetworkDeltaSystem(this.replicationTracker);
+  private REPLICATION_MODE: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' = 'binary';
 
   private spawnAsteroids(count: number) {
     const gameplayRandom = RandomService.getInstance("gameplay");
@@ -175,53 +176,82 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     let totalEntitiesFiltered = 0;
     const totalEntitiesInWorld = this.world.entities.length;
 
-    const detailedInterestMap = this.world.getResource<Map<string, import("../../src/engine/network/types/ReplicationTypes").InterestedEntity[]>>("DetailedInterestMap");
-    this.clients.forEach(client => {
-        const interest = detailedInterestMap?.get(client.sessionId) || [];
-
-        // Iteration 4: Budgeting
-        const prioritized = this.budgetManager.prioritize(client.sessionId, interest);
-        const interestIds = new Set(prioritized.map(e => e.entityId));
-
-        totalEntitiesFiltered += (totalEntitiesInWorld - interestIds.size);
-
-        const serializationStart = Date.now();
-
-        // Iteration 3: Delta Compression
-        const sequence = this.ackTracker.nextSequence(client.sessionId);
-        const baselineAck = this.ackTracker.getLastAckedSequence(client.sessionId);
-        const idleTime = this.ackTracker.getIdleTime(client.sessionId);
-        const forceFull = idleTime > 3000 || baselineAck === 0;
-
-        const deltaPacket = this.deltaSystem.generateDelta(
-            this.world,
-            client.sessionId,
-            sequence,
-            baselineAck,
-            interestIds,
-            forceFull
-        );
-
-        // Iteration 5: Binary Compression
-        const binaryPacket = BinaryCompression.pack(deltaPacket);
-
-        totalSerializationMs += (Date.now() - serializationStart);
-        totalBytesSentThisTick += binaryPacket.length;
-
-        client.send("world_delta_bin", binaryPacket);
-    });
-
-    // Optimization: Only update fullWorldState occasionally for late joiners
-    // to avoid broadcasting large strings every tick.
-    if (this.state.serverTick % 60 === 0) {
+    if (this.REPLICATION_MODE === 'legacy') {
         const fullSerializationStart = Date.now();
         const snapshot = this.world.snapshot();
         const serialized = JSON.stringify(snapshot);
         totalSerializationMs += (Date.now() - fullSerializationStart);
-
         this.state.fullWorldState = serialized;
-        // Note: we don't count fullWorldState in per-tick bytes sent
-        // as it's a schema field synchronized via Colyseus's own patch rate
+        totalBytesSentThisTick = serialized.length;
+    } else {
+        const detailedInterestMap = this.world.getResource<Map<string, import("../../src/engine/network/types/ReplicationTypes").InterestedEntity[]>>("DetailedInterestMap");
+        this.clients.forEach(client => {
+            const interest = detailedInterestMap?.get(client.sessionId) || [];
+            let interestIds: Set<number>;
+
+            if (this.REPLICATION_MODE === 'interest') {
+                interestIds = new Set(interest.map(e => e.entityId));
+            } else {
+                // Iteration 4: Budgeting
+                const prioritized = this.budgetManager.prioritize(client.sessionId, interest);
+                interestIds = new Set(prioritized.map(e => e.entityId));
+            }
+
+            totalEntitiesFiltered += (totalEntitiesInWorld - interestIds.size);
+
+            const serializationStart = Date.now();
+
+            if (this.REPLICATION_MODE === 'interest') {
+                const snapshot = this.world.snapshot();
+                // Filter snapshot entities
+                snapshot.entities = snapshot.entities.filter(id => interestIds.has(id));
+                for (const type in snapshot.componentData) {
+                    for (const id in snapshot.componentData[type]) {
+                        if (!interestIds.has(parseInt(id))) {
+                            delete snapshot.componentData[type][id];
+                        }
+                    }
+                }
+                const serialized = JSON.stringify(snapshot);
+                totalSerializationMs += (Date.now() - serializationStart);
+                totalBytesSentThisTick += serialized.length;
+                client.send("world_delta", { tick: this.state.serverTick, delta: serialized });
+            } else {
+                // Iteration 3: Delta Compression
+                const sequence = this.ackTracker.nextSequence(client.sessionId);
+                const baselineAck = this.ackTracker.getLastAckedSequence(client.sessionId);
+                const idleTime = this.ackTracker.getIdleTime(client.sessionId);
+                const forceFull = idleTime > 3000 || baselineAck === 0;
+
+                const deltaPacket = this.deltaSystem.generateDelta(
+                    this.world,
+                    client.sessionId,
+                    sequence,
+                    baselineAck,
+                    interestIds,
+                    forceFull
+                );
+
+                if (this.REPLICATION_MODE === 'binary') {
+                    // Iteration 5: Binary Compression
+                    const binaryPacket = BinaryCompression.pack(deltaPacket);
+                    totalSerializationMs += (Date.now() - serializationStart);
+                    totalBytesSentThisTick += binaryPacket.length;
+                    client.send("world_delta_bin", binaryPacket);
+                } else {
+                    const serialized = JSON.stringify(deltaPacket);
+                    totalSerializationMs += (Date.now() - serializationStart);
+                    totalBytesSentThisTick += serialized.length;
+                    client.send("world_delta", { tick: this.state.serverTick, delta: serialized });
+                }
+            }
+        });
+
+        // Optimization: Only update fullWorldState occasionally for late joiners
+        if (this.state.serverTick % 60 === 0) {
+            const snapshot = this.world.snapshot();
+            this.state.fullWorldState = JSON.stringify(snapshot);
+        }
     }
 
     // Record metrics every tick
