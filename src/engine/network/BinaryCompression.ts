@@ -1,7 +1,20 @@
 import { Packr, unpack } from "msgpackr";
 
 /**
- * @responsibility Handle binary serialization of network packets using MessagePack.
+ * Utilidad de compresión y serialización binaria basada en MessagePack.
+ *
+ * @responsibility Transformar objetos JavaScript (snapshots/deltas) en buffers binarios compactos.
+ *
+ * @remarks
+ * TinyAsterEngine utiliza `msgpackr` por su alta eficiencia y soporte nativo para
+ * extensiones de tipos (como Maps/Sets). La serialización binaria reduce el tamaño
+ * de los paquetes de red entre un 40% y 60% en comparación con JSON estándar.
+ *
+ * @conceptualRisk [BINARY_COMPATIBILITY] Los cambios en la estructura de los esquemas
+ * (GameState) requieren que tanto el cliente como el servidor se actualicen simultáneamente
+ * para evitar fallos de desempaquetado.
+ * @conceptualRisk [OVERHEAD] Aunque el tamaño del paquete es menor, la CPU debe realizar
+ * el paso extra de empaquetado/desempaquetado.
  */
 export class BinaryCompression {
   private static packr = new Packr({
