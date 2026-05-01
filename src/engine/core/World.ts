@@ -78,7 +78,7 @@ export class World {
   /** Incremented on data changes or manual notification. */
   private _stateVersion = 0;
   /** @internal */
-  private componentVersions = new Map<string, Map<Entity, number>>();
+  public componentVersions = new Map<string, Map<Entity, number>>();
   /** Current simulation tick. */
   private _tick = 0;
 

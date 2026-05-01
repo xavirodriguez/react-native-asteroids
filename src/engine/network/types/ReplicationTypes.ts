@@ -23,3 +23,31 @@ export interface InterestedEntity {
 export interface NetworkPacket {
   protocolVersion: number;
 }
+
+/**
+ * Full state of an entity for initial synchronization.
+ */
+export interface EntityPayload {
+  entityId: number;
+  components: Record<string, unknown>;
+}
+
+/**
+ * Partial state of an entity containing only changed components.
+ */
+export interface EntityDeltaPayload {
+  entityId: number;
+  components: Record<string, unknown>;
+}
+
+/**
+ * Granular update packet using delta compression.
+ */
+export interface DeltaPacket extends NetworkPacket {
+  sequence: number;
+  baselineAck: number;
+  full: boolean;
+  created: EntityPayload[];
+  updated: EntityDeltaPayload[];
+  removed: number[];
+}
