@@ -6,7 +6,18 @@ import { ReplicationPolicy } from "./ReplicationPolicy";
 import { Quantization } from "./Quantization";
 
 /**
- * @responsibility Generate delta packets for clients based on interest and last known state.
+ * Sistema encargado de generar paquetes diferenciales (Deltas) para la replicación de red.
+ *
+ * @responsibility Comparar el estado actual del mundo con el último estado confirmado (ACK) por cada cliente.
+ * @responsibility Filtrar entidades irrelevantes mediante el mapa de interés.
+ * @responsibility Serializar solo los componentes que han incrementado su `stateVersion`.
+ *
+ * @remarks
+ * Utiliza el `ReplicationStateTracker` para recordar qué versión de qué componente
+ * tiene cada cliente, evitando el envío de datos redundantes.
+ *
+ * @conceptualRisk [ROLLBACK_SYNC] Si el servidor realiza un rollback interno, debe invalidar
+ * los ACKs de los clientes para asegurar que el re-envío de la rama corregida sea completo.
  */
 export class NetworkDeltaSystem {
   constructor(
@@ -15,7 +26,14 @@ export class NetworkDeltaSystem {
   ) {}
 
   /**
-   * Generates a delta packet for a specific client.
+   * Genera un paquete delta optimizado para un cliente específico.
+   *
+   * @param world - El mundo ECS fuente de datos.
+   * @param clientId - Identificador único de la sesión del cliente.
+   * @param sequence - Número de secuencia actual del paquete.
+   * @param baselineAck - La versión de estado que el cliente confirmó haber recibido.
+   * @param interestedEntities - Conjunto de entidades visibles/relevantes para este cliente (Culling).
+   * @param forceFull - Si es true, ignora el delta y envía el estado completo de las entidades interesadas.
    */
   public generateDelta(
     world: World,
