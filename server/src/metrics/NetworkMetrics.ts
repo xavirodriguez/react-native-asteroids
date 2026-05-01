@@ -9,6 +9,7 @@
 export interface TickSample {
   bytes: number;
   entities: number;
+  entitiesFiltered: number;
   serializationMs: number;
   clients: number;
   timestamp: number;
@@ -21,6 +22,7 @@ export class NetworkMetricsCollector {
   private currentMetrics = {
     avgBytesPerTick: 0,
     avgEntitiesPerTick: 0,
+    avgEntitiesFiltered: 0,
     avgSerializationMs: 0,
     peakBytesPerTick: 0,
     avgClients: 0,
@@ -32,10 +34,11 @@ export class NetworkMetricsCollector {
    * @param entities Number of entities included in the state.
    * @param serializationMs Time taken to serialize the state in milliseconds.
    * @param clients Number of connected clients.
+   * @param entitiesFiltered Number of entities filtered out by interest management.
    */
-  public recordTick(bytes: number, entities: number, serializationMs: number, clients: number): void {
+  public recordTick(bytes: number, entities: number, serializationMs: number, clients: number, entitiesFiltered: number = 0): void {
     const now = Date.now();
-    this.samples.push({ bytes, entities, serializationMs, clients, timestamp: now });
+    this.samples.push({ bytes, entities, entitiesFiltered, serializationMs, clients, timestamp: now });
 
     this.cleanupOldSamples(now);
     this.updateMetrics();
@@ -58,6 +61,7 @@ export class NetworkMetricsCollector {
       this.currentMetrics = {
         avgBytesPerTick: 0,
         avgEntitiesPerTick: 0,
+        avgEntitiesFiltered: 0,
         avgSerializationMs: 0,
         peakBytesPerTick: 0,
         avgClients: 0,
@@ -67,6 +71,7 @@ export class NetworkMetricsCollector {
 
     let totalBytes = 0;
     let totalEntities = 0;
+    let totalEntitiesFiltered = 0;
     let totalMs = 0;
     let totalClients = 0;
     let peak = 0;
@@ -74,6 +79,7 @@ export class NetworkMetricsCollector {
     for (const sample of this.samples) {
       totalBytes += sample.bytes;
       totalEntities += sample.entities;
+      totalEntitiesFiltered += sample.entitiesFiltered;
       totalMs += sample.serializationMs;
       totalClients += sample.clients;
       if (sample.bytes > peak) peak = sample.bytes;
@@ -82,6 +88,7 @@ export class NetworkMetricsCollector {
     this.currentMetrics = {
       avgBytesPerTick: totalBytes / this.samples.length,
       avgEntitiesPerTick: totalEntities / this.samples.length,
+      avgEntitiesFiltered: totalEntitiesFiltered / this.samples.length,
       avgSerializationMs: totalMs / this.samples.length,
       peakBytesPerTick: peak,
       avgClients: totalClients / this.samples.length,
@@ -91,7 +98,7 @@ export class NetworkMetricsCollector {
   private logSummary(): void {
     console.log(
       `[NetworkMetrics] 1s-Window - Avg: ${this.currentMetrics.avgBytesPerTick.toFixed(0)} B/tick, ` +
-      `${this.currentMetrics.avgEntitiesPerTick.toFixed(1)} ent/tick, ` +
+      `${this.currentMetrics.avgEntitiesPerTick.toFixed(1)} ent/tick (${this.currentMetrics.avgEntitiesFiltered.toFixed(1)} filtered), ` +
       `${this.currentMetrics.avgSerializationMs.toFixed(2)} ms/ser, ` +
       `${this.currentMetrics.avgClients.toFixed(1)} clients | ` +
       `Peak: ${this.currentMetrics.peakBytesPerTick} B`

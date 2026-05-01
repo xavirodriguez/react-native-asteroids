@@ -7,7 +7,7 @@ import { DeterministicSimulation } from "../../src/simulation/DeterministicSimul
 import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "../../src/engine/core/CoreComponents";
 import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
 import { InputComponent, ShipComponent, BulletComponent } from "../../src/games/asteroids/types/AsteroidTypes";
-import { InterestManagementSystem } from "../../src/engine/systems/InterestManagementSystem";
+import { InterestManagerSystem } from "../../src/engine/network/InterestManagerSystem";
 import { SpatialPartitioningSystem } from "../../src/engine/systems/SpatialPartitioningSystem";
 import { SpatialGrid } from "../../src/engine/physics/utils/SpatialGrid";
 import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
@@ -79,7 +79,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.world.setResource("SpatialGrid", new SpatialGrid());
     this.world.addComponent(this.world.createEntity(), { type: "GameState", score: 0 } as Component);
     this.world.addSystem(new SpatialPartitioningSystem());
-    this.world.addSystem(new InterestManagementSystem());
+    this.world.addSystem(new InterestManagerSystem());
   }
 
   onJoin(client: Client, options: { name?: string }) {
@@ -160,24 +160,31 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     // 4. Update per-client delta snapshots (Interest-based)
     let totalBytesSentThisTick = 0;
     let totalSerializationMs = 0;
-    const startTime = Date.now();
+    let totalEntitiesFiltered = 0;
+    const totalEntitiesInWorld = this.world.entities.length;
 
     const interestMap = this.world.getResource<Map<string, Set<number>>>("InterestMap");
     this.clients.forEach(client => {
-        const lastAck = this.clientAcks.get(client.sessionId) ?? 0;
         const interest = interestMap?.get(client.sessionId);
 
+        if (interest) {
+            totalEntitiesFiltered += (totalEntitiesInWorld - interest.size);
+        }
+
         const serializationStart = Date.now();
-        const delta = this.world.deltaSnapshot(lastAck, interest);
-        const serializedDelta = JSON.stringify(delta);
+        // Iteration 2: No delta compression yet.
+        // We use deltaSnapshot with version -1 to get a "Full Snapshot" of only interested entities.
+        const filteredSnapshot = this.world.deltaSnapshot(-1, interest);
+        const serializedState = JSON.stringify(filteredSnapshot);
         totalSerializationMs += (Date.now() - serializationStart);
 
-        totalBytesSentThisTick += serializedDelta.length;
+        totalBytesSentThisTick += serializedState.length;
 
-        // We send the delta specifically to this client
-        client.send("world_delta", {
+        // In Iteration 2, we use a different message or the same one but with full state of interested entities.
+        // The objective says "Serializar solo esas entidades en fullWorldState (o mejor: eliminar fullWorldState y usar mensajes directos)"
+        client.send("world_update", {
             tick: this.state.serverTick,
-            delta: serializedDelta
+            entities: serializedState
         });
     });
 
@@ -195,8 +202,13 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     }
 
     // Record metrics every tick
-    const totalEntities = this.world.entities.length;
-    this.networkMetrics.recordTick(totalBytesSentThisTick, totalEntities, totalSerializationMs, this.clients.length);
+    this.networkMetrics.recordTick(
+        totalBytesSentThisTick,
+        totalEntitiesInWorld,
+        totalSerializationMs,
+        this.clients.length,
+        this.clients.length > 0 ? totalEntitiesFiltered / this.clients.length : 0
+    );
 
     // 5. Record for Replay
     this.replayFrames.push({
