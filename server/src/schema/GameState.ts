@@ -37,6 +37,7 @@ export class AsteroidsState extends Schema {
   @type("number") gameWidth: number = 800;
   @type("number") gameHeight: number = 600;
   @type("uint32") seed: number = 12345;
+  @type("uint32") protocolVersion: number = 1;
   @type("string") fullWorldState: string = "";
 }
 

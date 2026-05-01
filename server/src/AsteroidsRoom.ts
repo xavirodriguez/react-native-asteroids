@@ -7,9 +7,13 @@ import { DeterministicSimulation } from "../../src/simulation/DeterministicSimul
 import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "../../src/engine/core/CoreComponents";
 import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
 import { InputComponent, ShipComponent, BulletComponent } from "../../src/games/asteroids/types/AsteroidTypes";
-import { InterestManagementSystem } from "../../src/engine/systems/InterestManagementSystem";
+import { InterestManagerSystem } from "../../src/engine/network/InterestManagerSystem";
 import { SpatialPartitioningSystem } from "../../src/engine/systems/SpatialPartitioningSystem";
 import { SpatialGrid } from "../../src/engine/physics/utils/SpatialGrid";
+import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
+import { ReplicationStateTracker } from "../../src/engine/network/ReplicationStateTracker";
+import { ClientAckTracker } from "../../src/engine/network/ClientAckTracker";
+import { NetworkDeltaSystem } from "../../src/engine/network/NetworkDeltaSystem";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
@@ -21,6 +25,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private world: World;
   private playerEntities = new Map<string, number>();
   private nextPlayerNumber = 1;
+  private networkMetrics = new NetworkMetricsCollector();
+  private replicationTracker = new ReplicationStateTracker();
+  private ackTracker = new ClientAckTracker();
+  private deltaSystem = new NetworkDeltaSystem(this.replicationTracker);
 
   private spawnAsteroids(count: number) {
     const gameplayRandom = RandomService.getInstance("gameplay");
@@ -56,6 +64,9 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       if (data?.lastAckedVersion !== undefined) {
         this.clientAcks.set(client.sessionId, data.lastAckedVersion);
       }
+      if (data?.sequence !== undefined) {
+        this.ackTracker.recordAck(client.sessionId, data.sequence, this.state.serverTick);
+      }
       client.send("sync_tick", {
         serverTick: this.state.serverTick,
         timestamp: data?.timestamp ?? 0
@@ -68,12 +79,16 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       this.spawnAsteroids(6);
     });
 
+    this.onMessage("metrics", (client) => {
+      client.send("metrics", this.networkMetrics.getMetrics());
+    });
+
     // Initialized ECS world
     this.world = new World();
     this.world.setResource("SpatialGrid", new SpatialGrid());
     this.world.addComponent(this.world.createEntity(), { type: "GameState", score: 0 } as Component);
     this.world.addSystem(new SpatialPartitioningSystem());
-    this.world.addSystem(new InterestManagementSystem());
+    this.world.addSystem(new InterestManagerSystem());
   }
 
   onJoin(client: Client, options: { name?: string }) {
@@ -152,24 +167,62 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.syncWorldToSchema();
 
     // 4. Update per-client delta snapshots (Interest-based)
+    let totalBytesSentThisTick = 0;
+    let totalSerializationMs = 0;
+    let totalEntitiesFiltered = 0;
+    const totalEntitiesInWorld = this.world.entities.length;
+
     const interestMap = this.world.getResource<Map<string, Set<number>>>("InterestMap");
     this.clients.forEach(client => {
-        const lastAck = this.clientAcks.get(client.sessionId) ?? 0;
-        const interest = interestMap?.get(client.sessionId);
-        const delta = this.world.deltaSnapshot(lastAck, interest);
+        const interest = interestMap?.get(client.sessionId) || new Set<number>();
 
-        // We send the delta specifically to this client
-        client.send("world_delta", {
-            tick: this.state.serverTick,
-            delta: JSON.stringify(delta)
-        });
+        totalEntitiesFiltered += (totalEntitiesInWorld - interest.size);
+
+        const serializationStart = Date.now();
+
+        // Iteration 3: Delta Compression
+        const sequence = this.ackTracker.nextSequence(client.sessionId);
+        const baselineAck = this.ackTracker.getLastAckedSequence(client.sessionId);
+        const idleTime = this.ackTracker.getIdleTime(client.sessionId);
+        const forceFull = idleTime > 3000 || baselineAck === 0;
+
+        const deltaPacket = this.deltaSystem.generateDelta(
+            this.world,
+            client.sessionId,
+            sequence,
+            baselineAck,
+            interest,
+            forceFull
+        );
+
+        const serializedPacket = JSON.stringify(deltaPacket);
+        totalSerializationMs += (Date.now() - serializationStart);
+        totalBytesSentThisTick += serializedPacket.length;
+
+        client.send("world_delta", deltaPacket);
     });
 
     // Optimization: Only update fullWorldState occasionally for late joiners
     // to avoid broadcasting large strings every tick.
     if (this.state.serverTick % 60 === 0) {
-        this.state.fullWorldState = JSON.stringify(this.world.snapshot());
+        const fullSerializationStart = Date.now();
+        const snapshot = this.world.snapshot();
+        const serialized = JSON.stringify(snapshot);
+        totalSerializationMs += (Date.now() - fullSerializationStart);
+
+        this.state.fullWorldState = serialized;
+        // Note: we don't count fullWorldState in per-tick bytes sent
+        // as it's a schema field synchronized via Colyseus's own patch rate
     }
+
+    // Record metrics every tick
+    this.networkMetrics.recordTick(
+        totalBytesSentThisTick,
+        totalEntitiesInWorld,
+        totalSerializationMs,
+        this.clients.length,
+        this.clients.length > 0 ? totalEntitiesFiltered / this.clients.length : 0
+    );
 
     // 5. Record for Replay
     this.replayFrames.push({
