@@ -1,3 +1,13 @@
+/**
+ * System that manages item drops from destroyed entities.
+ *
+ * This system decouples the destruction of an entity from the spawning of loot.
+ * It listens for specific game events (e.g., `asteroid:destroyed`) and uses
+ * `LootTableComponent` to determine if and what should be spawned.
+ *
+ * @packageDocumentation
+ */
+
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { Entity } from "../core/Entity";
@@ -6,11 +16,7 @@ import { LootTableComponent, TransformComponent, VelocityComponent, RenderCompon
 import { RandomService } from "../utils/RandomService";
 
 /**
- * System responsible for spawning loot when entities are destroyed.
- *
- * @remarks
- * Listens for game-specific destruction events and uses LootTableComponent
- * to determine if a power-up should be spawned.
+ * Coordinates loot generation based on entity destruction events.
  */
 export class LootSystem extends System {
   private registeredWorld: World | null = null;
@@ -19,6 +25,9 @@ export class LootSystem extends System {
     super();
   }
 
+  /**
+   * Periodically checks if the system needs to register listeners for a new world.
+   */
   public update(world: World, _deltaTime: number): void {
     if (this.registeredWorld !== world) {
       this.registerListeners(world);

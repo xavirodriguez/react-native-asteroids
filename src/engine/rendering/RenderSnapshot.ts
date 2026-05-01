@@ -1,3 +1,13 @@
+/**
+ * Snapshot definitions for decoupled rendering.
+ *
+ * This module provides the data structures used to capture a consistent state
+ * of the ECS world at a specific point in time. The renderer consumes these
+ * snapshots to draw frames without needing direct access to the live World.
+ *
+ * @packageDocumentation
+ */
+
 import { Entity } from "../core/Entity";
 
 /**
@@ -52,12 +62,14 @@ export interface UISnapshot {
 }
 
 /**
- * Snapshot completo de un frame de renderizado.
+ * Complete snapshot of a single rendering frame.
  *
  * @remarks
- * Esta estructura desacopla la fase de captura (que lee del World) de la fase de dibujo.
- * Ayuda a que el renderizado sea consistente y busca evitar efectos secundarios de
- * mutaciones del World durante el dibujo.
+ * This structure decouples the capture phase (reading from the ECS World) from
+ * the drawing phase. It ensures visual consistency and prevents race conditions
+ * or inconsistent states caused by mid-frame simulation updates.
+ *
+ * It is typically managed by a `Renderer` and passed to custom `EffectDrawer` callbacks.
  */
 export interface RenderSnapshot {
   /** Array pre-asignado de snapshots de entidades. */

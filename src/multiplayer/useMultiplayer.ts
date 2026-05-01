@@ -1,8 +1,24 @@
+/**
+ * React hook for managing multiplayer connectivity and state synchronization.
+ *
+ * This hook encapsulates the complexity of connecting to Colyseus rooms,
+ * handling server messages, and notifying the React component tree of state updates.
+ *
+ * @packageDocumentation
+ */
+
 import { useEffect, useState, useRef, useCallback } from "react";
 import { connectToRoom, disconnect } from "./ColyseusClient";
 import { Room } from "@colyseus/sdk";
 import { InputFrame } from "./NetTypes";
 
+/**
+ * Manages the network lifecycle for a game session.
+ *
+ * @param roomName - The name of the game room to join.
+ * @param playerName - Display name for the player.
+ * @param active - If false, the hook will disconnect and cleanup.
+ */
 export function useMultiplayer(roomName: string, playerName: string, active: boolean) {
   const [room, setRoom] = useState<Room | null>(null);
   const [connected, setConnected] = useState(false);
@@ -46,22 +62,31 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
           }
         });
 
+        /**
+         * Clock synchronization logic.
+         * Calculates Round Trip Time (RTT) to align client simulation tick with server.
+         * The client stays ahead of the server to ensure inputs arrive before their tick.
+         */
         joinedRoom.onMessage("sync_tick", (data: { serverTick: number, timestamp: number }) => {
             const now = Date.now();
             const rtt = now - data.timestamp;
-            // Approximate local tick to be ahead of server by half RTT + buffer
-            localTickRef.current = data.serverTick + Math.ceil((rtt / 2) / 16.66) + 2;
+            // 16.66ms is the duration of a 60fps frame.
+            const FRAME_DURATION = 16.66;
+            // Buffer of 2 frames to account for jitter.
+            const TICK_BUFFER = 2;
+
+            localTickRef.current = data.serverTick + Math.ceil((rtt / 2) / FRAME_DURATION) + TICK_BUFFER;
             console.log(`Synced tick: server=${data.serverTick}, local=${localTickRef.current}, rtt=${rtt}`);
         });
 
         joinedRoom.onMessage("world_delta", (data: { tick: number, delta: string }) => {
             // Forward delta to the game via serverState update
             // We only send delta and tick to ensure the game identifies this as a delta update
+            setServerState({ delta: data.delta, tick: data.tick });
+
+            // Extract stateVersion if present in the JSON string
             try {
                 const deltaObj = JSON.parse(data.delta);
-                setServerState({ delta: deltaObj, tick: data.tick });
-
-                // Extract stateVersion if present
                 if (deltaObj.stateVersion !== undefined) {
                     lastAckedVersionRef.current = deltaObj.stateVersion;
                 }

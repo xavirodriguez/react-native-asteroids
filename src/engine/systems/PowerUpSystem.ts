@@ -1,12 +1,25 @@
+/**
+ * System that manages the collection and application of power-up effects.
+ *
+ * This system monitors collision events between entities marked as "PowerUp"
+ * and other entities. When a collision occurs, it applies the corresponding
+ * `Modifier` to the collector and destroys the power-up entity.
+ *
+ * @packageDocumentation
+ */
+
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { CollisionEventsComponent, PowerUpComponent, ModifierStackComponent, Modifier } from "../core/CoreComponents";
 import { EventBus } from "../core/EventBus";
 
 /**
- * System that manages power-up collection and effect application.
+ * Coordinates the logic for collecting power-ups and applying their buffs.
  */
 export class PowerUpSystem extends System {
+  /**
+   * Scans for collisions involving PowerUp entities.
+   */
   public update(world: World, _deltaTime: number): void {
     const powerUps = world.query("PowerUp", "CollisionEvents");
 

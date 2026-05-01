@@ -7,7 +7,17 @@ import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers"
 import { Collider2DComponent, BoundaryComponent } from "../../engine/core/CoreComponents";
 
 /**
- * Creates the player entity.
+ * Entity factory for the Space Invaders game domain.
+ *
+ * Coordinates the creation of players, invaders, shields, and formation controllers.
+ * Ensures proper collision layer and mask assignment for the classic shooter mechanics.
+ *
+ * @packageDocumentation
+ */
+
+/**
+ * Creates the player ship entity.
+ * Includes input handling, health, and boundary constraints.
  */
 export function createPlayer(world: World, x: number, y: number): Entity {
   const player = world.createEntity();
@@ -71,7 +81,8 @@ export function createPlayer(world: World, x: number, y: number): Entity {
 }
 
 /**
- * Creates an invader entity.
+ * Creates a single invader entity.
+ * Points are assigned based on the row (classic Space Invaders scoring).
  */
 export function createInvader(world: World, x: number, y: number, row: number, col: number): Entity {
   const invader = world.createEntity();
@@ -135,7 +146,7 @@ export function createEnemyBullet(world: World, x: number, y: number, pool: Enem
 }
 
 /**
- * Creates a shield segment entity.
+ * Creates a single destructible block of a shield/bunker.
  */
 export function createShieldSegment(world: World, x: number, y: number, row: number, col: number): Entity {
   const segment = world.createEntity();
@@ -188,7 +199,7 @@ export function createGameState(world: World): Entity {
 }
 
 /**
- * Creates the formation controller entity.
+ * Creates the singleton entity that coordinates the invader grid movement.
  */
 export function createFormationController(world: World): Entity {
   const controller = world.createEntity();
@@ -206,7 +217,7 @@ export function createFormationController(world: World): Entity {
 }
 
 /**
- * Spawns a full wave of invaders.
+ * Procedurally spawns a grid of invaders based on GAME_CONFIG spacing.
  */
 export function spawnInvaderWave(world: World, _level: number): void {
   const startX = GAME_CONFIG.INVADER_START_X;
@@ -230,7 +241,7 @@ export function spawnInvaderWave(world: World, _level: number): void {
 }
 
 /**
- * Spawns the bunkers/shields.
+ * Spawns multiple composite bunkers made of individual shield segments.
  */
 export function spawnShields(world: World): void {
   const count = GAME_CONFIG.SHIELD_COUNT;

@@ -1,3 +1,13 @@
+/**
+ * System that manages network interest and replication filtering.
+ *
+ * This system determines which entities should be synchronized to which players based
+ * on spatial proximity. It optimizes network bandwidth by avoiding updates for
+ * entities far away from the player's view.
+ *
+ * @packageDocumentation
+ */
+
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { Entity, TransformComponent } from "../types/EngineTypes";
@@ -5,15 +15,19 @@ import { SpatialGrid } from "../physics/utils/SpatialGrid";
 import { ShipComponent } from "../../games/asteroids/types/AsteroidTypes";
 
 /**
- * System that calculates which entities are "interesting" or relevant for viewers (players).
- *
- * @remarks
- * Primarily used on the server to filter network replication snapshots.
- * It populates the "InterestMap" resource: Map<string, Set<Entity>>.
+ * Calculates and maintains a map of entities relevant for each viewer.
  */
 export class InterestManagementSystem extends System {
-  public interestRadius = 800; // Default view distance
+  /**
+   * Distance in pixels around a player where entities are considered relevant.
+   * Default: 800 (approx. one screen size).
+   */
+  public interestRadius = 800;
 
+  /**
+   * Identifies interesting entities for each active session.
+   * Results are stored in the "InterestMap" resource.
+   */
   public update(world: World, _deltaTime: number): void {
     const grid = world.getResource<SpatialGrid>("SpatialGrid");
     if (!grid) return;

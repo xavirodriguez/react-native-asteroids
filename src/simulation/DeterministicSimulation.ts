@@ -1,3 +1,19 @@
+/**
+ * Core simulation orchestrator for the Asteroids game logic.
+ *
+ * This module centralizes all state-altering logic in a way that is reproducible across
+ * different platforms and network clients. It strictly follows a fixed-step update
+ * pattern and relies on deterministic services.
+ *
+ * @remarks
+ * To maintain determinism:
+ * - Only use `RandomService.getInstance("gameplay")` for logic that affects game state.
+ * - Avoid using `Date.now()` or `Math.random()` directly inside simulation methods.
+ * - Ensure system update order is consistent.
+ *
+ * @packageDocumentation
+ */
+
 import { World } from "../engine/core/World";
 import { Entity, TransformComponent, VelocityComponent, RenderComponent, HealthComponent, Collider2DComponent, TTLComponent, BoundaryComponent } from "../engine/types/EngineTypes";
 import { PhysicsUtils } from "../engine/physics/utils/PhysicsUtils";
@@ -8,10 +24,21 @@ import { RandomService } from "../engine/utils/RandomService";
 import { EventBus } from "../engine/core/EventBus";
 import { ScreenShakeComponent } from "../engine/types/EngineTypes";
 
+/**
+ * Context provided to simulation steps to handle specific execution modes.
+ */
 export type SimulationContext = {
+    /**
+     * If true, the simulation is running a rollback reconciliation.
+     * Side effects like spawning particles or emitting events should be suppressed.
+     */
     isResimulating: boolean;
 };
 
+/**
+ * Configuration mapping for asteroid fragmentation.
+ * Defines the next size and position offset when an asteroid is destroyed.
+ */
 const ASTEROID_SPLIT_CONFIG: Record<
   string,
   { nextSize: "medium" | "small"; offset: number } | undefined
@@ -25,11 +52,17 @@ const ASTEROID_SPLIT_CONFIG: Record<
  * Game simulation orchestrator designed for reproducibility.
  *
  * @remarks
- * This class consolidates update logic with the intention to support consistent operation
- * sequence between server and clients. It relies on controlled `RandomService`
- * usage with the goal to mitigate divergences.
+ * Consolidates the fixed-step update loop for the Asteroids game domain.
+ * It coordinates movement, collisions, spawning, and life-cycle management.
  */
 export class DeterministicSimulation {
+    /**
+     * Entry point for a single simulation tick.
+     *
+     * @param world - The ECS world to update.
+     * @param deltaTime - Fixed time step in milliseconds (expected to be 16.66ms).
+     * @param ctx - Execution context (Forward vs Resimulation).
+     */
     public static update(world: World, deltaTime: number, ctx: SimulationContext) {
         // Only lock gameplay context during resimulation.
         // Forward simulation may legitimately trigger visual effects that use the render RNG.
@@ -43,6 +76,10 @@ export class DeterministicSimulation {
         }
     }
 
+    /**
+     * Internal sequence of simulation phases.
+     * The order of these calls is critical for deterministic behavior.
+     */
     private static internalUpdate(world: World, deltaTime: number, ctx: SimulationContext) {
         const dtSeconds = deltaTime / 1000;
 
@@ -82,9 +119,13 @@ export class DeterministicSimulation {
             });
 
             // Update vertical position with sine wave oscillation
-            // Oscillation amplitude: 30, frequency: 2 rad/s
+            // Amplitude: 30 pixels, Frequency: 2 rad/s
+            // These values are currently hardcoded heuristics for UFO flight patterns.
+            const UFO_OSCILLATION_AMPLITUDE = 30;
+            const UFO_OSCILLATION_FREQUENCY = 2;
+
             world.mutateComponent(entity, "Transform", (t: TransformComponent) => {
-                t.y = ufo.baseY + Math.sin(ufo.time * 2) * 30;
+                t.y = ufo.baseY + Math.sin(ufo.time * UFO_OSCILLATION_FREQUENCY) * UFO_OSCILLATION_AMPLITUDE;
             });
 
             // UFOs that go off-screen horizontally are removed
@@ -277,16 +318,23 @@ export class DeterministicSimulation {
         world.removeEntity(asteroidEntity);
     }
 
+    /**
+     * Spawns cosmetic particles at the given position.
+     * Uses `renderRandom` to ensure particle patterns don't affect gameplay determinism.
+     */
     private static spawnExplosion(world: World, position: TransformComponent) {
         const renderRandom = RandomService.getRenderRandom();
+        // Base velocity multiplier for explosion spread
+        const EXPLOSION_VELOCITY_SCALE = 160;
+
         for (let i = 0; i < GAME_CONFIG.PARTICLE_COUNT; i++) {
           createParticle({
             world,
             x: position.x,
             y: position.y,
-            dx: (renderRandom.next() - 0.5) * 160,
-            dy: (renderRandom.next() - 0.5) * 160,
-            color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
+            dx: (renderRandom.next() - 0.5) * EXPLOSION_VELOCITY_SCALE,
+            dy: (renderRandom.next() - 0.5) * EXPLOSION_VELOCITY_SCALE,
+            color: i % 2 === 0 ? "#FF8800" : "#FFDD00", // Standard orange/yellow fire colors
           });
         }
     }
@@ -302,7 +350,9 @@ export class DeterministicSimulation {
                 if (eventBus) eventBus.emit("wave:complete");
             }
 
-            for (let i = 0; i < 6; i++) {
+            // Spawn 6 large asteroids at random positions to start a new wave.
+            const ASTEROIDS_PER_WAVE = 6;
+            for (let i = 0; i < ASTEROIDS_PER_WAVE; i++) {
                 createAsteroid({
                     world,
                     x: gameplayRandom.nextRange(0, GAME_CONFIG.SCREEN_WIDTH),

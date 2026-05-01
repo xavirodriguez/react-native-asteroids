@@ -21,7 +21,20 @@ export interface PongStateComponent extends Component, PongState {
   type: "PongState";
 }
 
+/**
+ * Entity factory for the Pong game domain.
+ *
+ * Manages the creation of the Ball, Paddles, and Game State.
+ * Implements specific logic for paddle positioning and ball initialization.
+ *
+ * @packageDocumentation
+ */
+
 export const PongEntityFactory = {
+  /**
+   * Creates the ball entity at the center of the screen.
+   * Uses `gameplayRandom` to determine initial vertical direction.
+   */
   createBall(world: World) {
     const ball = world.createEntity();
     world.addComponent(ball, { type: "Transform", x: PONG_CONFIG.WIDTH / 2, y: PONG_CONFIG.HEIGHT / 2, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
@@ -43,6 +56,11 @@ export const PongEntityFactory = {
     return ball;
   },
 
+  /**
+   * Creates a paddle entity for either the left or right side.
+   * @param world - ECS World.
+   * @param side - Which side of the screen the paddle belongs to.
+   */
   createPaddle(world: World, side: "left" | "right") {
     const paddle = world.createEntity();
     const x = side === "left" ? 40 : PONG_CONFIG.WIDTH - 40;
