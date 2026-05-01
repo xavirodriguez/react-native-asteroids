@@ -1,11 +1,26 @@
+/**
+ * System for playback and management of recorded game sessions.
+ *
+ * This module allows loading historical input streams and replaying them
+ * through the deterministic simulation engine.
+ *
+ * @packageDocumentation
+ */
+
 import { ReplayData, InputFrame } from "./NetTypes";
 import { AsteroidsGame } from "../games/asteroids/AsteroidsGame";
 
+/**
+ * Manages the state and execution of a game replay.
+ */
 export class ReplayManager {
   private replayData: ReplayData | null = null;
   private currentFrameIndex: number = 0;
   private isPlaying: boolean = false;
 
+  /**
+   * Initializes the manager with a recorded replay dataset.
+   */
   public loadReplay(data: ReplayData) {
     this.replayData = data;
     this.currentFrameIndex = 0;

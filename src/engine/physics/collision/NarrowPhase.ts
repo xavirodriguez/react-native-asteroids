@@ -1,3 +1,18 @@
+/**
+ * Implementation of Narrow Phase collision detection algorithms.
+ *
+ * This module provides precise collision detection between different geometric primitives
+ * using algorithms like Separating Axis Theorem (SAT) and distance-based checks.
+ * It generates a {@link CollisionManifold} containing details about collision state,
+ * normals, penetration depth, and contact points.
+ *
+ * @remarks
+ * Most algorithms here assume standard Euclidean geometry. SAT is used for convex polygons.
+ * The system uses object pooling and shared manifolds to minimize GC pressure during the physics step.
+ *
+ * @packageDocumentation
+ */
+
 import { Shape, CircleShape, AABBShape, CapsuleShape, PolygonShape } from "../shapes/ShapeTypes";
 
 import { CollisionManifold } from "./CollisionTypes";
@@ -39,6 +54,20 @@ const staticAABBPoly: PolygonShape = {
 };
 
 export class NarrowPhase {
+  /**
+   * Main entry point for narrow phase testing between two shapes.
+   * Dispatches to specific primitive-vs-primitive tests based on shape types.
+   *
+   * @param shapeA - Geometric definition of the first shape.
+   * @param posXA - World X coordinate of shape A.
+   * @param posYA - World Y coordinate of shape A.
+   * @param rotA - World rotation of shape A in radians.
+   * @param shapeB - Geometric definition of the second shape.
+   * @param posXB - World X coordinate of shape B.
+   * @param posYB - World Y coordinate of shape B.
+   * @param rotB - World rotation of shape B in radians.
+   * @returns A manifold containing collision data.
+   */
   static test(
     shapeA: Shape, posXA: number, posYA: number, rotA: number,
     shapeB: Shape, posXB: number, posYB: number, rotB: number
@@ -91,61 +120,109 @@ export class NarrowPhase {
     return resetManifold();
   }
 
+  /**
+   * Collision detection between two circles.
+   * Uses simple distance squared comparison for performance.
+   */
   static circleVsCircle(a: CircleShape, ax: number, ay: number, b: CircleShape, bx: number, by: number): CollisionManifold {
     const manifold = resetManifold();
     const dx = bx - ax; const dy = by - ay;
     const distanceSq = dx * dx + dy * dy;
     const radiusSum = a.radius + b.radius;
+
+    // Check if squared distance is less than squared sum of radii
     if (distanceSq < radiusSum * radiusSum) {
       const distance = Math.sqrt(distanceSq);
-      manifold.colliding = true; manifold.depth = radiusSum - distance;
-      if (distance > 0.0001) { manifold.normalX = dx / distance; manifold.normalY = dy / distance; }
-      else { manifold.normalX = 1; manifold.normalY = 0; }
+      manifold.colliding = true;
+      manifold.depth = radiusSum - distance;
+
+      // Normal points from A to B
+      if (distance > 0.0001) {
+        manifold.normalX = dx / distance;
+        manifold.normalY = dy / distance;
+      } else {
+        // Degenerate case: centers are exactly the same
+        manifold.normalX = 1;
+        manifold.normalY = 0;
+      }
+
+      // Contact point is along the normal at radius distance from A
       manifold.contactPoints.push({ x: ax + manifold.normalX * a.radius, y: ay + manifold.normalY * a.radius });
     }
     return manifold;
   }
 
+  /**
+   * Collision detection between two Axis-Aligned Bounding Boxes (AABBs).
+   * Calculates overlap on both axes and chooses the axis of minimum penetration.
+   */
   static aabbVsAabb(a: AABBShape, ax: number, ay: number, b: AABBShape, bx: number, by: number): CollisionManifold {
     const manifold = resetManifold();
-    const dx = bx - ax; const xOverlap = a.halfWidth + b.halfWidth - Math.abs(dx);
+    const dx = bx - ax;
+    const xOverlap = a.halfWidth + b.halfWidth - Math.abs(dx);
+
     if (xOverlap > 0) {
-      const dy = by - ay; const yOverlap = a.halfHeight + b.halfHeight - Math.abs(dy);
+      const dy = by - ay;
+      const yOverlap = a.halfHeight + b.halfHeight - Math.abs(dy);
+
       if (yOverlap > 0) {
         manifold.colliding = true;
+        // Minimum translation vector (MTV) principle
         if (xOverlap < yOverlap) {
-          manifold.depth = xOverlap; manifold.normalX = dx > 0 ? 1 : -1; manifold.normalY = 0;
+          manifold.depth = xOverlap;
+          manifold.normalX = dx > 0 ? 1 : -1;
+          manifold.normalY = 0;
         } else {
-          manifold.depth = yOverlap; manifold.normalX = 0; manifold.normalY = dy > 0 ? 1 : -1;
+          manifold.depth = yOverlap;
+          manifold.normalX = 0;
+          manifold.normalY = dy > 0 ? 1 : -1;
         }
       }
     }
     return manifold;
   }
 
+  /**
+   * Collision detection between a circle and an AABB.
+   * Clamps the circle center to the AABB bounds to find the closest point.
+   */
   static circleVsAabb(circle: CircleShape, cx: number, cy: number, aabb: AABBShape, ax: number, ay: number): CollisionManifold {
     const manifold = resetManifold();
-    let closestX = cx; let closestY = cy;
-    const minX = ax - aabb.halfWidth; const maxX = ax + aabb.halfWidth;
-    const minY = ay - aabb.halfHeight; const maxY = ay + aabb.halfHeight;
+    let closestX = cx;
+    let closestY = cy;
+    const minX = ax - aabb.halfWidth;
+    const maxX = ax + aabb.halfWidth;
+    const minY = ay - aabb.halfHeight;
+    const maxY = ay + aabb.halfHeight;
+
+    // Clamp circle center to AABB extent to find closest point on AABB
     if (cx < minX) closestX = minX; else if (cx > maxX) closestX = maxX;
     if (cy < minY) closestY = minY; else if (cy > maxY) closestY = maxY;
-    const dx = cx - closestX; const dy = cy - closestY;
+
+    const dx = cx - closestX;
+    const dy = cy - closestY;
     const distanceSq = dx * dx + dy * dy;
+
     if (distanceSq < circle.radius * circle.radius) {
       const distance = Math.sqrt(distanceSq);
       manifold.colliding = true;
+
       if (distance > 0.0001) {
-        manifold.normalX = -dx / distance; manifold.normalY = -dy / distance;
+        // Normal points from AABB (closestPoint) towards circle center
+        manifold.normalX = -dx / distance;
+        manifold.normalY = -dy / distance;
         manifold.depth = circle.radius - distance;
       } else {
+        // Circle center is inside the AABB
         const xDist = Math.min(Math.abs(cx - minX), Math.abs(cx - maxX));
         const yDist = Math.min(Math.abs(cy - minY), Math.abs(cy - maxY));
         if (xDist < yDist) {
-            manifold.normalX = cx > ax ? 1 : -1; manifold.normalY = 0;
+            manifold.normalX = cx > ax ? 1 : -1;
+            manifold.normalY = 0;
             manifold.depth = circle.radius + xDist;
         } else {
-            manifold.normalX = 0; manifold.normalY = cy > ay ? 1 : -1;
+            manifold.normalX = 0;
+            manifold.normalY = cy > ay ? 1 : -1;
             manifold.depth = circle.radius + yDist;
         }
       }
@@ -154,9 +231,14 @@ export class NarrowPhase {
     return manifold;
   }
 
+  /**
+   * Collision detection between a circle and a convex polygon.
+   * Finds the closest point on the polygon's perimeter to the circle center.
+   */
   static circleVsPolygon(circle: CircleShape, cx: number, cy: number, poly: PolygonShape, px: number, py: number, pr: number): CollisionManifold {
     const manifold = resetManifold();
     this.populateGlobalVertices(poly, px, py, pr, worldVerticesA);
+
     let minDistanceSq = Infinity;
     let closestPoint = { x: 0, y: 0 };
     let inside = true;
@@ -164,22 +246,42 @@ export class NarrowPhase {
     for (let i = 0; i < worldVerticesA.length; i++) {
         const v1 = worldVerticesA[i];
         const v2 = worldVerticesA[(i + 1) % worldVerticesA.length];
-        const edgeX = v2.x - v1.x; const edgeY = v2.y - v1.y;
-        const toCircleX = cx - v1.x; const toCircleY = cy - v1.y;
+        const edgeX = v2.x - v1.x;
+        const edgeY = v2.y - v1.y;
+        const toCircleX = cx - v1.x;
+        const toCircleY = cy - v1.y;
+
+        // Using cross product to determine if center is to the right of the CCW edge
         if (edgeX * toCircleY - edgeY * toCircleX < 0) inside = false;
+
+        // Project circle center onto edge line segment
         const t = Math.max(0, Math.min(1, (toCircleX * edgeX + toCircleY * edgeY) / (edgeX * edgeX + edgeY * edgeY)));
-        const projectX = v1.x + t * edgeX; const projectY = v1.y + t * edgeY;
+        const projectX = v1.x + t * edgeX;
+        const projectY = v1.y + t * edgeY;
+
         const distSq = (cx - projectX) ** 2 + (cy - projectY) ** 2;
-        if (distSq < minDistanceSq) { minDistanceSq = distSq; closestPoint = { x: projectX, y: projectY }; }
+        if (distSq < minDistanceSq) {
+          minDistanceSq = distSq;
+          closestPoint = { x: projectX, y: projectY };
+        }
     }
 
     if (inside || minDistanceSq < circle.radius * circle.radius) {
         const distance = Math.sqrt(minDistanceSq);
         manifold.colliding = true;
+        // If inside, depth includes radius + distance to nearest edge
         manifold.depth = inside ? circle.radius + distance : circle.radius - distance;
-        const dx = cx - closestPoint.x; const dy = cy - closestPoint.y;
-        if (distance > 0.0001) { manifold.normalX = (inside ? -dx : dx) / distance; manifold.normalY = (inside ? -dy : dy) / distance; }
-        else { manifold.normalX = 1; manifold.normalY = 0; }
+
+        const dx = cx - closestPoint.x;
+        const dy = cy - closestPoint.y;
+
+        if (distance > 0.0001) {
+          manifold.normalX = (inside ? -dx : dx) / distance;
+          manifold.normalY = (inside ? -dy : dy) / distance;
+        } else {
+          manifold.normalX = 1;
+          manifold.normalY = 0;
+        }
         manifold.contactPoints.push({x: closestPoint.x, y: closestPoint.y});
     }
     return manifold;
@@ -193,30 +295,56 @@ export class NarrowPhase {
       return this.polygonVsPolygon(staticAABBPoly, ax, ay, 0, poly, px, py, pr);
   }
 
+  /**
+   * Collision detection between two convex polygons using Separating Axis Theorem (SAT).
+   *
+   * @remarks
+   * For two convex shapes to be colliding, their projections must overlap on ALL potential axes.
+   * For polygons, these axes are the normals of every edge of both polygons.
+   */
   static polygonVsPolygon(a: PolygonShape, ax: number, ay: number, ar: number, b: PolygonShape, bx: number, by: number, br: number): CollisionManifold {
     const manifold = resetManifold();
     this.populateGlobalVertices(a, ax, ay, ar, worldVerticesA);
     this.populateGlobalVertices(b, bx, by, br, worldVerticesB);
+
     axesCache.length = 0;
     this.populateGlobalNormals(a, ar, axesCache);
     this.populateGlobalNormals(b, br, axesCache);
+
     let minOverlap = Infinity;
-    let smallestAxisX = 0; let smallestAxisY = 0;
+    let smallestAxisX = 0;
+    let smallestAxisY = 0;
+
+    // Test each axis for separation
     for (let i = 0; i < axesCache.length; i++) {
       const axis = axesCache[i];
       const projectionA = this.projectPolygon(worldVerticesA, axis);
       const projectionB = this.projectPolygon(worldVerticesB, axis);
+
       const overlap = Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min);
+
+      // If there is NO overlap on any single axis, the polygons are NOT colliding
       if (overlap <= 0) return resetManifold();
+
       if (overlap < minOverlap) {
         minOverlap = overlap;
-        smallestAxisX = axis.x; smallestAxisY = axis.y;
+        smallestAxisX = axis.x;
+        smallestAxisY = axis.y;
       }
     }
-    manifold.colliding = true; manifold.depth = minOverlap;
+
+    manifold.colliding = true;
+    manifold.depth = minOverlap;
+
+    // Ensure normal points from A towards B
     const dot = (bx - ax) * smallestAxisX + (by - ay) * smallestAxisY;
-    if (dot < 0) { manifold.normalX = -smallestAxisX; manifold.normalY = -smallestAxisY; }
-    else { manifold.normalX = smallestAxisX; manifold.normalY = smallestAxisY; }
+    if (dot < 0) {
+      manifold.normalX = -smallestAxisX;
+      manifold.normalY = -smallestAxisY;
+    } else {
+      manifold.normalX = smallestAxisX;
+      manifold.normalY = smallestAxisY;
+    }
     return manifold;
   }
 
@@ -261,6 +389,9 @@ export class NarrowPhase {
       return this.circleVsCapsule({type: "circle", radius: a.radius}, ax, ay, b, bx, by, br);
   }
 
+  /**
+   * Internal helper to calculate world-space line segment for a capsule.
+   */
   private static getCapsuleLine(c: CapsuleShape, x: number, y: number, r: number) {
       const angle = r + c.orientation;
       const dx = Math.cos(angle) * c.halfHeight;
@@ -268,6 +399,9 @@ export class NarrowPhase {
       return { p1x: x - dx, p1y: y - dy, p2x: x + dx, p2y: y + dy };
   }
 
+  /**
+   * Approximates a capsule as a polygon for SAT testing.
+   */
   private static capsuleToPolygon(c: CapsuleShape): PolygonShape {
       // Hexagonal approximation of a capsule for SAT
       const angle = c.orientation;
@@ -286,6 +420,10 @@ export class NarrowPhase {
       };
   }
 
+  /**
+   * Transforms local polygon vertices to world space coordinates.
+   * Reuse arrays to avoid GC.
+   */
   private static populateGlobalVertices(shape: PolygonShape, x: number, y: number, r: number, out: Array<{x: number, y: number}>) {
     const cos = Math.cos(r); const sin = Math.sin(r);
     for (let i = 0; i < shape.vertices.length; i++) {
@@ -297,6 +435,9 @@ export class NarrowPhase {
     out.length = shape.vertices.length;
   }
 
+  /**
+   * Transforms local polygon normals to world space based on current rotation.
+   */
   private static populateGlobalNormals(shape: PolygonShape, r: number, out: Array<{x: number, y: number}>) {
     const cos = Math.cos(r); const sin = Math.sin(r);
     const startIdx = out.length;
@@ -308,6 +449,10 @@ export class NarrowPhase {
     }
   }
 
+  /**
+   * Projects polygon vertices onto a specific axis to find min/max extent.
+   * Used as part of SAT.
+   */
   private static projectPolygon(vertices: Array<{x: number, y: number}>, axis: {x: number, y: number}) {
     let min = Infinity; let max = -Infinity;
     for (let i = 0; i < vertices.length; i++) {

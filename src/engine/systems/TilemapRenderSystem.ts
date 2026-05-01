@@ -1,11 +1,24 @@
+/**
+ * System responsible for calculating the visible portion of tilemaps.
+ *
+ * This system performs view culling (frustum culling) for large tilemaps,
+ * identifying which range of tiles should be processed by the renderer
+ * based on the current camera position and zoom.
+ *
+ * @packageDocumentation
+ */
+
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { TilemapComponent, Camera2DComponent } from "../types/EngineTypes";
 
 /**
- * System that renders tilemaps with view culling based on the active camera.
+ * Manages the visibility and culling of tile-based maps.
  */
 export class TilemapRenderSystem extends System {
+  /**
+   * Updates the visible range for all tilemaps in the world.
+   */
   public update(world: World, _deltaTime: number): void {
     const tilemaps = world.query("Tilemap");
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");

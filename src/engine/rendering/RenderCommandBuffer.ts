@@ -1,7 +1,21 @@
+/**
+ * Core rendering command definitions and buffering.
+ *
+ * This module defines the protocol for communicating between game systems
+ * and platform-specific renderers (Canvas, Skia). It provides a high-performance
+ * command buffer that minimizes object allocations during the render loop.
+ *
+ * @packageDocumentation
+ */
+
 import { Entity } from "../core/Entity";
 
+/** Discriminator for the type of drawing operation. */
 export type CommandType = string;
 
+/**
+ * An immutable-like representation of a single drawing operation.
+ */
 export interface DrawCommand {
   type: CommandType;
   x: number;
@@ -20,8 +34,8 @@ export interface DrawCommand {
 }
 
 /**
- * Opciones para añadir un comando al buffer.
- * Evita el uso de parámetros posicionales excesivos.
+ * Configuration options for adding a command to the buffer.
+ * Used to avoid excessive positional parameters in the public API.
  */
 export interface DrawCommandOptions {
   type: CommandType;
@@ -87,9 +101,12 @@ export class RenderCommandBuffer {
   }
 
   /**
-   * Añade un comando al buffer actualizando el siguiente objeto disponible del pool.
+   * Adds a render command to the buffer by updating the next available pooled object.
    *
-   * @param options - Configuración del comando de dibujo.
+   * @param options - Visual configuration for the drawing operation.
+   * @remarks
+   * If the internal `MAX_COMMANDS` limit is reached, subsequent calls will be ignored
+   * to preserve memory stability.
    */
   public addCommand(options: DrawCommandOptions): void {
     if (this.activeCount >= this.MAX_COMMANDS) {
@@ -130,8 +147,11 @@ export class RenderCommandBuffer {
   }
 
   /**
-   * Ordenamiento por inserción in-situ. Eficiente para arrays casi ordenados (típico para Z-indices).
-   * Busca preservar la estabilidad para evitar parpadeos visuales.
+   * Performs an in-place insertion sort on the active commands.
+   *
+   * @remarks
+   * Optimized for nearly-sorted arrays, which is the typical case for Z-indices in 2D games.
+   * Preserves stability to prevent visual flickering of overlapping entities with the same Z-index.
    */
   public sort(): void {
     for (let i = 1; i < this.activeCount; i++) {

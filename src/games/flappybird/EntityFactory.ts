@@ -4,6 +4,16 @@ import { FLAPPY_CONFIG } from "./types/FlappyBirdTypes";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import { Collider2DComponent } from "../../engine/core/CoreComponents";
+/**
+ * Entity factory for the Flappy Bird game domain.
+ *
+ * Coordinates the creation of the bird, pipes, and ground.
+ * Manages the spatial layout of pipes and ensures proper collision masking
+ * for the "flap and avoid" gameplay.
+ *
+ * @packageDocumentation
+ */
+
 import { createInputBufferComponent } from "../../engine/types/InputBufferComponent";
 
 /**
@@ -25,7 +35,8 @@ export interface CreatePipeParams {
 }
 
 /**
- * Creates the bird entity.
+ * Creates the player bird entity.
+ * Includes physics, input handling, and a specialized input buffer for jump timing.
  */
 export function createBird(options: CreateBirdParams): Entity {
   const { world, x, y } = options;
@@ -88,7 +99,8 @@ export function createBird(options: CreateBirdParams): Entity {
 }
 
 /**
- * Creates pipe entities (top and bottom).
+ * Creates a vertical pair of pipe entities (top and bottom).
+ * @param options.gapY - The vertical center of the gap between pipes.
  */
 export function createPipe(options: CreatePipeParams): void {
   const { world, x, gapY } = options;

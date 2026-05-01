@@ -1,6 +1,40 @@
+/**
+ * Registry and logic definitions for meta-game Mutators.
+ *
+ * Mutators are persistent player upgrades or temporary session modifiers that alter
+ * game rules or entity stats. This registry defines available "beneficial" mutators
+ * that players can purchase with XP.
+ *
+ * @remarks
+ * The registry currently acts as a data provider. Actual application logic
+ * is implemented via the `apply` callback which modifies the ECS World or Game Config.
+ *
+ * @packageDocumentation
+ */
+
 import { World } from "../engine/core/World";
 
-export const BENEFICIAL_MUTATORS = {
+/**
+ * Interface for a beneficial mutator definition.
+ */
+export interface BeneficialMutator {
+  /** Unique identifier for the mutator. */
+  id: string;
+  /** Human-readable description of the effect. */
+  description: string;
+  /** Experience point cost to unlock or activate. */
+  xpCost: number;
+  /**
+   * Transformation function that applies the mutator effect to a World.
+   * @param world - The ECS world where the effect should be applied.
+   */
+  apply: (world: World) => void;
+}
+
+/**
+ * Collection of mutators that provide advantages to the player.
+ */
+export const BENEFICIAL_MUTATORS: Record<string, BeneficialMutator> = {
   "faster_bullets": {
     id: "faster_bullets",
     description: "Balas 10% más rápidas en todos los juegos",
