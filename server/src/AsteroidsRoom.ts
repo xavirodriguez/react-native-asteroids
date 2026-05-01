@@ -14,6 +14,7 @@ import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
 import { ReplicationStateTracker } from "../../src/engine/network/ReplicationStateTracker";
 import { ClientAckTracker } from "../../src/engine/network/ClientAckTracker";
 import { NetworkDeltaSystem } from "../../src/engine/network/NetworkDeltaSystem";
+import { NetworkBudgetManager } from "../../src/engine/network/NetworkBudgetManager";
 
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
@@ -28,6 +29,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private networkMetrics = new NetworkMetricsCollector();
   private replicationTracker = new ReplicationStateTracker();
   private ackTracker = new ClientAckTracker();
+  private budgetManager = new NetworkBudgetManager();
   private deltaSystem = new NetworkDeltaSystem(this.replicationTracker);
 
   private spawnAsteroids(count: number) {
@@ -172,11 +174,15 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     let totalEntitiesFiltered = 0;
     const totalEntitiesInWorld = this.world.entities.length;
 
-    const interestMap = this.world.getResource<Map<string, Set<number>>>("InterestMap");
+    const detailedInterestMap = this.world.getResource<Map<string, import("../../src/engine/network/types/ReplicationTypes").InterestedEntity[]>>("DetailedInterestMap");
     this.clients.forEach(client => {
-        const interest = interestMap?.get(client.sessionId) || new Set<number>();
+        const interest = detailedInterestMap?.get(client.sessionId) || [];
 
-        totalEntitiesFiltered += (totalEntitiesInWorld - interest.size);
+        // Iteration 4: Budgeting
+        const prioritized = this.budgetManager.prioritize(client.sessionId, interest);
+        const interestIds = new Set(prioritized.map(e => e.entityId));
+
+        totalEntitiesFiltered += (totalEntitiesInWorld - interestIds.size);
 
         const serializationStart = Date.now();
 
@@ -191,7 +197,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
             client.sessionId,
             sequence,
             baselineAck,
-            interest,
+            interestIds,
             forceFull
         );
 

@@ -2,6 +2,7 @@ import { World } from "../core/World";
 import { Entity } from "../types/EngineTypes";
 import { ReplicationStateTracker } from "./ReplicationStateTracker";
 import { DeltaPacket, EntityPayload, EntityDeltaPayload } from "./types/ReplicationTypes";
+import { ReplicationPolicy } from "./ReplicationPolicy";
 
 /**
  * @responsibility Generate delta packets for clients based on interest and last known state.
@@ -50,10 +51,15 @@ export class NetworkDeltaSystem {
         };
 
         components.forEach(type => {
+          if (!ReplicationPolicy.shouldReplicate(type, world.tick) && !forceFull) return;
+
           const comp = world.getComponent(entityId, type);
           if (comp) {
+            const componentVersions = world.componentVersions.get(type);
+            const currentVersion = componentVersions?.get(entityId) ?? currentWorldStateVersion;
+
             payload.components[type] = this.serializeComponent(comp);
-            this.stateTracker.recordSent(clientId, entityId, type, currentWorldStateVersion);
+            this.stateTracker.recordSent(clientId, entityId, type, currentVersion);
           }
         });
         created.push(payload);
@@ -66,6 +72,8 @@ export class NetworkDeltaSystem {
         let hasChanges = false;
 
         components.forEach(type => {
+          if (!ReplicationPolicy.shouldReplicate(type, world.tick)) return;
+
           // Use component-level versioning from World
           const componentVersions = world.componentVersions.get(type);
           const currentVersion = componentVersions?.get(entityId) ?? 0;
