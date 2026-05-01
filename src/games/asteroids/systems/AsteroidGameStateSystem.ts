@@ -1,5 +1,6 @@
 import { World } from "../../../engine/core/World";
-import { type GameStateComponent, type HealthComponent, GAME_CONFIG } from "../types/AsteroidTypes";
+import { type GameStateComponent, GAME_CONFIG } from "../types/AsteroidTypes";
+import { HealthComponent } from "../../../engine/core/CoreComponents";
 import { spawnAsteroidWave, createUfo } from "../EntityFactory";
 import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
 import { RandomService } from "../../../engine/utils/RandomService";
@@ -11,7 +12,7 @@ import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem
 export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateComponent> implements IGameStateSystem {
 
   constructor(gameInstance?: IAsteroidsGame) {
-    super(gameInstance as unknown as IAsteroidsGame & import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, boolean>>);
+    super(gameInstance as any);
   }
 
   /**
@@ -66,12 +67,12 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
     gameState: GameStateComponent;
     deltaTime: number;
   }): void {
-    const { world, gameState, deltaTime } = context;
+    const { world, deltaTime } = context;
     const ships = world.query("Ship", "Health", "Input");
     if (ships.length === 0) return;
 
     const shipEntity = ships[0];
-    const health = world.getComponent<HealthComponent>(shipEntity, "Health");
+    const health = world.getComponent(shipEntity, "Health") as HealthComponent;
     if (!health) return;
 
     this.updateInvulnerability(health, deltaTime, world, shipEntity);

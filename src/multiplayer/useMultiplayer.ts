@@ -11,6 +11,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { connectToRoom, disconnect } from "./ColyseusClient";
 import { Room } from "@colyseus/sdk";
 import { InputFrame } from "./NetTypes";
+import { BinaryCompression } from "../engine/network/BinaryCompression";
 
 /**
  * Manages the network lifecycle for a game session.
@@ -91,6 +92,18 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
                     lastAckedVersionRef.current = deltaObj.stateVersion;
                 }
             } catch (e) {}
+        });
+
+        joinedRoom.onMessage("world_delta_bin", (data: Uint8Array) => {
+            try {
+                const deltaPacket = BinaryCompression.unpack<any>(data);
+                setServerState({ delta: JSON.stringify(deltaPacket), tick: deltaPacket.tick || serverTickRef.current });
+                if (deltaPacket.stateVersion !== undefined) {
+                    lastAckedVersionRef.current = deltaPacket.stateVersion;
+                }
+            } catch (e) {
+                console.error("[useMultiplayer] Failed to unpack binary delta:", e);
+            }
         });
 
         joinedRoom.send("sync_tick", {

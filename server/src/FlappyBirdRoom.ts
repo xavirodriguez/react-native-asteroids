@@ -1,6 +1,6 @@
 import { Room, type Client } from "@colyseus/core";
 import { FlappyBirdState, Player, Pipe } from "./schema/GameState";
-import { RandomService } from "./RandomService";
+import { RandomService } from "../../src/engine/utils/RandomService";
 
 export class FlappyBirdRoom extends Room<FlappyBirdState> {
   maxClients = 8;
@@ -10,7 +10,8 @@ export class FlappyBirdRoom extends Room<FlappyBirdState> {
   onCreate(options: { seed?: number }) {
     this.state = new FlappyBirdState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
-    this.random = new RandomService(this.state.seed);
+    this.random = RandomService.getInstance("flappy");
+    this.random.setSeed(this.state.seed);
 
     this.state.gameStarted = false;
     this.state.gameOver = false;
