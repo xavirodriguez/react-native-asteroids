@@ -39,10 +39,15 @@ export enum GameStatus {
  * Orquestador principal del ciclo de vida y el estado del juego.
  *
  * @remarks
- * Diseñado con la intención de implementar un pipeline orientado a la reproducibilidad:
- * 1. INPUT: Captura y procesamiento de comandos.
- * 2. SIMULATION: Ejecución de la lógica de juego y sistemas físicos (Fixed Step).
- * 3. TRANSFORM: Propagación de jerarquías espaciales.
+ * Esta clase abstracta implementa el esqueleto del motor, gestionando la transición entre estados
+ * y asegurando un pipeline de ejecución predecible.
+ *
+ * Pipeline de Actualización (Fixed Update):
+ * 1. PRE-UPDATE: Captura de estados previos para interpolación.
+ * 2. INPUT: Traducción de eventos crudos a acciones semánticas.
+ * 3. SIMULATION: Ejecución de sistemas ECS y lógica de escena (Paso Fijo).
+ * 4. TRANSFORM: Propagación de jerarquías y cálculo de matrices de mundo.
+ * 5. REPLAY: Grabado de frames de entrada para soporte de repeticiones.
  *
  * La fase de renderizado está desacoplada y gestiona la interpolación visual mediante
  * el valor `alpha` calculado por el {@link GameLoop}.
@@ -289,16 +294,16 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * Reinicia el estado del juego, opcionalmente con una nueva semilla aleatoria.
    *
    * @remarks
-   * Las llamadas a este método se serializan mediante un lock interno para evitar
-   * condiciones de carrera durante la re-inicialización asíncrona.
-   * Realiza una limpieza previa mediante `_onBeforeRestart`. Si hay escenas activas,
-   * reinicia la escena actual invocando `onRestartCleanup()`; de lo contrario, limpia
-   * el mundo y re-inicializa las entidades.
+   * Garantiza la atomicidad del reinicio mediante un lock. Durante el reinicio,
+   * el motor se pausa y se limpian los recursos volátiles para evitar fugas de memoria.
    *
-   * @param seed - Semilla opcional para favorecer la repetibilidad en la simulación.
-   * @postcondition El juego intenta volver a su estado inicial de simulación.
-   * @sideEffect Reinicia el tick de simulación y el estado de pausa.
-   * @sideEffect Actualiza la semilla global en {@link RandomService}.
+   * Diferencia Escena vs Mundo:
+   * - Si hay una Escena activa: Delega el reinicio al `SceneManager`.
+   * - Si no: Limpia el Mundo global, re-registra sistemas y re-crea entidades base.
+   *
+   * @param seed - Semilla opcional para forzar una simulación determinista específica.
+   * @postcondition El tick de simulación vuelve a 0 (o el valor inicial del juego).
+   * @sideEffect Resetea el `EventBus` y el `SpatialGrid`.
    */
   public async restart(seed?: number): Promise<void> {
     if (this._status === GameStatus.DESTROYED) {
@@ -408,13 +413,23 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * Inicializa el juego y sus subsistemas de forma asíncrona.
    *
    * @remarks
-   * Se espera que se llame antes de {@link BaseGame.start}.
-   * Las llamadas concurrentes se serializan mediante un lock. Si el juego ya está inicializado,
-   * la llamada lanza un error con el fin de prevenir re-inicializaciones accidentales.
+   * El proceso de inicialización es crítico y debe ocurrir ANTES de {@link BaseGame.start}.
+   * Se gestiona mediante un cerrojo de transición (`_transitionLock`) para evitar que
+   * múltiples llamadas concurrentes corrompan la configuración del mundo.
    *
-   * @throws Error - Si el juego ya está inicializado o en proceso de inicialización.
-   * @postcondition El {@link World} está configurado con sistemas y entidades iniciales.
-   * @postcondition {@link BaseGame._status} pasa de `UNINITIALIZED` a `READY`.
+   * Flujo de init:
+   * 1. Espera a cualquier transición en curso.
+   * 2. Cambia estado a INITIALIZING.
+   * 3. Registra sistemas esenciales (EventBus, Input, Audio, Grid).
+   * 4. Llama a hooks abstractos para que el juego concreto registre su lógica.
+   * 5. Establece estado a READY.
+   *
+   * @throws Error - Si el juego ya está inicializado o en proceso.
+   * @postcondition El {@link World} está configurado y listo para simular.
+   * @postcondition {@link BaseGame._status} pasa a `READY`.
+   *
+   * @conceptualRisk [ASYNC_RACE] Aunque existe el lock, el uso de recursos externos (API, DB)
+   * durante la inicialización debe ser manejado con cuidado para no bloquear el hilo principal.
    */
   public async init(): Promise<void> {
     if (this._status !== GameStatus.UNINITIALIZED) {
