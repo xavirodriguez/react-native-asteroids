@@ -108,8 +108,16 @@ export class PhysicsSystem2D extends System {
    * Resolves a single collision manifold between two rigid bodies using impulses.
    *
    * @remarks
-   * Handles linear and angular impulses, static/dynamic Coulomb friction,
-   * and positional correction to prevent sinking.
+   * ### Impulse Resolution Physics
+   * This method applies the Sequential Impulses algorithm:
+   * 1. **Relative Velocity**: Calculates velocity at the contact point, including rotation (`V = v + w x r`).
+   * 2. **Normal Impulse**: Applies an impulse `j` along the collision normal to satisfy the
+   *    restitution coefficient `e` (Newton's Law of Restitution).
+   *    `j = -(1 + e) * v_rel_normal / (1/mA + 1/mB + (rA x n)^2 / IA + (rB x n)^2 / IB)`
+   * 3. **Friction Impulse**: Applies a tangent impulse `jt` based on Coulomb's Law,
+   *    clamping the tangent impulse to `j * friction_coefficient`.
+   * 4. **Positional Correction**: Applies a small "push" (pseudo-impulse) to resolve
+   *    overlaps and prevent entities from "sinking" into each other due to gravity or integration errors.
    *
    * @param transformA - Transform of first entity.
    * @param bodyA - Physics body of first entity.

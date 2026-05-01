@@ -10,7 +10,19 @@ import { ModifierStackComponent } from "../../../engine/core/CoreComponents";
 
 /**
  * Shared logic for ship movement and physics application.
- * Can be used by both the client and server/prediction.
+ *
+ * This utility centralizes the physical behavior of player-controlled ships,
+ * ensuring consistency between local client prediction and authoritative
+ * server simulation.
+ *
+ * @remarks
+ * ### Units and Constants
+ * - **Position**: World units (pixels).
+ * - **Rotation**: Radians (0 is facing Right, -PI/2 is facing Up).
+ * - **Thrust**: Pixels per second squared.
+ * - **Friction**: Velocity multiplier per millisecond (exponential decay).
+ * - **DeltaTime**: Mixed usage. Some methods use seconds (`dtSeconds`),
+ *   while others use milliseconds (`dtMs`) based on historical integration needs.
  */
 export const ShipPhysics = {
   applyRotation(world: World, entity: number, pos: TransformComponent, input: InputComponent, dtSeconds: number, config: typeof GAME_CONFIG = GAME_CONFIG): void {

@@ -69,13 +69,19 @@ export class World {
   /** @internal */
   private freeEntities: Entity[] = [];
   private resources = new Map<string, unknown>();
-  /** Incremented on structural changes (entity creation/destruction, component addition/removal). */
+  /**
+   * Incremented on structural changes (entity creation/destruction, component addition/removal).
+   * Used to invalidate caches in systems that iterate over all entities.
+   */
   private _structureVersion = 0;
   /** @internal */
   private _entitiesCache: Entity[] = [];
   /** @internal */
   private _entitiesCacheVersion = -1;
-  /** Incremented on data changes or manual notification. */
+  /**
+   * Incremented on data changes or manual notification.
+   * Used by the Renderer and Network systems to detect mutations within components.
+   */
   private _stateVersion = 0;
   /** @internal */
   public componentVersions = new Map<string, Map<Entity, number>>();
@@ -143,7 +149,7 @@ export class World {
   }
 
   /**
-   * Genera una instantánea serializable del estado del mundo destinada a apoyar rollback o persistencia.
+   * Generates a serializable snapshot of the entire world state for rollback or persistence.
    *
    * @remarks
    * Captura entidades activas, datos serializables de componentes, contadores de IDs, versión del mundo
@@ -222,7 +228,7 @@ export class World {
   }
 
   /**
-   * Intenta restaurar el estado del mundo a partir de una instantánea previamente capturada.
+   * Restores the world state from a previously captured snapshot.
    *
    * @remarks
    * Este método reconstruye los mapas de componentes e índices basándose en los datos serializados restaurables.
@@ -609,11 +615,18 @@ export class World {
   }
 
   /**
-   * Genera un snapshot parcial que solo contiene los cambios ocurridos desde una versión específica.
+   * Generates a partial snapshot containing only data that changed since a specific version.
    *
-   * @param sinceVersion - La versión del estado a partir de la cual se calculan los cambios.
-   * @param filterEntities - Opcional. Un conjunto de entidades a las que limitar el snapshot (Culling/Interés).
-   * @returns Un objeto con los datos de componentes modificados y metadatos básicos.
+   * @remarks
+   * This is the foundation of the Delta Synchronization system. It iterates through all
+   * components and compares their stored version with `sinceVersion`.
+   *
+   * @param sinceVersion - The state version to compare against.
+   * @param filterEntities - Optional. A set of entities to restrict the snapshot to (Interest Management).
+   * @returns A partial {@link WorldSnapshot} containing modified component data.
+   *
+   * @conceptualRisk [PERFORMANCE][HIGH] In worlds with many entities, this method can be
+   * expensive as it performs a nested iteration over component types and entities.
    */
   public deltaSnapshot(sinceVersion: number, filterEntities?: Set<Entity>): Partial<WorldSnapshot> {
     const componentData: ComponentDataSnapshot = {};

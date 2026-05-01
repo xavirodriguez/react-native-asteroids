@@ -6,7 +6,25 @@ import { ReplicationPolicy } from "./ReplicationPolicy";
 import { Quantization } from "./Quantization";
 
 /**
+ * System responsible for generating differential state updates (Deltas).
+ *
+ * Instead of sending a full snapshot of the world on every tick, this system
+ * calculates the differences between the current state and what each client
+ * has already acknowledged.
+ *
  * @responsibility Generate delta packets for clients based on interest and last known state.
+ * @remarks
+ * ### Delta Protocol
+ * 1. The server tracks which component versions were last sent to each client.
+ * 2. When generating a packet, it only includes components whose `stateVersion`
+ *    is greater than the last acknowledged version by that client.
+ * 3. It utilizes {@link ReplicationPolicy} to throttle updates for low-priority components.
+ * 4. Transform components are automatically quantized to reduce bandwidth.
+ *
+ * @conceptualRisk [BANDWIDTH][MEDIUM] If too many components change simultaneously,
+ * the delta packet size can approach or exceed a full snapshot.
+ * @conceptualRisk [CONSISTENCY][HIGH] Relies on clients accurately acknowledging
+ * received versions. A missed ACK or incorrect tracking leads to state divergence.
  */
 export class NetworkDeltaSystem {
   constructor(
@@ -16,6 +34,15 @@ export class NetworkDeltaSystem {
 
   /**
    * Generates a delta packet for a specific client.
+   *
+   * @param world - The source ECS world.
+   * @param clientId - Unique identifier for the destination client.
+   * @param sequence - Monotonic packet sequence number.
+   * @param baselineAck - The last world state version acknowledged by this client.
+   * @param interestedEntities - Set of entities relevant to this client (Interest Management).
+   * @param forceFull - If true, ignores versioning and sends all interested components.
+   *
+   * @returns A {@link DeltaPacket} containing created, updated, and removed data.
    */
   public generateDelta(
     world: World,

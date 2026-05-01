@@ -7,7 +7,27 @@
  * normals, penetration depth, and contact points.
  *
  * @remarks
- * Most algorithms here assume standard Euclidean geometry. SAT is used for convex polygons.
+ * Most algorithms here assume standard Euclidean geometry.
+ *
+ * ### Separating Axis Theorem (SAT)
+ * For two convex shapes, if there exists an axis on which their projections do not overlap,
+ * they are not colliding. The system tests all potential axes (edge normals for polygons,
+ * and the axis between centers for circles).
+ *
+ * ### Reference Diagram (Polygon SAT)
+ * ```
+ *      Polygon A          Axis (Normal)
+ *       /---\               ^
+ *      /     \              |     [---] Projection A
+ *      \     /              |
+ *       \---/               |     (Gap) -> Separated!
+ *                           |
+ *             /---\         |     [---] Projection B
+ *            /     \        |
+ *           \---/           |
+ *          Polygon B
+ * ```
+ *
  * The system uses object pooling and shared manifolds to minimize GC pressure during the physics step.
  *
  * @packageDocumentation
@@ -122,7 +142,10 @@ export class NarrowPhase {
 
   /**
    * Collision detection between two circles.
-   * Uses simple distance squared comparison for performance.
+   *
+   * @remarks
+   * Uses distance comparison: `distance(A, B) < radiusA + radiusB`.
+   * For performance, it compares squared distances to avoid `Math.sqrt`.
    */
   static circleVsCircle(a: CircleShape, ax: number, ay: number, b: CircleShape, bx: number, by: number): CollisionManifold {
     const manifold = resetManifold();
@@ -184,7 +207,15 @@ export class NarrowPhase {
 
   /**
    * Collision detection between a circle and an AABB.
-   * Clamps the circle center to the AABB bounds to find the closest point.
+   *
+   * @remarks
+   * Employs the "Clamping" method:
+   * 1. Find the point on the AABB closest to the circle's center by clamping the center coordinates to the AABB's range.
+   * 2. Calculate the distance between the circle center and this closest point.
+   * 3. If distance < circle radius, a collision is occurring.
+   *
+   * Special case: If the circle center is *inside* the AABB, the normal and depth are calculated
+   * based on the distance to the nearest edge of the AABB.
    */
   static circleVsAabb(circle: CircleShape, cx: number, cy: number, aabb: AABBShape, ax: number, ay: number): CollisionManifold {
     const manifold = resetManifold();
@@ -233,7 +264,13 @@ export class NarrowPhase {
 
   /**
    * Collision detection between a circle and a convex polygon.
-   * Finds the closest point on the polygon's perimeter to the circle center.
+   *
+   * @remarks
+   * 1. Transform polygon vertices to world space.
+   * 2. Iterate through each edge of the polygon.
+   * 3. Project the circle center onto the edge segment to find the closest point on the perimeter.
+   * 4. Check if the center is "inside" all edges using the cross product.
+   * 5. If inside OR distance to perimeter < radius, there is a collision.
    */
   static circleVsPolygon(circle: CircleShape, cx: number, cy: number, poly: PolygonShape, px: number, py: number, pr: number): CollisionManifold {
     const manifold = resetManifold();
@@ -301,6 +338,16 @@ export class NarrowPhase {
    * @remarks
    * For two convex shapes to be colliding, their projections must overlap on ALL potential axes.
    * For polygons, these axes are the normals of every edge of both polygons.
+   *
+   * 1. Transform local vertices to world space.
+   * 2. Collect unique edge normals (axes) from both polygons.
+   * 3. For each axis:
+   *    - Project all vertices onto the axis.
+   *    - Find min/max of the projection.
+   *    - Check for overlap: `overlap = min(maxA, maxB) - max(minA, minB)`.
+   *    - If `overlap <= 0`, exit early (no collision).
+   * 4. Identify the axis of minimum overlap (MTV - Minimum Translation Vector).
+   * 5. Ensure the normal points from A to B.
    */
   static polygonVsPolygon(a: PolygonShape, ax: number, ay: number, ar: number, b: PolygonShape, bx: number, by: number, br: number): CollisionManifold {
     const manifold = resetManifold();

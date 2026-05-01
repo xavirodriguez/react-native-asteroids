@@ -6,10 +6,14 @@
  * pattern and relies on deterministic services.
  *
  * @remarks
- * To maintain determinism:
- * - Only use `RandomService.getInstance("gameplay")` for logic that affects game state.
- * - Avoid using `Date.now()` or `Math.random()` directly inside simulation methods.
- * - Ensure system update order is consistent.
+ * To maintain determinism, developers MUST follow these rules:
+ * 1. **Pure State Logic**: Only use `RandomService.getInstance("gameplay")` for state-altering logic.
+ * 2. **No External Clocks**: Avoid using `Date.now()`, `performance.now()`, or `Math.random()`.
+ * 3. **Fixed Execution Order**: Ensure systems are updated in a consistent sequence across all clients.
+ * 4. **Side Effect Suppression**: Use `ctx.isResimulating` to disable non-deterministic side effects
+ *    like SFX or visual particles during rollbacks.
+ * 5. **Floating Point Care**: Be aware that JS floating point math can vary slightly across architectures;
+ *    important values should ideally be quantized.
  *
  * @packageDocumentation
  */
@@ -58,6 +62,11 @@ const ASTEROID_SPLIT_CONFIG: Record<
 export class DeterministicSimulation {
     /**
      * Entry point for a single simulation tick.
+     *
+     * @remarks
+     * Manages the PRNG context locking. During resimulation (rollback), the gameplay
+     * context is locked to ensure that the RNG stream remains perfectly aligned
+     * with the tick count, preventing visual-only effects from consuming gameplay entropy.
      *
      * @param world - The ECS world to update.
      * @param deltaTime - Fixed time step in milliseconds (expected to be 16.66ms).

@@ -12,7 +12,7 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
 /**
  * Sistema de detección de colisiones 2D.
  *
- * @responsibility Selección de fase ancha híbrida (Spatial Hash / Sweep and Prune).
+ * @responsibility Selección de fase ancha híbrida (Spatial Grid / Sweep and Prune).
  * @responsibility Detección de fase estrecha (AABB, Círculo, Polígono) y generación de manifolds.
  * @responsibility Proporcionar soporte para Continuous Collision Detection (CCD) lineal.
  *
@@ -48,6 +48,14 @@ export class CollisionSystem2D extends System {
 
   /**
    * Orchestrates the collision detection pipeline.
+   *
+   * @remarks
+   * ### Broadphase Selection
+   * The system evaluates two strategies for pair generation:
+   * 1. **SpatialGrid**: If `useSpatialGrid` is true and a grid is available, it queries
+   *    nearby entities based on AABB overlaps. Best for high-density environments.
+   * 2. **Sweep and Prune**: A 1D sorting-based algorithm that iterates through sorted
+   *    AABBs. More efficient for low-density or sparse environments.
    *
    * @warning Los callbacks registrados (`onCollision`, `onTriggerEnter`, etc.) se ejecutan durante
    * la fase de resolución. Se recomienda NO realizar mutaciones estructurales directas en el World
