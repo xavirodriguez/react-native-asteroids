@@ -51,3 +51,23 @@ export interface DeltaPacket extends NetworkPacket {
   updated: EntityDeltaPayload[];
   removed: number[];
 }
+
+/**
+ * Budget constraints for a single client update.
+ */
+export interface ClientNetworkBudget {
+  maxBytesPerPacket: number;
+  maxEntitiesPerPacket: number;
+  maxCriticalPerTick: number;
+  maxLowPriorityPerSecond: number;
+}
+
+/**
+ * Policy for how a specific component type should be replicated.
+ */
+export interface ReplicationSchema {
+  componentType: string;
+  reliable: boolean;
+  sendRate: number; // ticks between sends (1 = every tick)
+  importance: 'critical' | 'high' | 'medium' | 'low';
+}

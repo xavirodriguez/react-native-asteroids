@@ -41,7 +41,8 @@ describe("NetworkDeltaSystem", () => {
     expect(packet.created.length).toBe(0);
     expect(packet.updated.length).toBe(1);
     expect(packet.updated[0].components.Transform).toBeDefined();
-    expect((packet.updated[0].components.Transform as any).x).toBe(100);
+    // Quantized value for 100 with scale 10 is 1000
+    expect((packet.updated[0].components.Transform as any).x).toBe(1000);
   });
 
   test("should not include unchanged components in delta", () => {
