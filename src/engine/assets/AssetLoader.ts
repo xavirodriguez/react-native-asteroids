@@ -1,11 +1,20 @@
 import { AssetDescriptor, AssetHandle } from "./AssetTypes";
 
 /**
- * AssetLoader intended to manage game assets with caching and reference counting.
+ * Cargador de recursos (Asset Loader) asíncrono con gestión de ciclo de vida.
+ *
+ * @responsibility Gestionar la carga asíncrona de imágenes, audio y JSON.
+ * @responsibility Implementar un sistema de conteo de referencias para liberar memoria.
  *
  * @remarks
- * Implements an ownership model where scenes or systems are expected to manage
- * reference count increments and decrements with the intention to control memory usage.
+ * Implementa un modelo de propiedad donde las escenas o sistemas deben incrementar
+ * y decrementar el contador de referencias (`refCount`) para asegurar una gestión
+ * de memoria eficiente.
+ *
+ * ### Características:
+ * 1. **Caché Inteligente**: Evita descargas duplicadas de un mismo recurso.
+ * 2. **Reference Counting**: Libera automáticamente el recurso de memoria cuando nadie lo usa.
+ * 3. **Asset Handles**: Proporciona estados reactivos (`loading`, `ready`, `error`).
  */
 export class AssetLoader {
   private cache = new Map<string, AssetHandle>();

@@ -22,14 +22,14 @@ export interface PongStateComponent extends Component, PongState {
 }
 
 /**
- * Entity factory for the Pong game domain.
+ * Factoría para la creación de entidades de Pong.
  *
- * Manages the creation of the Ball, Paddles, and Game State.
- * Implements specific logic for paddle positioning and ball initialization.
+ * @responsibility Instanciar la bola, las paletas y el estado global con los componentes correctos.
  *
- * @packageDocumentation
+ * @remarks
+ * Encapsula la configuración de dimensiones, velocidades iniciales y máscaras de colisión
+ * necesarias para el comportamiento de rebote característico de Pong.
  */
-
 export const PongEntityFactory = {
   /**
    * Creates the ball entity at the center of the screen.

@@ -35,8 +35,13 @@ interface VelocityLike {
  */
 export class PhysicsUtils {
   /**
-   * Aplica integración lineal para actualizar la posición basada en la velocidad.
+   * Realiza una integración de Euler semi-implícita para actualizar la posición.
    * Soporta tanto componentes ECS estándar como objetos proxy (para predicción).
+   *
+   * @remarks
+   * Fórmula: `P_new = P_old + V * dt`.
+   * Es eficiente y determinista, pero propenso a errores de precisión en velocidades
+   * extremas o framerates muy bajos (tunnelling).
    *
    * @param pos - Objeto de posición (se espera que tenga x,y o worldX,worldY).
    * @param vel - Objeto de velocidad (se espera que tenga dx,dy o velocityX,velocityY).

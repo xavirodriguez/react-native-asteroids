@@ -5,10 +5,20 @@ import { SpatialGrid } from "../physics/utils/SpatialGrid";
 import { BroadPhase } from "../physics/collision/BroadPhase";
 
 /**
- * System that synchronizes entities with the global SpatialGrid.
+ * Sistema de Particionado Espacial Unificado (USSC).
  *
- * @responsibility Update SpatialNodeComponent and SpatialGrid occupancy based on Transform.
- * @responsibility Update the 'active' status of SpatialNodes based on camera proximity.
+ * @responsibility Mantener actualizado el `SpatialGrid` global con las posiciones de las entidades.
+ * @responsibility Gestionar el 'active status' (culling) de las entidades basado en su visibilidad.
+ *
+ * @remarks
+ * Este sistema es el corazón de las optimizaciones espaciales del motor. Permite que otros
+ * sistemas (colisiones, renderizado, replicación) realicen consultas de proximidad O(1).
+ *
+ * ### Criterios de Actualización:
+ * 1. Solo procesa entidades con `SpatialNodeComponent` y `Transform`.
+ * 2. Inserta la entidad en las celdas del `SpatialGrid` correspondientes a su AABB.
+ * 3. Actualiza la propiedad `active` del componente: las entidades lejos de la cámara
+ *    se marcan como inactivas para omitir su procesamiento en otros sistemas.
  */
 export class SpatialPartitioningSystem extends System {
   public update(world: World, _deltaTime: number): void {

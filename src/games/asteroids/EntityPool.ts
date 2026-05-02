@@ -30,7 +30,13 @@ interface BulletParams {
 }
 
 /**
- * BulletPool utilizing the engine's PrefabPool.
+ * Pool de proyectiles (Bullets) para Asteroids.
+ *
+ * @responsibility Gestionar el reciclaje de proyectiles para evitar picos de GC.
+ *
+ * @remarks
+ * Utiliza el `PrefabPool` del motor para pre-instanciar un conjunto de componentes
+ * (Transform, Velocity, Render, Collider2D, TTL) que se reutilizan durante el combate.
  */
 export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
   constructor(initialSize: number = 20) {

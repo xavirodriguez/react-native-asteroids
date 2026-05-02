@@ -34,8 +34,20 @@ export interface ColliderShapeInfo {
 }
 
 /**
- * DebugManager singleton that attaches to a BaseGame instance to provide
- * deep inspection of the ECS world, systems, events, and performance.
+ * Manager Singleton para la depuración y perfilado en tiempo real del motor.
+ *
+ * @responsibility Orquestar la recolección de métricas de rendimiento y estado del ECS.
+ * @responsibility Integrar la visualización de colliders y jerarquías en modo debug.
+ *
+ * @remarks
+ * Este singleton se acopla a una instancia de `BaseGame` para proporcionar inspección
+ * profunda del mundo ECS, sistemas, eventos y rendimiento.
+ *
+ * ### Características:
+ * 1. **Log de Eventos**: Utiliza un buffer circular para capturar eventos del `EventBus`
+ *    sin impacto masivo en el GC.
+ * 2. **Diferenciación de Estado**: Calcula diffs entre ticks para detectar cambios inesperados.
+ * 3. **Métricas de Frame**: Calcula FPS, tiempo de frame y delta de interpolación (alpha).
  */
 export class DebugManager {
   private static instance: DebugManager | null = null;

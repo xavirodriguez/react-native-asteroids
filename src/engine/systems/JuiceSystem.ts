@@ -44,11 +44,16 @@ export function createJuiceComponent(): JuiceComponent {
 
 /**
  * Sistema encargado de procesar animaciones procedimentales (Juice) sobre las entidades.
- * Permite efectos visuales reactivos (pop, squash, stretch, fade) sin lógica de estado compleja.
  *
+ * @responsibility Animar propiedades de componentes de forma elástica o interpolada.
  * @responsibility Actualizar el progreso de cada {@link JuiceAnimation}.
  * @responsibility Interpolar y aplicar valores a {@link VisualOffsetComponent} o {@link RenderComponent}.
  * @responsibility Notificar la finalización mediante callbacks {@link JuiceAnimation.onComplete}.
+ *
+ * @remarks
+ * Es una pieza clave para la **"reconciliación suave"** en red. Cuando el servidor corrige
+ * la posición de una nave, este sistema interpola el error visual (`VisualOffset`)
+ * gradualmente hacia cero, evitando que el jugador perciba saltos bruscos.
  *
  * @queries Juice, VisualOffset, Render
  * @mutates VisualOffset.x, VisualOffset.y, VisualOffset.scaleX, VisualOffset.scaleY, VisualOffset.rotation
