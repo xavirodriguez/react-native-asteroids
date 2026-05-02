@@ -15,6 +15,9 @@ export class NetworkBudgetManager {
 
   /**
    * Filters and prioritizes entities based on the client's budget.
+   *
+   * @remarks
+   * Estimates byte size for different entity types to respect maxBytesPerPacket (Hallazgo 7).
    */
   public prioritize(
     clientId: string,
@@ -22,6 +25,10 @@ export class NetworkBudgetManager {
     budget: ClientNetworkBudget = NetworkBudgetManager.DEFAULT_BUDGET
   ): InterestedEntity[] {
     const result: InterestedEntity[] = [];
+    let currentBytes = 0;
+    // Base packet overhead (headers, sequence, etc.)
+    const ESTIMATED_OVERHEAD = 256;
+    currentBytes += ESTIMATED_OVERHEAD;
 
     // 1. Sort by importance level
     const importanceOrder = { 'critical': 0, 'high': 1, 'medium': 2, 'low': 3, 'none': 4 };
@@ -37,43 +44,64 @@ export class NetworkBudgetManager {
     const medium = sorted.filter(e => e.interestLevel === 'medium');
     const low = sorted.filter(e => e.interestLevel === 'low');
 
+    // Heuristic: estimated bytes per entity based on level
+    const bytesPerEntity: Record<string, number> = { 'critical': 200, 'high': 150, 'medium': 100, 'low': 100, 'none': 0 };
+
     // 2. Add Critical (within budget)
     let count = 0;
     for (const e of critical) {
-      if (count < budget.maxCriticalPerTick && count < budget.maxEntitiesPerPacket) {
+      const estimated = bytesPerEntity[e.interestLevel];
+      if (count < budget.maxEntitiesPerPacket &&
+          count < budget.maxCriticalPerTick &&
+          currentBytes + estimated < budget.maxBytesPerPacket) {
         result.push(e);
         count++;
+        currentBytes += estimated;
       }
     }
 
     // 3. Add High
     for (const e of high) {
-      if (count < budget.maxEntitiesPerPacket) {
+      const estimated = bytesPerEntity[e.interestLevel];
+      if (count < budget.maxEntitiesPerPacket && currentBytes + estimated < budget.maxBytesPerPacket) {
         result.push(e);
         count++;
+        currentBytes += estimated;
       }
     }
 
     // 4. Add Medium
     for (const e of medium) {
-      if (count < budget.maxEntitiesPerPacket) {
+      const estimated = bytesPerEntity[e.interestLevel];
+      if (count < budget.maxEntitiesPerPacket && currentBytes + estimated < budget.maxBytesPerPacket) {
         result.push(e);
         count++;
+        currentBytes += estimated;
       }
     }
 
     // 5. Add Low (rotating)
     if (count < budget.maxEntitiesPerPacket && low.length > 0) {
       const startIndex = this.lowPriorityRotation.get(clientId) ?? 0;
-      const amountToAdd = Math.min(budget.maxLowPriorityPerSecond, budget.maxEntitiesPerPacket - count, low.length);
+      const amountToTry = Math.min(budget.maxLowPriorityPerSecond, budget.maxEntitiesPerPacket - count, low.length);
 
-      for (let i = 0; i < amountToAdd; i++) {
+      let addedLow = 0;
+      for (let i = 0; i < amountToTry; i++) {
         const index = (startIndex + i) % low.length;
-        result.push(low[index]);
-        count++;
+        const e = low[index];
+        const estimated = bytesPerEntity[e.interestLevel];
+
+        if (currentBytes + estimated < budget.maxBytesPerPacket) {
+            result.push(e);
+            count++;
+            currentBytes += estimated;
+            addedLow++;
+        } else {
+            break;
+        }
       }
 
-      this.lowPriorityRotation.set(clientId, (startIndex + amountToAdd) % low.length);
+      this.lowPriorityRotation.set(clientId, (startIndex + addedLow) % low.length);
     }
 
     return result;
