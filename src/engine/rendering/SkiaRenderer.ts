@@ -23,6 +23,12 @@ import { RandomService } from "../utils/RandomService";
  * Interpolación: Intenta usar el valor `alpha` del loop para interpolar entre `PreviousTransform` y `Transform`.
  * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia puede perderse
  * si la app pasa a segundo plano de forma prolongada.
+ *
+ * ### Patrones de Optimización:
+ * 1. **Factory Pattern para SkPaint**: Utiliza objetos `SkPaint` reutilizables para evitar
+ *    alocaciones costosas en el hot-path de renderizado.
+ * 2. **Hardware Acceleration**: Aprovecha la GPU del dispositivo para operaciones complejas
+ *    de dibujo y efectos de mezcla.
  */
 export class SkiaRenderer implements Renderer {
   public readonly type = 'skia';

@@ -7,7 +7,7 @@ import { World } from "../core/World";
  * @responsibility Serializar y hashear el estado serializable de todas las entidades y componentes activos.
  * @conceptualRisk [JSON_DETERMINISM] Se espera que `JSON.stringify` no garantice un orden determinista de las propiedades de los objetos.
  * Si dos clientes tienen los mismos datos pero las propiedades del objeto se insertaron en orden distinto,
- * los hashes diferirán (falso positivo de desync).
+ * los hashes diferirán. Esto genera **falsos positivos de desync**.
  * @conceptualRisk [FLOAT_PRECISION] Diferencias minúsculas en cálculos de punto flotante entre arquitecturas
  * (ej. x86 vs ARM) pueden causar que el string serializado difiera y el hash falle.
  */

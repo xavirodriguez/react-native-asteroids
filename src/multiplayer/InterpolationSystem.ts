@@ -11,7 +11,18 @@
 import { EntitySnapshot } from "./NetTypes";
 
 /**
- * Buffer that stores and retrieves snapshots for time-based interpolation.
+ * Buffer que almacena y recupera snapshots para realizar interpolación basada en tiempo.
+ *
+ * @remarks
+ * Previene el movimiento "entrecortado" (stuttering) causado por la latencia de red
+ * y la baja frecuencia de actualización de los paquetes de estado.
+ *
+ * ### Lógica de Interpolación:
+ * 1. **Buffer de Snapshots**: Mantiene un historial de los últimos estados recibidos (`snapshots`).
+ * 2. **Búsqueda de Intervalo**: Encuentra los dos snapshots que rodean el tiempo objetivo (`targetTime`).
+ * 3. **Cálculo de Alpha**: Determina un factor [0, 1] que representa cuánto tiempo ha pasado
+ *    entre el snapshot previo y el siguiente.
+ * 4. **Interpolación Lineal (Lerp)**: El llamador utiliza este alpha para mezclar posiciones.
  */
 export class InterpolationBuffer {
   private snapshots: EntitySnapshot[] = [];

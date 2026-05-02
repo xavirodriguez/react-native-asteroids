@@ -7,12 +7,22 @@ import { InterestedEntity } from "./types/ReplicationTypes";
 import { InterestManager } from "./InterestManager";
 
 /**
- * @responsibility Determine which entities are relevant for each player based on spatial proximity.
- * @remarks
- * This system populates the "InterestMap" resource, which is used by the server to filter network updates.
- * It uses the existing SpatialHash (physics index) to efficiently query nearby entities.
+ * Sistema encargado de calcular la relevancia de las entidades para cada cliente conectado.
  *
- * @conceptualRisk [SCALE][MEDIUM] As the number of players increases, querying for each one becomes more expensive.
+ * @responsibility Determinar qué entidades son relevantes para cada jugador basándose en proximidad espacial.
+ *
+ * @remarks
+ * Implementa una estrategia de "Interest Management" (Gestión de Interés) para reducir
+ * el tráfico de red enviando solo lo que el jugador puede ver o lo que le afecta directamente.
+ * Este sistema puebla el recurso "DetailedInterestMap", utilizado por el servidor para filtrar actualizaciones.
+ *
+ * ### Niveles de Interés:
+ * - **Critical**: Entidades inmediatas o el propio jugador. Replicación prioritaria.
+ * - **High**: Entidades dentro del radio visual. Replicación frecuente.
+ * - **Medium/Low**: Entidades lejanas. Replicación con tasa de envío reducida (throttling).
+ *
+ * @conceptualRisk [SCALE][MEDIUM] A medida que aumenta el número de jugadores, la consulta
+ * por cada uno de ellos se vuelve más costosa.
  */
 export class InterestManagerSystem extends System {
   public update(world: World, _deltaTime: number): void {

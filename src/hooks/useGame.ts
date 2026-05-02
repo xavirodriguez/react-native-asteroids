@@ -18,11 +18,19 @@ export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, T
 }
 
 /**
- * Generic hook to manage game lifecycle and state in React components.
+ * Hook genérico para gestionar el ciclo de vida del juego y su estado en componentes React.
  *
  * @remarks
- * Intended to facilitate integration between the ECS engine and React's rendering system,
- * managing asynchronous initialization, UI update throttling, and resource cleanup.
+ * Facilita la integración entre el motor ECS (síncrono/fixed-step) y el sistema de renderizado
+ * de React (asíncrono/bajo demanda).
+ *
+ * ### Responsabilidades:
+ * 1. **Inicialización Asíncrona**: Ejecuta `game.init()` y `game.start()` de forma segura.
+ * 2. **Throttling de UI**: Limita las actualizaciones del estado de React a 15 FPS para
+ *    evitar sobrecargar el hilo principal con datos de simulación de alta frecuencia.
+ * 3. **Gestión de Recursos**: Asegura que `game.destroy()` se llame al desmontar el componente,
+ *    previniendo fugas de memoria (timers, event listeners).
+ * 4. **Keep Awake**: Mantiene la pantalla encendida mientras el juego está activo.
  */
 export function useGame<
   TGame extends BaseGame<TState, TInput>,

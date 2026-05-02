@@ -20,6 +20,13 @@ import { MutatorService } from "../../services/MutatorService";
 
 export type PongMode = "local" | "ai" | "online";
 
+/**
+ * Controlador principal del juego Pong.
+ *
+ * @remarks
+ * Implementa una física de rebotes basada en el ángulo de incidencia y el movimiento
+ * relativo de las paletas (spin). Gestiona modos de juego contra IA o multijugador local.
+ */
 export class PongGame extends BaseGame<PongState, PongInput> {
   private stateSystem!: PongGameStateSystem;
   private assetLoader: AssetLoader;

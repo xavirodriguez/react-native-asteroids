@@ -11,7 +11,20 @@ import {
     UIEdgeInsets
 } from "./UITypes";
 
+/**
+ * Factoría para la creación simplificada de elementos de interfaz de usuario.
+ *
+ * @responsibility Instanciar entidades de UI con la composición correcta de componentes (Element, Style, Text).
+ *
+ * @remarks
+ * Encapsula las jerarquías de componentes necesarias para widgets comunes como
+ * etiquetas, paneles, botones y barras de progreso. Asigna valores por defecto
+ * consistentes para facilitar el desarrollo rápido de interfaces.
+ */
 export class UIFactory {
+    /**
+     * Crea una etiqueta de texto (Label).
+     */
     public static createLabel(world: World, config: {
         text: string;
         anchor: UIAnchor;

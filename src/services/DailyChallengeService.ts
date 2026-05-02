@@ -15,7 +15,12 @@ export const DailyAttemptSchema = z.object({
 export type DailyAttempt = z.infer<typeof DailyAttemptSchema>;
 
 /**
- * Service to manage daily challenges and seeds.
+ * Servicio encargado de gestionar los retos diarios y sus semillas deterministas.
+ *
+ * @remarks
+ * Garantiza que todos los jugadores tengan el mismo reto en un día específico generando
+ * una semilla basada en la fecha actual (UTC). Esta semilla se utiliza para inicializar
+ * el `RandomService` y posicionar obstáculos de forma idéntica para todos los usuarios.
  */
 export class DailyChallengeService {
   /**

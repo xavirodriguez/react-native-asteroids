@@ -29,11 +29,23 @@ export type PlayerProfile = z.infer<typeof PlayerProfileSchema>;
 const PROFILE_KEY = "player:profile";
 
 /**
- * Service to manage the global player profile and progression.
+ * Servicio encargado de gestionar el perfil global del jugador y su progresión.
+ *
+ * @remarks
+ * Implementa la persistencia mediante {@link AsyncStorage} y valida los datos
+ * utilizando esquemas de Zod para garantizar la integridad entre sesiones.
+ * Gestiona el sistema de XP, niveles y desbloqueo de cosméticos (paletas y estelas).
+ *
+ * @conceptualRisk [ASYNC_RACE][LOW] Múltiples llamadas a `addXP` seguidas pueden
+ * causar inconsistencia si no se espera a la resolución del `saveProfile`.
  */
 export class PlayerProfileService {
   private static profile: PlayerProfile | null = null;
 
+  /**
+   * Recupera el perfil del jugador desde el almacenamiento persistente.
+   * Si no existe, inicializa un perfil por defecto.
+   */
   public static async getProfile(): Promise<PlayerProfile> {
     if (this.profile) return this.profile;
 
@@ -70,6 +82,16 @@ export class PlayerProfileService {
     return this.profile!;
   }
 
+  /**
+   * Incrementa la experiencia del jugador y calcula posibles subidas de nivel.
+   *
+   * @remarks
+   * El algoritmo de nivel es iterativo: comprueba el XP acumulado contra el array
+   * `LEVEL_THRESHOLDS`. Cada subida de nivel dispara `checkUnlocks`.
+   *
+   * @param amount - Cantidad de XP a añadir.
+   * @returns Un objeto indicando si subió de nivel y el nivel resultante.
+   */
   public static async addXP(amount: number): Promise<{ leveledUp: boolean, newLevel: number }> {
     const profile = await this.getProfile();
     profile.xp += amount;

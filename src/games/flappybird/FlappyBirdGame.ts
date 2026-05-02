@@ -27,7 +27,11 @@ import {
 import { MutatorService } from "../../services/MutatorService";
 
 /**
- * Main game controller for Flappy Bird.
+ * Controlador principal del juego Flappy Bird.
+ *
+ * @remarks
+ * Implementa mecánicas de scroll infinito y generación procedural de obstáculos (tuberías).
+ * Utiliza un sistema de gravedad simple y una única acción de entrada ("jump").
  */
 export class FlappyBirdGame
   extends BaseGame<FlappyBirdState, FlappyBirdInput>

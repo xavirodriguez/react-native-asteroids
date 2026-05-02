@@ -27,22 +27,21 @@ import {
 } from "./types/AsteroidTypes";
 
 /**
- * Entity factory for the Asteroids game domain.
+ * Factoría de entidades para el dominio del juego Asteroids.
  *
- * This module centralizes the creation of game entities like the player Ship,
- * Asteroids, UFOs, and visual effects. It ensures all necessary ECS components
- * are attached and initialized with appropriate design constants or procedural data.
+ * @responsibility Centralizar la creación de naves, asteroides, UFOs y efectos visuales.
+ * @responsibility Garantizar que todas las entidades posean el conjunto mínimo de componentes para su funcionamiento.
  *
  * @remarks
- * Most creation functions use `RandomService.getInstance("gameplay")` to ensure
- * that procedurally generated attributes (like asteroid shapes or spawn positions)
- * remain deterministic across network clients.
+ * La mayoría de las funciones de creación utilizan `RandomService.getInstance("gameplay")` para asegurar
+ * que los atributos generados procedimentalmente (ej. formas de asteroides, posiciones de spawn)
+ * sean deterministas entre los diferentes clientes de red.
  *
  * @packageDocumentation
  */
 
 /**
- * Creates the player ship entity.
+ * Crea la entidad de la nave del jugador.
  * @param world - Mundo ECS.
  * @param x - Posición inicial X.
  * @param y - Posición inicial Y.

@@ -27,7 +27,20 @@ const ASTEROID_SPLIT_CONFIG: Record<
 };
 
 /**
- * System responsible for reacting to collision events detected by CollisionSystem2D.
+ * Sistema responsable de reaccionar a los eventos de colisión detectados por el motor físico.
+ *
+ * @responsibility Resolver las consecuencias lógicas de los impactos (daño, destrucción, score).
+ *
+ * @remarks
+ * Este sistema actúa como un despachador reactivo. En lugar de calcular colisiones,
+ * lee el componente `CollisionEvents` poblado por el `CollisionSystem2D`.
+ *
+ * ### Flujo de Resolución:
+ * 1. Identifica pares de entidades involucradas (ej. Bullet vs Asteroid).
+ * 2. Aplica lógica de negocio:
+ *    - **Asteroides**: Se dividen en fragmentos menores y emiten eventos de destrucción.
+ *    - **Naves**: Pierden vida, activan invulnerabilidad temporal y disparan efectos de juice (shake).
+ *    - **Eventos**: Notifica al `EventBus` para disparar efectos de sonido y actualizaciones de UI.
  */
 export class AsteroidCollisionSystem extends System {
   constructor(private _particlePool: ParticlePool) {

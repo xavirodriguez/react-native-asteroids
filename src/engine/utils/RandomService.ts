@@ -153,10 +153,13 @@ export class RandomService {
 
   /**
    * Genera un número aleatorio de punto flotante en el rango [0, 1).
-   * Utiliza el algoritmo Mulberry32 con la intención de ofrecer un comportamiento reproducible en la misma plataforma.
    *
    * @remarks
-   * Cada llamada actualiza la semilla interna de la instancia.
+   * Utiliza el algoritmo **Mulberry32** con la intención de ofrecer un comportamiento reproducible
+   * en la misma plataforma. Cada llamada actualiza la semilla interna de la instancia.
+   *
+   * **Invariante de Determinismo**: Para que la simulación sea reproducible, todos los clientes
+   * deben llamar a `next()` el mismo número de veces y en el mismo orden para el stream de `gameplay`.
    *
    * @returns Un valor aleatorio entre 0 (inclusive) y 1 (exclusive).
    * @sideEffect Actualiza `this.seed`.

@@ -8,19 +8,25 @@
 export type EventHandler<T = unknown> = (payload: T, event: string) => void;
 
 /**
- * Sistema de mensajería diseñado para la comunicación síncrona basada en el patrón Pub/Sub.
+ * Sistema de mensajería diseñado para la comunicación síncrona y diferida basada en el patrón Pub/Sub.
  *
  * @remarks
  * El EventBus facilita el desacoplamiento entre sistemas. Soporta nombres de eventos
- * jerárquicos y comodines.
+ * jerárquicos y comodines. Permite emitir eventos síncronos y diferidos. Los eventos diferidos son útiles
+ * para evitar efectos secundarios inmediatos (como SFX) que podrían romper el determinismo
+ * si se ejecutan durante la fase de resimulación/rollback.
  *
  * @responsibility Despachar notificaciones a los subscriptores registrados.
  * @responsibility Aislar errores de listeners individuales mediante bloques try-catch.
+ * @responsibility Proteger contra recursión infinita mediante un contador de profundidad.
  *
  * @conceptualRisk [ORDER][MEDIUM] El orden de ejecución de los handlers para un mismo evento
  * no está garantizado y no se debe depender del orden de registro.
- * @conceptualRisk [RECURSION][LOW] No hay protección contra bucles infinitos de eventos
- * (ej: Evento A dispara Evento B, que dispara de nuevo Evento A).
+ *
+ * ### Características:
+ * 1. **Emit Synchronous**: `emit()` ejecuta los suscriptores inmediatamente.
+ * 2. **Emit Deferred**: `emitDeferred()` encola el evento para ser procesado al final del frame.
+ * 3. **Recursion Guard**: Protege contra bucles infinitos de eventos limitando la profundidad a 10 niveles.
  */
 export class EventBus {
   private handlers = new Map<string, Set<EventHandler<unknown>>>();

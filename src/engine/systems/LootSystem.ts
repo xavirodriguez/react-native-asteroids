@@ -1,13 +1,13 @@
 /**
- * System that manages item drops from destroyed entities.
- *
- * This system decouples the destruction of an entity from the spawning of loot.
- * It listens for specific game events and uses the `LootTableComponent` to
- * determine if and what should be spawned.
+ * Sistema que gestiona el spawn de items (loot) tras la destrucción de entidades.
  *
  * @remarks
- * ### Event Contract
- * The system expects events to carry the source entity's ID and coordinates:
+ * Desacopla la lógica de destrucción de una entidad de la generación de recompensas.
+ * Escucha eventos específicos y utiliza el `LootTableComponent` para determinar
+ * qué debe spawnearse.
+ *
+ * ### Contrato de Eventos:
+ * El sistema espera que los eventos porten el ID de la entidad origen y sus coordenadas:
  * - `entity:destroyed`: `{ entity: Entity, type: string }`
  * - `asteroid:destroyed`: `{ entity: Entity, x: number, y: number }`
  *
