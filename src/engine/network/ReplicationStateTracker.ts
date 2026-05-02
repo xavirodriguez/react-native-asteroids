@@ -51,9 +51,25 @@ export class ReplicationStateTracker {
   }
 
   /**
+   * Removes tracking for an entity for a specific client.
+   */
+  public removeEntityForClient(clientId: string, entityId: number): void {
+    this.clientStates.get(clientId)?.delete(entityId);
+  }
+
+  /**
    * Checks if the client already knows about this entity.
    */
   public isKnown(clientId: string, entityId: number): boolean {
     return this.clientStates.get(clientId)?.has(entityId) ?? false;
+  }
+
+  /**
+   * Returns the set of entity IDs that are currently known by the client.
+   */
+  public getKnownEntities(clientId: string): Set<number> {
+    const clientMap = this.clientStates.get(clientId);
+    if (!clientMap) return new Set();
+    return new Set(clientMap.keys());
   }
 }

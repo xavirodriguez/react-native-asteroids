@@ -61,13 +61,14 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private replayFrames: ReplayFrame[] = [];
   private world: World;
   private playerEntities = new Map<string, number>();
+  private newClients = new Set<string>();
   private nextPlayerNumber = 1;
   private networkMetrics = new NetworkMetricsCollector();
   private replicationTracker = new ReplicationStateTracker();
   private ackTracker = new ClientAckTracker();
   private budgetManager = new NetworkBudgetManager();
   private deltaSystem = new NetworkDeltaSystem(this.replicationTracker);
-  private REPLICATION_MODE: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' = 'binary';
+  private REPLICATION_MODE: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' = 'legacy';
 
   private spawnAsteroids(count: number) {
     const gameplayRandom = RandomService.getInstance("gameplay");
@@ -146,6 +147,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     // Create ECS entity for player
     const entity = createShip({ world: this.world, x: player.x, y: player.y });
     this.playerEntities.set(client.sessionId, entity);
+    this.newClients.add(client.sessionId);
 
     // Add necessary multiplayer components
     this.world.addComponent(entity, {
@@ -235,10 +237,11 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     } else {
         const detailedInterestMap = this.world.getResource<Map<string, import("../../src/engine/network/types/ReplicationTypes").InterestedEntity[]>>("DetailedInterestMap");
         this.clients.forEach(client => {
+            const isNew = this.newClients.has(client.sessionId);
             const interest = detailedInterestMap?.get(client.sessionId) || [];
             let interestIds: Set<number>;
 
-            if (this.REPLICATION_MODE === 'interest') {
+            if (this.REPLICATION_MODE === 'interest' || isNew) {
                 interestIds = new Set(interest.map(e => e.entityId));
             } else {
                 // Iteration 4: Budgeting
@@ -250,14 +253,18 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
 
             const serializationStart = Date.now();
 
-            if (this.REPLICATION_MODE === 'interest') {
+            if (this.REPLICATION_MODE === 'interest' || isNew) {
                 const snapshot = this.world.snapshot();
-                // Filter snapshot entities
-                snapshot.entities = snapshot.entities.filter(id => interestIds.has(id));
-                for (const type in snapshot.componentData) {
-                    for (const id in snapshot.componentData[type]) {
-                        if (!interestIds.has(parseInt(id))) {
-                            delete snapshot.componentData[type][id];
+                // Filter snapshot entities (unless it's a legacy or we want full for new clients, but iteration 2 says "interest management simple")
+                // Actually "Mantener snapshots completos para clientes que acaban de conectarse (primer tick)"
+                // So if isNew is true, we should NOT filter.
+                if (!isNew) {
+                    snapshot.entities = snapshot.entities.filter(id => interestIds.has(id));
+                    for (const type in snapshot.componentData) {
+                        for (const id in snapshot.componentData[type]) {
+                            if (!interestIds.has(parseInt(id))) {
+                                delete snapshot.componentData[type][id];
+                            }
                         }
                     }
                 }
@@ -265,6 +272,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
                 totalSerializationMs += (Date.now() - serializationStart);
                 totalBytesSentThisTick += serialized.length;
                 client.send("world_delta", { tick: this.state.serverTick, delta: serialized });
+                if (isNew) this.newClients.delete(client.sessionId);
             } else {
                 // Iteration 3: Delta Compression
                 const sequence = this.ackTracker.nextSequence(client.sessionId);
@@ -311,6 +319,13 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         this.clients.length,
         this.clients.length > 0 ? totalEntitiesFiltered / this.clients.length : 0
     );
+
+    // Iteration 5: Set replication mode to binary (final step)
+    // REPLICATION_MODE should be manually changed based on the iteration goal.
+    // Setting it to 'binary' here is the final desired state of the roadmap.
+    if (this.state.serverTick === 1) {
+        this.REPLICATION_MODE = 'binary';
+    }
 
     // 5. Record for Replay
     this.replayFrames.push({
