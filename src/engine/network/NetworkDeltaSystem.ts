@@ -60,11 +60,13 @@ export class NetworkDeltaSystem {
     const removed: number[] = [];
 
     // 1. Identify removed entities (were known, but no longer interested or active)
-    // This requires tracking what we SENT last time.
-    // In a real system, we'd compare interestedEntities with stateTracker.getKnownEntities(clientId)
-    // For simplicity in Iteration 3, we'll assume the stateTracker can provide known entities.
-    // Since I didn't implement getKnownEntities, I'll add it to stateTracker if needed,
-    // or just use a simplified approach.
+    const knownEntities = this.stateTracker.getKnownEntities(clientId);
+    knownEntities.forEach(entityId => {
+        if (!interestedEntities.has(entityId) || !world.hasEntity(entityId)) {
+            removed.push(entityId);
+            this.stateTracker.removeEntityForClient(clientId, entityId);
+        }
+    });
 
     // 2. Identify created and updated entities
     interestedEntities.forEach(entityId => {

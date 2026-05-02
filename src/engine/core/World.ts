@@ -94,6 +94,15 @@ export class World {
   public get stateVersion(): number { return this._stateVersion; }
   /** Obtiene el tick actual de simulación. */
   public get tick(): number { return this._tick; }
+
+  /**
+   * Manually advances the simulation tick.
+   * Used by external orchestrators that manage the timing loop.
+   */
+  public advanceTick(): void {
+    this._tick++;
+  }
+
   private _renderDirty = false;
   private commandBuffer = new WorldCommandBuffer();
 
