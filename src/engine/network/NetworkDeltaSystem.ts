@@ -62,10 +62,10 @@ export class NetworkDeltaSystem {
     // 1. Identify removed entities (were known, but no longer interested or active)
     const knownEntities = this.stateTracker.getKnownEntities(clientId);
     knownEntities.forEach(entityId => {
-        if (!interestedEntities.has(entityId) || !world.hasEntity(entityId)) {
-            removed.push(entityId);
-            this.stateTracker.removeEntityForClient(clientId, entityId);
-        }
+      if (!interestedEntities.has(entityId) || !world.hasEntity(entityId)) {
+        removed.push(entityId);
+        this.stateTracker.removeEntityForClient(clientId, entityId);
+      }
     });
 
     // 2. Identify created and updated entities

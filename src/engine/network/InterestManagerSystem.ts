@@ -1,7 +1,7 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { TransformComponent } from "../core/CoreComponents";
-import { SpatialGrid } from "../physics/utils/SpatialGrid";
+import { SpatialHash } from "../physics/collision/SpatialHash";
 import { ShipComponent } from "../../games/asteroids/types/AsteroidTypes";
 import { InterestedEntity } from "./types/ReplicationTypes";
 import { InterestManager } from "./InterestManager";
@@ -10,18 +10,17 @@ import { InterestManager } from "./InterestManager";
  * @responsibility Determine which entities are relevant for each player based on spatial proximity.
  * @remarks
  * This system populates the "InterestMap" resource, which is used by the server to filter network updates.
- * It uses the global SpatialGrid to efficiently query nearby entities.
+ * It uses the existing SpatialHash (physics index) to efficiently query nearby entities.
  *
  * @conceptualRisk [SCALE][MEDIUM] As the number of players increases, querying for each one becomes more expensive.
  */
 export class InterestManagerSystem extends System {
   public update(world: World, _deltaTime: number): void {
-    const grid = world.getResource<SpatialGrid>("SpatialGrid");
+    // Note: In this codebase, SpatialGrid is the resource name used in AsteroidsRoom.
+    // SpatialGrid is a more modern version of SpatialHash used in this engine's USSC.
+    const grid = world.getResource<any>("SpatialGrid");
     if (!grid) return;
 
-    // We use the same interest map structure but now with detailed InterestEntity data if needed.
-    // For Iteration 2, we'll store Detailed Interest Info in a new resource or update the existing one.
-    // The requirement says: InterestedEntity[] { entityId, interestLevel, distance }
     const detailedInterestMap = new Map<string, InterestedEntity[]>();
     const simpleInterestMap = new Map<string, Set<number>>();
 
