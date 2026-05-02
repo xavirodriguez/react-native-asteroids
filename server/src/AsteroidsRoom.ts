@@ -1,6 +1,7 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, EntitySnapshot, ReplayFrame } from "./NetTypes";
+import { INITIAL_GAME_STATE, GameStateComponent } from "../../src/games/asteroids/types/AsteroidTypes";
 import { RandomService } from "../../src/engine/utils/RandomService";
 import { World } from "../../src/engine/core/World";
 import { DeterministicSimulation } from "../../src/simulation/DeterministicSimulation";
@@ -64,6 +65,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private newClients = new Set<string>();
   private nextPlayerNumber = 1;
   private networkMetrics = new NetworkMetricsCollector();
+  private newClients = new Set<string>();
   private replicationTracker = new ReplicationStateTracker();
   private ackTracker = new ClientAckTracker();
   private budgetManager = new NetworkBudgetManager();
@@ -80,6 +82,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   }
 
   onCreate(options: { seed?: number }) {
+    this.newClients.clear();
     this.state = new AsteroidsState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
     // Sync the global gameplay random service for the server
@@ -126,7 +129,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     // Initialized ECS world
     this.world = new World();
     this.world.setResource("SpatialGrid", new SpatialGrid());
-    this.world.addComponent(this.world.createEntity(), { type: "GameState", score: 0 } as Component);
+    this.world.addComponent(this.world.createEntity(), {
+        ...INITIAL_GAME_STATE,
+        serverTick: 0
+    } as GameStateComponent);
     this.world.addSystem(new SpatialPartitioningSystem());
     this.world.addSystem(new InterestManagerSystem());
   }
@@ -156,6 +162,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         hyperspaceTimer: 0,
         hyperspaceCooldownRemaining: 0
     } as ShipComponent);
+
+    this.newClients.add(client.sessionId);
   }
 
   async onLeave(client: Client, code: number) {
@@ -166,6 +174,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       this.state.players.delete(client.sessionId);
       this.inputBuffers.delete(client.sessionId);
       this.clientAcks.delete(client.sessionId);
+      this.newClients.delete(client.sessionId);
     }
   }
 
@@ -214,7 +223,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     DeterministicSimulation.update(this.world, this.fixedTimeStep, { isResimulating: false });
 
     // 2.1 Run server-only systems (Spatial Partitioning, Interest Management)
-    // We execute systems manually to avoid advancing world.tick (already incremented by loop)
+    // Manually advance world.tick to fix Hallazgo 6
+    this.world.advanceTick();
     this.world.systemsList.forEach(system => system.update(this.world, 0));
     this.world.flush();
 

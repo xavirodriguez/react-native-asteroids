@@ -90,6 +90,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
          * Extracts the world state version for acknowledgment.
          */
         joinedRoom.onMessage("world_delta", (data: { tick: number, delta: string }) => {
+            if (data.tick <= lastProcessedTickRef.current) return;
             try {
                 const deltaObj = JSON.parse(data.delta);
                 let versionChanged = false;
@@ -115,6 +116,8 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
         joinedRoom.onMessage("world_delta_bin", (data: Uint8Array) => {
             try {
                 const deltaPacket = BinaryCompression.unpack<any>(data);
+                if (deltaPacket.tick !== undefined && deltaPacket.tick <= lastProcessedTickRef.current) return;
+
                 let versionChanged = false;
                 if (deltaPacket.stateVersion !== undefined && deltaPacket.stateVersion !== lastAckedVersionRef.current) {
                     lastAckedVersionRef.current = deltaPacket.stateVersion;
