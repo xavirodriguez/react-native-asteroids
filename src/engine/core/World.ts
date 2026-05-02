@@ -88,11 +88,20 @@ export class World {
   /** Current simulation tick. */
   private _tick = 0;
 
-  /** Obtiene la versión actual de la estructura del mundo. */
+  /**
+   * Obtiene la versión actual de la estructura del mundo.
+   * @remarks Se incrementa al crear/destruir entidades o añadir/quitar componentes.
+   */
   public get structureVersion(): number { return this._structureVersion; }
-  /** Obtiene la versión actual de los datos del mundo. */
+
+  /**
+   * Obtiene la versión actual de los datos del mundo.
+   * @remarks Se incrementa en cada mutación de datos interna de los componentes.
+   * Es fundamental para la replicación delta en red.
+   */
   public get stateVersion(): number { return this._stateVersion; }
-  /** Obtiene el tick actual de simulación. */
+
+  /** Obtiene el tick actual de simulación autoritativo. */
   public get tick(): number { return this._tick; }
 
   /**

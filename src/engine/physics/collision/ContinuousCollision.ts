@@ -96,12 +96,14 @@ export class ContinuousCollision {
     const b = -2 * (vx * dx + vy * dy);
     const c = dx * dx + dy * dy - radiusSumSq;
 
-    // El discriminante (b^2 - 4ac) determina si existen raíces reales (intersecciones).
+    // El discriminante (b^2 - 4ac) de la ecuación cuadrática determina si existen raíces reales.
+    // D < 0 significa que los círculos nunca llegan a tocarse en sus trayectorias lineales.
     const discriminant = b * b - 4 * a * c;
-    if (discriminant < 0) return result; // No hay intersección posible en la trayectoria
+    if (discriminant < 0) return result;
 
-    // Calculamos el tiempo del primer impacto (la raíz más pequeña)
-    // t = (-b - sqrt(D)) / 2a
+    // Calculamos el tiempo del primer impacto resolviendo para 't' usando la fórmula cuadrática.
+    // Buscamos la raíz más pequeña (primer contacto) en el intervalo [0, 1].
+    // t = (-b - sqrt(discriminant)) / 2a
     const t = (-b - Math.sqrt(discriminant)) / (2 * a);
 
     if (t >= 0 && t <= 1) {

@@ -125,6 +125,22 @@ export class AsteroidsGame
     if (this.stateHistory.has(oldestTick)) this.stateHistory.delete(oldestTick);
   }
 
+  /**
+   * Manejador principal de actualizaciones de estado multijugador.
+   *
+   * @remarks
+   * Procesa snapshots completos y deltas parciales para mantener la coherencia con el servidor:
+   * 1. **Snapshot Integration**: Si el estado es un delta, lo integra en una copia del mundo.
+   * 2. **Reconciliation (Reconciliación)**:
+   *    - Restaura el estado autoritativo del servidor en el tick especificado.
+   *    - Vuelve a ejecutar la simulación localmente para todos los ticks transcurridos
+   *      desde el `serverTick` hasta el tick actual del cliente, aplicando el buffer de inputs local.
+   * 3. **Error Smoothing**: Si la posición resultante difiere de la visual, se aplica un
+   *    `VisualOffset` que se interpola a cero progresivamente (via `JuiceSystem`) para evitar "saltos" visuales.
+   *
+   * @param serverState - El objeto de estado recibido del hook `useMultiplayer`.
+   * @param localSessionId - ID de sesión del jugador local para identificar su entidad.
+   */
   public updateFromServer(serverState: Record<string, unknown>, localSessionId?: string) {
     if (!this.isMultiplayer || !serverState) return;
 

@@ -76,10 +76,13 @@ export class Query {
    * Esto garantiza que los consumidores no puedan corromper el caché de la query mediante
    * casting forzado a tipos mutables.
    *
+   * @warning **Costo de Consultas Dinámicas**: Evite crear queries dinámicas en tiempo de ejecución.
+   * Prefiera el uso de `world.query(...types)` que utiliza un caché persistente para estas instancias.
+   *
    * @returns Un array de solo lectura de IDs de {@link Entity}.
    *
    * @postcondition El array devuelto es una copia independiente del estado actual.
-   * @postcondition Las entidades en el array se entregan ordenadas por ID de forma ascendente.
+   * @postcondition Las entidades en el array se entregan ordenadas por ID de forma ascendente para garantizar determinismo.
    *
    * @conceptualRisk [GC_PRESSURE][MEDIUM] Cada llamada genera una nueva asignación de array.
    * Los sistemas de alta frecuencia deben considerar cachear el resultado localmente si

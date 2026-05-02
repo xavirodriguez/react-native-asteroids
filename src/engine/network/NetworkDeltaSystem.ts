@@ -6,20 +6,22 @@ import { ReplicationPolicy } from "./ReplicationPolicy";
 import { Quantization } from "./Quantization";
 
 /**
- * System responsible for generating differential state updates (Deltas).
+ * Sistema encargado de generar actualizaciones de estado diferenciales (Deltas).
  *
- * Instead of sending a full snapshot of the world on every tick, this system
- * calculates the differences between the current state and what each client
- * has already acknowledged.
+ * En lugar de enviar un snapshot completo del mundo en cada tick, este sistema calcula
+ * las diferencias entre el estado actual y lo que cada cliente ya ha confirmado (ACK).
  *
- * @responsibility Generate delta packets for clients based on interest and last known state.
+ * @responsibility Generar paquetes delta basados en el interés espacial y el último estado conocido.
  * @remarks
- * ### Delta Protocol
- * 1. The server tracks which component versions were last sent to each client.
- * 2. When generating a packet, it only includes components whose `stateVersion`
- *    is greater than the last acknowledged version by that client.
- * 3. It utilizes {@link ReplicationPolicy} to throttle updates for low-priority components.
- * 4. Transform components are automatically quantized to reduce bandwidth.
+ * ### Protocolo de Replicación Delta:
+ * 1. **Rastreo de Versiones**: El servidor mantiene un `ReplicationStateTracker` por cliente.
+ * 2. **Detección de Cambios**: Se comparan las versiones de componentes del `World` (`stateVersion`)
+ *    con la versión del último ACK recibido de ese cliente específico.
+ * 3. **Filtrado de Interés**: Solo se procesan las entidades dentro del radio de interés del cliente.
+ * 4. **Diferencial**: El paquete resultante solo contiene:
+ *    - `created`: Nuevas entidades que han entrado en el área de interés.
+ *    - `updated`: Componentes cuya versión es superior a la del último ACK.
+ *    - `removed`: Entidades que han sido destruidas o han salido del área de interés.
  *
  * @conceptualRisk [BANDWIDTH][MEDIUM] If too many components change simultaneously,
  * the delta packet size can approach or exceed a full snapshot.
