@@ -2,10 +2,19 @@ import { Entity, AABB } from "../../types/EngineTypes";
 import { ObjectPool } from "../../utils/ObjectPool";
 
 /**
- * Global Spatial Grid for broadphase collision and simulation culling.
+ * Grid Espacial para optimización de fase ancha (Broadphase).
  *
- * @responsibility Maintain a spatial index of entities for efficient querying.
- * @responsibility Provide O(1) cell access and O(M) AABB queries.
+ * @responsibility Dividir el mundo en celdas cuadradas para acelerar consultas espaciales.
+ * @responsibility Proporcionar acceso O(1) a celdas y consultas O(M) sobre AABBs.
+ *
+ * @remarks
+ * Implementa una estrategia de **Hash Espacial** donde las entidades se indexan en
+ * una o más celdas basadas en su AABB. Esto reduce la complejidad de detección de
+ * colisiones de O(N^2) a aproximadamente O(N).
+ *
+ * ### Configuración:
+ * - **cellSize**: Tamaño de cada celda en píxeles. Debe ser mayor que el objeto más grande
+ *   para un rendimiento óptimo.
  */
 export class SpatialGrid {
   private grid = new Map<string, Entity[]>();

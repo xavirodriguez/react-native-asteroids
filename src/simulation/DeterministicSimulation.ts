@@ -61,10 +61,12 @@ const ASTEROID_SPLIT_CONFIG: Record<
  * dada una misma semilla y una secuencia de inputs, el estado final sea idéntico en
  * cualquier cliente o servidor.
  *
- * Invariantes de Determinismo:
- * 1. El orden de ejecución de los sistemas debe ser constante.
- * 2. El uso de `RandomService.getInstance("gameplay")` es obligatorio para lógica de estado.
- * 3. `deltaTime` debe ser constante (típicamente 16.66ms).
+ * ### Reglas de Oro del Determinismo:
+ * 1. **Orden Fijo**: Los sistemas deben ejecutarse siempre en la misma secuencia (`internalUpdate`).
+ * 2. **RNG Protegido**: Usar exclusivamente `RandomService.getInstance("gameplay")`.
+ * 3. **Cero Relojes Externos**: Prohibido usar `Date.now()`, `performance.now()` o `Math.random()`.
+ * 4. **Aislamiento de Side-Effects**: Usar `ctx.isResimulating` para desactivar sonidos o partículas visuales durante rollbacks.
+ * 5. **Paso de Tiempo Fijo**: `deltaTime` debe ser constante (16.66ms) independientemente del framerate de renderizado.
  *
  * @conceptualRisk [PRECISION_DRIFT][MEDIUM] El uso de acumulaciones de punto flotante en
  * sesiones extremadamente largas puede derivar en desincronización entre arquitecturas (JS IEEE 754).

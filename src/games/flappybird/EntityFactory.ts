@@ -35,8 +35,11 @@ export interface CreatePipeParams {
 }
 
 /**
- * Creates the player bird entity.
- * Includes physics, input handling, and a specialized input buffer for jump timing.
+ * Crea la entidad del pájaro (jugador).
+ *
+ * @remarks
+ * Incluye física de gravedad, manejo de entrada y un buffer de entrada especializado
+ * para facilitar el timing del salto (jump timing).
  */
 export function createBird(options: CreateBirdParams): Entity {
   const { world, x, y } = options;

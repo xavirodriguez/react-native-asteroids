@@ -31,6 +31,18 @@ export class ReplicationPolicy {
     };
   }
 
+  /**
+   * Evalúa si un componente debe ser replicado en el tick actual basándose en su tasa de envío.
+   *
+   * @remarks
+   * Implementa una estrategia de "Rate Limiting" por tipo de componente para ahorrar ancho de banda.
+   * Por ejemplo, el `Transform` se envía cada tick (`sendRate: 1`), mientras que el `Render`
+   * se envía cada 10 ticks (`sendRate: 10`) dado que su información es principalmente cosmética.
+   *
+   * @param componentType - El discriminador del tipo de componente.
+   * @param tick - El tick actual del mundo.
+   * @returns `true` si el componente cumple con el criterio de tasa de envío.
+   */
   public static shouldReplicate(componentType: string, tick: number): boolean {
     const policy = this.getPolicy(componentType);
     return tick % policy.sendRate === 0;

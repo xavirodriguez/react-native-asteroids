@@ -48,7 +48,15 @@ export class MutatorService {
   }
 
   /**
-   * Helper to get the ISO week number.
+   * Calcula el número de semana ISO para una fecha dada.
+   *
+   * @remarks
+   * Utiliza el estándar ISO 8601 donde la primera semana del año es la que contiene
+   * el primer jueves del año. Este algoritmo garantiza una rotación determinista
+   * de mutadores sincronizada entre todos los clientes del mundo.
+   *
+   * @param date - La fecha a evaluar.
+   * @returns El número de semana [1-53].
    */
   private static getISOWeekNumber(date: Date): number {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));

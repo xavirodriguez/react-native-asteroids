@@ -414,15 +414,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    *
    * @remarks
    * El proceso de inicialización es crítico y debe ocurrir ANTES de {@link BaseGame.start}.
-   * Se gestiona mediante un cerrojo de transición (`_transitionLock`) para evitar que
-   * múltiples llamadas concurrentes corrompan la configuración del mundo.
+   * Se gestiona mediante un cerrojo de transición (`_transitionLock`) para garantizar la
+   * atomicidad y evitar que llamadas concurrentes corrompan la configuración del mundo.
    *
-   * Flujo de init:
-   * 1. Espera a cualquier transición en curso.
-   * 2. Cambia estado a INITIALIZING.
-   * 3. Registra sistemas esenciales (EventBus, Input, Audio, Grid).
-   * 4. Llama a hooks abstractos para que el juego concreto registre su lógica.
-   * 5. Establece estado a READY.
+   * ### Máquina de Estados de Inicialización:
+   * 1. **Wait**: Espera a que cualquier promesa de `_transitionLock` previa se resuelva.
+   * 2. **Lock**: Crea una nueva promesa controlada para bloquear otros accesos.
+   * 3. **Setup**: Registra sistemas esenciales (EventBus, Input, Audio, SpatialGrid).
+   * 4. **Game Logic**: Llama a `registerSystems()` y `initializeEntities()` del juego concreto.
+   * 5. **Ready**: Transiciona el estado a `READY` y libera el cerrojo.
    *
    * @throws Error - Si el juego ya está inicializado o en proceso.
    * @postcondition El {@link World} está configurado y listo para simular.

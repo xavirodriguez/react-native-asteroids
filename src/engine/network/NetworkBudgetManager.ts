@@ -1,7 +1,20 @@
 import { InterestedEntity, ClientNetworkBudget } from "./types/ReplicationTypes";
 
 /**
- * @responsibility Prioritize and filter entities to stay within a network budget.
+ * Sistema encargado de gestionar el presupuesto de ancho de banda para la replicación de red.
+ *
+ * @responsibility Priorizar y filtrar entidades para mantenerse dentro de los límites de red.
+ *
+ * @remarks
+ * Este manager prioriza las entidades basándose en su nivel de interés espacial
+ * y asegura que el tamaño total de los paquetes no exceda los límites configurados.
+ *
+ * ### Algoritmo de Selección:
+ * 1. **Filtro Crítico**: Entidades marcadas como 'critical' se incluyen siempre que haya espacio.
+ * 2. **Priorización por Nivel**: Se asignan bytes restantes a niveles High, Medium y Low en ese orden.
+ * 3. **Rotación (Fairness)**: Para las entidades de baja prioridad (Low), se utiliza un sistema
+ *    de rotación circular para garantizar que todas reciban actualizaciones eventualmente, incluso
+ *    si el ancho de banda es limitado.
  */
 export class NetworkBudgetManager {
   private lowPriorityRotation = new Map<string, number>(); // clientId -> startIndex

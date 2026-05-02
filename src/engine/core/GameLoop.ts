@@ -134,6 +134,16 @@ export class GameLoop {
     this.isRunning = false;
   }
 
+  /**
+   * Bucle de ejecución principal coordinado con `requestAnimationFrame`.
+   *
+   * @remarks
+   * Implementa el algoritmo de **Acumulador de Tiempo** para un Fixed Timestep:
+   * 1. Calcula `deltaTime` limitado por `maxDeltaMs` (para evitar saltos gigantes tras una pausa).
+   * 2. Añade `deltaTime` al `accumulator`.
+   * 3. Ejecuta la fase de simulación en pasos fijos de 16.66ms mientras el acumulador lo permita.
+   * 4. Calcula `alpha` como la fracción de tiempo sobrante para la interpolación visual.
+   */
   private loop = (currentTime: number): void => {
     if (!this.isRunning) return;
 

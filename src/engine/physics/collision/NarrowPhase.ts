@@ -279,14 +279,24 @@ export class NarrowPhase {
   }
 
   /**
-   * Collision detection between a circle and a convex polygon.
+   * Detección de colisiones entre un círculo y un polígono convexo.
    *
    * @remarks
-   * 1. Transform polygon vertices to world space.
-   * 2. Iterate through each edge of the polygon.
-   * 3. Project the circle center onto the edge segment to find the closest point on the perimeter.
-   * 4. Check if the center is "inside" all edges using the cross product.
-   * 5. If inside OR distance to perimeter < radius, there is a collision.
+   * Combina pruebas de punto más cercano y el principio del SAT simplificado para círculos:
+   * 1. Se transforman los vértices del polígono al espacio de mundo.
+   * 2. Para cada arista, se proyecta el centro del círculo sobre el segmento de la arista.
+   * 3. Se determina si el centro está "dentro" del polígono verificando el signo del producto cruzado
+   *    con cada arista (asumiendo vértices en sentido anti-horario CCW).
+   * 4. La normal de colisión apunta desde el punto más cercano en el perímetro hacia el centro del círculo.
+   *
+   * ### Derivación de la Normal:
+   * Si el centro está fuera, la normal es `(Centro - PuntoCercano)`.
+   * Si está dentro, la normal se invierte y la profundidad incluye el radio más la distancia a la arista.
+   *
+   * @param circle - Definición del círculo.
+   * @param cx - X del centro del círculo.
+   * @param cy - Y del centro del círculo.
+   * @param poly - Polígono convexo.
    */
   static circleVsPolygon(circle: CircleShape, cx: number, cy: number, poly: PolygonShape, px: number, py: number, pr: number): CollisionManifold {
     const manifold = resetManifold();
@@ -352,21 +362,31 @@ export class NarrowPhase {
    * Detección de colisiones entre polígonos convexos usando el Teorema del Eje Separador (SAT).
    *
    * @remarks
-   * For two convex shapes to be colliding, their projections must overlap on ALL potential axes.
-   * For polygons, these axes are the normals of every edge of both polygons.
+   * El algoritmo SAT (Separating Axis Theorem) establece que para dos objetos convexos, si existe un eje
+   * en el cual sus proyecciones no se solapan, entonces NO hay colisión.
    *
-   * 1. Transform local vertices to world space.
-   * 2. Collect unique edge normals (axes) from both polygons.
-   * 3. For each axis:
-   *    - Project all vertices onto the axis.
-   *    - Find min/max of the projection.
-   *    - Check for overlap: `overlap = min(maxA, maxB) - max(minA, minB)`.
-   *    - If `overlap <= 0`, exit early (no collision).
-   * 4. Identify the axis of minimum overlap (MTV - Minimum Translation Vector).
-   * 5. Ensure the normal points from A to B.
-   * El algoritmo SAT establece que dos objetos convexos NO colisionan si existe un eje
-   * en el cual sus proyecciones no se solapan. Para polígonos, basta con probar las normales
-   * de cada una de sus caras como ejes potenciales de separación.
+   * ### Pasos del Algoritmo:
+   * 1. **Transformación**: Se calculan los vértices en coordenadas de mundo (`populateGlobalVertices`).
+   * 2. **Generación de Ejes**: Para polígonos, los ejes potenciales de separación son las normales de cada cara.
+   * 3. **Proyección**: Se proyectan todos los vértices de ambos polígonos sobre cada eje (`projectPolygon`).
+   * 4. **Detección de Brecha**: Se calcula el solapamiento (`overlap = min(maxA, maxB) - max(minA, minB)`).
+   *    - Si `overlap <= 0` en CUALQUIER eje, salimos prematuramente (Sin colisión).
+   * 5. **MTV (Minimum Translation Vector)**: El eje con el solapamiento mínimo es la normal de colisión,
+   *    y el valor del solapamiento es la profundidad de penetración.
+   *
+   * ### Diagrama Conceptual:
+   * ```
+   *      Polygon A          Axis (Normal)
+   *       /---\               ^
+   *      /     \              |     [---] Projection A
+   *      \     /              |
+   *       \---/               |     (Gap) -> overlap <= 0 -> SEPARATED!
+   *                           |
+   *             /---\         |     [---] Projection B
+   *            /     \        |
+   *           \---/           |
+   *          Polygon B
+   * ```
    *
    * @conceptualRisk [CONVEX_ONLY] Este método NO funciona con polígonos cóncavos.
    * @conceptualRisk [PERFORMANCE] Complejidad O(N+M) donde N y M son el número de vértices.
@@ -425,10 +445,22 @@ export class NarrowPhase {
     return manifold;
   }
 
+  /**
+   * Detección de colisiones entre un círculo y una cápsula.
+   *
+   * @remarks
+   * Una cápsula se define matemáticamente como un segmento de línea con un radio.
+   * La colisión se resuelve encontrando el punto más cercano en el segmento al centro del círculo.
+   * 1. Se calcula el segmento de línea central de la cápsula (`getCapsuleLine`).
+   * 2. Se proyecta el centro del círculo sobre esta línea, limitando el parámetro `t` a [0, 1].
+   * 3. Se realiza una prueba de círculo vs círculo entre el círculo original y un círculo virtual
+   *    situado en el punto más cercano de la línea con el radio de la cápsula.
+   */
   static circleVsCapsule(circle: CircleShape, cx: number, cy: number, capsule: CapsuleShape, cpx: number, cpy: number, cpr: number): CollisionManifold {
       const manifold = resetManifold();
       const line = this.getCapsuleLine(capsule, cpx, cpy, cpr);
       const dx = line.p2x - line.p1x; const dy = line.p2y - line.p1y;
+      // Proyección escalar para encontrar el punto más cercano en el segmento
       const t = Math.max(0, Math.min(1, ((cx - line.p1x) * dx + (cy - line.p1y) * dy) / (dx * dx + dy * dy)));
       const closestX = line.p1x + t * dx; const closestY = line.p1y + t * dy;
 

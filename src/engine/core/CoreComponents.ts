@@ -23,19 +23,29 @@ export { Entity, Component, GenericComponent };
 export interface TransformComponent extends Component {
   type: "Transform";
   [key: string]: unknown; // Para compatibilidad con utilidades que no usan index signatures
+  /** [px] Coordenada X local. */
   x: number;
+  /** [px] Coordenada Y local. */
   y: number;
+  /** [rad] Rotación local en radianes. */
   rotation: number;
+  /** Multiplicador de escala horizontal. */
   scaleX: number;
+  /** Multiplicador de escala vertical. */
   scaleY: number;
 
   parent?: Entity;
   dirty?: boolean;
 
+  /** [px] Coordenada X absoluta en el mundo. */
   worldX?: number;
+  /** [px] Coordenada Y absoluta en el mundo. */
   worldY?: number;
+  /** [rad] Rotación absoluta en el mundo. */
   worldRotation?: number;
+  /** Multiplicador de escala horizontal absoluto. */
   worldScaleX?: number;
+  /** Multiplicador de escala vertical absoluto. */
   worldScaleY?: number;
 }
 
@@ -69,8 +79,11 @@ export interface PreviousTransformComponent extends Component {
 export interface VelocityComponent extends Component {
   type: "Velocity";
   [key: string]: unknown;
+  /** [px/s] Velocidad en el eje X. */
   dx: number;
+  /** [px/s] Velocidad en el eje Y. */
   dy: number;
+  /** [rad/s] Velocidad angular. */
   vAngle?: number;
 }
 
@@ -87,9 +100,13 @@ export interface FrictionComponent extends Component {
  */
 export interface BoundaryComponent extends Component {
   type: "Boundary";
+  /** [px] Límite izquierdo (opcional). */
   x?: number;
+  /** [px] Límite superior (opcional). */
   y?: number;
+  /** [px] Ancho del área límite. */
   width: number;
+  /** [px] Alto del área límite. */
   height: number;
   behavior: "wrap" | "bounce" | "destroy";
   bounceX?: boolean;
@@ -110,7 +127,9 @@ export interface TagComponent extends Component {
  */
 export interface TTLComponent extends Component {
   type: "TTL";
+  /** [ms] Tiempo restante de vida. */
   remaining: number;
+  /** [ms] Tiempo total de vida inicial. */
   total: number;
   onComplete?: () => void;
 }
@@ -124,7 +143,9 @@ import { Shape } from "../physics/shapes/ShapeTypes";
 export interface Collider2DComponent extends Component {
   type: "Collider2D";
   shape: Shape;
+  /** [px] Desplazamiento horizontal relativo al Transform. */
   offsetX: number;
+  /** [px] Desplazamiento vertical relativo al Transform. */
   offsetY: number;
   layer: number;
   mask: number;
@@ -179,15 +200,19 @@ export interface PhysicsBody2DComponent extends Component {
    * kinematic: moved via velocity, not affected by forces.
    */
   bodyType: "static" | "dynamic" | "kinematic";
+  /** [px/s] Velocidad lineal en X. */
   velocityX: number;
+  /** [px/s] Velocidad lineal en Y. */
   velocityY: number;
+  /** [rad/s] Velocidad angular. */
   angularVelocity: number;
-  /** Accumulated force X to be applied in the next tick. */
+  /** [N] Fuerza acumulada en X. */
   forceX: number;
-  /** Accumulated force Y to be applied in the next tick. */
+  /** [N] Fuerza acumulada en Y. */
   forceY: number;
-  /** Accumulated torque to be applied in the next tick. */
+  /** [N*m] Torque acumulado. */
   torque: number;
+  /** [kg] Masa del cuerpo. */
   mass: number;
   /** Pre-calculated 1/mass. Use 0 for infinite mass (static). */
   readonly inverseMass: number;
@@ -210,15 +235,15 @@ export interface PhysicsBody2DComponent extends Component {
  */
 export interface RenderComponent extends Component {
   type: "Render";
-  /** Identifier for the shape drawer (e.g., "circle", "triangle", "ufo"). */
+  /** Identificador del dibujador (ej: "circle", "triangle", "ufo"). */
   shape: string;
-  /** Primary dimension (radius or width). */
+  /** [px] Dimensión primaria (radio o lado). */
   size: number;
-  /** Hex or CSS color string. */
+  /** Color en formato Hex o CSS. */
   color: string;
-  /** Current cosmetic rotation in radians. */
+  /** [rad] Rotación cosmética actual. */
   rotation: number;
-  /** Rotational speed for cosmetic effects. */
+  /** [rad/s] Velocidad de rotación cosmética. */
   angularVelocity?: number;
   /** Optional custom vertices for polygon shapes. */
   vertices?: { x: number; y: number }[];
@@ -235,11 +260,11 @@ export interface RenderComponent extends Component {
  */
 export interface HealthComponent extends Component {
   type: "Health";
-  /** Current HP. */
+  /** Puntos de vida actuales. */
   current: number;
-  /** Maximum HP. */
+  /** Puntos de vida máximos. */
   max: number;
-  /** Remaining invulnerability time in milliseconds. */
+  /** [ms] Tiempo restante de invulnerabilidad tras impacto. */
   invulnerableRemaining: number;
 }
 

@@ -64,6 +64,15 @@ export interface DrawCommandOptions {
  *
  * @responsibility Almacenar y ordenar comandos de dibujo para el renderer.
  * @responsibility Minimizar la presión sobre el recolector de basura (GC) mediante pooling.
+ *
+ * @remarks
+ * Encapsula todas las operaciones de dibujo de un frame en una lista plana de comandos.
+ * Permite desacoplar la lógica de simulación (qué dibujar) de la lógica de presentación (cómo dibujar).
+ *
+ * ### Características:
+ * 1. **Sorting por Z-Index**: Garantiza que los objetos se dibujen en el orden correcto
+ *    de profundidad para evitar parpadeos y solapamientos incorrectos.
+ * 2. **Object Pooling**: Recicla objetos `DrawCommand` para mitigar la presión sobre el GC.
  */
 export class RenderCommandBuffer {
   private readonly pool: DrawCommand[];

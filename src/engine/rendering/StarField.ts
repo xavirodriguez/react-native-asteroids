@@ -24,7 +24,17 @@ export function generateStarField(count: number, width: number, height: number):
 }
 
 /**
- * Draws the starfield with parallax effect based on ship position.
+ * Dibuja un campo de estrellas con efecto parallax basado en la posición de la cámara/nave.
+ *
+ * @remarks
+ * Genera una ilusión de profundidad infinita mediante el wrapping de coordenadas y
+ * multiplicadores de velocidad por capa.
+ *
+ * ### Lógica de Parallax:
+ * 1. Cada estrella pertenece a una capa (`layer`).
+ * 2. Las capas más profundas tienen un `parallaxFactor` menor, moviéndose más lento.
+ * 3. Se utiliza el operador módulo (%) para que las estrellas que salen de pantalla
+ *    aparezcan por el lado opuesto (coordenadas cíclicas).
  */
 export function drawStarField(
   ctx: CanvasRenderingContext2D,

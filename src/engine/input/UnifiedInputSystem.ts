@@ -3,17 +3,21 @@ import { System } from "../core/System";
 import { InputStateComponent, InputAction } from "../types/EngineTypes";
 
 /**
- * Sistema de entrada unificado que gestiona bindings de teclado y táctiles.
- * Mapea entradas crudas a acciones semánticas en un singleton `InputStateComponent`.
+ * Sistema de entrada unificado (Unified Input System) para el manejo de controles multiplataforma.
+ * Mapea entradas crudas de hardware a acciones semánticas en un singleton `InputStateComponent`.
  *
- * @responsibility Traducir eventos de hardware (teclado, puntero) a acciones abstractas del juego.
+ * @responsibility Traducir eventos de hardware (teclado, puntero, gamepad) a acciones abstractas.
  * @responsibility Mantener el componente singleton `InputState` actualizado en el `World`.
  * @responsibility Permitir la inyección manual de estados mediante overrides para red y UI.
  *
  * @remarks
- * El sistema permite desacoplar la lógica del juego de los dispositivos de hardware.
- * Soporta bindings de teclas, gestos táctiles, ejes (como joysticks virtuales) y
- * permite forzar estados mediante `overrides` (útil para red o UI).
+ * El sistema desacopla la lógica del juego de los dispositivos físicos.
+ * Soporta **Bindings** (mapeo N:1 de teclas a acción) y **Overrides** (inyección forzada de estado).
+ * Los Overrides son críticos para implementar controles táctiles en móviles y replicación de red.
+ *
+ * ### Características:
+ * 1. **Axis to Button**: Permite que ejes (ej. joystick) disparen acciones digitales.
+ * 2. **Logical Overriding**: Los botones de UI de React pueden simular pulsaciones de teclas físicas.
  */
 export class UnifiedInputSystem extends System {
   private bindings = new Map<InputAction, string[]>();

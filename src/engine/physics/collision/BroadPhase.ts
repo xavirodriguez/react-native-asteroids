@@ -57,6 +57,22 @@ export class BroadPhase {
     }
   }
 
+  /**
+   * Implementación del algoritmo Sweep and Prune (1D).
+   *
+   * @remarks
+   * Ordena las entidades por su eje X y comprueba solapamientos en intervalos.
+   * Este algoritmo es muy eficiente para entornos dispersos (sparse) donde los objetos
+   * no están muy agrupados.
+   *
+   * @warning **Complejidad O(N log N)** debido al ordenamiento. En escenarios con alta
+   * densidad de entidades (>100), se recomienda el uso del `SpatialGrid` para mantener
+   * un rendimiento óptimo.
+   *
+   * @param entities - Lista de entidades a procesar.
+   * @param world - El mundo ECS para recuperar componentes.
+   * @returns Lista de pares candidatos [Entity, Entity].
+   */
   static sweepAndPrune(entities: Entity[], world: import("../../core/World").World): Array<[Entity, Entity]> {
     const bounds = entities.map(entity => ({
       entity,

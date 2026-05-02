@@ -16,9 +16,16 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  * @responsibility Dibujar elementos de UI procedimentales (paneles, etiquetas, barras de progreso).
  *
  * @remarks
- * Es el renderizador para la plataforma Web y entornos de desarrollo rápido.
- * Utiliza una estrategia destinada a mitigar las alocaciones por frame mediante el reciclaje
- * de objetos snapshot y comandos, con la intención de reducir la presión sobre el recolector de basura (GC).
+ * ### Arquitectura de Renderizado Desacoplado:
+ * Este motor no dibuja directamente el estado actual del `World`. En su lugar, utiliza un pipeline de dos fases:
+ *
+ * 1. **Fase de Captura (`createSnapshot`)**: Recorre el mundo ECS y extrae los datos necesarios (posición, rotación, color)
+ *    hacia un objeto `RenderSnapshot` plano. En este paso se aplica la **interpolación visual** (alpha blending)
+ *    y el **Frustum Culling** para ignorar entidades fuera de cámara.
+ * 2. **Fase de Dibujado (`renderSnapshot`)**: Toma el snapshot y ejecuta las llamadas a la API de Canvas.
+ *    Los comandos se ordenan por `zIndex` para garantizar la correcta superposición visual.
+ *
+ * Esta separación permite que el renderizado corra a una frecuencia distinta que la simulación física (60Hz fixed).
  *
  * @conceptualRisk [GC_PRESSURE][LOW] Aunque usa pools, el crecimiento de `entities` en el
  * snapshot más allá de `MAX_ENTITIES` (2000) causará pérdida de dibujo.

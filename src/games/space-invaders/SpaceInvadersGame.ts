@@ -16,7 +16,12 @@ import {
 import { MutatorService } from "../../services/MutatorService";
 
 /**
- * Main game controller for Space Invaders.
+ * Controlador principal del juego Space Invaders.
+ *
+ * @remarks
+ * Gestiona el ciclo de vida de la horda de enemigos y la progresión de oleadas.
+ * A diferencia de Asteroids, utiliza un sistema de formación rígida donde el movimiento
+ * de una entidad afecta a todo el grupo (Swarm movement).
  */
 export class SpaceInvadersGame
   extends BaseGame<GameStateComponent, InputState>

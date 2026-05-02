@@ -2,7 +2,11 @@ import { System } from "../core/System";
 import { World } from "../core/World";
 
 /**
- * Decorator or wrapper for systems to track their execution time.
+ * Decorador encargado de medir el tiempo de ejecución de un sistema ECS.
+ *
+ * @remarks
+ * Implementa una **Media Móvil (Moving Average)** basada en los últimos 60 frames
+ * para suavizar los picos de CPU y ofrecer una métrica de rendimiento estable.
  */
 export class SystemProfiler extends System {
   private systemTimings: Map<string, number[]> = new Map();

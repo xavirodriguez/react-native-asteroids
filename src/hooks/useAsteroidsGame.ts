@@ -6,7 +6,12 @@ import { INITIAL_GAME_STATE } from "../types/GameTypes";
 import type { GameStateComponent, InputState } from "../types/GameTypes";
 
 /**
- * Custom hook to manage the lifecycle of the Asteroids game engine.
+ * Hook especializado para gestionar la instancia del juego Asteroids.
+ *
+ * @remarks
+ * Actúa como puente (bridge) entre React y la clase `AsteroidsGame`. Encapsula
+ * la lógica de inicialización de la escena, carga de assets específicos
+ * y configuración del modo multijugador.
  */
 export function useAsteroidsGame(isMultiplayer: boolean = false) {
   const { game, gameState, isPaused, isReady, handleInput, togglePause, restart } =

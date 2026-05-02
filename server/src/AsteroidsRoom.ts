@@ -179,18 +179,21 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   }
 
   /**
-   * Main server-side update loop.
-   * Runs at a fixed interval (16.66ms / 60 FPS).
-   * Bucle principal de actualización del servidor.
+   * Bucle principal de actualización del servidor (Fixed Step @ 60Hz).
    *
    * @remarks
-   * Sigue un pipeline estricto para mantener la autoridad del estado:
-   * 1. Sincronización de Tick.
-   * 2. Aplicación de Inputs del buffer (Reconciliación).
-   * 3. Simulación ECS (Lógica Compartida).
-   * 4. Post-procesamiento de Servidor (Culling/Interés).
-   * 5. Sincronización a Schema (Colyseus).
-   * 6. Replicación Delta/Binaria a clientes.
+   * Sigue un pipeline estricto para mantener la autoridad del estado y la eficiencia de red:
+   *
+   * 1. **Tick Sync**: Incrementa `serverTick`, la referencia temporal absoluta.
+   * 2. **Input Recovery**: Extrae inputs del buffer de cada cliente correspondientes al tick actual.
+   * 3. **Authoritative Simulation**: Ejecuta la lógica compartida (`DeterministicSimulation`).
+   * 4. **Post-Simulation**: Ejecuta sistemas exclusivos del servidor (ej. `InterestManagerSystem`).
+   * 5. **Schema Sync**: Sincroniza el mundo ECS con los objetos Schema de Colyseus para clientes 'legacy'.
+   * 6. **Advanced Replication**:
+   *    - **Legacy**: Envía JSON completo del estado.
+   *    - **Interest**: Filtra entidades por cercanía espacial.
+   *    - **Delta/Binary**: Calcula qué componentes han cambiado basándose en `stateVersion` y ACKs.
+   * 7. **Replay & Cleanup**: Registra frames para repeticiones y limpia buffers de entrada antiguos.
    */
   update(_dt: number) {
     if (!this.state.gameStarted) return;

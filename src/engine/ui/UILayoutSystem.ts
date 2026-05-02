@@ -96,15 +96,17 @@ export class UILayoutSystem extends System {
   }
 
   /**
-   * Recursively resolves the position and size of an element and its children.
+   * Resuelve de forma recursiva la posición y tamaño de un elemento y sus hijos.
    *
    * @remarks
-   * ### Layout Hierarchy
-   * 1. **Root Elements**: Positioned relative to the viewport using `anchor` and `offset`.
-   * 2. **Child Elements**: Inherit their parent's computed position and scale their
-   *    relative dimensions (%) based on the parent's `computedWidth/Height`.
-   * 3. **Containers**: Automatically arrange children horizontally or vertically
-   *    with support for alignment and gaps.
+   * ### Jerarquía de Layout:
+   * 1. **Elementos Raíz**: Se posicionan relativos al viewport (pantalla) usando `anchor` y `offset`.
+   * 2. **Elementos Hijo**: Heredan la posición computada de su padre y escalan sus dimensiones
+   *    relativas (%) basadas en el `computedWidth/Height` del padre.
+   * 3. **Contenedores**: Organizan automáticamente a sus hijos en flujo horizontal o vertical,
+   *    respetando alineación (`align`) y espaciado (`gap`).
+   * 4. **Z-Index**: Los elementos dentro de contenedores se ordenan por su propiedad `zIndex`
+   *    antes de calcular su posición en el flujo.
    *
    * @param world - El mundo ECS.
    * @param entity - La entidad UI a procesar.

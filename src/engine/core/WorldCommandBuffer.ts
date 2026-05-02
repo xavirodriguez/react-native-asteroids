@@ -31,6 +31,11 @@ type Command =
  * El uso del CommandBuffer es fundamental para evitar la invalidación de iteradores durante
  * la ejecución de sistemas. Los cambios grabados NO son visibles en el mundo (ni en las queries)
  * hasta que se llama a {@link World.flush} (generalmente al final del frame).
+ *
+ * ### Garantías:
+ * 1. **Orden de Ejecución**: Los comandos se ejecutan en el orden exacto en que fueron grabados.
+ * 2. **Consolidación Atómica**: Todos los cambios se aplican de forma secuencial, permitiendo
+ *    que un comando (ej. crear entidad) afecte a comandos posteriores en el mismo flush (ej. añadir componente).
  */
 export class WorldCommandBuffer {
   private commands: Command[] = [];

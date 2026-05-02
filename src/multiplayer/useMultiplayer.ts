@@ -64,14 +64,19 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
         });
 
         /**
-         * Clock synchronization logic.
+         * Lógica de Sincronización de Clocks (Clock Sync).
          *
          * @remarks
-         * Calculates Round Trip Time (RTT) to align client simulation tick with the server.
-         * The client maintains a "lead" (TICK_BUFFER) ahead of the server to ensure
-         * that local inputs arrive at the server before they need to be processed.
+         * Calcula el Round Trip Time (RTT) para alinear el tick de simulación local con el del servidor.
+         * El cliente mantiene un "lead" (adelanto) respecto al servidor para garantizar que sus inputs
+         * lleguen al backend ANTES de que el servidor necesite procesarlos para ese tick.
          *
-         * Local Tick = Server Tick + (RTT / 2 / FrameDuration) + Buffer
+         * ### Fórmula de Sincronización:
+         * `Tick Local = Server Tick + (RTT / 2 / DuraciónFrame) + TICK_BUFFER`
+         *
+         * - `RTT / 2`: Latencia unidireccional estimada.
+         * - `DuraciónFrame`: 16.66ms para 60 FPS.
+         * - `TICK_BUFFER`: Margen de seguridad (2 frames) para absorber el Jitter de la red.
          */
         joinedRoom.onMessage("sync_tick", (data: { serverTick: number, timestamp: number }) => {
             const now = Date.now();

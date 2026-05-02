@@ -105,19 +105,22 @@ export class PhysicsSystem2D extends System {
   }
 
   /**
-   * Resolves a single collision manifold between two rigid bodies using impulses.
+   * Resuelve una colisión entre dos cuerpos rígidos utilizando impulsos.
    *
    * @remarks
-   * ### Impulse Resolution Physics
-   * This method applies the Sequential Impulses algorithm:
-   * 1. **Relative Velocity**: Calculates velocity at the contact point, including rotation (`V = v + w x r`).
-   * 2. **Normal Impulse**: Applies an impulse `j` along the collision normal to satisfy the
-   *    restitution coefficient `e` (Newton's Law of Restitution).
-   *    `j = -(1 + e) * v_rel_normal / (1/mA + 1/mB + (rA x n)^2 / IA + (rB x n)^2 / IB)`
-   * 3. **Friction Impulse**: Applies a tangent impulse `jt` based on Coulomb's Law,
-   *    clamping the tangent impulse to `j * friction_coefficient`.
-   * 4. **Positional Correction**: Applies a small "push" (pseudo-impulse) to resolve
-   *    overlaps and prevent entities from "sinking" into each other due to gravity or integration errors.
+   * ### Física de Resolución de Impulsos (Sequential Impulses)
+   * Este método implementa una versión simplificada del algoritmo de impulsos secuenciales para satisfacer
+   * restricciones de contacto y fricción:
+   *
+   * 1. **Velocidad Relativa**: Se calcula la velocidad en el punto de contacto considerando traslación y rotación.
+   *    `V_p = V_cm + omega x r`.
+   * 2. **Magnitud del Impulso (Normal)**: Basado en la Ley de Restitución de Newton.
+   *    `j = -(1 + e) * v_rel_normal / K`
+   *    Donde `K` es la masa efectiva en el punto de contacto: `1/mA + 1/mB + (rA x n)^2 / IA + (rB x n)^2 / IB`.
+   * 3. **Impulso de Fricción**: Aplicado en el eje tangente basado en el Modelo de Fricción de Coulomb.
+   *    Se calcula el impulso tangente `jt` y se limita por `j * mu` (el cono de fricción).
+   * 4. **Corrección Posicional (Baumgarte)**: Aplica un ligero desplazamiento para resolver el solapamiento (sinking)
+   *    causado por errores numéricos de integración.
    *
    * @param transformA - Transform of first entity.
    * @param bodyA - Physics body of first entity.
