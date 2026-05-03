@@ -137,7 +137,9 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.world.setResource("SpatialGrid", new SpatialGrid());
     this.world.addComponent(this.world.createEntity(), {
         ...INITIAL_GAME_STATE,
-        serverTick: 0
+        serverTick: 0,
+        level: 1,
+        lives: 3
     } as GameStateComponent);
     this.world.addSystem(new SpatialPartitioningSystem());
     this.world.addSystem(new InterestManagerSystem());
@@ -275,9 +277,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
 
             if (this.REPLICATION_MODE === 'interest' || isNew) {
                 const snapshot = this.world.snapshot();
-                // Filter snapshot entities (unless it's a legacy or we want full for new clients, but iteration 2 says "interest management simple")
-                // Actually "Mantener snapshots completos para clientes que acaban de conectarse (primer tick)"
-                // So if isNew is true, we should NOT filter.
+                // Filter snapshot entities (unless it's a legacy or we want full for new clients)
                 if (!isNew) {
                     snapshot.entities = snapshot.entities.filter(id => interestIds.has(id));
                     for (const type in snapshot.componentData) {

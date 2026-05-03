@@ -58,7 +58,7 @@ export class NetworkBudgetManager {
     const medium = sorted.filter(e => e.interestLevel === 'medium');
     const low = sorted.filter(e => e.interestLevel === 'low');
 
-    // Heuristic: estimated bytes per entity based on level
+    // Heuristic: estimated bytes per entity based on level (including components and overhead)
     const bytesPerEntity: Record<string, number> = { 'critical': 200, 'high': 150, 'medium': 100, 'low': 100, 'none': 0 };
 
     // 2. Add Self Entity first (Hallazgo 7 / Prioridad 1)

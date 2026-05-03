@@ -56,16 +56,16 @@ describe("InterestManagerSystem", () => {
 
     expect(interest).toBeDefined();
 
-    const findById = (id: number) => interest.find(i => i.entityId === id);
+    const findById = (id: number) => interest.find(i => i.entityId === id.toString());
 
     expect(findById(criticalEntity)?.interestLevel).toBe('critical');
     expect(findById(highEntity)?.interestLevel).toBe('high');
     expect(findById(mediumEntity)?.interestLevel).toBe('medium');
     expect(findById(lowEntity)?.interestLevel).toBe('low');
-    expect(interest.find(i => i.entityId === farEntity)).toBeUndefined();
+    expect(interest.find(i => i.entityId === farEntity.toString())).toBeUndefined();
 
     // Self should be critical
-    const self = interest.find(i => i.entityId === player);
+    const self = interest.find(i => i.entityId === player.toString());
     expect(self?.interestLevel).toBe('critical');
   });
 });

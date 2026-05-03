@@ -121,6 +121,7 @@ export class DeterministicSimulation {
         // 0. Sincronización del tick del servidor en el singleton GameState.
         // Actúa como la referencia temporal absoluta para el netcode.
         world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+            if (gs.serverTick === undefined) gs.serverTick = 0;
             gs.serverTick++;
         });
 
