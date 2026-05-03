@@ -57,7 +57,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   /** Paso de tiempo fijo para el motor ECS (60Hz). */
   private fixedTimeStep = 16.66;
   private inputBuffers = new Map<string, InputFrame[]>();
-  private stateHistory = new Map<number, Map<string, EntitySnapshot>>();
+  private stateHistory = new Map<number, import("../../src/engine/types/EngineTypes").WorldSnapshot>();
   private clientAcks = new Map<string, number>(); // sessionId -> lastAckedStateVersion
   private replayFrames: ReplayFrame[] = [];
   private world: World;
@@ -65,7 +65,6 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private newClients = new Set<string>();
   private nextPlayerNumber = 1;
   private networkMetrics = new NetworkMetricsCollector();
-  private newClients = new Set<string>();
   private replicationTracker = new ReplicationStateTracker();
   private ackTracker = new ClientAckTracker();
   private budgetManager = new NetworkBudgetManager();
@@ -81,7 +80,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     }
   }
 
-  onCreate(options: { seed?: number }) {
+  onCreate(options: { seed?: number, replicationMode?: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' }) {
+    if (options.replicationMode) {
+        this.REPLICATION_MODE = options.replicationMode;
+    }
     this.newClients.clear();
     this.state = new AsteroidsState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
@@ -111,6 +113,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         this.ackTracker.recordAck(client.sessionId, data.sequence, this.state.serverTick);
       }
       client.send("sync_tick", {
+        protocolVersion: this.state.protocolVersion,
         serverTick: this.state.serverTick,
         timestamp: data?.timestamp ?? 0
       });
@@ -123,7 +126,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     });
 
     this.onMessage("metrics", (client) => {
-      client.send("metrics", this.networkMetrics.getMetrics());
+      client.send("metrics", {
+        protocolVersion: this.state.protocolVersion,
+        ...this.networkMetrics.getMetrics()
+      });
     });
 
     // Initialized ECS world
@@ -162,8 +168,6 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         hyperspaceTimer: 0,
         hyperspaceCooldownRemaining: 0
     } as ShipComponent);
-
-    this.newClients.add(client.sessionId);
   }
 
   async onLeave(client: Client, code: number) {
@@ -223,6 +227,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     });
 
     // 2. Run Shared Deterministic Simulation
+    // In a full implementation, we'd loop through inputs and backtrack for shots.
+    // For this roadmap iteration, we simulate one tick.
     DeterministicSimulation.update(this.world, this.fixedTimeStep, { isResimulating: false });
 
     // 2.1 Run server-only systems (Spatial Partitioning, Interest Management)
@@ -255,11 +261,12 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
             let interestIds: Set<number>;
 
             if (this.REPLICATION_MODE === 'interest' || isNew) {
-                interestIds = new Set(interest.map(e => e.entityId));
+                interestIds = new Set(interest.map(e => parseInt(e.entityId)));
             } else {
                 // Iteration 4: Budgeting
-                const prioritized = this.budgetManager.prioritize(client.sessionId, interest);
-                interestIds = new Set(prioritized.map(e => e.entityId));
+                const selfEntityId = this.playerEntities.get(client.sessionId)?.toString();
+                const prioritized = this.budgetManager.prioritize(client.sessionId, interest, undefined, selfEntityId);
+                interestIds = new Set(prioritized.map(e => parseInt(e.entityId)));
             }
 
             totalEntitiesFiltered += (totalEntitiesInWorld - interestIds.size);
@@ -284,7 +291,11 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
                 const serialized = JSON.stringify(snapshot);
                 totalSerializationMs += (Date.now() - serializationStart);
                 totalBytesSentThisTick += serialized.length;
-                client.send("world_delta", { tick: this.state.serverTick, delta: serialized });
+                client.send("world_delta", {
+                    protocolVersion: this.state.protocolVersion,
+                    tick: this.state.serverTick,
+                    delta: serialized
+                });
                 if (isNew) this.newClients.delete(client.sessionId);
             } else {
                 // Iteration 3: Delta Compression
@@ -312,7 +323,11 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
                     const serialized = JSON.stringify(deltaPacket);
                     totalSerializationMs += (Date.now() - serializationStart);
                     totalBytesSentThisTick += serialized.length;
-                    client.send("world_delta", { tick: this.state.serverTick, delta: serialized });
+                    client.send("world_delta", {
+                        protocolVersion: this.state.protocolVersion,
+                        tick: this.state.serverTick,
+                        delta: serialized
+                    });
                 }
             }
         });
@@ -333,12 +348,6 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         this.clients.length > 0 ? totalEntitiesFiltered / this.clients.length : 0
     );
 
-    // Iteration 5: Set replication mode to binary (final step)
-    // REPLICATION_MODE should be manually changed based on the iteration goal.
-    // Setting it to 'binary' here is the final desired state of the roadmap.
-    if (this.state.serverTick === 1) {
-        this.REPLICATION_MODE = 'binary';
-    }
 
     // 5. Record for Replay
     this.replayFrames.push({
@@ -360,16 +369,9 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       }
     });
 
-    // 7. Store history for lag compensation
-    const snapshot = new Map<string, EntitySnapshot>();
-    this.state.players.forEach((p: Player, id: string) => {
-        snapshot.set(id, { tick: this.state.serverTick, x: p.x, y: p.y, angle: p.angle, timestamp: 0 });
-    });
-    this.state.asteroids.forEach((a: Asteroid, id: string) => {
-        snapshot.set(id, { tick: this.state.serverTick, x: a.x, y: a.y, timestamp: 0 });
-    });
-    this.stateHistory.set(this.state.serverTick, snapshot);
-    while (this.stateHistory.size > 60) {
+    // 7. Store history for lag compensation (Backtracking)
+    this.stateHistory.set(this.state.serverTick, this.world.snapshot());
+    while (this.stateHistory.size > 120) { // Keep 2 seconds of history @ 60Hz
         const oldestTick = Math.min(...this.stateHistory.keys());
         this.stateHistory.delete(oldestTick);
     }
@@ -377,6 +379,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     // 8. Check Game Over to broadcast replay
     if (this.state.gameOver && this.replayFrames.length > 0) {
         this.broadcast("replay", {
+            protocolVersion: this.state.protocolVersion,
             version: 1,
             roomId: this.roomId,
             startTick: this.replayFrames[0].tick,
@@ -392,6 +395,28 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
    * This is necessary because the Schema is the source of truth for the clients
    * that use standard Colyseus state synchronization.
    */
+  /**
+   * Temporarily restores entities to a previous state for lag-compensated hit detection.
+   * @param targetTick The tick to backtrack to.
+   * @returns A function to restore the entities to their current state.
+   */
+  private backtrackEntities(targetTick: number): () => void {
+    const historicalSnapshot = this.stateHistory.get(targetTick);
+    if (!historicalSnapshot) return () => {};
+
+    // Save current state of potential targets (Asteroids)
+    const currentSnapshot = this.world.snapshot();
+
+    // We only want to backtrack targets, not the shooter.
+    // For simplicity, we restore the whole world but we'll need to be careful with shooters.
+    // In a more complex implementation, we'd only mutate Transform components of targets.
+    this.world.restore(historicalSnapshot);
+
+    return () => {
+      this.world.restore(currentSnapshot);
+    };
+  }
+
   private syncWorldToSchema() {
     // Sync Players
     this.playerEntities.forEach((entity, sessionId) => {

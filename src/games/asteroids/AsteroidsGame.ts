@@ -26,6 +26,7 @@ import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STA
 import { MutatorService } from "../../services/MutatorService";
 import { InputFrame } from "../../multiplayer/NetTypes";
 import { InterpolationBuffer } from "../../multiplayer/InterpolationSystem";
+import { PredictionBuffer } from "../../multiplayer/PredictionBuffer";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "../../engine/rendering/Renderer";
@@ -44,9 +45,11 @@ export class AsteroidsGame
   private bulletPool: BulletPool;
   private particlePool: ParticlePool;
   private entityInterpolationBuffers = new Map<string, InterpolationBuffer>();
+  private predictionBuffer = new PredictionBuffer();
   private serverEntities = new Map<string, number>();
   private inputHistory: InputFrame[] = [];
   private stateHistory = new Map<number, import("../../engine/types/EngineTypes").WorldSnapshot>();
+  private interpolationDelay = 100; // ms
   private lastAuthoritativeTick = 0;
   private lastProcessedFullStateVersion = -1;
   public readonly gameId = "asteroids";
@@ -116,6 +119,20 @@ export class AsteroidsGame
 
     DeterministicSimulation.update(this.world, deltaTime, { isResimulating: false });
 
+    // Store for reconciliation
+    const lp = this.world.query("LocalPlayer")[0];
+    if (lp !== undefined) {
+        const trans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(lp, "Transform");
+        const vel = this.world.getComponent<import("../../engine/types/EngineTypes").VelocityComponent>(lp, "Velocity");
+        if (trans && vel) {
+            this.predictionBuffer.save({
+                tick: input.tick,
+                entityId: lp.toString(),
+                state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation }
+            });
+        }
+    }
+
     // Attempts to capture state after simulation for potential reconciliation
     this.stateHistory.set(input.tick, this.world.snapshot());
 
@@ -144,16 +161,19 @@ export class AsteroidsGame
   public updateFromServer(serverState: Record<string, unknown>, localSessionId?: string) {
     if (!this.isMultiplayer || !serverState) return;
 
+    // Record receipt timestamp for jitter buffering
+    const receiptTimestamp = Date.now();
+
     // Prefer delta update if available (more frequent and granular)
     if (serverState.delta) {
-        this.handleDeltaServerUpdate(serverState, localSessionId);
+        this.handleDeltaServerUpdate(serverState, localSessionId, receiptTimestamp);
     } else if (serverState.fullWorldState) {
         // Fallback to full snapshot only if no delta is present
-        this.handleFullServerUpdate(serverState, localSessionId);
+        this.handleFullServerUpdate(serverState, localSessionId, receiptTimestamp);
     }
   }
 
-  private handleDeltaServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
+  private handleDeltaServerUpdate(serverState: Record<string, unknown>, localSessionId?: string, timestamp: number = Date.now()) {
     const serverTick = serverState.tick as number;
     if (serverTick <= this.lastAuthoritativeTick) return;
 
@@ -187,7 +207,29 @@ export class AsteroidsGame
     }
   }
 
-  private handleFullServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
+  private updateInterpolationBuffers(snapshot: import("../../engine/types/EngineTypes").WorldSnapshot, timestamp: number) {
+      snapshot.entities.forEach(entityId => {
+          const id = entityId.toString();
+          const transform = snapshot.componentData["Transform"]?.[entityId];
+          if (!transform) return;
+
+          let buffer = this.entityInterpolationBuffers.get(id);
+          if (!buffer) {
+              buffer = new InterpolationBuffer();
+              this.entityInterpolationBuffers.set(id, buffer);
+          }
+
+          buffer.push({
+              tick: snapshot.tick || 0,
+              x: transform.x,
+              y: transform.y,
+              angle: transform.rotation,
+              timestamp
+          });
+      });
+  }
+
+  private handleFullServerUpdate(serverState: Record<string, unknown>, localSessionId?: string, timestamp: number = Date.now()) {
     const authoritativeSnapshot = typeof serverState.fullWorldState === "string"
       ? JSON.parse(serverState.fullWorldState)
       : serverState.fullWorldState;
@@ -203,6 +245,7 @@ export class AsteroidsGame
     this.lastAuthoritativeTick = serverTick;
     this.lastProcessedFullStateVersion = authoritativeSnapshot.stateVersion;
 
+    this.updateInterpolationBuffers(authoritativeSnapshot, timestamp);
     this.performReconciliation(serverTick, authoritativeSnapshot, localSessionId);
   }
 
@@ -272,7 +315,7 @@ export class AsteroidsGame
   }
 
   private performReconciliation(serverTick: number, authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot, localSessionId?: string) {
-    const predicted = this.stateHistory.get(serverTick);
+    const predicted = this.predictionBuffer.getAt(serverTick);
 
     // Record the authoritative state for this tick to prevent redundant rollbacks
     this.stateHistory.set(serverTick, authoritativeSnapshot);
@@ -297,9 +340,8 @@ export class AsteroidsGame
         }
 
         if (localPlayerId !== undefined) {
-          const pPos = predicted.componentData["Transform"]?.[localPlayerId];
           const aPos = authoritativeSnapshot.componentData["Transform"]?.[localPlayerId];
-          if (!pPos || !aPos || Math.abs(pPos.x - aPos.x) > 0.01 || Math.abs(pPos.y - aPos.y) > 0.01) {
+          if (!predicted || !aPos || Math.abs(predicted.state.x - aPos.x) > 0.1 || Math.abs(predicted.state.y - aPos.y) > 0.1) {
             needsRollback = true;
           }
         }
@@ -346,6 +388,21 @@ export class AsteroidsGame
             }
           }
           DeterministicSimulation.update(this.world, 16.66, { isResimulating: true });
+
+          // Re-save prediction after re-simulation
+          const lp_resim = this.world.query("LocalPlayer")[0];
+          if (lp_resim !== undefined) {
+              const trans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(lp_resim, "Transform");
+              const vel = this.world.getComponent<import("../../engine/types/EngineTypes").VelocityComponent>(lp_resim, "Velocity");
+              if (trans && vel) {
+                  this.predictionBuffer.save({
+                      tick: input.tick,
+                      entityId: lp_resim.toString(),
+                      state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation }
+                  });
+              }
+          }
+
           this.stateHistory.set(input.tick, this.world.snapshot());
         });
 
@@ -383,6 +440,7 @@ export class AsteroidsGame
     }
 
     this.inputHistory = this.inputHistory.filter(i => i.tick > serverTick);
+    this.predictionBuffer.clearBefore(serverTick);
   }
 
   protected registerSystems(): void {
@@ -423,6 +481,35 @@ export class AsteroidsGame
     this.world.addSystem(new PowerUpSystem());
     this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
     this.world.addSystem(new AsteroidRenderSystem()); // Handle trails
+
+    // Register a system to apply interpolation for remote entities
+    if (this.isMultiplayer) {
+      this.world.addSystem({
+        update: (world) => {
+          const targetTime = Date.now() - this.interpolationDelay;
+          const localPlayer = world.query("LocalPlayer")[0];
+
+          this.entityInterpolationBuffers.forEach((buffer, idStr) => {
+            const entityId = parseInt(idStr);
+            if (entityId === localPlayer) return; // Don't interpolate local player (predicted)
+
+            const data = buffer.getAt(targetTime);
+            if (data) {
+              const transform = world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(entityId, "Transform");
+              if (transform) {
+                // Lerp position
+                transform.x = data.prev.x + (data.next.x - data.prev.x) * data.alpha;
+                transform.y = data.prev.y + (data.next.y - data.prev.y) * data.alpha;
+                // Simple angle lerp
+                if (data.prev.angle !== undefined && data.next.angle !== undefined) {
+                  transform.rotation = data.prev.angle + (data.next.angle - data.prev.angle) * data.alpha;
+                }
+              }
+            }
+          });
+        }
+      });
+    }
   }
 
   protected initializeEntities(): void {
