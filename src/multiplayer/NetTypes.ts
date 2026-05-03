@@ -11,6 +11,8 @@
  * Represents a single tick of user input.
  */
 export interface InputFrame {
+  /** Network protocol version. */
+  protocolVersion: number;
   /** The simulation tick this input belongs to. */
   tick: number;
   /** Wall-clock time when the input was captured. */

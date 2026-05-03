@@ -142,6 +142,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
         });
 
         joinedRoom.send("sync_tick", {
+            protocolVersion: 1,
             timestamp: Date.now(),
             lastAckedVersion: lastAckedVersionRef.current
         });
@@ -172,6 +173,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
     // Periodically sync tick and ack version
     if (localTickRef.current % 60 === 0) {
         room.send("sync_tick", {
+            protocolVersion: 1,
             timestamp: Date.now(),
             lastAckedVersion: lastAckedVersionRef.current
         });
@@ -186,6 +188,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
     if (input.hyperspace) actions.push("hyperspace");
 
     const frame: InputFrame = {
+        protocolVersion: 1,
         tick: localTickRef.current,
         timestamp: Date.now(),
         actions,

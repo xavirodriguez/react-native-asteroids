@@ -3,6 +3,7 @@ export interface NetworkPacket {
 }
 
 export interface InputFrame {
+  protocolVersion: number;
   tick: number;
   timestamp: number;
   actions: string[];

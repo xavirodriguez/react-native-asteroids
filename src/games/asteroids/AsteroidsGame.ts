@@ -277,7 +277,8 @@ export class AsteroidsGame
         });
       }
       if (delta.removed) {
-        delta.removed.forEach((entityId: number) => {
+        delta.removed.forEach((entityIdStr: string) => {
+          const entityId = parseInt(entityIdStr);
           entitySet.delete(entityId);
           for (const type in snapshot.componentData) {
             delete snapshot.componentData[type][entityId];

@@ -24,7 +24,7 @@ describe("NetworkDeltaSystem - Entity Removal", () => {
     // Generate delta with empty interest set
     const packet = system.generateDelta(world, "client1", 2, 1, new Set([]), false);
 
-    expect(packet.removed).toContain(entity);
+    expect(packet.removed).toContain(entity.toString());
     expect(tracker.isKnown("client1", entity)).toBe(false);
   });
 
@@ -42,7 +42,7 @@ describe("NetworkDeltaSystem - Entity Removal", () => {
     // Generate delta with same interest set (but entity is gone from world)
     const packet = system.generateDelta(world, "client1", 2, 1, new Set([entity]), false);
 
-    expect(packet.removed).toContain(entity);
+    expect(packet.removed).toContain(entity.toString());
     expect(tracker.isKnown("client1", entity)).toBe(false);
   });
 });

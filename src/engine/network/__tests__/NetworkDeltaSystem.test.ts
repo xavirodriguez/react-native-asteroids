@@ -21,7 +21,7 @@ describe("NetworkDeltaSystem", () => {
 
     expect(packet.full).toBe(true);
     expect(packet.created.length).toBe(1);
-    expect(packet.created[0].entityId).toBe(entity);
+    expect(packet.created[0].entityId).toBe(entity.toString());
     expect(packet.created[0].components.Transform).toBeDefined();
   });
 
