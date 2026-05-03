@@ -22,20 +22,22 @@ type Command =
   | { type: CommandType.MUTATE_COMPONENT, entity: Entity, componentType: string, mutator: (component: any) => void };
 
 /**
- * Buffer de comandos para diferir mutaciones estructurales del mundo ECS.
+ * ECS Command Buffer - Defers structural world mutations to ensure iterator safety.
  *
- * @responsibility Grabar operaciones de creación, eliminación y modificación de entidades/componentes.
- * @responsibility Ejecutar los comandos grabados de forma secuencial sobre una instancia de {@link World}.
+ * @responsibility Record entity/component creation, deletion, and modification operations.
+ * @responsibility Atomically apply recorded commands during the world's flush phase.
  *
  * @remarks
- * El uso del CommandBuffer es fundamental para evitar la invalidación de iteradores durante
- * la ejecución de sistemas. Los cambios grabados NO son visibles en el mundo (ni en las queries)
- * hasta que se llama a {@link World.flush} (generalmente al final del frame).
+ * Using the `WorldCommandBuffer` is mandatory when modifying the world during system
+ * updates. Since many systems iterate over entities via queries, direct modifications
+ * would invalidate those iterators and lead to inconsistent behavior.
  *
- * ### Garantías:
- * 1. **Orden de Ejecución**: Los comandos se ejecutan en el orden exacto en que fueron grabados.
- * 2. **Consolidación Atómica**: Todos los cambios se aplican de forma secuencial, permitiendo
- *    que un comando (ej. crear entidad) afecte a comandos posteriores en el mismo flush (ej. añadir componente).
+ * ### Execution Guarantees:
+ * 1. **FIFO Order**: Commands are executed in the exact sequence they were recorded.
+ * 2. **Chainability**: A command to create an entity can be followed immediately by
+ *    a command to add a component to that new entity within the same frame.
+ * 3. **Visibility**: Structural changes are NOT reflected in the `World` until `flush()`
+ *    is called (typically at the end of the `Simulation` phase).
  */
 export class WorldCommandBuffer {
   private commands: Command[] = [];

@@ -36,30 +36,32 @@ export enum GameStatus {
 }
 
 /**
- * Orquestador principal del ciclo de vida y el estado del juego.
+ * Main orchestrator of the game lifecycle and engine state.
  *
  * @remarks
- * Esta clase abstracta implementa el esqueleto del motor, gestionando la transición entre estados
- * y asegurando un pipeline de ejecución predecible.
+ * This abstract class implements the motor's skeleton, managing transitions between states
+ * and ensuring a predictable execution pipeline. It utilizes a transition lock to
+ * prevent race conditions during asynchronous initialization and scene swaps.
  *
- * Pipeline de Actualización (Fixed Update):
- * 1. PRE-UPDATE: Captura de estados previos para interpolación.
- * 2. INPUT: Traducción de eventos crudos a acciones semánticas.
- * 3. SIMULATION: Ejecución de sistemas ECS y lógica de escena (Paso Fijo).
- * 4. TRANSFORM: Propagación de jerarquías y cálculo de matrices de mundo.
- * 5. REPLAY: Grabado de frames de entrada para soporte de repeticiones.
+ * ### Update Pipeline (Fixed Update):
+ * 1. **PRE-UPDATE**: `InterpolationPrepSystem` captures previous states.
+ * 2. **INPUT**: Hardware events are translated into semantic actions.
+ * 3. **SIMULATION**: ECS systems and scene logic execute with a fixed time step.
+ * 4. **TRANSFORM**: `HierarchySystem` propagates world matrices (Top-Down).
+ * 5. **REPLAY**: `ReplayRecorder` captures input frames for deterministic playback.
+ * 6. **DEFERRED**: `EventBus` flushes the deferred queue to isolate side effects.
  *
- * La fase de renderizado está desacoplada y gestiona la interpolación visual mediante
- * el valor `alpha` calculado por el {@link GameLoop}.
+ * ### Initialization Machine:
+ * UNINITIALIZED --(init)--> INITIALIZING --(register systems)--> READY --(start)--> RUNNING
  *
- * @responsibility Coordinar la inicialización de sistemas y entidades.
- * @responsibility Gestionar las transiciones de pausa y reinicio.
- * @responsibility Proveer acceso unificado al mundo ECS y recursos globales.
+ * @responsibility Coordinate the initialization of systems and entities.
+ * @responsibility Manage pause, resume, and restart transitions atomically via `_transitionLock`.
+ * @responsibility Provide unified access to the ECS World and global resources.
  *
- * @conceptualRisk [DETERMINISM][CRITICAL] `currentTick` (number) puede desbordarse tras ~285,000 años,
- * pero los límites de lockstep/buffer podrían verse afectados por la precisión mucho antes.
- * @conceptualRisk [ASYNC_RACE][MEDIUM] Llamar a `start()` antes de que la promesa de `init()`
- * se resuelva puede resultar en una simulación inconsistente.
+ * @conceptualRisk [DETERMINISM][CRITICAL] `currentTick` overflow happens after ~285,000 years,
+ * but buffer precision limits may be hit significantly earlier.
+ * @conceptualRisk [ASYNC_RACE][HIGH] Calling `start()` before the `init()` promise resolves
+ * will lead to inconsistent simulation. Handled via state checks and locks.
  */
 export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   implements IGame<BaseGame<TState, TInput>> {

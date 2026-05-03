@@ -34,20 +34,25 @@ export interface ColliderShapeInfo {
 }
 
 /**
- * Manager Singleton para la depuración y perfilado en tiempo real del motor.
+ * Debug Manager - Singleton for real-time engine profiling and inspection.
  *
- * @responsibility Orquestar la recolección de métricas de rendimiento y estado del ECS.
- * @responsibility Integrar la visualización de colliders y jerarquías en modo debug.
+ * @responsibility Orchestrate performance metric collection and ECS state inspection.
+ * @responsibility Integrate collider visualization and hierarchy debugging.
  *
  * @remarks
- * Este singleton se acopla a una instancia de `BaseGame` para proporcionar inspección
- * profunda del mundo ECS, sistemas, eventos y rendimiento.
+ * This singleton attaches to a `BaseGame` instance to provide deep visibility into the
+ * ECS world, system timings, event logs, and state mutations.
  *
- * ### Características:
- * 1. **Log de Eventos**: Utiliza un buffer circular para capturar eventos del `EventBus`
- *    sin impacto masivo en el GC.
- * 2. **Diferenciación de Estado**: Calcula diffs entre ticks para detectar cambios inesperados.
- * 3. **Métricas de Frame**: Calcula FPS, tiempo de frame y delta de interpolación (alpha).
+ * ### Key Features:
+ * 1. **Event Logger**: Uses a circular buffer (`MAX_EVENTS = 100`) to capture `EventBus`
+ *    traffic without high allocation costs.
+ * 2. **State Diffing**: Calculates property-level differences between ticks to detect
+ *    unexpected state jumps or non-deterministic changes.
+ * 3. **Frame Metrics**: Tracks FPS, frame time, and the current interpolation alpha.
+ *
+ * ### Architectural Integration:
+ * The manager hooks into the `GameLoop`'s render phase and listens to all `EventBus`
+ * namespaces via wildcard subscriptions (`*`).
  */
 export class DebugManager {
   private static instance: DebugManager | null = null;

@@ -10,28 +10,28 @@ export type CollisionCallback = (world: World, entityA: Entity, entityB: Entity,
 export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) => void;
 
 /**
- * Sistema de detección de colisiones 2D.
+ * Hybrid 2D Collision System.
  *
- * @responsibility Selección de fase ancha híbrida (Spatial Grid / Sweep and Prune).
- * @responsibility Detección de fase estrecha (AABB, Círculo, Polígono) y generación de manifolds.
- * @responsibility Proporcionar soporte para Continuous Collision Detection (CCD) lineal.
- *
- * @queries Transform, Collider2D, CollisionEvents, ContinuousCollider, Velocity
- * @mutates {@link CollisionEventsComponent} - Limpia y repuebla los buffers de eventos por frame.
- * @mutates {@link TransformComponent} - Puede ajustar posiciones cuando se detectan impactos vía CCD.
- * @emits Datos de manifold de colisión y eventos de ciclo de vida de Trigger (Enter, Stay, Exit).
- * @executionOrder Fase: {@link SystemPhase.Collision}.
+ * @responsibility Implement a two-phase collision detection pipeline (Broadphase & Narrowphase).
+ * @responsibility Manage lifecycle events for triggers (Enter, Stay, Exit).
+ * @responsibility Provide Continuous Collision Detection (CCD) to mitigate tunneling.
  *
  * @remarks
- * Este sistema orquesta la detección de colisiones. Emplea un Spatial Hash opcional o Sweep and Prune
- * para optimizar la fase ancha. Los eventos de colisión se consolidan en componentes para su
- * procesamiento posterior por otros sistemas.
+ * ### Detection Pipeline:
+ * 1. **Broadphase Selection**:
+ *    - If `useSpatialGrid` is enabled: Queries the `SpatialGrid` resource for O(1) candidate selection.
+ *    - Fallback: Uses `Sweep and Prune` (1D sorting) for sparse environments.
+ * 2. **CCD Phase**: If enabled, performs swept tests using `ContinuousCollision` to calculate
+ *    Time of Impact (TOI) and prevent objects from jumping through walls.
+ * 3. **Narrowphase Phase**: Uses `NarrowPhase.test` (SAT/GJK) to generate precise manifolds.
+ * 4. **Event Dispatch**: Populates `CollisionEvents` components and executes registered callbacks.
  *
- * @warning Modificar la estructura del World (añadir/quitar entidades o componentes) directamente
- * dentro de los callbacks de colisión o trigger puede invalidar la iteración actual. Se recomienda
- * utilizar el {@link WorldCommandBuffer}.
- * @conceptualRisk [SPATIAL_HASH_TUNING][MEDIUM] El tamaño de celda del hash debe estar
- * equilibrado con el tamaño promedio de los objetos para evitar saturación de celdas.
+ * @warning **Safety**: Do NOT perform structural world changes (entity creation/deletion)
+ * inside collision callbacks. Use `world.getCommandBuffer()` to defer these operations.
+ *
+ * @conceptualRisk [TUNNELING] Fast objects without CCD enabled will skip collisions.
+ * @conceptualRisk [STALE_GRID] The system relies on `SpatialPartitioningSystem` updating the
+ * grid before the collision phase executes.
  */
 export class CollisionSystem2D extends System {
   private onCollisionCallbacks: CollisionCallback[] = [];

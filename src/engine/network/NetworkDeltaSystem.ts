@@ -6,22 +6,25 @@ import { ReplicationPolicy } from "./ReplicationPolicy";
 import { Quantization } from "./Quantization";
 
 /**
- * Sistema encargado de generar actualizaciones de estado diferenciales (Deltas).
+ * Network Delta Replication System.
  *
- * En lugar de enviar un snapshot completo del mundo en cada tick, este sistema calcula
- * las diferencias entre el estado actual y lo que cada cliente ya ha confirmado (ACK).
+ * Instead of transmitting full world snapshots every tick, this system calculates the
+ * differences between the current authoritative state and what each client has
+ * previously acknowledged (ACK).
  *
- * @responsibility Generar paquetes delta basados en el interés espacial y el último estado conocido.
+ * @responsibility Generate delta packets based on spatial interest and last known version.
  * @remarks
- * ### Protocolo de Replicación Delta:
- * 1. **Rastreo de Versiones**: El servidor mantiene un `ReplicationStateTracker` por cliente.
- * 2. **Detección de Cambios**: Se comparan las versiones de componentes del `World` (`stateVersion`)
- *    con la versión del último ACK recibido de ese cliente específico.
- * 3. **Filtrado de Interés**: Solo se procesan las entidades dentro del radio de interés del cliente.
- * 4. **Diferencial**: El paquete resultante solo contiene:
- *    - `created`: Nuevas entidades que han entrado en el área de interés.
- *    - `updated`: Componentes cuya versión es superior a la del último ACK.
- *    - `removed`: Entidades que han sido destruidas o han salido del área de interés.
+ * ### Delta Replication Protocol:
+ * 1. **Version Tracking**: The server maintains a `ReplicationStateTracker` per client,
+ *    mapping `(entityId, componentType)` to the `stateVersion` when it was last sent.
+ * 2. **Change Detection**: Compares current component versions in the `World` against
+ *    the `baselineAck` (the version of the last state the client confirmed receiving).
+ * 3. **Interest Filtering**: Only entities within the client's interest radius (provided
+ *    by `InterestManagerSystem`) are considered for updates.
+ * 4. **Differential Payload**: The resulting `DeltaPacket` contains:
+ *    - `created`: Entities new to the client's interest area (sent with full state).
+ *    - `updated`: Components mutated since the client's `baselineAck`.
+ *    - `removed`: Entities that were previously known but are now destroyed or out of range.
  *
  * @conceptualRisk [BANDWIDTH][MEDIUM] If too many components change simultaneously,
  * the delta packet size can approach or exceed a full snapshot.

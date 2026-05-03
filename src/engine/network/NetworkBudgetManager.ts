@@ -27,10 +27,22 @@ export class NetworkBudgetManager {
   };
 
   /**
-   * Filters and prioritizes entities based on the client's budget.
+   * Filters and prioritizes entities based on the client's network budget.
    *
    * @remarks
-   * Estimates byte size for different entity types to respect maxBytesPerPacket (Hallazgo 7).
+   * Implements a strict prioritization hierarchy to handle bandwidth constraints:
+   * 1. **Self Player**: Always prioritized to ensure the local user has the best feedback.
+   * 2. **Critical Radius**: Entities within the immediate vicinity of the player.
+   * 3. **High/Medium/Low**: Distance-based selection and rotation.
+   *
+   * The method estimates the byte size of each entity (Critical: 200B, High: 150B, etc.)
+   * to respect the `maxBytesPerPacket` limit (default 8KB).
+   *
+   * @param clientId - Target client ID.
+   * @param entities - List of entities currently in interest.
+   * @param budget - Bandwidth limits.
+   * @param selfEntityId - ID of the client's own ship.
+   * @returns Filtered list of entities that fit within the current packet budget.
    */
   public prioritize(
     clientId: string,
