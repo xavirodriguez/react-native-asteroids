@@ -359,22 +359,23 @@ export class NarrowPhase {
   }
 
   /**
-   * Detección de colisiones entre polígonos convexos usando el Teorema del Eje Separador (SAT).
+   * Collision detection between convex polygons using the Separating Axis Theorem (SAT).
    *
    * @remarks
-   * El algoritmo SAT (Separating Axis Theorem) establece que para dos objetos convexos, si existe un eje
-   * en el cual sus proyecciones no se solapan, entonces NO hay colisión.
+   * The Separating Axis Theorem (SAT) states that for two convex objects, if there exists an axis
+   * on which their projections do not overlap, then they are NOT colliding.
    *
-   * ### Pasos del Algoritmo:
-   * 1. **Transformación**: Se calculan los vértices en coordenadas de mundo (`populateGlobalVertices`).
-   * 2. **Generación de Ejes**: Para polígonos, los ejes potenciales de separación son las normales de cada cara.
-   * 3. **Proyección**: Se proyectan todos los vértices de ambos polígonos sobre cada eje (`projectPolygon`).
-   * 4. **Detección de Brecha**: Se calcula el solapamiento (`overlap = min(maxA, maxB) - max(minA, minB)`).
-   *    - Si `overlap <= 0` en CUALQUIER eje, salimos prematuramente (Sin colisión).
-   * 5. **MTV (Minimum Translation Vector)**: El eje con el solapamiento mínimo es la normal de colisión,
-   *    y el valor del solapamiento es la profundidad de penetración.
+   * ### Mathematical Steps:
+   * 1. **Transformation**: Local vertices are transformed to world coordinates using rotation and translation.
+   * 2. **Axis Generation**: For polygons, the potential axes of separation are the face normals of both shapes.
+   * 3. **Projection**: Every vertex of both polygons is projected onto each potential axis: `proj = vertex · axis`.
+   * 4. **Overlap Check**: Calculate the projection interval `[min, max]` for both polygons.
+   *    - Overlap: `L = min(maxA, maxB) - max(minA, minB)`
+   *    - If `L <= 0` on ANY axis, the shapes are separated (early exit).
+   * 5. **MTV (Minimum Translation Vector)**: The axis with the minimum overlap is the collision normal,
+   *    and the overlap value is the penetration depth.
    *
-   * ### Diagrama Conceptual:
+   * ### SAT Projection Diagram:
    * ```
    *      Polygon A          Axis (Normal)
    *       /---\               ^
@@ -388,8 +389,17 @@ export class NarrowPhase {
    *          Polygon B
    * ```
    *
-   * @conceptualRisk [CONVEX_ONLY] Este método NO funciona con polígonos cóncavos.
-   * @conceptualRisk [PERFORMANCE] Complejidad O(N+M) donde N y M son el número de vértices.
+   * @conceptualRisk [CONVEX_ONLY] This method only supports convex polygons. Concave shapes will produce false negatives.
+   * @conceptualRisk [PERFORMANCE] Complexity is O(N + M) where N and M are the number of vertices.
+   * @param a - Shape A.
+   * @param ax - X position of A.
+   * @param ay - Y position of A.
+   * @param ar - Rotation of A in radians.
+   * @param b - Shape B.
+   * @param bx - X position of B.
+   * @param by - Y position of B.
+   * @param br - Rotation of B in radians.
+   * @returns Collision manifold with depth and normal.
    */
   static polygonVsPolygon(a: PolygonShape, ax: number, ay: number, ar: number, b: PolygonShape, bx: number, by: number, br: number): CollisionManifold {
     const manifold = resetManifold();

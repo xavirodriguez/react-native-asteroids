@@ -13,29 +13,33 @@ interface RegisteredSystem {
 }
 
 /**
- * Mundo ECS - Registro central que gestiona el ciclo de vida de entidades, componentes y sistemas.
+ * ECS World - Central registry managing the lifecycle of entities, components, and systems.
  *
- * @responsibility Gestionar el ciclo de vida de las entidades (creación, destrucción).
- * @responsibility Almacenar y proporcionar acceso eficiente a los componentes.
- * @responsibility Orquestar la ejecución de sistemas en fases específicas.
- * @responsibility Mantener recursos compartidos globales del juego.
+ * @responsibility Manage entity creation and destruction (ID recycling).
+ * @responsibility Provide high-performance access to component storage.
+ * @responsibility Orchestrate system execution across specific phases.
+ * @responsibility Maintain global shared resources.
  *
  * @remarks
- * El `World` actúa como el núcleo de la arquitectura ECS. Está diseñado para reducir la presión sobre el GC
- * mediante la reutilización de identificadores de entidades y emplea queries reactivas cacheadas
- * para optimizar las consultas de sistemas.
+ * The `World` is the core of the ECS architecture. It is designed to minimize GC pressure
+ * through entity ID pooling and utilizes reactive cached queries to optimize system lookups.
  *
- * Invariantes (Expectativas de Diseño):
- * - **Principio 2**: Se espera que las estructuras jerárquicas (Transforms) sean válidas; el sistema intenta evitar el auto-parentesco.
- * - **Principio 6**: Los componentes singleton recuperados mediante {@link World.getSingleton} están
- * diseñados para ser mutables (se realiza una copia si están congelados).
+ * ### State Versioning System:
+ * - **structureVersion**: Incremented on structural changes (adding/removing entities or components).
+ *   Used to invalidate cached query results.
+ * - **stateVersion**: Incremented on data mutations (via `mutateComponent` or `mutateSingleton`).
+ *   Fundamental for the **Delta Replication** system to detect what changed since the last ACK.
  *
- * @conceptualRisk [PERFORMANCE][MEDIUM] Las consultas (queries) sin caché pueden volverse costosas
- * si se realizan múltiples veces por frame en mundos con miles de entidades.
- * @conceptualRisk [CONSISTENCY][HIGH] La eliminación de componentes durante una iteración
- * de sistema puede invalidar el estado de los iteradores si no se maneja mediante buffers.
- * @conceptualRisk [MEMORY][LOW] El versionado del World (`world.version`) es un entero simple.
- * Potencial overflow en sesiones de juego extremadamente largas.
+ * ### Performance Invariants:
+ * 1. **Structural Buffering**: During `update()`, structural changes are deferred to a
+ *    `WorldCommandBuffer` to prevent iterator invalidation in active queries.
+ * 2. **Snapshotting Cost**: Methods like `snapshot()` and `deltaSnapshot()` are O(N) relative
+ *    to component counts. Use sparingly in high-frequency paths.
+ *
+ * @conceptualRisk [VERSION_OVERFLOW][LOW] Versions are 32-bit integers; sessions lasting
+ * years might trigger overflow, though engine resets usually happen much earlier.
+ * @conceptualRisk [GC_PRESSURE][MEDIUM] Frequent snapshots in worlds with >1000 entities
+ * will increase garbage collection frequency.
  */
 export class World {
   /** @internal */
