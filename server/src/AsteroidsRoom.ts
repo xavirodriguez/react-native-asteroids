@@ -57,7 +57,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   /** Paso de tiempo fijo para el motor ECS (60Hz). */
   private fixedTimeStep = 16.66;
   private inputBuffers = new Map<string, InputFrame[]>();
-  private stateHistory = new Map<number, Map<string, EntitySnapshot>>();
+  private stateHistory = new Map<number, import("../../src/engine/types/EngineTypes").WorldSnapshot>();
   private clientAcks = new Map<string, number>(); // sessionId -> lastAckedStateVersion
   private replayFrames: ReplayFrame[] = [];
   private world: World;
@@ -227,6 +227,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     });
 
     // 2. Run Shared Deterministic Simulation
+    // In a full implementation, we'd loop through inputs and backtrack for shots.
+    // For this roadmap iteration, we simulate one tick.
     DeterministicSimulation.update(this.world, this.fixedTimeStep, { isResimulating: false });
 
     // 2.1 Run server-only systems (Spatial Partitioning, Interest Management)
@@ -367,16 +369,9 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       }
     });
 
-    // 7. Store history for lag compensation
-    const snapshot = new Map<string, EntitySnapshot>();
-    this.state.players.forEach((p: Player, id: string) => {
-        snapshot.set(id, { tick: this.state.serverTick, x: p.x, y: p.y, angle: p.angle, timestamp: 0 });
-    });
-    this.state.asteroids.forEach((a: Asteroid, id: string) => {
-        snapshot.set(id, { tick: this.state.serverTick, x: a.x, y: a.y, timestamp: 0 });
-    });
-    this.stateHistory.set(this.state.serverTick, snapshot);
-    while (this.stateHistory.size > 60) {
+    // 7. Store history for lag compensation (Backtracking)
+    this.stateHistory.set(this.state.serverTick, this.world.snapshot());
+    while (this.stateHistory.size > 120) { // Keep 2 seconds of history @ 60Hz
         const oldestTick = Math.min(...this.stateHistory.keys());
         this.stateHistory.delete(oldestTick);
     }
@@ -400,6 +395,28 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
    * This is necessary because the Schema is the source of truth for the clients
    * that use standard Colyseus state synchronization.
    */
+  /**
+   * Temporarily restores entities to a previous state for lag-compensated hit detection.
+   * @param targetTick The tick to backtrack to.
+   * @returns A function to restore the entities to their current state.
+   */
+  private backtrackEntities(targetTick: number): () => void {
+    const historicalSnapshot = this.stateHistory.get(targetTick);
+    if (!historicalSnapshot) return () => {};
+
+    // Save current state of potential targets (Asteroids)
+    const currentSnapshot = this.world.snapshot();
+
+    // We only want to backtrack targets, not the shooter.
+    // For simplicity, we restore the whole world but we'll need to be careful with shooters.
+    // In a more complex implementation, we'd only mutate Transform components of targets.
+    this.world.restore(historicalSnapshot);
+
+    return () => {
+      this.world.restore(currentSnapshot);
+    };
+  }
+
   private syncWorldToSchema() {
     // Sync Players
     this.playerEntities.forEach((entity, sessionId) => {
