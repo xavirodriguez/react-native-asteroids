@@ -171,7 +171,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
     if (!room || !connected) return null;
 
     // Periodically sync tick and ack version
-    if (localTickRef.current % 60 === 0) {
+    if (localTickRef.current % 10 === 0) {
         room.send("sync_tick", {
             protocolVersion: 1,
             timestamp: Date.now(),

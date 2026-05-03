@@ -23,8 +23,10 @@ export const createSkiaShipDrawer = () => {
         const health = world.getComponent<HealthComponent>(entity, "Health");
 
         const isInvulnerable = health && health.invulnerableRemaining > 0;
+        const gameState = world.getSingleton<GameStateComponent>("GameState");
+        const tick = gameState?.serverTick ?? Math.floor(elapsedTime / 16.66);
         const blinkOpacity = isInvulnerable
-            ? Math.floor(elapsedTime / 150) % 2 === 0 ? 0.3 : 1.0
+            ? Math.floor(tick / 10) % 2 === 0 ? 0.3 : 1.0
             : 1.0;
 
         p.setAlphaf(blinkOpacity);

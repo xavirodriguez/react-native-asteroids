@@ -198,6 +198,7 @@ export class AsteroidsGame
     }
 
     this.lastAuthoritativeTick = serverTick;
+    this.updateInterpolationBuffers(authoritativeSnapshot, timestamp);
     this.performReconciliation(serverTick, authoritativeSnapshot, localSessionId);
 
     // Acknowledge the received state version to the server
@@ -342,7 +343,10 @@ export class AsteroidsGame
 
         if (localPlayerId !== undefined) {
           const aPos = authoritativeSnapshot.componentData["Transform"]?.[localPlayerId];
-          if (!predicted || !aPos || Math.abs(predicted.state.x - aPos.x) > 0.1 || Math.abs(predicted.state.y - aPos.y) > 0.1) {
+          if (!predicted || !aPos ||
+              Math.abs(predicted.state.x - aPos.x) > 0.1 ||
+              Math.abs(predicted.state.y - aPos.y) > 0.1 ||
+              Math.abs((predicted.state.angle ?? 0) - (aPos.rotation ?? 0)) > 0.01) {
             needsRollback = true;
           }
         }
@@ -360,6 +364,19 @@ export class AsteroidsGame
       }
 
       this.world.restore(authoritativeSnapshot);
+
+      // Save authoritative state for the local player to prediction buffer to prevent redundant rollbacks
+      if (localPlayerId !== undefined && localSessionId) {
+          const aPos = authoritativeSnapshot.componentData["Transform"]?.[localPlayerId];
+          const aVel = authoritativeSnapshot.componentData["Velocity"]?.[localPlayerId];
+          if (aPos && aVel) {
+              this.predictionBuffer.save({
+                  tick: serverTick,
+                  entityId: localPlayerId.toString(),
+                  state: { x: aPos.x, y: aPos.y, vx: aVel.dx, vy: aVel.dy, angle: aPos.rotation }
+              });
+          }
+      }
 
       // Re-apply LocalPlayer tag
       if (localSessionId) {
