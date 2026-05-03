@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
+import { useTouchDevice } from "../src/hooks/useTouchDevice";
 
 interface FlappyBirdControlsProps {
   onFlap: (pressed: boolean) => void;
@@ -8,6 +9,9 @@ interface FlappyBirdControlsProps {
 export const FlappyBirdControls: React.FC<FlappyBirdControlsProps> = ({
   onFlap,
 }) => {
+  const isTouch = useTouchDevice();
+  if (!isTouch) return null;
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
