@@ -157,13 +157,19 @@ export class AsteroidsGame
     const serverTick = serverState.tick as number;
     if (serverTick <= this.lastAuthoritativeTick) return;
 
-    const delta = typeof serverState.delta === "string" ? JSON.parse(serverState.delta) : serverState.delta;
+    const delta = serverState.delta as any;
 
     let authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot;
 
     if (delta.created || delta.updated || delta.removed) {
       // DeltaPacket format: Apply to the best available baseline snapshot
-      const baseSnapshot = this.stateHistory.get(this.lastAuthoritativeTick) ?? this.world.snapshot();
+      const baseSnapshot = this.stateHistory.get(this.lastAuthoritativeTick);
+      if (!baseSnapshot) {
+        // If we don't have the baseline, we can't apply the delta accurately.
+        // We MUST NOT use the current predicted world state as it creates a hybrid state.
+        console.warn(`[AsteroidsGame] Missing baseline snapshot for tick ${this.lastAuthoritativeTick}. Skipping delta for tick ${serverTick}.`);
+        return;
+      }
       authoritativeSnapshot = structuredClone(baseSnapshot);
       this.applyDeltaToSnapshot(authoritativeSnapshot, delta);
     } else {
@@ -229,13 +235,13 @@ export class AsteroidsGame
       }
       if (delta.removed) {
         delta.removed.forEach((entityId: number) => {
-          const index = snapshot.entities.indexOf(entityId);
-          if (index !== -1) snapshot.entities.splice(index, 1);
           entitySet.delete(entityId);
           for (const type in snapshot.componentData) {
             delete snapshot.componentData[type][entityId];
           }
         });
+        // Optimize: Filter entities in a single pass instead of per-entity splice
+        snapshot.entities = snapshot.entities.filter(id => entitySet.has(id));
       }
       snapshot.entities.sort((a, b) => a - b);
     } else if (delta.componentData) {
@@ -267,6 +273,9 @@ export class AsteroidsGame
 
   private performReconciliation(serverTick: number, authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot, localSessionId?: string) {
     const predicted = this.stateHistory.get(serverTick);
+
+    // Record the authoritative state for this tick to prevent redundant rollbacks
+    this.stateHistory.set(serverTick, authoritativeSnapshot);
 
     let needsRollback = false;
     let localPlayerId: number | undefined;

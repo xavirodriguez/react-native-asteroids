@@ -6,7 +6,10 @@ import { ReplicationSchema } from "./types/ReplicationTypes";
 export class ReplicationPolicy {
   private static policies = new Map<string, ReplicationSchema>();
 
-  static {
+  private static initialized = false;
+
+  public static initialize(): void {
+    if (this.initialized) return;
     // Default policies
     this.register({ componentType: 'Transform', reliable: false, sendRate: 1, importance: 'high' });
     this.register({ componentType: 'Velocity', reliable: false, sendRate: 2, importance: 'high' });
@@ -16,6 +19,7 @@ export class ReplicationPolicy {
     this.register({ componentType: 'Bullet', reliable: true, sendRate: 1, importance: 'high' });
     this.register({ componentType: 'Asteroid', reliable: false, sendRate: 3, importance: 'medium' });
     this.register({ componentType: 'Render', reliable: false, sendRate: 10, importance: 'low' });
+    this.initialized = true;
   }
 
   public static register(schema: ReplicationSchema): void {
@@ -23,6 +27,7 @@ export class ReplicationPolicy {
   }
 
   public static getPolicy(componentType: string): ReplicationSchema {
+    this.initialize();
     return this.policies.get(componentType) ?? {
       componentType,
       reliable: false,
@@ -44,6 +49,7 @@ export class ReplicationPolicy {
    * @returns `true` si el componente cumple con el criterio de tasa de envío.
    */
   public static shouldReplicate(componentType: string, tick: number): boolean {
+    this.initialize();
     const policy = this.getPolicy(componentType);
     return tick % policy.sendRate === 0;
   }
