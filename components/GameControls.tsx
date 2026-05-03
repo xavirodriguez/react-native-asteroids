@@ -1,5 +1,7 @@
 import React from "react"
-import { View, TouchableOpacity, Text, StyleSheet, Platform } from "react-native"
+import { View, Text, StyleSheet } from "react-native"
+import { useTouchDevice } from "../src/hooks/useTouchDevice"
+import { ControlButton } from "./ui/ControlButton"
 
 /**
  * Properties for the {@link GameControls} component.
@@ -44,8 +46,9 @@ export const GameControls = React.memo(function GameControls({
   onShoot,
   onHyperspace,
 }: GameControlsProps) {
-  // Only show touch controls on native platforms
-  if (Platform.OS === "web") {
+  const isTouch = useTouchDevice()
+
+  if (!isTouch) {
     return (
       <View style={styles.webInstructions}>
         <Text style={styles.instructionText}>Use Arrow Keys to move, Space to shoot, Shift to Hyperspace</Text>
@@ -56,47 +59,39 @@ export const GameControls = React.memo(function GameControls({
   return (
     <View style={styles.container}>
       <View style={styles.leftControls}>
-        <TouchableOpacity
-          style={styles.controlButton}
+        <ControlButton
+          label="↺"
           onPressIn={() => onRotateLeft(true)}
           onPressOut={() => onRotateLeft(false)}
-        >
-          <Text style={styles.buttonText}>↺</Text>
-        </TouchableOpacity>
+        />
 
-        <TouchableOpacity
-          style={styles.controlButton}
+        <ControlButton
+          label="↑"
           onPressIn={() => onThrust(true)}
           onPressOut={() => onThrust(false)}
-        >
-          <Text style={styles.buttonText}>↑</Text>
-        </TouchableOpacity>
+        />
 
-        <TouchableOpacity
-          style={styles.controlButton}
+        <ControlButton
+          label="↻"
           onPressIn={() => onRotateRight(true)}
           onPressOut={() => onRotateRight(false)}
-        >
-          <Text style={styles.buttonText}>↻</Text>
-        </TouchableOpacity>
+        />
       </View>
 
       <View style={styles.rightControls}>
-        <TouchableOpacity
-          style={[styles.controlButton, styles.hyperspaceButton]}
+        <ControlButton
+          label="H"
+          style={styles.hyperspaceButton}
           onPressIn={() => onHyperspace(true)}
           onPressOut={() => onHyperspace(false)}
-        >
-          <Text style={styles.buttonText}>H</Text>
-        </TouchableOpacity>
+        />
 
-        <TouchableOpacity
-          style={[styles.controlButton, styles.shootButton]}
+        <ControlButton
+          label="FIRE"
+          style={styles.shootButton}
           onPressIn={() => onShoot(true)}
           onPressOut={() => onShoot(false)}
-        >
-          <Text style={styles.buttonText}>FIRE</Text>
-        </TouchableOpacity>
+        />
       </View>
     </View>
   )
@@ -131,16 +126,6 @@ const styles = StyleSheet.create({
   rightControls: {
     justifyContent: "center",
   },
-  controlButton: {
-    width: 60,
-    height: 60,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-  },
   shootButton: {
     width: 80,
     height: 60,
@@ -154,10 +139,5 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 255, 255, 0.3)",
     borderColor: "#00FFFF",
     marginRight: 10,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
   },
 })

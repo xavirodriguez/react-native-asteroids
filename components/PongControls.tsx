@@ -1,5 +1,6 @@
 import React from "react";
-import { StyleSheet, View, TouchableOpacity, Text, Platform } from "react-native";
+import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
+import { useTouchDevice } from "../src/hooks/useTouchDevice";
 
 interface PongControlsProps {
   onP1Up: (pressed: boolean) => void;
@@ -14,7 +15,8 @@ export const PongControls: React.FC<PongControlsProps> = ({
   onP2Up,
   onP2Down,
 }) => {
-  if (Platform.OS === "web") return null;
+  const isTouch = useTouchDevice();
+  if (!isTouch) return null;
 
   return (
     <View style={styles.container} pointerEvents="box-none">

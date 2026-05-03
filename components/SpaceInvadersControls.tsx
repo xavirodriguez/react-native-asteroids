@@ -1,5 +1,7 @@
 import React from "react";
-import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
+import { StyleSheet, View, Text } from "react-native";
+import { useTouchDevice } from "../src/hooks/useTouchDevice";
+import { ControlButton } from "./ui/ControlButton";
 
 interface SpaceInvadersControlsProps {
   onMoveLeft: (pressed: boolean) => void;
@@ -12,31 +14,41 @@ export const SpaceInvadersControls: React.FC<SpaceInvadersControlsProps> = ({
   onMoveRight,
   onShoot,
 }) => {
+  const isTouch = useTouchDevice();
+
+  if (!isTouch) {
+    return (
+      <View style={styles.webInstructions}>
+        <Text style={styles.instructionText}>Use Arrow Keys to move, Space to shoot</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.movementControls}>
-        <TouchableOpacity
+        <ControlButton
+          label="←"
           style={styles.controlButton}
+          labelStyle={styles.buttonText}
           onPressIn={() => onMoveLeft(true)}
           onPressOut={() => onMoveLeft(false)}
-        >
-          <Text style={styles.buttonText}>←</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        />
+        <ControlButton
+          label="→"
           style={styles.controlButton}
+          labelStyle={styles.buttonText}
           onPressIn={() => onMoveRight(true)}
           onPressOut={() => onMoveRight(false)}
-        >
-          <Text style={styles.buttonText}>→</Text>
-        </TouchableOpacity>
+        />
       </View>
-      <TouchableOpacity
+      <ControlButton
+        label="SHOOT"
         style={[styles.controlButton, styles.shootButton]}
+        labelStyle={styles.buttonText}
         onPressIn={() => onShoot(true)}
         onPressOut={() => onShoot(false)}
-      >
-        <Text style={styles.buttonText}>SHOOT</Text>
-      </TouchableOpacity>
+      />
     </View>
   );
 };
@@ -51,6 +63,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 30,
     alignItems: "center",
+  },
+  webInstructions: {
+    position: "absolute",
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+  instructionText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "monospace",
   },
   movementControls: {
     flexDirection: "row",
