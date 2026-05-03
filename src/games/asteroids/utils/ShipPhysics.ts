@@ -9,19 +9,23 @@ import { EventBus } from "../../../engine/core/EventBus";
 import { ModifierStackComponent } from "../../../engine/core/CoreComponents";
 
 /**
- * Lógica compartida para el movimiento y aplicación de física de naves.
+ * Shared Player Ship Physics & Movement.
+ *
+ * @responsibility Centralize the physical behavior of player-controlled ships.
+ * @responsibility Ensure consistent simulation between local client prediction
+ * and authoritative server state.
  *
  * @remarks
- * Centraliza el comportamiento físico de las naves controladas por el jugador,
- * garantizando la consistencia entre la predicción local del cliente y la simulación
- * autoritativa del servidor.
+ * ### Coordinate System & Units:
+ * - **Position**: `[px]` World units.
+ * - **Rotation**: `[rad]` Radians (0 = Right, -π/2 = Top).
+ * - **Thrust**: `[px/s²]` Acceleration applied along the forward vector.
+ * - **Friction**: `[multiplier]` Exponential velocity decay per second.
+ * - **Time Step**: Operates with `deltaTime` in milliseconds (dtMs) and seconds (dtS).
  *
- * ### Unidades y Constantes:
- * - **Posición**: [px] Unidades de mundo.
- * - **Rotación**: [rad] Radianes (0 = derecha, -PI/2 = arriba).
- * - **Empuje (Thrust)**: [px/s^2] Aceleración aplicada en la dirección actual.
- * - **Fricción**: Multiplicador exponencial de decaimiento de velocidad.
- * - **DeltaTime**: Uso mixto (segundos y milisegundos) según la etapa de integración.
+ * ### Gameplay Mechanics:
+ * - **Power-ups**: Modifies `thrust` and `rotation` multipliers via `ModifierStack`.
+ * - **Boundary Wrapping**: Automatically warps coordinates when exceeding the viewport.
  */
 export const ShipPhysics = {
   applyRotation(world: World, entity: number, pos: TransformComponent, input: InputComponent, dtSeconds: number, config: typeof GAME_CONFIG = GAME_CONFIG): void {

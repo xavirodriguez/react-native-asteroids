@@ -51,11 +51,19 @@ export class InterpolationBuffer {
   /**
    * Calculates interpolation data for a specific point in time.
    *
-   * @param targetTime - The wall-clock time (ms) to interpolate at.
-   * @returns The two surrounding snapshots and an interpolation factor [0, 1], or null if not enough data.
-   *
    * @remarks
-   * If `targetTime` is beyond the latest snapshot, it currently returns the latest state (clamping).
+   * Performs interval searching within the buffer to find snapshots `t_prev` and `t_next`
+   * such that `t_prev <= targetTime <= t_next`.
+   *
+   * ### Alpha Calculation:
+   * `alpha = (targetTime - t_prev) / (t_next - t_prev)`
+   *
+   * ### Extrapolation:
+   * If `targetTime` exceeds the buffer's head, the system currently clamps to the latest
+   * snapshot (`alpha = 1`). In high-jitter environments, this prevents erratic movement.
+   *
+   * @param targetTime - The wall-clock time (ms) to interpolate at.
+   * @returns Snapshots and alpha factor, or null if insufficient data (< 2 snapshots).
    */
   public getAt(targetTime: number): { prev: EntitySnapshot; next: EntitySnapshot; alpha: number } | null {
     if (this.snapshots.length < 2) return null;

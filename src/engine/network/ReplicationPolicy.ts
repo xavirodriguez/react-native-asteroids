@@ -1,7 +1,16 @@
 import { ReplicationSchema } from "./types/ReplicationTypes";
 
 /**
- * @responsibility Define and manage component replication policies.
+ * Component Replication Policy Manager.
+ *
+ * @responsibility Define and manage how components are synchronized over the network.
+ * @responsibility Implement bandwidth optimization via per-component send rates.
+ *
+ * @remarks
+ * Policies define the reliability and frequency (`sendRate`) of component updates.
+ * - **Reliability**: Determines if a component must be acknowledged (e.g., `Health`, `Ship`).
+ * - **Send Rate**: Controls how many world ticks pass between updates for a specific type.
+ *   Example: `Transform` is sent every tick (`sendRate: 1`), while `Render` is sent every 10.
  */
 export class ReplicationPolicy {
   private static policies = new Map<string, ReplicationSchema>();

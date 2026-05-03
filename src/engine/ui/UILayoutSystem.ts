@@ -96,20 +96,23 @@ export class UILayoutSystem extends System {
   }
 
   /**
-   * Resuelve de forma recursiva la posición y tamaño de un elemento y sus hijos.
+   * Recursively resolves the position and size of a UI element and its children.
    *
    * @remarks
-   * ### Jerarquía de Layout:
-   * 1. **Elementos Raíz**: Se posicionan relativos al viewport (pantalla) usando `anchor` y `offset`.
-   * 2. **Elementos Hijo**: Heredan la posición computada de su padre y escalan sus dimensiones
-   *    relativas (%) basadas en el `computedWidth/Height` del padre.
-   * 3. **Contenedores**: Organizan automáticamente a sus hijos en flujo horizontal o vertical,
-   *    respetando alineación (`align`) y espaciado (`gap`).
-   * 4. **Z-Index**: Los elementos dentro de contenedores se ordenan por su propiedad `zIndex`
-   *    antes de calcular su posición en el flujo.
+   * ### Layout Resolution Order:
+   * 1. **Root Elements**: Positioned relative to the viewport using `anchor` and `offset`.
+   * 2. **World-Attached Elements**: Projected from simulation coordinates to screen space.
+   * 3. **Child Elements**: Inherit their parent's computed position and resolve relative units
+   *    (%) based on the parent's `computedWidth` and `computedHeight`.
+   * 4. **Containers (Flex-like)**: Children are organized in horizontal or vertical flows
+   *    with automatic spacing (`gap`) and alignment.
    *
-   * @param world - El mundo ECS.
-   * @param entity - La entidad UI a procesar.
+   * ### Recursion Strategy:
+   * Uses a depth-first traversal to ensure that parent dimensions are fully computed before
+   * being propagated to dependent children.
+   *
+   * @param world - The ECS world.
+   * @param entity - The UI entity to process.
    * @param childrenByParent - Pre-calculated hierarchical mapping.
    *
    * @conceptualRisk [ZALGO_MAPPING] Si `childrenByParent` no incluye a todos los miembros de `uiEntities` de `update()`, algunos elementos quedarán huérfanos.

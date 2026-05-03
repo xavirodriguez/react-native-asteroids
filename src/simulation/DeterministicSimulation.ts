@@ -53,23 +53,22 @@ const ASTEROID_SPLIT_CONFIG: Record<
 };
 
 /**
- * Orquestador de la simulación del juego diseñado para la reproducibilidad (Determinismo).
+ * Core simulation orchestrator designed for perfect reproducibility (Determinism).
  *
  * @remarks
- * Este módulo centraliza el bucle de actualización de paso fijo (Fixed Step) para Asteroids.
- * Coordina el movimiento, colisiones, spawning y gestión del ciclo de vida de forma que,
- * dada una misma semilla y una secuencia de inputs, el estado final sea idéntico en
- * cualquier cliente o servidor.
+ * This module centralizes the fixed-step update loop for Asteroids. It coordinates
+ * movement, collisions, spawning, and lifecycle management such that, given the same
+ * seed and input sequence, the resulting state is identical across all clients and servers.
  *
- * ### Reglas de Oro del Determinismo:
- * 1. **Orden Fijo**: Los sistemas deben ejecutarse siempre en la misma secuencia (`internalUpdate`).
- * 2. **RNG Protegido**: Usar exclusivamente `RandomService.getInstance("gameplay")`.
- * 3. **Cero Relojes Externos**: Prohibido usar `Date.now()`, `performance.now()` o `Math.random()`.
- * 4. **Aislamiento de Side-Effects**: Usar `ctx.isResimulating` para desactivar sonidos o partículas visuales durante rollbacks.
- * 5. **Paso de Tiempo Fijo**: `deltaTime` debe ser constante (16.66ms) independientemente del framerate de renderizado.
+ * ### Golden Rules of Determinism:
+ * 1. **Fixed Execution Order**: Systems MUST execute in the exact same sequence (`internalUpdate`).
+ * 2. **Protected RNG**: Use only `RandomService.getInstance("gameplay")` for state changes.
+ * 3. **No External Clocks**: Never use `Date.now()`, `performance.now()`, or `Math.random()`.
+ * 4. **Side-Effect Isolation**: Use `ctx.isResimulating` to suppress sounds/particles during rollbacks.
+ * 5. **Fixed Time Step**: `deltaTime` must be constant (16.66ms) regardless of render framerate.
  *
- * @conceptualRisk [PRECISION_DRIFT][MEDIUM] El uso de acumulaciones de punto flotante en
- * sesiones extremadamente largas puede derivar en desincronización entre arquitecturas (JS IEEE 754).
+ * @conceptualRisk [PRECISION_DRIFT][MEDIUM] IEEE 754 floating point accumulations over
+ * extremely long sessions (hours) may lead to architecture-dependent desyncs.
  */
 export class DeterministicSimulation {
     /**

@@ -1,17 +1,16 @@
 /**
- * Sistema que gestiona el spawn de items (loot) tras la destrucción de entidades.
+ * Loot Generation System - Item spawning upon entity destruction.
  *
  * @remarks
- * Desacopla la lógica de destrucción de una entidad de la generación de recompensas.
- * Escucha eventos específicos y utiliza el `LootTableComponent` para determinar
- * qué debe spawnearse.
+ * Decouples entity destruction from reward generation by utilizing an event-based
+ * architecture. It processes the `LootTableComponent` of destroyed entities to
+ * determine item drops via PRNG.
  *
- * ### Contrato de Eventos:
- * El sistema espera que los eventos porten el ID de la entidad origen y sus coordenadas:
- * - `entity:destroyed`: `{ entity: Entity, type: string }`
- * - `asteroid:destroyed`: `{ entity: Entity, x: number, y: number }`
+ * ### Event Contract:
+ * - **`entity:destroyed`**: `{ entity: Entity, type: string }`
+ * - **`asteroid:destroyed`**: `{ entity: Entity, size: string }`
  *
- * ### Spawning Logic
+ * ### Spawning Logic:
  * 1. An entity is destroyed.
  * 2. `LootSystem` retrieves its `LootTableComponent`.
  * 3. For each entry in `drops`, it rolls a PRNG check against `drop.chance`.

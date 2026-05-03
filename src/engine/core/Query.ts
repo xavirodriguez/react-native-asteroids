@@ -69,24 +69,26 @@ export class Query {
   }
 
   /**
-   * Proporciona una instantánea (defensive copy) de las entidades que coinciden con la firma de la query.
+   * Provides a defensive copy of the entities matching this query's signature.
    *
    * @remarks
-   * A diferencia de versiones anteriores, este método devuelve una copia del array interno.
-   * Esto garantiza que los consumidores no puedan corromper el caché de la query mediante
-   * casting forzado a tipos mutables.
+   * To prevent external cache corruption, this method returns a shallow copy of the
+   * internal entity array. This ensures that callers cannot mutate the query's
+   * state by casting the result.
    *
-   * @warning **Costo de Consultas Dinámicas**: Evite crear queries dinámicas en tiempo de ejecución.
-   * Prefiera el uso de `world.query(...types)` que utiliza un caché persistente para estas instancias.
+   * ### Performance Invariants:
+   * 1. **Determinisic Order**: The returned array is always sorted by Entity ID.
+   * 2. **Caching**: If the structural version of the World hasn't changed, the internal
+   *    array is reused.
    *
-   * @returns Un array de solo lectura de IDs de {@link Entity}.
+   * @warning **Dynamic Query Cost**: Avoid calling `world.query()` with new arrays inside loops.
+   * Reuse specific query instances to benefit from persistent caching.
    *
-   * @postcondition El array devuelto es una copia independiente del estado actual.
-   * @postcondition Las entidades en el array se entregan ordenadas por ID de forma ascendente para garantizar determinismo.
+   * @returns A read-only array of {@link Entity} IDs.
    *
-   * @conceptualRisk [GC_PRESSURE][MEDIUM] Cada llamada genera una nueva asignación de array.
-   * Los sistemas de alta frecuencia deben considerar cachear el resultado localmente si
-   * no hay cambios estructurales en el mundo (ver `world.structureVersion`).
+   * @conceptualRisk [GC_PRESSURE][MEDIUM] Every call allocates a new array instance.
+   * High-frequency systems should consider local result caching if `world.structureVersion`
+   * remains unchanged.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.needsUpdateArray) {

@@ -21,36 +21,28 @@ import { BinaryCompression } from "../../src/engine/network/BinaryCompression";
 /**
  * Authoritative Game Room for Asteroids.
  *
- * This room orchestrates the multiplayer lifecycle, including client synchronization,
- * input processing, deterministic simulation, and optimized state replication.
+ * Orchestrates the authoritative server-side simulation, client input synchronization,
+ * and optimized state replication using various strategies (Interest, Delta, Binary).
  *
- * @responsibility Orchestrate the multiplayer game loop on the server.
- * @responsibility Synchronize the ECS World state with the Colyseus Schema.
- * @responsibility Implement advanced replication modes (Interest, Delta, Binary).
- * @responsibility Manage input buffers and state history for lag compensation.
+ * @responsibility Manage Colyseus room lifecycle and client connections.
+ * @responsibility Execute authoritative {@link DeterministicSimulation} at 60Hz.
+ * @responsibility Implement multi-mode replication (Interest Management, Delta Compression).
+ * @responsibility Maintain historical snapshots for lag compensation and re-simulation.
  *
  * @remarks
- * ### Server Update Loop
- * 1. **Collect Inputs**: Extract pending input frames from client buffers.
- * 2. **Simulate**: Execute the shared {@link DeterministicSimulation}.
- * 3. **Sync Schema**: Update the Colyseus schema (Players, Asteroids, Bullets) from ECS.
- * 4. **Replicate**: Generate and send updates to clients based on the active `REPLICATION_MODE`.
- * 5. **Cleanup**: Discard processed inputs and manage history buffers.
- * Habitación Colyseus para el juego Asteroids.
+ * ### Data Flow (The Server Tick Pipeline)
+ * 1. **Input Recovery**: Retrieves buffered user actions matching the current `serverTick`.
+ * 2. **Authoritative Simulation**: Advances the ECS World using the shared simulation logic.
+ * 3. **World Sync**: Copies authoritative state from ECS components to Colyseus Schema objects.
+ * 4. **Filtering & Encoding**:
+ *    - Applies **Interest Management** (Spatial Hash) to determine visibility per client.
+ *    - Generates **Delta Packets** by comparing `world.stateVersion` against client ACKs.
+ *    - (Optional) Compresses payloads using **MessagePack** (Binary Mode).
+ * 5. **Dispatch**: Transmits optimized updates to connected clients.
  *
- * Gestiona el ciclo de vida del servidor, la recolección de inputs de múltiples clientes,
- * la ejecución de la simulación autoritativa y la replicación optimizada del estado.
- *
- * Estrategias de Replicación (REPLICATION_MODE):
- * - 'legacy': Envía el snapshot completo del mundo cada tick (Alto ancho de banda).
- * - 'interest': Filtra entidades por proximidad espacial (USSC).
- * - 'delta': Envía solo componentes mutados detectados vía stateVersion.
- * - 'budget': Limita el número de entidades y bytes por paquete según prioridad.
- * - 'binary': Utiliza MessagePack para comprimir deltas (Máxima eficiencia).
- *
- * @conceptualRisk [BANDWIDTH][HIGH] El modo legacy puede saturar la red con >50 entidades.
- * @conceptualRisk [TICK_DRIFT] Desajustes entre el simulationInterval y el patchRate pueden
- * causar jitter visual en el cliente si no hay buffer de interpolación.
+ * @conceptualRisk [BANDWIDTH][HIGH] 'legacy' mode sends full JSON snapshots (avoid for >20 entities).
+ * @conceptualRisk [TICK_DRIFT] Discrepancies between fixed simulation and variable patch rates
+ * can cause visual jitter without client-side interpolation.
  */
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;

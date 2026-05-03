@@ -27,34 +27,36 @@ function resetResult(): CCDResult {
 }
 
 /**
- * Utilidades para Continuous Collision Detection (CCD) mediante barrido lineal (Linear Sweeping).
+ * Utilities for Continuous Collision Detection (CCD) using Linear Sweeping.
  *
- * El CCD se utiliza para prevenir el "tunnelling", un fenómeno donde objetos que se mueven rápido
- * saltan a través de obstáculos entre pasos de simulación discretos. Estos algoritmos calculan
- * el Tiempo de Impacto exacto (TOI - Time of Impact) dentro de la duración de un frame.
+ * CCD prevents "tunneling"—a phenomenon where fast-moving objects skip over
+ * obstacles between discrete simulation steps. These algorithms calculate the
+ * exact Time of Impact (TOI) within a frame's duration.
  *
  * @remarks
- * - Asume velocidad lineal constante durante el frame (Integración de Euler).
- * - No tiene en cuenta el movimiento rotacional durante el barrido.
- * - Optimizado mediante el uso de objetos de resultado compartidos para reducir la presión sobre el GC.
+ * ### Mathematical Basis:
+ * - Assumes constant linear velocity (Euler integration).
+ * - Ignores rotational movement during the sweep.
+ * - Optimized with shared result objects to minimize GC pressure.
  *
  * @packageDocumentation
  */
 export class ContinuousCollision {
   /**
-   * Predice la colisión entre un círculo en movimiento y un círculo estático.
+   * Predicts collision between a moving circle and a static circle.
    *
    * @remarks
-   * Solves the quadratic equation representing the distance between the two centers
-   * over time: `|(P_a + V_a * t) - P_b|^2 = (r_a + r_b)^2`
+   * Solves the quadratic equation for the distance between centers:
+   * `|(Pa + Va*t) - Pb|^2 = (ra + rb)^2`
    *
-   * Let `D = P_a - P_b` and `V = V_a`.
-   * Expanding the equation: `(D + V*t) . (D + V*t) = R^2`
-   * Leads to `(V.V)t^2 + 2(V.D)t + (D.D - R^2) = 0`
-   * Where:
-   * - `a = V.V`
-   * - `b = 2(V.D)`
-   * - `c = D.D - R^2`
+   * Let `D = Pa - Pb` (relative distance) and `V = Va` (relative velocity).
+   * Expanding `(D + V*t) · (D + V*t) = R^2`:
+   * `(V·V)t^2 + 2(V·D)t + (D·D - R^2) = 0`
+   *
+   * Coefficients:
+   * - `a = V·V` (Square of relative speed)
+   * - `b = 2(V·D)`
+   * - `c = D·D - R^2` (Initial separation squared minus radius sum squared)
    *
    * @param posAX - Initial X position of circle A.
    * @param posAY - Initial Y position of circle A.
