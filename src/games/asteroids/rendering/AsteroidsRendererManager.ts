@@ -55,8 +55,8 @@ export function initializeAsteroidsRenderer(renderer: Renderer<unknown>): void {
       const skiaRenderer = renderer as unknown as import("../../../engine/rendering/SkiaRenderer").SkiaRenderer;
 
       // Use factory-based drawers to ensure state isolation
-      skiaRenderer.registerShape("triangle", drawSkiaShip || createSkiaShipDrawer());
-      skiaRenderer.registerShape("ufo", drawSkiaUfo || createSkiaUfoDrawer());
+      skiaRenderer.registerShape("triangle", createSkiaShipDrawer());
+      skiaRenderer.registerShape("ufo", createSkiaUfoDrawer());
       skiaRenderer.registerPostEntityDrawer("triangle", createSkiaAsteroidShipTrailDrawer());
       skiaRenderer.registerShape("bullet_shape", createSkiaBulletDrawer());
       skiaRenderer.registerShape("particle", createSkiaParticleDrawer());
