@@ -4,7 +4,18 @@ import { MUTATORS, Mutator } from "../config/MutatorConfig";
 const MUTATORS_ENABLED_KEY = "settings:mutators_enabled";
 
 /**
- * Service to manage weekly mutators and their rotation.
+ * Weekly Mutator Management Service.
+ *
+ * @responsibility Handle the selection and rotation of global gameplay mutators.
+ * @responsibility Ensure cross-client seed consistency for periodic events.
+ *
+ * @remarks
+ * This service implements a deterministic rotation logic based on the UTC week number.
+ * This guarantees that all players in a session see the same active mutators without
+ * requiring constant server-to-client synchronization for the mutator list.
+ *
+ * @conceptualRisk [TIME_SYNC] Relies on the client system clock. Significant drifts may
+ * cause a player to see the wrong active mutators for a short period during week rollover.
  */
 export class MutatorService {
   /**

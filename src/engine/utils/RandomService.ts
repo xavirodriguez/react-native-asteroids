@@ -1,24 +1,26 @@
 /**
- * Servicio de aleatoriedad destinado a mejorar la reproducibilidad (PRNG).
- * Proporciona instancias segregadas para simulación y efectos visuales para ayudar a mitigar
- * la deriva de la semilla (seed drift).
+ * PRNG Random Service - Multi-stream Seeded Randomness.
  *
- * @responsibility Proveer números aleatorios basados en semillas bajo condiciones controladas.
- * @responsibility Segregar el estado del PRNG entre simulación y presentación.
+ * @responsibility Provide deterministic pseudo-random numbers (Mulberry32).
+ * @responsibility Segregate RNG state between simulation and presentation layers.
  *
  * @remarks
- * ### PRNG Streams
- * 1. **gameplay**: Reserved for state-altering logic (spawn positions, AI decisions).
- *    Must be perfectly synced between server and client.
- * 2. **render**: Used for purely cosmetic effects (particle colors, screen shake).
- *    Does not require synchronization and does not affect the game state.
+ * To prevent state divergence (desync) in multiplayer or replays, randomness is
+ * split into three primary streams:
  *
- * ### Determinism Rules
- * Systems MUST use the appropriate stream. Using the `gameplay` stream for visual
- * effects will cause desyncs during rollback/reconciliation cycles.
+ * 1. **Gameplay Stream**: `RandomService.getGameplayRandom()`.
+ *    - Reserved for state-altering logic (spawn coords, loot rolls, AI).
+ *    - **Must remain in perfect sync** between server and all clients.
+ * 2. **Render Stream**: `RandomService.getRenderRandom()`.
+ *    - Used for cosmetic effects (particle colors, shake patterns).
+ *    - Not synchronized; does not affect simulation state.
+ * 3. **Global Stream**: Standard fallback for non-deterministic utilities.
  *
- * @conceptualRisk [SEED_COLLISION] El uso de la misma semilla en múltiples instancias "named"
- * no coordinadas puede resultar en patrones de aleatoriedad idénticos.
+ * @warning **Determinism Violation**: Accessing non-gameplay streams while
+ * `lockGameplayContext` is active will throw an error to prevent accidental desyncs.
+ *
+ * @conceptualRisk [SEED_DRIFT] Consuming gameplay randoms during cosmetic steps
+ * will break reconciliation and lead to rollback failures.
  */
 
 export type RandomStream = "gameplay" | "render" | "global";

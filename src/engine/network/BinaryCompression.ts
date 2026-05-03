@@ -1,34 +1,26 @@
 import { Packr, unpack } from "msgpackr";
 
 /**
- * Utility for high-performance binary serialization.
+ * Binary Serialization Engine - High-performance object encoding via MessagePack.
  *
- * Uses MessagePack (via `msgpackr`) to convert complex JavaScript objects
- * into compact `Uint8Array` payloads for network transmission.
+ * @responsibility Transform JavaScript objects (snapshots/deltas) into compact binary buffers.
+ * @responsibility Mitigate network bandwidth by reducing payload size.
  *
- * @responsibility Handle binary serialization of network packets using MessagePack.
  * @remarks
- * ### Serialization Strategy
- * - **MessagePack**: Chosen for its balance between performance and compression ratio
- *   compared to Protobuf (no schema required) or JSON (text-based).
- * - **structuredClone**: Enabled to support complex data types and circular references
- *   within the object tree.
+ * TinyAsterEngine utilizes `msgpackr` for its high efficiency and native support for
+ * modern JS types. Binary serialization reduces network packet size by 40% to 60%
+ * compared to standard JSON strings.
+ *
+ * ### Serialization Strategy:
+ * - **MessagePack**: Balanced performance/compression ratio (schema-less).
+ * - **structuredClone: true**: Supports complex nested structures and prevents prototype pollution.
  * - **useRecords: false**: Disables record-style optimization to ensure maximum
- *   compatibility across different versions of the packr library and clients.
- * Utilidad de compresión y serialización binaria basada en MessagePack.
+ *   compatibility across different versions of the library and transport layers.
  *
- * @responsibility Transformar objetos JavaScript (snapshots/deltas) en buffers binarios compactos.
- *
- * @remarks
- * TinyAsterEngine utiliza `msgpackr` por su alta eficiencia y soporte nativo para
- * extensiones de tipos (como Maps/Sets). La serialización binaria reduce el tamaño
- * de los paquetes de red entre un 40% y 60% en comparación con JSON estándar.
- *
- * @conceptualRisk [BINARY_COMPATIBILITY] Los cambios en la estructura de los esquemas
- * (GameState) requieren que tanto el cliente como el servidor se actualicen simultáneamente
- * para evitar fallos de desempaquetado.
- * @conceptualRisk [OVERHEAD] Aunque el tamaño del paquete es menor, la CPU debe realizar
- * el paso extra de empaquetado/desempaquetado.
+ * @conceptualRisk [BINARY_COMPATIBILITY] State schema changes require synchronized
+ * updates between client and server to prevent unpacking failures.
+ * @conceptualRisk [CPU_OVERHEAD] Packing/unpacking adds a non-trivial CPU step
+ * per network frame on low-end devices.
  */
 export class BinaryCompression {
   private static packr = new Packr({
