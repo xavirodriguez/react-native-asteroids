@@ -60,6 +60,8 @@ export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, ren
 import { Platform } from "react-native";
 
 export const createSkiaAsteroidShipTrailDrawer = () => {
+    // Return a closure that maintains its own paint object to avoid module-level shared state,
+    // while still avoiding per-frame allocations.
     let paint: SkPaint | null = null;
 
     return (canvas: SkCanvas, entity: Entity, pos: { x: number, y: number, rotation: number, scaleX: number, scaleY: number }, _elapsedTime: number, render: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null }, world: World) => {
@@ -76,8 +78,6 @@ export const createSkiaAsteroidShipTrailDrawer = () => {
         } catch (_e) { /* ignore */ }
     };
 };
-
-export const drawSkiaAsteroidShipTrailDrawer = createSkiaAsteroidShipTrailDrawer();
 
 export const drawSkiaUfo = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => {
     const size = render.size;
