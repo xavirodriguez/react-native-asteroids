@@ -65,7 +65,6 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private newClients = new Set<string>();
   private nextPlayerNumber = 1;
   private networkMetrics = new NetworkMetricsCollector();
-  private newClients = new Set<string>();
   private replicationTracker = new ReplicationStateTracker();
   private ackTracker = new ClientAckTracker();
   private budgetManager = new NetworkBudgetManager();
@@ -81,7 +80,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     }
   }
 
-  onCreate(options: { seed?: number }) {
+  onCreate(options: { seed?: number, replicationMode?: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' }) {
+    if (options.replicationMode) {
+        this.REPLICATION_MODE = options.replicationMode;
+    }
     this.newClients.clear();
     this.state = new AsteroidsState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
@@ -111,6 +113,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         this.ackTracker.recordAck(client.sessionId, data.sequence, this.state.serverTick);
       }
       client.send("sync_tick", {
+        protocolVersion: this.state.protocolVersion,
         serverTick: this.state.serverTick,
         timestamp: data?.timestamp ?? 0
       });
@@ -123,7 +126,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     });
 
     this.onMessage("metrics", (client) => {
-      client.send("metrics", this.networkMetrics.getMetrics());
+      client.send("metrics", {
+        protocolVersion: this.state.protocolVersion,
+        ...this.networkMetrics.getMetrics()
+      });
     });
 
     // Initialized ECS world
@@ -162,8 +168,6 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         hyperspaceTimer: 0,
         hyperspaceCooldownRemaining: 0
     } as ShipComponent);
-
-    this.newClients.add(client.sessionId);
   }
 
   async onLeave(client: Client, code: number) {
@@ -255,11 +259,12 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
             let interestIds: Set<number>;
 
             if (this.REPLICATION_MODE === 'interest' || isNew) {
-                interestIds = new Set(interest.map(e => e.entityId));
+                interestIds = new Set(interest.map(e => parseInt(e.entityId)));
             } else {
                 // Iteration 4: Budgeting
-                const prioritized = this.budgetManager.prioritize(client.sessionId, interest);
-                interestIds = new Set(prioritized.map(e => e.entityId));
+                const selfEntityId = this.playerEntities.get(client.sessionId)?.toString();
+                const prioritized = this.budgetManager.prioritize(client.sessionId, interest, undefined, selfEntityId);
+                interestIds = new Set(prioritized.map(e => parseInt(e.entityId)));
             }
 
             totalEntitiesFiltered += (totalEntitiesInWorld - interestIds.size);
@@ -284,7 +289,11 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
                 const serialized = JSON.stringify(snapshot);
                 totalSerializationMs += (Date.now() - serializationStart);
                 totalBytesSentThisTick += serialized.length;
-                client.send("world_delta", { tick: this.state.serverTick, delta: serialized });
+                client.send("world_delta", {
+                    protocolVersion: this.state.protocolVersion,
+                    tick: this.state.serverTick,
+                    delta: serialized
+                });
                 if (isNew) this.newClients.delete(client.sessionId);
             } else {
                 // Iteration 3: Delta Compression
@@ -312,7 +321,11 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
                     const serialized = JSON.stringify(deltaPacket);
                     totalSerializationMs += (Date.now() - serializationStart);
                     totalBytesSentThisTick += serialized.length;
-                    client.send("world_delta", { tick: this.state.serverTick, delta: serialized });
+                    client.send("world_delta", {
+                        protocolVersion: this.state.protocolVersion,
+                        tick: this.state.serverTick,
+                        delta: serialized
+                    });
                 }
             }
         });
@@ -333,12 +346,6 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         this.clients.length > 0 ? totalEntitiesFiltered / this.clients.length : 0
     );
 
-    // Iteration 5: Set replication mode to binary (final step)
-    // REPLICATION_MODE should be manually changed based on the iteration goal.
-    // Setting it to 'binary' here is the final desired state of the roadmap.
-    if (this.state.serverTick === 1) {
-        this.REPLICATION_MODE = 'binary';
-    }
 
     // 5. Record for Replay
     this.replayFrames.push({
@@ -377,6 +384,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     // 8. Check Game Over to broadcast replay
     if (this.state.gameOver && this.replayFrames.length > 0) {
         this.broadcast("replay", {
+            protocolVersion: this.state.protocolVersion,
             version: 1,
             roomId: this.roomId,
             startTick: this.replayFrames[0].tick,

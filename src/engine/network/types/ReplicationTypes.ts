@@ -12,7 +12,7 @@ export type InterestLevel = 'critical' | 'high' | 'medium' | 'low' | 'none';
  * Represents an entity that is relevant to a specific client.
  */
 export interface InterestedEntity {
-  entityId: number;
+  entityId: string;
   interestLevel: InterestLevel;
   distance: number;
 }
@@ -28,7 +28,7 @@ export interface NetworkPacket {
  * Full state of an entity for initial synchronization.
  */
 export interface EntityPayload {
-  entityId: number;
+  entityId: string;
   components: Record<string, unknown>;
 }
 
@@ -36,7 +36,7 @@ export interface EntityPayload {
  * Partial state of an entity containing only changed components.
  */
 export interface EntityDeltaPayload {
-  entityId: number;
+  entityId: string;
   components: Record<string, unknown>;
 }
 
@@ -49,7 +49,7 @@ export interface DeltaPacket extends NetworkPacket {
   full: boolean;
   created: EntityPayload[];
   updated: EntityDeltaPayload[];
-  removed: number[];
+  removed: string[];
 }
 
 /**

@@ -35,7 +35,8 @@ export class NetworkBudgetManager {
   public prioritize(
     clientId: string,
     entities: InterestedEntity[],
-    budget: ClientNetworkBudget = NetworkBudgetManager.DEFAULT_BUDGET
+    budget: ClientNetworkBudget = NetworkBudgetManager.DEFAULT_BUDGET,
+    selfEntityId?: string
   ): InterestedEntity[] {
     const result: InterestedEntity[] = [];
     let currentBytes = 0;
@@ -60,9 +61,20 @@ export class NetworkBudgetManager {
     // Heuristic: estimated bytes per entity based on level
     const bytesPerEntity: Record<string, number> = { 'critical': 200, 'high': 150, 'medium': 100, 'low': 100, 'none': 0 };
 
-    // 2. Add Critical (within budget)
+    // 2. Add Self Entity first (Hallazgo 7 / Prioridad 1)
     let count = 0;
+    if (selfEntityId) {
+        const self = entities.find(e => e.entityId === selfEntityId);
+        if (self) {
+            result.push(self);
+            count++;
+            currentBytes += bytesPerEntity[self.interestLevel] || 200;
+        }
+    }
+
+    // 3. Add Critical (within budget)
     for (const e of critical) {
+      if (e.entityId === selfEntityId) continue; // Already added
       const estimated = bytesPerEntity[e.interestLevel];
       if (count < budget.maxEntitiesPerPacket &&
           count < budget.maxCriticalPerTick &&
@@ -73,8 +85,9 @@ export class NetworkBudgetManager {
       }
     }
 
-    // 3. Add High
+    // 4. Add High
     for (const e of high) {
+      if (e.entityId === selfEntityId) continue; // Already added
       const estimated = bytesPerEntity[e.interestLevel];
       if (count < budget.maxEntitiesPerPacket && currentBytes + estimated < budget.maxBytesPerPacket) {
         result.push(e);
@@ -83,8 +96,9 @@ export class NetworkBudgetManager {
       }
     }
 
-    // 4. Add Medium
+    // 5. Add Medium
     for (const e of medium) {
+      if (e.entityId === selfEntityId) continue; // Already added
       const estimated = bytesPerEntity[e.interestLevel];
       if (count < budget.maxEntitiesPerPacket && currentBytes + estimated < budget.maxBytesPerPacket) {
         result.push(e);
@@ -93,7 +107,7 @@ export class NetworkBudgetManager {
       }
     }
 
-    // 5. Add Low (rotating)
+    // 6. Add Low (rotating)
     if (count < budget.maxEntitiesPerPacket && low.length > 0) {
       const startIndex = this.lowPriorityRotation.get(clientId) ?? 0;
       const amountToTry = Math.min(budget.maxLowPriorityPerSecond, budget.maxEntitiesPerPacket - count, low.length);

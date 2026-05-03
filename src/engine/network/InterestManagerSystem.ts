@@ -67,7 +67,7 @@ export class InterestManagerSystem extends System {
         const level = InterestManager.getInterestLevelSq(distanceSq);
         if (level !== 'none') {
           interested.push({
-            entityId,
+            entityId: entityId.toString(),
             interestLevel: level,
             distance: Math.sqrt(distanceSq)
           });
@@ -78,7 +78,7 @@ export class InterestManagerSystem extends System {
       // Always include self as critical
       if (!interestedIds.has(playerEntity)) {
           interested.push({
-              entityId: playerEntity,
+              entityId: playerEntity.toString(),
               interestLevel: 'critical',
               distance: 0
           });

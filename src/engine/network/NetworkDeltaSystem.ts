@@ -59,13 +59,13 @@ export class NetworkDeltaSystem {
 
     const created: EntityPayload[] = [];
     const updated: EntityDeltaPayload[] = [];
-    const removed: number[] = [];
+    const removed: string[] = [];
 
     // 1. Identify removed entities (were known, but no longer interested or active)
     const knownEntities = this.stateTracker.getKnownEntities(clientId);
     knownEntities.forEach(entityId => {
       if (!interestedEntities.has(entityId) || !world.hasEntity(entityId)) {
-        removed.push(entityId);
+        removed.push(entityId.toString());
         this.stateTracker.removeEntityForClient(clientId, entityId);
       }
     });
@@ -78,7 +78,7 @@ export class NetworkDeltaSystem {
       if (!isKnown || forceFull) {
         // Created / New to client
         const payload: EntityPayload = {
-          entityId,
+          entityId: entityId.toString(),
           components: {}
         };
 
@@ -98,7 +98,7 @@ export class NetworkDeltaSystem {
       } else {
         // Potential update
         const deltaPayload: EntityDeltaPayload = {
-          entityId,
+          entityId: entityId.toString(),
           components: {}
         };
         let hasChanges = false;

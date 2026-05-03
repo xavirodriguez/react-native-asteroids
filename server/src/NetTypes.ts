@@ -1,3 +1,7 @@
+export interface NetworkPacket {
+  protocolVersion: number;
+}
+
 export interface InputFrame {
   tick: number;
   timestamp: number;
