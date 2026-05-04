@@ -196,7 +196,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
         tick: this.currentTick,
         timestamp: Date.now(),
         actions: currentInput.actions,
-        axes: currentInput.axes
+        axes: currentInput.axes,
+        protocolVersion: 1 // TO-DO temporary fix
       };
       this.replayRecorder.recordTick(this.currentTick, { "local": [inputFrame] });
 
