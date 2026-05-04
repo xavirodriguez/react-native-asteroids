@@ -1,22 +1,24 @@
 import { World } from "../core/World";
 
 /**
- * Clase base abstracta para todas las escenas del juego.
- * Una escena representa un estado específico (e.g., Menú, Jugando, Game Over).
- * Gestiona su propio mundo ECS y proporciona ganchos de ciclo de vida.
+ * Abstract base class for all game scenes.
+ * A scene represents a specific logical state (e.g., Menu, Gameplay, Game Over).
+ * It manages its own ECS World context and provides lifecycle hooks.
  *
- * @responsibility Orquestar la inicialización y limpieza de entidades/sistemas para un estado de juego específico.
- * @responsibility Proveer un contexto aislado (World) para evitar fugas de estado entre escenas.
+ * @responsibility Orchestrate the initialization and cleanup of entities and systems for a specific game state.
+ * @responsibility Provide an isolated {@link World} context to prevent state leakage between scenes.
  *
  * @remarks
- * Las escenas permiten segmentar la lógica del juego en módulos independientes.
- * Cada escena puede tener su propio conjunto de sistemas y entidades, lo que
- * simplifica la gestión de la memoria y la complejidad.
+ * Scenes allow segmenting game logic into independent modules.
+ * Each scene typically has its own set of systems and entities,
+ * simplifying memory management and reducing architectural coupling.
+ *
+ * @public
  */
 export abstract class Scene {
   /**
-   * El mundo ECS asociado a esta escena.
-   * @invariant Cada escena posee una instancia única de World a menos que se comparta explícitamente.
+   * The ECS world associated with this scene.
+   * @invariant Each scene possesses a unique World instance unless explicitly shared.
    */
   protected world: World;
 
@@ -24,76 +26,79 @@ export abstract class Scene {
     this.world = world;
   }
 
-  /** Nombre identificador de la escena para debugging y transiciones. */
+  /** Identifier name for the scene, used for debugging and transitions. */
   public name: string = "Unnamed Scene";
 
   /**
-   * Llamado cuando la escena se convierte en la escena activa.
-   * @param _world - Referencia al mundo de la escena.
-   * @remarks Se espera que inicialice los sistemas y entidades necesarios.
-   * @conceptualRisk [ASYNC_INIT] Si es asíncrono, se recomienda que la lógica de actualización espere a que se resuelva
-   * con el fin de mitigar el riesgo de referencias nulas o sistemas incompletos.
+   * Executed when the scene becomes the active scene in the {@link SceneManager}.
+   *
+   * @param _world - Reference to the scene's ECS world.
+   *
+   * @remarks
+   * Recommended to initialize scene-specific entities and register systems here.
+   *
+   * @conceptualRisk [ASYNC_INIT] If logic is asynchronous, ensure systems are
+   * fully registered before the first update tick to avoid null references.
    */
   public onEnter(_world: World): void | Promise<void> {}
 
   /**
-   * Llamado cuando la escena deja de ser la escena activa.
-   * @param _world - Referencia al mundo de la escena.
-   * @remarks Se recomienda liberar recursos pesados o cancelar suscripciones pendientes.
+   * Executed when the scene is no longer the active scene.
+   *
+   * @param _world - Reference to the scene's ECS world.
+   *
+   * @remarks
+   * Recommended to release heavy resources, cancel timers, or unregister global listeners here.
    */
   public onExit(_world: World): void | Promise<void> {}
 
   /**
-   * Llamado cuando el juego se pausa mientras esta escena está activa.
+   * Executed when the engine is paused while this scene is active.
    */
   public onPause(): void {}
 
   /**
-   * Llamado cuando el juego se reanuda mientras esta escena está activa.
+   * Executed when the engine is resumed.
    */
   public onResume(): void {}
 
   /**
-   * Llamado para inicializar la escena.
+   * Hook for scene-specific asynchronous initialization (loading assets, etc).
    */
   public async init(_world: World): Promise<void> {}
 
   /**
-   * Llamado para reiniciar la escena.
+   * Hook for restarting the scene state.
    */
   public async restart(): Promise<void> {}
 
   /**
-   * Llamado durante el reinicio de la escena para limpiar recursos compartidos.
+   * Internal hook called during the restart transition to clear shared/stale resources.
    */
   public onRestartCleanup(): void {}
 
   /**
-   * Llamado durante el tick de actualización de la simulación (Fixed Step).
+   * Executed during the simulation update tick (Fixed Step).
    *
-   * @param dt - Tiempo transcurrido en milisegundos (fixedDeltaTime).
-   * @param world - El mundo {@link World} asociado a la escena.
+   * @param dt - [ms] Elapsed time since last tick (fixedDeltaTime).
+   * @param world - The {@link World} associated with the scene.
    *
    * @remarks
-   * Por defecto, delega la actualización al `world.update(dt)`. Las escenas
-   * pueden sobrescribir este método para añadir lógica de orquestación previa
-   * o posterior a la ejecución de los sistemas.
-   *
-   * @executionOrder Típicamente llamado por el {@link SceneManager} dentro del {@link GameLoop}.
+   * By default, delegates the update to `world.update(dt)`. Scenes may override
+   * this to add orchestration logic before or after system execution.
    */
   public onUpdate(dt: number, world: World): void {
     world.update(dt);
   }
 
   /**
-   * Llamado durante el paso de renderizado.
-   * @param _alpha - Factor de interpolación para renderizado suave.
+   * Executed during the rendering pass.
+   * @param _alpha - [0, 1] Interpolation factor for smooth visuals.
    */
   public onRender(_alpha: number): void {}
 
   /**
-   * Obtiene el mundo ECS de esta escena.
-   * @queries world
+   * Returns the ECS World of this scene.
    */
   public getWorld(): World {
     return this.world;
@@ -104,15 +109,14 @@ export abstract class Scene {
   // ==========================================================================
 
   /**
-   * Métodos de reenvío públicos para compatibilidad con versiones anteriores.
-   * @deprecated Usar el flujo de SceneManager u onUpdate directamente.
+   * @deprecated Use the standard {@link onUpdate} flow.
    */
   public update(dt: number): void {
     this.onUpdate(dt, this.world);
   }
 
   /**
-   * @deprecated Delegar renderizado al RenderSystem o SceneManager.
+   * @deprecated Delegate rendering to {@link Renderer.render}.
    */
   public render(renderer: import("../rendering/Renderer").Renderer): void {
     renderer.render(this.world);

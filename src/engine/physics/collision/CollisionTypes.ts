@@ -1,21 +1,45 @@
 import { Entity } from "../../core/Entity";
 
 /**
- * Represents the geometric data of a collision between two entities.
+ * Represents the geometric result of a collision between two shapes.
+ *
+ * @public
  */
 export interface CollisionManifold {
-  /** Whether the two shapes are currently overlapping. */
+  /**
+   * Indicates if the two shapes are currently overlapping.
+   */
   colliding: boolean;
-  /** Normal vector X component pointing from entity A to entity B. */
+  /**
+   * X component of the collision normal vector.
+   * @remarks
+   * The normal points from entity A to entity B.
+   */
   normalX: number;
-  /** Normal vector Y component pointing from entity A to entity B. */
+  /**
+   * Y component of the collision normal vector.
+   * @remarks
+   * The normal points from entity A to entity B.
+   */
   normalY: number;
-  /** Penetration depth of the collision. */
+  /**
+   * [px] Penetration depth of the collision.
+   * @remarks
+   * Represents the minimum distance required to separate the overlapping shapes.
+   */
   depth: number;
-  /** Points where the two shapes are in contact. */
+  /**
+   * [px] Points where the two shapes are in contact.
+   * @remarks
+   * Inferred: typically one or two points in 2D manifold generation.
+   */
   contactPoints: Array<{ x: number; y: number }>;
-  /** @deprecated Reference to entity A. Prefer using system-provided context. */
+  /**
+   * @deprecated Use context-provided entities in systems or event components.
+   */
   entityA?: Entity;
-  /** @deprecated Reference to entity B. Prefer using system-provided context. */
+  /**
+   * @deprecated Use context-provided entities in systems or event components.
+   */
   entityB?: Entity;
 }

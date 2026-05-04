@@ -20,6 +20,8 @@ import { ScreenShakeComponent } from "../types/EngineTypes";
  *
  * @conceptualRisk [SINGLETON_LIMITATION][LOW] El diseño actual asume que solo una entidad
  * (normalmente el GameState o la Cámara) tiene el control del Screen Shake global.
+ *
+ * @public
  */
 export class ScreenShakeSystem extends System {
   /**

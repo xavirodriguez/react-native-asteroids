@@ -2,28 +2,39 @@ import { World } from "../core/World";
 import { Scene } from "./Scene";
 import { runLifecycleSync, runLifecycleAsync } from "../utils/LifecycleUtils";
 
+/**
+ * Operational states for the Scene Manager.
+ *
+ * @public
+ */
 export enum SceneState {
+  /** No scene active or transition pending. */
   IDLE = "IDLE",
+  /** `onEnter` is currently executing for a new scene. */
   LOADING = "LOADING",
+  /** Scene is active and receiving updates. */
   ACTIVE = "ACTIVE",
+  /** `onExit` is executing for the current scene. */
   UNLOADING = "UNLOADING",
 }
 
 /**
- * Gestor central de transiciones entre escenas.
+ * Central manager for scene transitions and lifecycle orchestration.
  *
- * @responsibility Implementar una Máquina de Estados Finitos (FSM) para el flujo de escenas.
- * @responsibility Gestionar transiciones secuenciales mediante una cola de tareas.
- * @responsibility Gestionar la pila de escenas (push/pop) para sub-estados como menús de pausa.
+ * @responsibility Implement a Finite State Machine (FSM) for scene flow.
+ * @responsibility Manage sequential transitions via a task queue to prevent race conditions.
+ * @responsibility Manage a scene stack (Push/Pop) for sub-states like pause menus.
  *
  * @remarks
  * El `SceneManager` es crítico para prevenir fugas de memoria y condiciones de carrera
  * durante la carga/descarga de recursos asíncronos. Utiliza LifecycleUtils
  * para asegurar que los ganchos de ciclo de vida se ejecuten correctamente.
  *
- * @conceptualRisk [TRANSITION_INTERRUPTION][HIGH] Si una transición asíncrona es
- * interrumpida por otra, el estado del motor puede quedar inconsistente. Se mitiga
- * mediante `transitionQueue`.
+ * @conceptualRisk [TRANSITION_INTERRUPTION][HIGH] If an asynchronous transition
+ * is interrupted by another request, the engine state may become inconsistent.
+ * Mitigated by the `transitionQueue`.
+ *
+ * @public
  */
 export class SceneManager {
   private sceneStack: Scene[] = [];
@@ -32,22 +43,31 @@ export class SceneManager {
   private transitionQueue: (() => Promise<void>)[] = [];
   private isProcessingTransition = false;
   private world: World;
+
+  /**
+   * Optional hook executed whenever a new world context is established for a scene.
+   *
+   * @remarks
+   * Useful for registering global engine systems on fresh world instances.
+   */
   public onWorldCreated?: (world: World) => void | Promise<void>;
 
   constructor(world: World) {
     this.world = world;
   }
 
+  /** Returns the currently active scene. */
   public getCurrentScene(): Scene | null {
     return this.currentScene;
   }
 
+  /** Returns the current transition state of the manager. */
   public getState(): SceneState {
     return this.state;
   }
 
   /**
-   * Encola una tarea de transición para ejecución secuencial.
+   * Enqueues a transition task for sequential execution.
    */
   private enqueueTransition(task: () => Promise<void>): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -63,6 +83,10 @@ export class SceneManager {
     });
   }
 
+  /**
+   * Processes the transition queue.
+   * Ensures only one transition happens at a time.
+   */
   private async processQueue(): Promise<void> {
     if (this.isProcessingTransition || this.transitionQueue.length === 0) {
       return;
@@ -140,6 +164,9 @@ export class SceneManager {
 
   /**
    * Pushes a new scene onto the stack, pausing the current one.
+   *
+   * @remarks
+   * Useful for overlays or menus that should preserve the underlying game state.
    */
   public async push(scene: Scene): Promise<void> {
     return this.enqueueTransition(async () => {
@@ -175,6 +202,9 @@ export class SceneManager {
 
   /**
    * Pops the current scene from the stack, resuming the previous one.
+   *
+   * @remarks
+   * Executes `onExit` for the popped scene and `onResume` for the top of the stack.
    */
   public async pop(): Promise<void> {
     return this.enqueueTransition(async () => {
@@ -212,7 +242,7 @@ export class SceneManager {
   }
 
   /**
-   * Updates the current scene.
+   * Dispatches the update tick to the active scene.
    */
   public update(deltaTime: number): void {
     if (this.state === SceneState.ACTIVE && this.currentScene) {
@@ -221,7 +251,7 @@ export class SceneManager {
   }
 
   /**
-   * Renders the current scene.
+   * Dispatches the render call to the active scene.
    */
   public render(alpha: number): void {
     if (this.state === SceneState.ACTIVE && this.currentScene) {
@@ -229,20 +259,21 @@ export class SceneManager {
     }
   }
 
+  /** Pauses the active scene. */
   public pause(): void {
     if (this.currentScene) this.currentScene.onPause();
   }
 
+  /** Resumes the active scene. */
   public resume(): void {
     if (this.currentScene) this.currentScene.onResume();
   }
 
   /**
-   * Solicita el reinicio de la escena activa actual.
+   * Restarts the currently active scene.
    *
    * @remarks
-   * Invoca `onRestartCleanup()` en la escena antes de intentar una transición hacia sí misma,
-   * buscando restaurar el estado inicial.
+   * Clears the scene's world, resets systems, and executes `onRestartCleanup()`.
    */
   public async restartCurrentScene(): Promise<void> {
     if (this.currentScene) {

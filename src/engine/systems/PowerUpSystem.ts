@@ -15,6 +15,8 @@ import { EventBus } from "../core/EventBus";
 
 /**
  * Coordinates the logic for collecting power-ups and applying their buffs.
+ *
+ * @public
  */
 export class PowerUpSystem extends System {
   /**

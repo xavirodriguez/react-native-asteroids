@@ -21,10 +21,17 @@
  *
  * @conceptualRisk [SEED_DRIFT] Consuming gameplay randoms during cosmetic steps
  * will break reconciliation and lead to rollback failures.
+ *
+ * @public
  */
 
 export type RandomStream = "gameplay" | "render" | "global";
 
+/**
+ * Service providing seeded, deterministic random number generation.
+ *
+ * @public
+ */
 export class RandomService {
   private static globalInstance: RandomService = new RandomService(12345);
   private static namedInstances: Map<string, RandomService> = new Map();

@@ -5,7 +5,9 @@ import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, C
 /**
  * Built-in 2D Physics System for rigid body dynamics.
  *
- * @responsibility Rigid body dynamics integration designed around linear Euler and impulse-based collision response.
+ * @responsibility Rigid body dynamics integration using Semi-Implicit Euler.
+ * @responsibility Impulse-based collision response satisfying contact and friction constraints.
+ * @responsibility Positional correction to mitigate numerical "sinking".
  *
  * @remarks
  * This system manages rigid body dynamics. It uses semi-implicit linear Euler integration,
@@ -13,18 +15,26 @@ import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, C
  * Using CCD (Continuous Collision Detection) in the {@link CollisionSystem2D} is recommended
  * to mitigate tunneling for fast-moving entities.
  *
+ * ### Execution Order:
+ * Typically runs in the `Simulation` phase. Expected to execute AFTER {@link CollisionSystem2D}
+ * has populated {@link CollisionEventsComponent}, and BEFORE {@link HierarchySystem}
+ * propagates transforms.
+ *
  * @conceptualRisk [FPS_DEPENDENCE] Uses linear Euler integration which can lead to tunneling at high speeds or low framerates.
  * @conceptualRisk [STABILITY] Sequential impulse solver may jitter in complex resting contacts or deep stacks.
  *
- * @mutates {@link PhysicsBody2DComponent} - Updates velocities, resets accumulated forces/torque.
- * @mutates {@link TransformComponent} - Updates world positions and rotations.
- *
- * @executionOrder Simulation phase; se espera que se ejecute después de {@link CollisionSystem2D} y antes de {@link HierarchySystem}.
+ * @public
  */
 export class PhysicsSystem2D extends System {
   private gravityX = 0;
   private gravityY = 9.81 * 100; // Standard gravity scaled to pixels
 
+  /**
+   * Configures global gravity applied to all dynamic bodies.
+   *
+   * @param x - [px/s^2] Gravity X component.
+   * @param y - [px/s^2] Gravity Y component.
+   */
   setGravity(x: number, y: number) {
     this.gravityX = x;
     this.gravityY = y;
@@ -36,11 +46,13 @@ export class PhysicsSystem2D extends System {
    * @param world - The ECS world instance.
    * @param deltaTime - Time elapsed since last update in milliseconds.
    *
-   * @precondition El world debería estar en un estado consistente.
-   *
    * @remarks
-   * At the end of each entity update, it attempts to reset the accumulated forces
-   * and torque for the next tick.
+   * 1. **Integration**: Applies forces (gravity, manual forces) and updates velocity/position.
+   * 2. **Collision Response**: Iterates over entities with {@link CollisionEventsComponent}
+   *    and applies impulses to resolve contacts.
+   * 3. **Cleanup**: Resets accumulated forces and torque for the next tick.
+   *
+   * @precondition The world should be in a consistent state.
    */
   update(world: World, deltaTime: number): void {
     const dt = deltaTime / 1000;

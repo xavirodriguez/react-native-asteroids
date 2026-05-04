@@ -6,6 +6,8 @@ import { RandomService } from "../utils/RandomService";
 
 /**
  * Configuration parameters for spawning a single particle.
+ *
+ * @public
  */
 export interface ParticleParams {
   x: number;
@@ -37,6 +39,8 @@ export interface ParticleParams {
  * de todas las queries del motor.
  * @conceptualRisk [DETERMINISM][LOW] Utiliza `RandomService.getRenderRandom()` para las propiedades
  * de la partícula, buscando que la simulación de gameplay no se vea afectada por efectos visuales.
+ *
+ * @public
  */
 export class ParticleSystem extends System {
   private particlePool: PrefabPool<Record<string, Component>, ParticleParams>;

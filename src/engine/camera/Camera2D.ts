@@ -3,24 +3,35 @@ import { World } from "../core/World";
 import { Camera2DComponent, TransformComponent, Entity } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
 
+/**
+ * Static configuration for a camera instance.
+ *
+ * @public
+ */
 export interface CameraConfig {
+  /** [px] Dimensions of the output viewport. */
   viewport: { width: number; height: number };
+  /** [px] World constraints for camera movement. */
   bounds?: { minX: number; minY: number; maxX: number; maxY: number };
+  /** [0, 1] Smoothing factor for tracking. 1 = instant. */
   smoothing?: number;
+  /** [px] Viewport-relative offset from center. */
   offset?: { x: number; y: number };
 }
 
 /**
- * Sistema de Cámara 2D para TinyAsterEngine.
+ * 2D Camera System for viewport management and tracking.
  *
- * @responsibility Gestionar el seguimiento de múltiples objetivos con suavizado.
- * @responsibility Implementar áreas de zona muerta (deadzone) para un control de cámara orgánico.
- * @responsibility Manejar efectos de vibración (screen shake) con decaimiento controlado.
+ * @responsibility Manage smooth tracking of multiple target entities.
+ * @responsibility Implement deadzone regions for organic camera movement.
+ * @responsibility Handle screen shake effects with controlled temporal decay.
  *
  * @remarks
- * Utiliza interpolación exponencial para el suavizado (Lerp), con la intención de ofrecer una respuesta
- * fluida bajo diversas tasas de refresco (30, 60, 120+ FPS).
- * Las coordenadas de la cámara representan la esquina superior izquierda de la vista en el espacio del mundo.
+ * Coordinates represent the top-left corner of the view in world space.
+ * The system uses exponential smoothing (lerp-like) to ensure fluid motion
+ * across variable refresh rates (30, 60, 120+ FPS).
+ *
+ * @public
  */
 export class Camera2D extends System {
   private viewport = { width: 800, height: 600 };
@@ -32,15 +43,24 @@ export class Camera2D extends System {
     }
   }
 
+  /** Updates the physical viewport dimensions. */
   public setViewport(width: number, height: number): void {
     this.viewport = { width, height };
   }
 
   /**
-   * Actualiza todas las cámaras activas en el mundo.
+   * Updates all active camera entities in the world.
    *
-   * @param world - El mundo ECS.
-   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   * @param world - Target ECS world.
+   * @param deltaTime - [ms] Elapsed time since last tick.
+   *
+   * @remarks
+   * Order of operations:
+   * 1. Calculate focal point from aggregated targets.
+   * 2. Apply deadzone logic.
+   * 3. Interpolate current camera position towards target.
+   * 4. Apply world bounds constraints.
+   * 5. Apply screen shake decay.
    */
   public update(world: World, deltaTime: number): void {
     const cameras = world.query("Camera2D");
@@ -152,7 +172,7 @@ export class Camera2D extends System {
   }
 
   /**
-   * Configura la cámara principal para seguir a una entidad.
+   * Configures the main camera to track a specific entity.
    */
   public static follow(world: World, target: Entity): void {
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
@@ -164,7 +184,7 @@ export class Camera2D extends System {
   }
 
   /**
-   * Añade un objetivo adicional al seguimiento de la cámara.
+   * Adds an additional entity to the camera's tracking group.
    */
   public static addTarget(world: World, target: Entity): void {
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
@@ -178,7 +198,9 @@ export class Camera2D extends System {
   }
 
   /**
-   * Activa un efecto de vibración en la cámara principal.
+   * Triggers a screen shake effect on the main camera.
+   *
+   * @param intensity - [px] Initial displacement magnitude.
    */
   public static shake(world: World, intensity: number): void {
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
@@ -190,7 +212,7 @@ export class Camera2D extends System {
   }
 
   /**
-   * Transforma una posición del mundo a coordenadas de pantalla.
+   * Maps a world position to viewport-relative screen coordinates.
    */
   public static worldToScreen(worldPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
     const shakeX = cam.shakeOffsetX || 0;
@@ -202,7 +224,7 @@ export class Camera2D extends System {
   }
 
   /**
-   * Transforma una posición de pantalla a coordenadas del mundo.
+   * Maps screen coordinates to world position.
    */
   public static screenToWorld(screenPos: { x: number; y: number }, cam: Camera2DComponent): { x: number; y: number } {
     const shakeX = cam.shakeOffsetX || 0;

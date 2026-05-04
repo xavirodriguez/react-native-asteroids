@@ -14,6 +14,8 @@ import { TilemapComponent, Camera2DComponent } from "../types/EngineTypes";
 
 /**
  * Manages the visibility and culling of tile-based maps.
+ *
+ * @public
  */
 export class TilemapRenderSystem extends System {
   /**

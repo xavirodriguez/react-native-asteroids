@@ -1,63 +1,78 @@
 import { Entity } from "../core/Entity";
 
 /**
- * Representa el estado transformado de una entidad listo para renderizado.
- * @responsibility Almacenar datos de posición, rotación y escala para el pipeline de dibujo.
+ * Captured transform state of an entity ready for rendering.
+ *
+ * @public
  */
 export interface TransformSnapshot {
+  /** [px] World X coordinate. */
   x: number;
+  /** [px] World Y coordinate. */
   y: number;
+  /** [rad] Absolute rotation. */
   rotation: number;
+  /** Horizontal scale multiplier. */
   scaleX: number;
+  /** Vertical scale multiplier. */
   scaleY: number;
 }
 
 /**
- * Comandos emitidos por el `RenderSystem` para ser consumidos por el adaptador.
+ * Drawing command emitted by the Render System for backend consumption.
  *
  * @remarks
- * Representa una operación de dibujo agnóstica a la plataforma.
+ * Represents a platform-agnostic drawing operation.
  *
- * @conceptualRisk [ALLOCATION_FREE][HIGH] Se recomienda que estas interfaces sean implementadas
- * por objetos en un pool con el fin de reducir la presión del recolector de basura durante el renderizado.
+ * @conceptualRisk [ALLOCATION_FREE][HIGH] Implementation should ideally use
+ * object pooling to minimize GC pressure during the render loop.
+ *
+ * @public
  */
 export interface RenderCommand {
+  /** Discriminator for the drawer type (e.g., "sprite", "circle"). */
   type: string;
+  /** Source entity ID. */
   entityId: Entity;
+  /** Pre-interpolated visual transform. */
   worldTransform: TransformSnapshot;
-  alpha: number; // For interpolation
+  /** [0, 1] Alpha factor used during the capture for this command. */
+  alpha: number;
   textureId?: string;
   width?: number;
   height?: number;
   radius?: number;
   color?: string;
+  /** Layering order. Higher values are drawn later (on top). */
   zIndex: number;
   visible: boolean;
 }
 
 /**
- * Interfaz para el adaptador de renderizado.
- * Implementada por backends específicos como Skia, Canvas o SVG.
+ * Low-level Rendering Adapter interface.
+ * Implemented by specific backends like Skia, Canvas, or WebGL.
  *
- * @responsibility Preparar el lienzo para un nuevo frame.
- * @responsibility Procesar comandos de dibujo individuales de forma eficiente.
- * @responsibility Finalizar el frame y presentar el resultado visual.
+ * @responsibility Prepare the canvas for a new frame.
+ * @responsibility Process individual drawing commands efficiently.
+ * @responsibility Finalize the frame and present visual results.
+ *
+ * @public
  */
 export interface Renderer {
   /**
-   * Inicia el ciclo de renderizado de un frame.
-   * @param alpha - Factor de interpolación (0-1) para suavizar el movimiento.
+   * Begins a new rendering cycle.
+   * @param alpha - [0, 1] Interpolation factor for smooth motion.
    */
   beginFrame(alpha: number): void;
 
   /**
-   * Recibe un comando de dibujo para ser procesado.
-   * @param command - Los datos del comando a dibujar.
+   * Submits a drawing command to the backend.
+   * @param command - The command data.
    */
   submit(command: RenderCommand): void;
 
   /**
-   * Finaliza el frame actual.
+   * Finalizes the current frame and flushes buffers.
    */
   endFrame(): void;
 }
