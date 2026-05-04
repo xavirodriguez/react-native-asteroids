@@ -332,9 +332,12 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     }
 
     // Record metrics every tick
+    // We count specific entities (players + asteroids + bullets) as per Iteration 1 requirements
+    const trackedEntitiesCount = this.state.players.size + this.state.asteroids.size + this.state.bullets.size;
+
     this.networkMetrics.recordTick(
         totalBytesSentThisTick,
-        totalEntitiesInWorld,
+        trackedEntitiesCount,
         totalSerializationMs,
         this.clients.length,
         this.clients.length > 0 ? totalEntitiesFiltered / this.clients.length : 0
