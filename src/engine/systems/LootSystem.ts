@@ -28,6 +28,8 @@ import { RandomService } from "../utils/RandomService";
 
 /**
  * Coordinates loot generation based on entity destruction events.
+ *
+ * @public
  */
 export class LootSystem extends System {
   private registeredWorld: World | null = null;

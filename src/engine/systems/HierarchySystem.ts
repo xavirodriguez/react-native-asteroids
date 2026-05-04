@@ -4,49 +4,52 @@ import { Entity, TransformComponent } from "../types/EngineTypes";
 
 /**
  * 3x3 Matrix for 2D transformations.
- * [a, c, tx, b, d, ty]
+ * Column-major order: [a, c, tx, b, d, ty]
+ *
+ * @internal
  */
 type Mat3 = [number, number, number, number, number, number];
 
 /**
- * Sistema responsable de resolver las transformaciones espaciales jerárquicas.
+ * System managing hierarchical spatial transformations.
  *
- * @responsibility Calcular coordenadas de mundo (worldX, worldY, worldRotation, worldScale)
- * a partir de coordenadas locales y la relación con el padre.
- * @responsibility Propagar cambios de transformación mediante un sistema de flags 'dirty'
- * para mejorar el rendimiento.
- * @queries Transform
- * @mutates Transform (worldX, worldY, worldRotation, worldScaleX, worldScaleY, dirty)
- * @executionOrder Fase: Simulation/Presentation. Debe ejecutarse tras los sistemas que mutan
- * la posición local y antes del renderizado.
+ * @responsibility Calculate world-space coordinates (X, Y, Rotation, Scale) from local offsets.
+ * @responsibility Propagate changes down the entity tree using a topological sort.
+ * @responsibility Optimize updates via a dirty-flag propagation system.
  *
  * @remarks
  * Implementa una propagación top-down destinada a asegurar que los hijos se calculen
  * después de sus padres. Utiliza matrices 3x3 para composición de transformaciones.
+ * This system bridges the gap between local simulation (movement) and absolute
+ * rendering/collision world coordinates.
  *
- * @conceptualRisk [LAYOUT_CASCADE][MEDIUM] Una jerarquía muy profunda puede causar un
- * coste de cálculo elevado si la raíz cambia frecuentemente.
- * @conceptualRisk [WORLD_SYNC][HIGH] Si un sistema lee `worldX/Y` antes de que `HierarchySystem`
- * se ejecute en el frame actual, obtendrá datos del frame anterior (lag visual o de física).
- * @conceptualRisk [HIERARCHY][LOW] Jerarquías circulares disparan un warning y se ignoran,
- * pudiendo dejar entidades en posiciones 0,0.
+ * ### Execution Order:
+ * Typically runs at the end of the `Simulation` phase or start of `Presentation`.
+ * It MUST run after local movement systems to avoid 1-frame visual lag.
+ *
+ * @conceptualRisk [LAYOUT_CASCADE][MEDIUM] Deep hierarchies incur higher
+ * computational costs during root changes.
+ * @conceptualRisk [WORLD_SYNC][HIGH] Systems reading `worldX/Y` before
+ * this system executes will receive stale data from the previous frame.
+ *
+ * @public
  */
 export class HierarchySystem extends System {
   private wasDirty = new Set<Entity>();
 
   /**
-   * Resuelve recursivamente las transformaciones de mundo para todas las entidades.
+   * Recursively resolves world transforms for all entities with a Transform component.
    *
-   * @param world - El mundo ECS.
-   * @param _deltaTime - Tiempo transcurrido (ignorado).
+   * @param world - Target ECS world.
+   * @param _deltaTime - Elapsed time (ignored).
    *
    * @remarks
-   * El orden de ejecución recomendado debe ser posterior a los sistemas que mutan
-   * la posición local para evitar lag de un frame en la jerarquía visual.
+   * Performs an iterative topological sort to handle arbitrary tree depths without
+   * stack overflow. Detects and ignores circular dependencies.
    *
- * @postcondition Se intenta que las entidades con `Transform` marcadas como `dirty` (o con padres `dirty`)
- * tengan sus coordenadas `world*` actualizadas en este frame.
-   * @sideEffect Resetea el flag `dirty` de los componentes `Transform`.
+   * @postcondition All `Transform` components marked as dirty (or with dirty parents)
+   * have their `worldX`, `worldY`, `worldRotation`, `worldScaleX`, and `worldScaleY` updated.
+   * @sideEffect Resets the `dirty` flag for processed components.
    */
   public update(world: World, _deltaTime: number): void {
     const transforms = world.query("Transform");

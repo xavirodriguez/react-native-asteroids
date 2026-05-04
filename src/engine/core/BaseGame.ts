@@ -16,68 +16,96 @@ import { PlayerProfileService } from "../../services/PlayerProfileService";
 import { HierarchySystem } from "../systems/HierarchySystem";
 import { InterpolationPrepSystem } from "../systems/InterpolationPrepSystem";
 
+/**
+ * Configuration for the BaseGame instance.
+ */
 export interface BaseGameConfig {
+  /** [KeyboardEvent.code] Key to toggle pause. */
   pauseKey?: string;
+  /** [KeyboardEvent.code] Key to restart the game. */
   restartKey?: string;
+  /** Enables multiplayer-specific synchronization logic. */
   isMultiplayer?: boolean;
+  /** Global game options, including the initial simulation seed. */
   gameOptions?: Record<string, unknown>;
 }
 
 /**
- * Representa los estados posibles del ciclo de vida del motor.
+ * Engine lifecycle states.
  */
 export enum GameStatus {
+  /** Instance created but subsytems not yet initialized. */
   UNINITIALIZED = "UNINITIALIZED",
+  /** `init()` is currently executing. */
   INITIALIZING = "INITIALIZING",
+  /** Systems and initial entities ready for simulation. */
   READY = "READY",
+  /** `GameLoop` is active and systems are updating. */
   RUNNING = "RUNNING",
+  /** Simulation paused, loop may still be ticking. */
   STOPPED = "STOPPED",
+  /** Resources released, instance no longer usable. */
   DESTROYED = "DESTROYED",
 }
 
 /**
  * Main orchestrator of the game lifecycle and engine state.
  *
+ * @responsibility Coordinate the initialization of systems and entities.
+ * @responsibility Manage pause, resume, and restart transitions atomically via `_transitionLock`.
+ * @responsibility Provide unified access to the ECS World and global resources.
+ *
  * @remarks
- * This abstract class implements the motor's skeleton, managing transitions between states
+ * This abstract class implements the engine's core loop, managing transitions between states
  * and ensuring a predictable execution pipeline. It utilizes a transition lock to
  * prevent race conditions during asynchronous initialization and scene swaps.
  *
  * ### Update Pipeline (Fixed Update):
- * 1. **PRE-UPDATE**: `InterpolationPrepSystem` captures previous states.
+ * 1. **PRE-UPDATE**: `InterpolationPrepSystem` captures previous states for visual smoothing.
  * 2. **INPUT**: Hardware events are translated into semantic actions.
  * 3. **SIMULATION**: ECS systems and scene logic execute with a fixed time step.
  * 4. **TRANSFORM**: `HierarchySystem` propagates world matrices (Top-Down).
  * 5. **REPLAY**: `ReplayRecorder` captures input frames for deterministic playback.
- * 6. **DEFERRED**: `EventBus` flushes the deferred queue to isolate side effects.
+ * 6. **DEFERRED**: `EventBus` flushes the deferred queue to isolate side effects from core simulation.
  *
  * ### Initialization Machine:
  * UNINITIALIZED --(init)--> INITIALIZING --(register systems)--> READY --(start)--> RUNNING
- *
- * @responsibility Coordinate the initialization of systems and entities.
- * @responsibility Manage pause, resume, and restart transitions atomically via `_transitionLock`.
- * @responsibility Provide unified access to the ECS World and global resources.
  *
  * @conceptualRisk [DETERMINISM][CRITICAL] `currentTick` overflow happens after ~285,000 years,
  * but buffer precision limits may be hit significantly earlier.
  * @conceptualRisk [ASYNC_RACE][HIGH] Calling `start()` before the `init()` promise resolves
  * will lead to inconsistent simulation. Handled via state checks and locks.
+ *
+ * @public
  */
 export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   implements IGame<BaseGame<TState, TInput>> {
 
+  /** Global ECS World. */
   protected world: World;
+  /** Core timing loop orchestrator. */
   protected gameLoop: GameLoop;
+  /** Multi-platform input aggregation service. */
   public readonly unifiedInput: UnifiedInputSystem;
+  /** Central pub/sub for decoupled communication. */
   protected eventBus: EventBus;
+  /** Manager for level/scene transitions. */
   protected sceneManager: SceneManager;
+  /** Buffer for tracking historical inputs (Network/Replay). */
   protected inputBuffer: InputBuffer;
+  /** Network communication interface (optional). */
   protected networkTransport?: NetworkTransport;
+  /** Deterministic state/input recorder. */
   protected replayRecorder: ReplayRecorder;
+  /** Audio playback and semantic bridge service. */
   public readonly audio: AudioSystem;
+  /** Global spatial partitioning service (USSC). */
   public readonly spatialGrid: SpatialGrid;
+  /** Incremental counter for simulation steps. */
   protected currentTick: number = 0;
+  /** Initial seed used for PRNG streams. */
   protected currentSeed: number = 0;
+  /** Indicates if the game is running in a multiplayer session. */
   public isMultiplayer: boolean;
 
   private _status: GameStatus = GameStatus.UNINITIALIZED;
@@ -89,6 +117,11 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected hierarchySystem: HierarchySystem;
   protected interpolationPrepSystem: InterpolationPrepSystem;
 
+  /**
+   * Abstract hook to configure the platform-specific renderer.
+   *
+   * @param renderer - Instance of the renderer (Canvas, Skia, etc).
+   */
   public abstract initializeRenderer(renderer: import("../rendering/Renderer").Renderer<unknown>): void;
 
   constructor(config: BaseGameConfig = {}) {
@@ -119,6 +152,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this._setupAudioListeners();
   }
 
+  /**
+   * Configures global semantic audio listeners.
+   */
   private _setupAudioListeners(): void {
     this.eventBus.on("audio:play_sfx", (payload: { name: string }) => {
       this.audio.playSFX(payload.name);
@@ -155,6 +191,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     });
   }
 
+  /**
+   * Internal loop configuration implementing the engine's simulation pipeline.
+   */
   private setupLoop(): void {
     /**
      * Pipeline orientado al determinismo (Fixed Update Phase):
@@ -209,17 +248,29 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     });
   }
 
+  /**
+   * Register game-specific ECS systems.
+   */
   protected abstract registerSystems(): void;
+  /**
+   * Spawn initial entities for the current game mode.
+   */
   protected abstract initializeEntities(): void;
+  /**
+   * Returns a serializable representation of the high-level game state.
+   */
   public abstract getGameState(): TState;
+  /**
+   * Checks if the game has reached a terminal state.
+   */
   public abstract isGameOver(): boolean;
 
   /**
-   * Inicia el ciclo de ejecución del juego.
+   * Starts the simulation loop.
    *
-   * @throws Error - Si el juego no ha sido inicializado mediante {@link init}.
-   * @throws Error - Si el juego ha sido destruido.
-   * @postcondition El {@link GameLoop} comienza a despachar eventos de actualización si las condiciones de estado se cumplen.
+   * @throws Error - If called before {@link init} or on a destroyed game.
+   * @postcondition {@link GameLoop} begins dispatching updates.
+   * @postcondition Status transitions to `RUNNING`.
    */
   public start(): void {
     if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.INITIALIZING) {
@@ -236,8 +287,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Detiene el ciclo de ejecución del juego.
-   * @postcondition El {@link GameLoop} cesa sus actividades de actualización.
+   * Stops the simulation loop.
+   *
+   * @postcondition {@link GameLoop} stops.
+   * @postcondition Status transitions to `STOPPED`.
    */
   public stop(): void {
     if (
@@ -253,13 +306,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Pausa la simulación lógica manteniendo el renderizado activo.
+   * Pauses simulation logic while keeping the renderer active.
    *
    * @remarks
-   * El método es idempotente. Solo surte efecto si el juego está en estado `RUNNING`.
+   * Idempotent. Only effective if status is `RUNNING`.
    *
-   * @postcondition {@link BaseGame._isPaused} se establece en `true`.
-   * @sideEffect Notifica a la escena actual y a los suscriptores externos.
+   * @postcondition {@link _isPaused} set to `true`.
+   * @sideEffect Notifies current scene and external subscribers.
    */
   public pause(): void {
     if (this._status !== GameStatus.RUNNING || this._isPaused) return;
@@ -269,13 +322,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Reanuda la simulación lógica tras una pausa.
+   * Resumes simulation logic.
    *
    * @remarks
-   * El método es idempotente. Solo surte efecto si el juego estaba previamente pausado.
+   * Idempotent. Only effective if currently paused.
    *
-   * @postcondition {@link BaseGame._isPaused} se establece en `false`.
-   * @sideEffect Notifica a la escena actual y a los suscriptores externos.
+   * @postcondition {@link _isPaused} set to `false`.
    */
   public resume(): void {
     if (this._status !== GameStatus.RUNNING || !this._isPaused) return;
@@ -284,29 +336,29 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this._notifyListeners();
   }
 
-  /** Consulta si el juego se encuentra en estado de pausa. */
+  /** Checks if simulation is currently paused. */
   public isPausedState(): boolean { return this._isPaused; }
 
-  /** Obtiene el estado actual del ciclo de vida del juego. */
+  /** Returns current engine lifecycle status. */
   public getStatus(): GameStatus { return this._status; }
 
-  /** Proporciona acceso al {@link GameLoop} para suscripciones directas. */
+  /** Accesses the core loop for direct subscriptions. */
   public getGameLoop(): GameLoop { return this.gameLoop; }
 
   /**
-   * Reinicia el estado del juego, opcionalmente con una nueva semilla aleatoria.
+   * Restarts the game state, optionally with a new seed.
    *
    * @remarks
-   * Garantiza la atomicidad del reinicio mediante un lock. Durante el reinicio,
-   * el motor se pausa y se limpian los recursos volátiles para evitar fugas de memoria.
+   * Atomic transition protected by a lock. Pauses simulation and clears
+   * volatile resources to prevent memory leaks.
    *
-   * Diferencia Escena vs Mundo:
-   * - Si hay una Escena activa: Delega el reinicio al `SceneManager`.
-   * - Si no: Limpia el Mundo global, re-registra sistemas y re-crea entidades base.
+   * Logic:
+   * - If an active Scene exists, delegates restart to `SceneManager`.
+   * - Otherwise, clears the global World, re-registers systems, and re-spawns entities.
    *
-   * @param seed - Semilla opcional para forzar una simulación determinista específica.
-   * @postcondition El tick de simulación vuelve a 0 (o el valor inicial del juego).
-   * @sideEffect Resetea el `EventBus` y el `SpatialGrid`.
+   * @param seed - Optional new seed for deterministic PRNG.
+   * @postcondition Tick counter reset to 0.
+   * @sideEffect Clears {@link EventBus}, {@link spatialGrid}, and {@link World}.
    */
   public async restart(seed?: number): Promise<void> {
     if (this._status === GameStatus.DESTROYED) {
@@ -373,15 +425,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Libera recursos y detiene el motor.
+   * Releases resources and shuts down the engine.
    *
    * @remarks
-   * Detiene el loop, limpia los listeners de entrada (con el fin de mitigar fugas),
-   * elimina listeners de teclado globales y limpia suscriptores de UI.
-   * Una vez destruido, el motor no está diseñado para reiniciarse.
+   * Stops the loop, cleans up input listeners, and clears subscriptions.
+   * Once destroyed, the instance cannot be reused.
    *
-   * @precondition Se recomienda llamar cuando el componente de React que aloja el juego se desmonte.
-   * @postcondition {@link BaseGame._status} se establece en `DESTROYED`.
+   * @postcondition Status set to `DESTROYED`.
    */
   public destroy(): void {
     if (this._status === GameStatus.DESTROYED) {
@@ -395,44 +445,38 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Devuelve el mundo ECS activo (ya sea el global o el de la escena actual).
+   * Returns the currently active ECS World (Global or Scene-specific).
    *
    * @remarks
-   * Es la fuente de verdad preferida para que los componentes externos (como el Renderer)
-   * consulten el estado de las entidades.
+   * Primary source of truth for external observers (like Renderers).
    *
-   * @returns La instancia de {@link World} activa.
+   * @returns Active {@link World} instance.
    */
   public getWorld(): World {
     const scene = this.sceneManager.getCurrentScene();
     return scene ? scene.getWorld() : this.world;
   }
 
+  /** Returns the initial seed of the current simulation. */
   public getSeed(): number {
     return this.currentSeed;
   }
 
   /**
-   * Inicializa el juego y sus subsistemas de forma asíncrona.
+   * Initializes the game and its subsystems asynchronously.
    *
    * @remarks
-   * El proceso de inicialización es crítico y debe ocurrir ANTES de {@link BaseGame.start}.
-   * Se gestiona mediante un cerrojo de transición (`_transitionLock`) para garantizar la
-   * atomicidad y evitar que llamadas concurrentes corrompan la configuración del mundo.
+   * Critical initialization process that MUST occur before {@link start}.
+   * Atomic transition managed via `_transitionLock`.
    *
-   * ### Máquina de Estados de Inicialización:
-   * 1. **Wait**: Espera a que cualquier promesa de `_transitionLock` previa se resuelva.
-   * 2. **Lock**: Crea una nueva promesa controlada para bloquear otros accesos.
-   * 3. **Setup**: Registra sistemas esenciales (EventBus, Input, Audio, SpatialGrid).
-   * 4. **Game Logic**: Llama a `registerSystems()` y `initializeEntities()` del juego concreto.
-   * 5. **Ready**: Transiciona el estado a `READY` y libera el cerrojo.
+   * Flow:
+   * 1. Register Essential Resources (EventBus, Input, Audio, SpatialGrid).
+   * 2. Execute `registerSystems()` (User Hook).
+   * 3. Execute `initializeEntities()` (User Hook).
+   * 4. Transition status to `READY`.
    *
-   * @throws Error - Si el juego ya está inicializado o en proceso.
-   * @postcondition El {@link World} está configurado y listo para simular.
-   * @postcondition {@link BaseGame._status} pasa a `READY`.
-   *
-   * @conceptualRisk [ASYNC_RACE] Aunque existe el lock, el uso de recursos externos (API, DB)
-   * durante la inicialización debe ser manejado con cuidado para no bloquear el hilo principal.
+   * @throws Error - If already initialized or currently in progress.
+   * @postcondition World is configured and ready for simulation.
    */
   public async init(): Promise<void> {
     if (this._status !== GameStatus.UNINITIALIZED) {
@@ -470,6 +514,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     }
   }
 
+  /**
+   * Registers fundamental engine resources and core systems.
+   */
   protected async registerEssentialSystems(world: World): Promise<void> {
     world.setResource("EventBus", this.eventBus);
     world.setResource("UnifiedInputSystem", this.unifiedInput);
@@ -491,10 +538,16 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     }
   }
 
+  /** [Inference] Potential hook for network lag compensation or loading. */
   protected shouldStallSimulation(): boolean {
     return false;
   }
 
+  /**
+   * Manually sets an input override for semantic actions.
+   *
+   * @param input - Map of action names to boolean pressed state.
+   */
   public setInput(input: Record<string, unknown>): void {
     if (
       this._status === GameStatus.UNINITIALIZED ||
@@ -508,6 +561,11 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     });
   }
 
+  /**
+   * Subscribes to lifecycle update events.
+   *
+   * @returns Unsubscribe function.
+   */
   public subscribe(listener: UpdateListener<BaseGame<TState, TInput>>): () => void {
     if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.DESTROYED) {
       return () => {};
@@ -516,11 +574,11 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     return () => this._listeners.delete(listener);
   }
 
+  /** Hook called during the restart transition before clearing the world. */
   protected _onBeforeRestart(): void | Promise<void> {}
 
   /**
-   * Genera una semilla externa al stream de gameplay para la inicialización.
-   * Evita consumir el stream de gameplay antes de que sea sembrado formalmente.
+   * Generates an external seed to avoid consuming the gameplay stream.
    */
   private _generateExternalSeed(): number {
     return Math.floor(Math.random() * 0xFFFFFFFF);

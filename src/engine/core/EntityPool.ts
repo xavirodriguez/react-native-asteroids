@@ -6,6 +6,8 @@ import { Entity } from "../types/EngineTypes";
  * @remarks
  * Proporciona una estrategia destinada a reducir las alocaciones durante la creación y destrucción de entidades.
  * Al reutilizar IDs numéricos, se busca mitigar la presión sobre el recolector de basura (GC) en rutas críticas.
+ *
+ * @public
  */
 export class EntityPool {
   /** @internal */

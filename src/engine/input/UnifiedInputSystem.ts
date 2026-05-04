@@ -3,21 +3,23 @@ import { System } from "../core/System";
 import { InputStateComponent, InputAction } from "../types/EngineTypes";
 
 /**
- * Sistema de entrada unificado (Unified Input System) para el manejo de controles multiplataforma.
- * Mapea entradas crudas de hardware a acciones semánticas en un singleton `InputStateComponent`.
+ * Unified Input System for multi-platform control handling.
+ * Maps raw hardware input (keyboard, pointer, gamepad) to semantic actions.
  *
- * @responsibility Traducir eventos de hardware (teclado, puntero, gamepad) a acciones abstractas.
- * @responsibility Mantener el componente singleton `InputState` actualizado en el `World`.
- * @responsibility Permitir la inyección manual de estados mediante overrides para red y UI.
+ * @responsibility Translate hardware events into abstract semantic actions.
+ * @responsibility Update the singleton {@link InputStateComponent} in the {@link World}.
+ * @responsibility Support manual state injection (overrides) for Networking and UI.
  *
  * @remarks
- * El sistema desacopla la lógica del juego de los dispositivos físicos.
- * Soporta **Bindings** (mapeo N:1 de teclas a acción) y **Overrides** (inyección forzada de estado).
- * Los Overrides son críticos para implementar controles táctiles en móviles y replicación de red.
+ * Decouples game logic from physical devices. It supports **Bindings**
+ * (N:1 mapping from keys to actions) and **Overrides** (forced state injection).
  *
- * ### Características:
- * 1. **Axis to Button**: Permite que ejes (ej. joystick) disparen acciones digitales.
- * 2. **Logical Overriding**: Los botones de UI de React pueden simular pulsaciones de teclas físicas.
+ * ### Key Features:
+ * 1. **Cross-Platform**: Normalizes keyboard and touch-simulated inputs.
+ * 2. **UI Overriding**: React UI buttons can simulate physical hardware presses.
+ * 3. **Action-Axis Bridge**: Digital actions can be derived from analog axes.
+ *
+ * @public
  */
 export class UnifiedInputSystem extends System {
   private bindings = new Map<InputAction, string[]>();
@@ -38,69 +40,69 @@ export class UnifiedInputSystem extends System {
   }
 
   /**
-   * Vincula una acción semántica a una o más teclas crudas o gestos.
+   * Binds a semantic action to one or more raw inputs or keys.
    *
-   * @param action - Nombre de la acción semántica (e.g., "jump").
-   * @param inputs - Array de strings representando entradas crudas (e.g., ["Space", "ArrowUp", "TouchTap"]).
+   * @param action - Name of the semantic action (e.g., "jump").
+   * @param inputs - Array of raw input identifiers (e.g., ["Space", "ArrowUp", "TouchTap"]).
    */
   public bind(action: InputAction, inputs: string[]): void {
     this.bindings.set(action, inputs);
   }
 
   /**
-   * Vincula un eje a entradas crudas para direcciones positiva y negativa.
+   * Binds an axis to raw inputs for positive and negative directions.
    *
-   * @param axis - Nombre del eje (e.g., "horizontal").
-   * @param pos - Entradas que activan el valor positivo (+1).
-   * @param neg - Entradas que activan el valor negativo (-1).
+   * @param axis - Name of the axis (e.g., "horizontal").
+   * @param pos - Inputs triggering the positive value (+1).
+   * @param neg - Inputs triggering the negative value (-1).
    */
   public bindAxis(axis: string, pos: string[], neg: string[]): void {
     this.axisBindings.set(axis, { pos, neg });
   }
 
   /**
-   * Sobrescribe programáticamente el estado de una acción semántica.
-   * Este override persiste hasta que se cambie explícitamente o se limpie.
+   * Programmatically overrides the state of a semantic action.
    *
    * @remarks
-   * Útil para controlar el juego desde componentes de UI de React o para aplicar
-   * inputs recibidos a través de la red en modo multijugador.
+   * Essential for mobile touch controls (calling from React components)
+   * or for applying remote player inputs in multiplayer.
    *
-   * @param action - La acción a sobrescribir.
-   * @param isPressed - El nuevo estado de presión.
+   * @param action - Action to override.
+   * @param isPressed - New pressed state.
    */
   public setOverride(action: InputAction, isPressed: boolean): void {
     this.overrides.set(action, isPressed);
   }
 
   /**
-   * Elimina un override previo para una acción, devolviendo el control al hardware.
+   * Removes an override, returning control to hardware input.
    *
-   * @param action - La acción cuyo override se desea eliminar.
+   * @param action - Action to release.
    */
   public clearOverride(action: InputAction): void {
     this.overrides.delete(action);
   }
 
   /**
-   * Sobrescribe programáticamente el valor de un eje.
+   * Programmatically overrides an analog axis value.
    *
-   * @param axis - Nombre del eje.
-   * @param value - Valor del eje (típicamente entre -1 y 1).
+   * @param axis - Axis name.
+   * @param value - Normalized value [-1, 1].
    */
   public setAxisOverride(axis: string, value: number): void {
     this.axisOverrides.set(axis, value);
   }
 
   /**
-   * Elimina un override previo para un eje.
-   *
-   * @param axis - El eje cuyo override se desea eliminar.
+   * Removes an axis override.
    */
   public clearAxisOverride(axis: string): void {
     this.axisOverrides.delete(axis);
   }
 
+  /**
+   * Registers global window listeners for hardware events.
+   */
   private setupListeners(): void {
     if (typeof window === "undefined" || typeof window.addEventListener !== "function") return;
 
@@ -113,20 +115,17 @@ export class UnifiedInputSystem extends System {
   }
 
   /**
-   * Sincroniza el estado de las entradas activas con el componente `InputState` en el mundo.
+   * Synchronizes active inputs with the `InputState` component.
    *
    * @remarks
-   * Combina el estado detectado del hardware con los overrides programáticos configurados.
-   * Si no existe un componente `InputState` en el mundo, el sistema intenta crearlo como un singleton.
+   * Combines hardware states with active overrides.
+   * If `InputState` doesn't exist, it is created as a singleton entity.
    *
-   * @param world - El mundo donde reside el componente de entrada.
-   * @param _deltaTime - Tiempo transcurrido (en ms).
+   * @param world - Target ECS world.
+   * @param _deltaTime - Elapsed time.
    *
-   * @precondition Se espera que el `world` sea una instancia válida de World.
-   * @postcondition El componente singleton {@link InputStateComponent} refleja las acciones
-   * activas capturadas por el sistema.
-   * @sideEffect Puede crear una nueva entidad si el singleton `InputState` no está presente.
-   * @mutates world - Registra o actualiza el componente `InputState`.
+   * @postcondition {@link InputStateComponent} singleton reflects current actions.
+   * @mutates world - Creates or updates the input singleton.
    */
   public update(world: World, _deltaTime: number): void {
     let inputState = world.getSingleton<InputStateComponent>("InputState");
@@ -180,9 +179,8 @@ export class UnifiedInputSystem extends System {
   }
 
   /**
-   * Limpia los listeners de eventos globales registrados en `window`.
-   *
-   * @precondition Se recomienda llamar a este método cuando el motor se destruye con la intención de mitigar el riesgo de fugas de memoria.
+   * Removes global window listeners.
+   * @remarks Call during engine destruction to prevent memory leaks.
    */
   public cleanup(): void {
     if (typeof window === "undefined" || typeof window.removeEventListener !== "function") return;
@@ -194,16 +192,12 @@ export class UnifiedInputSystem extends System {
   }
 
   /**
-   * Devuelve una instantánea (snapshot) del estado semántico actual de la entrada.
+   * Captures a serializable snapshot of the current semantic input state.
    *
    * @remarks
-   * Utilizado principalmente para enviar el estado de entrada a través de la red
-   * en juegos multijugador.
+   * Primarily used for network replication or replay recording.
    *
-   * @returns Un objeto con la lista de acciones activas y el valor de los ejes.
-   * @queries activeKeys, activeTouches, overrides - Lee el estado acumulado.
-   *
-   * @postcondition El estado devuelto incorpora tanto las entradas de hardware como los `overrides` lógicos.
+   * @returns List of active actions and record of analog axes.
    */
   public getInputState(): { actions: string[], axes: Record<string, number> } {
     const actionsSet = new Set<string>();

@@ -6,7 +6,13 @@ import { NarrowPhase } from "./NarrowPhase";
 import { ContinuousCollision, CCDResult } from "./ContinuousCollision";
 import { SpatialGrid } from "../utils/SpatialGrid";
 
+/**
+ * Signature for collision response callbacks.
+ */
 export type CollisionCallback = (world: World, entityA: Entity, entityB: Entity, manifold: CollisionManifold) => void;
+/**
+ * Signature for trigger state change callbacks.
+ */
 export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) => void;
 
 /**
@@ -14,24 +20,26 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
  *
  * @responsibility Implement a two-phase collision detection pipeline (Broadphase & Narrowphase).
  * @responsibility Manage lifecycle events for triggers (Enter, Stay, Exit).
- * @responsibility Provide Continuous Collision Detection (CCD) to mitigate tunneling.
+ * @responsibility Provide Continuous Collision Detection (CCD) to mitigate tunneling for fast objects.
  *
  * @remarks
  * ### Detection Pipeline:
  * 1. **Broadphase Selection**:
- *    - If `useSpatialGrid` is enabled: Queries the `SpatialGrid` resource for O(1) candidate selection.
+ *    - If `useSpatialHash` is enabled: Queries the `SpatialGrid` resource for O(1) candidate selection.
  *    - Fallback: Uses `Sweep and Prune` (1D sorting) for sparse environments.
- * 2. **CCD Phase**: If enabled, performs swept tests using `ContinuousCollision` to calculate
- *    Time of Impact (TOI) and prevent objects from jumping through walls.
- * 3. **Narrowphase Phase**: Uses `NarrowPhase.test` (SAT/GJK) to generate precise manifolds.
- * 4. **Event Dispatch**: Populates `CollisionEvents` components and executes registered callbacks.
+ * 2. **CCD Phase**: For entities with `ContinuousColliderComponent`, performs swept tests to
+ *    calculate Time of Impact (TOI).
+ * 3. **Narrowphase Phase**: Uses `NarrowPhase.test` (SAT/GJK) to generate precise {@link CollisionManifold}s.
+ * 4. **Event Dispatch**: Populates {@link CollisionEventsComponent} and executes registered callbacks.
  *
  * @warning **Safety**: Do NOT perform structural world changes (entity creation/deletion)
- * inside collision callbacks. Use `world.getCommandBuffer()` to defer these operations.
+ * inside collision callbacks directly if iterating. Use `world.getCommandBuffer()`.
  *
  * @conceptualRisk [TUNNELING] Fast objects without CCD enabled will skip collisions.
- * @conceptualRisk [STALE_GRID] The system relies on `SpatialPartitioningSystem` updating the
- * grid before the collision phase executes.
+ * @conceptualRisk [STALE_GRID] Relies on `SpatialPartitioningSystem` (USSC) having
+ * updated the grid in a previous phase.
+ *
+ * @public
  */
 export class CollisionSystem2D extends System {
   private onCollisionCallbacks: CollisionCallback[] = [];
@@ -41,41 +49,30 @@ export class CollisionSystem2D extends System {
   private _useSpatialGrid = false;
   private _potentialBSet = new Set<Entity>();
 
+  /**
+   * Enables the use of a global Spatial Grid for optimized broadphase queries.
+   */
   useSpatialHash(_cellSize: number): void { this._useSpatialGrid = true; }
+
+  /** Registers a callback for physical collisions. */
   onCollision(callback: CollisionCallback): void { this.onCollisionCallbacks.push(callback); }
+  /** Registers a callback for when an entity enters a trigger. */
   onTriggerEnter(callback: TriggerCallback): void { this.onTriggerEnterCallbacks.push(callback); }
+  /** Registers a callback for when an entity leaves a trigger. */
   onTriggerExit(callback: TriggerCallback): void { this.onTriggerExitCallbacks.push(callback); }
 
   /**
-   * Orchestrates the collision detection pipeline.
-   *
-   * @remarks
-   * ### Broadphase Selection
-   * The system evaluates two strategies for pair generation:
-   * 1. **SpatialGrid**: If `useSpatialGrid` is true and a grid is available, it queries
-   *    nearby entities based on AABB overlaps. Best for high-density environments.
-   * 2. **Sweep and Prune**: A 1D sorting-based algorithm that iterates through sorted
-   *    AABBs. More efficient for low-density or sparse environments.
-   *
-   * @warning Los callbacks registrados (`onCollision`, `onTriggerEnter`, etc.) se ejecutan durante
-   * la fase de resolución. Se recomienda NO realizar mutaciones estructurales directas en el World
-   * dentro de estos callbacks con el fin de evitar la invalidación de iteradores; use el {@link WorldCommandBuffer} en su lugar.
-   *
-   * @remarks
-   * 1. Resets per-frame collision/trigger events.
-   *
-   * 2. Selects Broad-phase (Spatial Hash for \>50 entities, otherwise Sweep and Prune).
-   *
-   * 3. Performs Continuous Collision Detection (CCD) for enabled entities.
-   *
-   * 4. Executes Narrow-phase tests to generate collision manifolds.
-   *
-   * 5. Notifies callbacks and populates event components.
+   * Orchestrates the collision detection pipeline for the current tick.
    *
    * @param world - The ECS world instance.
    * @param _deltaTime - Time elapsed in milliseconds.
    *
-   * @precondition El world debería estar en un estado estable para favorecer una detección precisa.
+   * @remarks
+   * 1. Resets per-frame collision/trigger events on all entities with `CollisionEventsComponent`.
+   * 2. Selects Broad-phase candidates.
+   * 3. Performs CCD for enabled entities, moving them to their Time of Impact (TOI).
+   * 4. Executes Narrow-phase tests.
+   * 5. Notifies callbacks and populates event components.
    */
   update(world: World, _deltaTime: number): void {
     const entities = world.query("Transform", "Collider2D");

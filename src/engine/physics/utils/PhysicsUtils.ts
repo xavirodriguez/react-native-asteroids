@@ -1,58 +1,71 @@
 import { TransformComponent, PhysicsBody2DComponent, VelocityComponent } from "../../types/EngineTypes";
 
 /**
- * Interface mínima para objetos que representan una posición.
+ * Minimal interface for objects representing a position in 2D space.
+ *
+ * @public
  */
-interface PositionLike {
+export interface PositionLike {
+  /** [px] Local X coordinate. */
   x?: number;
+  /** [px] Local Y coordinate. */
   y?: number;
+  /** [px] Absolute World X coordinate. */
   worldX?: number;
+  /** [px] Absolute World Y coordinate. */
   worldY?: number;
   [key: string]: unknown;
 }
 
 /**
- * Interface mínima para objetos que representan una velocidad.
+ * Minimal interface for objects representing velocity in 2D space.
+ *
+ * @public
  */
-interface VelocityLike {
+export interface VelocityLike {
+  /** [px/s] Linear velocity X. */
   dx?: number;
+  /** [px/s] Linear velocity Y. */
   dy?: number;
+  /** [px/s] Physics-specific linear velocity X. */
   velocityX?: number;
+  /** [px/s] Physics-specific linear velocity Y. */
   velocityY?: number;
   [key: string]: unknown;
 }
 
 /**
- * Utilidades de integración física compartidas.
- * Diseñadas para fomentar la consistencia matemática entre los sistemas del motor y las predicciones de red.
+ * Shared physical integration utilities.
  *
- * @responsibility Proveer algoritmos de integración estándar (Euler/Damping).
- * @responsibility Centralizar el manejo de unidades (milisegundos vs segundos).
+ * @responsibility Provide standard integration algorithms (Euler/Damping).
+ * @responsibility Centralize unit conversions (ms vs seconds).
  *
  * @remarks
- * Es crítico que tanto los `Systems` como el código de predicción en el cliente usen
- * estas utilidades para evitar el "Implementation Drift" que causa desincronizaciones.
+ * It is critical that both simulation Systems and client-side prediction logic
+ * use these utilities to prevent "Implementation Drift" which leads to
+ * networking desyncs.
+ *
+ * @public
  */
 export class PhysicsUtils {
   /**
-   * Realiza una integración de Euler semi-implícita para actualizar la posición.
-   * Soporta tanto componentes ECS estándar como objetos proxy (para predicción).
+   * Performs Semi-Implicit Euler integration to update position.
    *
    * @remarks
-   * Fórmula: `P_new = P_old + V * dt`.
-   * Es eficiente y determinista, pero propenso a errores de precisión en velocidades
-   * extremas o framerates muy bajos (tunnelling).
+   * Formula: `P_new = P_old + V * dt`.
+   * Efficient and deterministic, but prone to "tunnelling" at extreme
+   * velocities or low framerates.
    *
-   * @param pos - Objeto de posición (se espera que tenga x,y o worldX,worldY).
-   * @param vel - Objeto de velocidad (se espera que tenga dx,dy o velocityX,velocityY).
-   * @param deltaTimeInSeconds - Tiempo transcurrido en SEGUNDOS.
+   * @param pos - Position object (local or world).
+   * @param vel - Velocity object (standard or physics).
+   * @param deltaTimeInSeconds - Elapsed time in SECONDS.
    *
-   * @precondition Se espera que `deltaTimeInSeconds` sea un valor finito positivo.
-   * @postcondition Las coordenadas `x`/`y` (o `worldX`/`worldY`) de `pos` son actualizadas.
-   * @remarks No se espera que modifique el objeto `vel`.
-   * @sideEffect Muta el objeto `pos` directamente por referencia.
-   * @conceptualRisk [PRECISION_LOSS][LOW] La acumulación de errores de punto flotante en integraciones
-   * largas puede causar divergencias mínimas entre clientes.
+   * @precondition `deltaTimeInSeconds` must be a finite positive value.
+   * @postcondition Coordinates in `pos` are updated.
+   * @sideEffect Mutates `pos` directly by reference.
+   *
+   * @conceptualRisk [PRECISION_LOSS][LOW] Accumulation of floating-point errors
+   * over long sessions may cause minor divergence between clients.
    */
   public static integrateMovement(pos: PositionLike, vel: VelocityLike, deltaTimeInSeconds: number): void {
     // Priority: local coordinates (x, y) over world coordinates (worldX, worldY)
@@ -75,22 +88,17 @@ export class PhysicsUtils {
   }
 
   /**
-   * Aplica amortiguación por fricción a la velocidad.
-   * Soporta tanto componentes ECS estándar como objetos proxy.
+   * Applies friction damping to velocity.
    *
    * @remarks
-   * Utiliza una función exponencial basada en el tiempo para favorecer que la fricción
-   * se aplique de forma consistente independientemente del framerate.
+   * Utilizes an exponential function based on time to ensure damping is
+   * frame-rate independent.
    *
-   * @param vel - Objeto de velocidad (estándar o proxy).
-   * @param friction - Coeficiente de fricción (ej: 0.99).
-   * @param deltaTimeMs - Tiempo transcurrido en milisegundos.
+   * @param vel - Velocity object to damp.
+   * @param friction - Friction coefficient (typically [0, 1]).
+   * @param deltaTimeMs - Elapsed time in MILLISECONDS.
    *
-   * @remarks
-   * La amortiguación se aplica como una reducción de la velocidad buscando independencia de la tasa de frames.
-   *
-   * @precondition Se recomienda que `friction` esté en el rango [0, 1].
-   * @sideEffect Muta el objeto `vel` directamente por referencia.
+   * @sideEffect Mutates `vel` directly by reference.
    */
   public static applyFriction(vel: VelocityLike, friction: number, deltaTimeMs: number): void {
     const dx = vel.dx !== undefined ? "dx" : "velocityX";
@@ -104,6 +112,12 @@ export class PhysicsUtils {
 
   /**
    * Wraps coordinates around a screen boundary.
+   *
+   * @param pos - Transform to wrap.
+   * @param width - [px] Boundary width.
+   * @param height - [px] Boundary height.
+   * @param minX - [px] Start X.
+   * @param minY - [px] Start Y.
    */
   public static wrapBoundary(pos: TransformComponent, width: number, height: number, minX: number = 0, minY: number = 0): void {
     const maxX = minX + width;
@@ -117,6 +131,9 @@ export class PhysicsUtils {
 
   /**
    * Bounces an entity off screen boundaries.
+   *
+   * @param pos - Transform to update.
+   * @param vel - Velocity to invert.
    */
   public static bounceBoundary(
     pos: TransformComponent,
@@ -153,13 +170,17 @@ export class PhysicsUtils {
   }
 
   /**
-   * Actualiza las propiedades de masa e inercia de un cuerpo físico, buscando mantener las inversas en sincronía.
+   * Synchronizes mass and inertia with their respective inverse properties.
    *
-   * @param body - El componente de cuerpo rígido a actualizar.
-   * @param mass - La nueva masa (debería ser > 0 para cuerpos dinámicos).
-   * @param inertia - El nuevo momento de inercia (debería ser > 0 para permitir rotación).
+   * @remarks
+   * Required after manual mass changes to ensure simulation correctness,
+   * as the engine uses inverse properties for impulse calculations.
    *
-   * @responsibility Mantener la sincronía de `inverseMass` e `inverseInertia` con la masa y la inercia.
+   * @param body - The rigid body component to update.
+   * @param mass - [kg] New mass (> 0 for dynamic, 0 for static).
+   * @param inertia - New rotational inertia.
+   *
+   * @sideEffect Mutates `inverseMass` and `inverseInertia` properties.
    */
   public static updateBodyMassProperties(body: PhysicsBody2DComponent, mass: number, inertia: number): void {
     const mutableBody = body as { -readonly [K in keyof PhysicsBody2DComponent]: PhysicsBody2DComponent[K] };
