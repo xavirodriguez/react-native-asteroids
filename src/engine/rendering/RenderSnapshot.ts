@@ -11,31 +11,41 @@
 import { Entity } from "../core/Entity";
 
 /**
- * Instantánea de una entidad capturada para renderizado.
+ * Visual snapshot of an individual entity.
  *
  * @remarks
- * Contiene el estado visual final (ya interpolado y con offsets aplicados) necesario
- * para que el renderer dibuje la entidad sin consultar el mundo de nuevo.
+ * Contains pre-interpolated and transformed data ready for immediate drawing.
+ *
+ * @public
  */
 export interface RenderEntitySnapshot {
   id: Entity;
+  /** [px] Visual X position. */
   x: number;
+  /** [px] Visual Y position. */
   y: number;
+  /** [rad] Visual rotation. */
   rotation: number;
   scaleX: number;
   scaleY: number;
+  /** [0, 1] Transparency. */
   opacity: number;
+  /** Draw order. */
   zIndex: number;
+  /** Identifier for the drawer. */
   shape: string;
   color: string;
+  /** [px] Primary size. */
   size: number;
   vertices: { x: number, y: number }[] | null;
+  /** White hit-effect frames remaining. */
   hitFlashFrames: number;
+  /** Custom drawer metadata. */
   data: Record<string, unknown> | null;
 }
 
 /**
- * UI element state data for rendering.
+ * UI-specific state data.
  */
 export interface UISnapshotData {
   buttonState?: "idle" | "hovered" | "pressed" | "disabled";
@@ -43,17 +53,26 @@ export interface UISnapshotData {
 }
 
 /**
- * Snapshot of a UI element.
+ * Snapshot of a UI element for HUD rendering.
+ *
+ * @public
  */
 export interface UISnapshot {
   id: Entity;
+  /** UI element discriminator (e.g., "button", "text"). */
   elementType: string;
+  /** [px] Viewport-relative X. */
   x: number;
+  /** [px] Viewport-relative Y. */
   y: number;
+  /** [px] Element width. */
   width: number;
+  /** [px] Element height. */
   height: number;
+  /** [0, 1] Alpha. */
   opacity: number;
   visible: boolean;
+  /** Sorting layer. */
   zIndex: number;
   style?: import("../ui/UITypes").UIStyleComponent | null;
   text?: import("../ui/UITypes").UITextComponent | null;
@@ -62,38 +81,41 @@ export interface UISnapshot {
 }
 
 /**
- * Complete snapshot of a single rendering frame.
+ * Complete state representation of a single rendering frame.
+ *
+ * @responsibility Decouple state capture from drawing logic.
+ * @responsibility Ensure visual consistency across a single frame.
  *
  * @remarks
- * This structure decouples the capture phase (reading from the ECS World) from
- * the drawing phase. It ensures visual consistency and prevents race conditions
- * or inconsistent states caused by mid-frame simulation updates.
+ * This structure prevents inconsistent visual states caused by simulation
+ * updates occurring mid-frame. It is typically passed to custom
+ * {@link EffectDrawer} callbacks.
  *
- * It is typically managed by a `Renderer` and passed to custom `EffectDrawer` callbacks.
+ * @public
  */
 export interface RenderSnapshot {
-  /** Array pre-asignado de snapshots de entidades. */
+  /** Pooled array of entity snapshots. */
   entities: RenderEntitySnapshot[];
-  /** Número real de entidades capturadas en este snapshot. */
+  /** Number of valid entities in the pool for this frame. */
   entityCount: number;
-  /** Array pre-asignado de snapshots de elementos de UI. */
+  /** Pooled array of UI snapshots. */
   uiElements: UISnapshot[];
-  /** Número real de elementos de UI capturados. */
+  /** Number of valid UI elements. */
   uiCount: number;
-  /** Desplazamiento horizontal acumulado por efectos de Screen Shake. */
+  /** [px] Cumulative horizontal camera shake. */
   shakeX: number;
-  /** Desplazamiento vertical acumulado por efectos de Screen Shake. */
+  /** [px] Cumulative vertical camera shake. */
   shakeY: number;
-  /** Posición X de la cámara en el mundo. */
+  /** [px] World camera focal X. */
   cameraX: number;
-  /** Posición Y de la cámara en el mundo. */
+  /** [px] World camera focal Y. */
   cameraY: number;
-  /** Nivel de zoom de la cámara. */
+  /** Camera zoom multiplier. */
   cameraZoom: number;
-  /** Tiempo transcurrido (ms) desde el inicio de la simulación. */
+  /** [ms] Total simulation time elapsed. */
   elapsedTime: number;
-  /** Datos arbitrarios para efectos de fondo. */
+  /** Arbitrary background effect data. */
   backgroundData?: Record<string, unknown> | null;
-  /** Datos arbitrarios para efectos de primer plano. */
+  /** Arbitrary foreground/post-process data. */
   foregroundData?: Record<string, unknown> | null;
 }

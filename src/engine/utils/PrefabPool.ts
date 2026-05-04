@@ -4,6 +4,8 @@ import { ComponentSetPool } from "./ComponentSetPool";
 
 /**
  * Configuration for a PrefabPool.
+ *
+ * @public
  */
 export interface PrefabConfig<T extends Record<string, Component>, I> {
   factory: () => T;
@@ -15,6 +17,8 @@ export interface PrefabConfig<T extends Record<string, Component>, I> {
 /**
  * A PrefabPool provides a declarative way to manage pools of complex entities.
  * It combines an ComponentSetPool with a specific initialization logic.
+ *
+ * @public
  */
 export class PrefabPool<T extends Record<string, Component>, I> {
   private pool: ComponentSetPool<T>;

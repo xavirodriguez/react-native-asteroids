@@ -40,6 +40,17 @@ interface RegisteredSystem {
  * years might trigger overflow, though engine resets usually happen much earlier.
  * @conceptualRisk [GC_PRESSURE][MEDIUM] Frequent snapshots in worlds with >1000 entities
  * will increase garbage collection frequency.
+ *
+ * @example
+ * ```ts
+ * const world = new World();
+ * const player = world.createEntity();
+ * world.addComponent(player, { type: 'Transform', x: 0, y: 0 });
+ * world.addSystem(new PhysicsSystem());
+ * world.update(16.6);
+ * ```
+ *
+ * @public
  */
 export class World {
   /** @internal */
@@ -66,7 +77,12 @@ export class World {
   private _systemsVersion = 0;
   /** @internal */
   private profilers: Map<System, SystemProfiler> = new Map();
-  /** Whether system profiling is enabled. */
+  /**
+   * Whether system profiling is enabled.
+   *
+   * @remarks
+   * When enabled, the world tracks execution time for each system, accessible via {@link getSystemTiming}.
+   */
   public debugMode = false;
   /** @internal */
   private nextEntityId = 1;
@@ -87,30 +103,47 @@ export class World {
    * Used by the Renderer and Network systems to detect mutations within components.
    */
   private _stateVersion = 0;
-  /** @internal */
+  /**
+   * Tracks the state version of each component per entity.
+   *
+   * @internal
+   */
   public componentVersions = new Map<string, Map<Entity, number>>();
   /** Current simulation tick. */
   private _tick = 0;
 
   /**
-   * Obtiene la versión actual de la estructura del mundo.
-   * @remarks Se incrementa al crear/destruir entidades o añadir/quitar componentes.
+   * Current structural version of the world.
+   *
+   * @remarks
+   * Increments when entities are created/destroyed or components are added/removed.
+   * Inferences: Used for cache invalidation in queries.
    */
   public get structureVersion(): number { return this._structureVersion; }
 
   /**
-   * Obtiene la versión actual de los datos del mundo.
-   * @remarks Se incrementa en cada mutación de datos interna de los componentes.
-   * Es fundamental para la replicación delta en red.
+   * Current data state version of the world.
+   *
+   * @remarks
+   * Increments on data mutations within components.
+   * Crucial for the Delta Replication system to detect modified state since a known tick.
    */
   public get stateVersion(): number { return this._stateVersion; }
 
-  /** Obtiene el tick actual de simulación autoritativo. */
+  /**
+   * Current authoritative simulation tick.
+   *
+   * @remarks
+   * Represents the number of fixed-step updates that have occurred.
+   */
   public get tick(): number { return this._tick; }
 
   /**
    * Manually advances the simulation tick.
-   * Used by external orchestrators that manage the timing loop.
+   *
+   * @remarks
+   * Used by external orchestrators (e.g., room handlers) that manage simulation timing.
+   * Does not trigger a system update; use {@link update} for that.
    */
   public advanceTick(): void {
     this._tick++;
@@ -120,14 +153,13 @@ export class World {
   private commandBuffer = new WorldCommandBuffer();
 
   /**
-   * Obtiene una lista ordenada de todas las entidades activas.
+   * Sorted list of all active entities in the world.
    *
    * @remarks
-   * Utiliza un sistema de caché reactivo basado en {@link World.structureVersion} para
-   * evitar re-ordenaciones costosas. En entornos de desarrollo, el array devuelto
-   * está congelado para prevenir mutaciones accidentales.
+   * Employs a reactive caching mechanism based on {@link structureVersion} to avoid
+   * expensive re-sorting. In development, the returned array is frozen.
    *
-   * @returns Un array de solo lectura de {@link Entity}.
+   * @returns A read-only array of {@link Entity} IDs.
    */
   public get entities(): ReadonlyArray<Entity> {
     if (this._entitiesCacheVersion !== this._structureVersion) {
@@ -141,13 +173,12 @@ export class World {
   }
 
   /**
-   * Obtiene la lista de sistemas registrados ordenados por fase y prioridad.
+   * Registered systems sorted by phase and priority.
    *
    * @remarks
-   * Utiliza un caché interno que se invalida cuando cambia la composición o el
-   * orden de los sistemas. En __DEV__, el array está congelado.
+   * Internal cache invalidated when system registration or phase order changes.
    *
-   * @returns Un array de solo lectura de {@link System}.
+   * @returns A read-only array of {@link System} instances.
    */
   public get systemsList(): ReadonlyArray<System> {
     if (this.systemsNeedSorting) {
@@ -174,25 +205,19 @@ export class World {
    * Generates a serializable snapshot of the entire world state for rollback or persistence.
    *
    * @remarks
-   * Captura entidades activas, datos serializables de componentes, contadores de IDs, versión del mundo
-   * y la semilla actual del generador de números aleatorios de gameplay.
-   * Las entidades se devuelven ordenadas por ID para favorecer la consistencia en la reconstrucción.
+   * Captures active entities, serializable component data, ID counters, world versions,
+   * and the current gameplay random seed. Entities are sorted for deterministic reconstruction.
    *
-   * @returns Un objeto plano que contiene el estado serializable capturado del mundo.
+   * @returns A plain object containing the captured serializable state.
    *
-   * @warning La serialización se limita a propiedades que no sean funciones ni símbolos. Referencias a objetos complejos
-   * (clases, mapas, sets) no se restaurarán fielmente si no son POJOs serializables.
+   * @warning Serialization is limited to POJO-compatible properties. Functions, Symbols,
+   * and non-serializable objects (Maps, Sets) are omitted or may lose fidelity.
    *
-   * @precondition Se espera que el estado actual sea consistente; se recomienda evitar llamar durante un update de sistema
-   * para favorecer una captura coherente del estado lógico.
-   * @postcondition Devuelve una copia profunda (vía `structuredClone`) de los datos serializables de cada componente
-   * compatibles con dicho algoritmo.
+   * @precondition Recommended to call outside of an active system update to ensure logical consistency.
+   * @postcondition Returns a deep copy (via `structuredClone`) of serializable component data.
    *
-   * @conceptualRisk [JSON_DETERMINISM][MEDIUM] La serialización no garantiza un orden determinista de las
-   * propiedades de los objetos en todos los entornos, lo que puede afectar a la generación de hashes de estado.
-   * @conceptualRisk [GC_PRESSURE][MEDIUM] Las snapshots frecuentes, especialmente en mundos con alta densidad
-   * de entidades, aumentarán la presión sobre el recolector de basura.
-   * @returns El estado serializado del mundo.
+   * @conceptualRisk [JSON_DETERMINISM][MEDIUM] Property order is not guaranteed across all environments.
+   * @conceptualRisk [GC_PRESSURE][MEDIUM] Frequent snapshots in large worlds increase GC overhead.
    */
   public snapshot(): WorldSnapshot {
     const gameplayRandom = RandomService.getInstance("gameplay");
@@ -253,17 +278,15 @@ export class World {
    * Restores the world state from a previously captured snapshot.
    *
    * @remarks
-   * Este método reconstruye los mapas de componentes e índices basándose en los datos serializados restaurables.
-   * Intenta sincronizar las queries existentes para mantener la consistencia sin romper las referencias
-   * a los objetos Query.
+   * Rebuilds component maps, indices, and syncs existing queries to maintain consistency
+   * without breaking references to {@link Query} objects.
    *
-   * @param state - El objeto de estado obtenido de {@link World.snapshot}.
+   * @param state - The state object obtained from {@link World.snapshot}.
    *
-   * @precondition Se espera que el estado proporcionado sea una estructura válida y compatible con la versión del motor.
-   * @postcondition El mundo refleja el estado serializable contenido en la instantánea.
-   * @postcondition Las versiones de estructura y estado se sincronizan con los valores restaurados.
-   * @sideEffect Limpia el estado actual del mundo antes de la restauración.
-   * @sideEffect Re-inicializa la semilla de `RandomService("gameplay")`.
+   * @precondition The state must be compatible with the engine version.
+   * @postcondition Versions (state and structure) are synchronized with the restored values.
+   * @sideEffect Clears current world state, resources remain untouched unless they depend on entities.
+   * @sideEffect Re-seeds `RandomService("gameplay")`.
    */
   public restore(state: WorldSnapshot): void {
     this.activeEntities = new Set(state.entities);
@@ -328,19 +351,20 @@ export class World {
   }
 
   /**
-   * Solicita la creación de una nueva entidad en el mundo, intentando reutilizar IDs de entidades previamente eliminadas.
+   * Requests the creation of a new entity, recycling IDs from the free pool when available.
    *
    * @remarks
-   * Utiliza un pool de IDs reciclados con el fin de reducir la presión sobre el GC durante ciclos de vida frecuentes.
-   * Incrementa la versión de estructura del mundo para señalizar cambios topológicos.
+   * Employs ID recycling to mitigate GC pressure during high-frequency spawn/despawn cycles.
+   * Increments {@link structureVersion} to signal topological changes.
    *
-   * Si se llama durante {@link World.update}, la creación efectiva en los mapas de componentes se difiere
-   * mediante un buffer de comandos hasta el final de la fase de simulación.
+   * If called during {@link update}, creation is deferred via {@link WorldCommandBuffer}
+   * until the simulation phase completes.
    *
-   * @param id - ID opcional de la entidad. Reservado principalmente para restauraciones de estado o uso interno.
-   * @returns Un identificador de {@link Entity}.
-   * @postcondition La entidad se registra como activa o queda encolada para su activación.
-   * @sideEffect Incrementa {@link World.structureVersion}.
+   * @param id - Optional manual Entity ID. Primary use is state restoration or internal orchestration.
+   * @returns A unique {@link Entity} identifier.
+   *
+   * @postcondition Entity is registered as active or queued for activation.
+   * @sideEffect Increments {@link World.structureVersion}.
    */
   public createEntity(id?: Entity): Entity {
     const entityId = id ?? (this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++);
@@ -362,10 +386,10 @@ export class World {
   }
 
   /**
-   * Elimina todos los sistemas registrados de todas las fases.
+   * Unregisters all systems from all execution phases.
    *
-   * @postcondition La lista de sistemas queda vacía.
-   * @sideEffect Incrementa {@link World.structureVersion}.
+   * @postcondition The system execution list is empty.
+   * @sideEffect Increments {@link structureVersion}.
    */
   clearSystems(): void {
     this.systems = [];
@@ -376,25 +400,23 @@ export class World {
   }
 
   /**
-   * Registra o actualiza un componente en una entidad específica.
+   * Adds or replaces a component on a specific entity.
    *
    * @remarks
-   * Si la entidad ya posee un componente del mismo tipo, se reemplaza.
-   * Intenta validar la integridad jerárquica si el componente es de tipo 'Transform'.
-   * Notifica a las queries reactivas para apoyar la actualización de sus índices de forma incremental.
+   * Validates hierarchical integrity if the component is a 'Transform'.
+   * Triggers incremental query index updates via {@link notifyQueries}.
    *
-   * Si se llama durante {@link World.update}, la operación se difiere mediante un buffer.
+   * If called during {@link update}, the operation is buffered to prevent iterator invalidation.
    *
-   * @param entity - El ID de la entidad destino.
-   * @param component - La instancia del componente (POJO).
-   * @returns El componente añadido.
+   * @param entity - Target Entity ID.
+   * @param component - Component instance (must have a `type` discriminator).
+   * @returns The added component.
    *
-   * @precondition Se espera que la entidad sea válida en el contexto del mundo actual.
-   * @postcondition El componente es accesible a través de las APIs de consulta del mundo.
-   * @postcondition Si el tipo es 'Transform', se intenta mantener la validez de la jerarquía.
-   * @throws {Error} Si se intenta asignar una entidad como su propio padre en un Transform.
-   * @sideEffect Incrementa {@link World.version}.
-   * @mutates componentMaps, componentIndex, entityComponentSets
+   * @precondition Entity must exist in the world.
+   * @postcondition Component is accessible via {@link getComponent} or {@link query}.
+   * @throws {Error} If assigning an entity as its own parent in a Transform.
+   * @sideEffect Increments {@link stateVersion}.
+   * @sideEffect Increments {@link structureVersion} if the component type is new for this entity.
    */
   addComponent<T extends Component>(entity: Entity, component: T): Readonly<T> {
     if (this.isUpdating) {
@@ -438,10 +460,12 @@ export class World {
   }
 
   /**
-   * @remarks
    * Returns the live mutable component reference stored in the World.
-   * Direct mutations bypass state tracking.
-   * Use {@link World.mutateComponent} for controlled mutations that update versioning.
+   *
+   * @remarks
+   * Direct mutations of the returned object bypass engine state tracking unless
+   * manually notified via {@link notifyStateChange}.
+   * Prefer {@link mutateComponent} for controlled mutations that update versioning automatically.
    *
    * @param entity - The entity to query.
    * @param type - The discriminator name of the component.
@@ -457,13 +481,20 @@ export class World {
    * Performs an immediate mutation on a component.
    *
    * @remarks
-   * Official way for controlled mutations.
-   * Updates {@link World.stateVersion} and marks {@link World.isRenderDirty}.
+   * Recommended pattern for component state changes.
+   * Updates {@link stateVersion}, component-specific versions, and marks {@link isRenderDirty}.
    *
-   * @param entity - The entity that owns the component.
-   * @param type - The type discriminator of the component.
-   * @param updater - Callback that receives the component instance for modification.
+   * @param entity - The owner entity.
+   * @param type - The component type discriminator.
+   * @param updater - Callback receiving the mutable component instance.
    * @returns `true` if the component exists and was mutated, `false` otherwise.
+   *
+   * @example
+   * ```ts
+   * world.mutateComponent(player, 'Transform', t => {
+   *   t.x += 10;
+   * });
+   * ```
    */
   public mutateComponent<TType extends AnyCoreComponent["type"]>(
     entity: Entity,
@@ -491,42 +522,39 @@ export class World {
   }
 
   /**
-   * Comprueba la existencia de una entidad en el mundo de forma eficiente (O(1)).
+   * Checks for entity existence in O(1) time.
    *
-   * @param entity - El ID de la entidad a consultar.
-   * @returns `true` si la entidad está activa en el mundo.
+   * @param entity - The Entity ID to verify.
+   * @returns `true` if the entity is currently active.
    */
   public hasEntity(entity: Entity): boolean {
     return this.activeEntities.has(entity);
   }
 
   /**
-   * Comprueba la existencia de un componente en una entidad de forma eficiente.
+   * Checks if an entity possesses a specific component.
    *
-   * @param entity - La entidad a consultar.
-   * @param type - El tipo de componente.
-   * @returns `true` si la entidad posee el componente.
-   * @queries componentIndex
+   * @param entity - Target entity.
+   * @param type - Component type discriminator.
+   * @returns `true` if the entity has the component.
    */
   hasComponent(entity: Entity, type: string): boolean {
     return this.componentIndex.get(type)?.has(entity) ?? false;
   }
 
   /**
-   * Elimina un componente de una entidad.
+   * Removes a component from an entity.
    *
    * @remarks
-   * Notifica a las queries reactivas para que actualicen sus índices.
-   * Si se llama durante {@link World.update}, la eliminación se difiere al final del frame.
+   * Notifies reactive queries to update their indices.
+   * If called during {@link update}, removal is buffered.
    *
-   * @param entity - La entidad destino.
-   * @param type - El tipo de componente a eliminar.
+   * @param entity - Target entity.
+   * @param type - Component type to remove.
    *
-   * @precondition Se espera que la entidad exista en el mundo.
-   * @postcondition La entidad ya no posee el componente especificado.
-   * @postcondition Las queries que dependían de este componente ya no incluirán a la entidad.
-   * @sideEffect Incrementa {@link World.version}.
-   * @mutates componentMaps, componentIndex, entityComponentSets
+   * @precondition Entity should exist in the world.
+   * @postcondition Queries depending on this component will no longer include this entity.
+   * @sideEffect Increments {@link structureVersion}.
    */
   removeComponent(entity: Entity, type: string): void {
     if (this.isUpdating) {
@@ -548,22 +576,24 @@ export class World {
   }
 
   /**
-   * Proporciona acceso a un conjunto de entidades que poseen la firma de componentes indicada.
+   * Provides a set of entities matching the specified component signature.
    *
    * @remarks
-   * Emplea un sistema de caché reactivo para reducir el coste de las consultas recurrentes. Si la firma
-   * ya tiene una consulta asociada, el resultado se sirve desde el caché. Los resultados se actualizan
-   * de forma incremental ante cambios estructurales (añadir/quitar componentes).
+   * Utilizes reactive caching. If a query for the signature already exists,
+   * the cached result is returned. Updates are incremental and triggered by
+   * structural changes.
    *
-   * @param componentTypes - Lista de tipos que definen la firma de la consulta.
-   * @returns Un array de solo lectura con los IDs de las entidades coincidentes.
+   * @param componentTypes - Component types defining the query signature.
+   * @returns A read-only array of matching {@link Entity} IDs, sorted.
    *
-   * @warning Evite crear queries dinámicas (e.g. usando `world.query(...types)`) dentro de bucles de
-   * actualización, ya que la generación de la clave de caché tiene un coste O(N log N) respecto al
-   * número de tipos.
+   * @warning **Dynamic Queries**: Avoid dynamic signatures inside update loops.
+   * Signature sorting and key generation have O(N log N) cost.
    *
-   * @precondition Se recomienda proporcionar al menos un tipo de componente para evitar consultas universales.
-   * @postcondition El array devuelto se mantiene ordenado por ID de entidad con el fin de favorecer la reproducibilidad.
+   * @example
+   * ```ts
+   * const dynamicEntities = world.query('Transform', 'Velocity');
+   * for (const id of dynamicEntities) { ... }
+   * ```
    */
   public query(...componentTypes: string[]): ReadonlyArray<Entity> {
     if (componentTypes.length === 0) return [];
@@ -593,17 +623,17 @@ export class World {
   }
 
   /**
-   * Elimina completamente una entidad y todos sus componentes asociados del mundo.
+   * Completely removes an entity and all its components from the world.
    *
    * @remarks
-   * Libera el ID de la entidad para que pueda ser reutilizado por el {@link EntityPool}.
-   * Limpia todas las referencias en los índices de componentes y queries.
+   * Releases the ID for future recycling. Clears all component indices and
+   * query associations.
    *
-   * Si se llama durante {@link World.update}, la eliminación se difiere al final del frame.
+   * If called during {@link update}, destruction is deferred.
    *
-   * @param entity - La entidad a destruir.
-   * @postcondition La entidad ya no existe en el mundo y sus componentes son inaccesibles.
-   * @sideEffect Incrementa {@link World.structureVersion}.
+   * @param entity - Entity ID to destroy.
+   * @postcondition Entity is inaccessible and its components are deleted.
+   * @sideEffect Increments {@link structureVersion}.
    */
   public removeEntity(entity: Entity): void {
     if (this.isUpdating) {
@@ -622,43 +652,43 @@ export class World {
   }
 
   /**
-   * Proporciona acceso al buffer de comandos para diferir mutaciones estructurales.
+   * Accesses the command buffer for deferred structural mutations.
    *
    * @remarks
-   * Se recomienda encarecidamente utilizar este buffer durante la actualización de sistemas
-   * para evitar problemas de invalidación de iteradores en las Queries.
+   * Essential for making changes safely during system updates to avoid
+   * iterator invalidation.
    *
-   * @returns La instancia de WorldCommandBuffer del mundo.
+   * @returns The {@link WorldCommandBuffer} instance.
    */
   public getCommandBuffer(): WorldCommandBuffer {
     return this.commandBuffer;
   }
 
   /**
-   * Aplica todas las mutaciones estructurales grabadas en el buffer de comandos.
+   * Consolidates all buffered structural mutations.
    *
    * @remarks
-   * Debe llamarse al final de cada tick de simulación (Fixed Update).
+   * Automatically called at the end of {@link update}. Should be called
+   * manually if using the command buffer outside the standard loop.
    *
-   * @sideEffect Ejecuta operaciones de creación/eliminación diferidas.
+   * @sideEffect Executes deferred creations, additions, and removals.
    */
   public flush(): void {
     this.commandBuffer.flush(this);
   }
 
   /**
-   * Generates a partial snapshot containing only data that changed since a specific version.
+   * Generates a partial snapshot containing modified components since a version.
    *
    * @remarks
-   * This is the foundation of the Delta Synchronization system. It iterates through all
-   * components and compares their stored version with `sinceVersion`.
+   * Foundation for the authoritative delta synchronization system.
+   * Compares stored component versions with `sinceVersion`.
    *
-   * @param sinceVersion - The state version to compare against.
-   * @param filterEntities - Optional. A set of entities to restrict the snapshot to (Interest Management).
-   * @returns A partial {@link WorldSnapshot} containing modified component data.
+   * @param sinceVersion - Last acknowledged state version.
+   * @param filterEntities - Optional set for Interest Management (spatial culling).
+   * @returns Partial {@link WorldSnapshot} with changed data.
    *
-   * @conceptualRisk [PERFORMANCE][HIGH] In worlds with many entities, this method can be
-   * expensive as it performs a nested iteration over component types and entities.
+   * @conceptualRisk [PERFORMANCE][HIGH] Cost is proportional to the total number of components.
    */
   public deltaSnapshot(sinceVersion: number, filterEntities?: Set<Entity>): Partial<WorldSnapshot> {
     const componentData: ComponentDataSnapshot = {};
@@ -702,14 +732,14 @@ export class World {
   }
 
   /**
-   * Limpia el estado completo del mundo, incluyendo entidades, componentes y queries.
+   * Resets the entire world state.
    *
    * @remarks
-   * No elimina los sistemas registrados, pero sí todos los recursos y datos de simulación.
-   * Útil para reinicios completos de nivel o cambios de escena drásticos.
+   * Clears entities, components, resources, and command buffers.
+   * Systems registration remains intact.
    *
-   * @postcondition El mundo queda en un estado inicial vacío.
-   * @sideEffect Incrementa {@link World.structureVersion}.
+   * @postcondition World is empty.
+   * @sideEffect Increments {@link structureVersion}.
    */
   public clear(): void {
     this.activeEntities.clear();
@@ -725,45 +755,42 @@ export class World {
   }
 
   /**
-   * Registra un recurso global en el mundo.
-   * Los recursos son singletons que no están asociados a ninguna entidad.
+   * Registers a global singleton resource.
    *
    * @remarks
-   * Útil para servicios compartidos como `EventBus`, `AssetLoader` o configuraciones globales.
+   * Resources are shared services or configurations not attached to entities
+   * (e.g., EventBus, AssetLoader).
    *
-   * @param name - Identificador único del recurso.
-   * @param resource - La instancia u objeto del recurso.
+   * @param name - Resource identifier.
+   * @param resource - Instance or data object.
    *
-   * @precondition Se recomienda que el nombre del recurso sea único para evitar sobrescritura accidental.
-   * @postcondition El recurso es accesible mediante {@link World.getResource}.
-   * @sideEffect Sobrescribe cualquier recurso previo con el mismo nombre.
+   * @postcondition Resource is accessible via {@link getResource}.
+   * @sideEffect Overwrites any existing resource with the same name.
    */
   setResource<T>(name: string, resource: T): void {
     this.resources.set(name, resource);
   }
 
   /**
-   * Recupera un recurso global previamente registrado.
+   * Retrieves a registered global resource.
    *
-   * @param name - Nombre del recurso.
-   * @returns El recurso (Readonly) o `undefined` si no existe.
-   * @queries resources
+   * @param name - Resource identifier.
+   * @returns The resource (Readonly) or `undefined`.
    */
   getResource<T>(name: string): Readonly<T> | undefined {
     return this.resources.get(name) as T;
   }
 
   /**
-   * Ejecuta una mutación controlada sobre un recurso global.
+   * Performs a controlled mutation on a global resource.
    *
    * @remarks
-   * Es la vía recomendada para modificar el estado de un recurso singleton.
-   * Notifica automáticamente los cambios incrementando {@link World.stateVersion}.
+   * Automatically notifies the engine of state changes by incrementing {@link stateVersion}.
    *
-   * @param name - Nombre del recurso a mutar.
-   * @param mutator - Callback que recibe la instancia del recurso.
+   * @param name - Resource to mutate.
+   * @param mutator - Callback receiving the mutable resource.
    *
-   * @postcondition Se incrementa {@link World.stateVersion}.
+   * @postcondition {@link stateVersion} is incremented.
    */
   mutateResource<T>(name: string, mutator: (resource: T) => void): void {
     const resource = this.resources.get(name) as T;
@@ -774,32 +801,30 @@ export class World {
   }
 
   /**
-   * Comprueba si un recurso específico está registrado.
+   * Verifies if a resource is registered.
    */
   hasResource(name: string): boolean {
     return this.resources.has(name);
   }
 
   /**
-   * Elimina un recurso del mundo.
+   * Removes a resource from the world.
    */
   removeResource(name: string): void {
     this.resources.delete(name);
   }
 
   /**
-   * Registra un nuevo sistema en el mundo para que participe en el ciclo de actualización.
+   * Registers a system to participate in the simulation loop.
    *
    * @remarks
-   * El sistema se ejecutará en la fase indicada con la prioridad especificada.
-   * Los cambios en la lista de sistemas fuerzan una re-ordenación en el siguiente {@link World.update}.
+   * Systems are sorted by phase and priority during the next {@link update}.
    *
-   * @param system - Instancia del sistema que extiende {@link System}.
-   * @param config - Configuración de fase y prioridad.
+   * @param system - System instance.
+   * @param config - Execution configuration (phase, priority).
    *
-   * @precondition Se espera que el sistema sea una instancia válida de {@link System}.
-   * @postcondition El sistema se añade a la cola de ejecución en la fase correspondiente.
-   * @sideEffect Activa {@link World.systemsNeedSorting} para la siguiente actualización.
+   * @precondition System must not be already registered.
+   * @sideEffect Triggers re-sorting of systems in the next update cycle.
    */
   addSystem(system: System, config: SystemConfig = {}): void {
     // Prevent duplicate system instances
@@ -815,21 +840,17 @@ export class World {
   }
 
   /**
-   * Orquesta un ciclo de actualización ejecutando los sistemas registrados por fases.
+   * Orchestrates a simulation tick by executing systems in order.
    *
    * @remarks
-   * El ciclo sigue este orden:
-   * 1. Re-ordenación de sistemas si la lista ha cambiado.
-   * 2. Ejecución secuencial por fase (Input, Simulation, Collision, GameRules, Presentation).
-   * 3. Procesamiento de mutaciones diferidas a través del buffer de comandos.
+   * Execution Flow:
+   * 1. Re-sort systems if needed.
+   * 2. Sequential execution by phase (Input -> Simulation -> Collision -> GameRules -> Presentation).
+   * 3. Consolidate structural changes via {@link flush}.
    *
-   * @warning Se recomienda encarecidamente utilizar el {@link WorldCommandBuffer} para realizar
-   * mutaciones estructurales (crear/eliminar entidades) durante el update para evitar
-   * efectos secundarios en los iteradores de las queries.
+   * @param deltaTime - Elapsed time since last tick in milliseconds.
    *
-   * @param deltaTime - Tiempo transcurrido para este paso de simulación (ms).
-   *
-   * @postcondition El estado del mundo avanza y las mutaciones diferidas se consolidan al final.
+   * @postcondition Simulation state advances and deferred mutations are applied.
    */
   update(deltaTime: number): void {
     this._tick++;
@@ -856,10 +877,17 @@ export class World {
     this.flush();
   }
 
+  /**
+   * Returns the average execution time (ms) of a system.
+   *
+   * @remarks
+   * Requires {@link debugMode} to be enabled.
+   */
   getSystemTiming(system: System): number {
     return this.profilers.get(system)?.getAverageTime() ?? 0;
   }
 
+  /** Returns performance metrics for all registered systems. */
   getAllSystemTimings(): Record<string, number> {
     const timings: Record<string, number> = {};
     this.sortedSystems.forEach(system => {
@@ -888,6 +916,7 @@ export class World {
     this.systemsNeedSorting = false;
   }
 
+  /** Returns all component types attached to an entity. */
   getEntityComponentTypes(entity: Entity): string[] {
     const set = this.entityComponentSets.get(entity);
     return set ? Array.from(set) : [];
@@ -917,11 +946,11 @@ export class World {
   }
 
   /**
-   * Notifica que el estado interno de algún componente ha cambiado.
+   * Manually notifies the engine of a global state change.
    *
    * @remarks
-   * Debe llamarse cuando se mutan propiedades de componentes existentes de forma directa
-   * para que los sistemas que observan `stateVersion` (como el Renderer) puedan reaccionar.
+   * Increments {@link stateVersion} and marks {@link isRenderDirty}.
+   * Use this when mutating component data directly without using {@link mutateComponent}.
    */
   public notifyStateChange(): void {
     this._stateVersion++;
@@ -929,14 +958,14 @@ export class World {
   }
 
   /**
-   * Marca el mundo como sucio para el renderizado.
+   * Marks the world as requiring a re-render.
    */
   public setRenderDirty(dirty: boolean): void {
     this._renderDirty = dirty;
   }
 
   /**
-   * Comprueba si el mundo tiene cambios pendientes de renderizar.
+   * Checks if the world state has changed since the last frame was rendered.
    */
   public isRenderDirty(): boolean {
     return this._renderDirty;
@@ -946,11 +975,11 @@ export class World {
    * Tries to locate the first component of a given type, treating it as a Singleton.
    *
    * @remarks
-   * Convenient for single-instance components (e.g., global state, config).
-   * Use {@link World.mutateSingleton} for controlled mutations.
+   * Convenient for unique components (e.g., GlobalGameState, Config).
+   * Use {@link mutateSingleton} for controlled updates.
    *
-   * @param type - The component type.
-   * @returns The found instance or `undefined`.
+   * @param type - Component discriminator.
+   * @returns Found instance or `undefined`.
    */
   public getSingleton<TType extends AnyCoreComponent["type"]>(type: TType): ComponentOf<TType> | undefined;
   public getSingleton<T extends Component>(type: string): T | undefined;
@@ -964,13 +993,12 @@ export class World {
    * Performs an immediate mutation on a Singleton component.
    *
    * @remarks
-   * This is the official and recommended way for controlled mutations of unique components.
-   * It automatically notifies state changes by incrementing {@link World.stateVersion}
-   * and marking the world as dirty for rendering ({@link World.isRenderDirty}).
+   * Preferred way to update unique state components. Automatically notifies
+   * changes by updating versions and {@link isRenderDirty}.
    *
-   * @param type - The component type.
-   * @param updater - Callback that receives the component instance for modification.
-   * @returns `true` if the component existed and was mutated, `false` otherwise.
+   * @param type - Component type discriminator.
+   * @param updater - Callback for modification.
+   * @returns `true` if mutated, `false` otherwise.
    */
   public mutateSingleton<TType extends AnyCoreComponent["type"]>(
     type: TType,
@@ -1003,22 +1031,21 @@ export class World {
   // ==========================================================================
 
   /**
-   * @deprecated Use structureVersion or stateVersion instead.
-   * Combined version for backward compatibility.
+   * @deprecated Use {@link structureVersion} or {@link stateVersion} instead.
    */
   public get version(): number {
     return this._structureVersion + this._stateVersion;
   }
 
   /**
-   * Alias de {@link World.query} para obtener entidades con una firma específica.
-   * @deprecated Usar {@link World.query} directamente.
+   * Alias of {@link query} for entities with a specific signature.
+   * @deprecated Use {@link query} directly.
    */
   public getEntitiesWith(...componentTypes: string[]): ReadonlyArray<Entity> {
     return this.query(...componentTypes);
   }
 
-  /** @deprecated Usar el getter `entities`. */
+  /** @deprecated Use {@link entities} getter. */
   public getAllEntities(): ReadonlyArray<Entity> {
     return this.entities;
   }

@@ -4,6 +4,8 @@ import { World } from "../core/World";
 
 /**
  * Configuración de una animación individual gestionada por el JuiceSystem.
+ *
+ * @public
  */
 export interface JuiceAnimation {
   /** Propiedad del Transform o Render que será animada. */
@@ -24,6 +26,8 @@ export interface JuiceAnimation {
 
 /**
  * Componente que almacena una cola de animaciones procedimentales (tweens).
+ *
+ * @public
  */
 export interface JuiceComponent extends Component {
   type: "Juice";
@@ -68,6 +72,8 @@ export function createJuiceComponent(): JuiceComponent {
  * eliminando el riesgo de desincronización en la simulación física.
  * @conceptualRisk [MUTATION][LOW] Las animaciones se eliminan del array durante la iteración
  * inversa; el diseño es seguro ante mutaciones estructurales locales.
+ *
+ * @public
  */
 export class JuiceSystem extends System {
   /**

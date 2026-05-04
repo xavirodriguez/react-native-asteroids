@@ -1,20 +1,21 @@
 import { Entity } from "../types/EngineTypes";
 
 /**
- * Consulta reactiva que mantiene un índice actualizado de entidades con una firma de
- * componentes específica.
+ * Reactive Query that maintains an updated index of entities with a specific component signature.
  *
- * @responsibility Mantener una lista filtrada y cacheada de entidades que cumplen una firma.
- * @responsibility Responder de forma reactiva a cambios estructurales en el World.
- * @responsibility Proporcionar acceso eficiente a grupos de entidades filtrados por componentes.
+ * @responsibility Maintain a filtered and cached list of entities that match a signature.
+ * @responsibility Respond reactively to structural changes in the {@link World}.
+ * @responsibility Provide efficient access to component-filtered entity groups.
  *
  * @remarks
- * Las queries reducen la necesidad de iterar sobre todas las entidades del mundo en cada frame.
- * El {@link World} notifica a las queries relevantes cuando ocurren cambios estructurales,
- * permitiendo un acceso rápido a las entidades que coinciden con la firma.
+ * Queries significantly reduce the need to iterate over all entities every frame.
+ * The {@link World} notifies relevant queries when structural changes occur,
+ * enabling O(1) or O(N_matching) access to relevant entities.
  *
- * @conceptualRisk [MUTABLE_CACHE_LEAK][MITIGATED] El método `getEntities()` devuelve una copia
- * defensiva para prevenir la corrupción del estado interno desde el exterior.
+ * @conceptualRisk [MUTABLE_CACHE_LEAK][MITIGATED] `getEntities()` returns a defensive
+ * copy to prevent external state corruption.
+ *
+ * @public
  */
 export class Query {
   private entities: Set<Entity> = new Set();
@@ -22,31 +23,31 @@ export class Query {
   private needsUpdateArray = false;
 
   /**
-   * Inicializa una query para una firma de componentes determinada.
+   * Initializes a query for a specific component signature.
    *
-   * @param componentTypes - Lista de tipos de componentes que definen la firma.
+   * @param componentTypes - List of component type discriminators defining the signature.
    *
-   * @precondition Debe proporcionarse al menos un tipo de componente.
+   * @precondition At least one component type should be provided.
    */
   constructor(public readonly componentTypes: string[]) {}
 
   /**
-   * Comprueba si una entidad debe formar parte de esta query basado en sus componentes.
+   * Checks if an entity's component set matches this query's signature.
    *
-   * @param entityComponents - El conjunto de tipos de componentes que posee la entidad.
-   * @returns `true` si la entidad posee TODOS los tipos de componentes requeridos.
+   * @param entityComponents - The set of component types currently possessed by the entity.
+   * @returns `true` if the entity possesses ALL required component types.
    */
   public matches(entityComponents: Set<string>): boolean {
     return this.componentTypes.every(type => entityComponents.has(type));
   }
 
   /**
-   * Añade una entidad al resultado de la query si no está presente.
+   * Adds an entity to the query result index.
    *
-   * @param entity - La entidad a añadir.
+   * @param entity - Entity ID to add.
    *
-   * @precondition Se espera que la entidad cumpla la firma de la query.
-   * @postcondition Si la entidad era nueva, marca {@link Query.needsUpdateArray} como `true`.
+   * @precondition The entity must match the query's signature.
+   * @postcondition If the entity was new, {@link needsUpdateArray} is marked true.
    */
   public add(entity: Entity): void {
     if (!this.entities.has(entity)) {
@@ -56,11 +57,11 @@ export class Query {
   }
 
   /**
-   * Elimina una entidad del resultado de la query.
+   * Removes an entity from the query result index.
    *
-   * @param entity - La entidad a eliminar.
+   * @param entity - Entity ID to remove.
    *
-   * @postcondition Si la entidad estaba presente, marca {@link Query.needsUpdateArray} como `true`.
+   * @postcondition If the entity was present, {@link needsUpdateArray} is marked true.
    */
   public remove(entity: Entity): void {
     if (this.entities.delete(entity)) {
@@ -77,14 +78,13 @@ export class Query {
    * state by casting the result.
    *
    * ### Performance Invariants:
-   * 1. **Determinisic Order**: The returned array is always sorted by Entity ID.
-   * 2. **Caching**: If the structural version of the World hasn't changed, the internal
-   *    array is reused.
+   * 1. **Deterministic Order**: The returned array is always sorted by Entity ID.
+   * 2. **Caching**: If the internal Set hasn't changed, the existing sorted array is reused.
    *
    * @warning **Dynamic Query Cost**: Avoid calling `world.query()` with new arrays inside loops.
    * Reuse specific query instances to benefit from persistent caching.
    *
-   * @returns A read-only array of {@link Entity} IDs.
+   * @returns A read-only array of matching {@link Entity} IDs.
    *
    * @conceptualRisk [GC_PRESSURE][MEDIUM] Every call allocates a new array instance.
    * High-frequency systems should consider local result caching if `world.structureVersion`
@@ -99,25 +99,28 @@ export class Query {
   }
 
   /**
-   * Devuelve la clave única para esta query basada en los tipos de componentes.
+   * Returns the unique cache key for this query based on component types.
    *
    * @remarks
-   * La clave es una cadena separada por comas y ordenada alfabéticamente de los tipos
-   * de componentes, buscando que el orden de entrada no genere duplicados.
+   * The key is a comma-separated, alphabetically sorted string of component types.
+   * This ensures that different orders of input types result in the same query key.
    */
   public get key(): string {
     return [...this.componentTypes].sort().join(",");
   }
 
   /**
-   * Reconstruye los resultados de la query desde cero.
-   * Utilizado durante la restauración del mundo para asegurar la consistencia sin romper referencias.
+   * Rebuilds query results from scratch.
    *
-   * @param allEntities - Conjunto de todas las entidades activas.
-   * @param entityComponentSets - Mapa de conjuntos de componentes por entidad.
+   * @remarks
+   * Primarily used during world restoration or major state resets to ensure
+   * consistency without breaking existing {@link Query} references.
    *
-   * @postcondition {@link Query.entities} refleja el estado actual proporcionado.
-   * @postcondition Marca {@link Query.needsUpdateArray} como `true`.
+   * @param allEntities - Set of all active entities in the world.
+   * @param entityComponentSets - Map containing component sets for each entity.
+   *
+   * @postcondition {@link entities} Set reflects the provided world state.
+   * @postcondition Marks {@link needsUpdateArray} as true.
    */
   public rebuild(allEntities: Set<Entity>, entityComponentSets: Map<Entity, Set<string>>): void {
     this.entities.clear();

@@ -18,6 +18,8 @@ import { TTLComponent, ReclaimableComponent } from "../types/EngineTypes";
  * @remarks
  * El sistema intenta invocar el callback `onComplete` definido en el componente antes de
  * solicitar la eliminación de la entidad del mundo.
+ *
+ * @public
  */
 export class TTLSystem extends System {
   /**

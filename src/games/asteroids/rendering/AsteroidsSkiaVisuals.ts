@@ -70,9 +70,10 @@ export const createSkiaShipDrawer = () => {
         p.setStyle(Skia.PaintStyle.Fill);
         canvas.drawRect(Skia.XYWHRect(-size / 2, size / 6, size / 6, size / 8), p);
         canvas.drawRect(Skia.XYWHRect(-size / 2, -size / 6 - size / 8, size / 6, size / 8), p);
-    } catch (_e) {
-        // Skia not available or failed to load
-    }
+        } catch (_e) {
+            // Skia not available or failed to load
+        }
+    };
 };
 
 export const createSkiaUfoDrawer = () => {
@@ -113,7 +114,8 @@ export const createSkiaUfoDrawer = () => {
         canvas.drawCircle(-size / 2, 0, 1.5, p);
         canvas.drawCircle(0, size / 6, 1.5, p);
         canvas.drawCircle(size / 2, 0, 1.5, p);
-    } catch (_e) { /* ignore */ }
+        } catch (_e) { /* ignore */ }
+    };
 };
 
 export const createSkiaStarfieldEffect = () => {
@@ -148,7 +150,8 @@ export const createSkiaStarfieldEffect = () => {
               canvas.drawRect(Skia.XYWHRect(parallaxX, parallaxY, star.size, star.size), p);
             });
         }
-    } catch (_e) { /* ignore */ }
+        } catch (_e) { /* ignore */ }
+    };
 };
 
 export const skiaScreenShakeEffect: EffectDrawer<SkCanvas> = (canvas, _snapshot, _width, _height, world) => {
@@ -193,7 +196,8 @@ export const createSkiaParticleDrawer = () => {
 
         const size = render.size * lifeRatio;
         canvas.drawCircle(0, 0, size, p);
-    } catch (_e) { /* ignore */ }
+        } catch (_e) { /* ignore */ }
+    };
 };
 
 export const createSkiaBulletDrawer = () => {
@@ -220,5 +224,6 @@ export const createSkiaBulletDrawer = () => {
         p.setStyle(Skia.PaintStyle.Fill);
         canvas.drawCircle(0, 0, size, p);
         canvas.restore();
-    } catch (_e) { /* ignore */ }
+        } catch (_e) { /* ignore */ }
+    };
 };

@@ -10,32 +10,50 @@
 
 import { Entity } from "../core/Entity";
 
-/** Discriminator for the type of drawing operation. */
+/**
+ * Discriminator for the type of drawing operation (e.g., "ship", "particle").
+ *
+ * @public
+ */
 export type CommandType = string;
 
 /**
  * An immutable-like representation of a single drawing operation.
+ *
+ * @public
  */
 export interface DrawCommand {
   type: CommandType;
+  /** [px] World X coordinate. */
   x: number;
+  /** [px] World Y coordinate. */
   y: number;
+  /** [rad] Rotation. */
   rotation: number;
   scaleX: number;
   scaleY: number;
+  /** [0, 1] Visual transparency. */
   opacity: number;
+  /** Color string (Hex/CSS). */
   color: string;
+  /** [px] Primary dimension. */
   size: number;
+  /** Custom vertices for polygons. */
   vertices: { x: number; y: number }[] | null;
+  /** White flash duration in frames. */
   hitFlashFrames: number;
+  /** Sorting order. */
   zIndex: number;
+  /** Owner entity ID. */
   entityId: Entity;
+  /** Arbitrary metadata for the drawer. */
   data: Record<string, unknown> | null;
 }
 
 /**
  * Configuration options for adding a command to the buffer.
- * Used to avoid excessive positional parameters in the public API.
+ *
+ * @public
  */
 export interface DrawCommandOptions {
   type: CommandType;
@@ -55,30 +73,31 @@ export interface DrawCommandOptions {
 }
 
 /**
- * Buffer de comandos de renderizado persistente diseñado para minimizar las asignaciones por frame.
+ * High-performance render command buffer designed to minimize per-frame allocations.
+ *
+ * @responsibility Store and sort drawing commands for the backend renderer.
+ * @responsibility Minimize Garbage Collector (GC) pressure via pre-allocated pooling.
  *
  * @remarks
- * Utiliza un array de tamaño fijo con objetos de comando pre-asignados.
- * Emplea un ordenamiento estable in-situ para mantener el orden de renderizado con una sobrecarga mínima.
- * Renombrado de CommandBuffer a RenderCommandBuffer para evitar ambigüedad con WorldCommandBuffer.
+ * Encapsulates all drawing operations of a frame in a flat list.
+ * Allows decoupling simulation logic (what to draw) from presentation logic (how to draw).
  *
- * @responsibility Almacenar y ordenar comandos de dibujo para el renderer.
- * @responsibility Minimizar la presión sobre el recolector de basura (GC) mediante pooling.
+ * ### Key Features:
+ * 1. **Z-Index Sorting**: Ensures stable draw order via insertion sort.
+ * 2. **Object Pooling**: Recycles {@link DrawCommand} objects to avoid mid-frame allocations.
  *
- * @remarks
- * Encapsula todas las operaciones de dibujo de un frame en una lista plana de comandos.
- * Permite desacoplar la lógica de simulación (qué dibujar) de la lógica de presentación (cómo dibujar).
- *
- * ### Características:
- * 1. **Sorting por Z-Index**: Garantiza que los objetos se dibujen en el orden correcto
- *    de profundidad para evitar parpadeos y solapamientos incorrectos.
- * 2. **Object Pooling**: Recicla objetos `DrawCommand` para mitigar la presión sobre el GC.
+ * @public
  */
 export class RenderCommandBuffer {
   private readonly pool: DrawCommand[];
   private activeCount: number = 0;
   private readonly MAX_COMMANDS: number;
 
+  /**
+   * Initializes the buffer with a fixed pool size.
+   *
+   * @param maxCommands - Maximum number of commands supported per frame.
+   */
   constructor(maxCommands: number = 2000) {
     this.MAX_COMMANDS = maxCommands;
     this.pool = new Array(maxCommands);
@@ -103,19 +122,20 @@ export class RenderCommandBuffer {
   }
 
   /**
-   * Reinicia el buffer para un nuevo frame.
+   * Resets the buffer for a new frame cycle.
    */
   public clear(): void {
     this.activeCount = 0;
   }
 
   /**
-   * Adds a render command to the buffer by updating the next available pooled object.
+   * Adds a render command by updating the next available pooled object.
    *
    * @param options - Visual configuration for the drawing operation.
+   *
    * @remarks
-   * If the internal `MAX_COMMANDS` limit is reached, subsequent calls will be ignored
-   * to preserve memory stability.
+   * If the `MAX_COMMANDS` limit is reached, subsequent calls are silently
+   * ignored to preserve stability.
    */
   public addCommand(options: DrawCommandOptions): void {
     if (this.activeCount >= this.MAX_COMMANDS) {
@@ -142,25 +162,27 @@ export class RenderCommandBuffer {
   }
 
   /**
-   * Devuelve el array de comandos. Solo los primeros `getCount()` elementos son válidos.
+   * Returns the command pool.
+   * @remarks
+   * Only the first {@link getCount} elements contain valid data for the current frame.
    */
   public getCommands(): readonly DrawCommand[] {
     return this.pool;
   }
 
   /**
-   * Obtiene la cantidad de comandos activos en el buffer.
+   * Returns the number of active commands in the current frame.
    */
   public getCount(): number {
     return this.activeCount;
   }
 
   /**
-   * Performs an in-place insertion sort on the active commands.
+   * Performs an in-place stable insertion sort on active commands.
    *
    * @remarks
-   * Optimized for nearly-sorted arrays, which is the typical case for Z-indices in 2D games.
-   * Preserves stability to prevent visual flickering of overlapping entities with the same Z-index.
+   * Optimized for nearly-sorted arrays, which is common for Z-indices in 2D games.
+   * Stability prevents visual flickering between entities sharing the same Z-index.
    */
   public sort(): void {
     for (let i = 1; i < this.activeCount; i++) {
@@ -168,12 +190,8 @@ export class RenderCommandBuffer {
       const keyZ = key.zIndex;
       let j = i - 1;
 
-      // Move elements of pool[0..i-1] that are greater than key.zIndex
-      // to one position ahead of their current position
       while (j >= 0 && this.pool[j].zIndex > keyZ) {
-        // We can't just assign pool[j+1] = pool[j] because they are references to pooled objects.
-        // We need to swap the contents or swap the references in the array.
-        // Since we want to keep the pool array as the source of truth, swapping references is better.
+        // Swap references in the pre-allocated pool array
         const temp = this.pool[j + 1];
         this.pool[j + 1] = this.pool[j];
         this.pool[j] = temp;

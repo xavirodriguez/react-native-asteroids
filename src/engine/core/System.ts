@@ -1,15 +1,18 @@
 import { World } from "./World";
 
 /**
- * Fases estándar para la ejecución de sistemas.
+ * Standard phases for system execution order.
  *
  * @remarks
- * Los sistemas se ejecutan en el siguiente orden secuencial:
- * 1. `Input` - Procesamiento de entrada de usuario o red.
- * 2. `Simulation` - Física, integración de movimiento y estados básicos.
- * 3. `Collision` - Detección y resolución de colisiones.
- * 4. `GameRules` - Lógica de alto nivel (puntuación, vidas, condiciones de victoria/derrota).
- * 5. `Presentation` - Sonido, efectos visuales y preparación de datos para el renderer.
+ * Systems are executed sequentially in this order:
+ * 1. `Input` - Processing user or network input.
+ * 2. `Simulation` - Physics integration, movement, and basic state logic.
+ * 3. `Collision` - Detection and resolution of collisions.
+ * 4. `GameRules` - High-level logic (scoring, health, win/loss conditions).
+ * 5. `Transform` - Hierarchy propagation and world matrix calculation.
+ * 6. `Presentation` - Audio, visual effects, and preparing data for the renderer.
+ *
+ * @public
  */
 export enum SystemPhase {
   Input = "Input",
@@ -21,52 +24,75 @@ export enum SystemPhase {
 }
 
 /**
- * Configuration for registering a system.
+ * Configuration for registering a system within the {@link World}.
  */
 export interface SystemConfig {
-  /** The phase in which the system should run. Defaults to {@link SystemPhase.Simulation}. */
+  /**
+   * The phase in which the system should run.
+   * Defaults to {@link SystemPhase.Simulation}.
+   */
   phase?: SystemPhase | string;
-  /** Execution priority within the phase. Higher priority runs first. */
+  /**
+   * Execution priority within the phase.
+   * Higher priority runs earlier.
+   */
   priority?: number;
 }
 
 /**
- * Clase base abstracta para todos los sistemas en la arquitectura ECS.
+ * Abstract base class for all ECS Systems.
+ *
+ * @responsibility Encapsulate game logic in a decoupled manner.
+ * @responsibility Transform world state based on time increments (ticks).
+ * @responsibility Maintain pure simulation by operating only on components and resources.
  *
  * @remarks
- * Los sistemas encapsulan la lógica y el comportamiento del juego. Generalmente operan sobre
- * conjuntos de componentes filtrados mediante queries. Aunque se recomienda que la lógica sea
- * mayoritariamente dependiente del estado del mundo, los sistemas pueden mantener cachés internos
- * o estados de coordinación específicos si es necesario.
+ * Systems encapsulate logic and behavior. They typically operate on sets of
+ * entities filtered via queries. While systems should mostly depend on
+ * {@link World} state, they may maintain internal caches or coordination
+ * state if required.
  *
- * El orden de ejecución se gestiona mediante {@link SystemPhase} y prioridades dentro de cada fase.
+ * Execution order is managed via {@link SystemPhase} and priorities.
  *
- * @responsibility Encapsular la lógica de comportamiento del juego de forma desacoplada.
- * @responsibility Transformar el estado del mundo basándose en el avance del tiempo (ticks).
- * @responsibility Mantener la simulación pura operando sobre componentes y recursos.
+ * @example
+ * ```ts
+ * class PhysicsSystem extends System {
+ *   update(world: World, deltaTime: number) {
+ *     const entities = world.query('Transform', 'Velocity');
+ *     for (const entity of entities) {
+ *       const transform = world.getComponent(entity, 'Transform');
+ *       const velocity = world.getComponent(entity, 'Velocity');
+ *       // Logic...
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @public
  */
 export abstract class System {
   /**
-   * Ejecuta la lógica del sistema para el tick de simulación actual.
+   * Executes the system logic for the current simulation tick.
    *
-   * @param world - La instancia del {@link World} sobre la que opera el sistema.
-   * @param deltaTime - Tiempo transcurrido desde el último tick en milisegundos.
+   * @param world - The {@link World} instance the system operates on.
+   * @param deltaTime - Elapsed time since last update in milliseconds.
    *
    * @remarks
-   * El sistema debe consultar entidades relevantes mediante {@link World.query} y aplicar
-   * transformaciones a sus componentes. Con el fin de favorecer la reproducibilidad y el soporte de rollback,
-   * se recomienda minimizar el uso de estado mutable interno no serializable dentro del sistema.
+   * Systems should query relevant entities via {@link World.query} and apply
+   * transformations. To support reproducibility and rollbacks, minimize the
+   * use of non-serializable internal mutable state.
    *
-   * @warning Realizar mutaciones estructurales directas en el `world` (crear/eliminar entidades o componentes)
-   * durante la iteración de sistemas puede invalidar los iteradores de las queries activas. Se recomienda usar
-   * {@link World.getCommandBuffer} para diferir estas operaciones.
+   * @warning **Structural Mutations**: Creating/removing entities or components
+   * during query iteration can invalidate iterators. Use {@link World.getCommandBuffer}
+   * to buffer these operations for the end of the tick.
    *
-   * @precondition Se espera que el `world` esté en un estado consistente al inicio del ciclo.
-   * @postcondition Se recomienda que las mutaciones realizadas respeten los contratos definidos por los componentes.
-   * @sideEffect Puede crear/eliminar entidades, añadir/quitar componentes o emitir eventos.
-   * @conceptualRisk [UNIT_CONSISTENCY][LOW] `deltaTime` se entrega en milisegundos. Algunos
-   * cálculos físicos (como integraciones de velocidad) pueden esperar segundos, lo que
-   * requiere una división manual por 1000.
+   * @precondition World state should be consistent at the start of the update cycle.
+   * @postcondition Mutations should respect component contracts.
+   * @sideEffect May create/remove entities, add/remove components, or emit events.
+   *
+   * @conceptualRisk [UNIT_CONSISTENCY][LOW] `deltaTime` is in milliseconds.
+   * Physics integrations (e.g., velocity) typically expect seconds, requiring
+   * division by 1000.
    */
   abstract update(world: World, deltaTime: number): void;
 }

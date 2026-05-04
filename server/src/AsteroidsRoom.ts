@@ -61,7 +61,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private ackTracker = new ClientAckTracker();
   private budgetManager = new NetworkBudgetManager();
   private deltaSystem = new NetworkDeltaSystem(this.replicationTracker);
-  private REPLICATION_MODE: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' = 'legacy';
+  private REPLICATION_MODE: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' = 'binary';
 
   private spawnAsteroids(count: number) {
     const gameplayRandom = RandomService.getInstance("gameplay");

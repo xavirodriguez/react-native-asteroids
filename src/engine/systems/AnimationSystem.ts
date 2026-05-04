@@ -3,33 +3,33 @@ import { World } from "../core/World";
 import { AnimatorComponent } from "../types/EngineTypes";
 
 /**
- * Sistema que gestiona la progresión de frames para entidades con AnimatorComponent.
+ * System managing frame progression for entities with an Animator component.
  *
- * @responsibility Gestionar la progresión de animaciones basadas en frames.
- * @responsibility Manejar bucles (loops) y callbacks de finalización (onComplete).
- *
- * @queries Animator
- * @mutates {@link AnimatorComponent} - Actualiza el índice de `frame` y el tiempo `elapsed`.
- * @executionOrder Fase: Presentation.
+ * @responsibility Handle frame progression for sprite or property animations.
+ * @responsibility Manage loops and execute completion hooks.
  *
  * @remarks
  * El sistema calcula cuántos frames deben avanzar basándose en los FPS de la animación
  * y el `deltaTime` acumulado. Soporta skipping de frames si el tick es lento.
  *
- * @conceptualRisk [PRECISION_DRIFT] El tiempo `elapsed` acumulado usa suma/módulo de punto
- * flotante, lo que puede derivar en sesiones muy largas.
- * @conceptualRisk [FRAME_SKIPPING] Valores grandes de `deltaTime` pueden causar que se
- * salten múltiples frames en un solo ciclo de actualización.
+ * ### Execution Order:
+ * Typically runs in the `Presentation` phase.
+ *
+ * @conceptualRisk [PRECISION_DRIFT] Accumulated `elapsed` time uses
+ * floating-point arithmetic, which may drift in extremely long sessions.
+ * @conceptualRisk [FRAME_SKIPPING] High `deltaTime` spikes can cause multiple
+ * frames to be skipped in a single update.
+ *
+ * @public
  */
 export class AnimationSystem extends System {
   /**
-   * Actualiza el frame de animación basado en el tiempo transcurrido.
+   * Updates animation frames for all active animators.
    *
-   * @param world - El mundo ECS.
-   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   * @param world - Target ECS world.
+   * @param deltaTime - [ms] Elapsed time since last update.
    *
-   * @precondition Las entidades deben poseer un {@link AnimatorComponent}.
-   * @postcondition El frame actual y el tiempo transcurrido del animator son actualizados.
+   * @postcondition The `frame` index and `elapsed` time of {@link AnimatorComponent} are updated.
    */
   public update(world: World, deltaTime: number): void {
     const animators = world.query("Animator");
