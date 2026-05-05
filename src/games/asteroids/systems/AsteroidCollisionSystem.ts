@@ -209,6 +209,14 @@ export class AsteroidCollisionSystem extends System {
     const position = world.getComponent<TransformComponent>(asteroidEntity, "Transform");
 
     if (asteroid && position) {
+      // 15% chance to spawn power-up when large asteroid is destroyed
+      if (asteroid.size === "large" && RandomService.getInstance("gameplay").chance(0.15)) {
+          const eventBus = world.getResource<EventBus>("EventBus");
+          if (eventBus) {
+              eventBus.emit("entity:destroyed", { entity: asteroidEntity, type: "Asteroid" });
+          }
+      }
+
       this.executeSplitStrategy(world, position, asteroid.size);
     }
     world.removeEntity(asteroidEntity);

@@ -9,7 +9,8 @@ import { usePongGame } from "@/hooks/usePongGame";
 
 export default function PongScreen() {
   const [started, setStarted] = useState(false);
-  const { game, gameState, handleInput, isReady } = usePongGame();
+  const [mode, setMode] = useState<"local" | "ai">("local");
+  const { game, gameState, handleInput, isReady } = usePongGame(mode);
 
   if (!game || !isReady) return null;
 
@@ -26,9 +27,24 @@ export default function PongScreen() {
         <Text style={styles.instructions}>
             {Platform.OS === "web" ? "P1: W/S  P2: Flechas" : "Modo Local"}
         </Text>
-        <TouchableOpacity style={styles.startButton} onPress={() => setStarted(true)}>
-          <Text style={styles.startButtonText}>EMPEZAR</Text>
-        </TouchableOpacity>
+
+        <View style={styles.buttonRow}>
+            <TouchableOpacity
+                style={[styles.startButton, mode === 'local' && styles.activeButton]}
+                onPress={() => { setMode('local'); setStarted(true); }}
+            >
+                <Text style={[styles.startButtonText, mode === 'local' && styles.activeButtonText]}>LOCAL</Text>
+            </TouchableOpacity>
+            <View style={{ width: 20 }} />
+            <TouchableOpacity
+                style={[styles.startButton, mode === 'ai' && styles.activeButton]}
+                onPress={() => { setMode('ai'); setStarted(true); }}
+            >
+                <Text style={[styles.startButtonText, mode === 'ai' && styles.activeButtonText]}>VS AI</Text>
+            </TouchableOpacity>
+        </View>
+
+        <Text style={styles.betaText}>Online próximamente</Text>
       </View>
     );
   }
@@ -78,6 +94,21 @@ export default function PongScreen() {
 }
 
 const styles = StyleSheet.create({
+  buttonRow: {
+    flexDirection: 'row',
+  },
+  activeButton: {
+    backgroundColor: 'white',
+  },
+  activeButtonText: {
+    color: 'black',
+  },
+  betaText: {
+    marginTop: 40,
+    color: '#666',
+    fontFamily: 'monospace',
+    fontSize: 14,
+  },
   container: {
     flex: 1,
     backgroundColor: "black",

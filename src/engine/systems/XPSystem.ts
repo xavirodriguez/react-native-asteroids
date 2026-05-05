@@ -32,6 +32,13 @@ export interface XPAccumulatorComponent {
  */
 export class XPSystem extends System {
   private accumulator: XPAccumulatorComponent;
+  private pendingStats: Partial<import("../../services/PlayerProfileService").PlayerProfile["stats"]> = {
+    asteroidsDestroyed: 0,
+    pipesPassed: 0,
+    siKills: 0,
+    pongSetsWon: 0,
+    totalPlaytimeTicks: 0
+  };
 
   /**
    * Inicializa el sistema de XP y configura los escuchas de eventos.
@@ -59,6 +66,8 @@ export class XPSystem extends System {
       this.accumulator.pendingXP += data.size === "large"
         ? XP_TABLE.asteroid_large_destroyed
         : XP_TABLE.asteroid_destroyed;
+
+      this.pendingStats.asteroidsDestroyed!++;
     });
 
     this.eventBus.on("asteroid:combo_changed", (data: { multiplier: number }) => {
@@ -71,12 +80,15 @@ export class XPSystem extends System {
 
     this.eventBus.on("pipe:passed", () => {
       this.accumulator.pendingXP += XP_TABLE.pipe_passed;
+      this.pendingStats.pipesPassed!++;
     });
 
     this.eventBus.on("si:kill", (data: { chain: number }) => {
       this.accumulator.pendingXP += data.chain >= 5
         ? XP_TABLE.si_chain_kill
         : XP_TABLE.si_kill;
+
+      this.pendingStats.siKills!++;
     });
 
     this.eventBus.on("si:boss_defeated", () => {
@@ -85,6 +97,7 @@ export class XPSystem extends System {
 
     this.eventBus.on("pong:set_won", () => {
       this.accumulator.pendingXP += XP_TABLE.pong_set_won;
+      this.pendingStats.pongSetsWon!++;
     });
 
     this.eventBus.on("pong:charged_smash", () => {
@@ -99,6 +112,14 @@ export class XPSystem extends System {
         }
         this.accumulator.pendingXP = 0;
       }
+
+      // Persist stats
+      await PlayerProfileService.updateStats("all", this.pendingStats);
+
+      // Reset pending stats
+      Object.keys(this.pendingStats).forEach(key => {
+          (this.pendingStats as any)[key] = 0;
+      });
     });
   }
 
@@ -118,5 +139,8 @@ export class XPSystem extends System {
     if (!world.getResource("XPAccumulator")) {
       world.setResource("XPAccumulator", this.accumulator);
     }
+
+    // Accumulate playtime ticks
+    this.pendingStats.totalPlaytimeTicks!++;
   }
 }

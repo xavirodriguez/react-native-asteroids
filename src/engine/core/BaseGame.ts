@@ -168,6 +168,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       this.audio.stopMusic();
     });
 
+    this.eventBus.on("audio:mute", (payload: { muted: boolean }) => {
+        this.audio.setMuted(payload.muted);
+    });
+
+    this.eventBus.on("audio:set_volume", (payload: { volume: number }) => {
+        this.audio.setVolume(payload.volume);
+    });
+
     // Semantic Audio Bridge: Mapping game events to audio effects
     // Uses emitDeferred to decouple from simulation
     this.eventBus.on("asteroid:destroyed", () => {
@@ -187,7 +195,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     });
 
     this.eventBus.on("powerup:collected", () => {
-        this.eventBus.emitDeferred("audio:play_sfx", { name: "hit" }); // Reusing hit for collection feedback
+        this.eventBus.emitDeferred("audio:play_sfx", { name: "powerup" });
+    });
+
+    this.eventBus.on("level:up", () => {
+        this.eventBus.emitDeferred("audio:play_sfx", { name: "level_up" });
+    });
+
+    this.eventBus.on("menu:select", () => {
+        this.eventBus.emitDeferred("audio:play_sfx", { name: "menu_select" });
     });
   }
 
@@ -231,14 +247,16 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
       // 5. REPLAY RECORDING
       const currentInput = this.unifiedInput.getInputState();
-      const inputFrame = {
-        tick: this.currentTick,
-        timestamp: Date.now(),
-        actions: currentInput.actions,
-        axes: currentInput.axes,
-        protocolVersion: 1 // TO-DO temporary fix
-      };
-      this.replayRecorder.recordTick(this.currentTick, { "local": [inputFrame] });
+      if (__DEV__) {
+        const inputFrame = {
+            tick: this.currentTick,
+            timestamp: Date.now(),
+            actions: currentInput.actions,
+            axes: currentInput.axes,
+            protocolVersion: 1 // TO-DO temporary fix
+        };
+        this.replayRecorder.recordTick(this.currentTick, { "local": [inputFrame] });
+      }
 
       // 6. DEFERRED EVENTS
       this.eventBus.processDeferred();

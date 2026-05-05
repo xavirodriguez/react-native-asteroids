@@ -107,7 +107,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       client.send("sync_tick", {
         protocolVersion: this.state.protocolVersion,
         serverTick: this.state.serverTick,
-        timestamp: data?.timestamp ?? 0
+        timestamp: (data?.timestamp && data.timestamp > 0) ? data.timestamp : Date.now()
       });
     });
 
@@ -164,9 +164,9 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     } as ShipComponent);
   }
 
-  async onLeave(client: Client, code: number) {
+  async onLeave(client: Client, _code: number) {
     try {
-      if (code === CloseCode.CONSENTED) throw new Error("consented leave");
+      if (_code === CloseCode.CONSENTED) throw new Error("consented leave");
       await this.allowReconnection(client, 10);
     } catch (_err) {
       this.state.players.delete(client.sessionId);

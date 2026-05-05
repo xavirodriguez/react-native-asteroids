@@ -1,81 +1,62 @@
-import fs from "fs";
+import Database from "better-sqlite3";
 import path from "path";
+import fs from "fs";
 
 interface LeaderboardEntry {
   playerId: string;
+  displayName: string;
   score: number;
 }
 
 /**
- * Server-side store for daily leaderboards.
- * Persists to JSON files to survive restarts.
+ * Server-side store for daily leaderboards using SQLite.
  */
 export class DailyLeaderboardStore {
-  private static STORAGE_DIR = path.join(process.cwd(), "data", "leaderboards");
-  private cache: Map<string, LeaderboardEntry[]> = new Map();
+  private db: Database.Database;
 
   constructor() {
-    if (!fs.existsSync(DailyLeaderboardStore.STORAGE_DIR)) {
-      fs.mkdirSync(DailyLeaderboardStore.STORAGE_DIR, { recursive: true });
-    }
-  }
-
-  private getKey(gameId: string, dateKey: string): string {
-    // Sanitize keys to prevent path traversal
-    const safeGameId = gameId.replace(/[^a-z0-9_-]/gi, "_");
-    const safeDateKey = dateKey.replace(/[^0-9]/g, "");
-    return `${safeGameId}_${safeDateKey}`;
-  }
-
-  public addScore(gameId: string, dateKey: string, playerId: string, score: number) {
-    const key = this.getKey(gameId, dateKey);
-    let entries = this.getEntries(gameId, dateKey);
-
-    const existingIndex = entries.findIndex(e => e.playerId === playerId);
-    if (existingIndex !== -1) {
-      if (score > entries[existingIndex].score) {
-        entries[existingIndex].score = score;
-      }
-    } else {
-      entries.push({ playerId, score });
+    const dataDir = path.join(process.cwd(), "data");
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
     }
 
-    // Sort by score descending
-    entries.sort((a, b) => b.score - a.score);
-    // Keep top 100
-    entries = entries.slice(0, 100);
+    this.db = new Database(path.join(dataDir, "leaderboards.db"));
+    this.init();
+  }
 
-    this.cache.set(key, entries);
-    this.flush(key, entries);
+  private init() {
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS scores (
+        gameId TEXT,
+        dateKey TEXT,
+        playerId TEXT,
+        displayName TEXT,
+        score INTEGER,
+        PRIMARY KEY (gameId, dateKey, playerId)
+      )
+    `);
+    this.db.exec(`CREATE INDEX IF NOT EXISTS idx_scores_lookup ON scores (gameId, dateKey, score DESC)`);
+  }
+
+  public addScore(gameId: string, dateKey: string, playerId: string, score: number, displayName: string = "Jugador") {
+    const stmt = this.db.prepare(`
+      INSERT INTO scores (gameId, dateKey, playerId, displayName, score)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(gameId, dateKey, playerId) DO UPDATE SET
+        score = MAX(excluded.score, scores.score),
+        displayName = excluded.displayName
+    `);
+    stmt.run(gameId, dateKey, playerId, displayName, score);
   }
 
   public getEntries(gameId: string, dateKey: string): LeaderboardEntry[] {
-    const key = this.getKey(gameId, dateKey);
-    if (this.cache.has(key)) {
-      return [...this.cache.get(key)!];
-    }
-
-    const filePath = path.join(DailyLeaderboardStore.STORAGE_DIR, `${key}.json`);
-    if (fs.existsSync(filePath)) {
-      try {
-        const data = fs.readFileSync(filePath, "utf-8");
-        const entries = JSON.parse(data);
-        this.cache.set(key, entries);
-        return [...entries];
-      } catch (e) {
-        console.error("Error reading leaderboard file", e);
-      }
-    }
-
-    return [];
-  }
-
-  private flush(key: string, entries: LeaderboardEntry[]) {
-    const filePath = path.join(DailyLeaderboardStore.STORAGE_DIR, `${key}.json`);
-    try {
-      fs.writeFileSync(filePath, JSON.stringify(entries));
-    } catch (e) {
-      console.error("Error writing leaderboard file", e);
-    }
+    const stmt = this.db.prepare(`
+      SELECT playerId, displayName, score
+      FROM scores
+      WHERE gameId = ? AND dateKey = ?
+      ORDER BY score DESC
+      LIMIT 100
+    `);
+    return stmt.all(gameId, dateKey) as LeaderboardEntry[];
   }
 }
