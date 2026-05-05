@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { LeaderboardService } from '../src/services/LeaderboardService';
+import { LeaderboardService } from '../services/LeaderboardService';
 
 interface LeaderboardOverlayProps {
   gameId: string;

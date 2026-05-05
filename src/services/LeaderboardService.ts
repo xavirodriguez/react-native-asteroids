@@ -11,7 +11,9 @@ export class LeaderboardService {
     gameId: string,
     dateKey: string,
     score: number,
-    playerId: string
+    playerId: string,
+    displayName: string,
+    seed?: number
   ): Promise<boolean> {
     try {
       const response = await fetch(`${this.BASE_URL}/daily-score`, {
@@ -19,7 +21,15 @@ export class LeaderboardService {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ gameId, dateKey, score, playerId }),
+        body: JSON.stringify({
+          gameId,
+          dateKey,
+          score,
+          playerId,
+          displayName,
+          seed,
+          clientVersion: "1.0.0"
+        }),
       });
       return response.ok;
     } catch (e) {

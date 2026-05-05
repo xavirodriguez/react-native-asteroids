@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { DailyChallengeService } from '../src/services/DailyChallengeService';
-import { MutatorService } from '../src/services/MutatorService';
+import { DailyChallengeService } from '../services/DailyChallengeService';
+import { MutatorService } from '../services/MutatorService';
 
 interface DailyChallengeCardProps {
   onPlay: (gameId: string, seed: number) => void;

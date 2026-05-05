@@ -63,11 +63,17 @@ export class DailyChallengeService {
   }
 
   /**
-   * Marks the daily attempt as used and stores the score.
+   * Marks the daily attempt and stores the score if it's the best so far for today.
    */
   public static async markAttemptAsUsed(gameId: string, score: number, seed: number, completedAt: number): Promise<void> {
     const dateKey = this.getDateKey();
     const key = `daily:${gameId}:${dateKey}`;
+
+    const existingScore = await this.getTodayScore(gameId);
+    if (existingScore !== null && score <= existingScore) {
+        return; // Keep existing best score
+    }
+
     const attempt: DailyAttempt = {
       gameId,
       dateKey,

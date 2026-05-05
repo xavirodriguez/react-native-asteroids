@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { PlayerProfile } from '../src/services/PlayerProfileService';
-import { LEVEL_THRESHOLDS } from '../src/config/PassportConfig';
+import { PlayerProfile } from '../services/PlayerProfileService';
+import { LEVEL_THRESHOLDS } from '../config/PassportConfig';
 
 interface PassportOverlayProps {
   profile: PlayerProfile;
