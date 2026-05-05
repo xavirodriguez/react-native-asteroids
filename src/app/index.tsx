@@ -7,6 +7,7 @@ import { PlayerProfileService, PlayerProfile } from "../services/PlayerProfileSe
 import { PassportOverlay } from "../components/PassportOverlay";
 import { DailyChallengeCard } from "../components/DailyChallengeCard";
 import { LeaderboardOverlay } from "../components/LeaderboardOverlay";
+import { MULTIPLAYER_CONFIG } from "../config/MultiplayerConfig";
 
 interface GameEntry {
   id: string;
@@ -44,9 +45,14 @@ export default function HomeScreen() {
   }, []);
 
   const handlePlayDaily = (gameId: string, seed: number) => {
+      const path = gameId === "asteroids" ? "/asteroids" :
+                 gameId === "pong" ? "/pong" :
+                 gameId === "flappybird" ? "/flappybird" :
+                 "/space-invaders";
+
       // For MVP we just navigate to asteroids with the seed
       router.push({
-          pathname: "/asteroids",
+          pathname: path as any,
           params: { seed: seed.toString(), isDaily: "true" }
       });
   };

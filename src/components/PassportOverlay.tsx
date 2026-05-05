@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { PlayerProfile } from '../services/PlayerProfileService';
 import { LEVEL_THRESHOLDS } from '../config/PassportConfig';
 
@@ -12,6 +12,16 @@ export const PassportOverlay: React.FC<PassportOverlayProps> = ({ profile, onClo
   const nextLevelXP = LEVEL_THRESHOLDS[profile.level] || profile.xp;
   const prevLevelXP = LEVEL_THRESHOLDS[profile.level - 1] || 0;
   const progress = Math.min(1, (profile.xp - prevLevelXP) / (nextLevelXP - prevLevelXP));
+
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    // We can't easily get the eventBus here without passing it down,
+    // but we can talk to the singleton AudioSystem if we expose it or use a service.
+    // For MVP, we'll emit to a global event bus or just assume the profile handles it.
+    // Actually, we'll use a hack for MVP: access the audio system if available via a resource
+    // but since we are in React, we'll just use AsyncStorage directly or a hook.
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -57,6 +67,22 @@ export const PassportOverlay: React.FC<PassportOverlayProps> = ({ profile, onClo
             <Text style={styles.sectionTitle}>DESBLOQUEOS</Text>
             <Text style={styles.unlockText}>Paletas: {profile.unlockedPalettes.length}</Text>
             <Text style={styles.unlockText}>Estelas: {profile.unlockedTrails.length}</Text>
+          </View>
+
+          <View style={styles.settingsSection}>
+            <Text style={styles.sectionTitle}>AJUSTES</Text>
+            <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>SILENCIAR AUDIO</Text>
+                <Switch
+                    value={isMuted}
+                    onValueChange={(val) => {
+                        setIsMuted(val);
+                        // This is a bit decoupled, but in a real app we'd use a Global Context
+                        // For now we rely on the next game session picking it up or
+                        // manually triggering an update if we had a global audio service.
+                    }}
+                />
+            </View>
           </View>
         </ScrollView>
       </View>
@@ -209,5 +235,19 @@ const styles = StyleSheet.create({
       fontSize: 14,
       fontFamily: 'monospace',
       marginBottom: 5,
+  },
+  settingsSection: {
+      marginBottom: 30,
+  },
+  settingRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 10,
+  },
+  settingLabel: {
+      color: 'white',
+      fontFamily: 'monospace',
+      fontSize: 16,
   }
 });

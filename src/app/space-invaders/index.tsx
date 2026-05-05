@@ -18,6 +18,7 @@ import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
 import { SpaceInvadersGame } from "@/games/space-invaders/SpaceInvadersGame";
+import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 
 export default function SpaceInvadersScreen() {
   const [started, setStarted] = useState(false);
@@ -218,10 +219,17 @@ const StartScreen: React.FC<{
             <TouchableOpacity style={styles.startButton} onPress={onStart}>
                 <Text style={styles.startButtonText}>SOLO</Text>
             </TouchableOpacity>
-            <View style={{ width: 20 }} />
-            <TouchableOpacity style={[styles.startButton, { backgroundColor: '#444' }]} onPress={onStartMulti}>
-                <Text style={[styles.startButtonText, { color: 'white' }]}>MULTI</Text>
-            </TouchableOpacity>
+
+            {MULTIPLAYER_CONFIG.STATE !== 'hidden' && (
+                <>
+                    <View style={{ width: 20 }} />
+                    <TouchableOpacity style={[styles.startButton, { backgroundColor: '#444' }]} onPress={onStartMulti}>
+                        <Text style={[styles.startButtonText, { color: 'white' }]}>
+                            MULTI {MULTIPLAYER_CONFIG.STATE === 'beta' ? '(BETA)' : ''}
+                        </Text>
+                    </TouchableOpacity>
+                </>
+            )}
         </View>
       </View>
     </SafeAreaProvider>

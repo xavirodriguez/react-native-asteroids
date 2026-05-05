@@ -19,11 +19,12 @@ export class ReplayRecorder {
   private frames: ReplayFrame[] = [];
   private head: number = 0;
   private count: number = 0;
-  private readonly MAX_FRAMES = 10000; // 10,000 frames (~2.7 minutes at 60fps)
+  private readonly MAX_FRAMES = 1800; // 60 seconds @ 30 FPS or ~30s @ 60 FPS
   private isRecording: boolean = false;
   private currentTick: number = 0;
 
   public startRecording(): void {
+    if (!this.isEnabled()) return;
     this.frames = new Array(this.MAX_FRAMES);
     this.head = 0;
     this.count = 0;
@@ -66,7 +67,7 @@ export class ReplayRecorder {
    * @postcondition Se añade un nuevo frame a la colección interna.
    */
   public recordTick(tick: number, inputs: Record<string, InputFrame[]>): void {
-    if (!this.isRecording) return;
+    if (!this.isRecording || !this.isEnabled()) return;
 
     this.currentTick = tick;
 
@@ -80,6 +81,15 @@ export class ReplayRecorder {
     this.head = (this.head + 1) % this.MAX_FRAMES;
     if (this.count < this.MAX_FRAMES) {
       this.count++;
+    }
+  }
+
+  private isEnabled(): boolean {
+    // Only enable in development or if debug flag is set
+    try {
+        return (__DEV__ || (globalThis as any).DEBUG_REPLAY === true);
+    } catch {
+        return false;
     }
   }
 }

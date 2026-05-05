@@ -19,6 +19,7 @@ import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
 import { FlappyBirdGame } from "@/games/flappybird/FlappyBirdGame";
 import { FlappyBirdInput } from "@/games/flappybird/types/FlappyBirdTypes";
+import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 
 export default function FlappyBirdScreen() {
   const [started, setStarted] = useState(false);
@@ -217,10 +218,17 @@ const StartScreen: React.FC<{
             <TouchableOpacity style={styles.startButton} onPress={onStart}>
                 <Text style={styles.startButtonText}>SOLO</Text>
             </TouchableOpacity>
-            <View style={{ width: 20 }} />
-            <TouchableOpacity style={[styles.startButton, { backgroundColor: '#444' }]} onPress={onStartMulti}>
-                <Text style={[styles.startButtonText, { color: 'white' }]}>MULTI</Text>
-            </TouchableOpacity>
+
+            {MULTIPLAYER_CONFIG.STATE !== 'hidden' && (
+                <>
+                    <View style={{ width: 20 }} />
+                    <TouchableOpacity style={[styles.startButton, { backgroundColor: '#444' }]} onPress={onStartMulti}>
+                        <Text style={[styles.startButtonText, { color: 'white' }]}>
+                            MULTI {MULTIPLAYER_CONFIG.STATE === 'beta' ? '(BETA)' : ''}
+                        </Text>
+                    </TouchableOpacity>
+                </>
+            )}
         </View>
       </View>
     </SafeAreaProvider>

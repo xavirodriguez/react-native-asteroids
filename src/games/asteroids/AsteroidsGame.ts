@@ -9,6 +9,7 @@ import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { UfoSystem } from "./systems/UfoSystem";
 import { StatusEffectSystem } from "../../engine/systems/StatusEffectSystem";
 import { LootSystem } from "../../engine/systems/LootSystem";
+import { ModifierSystem } from "../../engine/systems/ModifierSystem";
 import { PowerUpSystem } from "../../engine/systems/PowerUpSystem";
 import { JuiceSystem } from "../../engine/systems/JuiceSystem";
 import { SpatialPartitioningSystem } from "../../engine/systems/SpatialPartitioningSystem";
@@ -497,6 +498,8 @@ export class AsteroidsGame
     this.world.addSystem(new SpatialPartitioningSystem());
     this.world.addSystem(new LootSystem());
     this.world.addSystem(new PowerUpSystem());
+    this.world.addSystem(new ModifierSystem());
+
     this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
     this.world.addSystem(new AsteroidRenderSystem()); // Handle trails
 
