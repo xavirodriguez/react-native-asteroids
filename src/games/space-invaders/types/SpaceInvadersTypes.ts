@@ -89,6 +89,7 @@ export interface GameStateComponent extends Component {
   highScoreCandidate?: number;
   screenShake?: { intensity: number; duration: number } | null;
   kamikazesActive: number;
+  gameOverLogged?: boolean;
 }
 
 /**

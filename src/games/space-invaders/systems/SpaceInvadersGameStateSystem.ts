@@ -1,28 +1,18 @@
-import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
 import { spawnInvaderWave } from "../EntityFactory";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";
+import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
 
 /**
  * System that manages the overall game state, level progression, and game over.
  */
-export class SpaceInvadersGameStateSystem extends System {
-  private game: ISpaceInvadersGame;
-
+export class SpaceInvadersGameStateSystem extends BaseGameStateSystem<GameStateComponent> {
   constructor(game: ISpaceInvadersGame) {
-    super();
-    this.game = game;
+    super(game as any);
   }
 
-  public update(world: World, deltaTime: number): void {
-    const gameState = world.getSingleton<GameStateComponent>("GameState");
-    if (!gameState) return;
-
-    if (gameState.isGameOver) {
-      return;
-    }
-
+  protected updateGameState(world: World, gameState: GameStateComponent, deltaTime: number): void {
     // 1. Count remaining invaders
     const invaders = world.query("Invader");
     gameState.invadersRemaining = invaders.length;
@@ -52,19 +42,21 @@ export class SpaceInvadersGameStateSystem extends System {
     }
   }
 
-  public isGameOver(): boolean {
-    const world = this.game.getWorld();
-    const entities = world.query("GameState");
-    if (entities.length === 0) return false;
-    const gameState = world.getComponent<GameStateComponent>(entities[0], "GameState");
-    return gameState?.isGameOver || false;
+  protected getGameState(world: World): GameStateComponent | undefined {
+    return world.getSingleton<GameStateComponent>("GameState");
   }
 
-  public resetGameOverState(): void {
-    const world = this.game.getWorld();
-    const gameState = world.getSingleton<GameStateComponent>("GameState");
+  protected evaluateGameOverCondition(state: GameStateComponent): boolean {
+    return state.isGameOver || state.lives <= 0;
+  }
+
+  public resetGameOverState(world?: World): void {
+    const w = world || this._world;
+    if (!w) return;
+    const gameState = w.getSingleton<GameStateComponent>("GameState");
     if (!gameState) return;
     gameState.isGameOver = false;
+    gameState.gameOverLogged = false;
     gameState.score = 0;
     gameState.level = 1;
     gameState.lives = 3;

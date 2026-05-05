@@ -62,4 +62,17 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
     // Note: The logic for setting isGameOver might be elsewhere or handled by collision
     return state.isGameOver;
   }
+
+  public resetGameOverState(world?: World): void {
+    const w = world || this._world;
+    if (w) {
+        const state = this.getGameState(w);
+        if (state) {
+            state.gameOverLogged = false;
+            state.isGameOver = false;
+            state.score = 0;
+            state.pipeSpawnTimer = 0;
+        }
+    }
+  }
 }

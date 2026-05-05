@@ -46,7 +46,16 @@ export default function AsteroidsScreen() {
       const score = gameState.score;
       dailySubmittedRef.current = true;
       DailyChallengeService.markAttemptAsUsed("asteroids", score, seed, 0);
-      LeaderboardService.submitDailyScore("asteroids", DailyChallengeService.getDateKey(), score, playerName);
+      PlayerProfileService.getProfile().then(profile => {
+        LeaderboardService.submitDailyScore(
+          "asteroids",
+          DailyChallengeService.getDateKey(),
+          score,
+          profile.playerId,
+          playerName,
+          seed
+        );
+      });
       setShowDailyResults(true);
     }
     if (!gameState?.isGameOver) {
