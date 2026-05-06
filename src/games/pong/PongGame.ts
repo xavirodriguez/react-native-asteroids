@@ -56,7 +56,22 @@ export class PongGame extends BaseGame<PongState, PongInput> {
       ? mutators.reduce((cfg, m) => m.apply(cfg), { ...PONG_CONFIG }) as typeof PONG_CONFIG
       : { ...PONG_CONFIG };
 
+    await this.onPreloadAssets();
     await super.init();
+  }
+
+  private async onPreloadAssets(): Promise<void> {
+    const audio = this.audio;
+    try {
+      await Promise.all([
+        audio.loadSFX("hit", "/assets/audio/hit.mp3"),
+        audio.loadSFX("score", "/assets/audio/score.mp3"),
+        audio.loadSFX("wall", "/assets/audio/hit.mp3"),
+        audio.loadSFX("game_over", "/assets/audio/game_over.mp3"),
+      ]);
+    } catch (e) {
+      console.warn("[Pong] Asset preloading failed.", e);
+    }
   }
 
   protected registerSystems(): void {

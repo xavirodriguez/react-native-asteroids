@@ -7,6 +7,10 @@ import { DailyLeaderboardStore } from "./DailyLeaderboardStore";
 
 const leaderboardStore = new DailyLeaderboardStore();
 
+// Simple in-memory rate limiter for score submissions
+const submissionTimestamps = new Map<string, number>();
+const SUBMISSION_COOLDOWN = 10000; // 10 seconds
+
 const gameServer = defineServer({
   presence: new LocalPresence(),
   driver: new LocalDriver(),
@@ -29,6 +33,14 @@ gameServer.listen(2567).then((server) => {
   server.app.post("/daily-score", (req, res) => {
     const { gameId, dateKey, playerId, score, displayName } = req.body;
     if (!gameId || !dateKey || !playerId || score === undefined) return res.status(400).send("Missing body fields");
+
+    // Basic Rate Limiting
+    const now = Date.now();
+    const lastSubmission = submissionTimestamps.get(playerId) || 0;
+    if (now - lastSubmission < SUBMISSION_COOLDOWN) {
+        return res.status(429).send("Too many submissions. Please wait.");
+    }
+    submissionTimestamps.set(playerId, now);
 
     // Validation
     const validGames = ["asteroids", "spaceinvaders", "flappybird", "pong"];

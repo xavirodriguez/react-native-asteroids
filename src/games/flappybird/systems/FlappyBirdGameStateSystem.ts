@@ -59,7 +59,6 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
   }
 
   protected evaluateGameOverCondition(state: FlappyBirdState): boolean {
-    // Note: The logic for setting isGameOver might be elsewhere or handled by collision
     return state.isGameOver;
   }
 
