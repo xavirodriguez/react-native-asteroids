@@ -146,6 +146,18 @@ export function drawSkiaAsteroidStarField(canvas: SkCanvas, stars: Star[], width
 
 export function drawSkiaAsteroidShipTrail(canvas: SkCanvas, trail: TrailComponent, paint: SkPaint, shipSize: number, headX?: number, headY?: number): void {
     if (typeof Skia === "undefined" || !Skia.Color) return;
+
+    // Pre-calculate inverse transform to map world coordinates to local space
+    // because the entity's transform is active on the canvas.
+    const matrix = canvas.getTotalMatrix();
+    const inverse = Skia.Matrix();
+    const hasInverse = matrix.invert(inverse);
+
+    canvas.save();
+    if (hasInverse) {
+        canvas.concat(inverse);
+    }
+
     paint.setColor(Skia.Color("cyan"));
     paint.setStyle(Skia.PaintStyle.Fill);
     for (let i = 0; i < trail.count; i++) {
@@ -157,9 +169,11 @@ export function drawSkiaAsteroidShipTrail(canvas: SkCanvas, trail: TrailComponen
           : trail.points[index];
 
         if (!p) continue;
+
         const ratio = i / trail.count;
         paint.setAlphaf(ratio * 0.4);
         const currentSize = 1 + ratio * (shipSize / 3);
         canvas.drawCircle(p.x, p.y, currentSize, paint);
     }
+    canvas.restore();
 }

@@ -91,7 +91,8 @@ export class SpaceInvadersGame
 
   public getGameState(): GameStateComponent {
     const world = this.getWorld();
-    return world.getSingleton<GameStateComponent>("GameState") || INITIAL_GAME_STATE;
+    const state = world.getSingleton<GameStateComponent>("GameState");
+    return state ? { ...state } : INITIAL_GAME_STATE;
   }
 
   public getWorld(): World {

@@ -80,7 +80,8 @@ export function useGame<
       const isPausedNow = updatedGame.isPausedState();
       if (isPausedNow !== isPausedRef.current || now - lastUpdateTime >= UI_UPDATE_INTERVAL) {
         isPausedRef.current = isPausedNow;
-        setGameState(state);
+        // Always spread to guarantee a new object reference for React reconciliation
+        setGameState({ ...state });
         setIsPaused(isPausedNow);
         forceUpdate((v) => v + 1);
         lastUpdateTime = now;
