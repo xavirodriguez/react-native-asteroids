@@ -6,7 +6,6 @@ import { TransformComponent, VelocityComponent } from "../../../engine/types/Eng
 import { EventBus } from "../../../engine/core/EventBus";
 
 export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
-  private state: PongState = { type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1 };
 
   constructor(private config: typeof PONG_CONFIG = PONG_CONFIG) {
     super();
@@ -16,10 +15,6 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
     void deltaTime;
 
     if (state.isGameOver) {
-        this.state.scoreP1 = state.scoreP1;
-        this.state.scoreP2 = state.scoreP2;
-        this.state.isGameOver = state.isGameOver;
-        this.state.winner = state.winner;
         return;
     }
 
@@ -30,31 +25,34 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
         const vel = world.getComponent<VelocityComponent>(ballEntity, "Velocity")!;
 
         if (pos.x < 0) {
-            state.scoreP2++;
+            world.mutateSingleton<PongState>("PongState", (gs) => {
+                gs.scoreP2++;
+            });
             this.resetBall(pos, vel, "right");
         } else if (pos.x > this.config.WIDTH) {
-            state.scoreP1++;
+            world.mutateSingleton<PongState>("PongState", (gs) => {
+                gs.scoreP1++;
+            });
             this.resetBall(pos, vel, "left");
         }
 
-        if (state.scoreP1 >= this.config.WIN_SCORE) {
-            state.isGameOver = true;
-            state.winner = 1;
+        const currentState = this.getGameState(world);
+        if (currentState && currentState.scoreP1 >= this.config.WIN_SCORE) {
+            world.mutateSingleton<PongState>("PongState", (gs) => {
+                gs.isGameOver = true;
+                gs.winner = 1;
+            });
             const eventBus = world.getResource<EventBus>("EventBus");
             if (eventBus) {
                 eventBus.emit("pong:set_won");
             }
-        } else if (state.scoreP2 >= this.config.WIN_SCORE) {
-            state.isGameOver = true;
-            state.winner = 2;
+        } else if (currentState && currentState.scoreP2 >= this.config.WIN_SCORE) {
+            world.mutateSingleton<PongState>("PongState", (gs) => {
+                gs.isGameOver = true;
+                gs.winner = 2;
+            });
         }
     });
-
-    // Update local state from singleton AFTER logic to reduce 1-frame lag
-    this.state.scoreP1 = state.scoreP1;
-    this.state.scoreP2 = state.scoreP2;
-    this.state.isGameOver = state.isGameOver;
-    this.state.winner = state.winner;
   }
 
   private resetBall(pos: TransformComponent, vel: VelocityComponent, direction: "left" | "right"): void {
@@ -73,24 +71,15 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
     return state.isGameOver;
   }
 
-  public getState(): PongState {
-    return this.state;
-  }
-
   public resetGameOverState(world?: World): void {
-    this.state.isGameOver = false;
-    this.state.scoreP1 = 0;
-    this.state.scoreP2 = 0;
-    this.state.winner = undefined;
-
     if (world) {
-        const state = world.getSingleton<PongState>("PongState");
-        if (state) {
+        world.mutateSingleton<PongState>("PongState", (state) => {
             state.isGameOver = false;
             state.scoreP1 = 0;
             state.scoreP2 = 0;
             state.winner = undefined;
-        }
+            state.gameOverLogged = false;
+        });
     }
   }
 }

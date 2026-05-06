@@ -146,7 +146,8 @@ export class FlappyBirdGame
   }
 
   public getGameState(): FlappyBirdState {
-    return this.getWorld().getSingleton<FlappyBirdState>("FlappyState") || { ...INITIAL_FLAPPY_STATE };
+    const state = this.getWorld().getSingleton<FlappyBirdState>("FlappyState");
+    return state ? { ...state } : INITIAL_FLAPPY_STATE;
   }
 
   public isGameOver(): boolean {

@@ -564,7 +564,8 @@ export class AsteroidsGame
   }
 
   public getGameState(): GameStateComponent {
-    return this.getWorld().getSingleton<GameStateComponent>("GameState") ?? INITIAL_GAME_STATE;
+    const state = this.getWorld().getSingleton<GameStateComponent>("GameState");
+    return state ? { ...state } : INITIAL_GAME_STATE;
   }
 
   public isGameOver(): boolean {

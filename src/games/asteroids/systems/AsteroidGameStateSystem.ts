@@ -68,7 +68,7 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
     deltaTime: number;
   }): void {
     const { world, deltaTime } = context;
-    const ships = world.query("Ship", "Health", "Input");
+    const ships = world.query("Ship", "Health");
     if (ships.length === 0) return;
 
     const shipEntity = ships[0];
