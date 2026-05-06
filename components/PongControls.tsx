@@ -7,6 +7,7 @@ interface PongControlsProps {
   onP1Down: (pressed: boolean) => void;
   onP2Up: (pressed: boolean) => void;
   onP2Down: (pressed: boolean) => void;
+  showP2Controls?: boolean;
 }
 
 export const PongControls: React.FC<PongControlsProps> = ({
@@ -14,6 +15,7 @@ export const PongControls: React.FC<PongControlsProps> = ({
   onP1Down,
   onP2Up,
   onP2Down,
+  showP2Controls = true,
 }) => {
   const isTouch = useTouchDevice();
   if (!isTouch) return null;
@@ -37,22 +39,24 @@ export const PongControls: React.FC<PongControlsProps> = ({
         </TouchableOpacity>
       </View>
 
-      <View style={styles.side}>
-        <TouchableOpacity
-          style={styles.touchArea}
-          onPressIn={() => onP2Up(true)}
-          onPressOut={() => onP2Up(false)}
-        >
-          <Text style={styles.hint}>P2 UP</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.touchArea}
-          onPressIn={() => onP2Down(true)}
-          onPressOut={() => onP2Down(false)}
-        >
-          <Text style={styles.hint}>P2 DOWN</Text>
-        </TouchableOpacity>
-      </View>
+      {showP2Controls && (
+        <View style={styles.side}>
+          <TouchableOpacity
+            style={styles.touchArea}
+            onPressIn={() => onP2Up(true)}
+            onPressOut={() => onP2Up(false)}
+          >
+            <Text style={styles.hint}>P2 UP</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.touchArea}
+            onPressIn={() => onP2Down(true)}
+            onPressOut={() => onP2Down(false)}
+          >
+            <Text style={styles.hint}>P2 DOWN</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 };

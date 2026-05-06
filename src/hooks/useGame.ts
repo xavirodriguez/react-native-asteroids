@@ -3,9 +3,15 @@ import { useKeepAwake } from "./useKeepAwake";
 import type { BaseGame } from "../engine/core/BaseGame";
 import type { DebugManager } from "../engine/debug/DebugManager";
 
+export type GameConfig = {
+  isMultiplayer?: boolean;
+  seed?: number;
+  gameOptions?: Record<string, unknown>;
+};
+
 // Constructor type - accepts any class that extends BaseGame
 type GameConstructor<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, unknown>> =
-  new (config: { isMultiplayer?: boolean, seed?: number }) => TGame;
+  new (config: GameConfig) => TGame;
 
 export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, boolean>> {
   game: TGame | null;
@@ -32,6 +38,8 @@ export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, T
  *    previniendo fugas de memoria (timers, event listeners).
  * 4. **Keep Awake**: Mantiene la pantalla encendida mientras el juego está activo.
  */
+const DEFAULT_OPTIONS = {};
+
 export function useGame<
   TGame extends BaseGame<TState, TInput>,
   TState,
@@ -39,7 +47,8 @@ export function useGame<
 >(
   GameClass: GameConstructor<TGame, TState, TInput>,
   initialState: TState | null = null,
-  isMultiplayer: boolean = false
+  isMultiplayer: boolean = false,
+  options: Omit<GameConfig, "isMultiplayer"> = DEFAULT_OPTIONS
 ): UseGameResult<TGame, TState, TInput> {
 
   const [game, setGame] = useState<TGame | null>(null);
@@ -57,7 +66,10 @@ export function useGame<
 
   useEffect(() => {
     let isMounted = true;
-    const gameInstance = new GameClass({ isMultiplayer });
+    const gameInstance = new GameClass({
+      isMultiplayer,
+      ...options,
+    });
     setIsReady(false);
 
     // Async initialization
@@ -94,8 +106,8 @@ export function useGame<
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       gameInstance.destroy();
     };
-  // Re-initialize if multiplayer mode or game class changes
-  }, [GameClass, isMultiplayer]);
+  // Re-initialize if multiplayer mode, game class or options change
+  }, [GameClass, isMultiplayer, options]);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
     game?.setInput(input as Record<string, boolean>);
