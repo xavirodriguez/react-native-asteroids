@@ -76,6 +76,7 @@ export default function PongScreen() {
           onP1Down={(pressed) => handleInput({ p1Down: pressed })}
           onP2Up={(pressed) => handleInput({ p2Up: pressed })}
           onP2Down={(pressed) => handleInput({ p2Down: pressed })}
+          showP2Controls={mode === "local"}
         />
 
         <DebugOverlay game={game} />
