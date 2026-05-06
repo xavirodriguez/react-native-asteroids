@@ -137,6 +137,13 @@ export const createBullet = ({ world, x, y, angle, ownerId }: { world: World; x:
   world.addComponent(bullet, { type: "TTL", remaining: GAME_CONFIG.BULLET_TTL, total: GAME_CONFIG.BULLET_TTL } as TTLComponent);
   world.addComponent(bullet, { type: "Bullet", ownerId } as BulletComponent);
   world.addComponent(bullet, { type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
+  world.addComponent(bullet, {
+    type: "Boundary",
+    x: 0, y: 0,
+    width: GAME_CONFIG.SCREEN_WIDTH,
+    height: GAME_CONFIG.SCREEN_HEIGHT,
+    behavior: "wrap",
+  } as BoundaryComponent);
   return bullet;
 };
 

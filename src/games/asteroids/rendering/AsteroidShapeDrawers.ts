@@ -126,6 +126,11 @@ export function drawAsteroidCRTEffect(ctx: CanvasRenderingContext2D, width: numb
 }
 
 export function drawAsteroidShipTrail(ctx: CanvasRenderingContext2D, trail: TrailComponent, shipSize: number, headX?: number, headY?: number): void {
+    // Pre-calculate world-to-local transform if a specific head position (entity) is provided
+    // This drawer is called while the entity transform is active in the context.
+    const transform = ctx.getTransform();
+    const inverse = transform.inverse();
+
     // Improvement 2: Trail cyan with alpha/size fade
     for (let i = 0; i < trail.count; i++) {
       // Iterar desde el punto más antiguo al más nuevo en el buffer circular
@@ -138,6 +143,9 @@ export function drawAsteroidShipTrail(ctx: CanvasRenderingContext2D, trail: Trai
 
       if (!p) continue;
 
+      // Transform world point p to local space because entity transform is active
+      const localP = inverse.transformPoint(new DOMPoint(p.x, p.y));
+
       const ratio = i / trail.count;
       const alpha = ratio * 0.4;
       const currentSize = 1 + ratio * (shipSize / 3); // Improvement 2: size fade
@@ -145,7 +153,7 @@ export function drawAsteroidShipTrail(ctx: CanvasRenderingContext2D, trail: Trai
       ctx.globalAlpha = alpha;
       ctx.fillStyle = "#00ffff";
       ctx.beginPath();
-      ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
+      ctx.arc(localP.x, localP.y, currentSize, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.globalAlpha = 1.0;

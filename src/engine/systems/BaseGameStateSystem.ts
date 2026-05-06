@@ -62,6 +62,12 @@ export abstract class BaseGameStateSystem<TState extends IGameState> extends Sys
       if (state.gameOverLogged !== true) {
         state.gameOverLogged = true;
         this.gameInstance?.pause();
+
+        // Emit global game:over event for systems like XPSystem
+        const eventBus = this._world?.getResource<import("../core/EventBus").EventBus>("EventBus");
+        if (eventBus) {
+          eventBus.emit("game:over", { gameId: (this.gameInstance as any)?.gameId });
+        }
       }
     } else {
       state.gameOverLogged = false;

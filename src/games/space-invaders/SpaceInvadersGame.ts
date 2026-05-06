@@ -6,6 +6,8 @@ import { ISpaceInvadersGame } from "./types/GameInterfaces";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
 import { SpaceInvadersGameScene } from "./scenes/SpaceInvadersGameScene";
 import { Renderer } from "../../engine/rendering/Renderer";
+import { LootSystem } from "../../engine/systems/LootSystem";
+import { PowerUpSystem } from "../../engine/systems/PowerUpSystem";
 import {
   drawSpaceInvadersPlayer,
   drawSpaceInvadersInvader,
@@ -49,8 +51,23 @@ export class SpaceInvadersGame
       ? mutators.reduce((cfg, m) => m.apply(cfg), { ...GAME_CONFIG }) as typeof GAME_CONFIG
       : { ...GAME_CONFIG };
 
+    await this.onPreloadAssets();
     await super.init();
     await this.registerSystemsAsync();
+  }
+
+  private async onPreloadAssets(): Promise<void> {
+    const audio = this.audio;
+    try {
+      await Promise.all([
+        audio.loadSFX("shoot", "/assets/audio/shoot.mp3"),
+        audio.loadSFX("explosion", "/assets/audio/explosion.mp3"),
+        audio.loadSFX("hit", "/assets/audio/hit.mp3"),
+        audio.loadSFX("game_over", "/assets/audio/game_over.mp3"),
+      ]);
+    } catch (e) {
+      console.warn("[SpaceInvaders] Asset preloading failed.", e);
+    }
   }
 
   protected registerSystems(): void {
@@ -147,6 +164,11 @@ export class SpaceInvadersGame
       this.particlePool,
       this.config
     );
+
+    // Register Power-up systems in the scene world
+    const sceneWorld = gameScene.getWorld();
+    sceneWorld.addSystem(new LootSystem());
+    sceneWorld.addSystem(new PowerUpSystem());
 
     await this.sceneManager.transitionTo(gameScene);
   }

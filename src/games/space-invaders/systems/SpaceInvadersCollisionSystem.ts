@@ -120,6 +120,25 @@ export class SpaceInvadersCollisionSystem extends System {
         gameState.kamikazesActive--;
       }
 
+      // 10% chance to drop loot
+      if (RandomService.getGameplayRandom().next() < 0.1) {
+        const loot = world.createEntity();
+        world.addComponent(loot, { type: "Transform", x: pos.x, y: pos.y, rotation: 0, scaleX: 1, scaleY: 1 });
+        world.addComponent(loot, {
+          type: "Loot",
+          table: "default",
+          rarity: "common",
+          autoCollect: false
+        } as import("../../../engine/systems/LootSystem").LootComponent);
+        world.addComponent(loot, {
+          type: "Render",
+          shape: "circle",
+          size: 10,
+          color: "#FFFF00",
+          rotation: 0
+        });
+      }
+
       world.removeEntity(invader);
       world.removeEntity(bullet);
       return;
@@ -151,8 +170,6 @@ export class SpaceInvadersCollisionSystem extends System {
 
         if (health.current <= 0) {
           gameState.isGameOver = true;
-          const eventBus = world.getResource<EventBus>("EventBus");
-          if (eventBus) eventBus.emit("game:over");
         }
       }
       world.removeEntity(bullet);
@@ -162,8 +179,6 @@ export class SpaceInvadersCollisionSystem extends System {
     const invaderPlayer = this.matchPair(world, e1, e2, "Invader", "Player");
     if (invaderPlayer) {
       gameState.isGameOver = true;
-      const eventBus = world.getResource<EventBus>("EventBus");
-      if (eventBus) eventBus.emit("game:over");
       return;
     }
 
@@ -212,8 +227,6 @@ export class SpaceInvadersCollisionSystem extends System {
       const pos = world.getComponent<TransformComponent>(invader, "Transform");
       if (pos && pos.y > limit) {
         gameState.isGameOver = true;
-        const eventBus = world.getResource<EventBus>("EventBus");
-        if (eventBus) eventBus.emit("game:over");
         break;
       }
     }

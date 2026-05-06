@@ -197,8 +197,6 @@ export class AsteroidCollisionSystem extends System {
 
     if (health.current <= 0) {
       hapticDeath();
-      const eventBus = world.getResource<EventBus>("EventBus");
-      if (eventBus) eventBus.emit("game:over");
     } else {
       hapticDamage();
     }
