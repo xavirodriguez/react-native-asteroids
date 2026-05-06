@@ -21,7 +21,10 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
 
   protected updateGameState(world: World, gameState: FlappyBirdState, deltaTime: number): void {
     // Update Pipe Spawner
-    gameState.pipeSpawnTimer += deltaTime;
+    world.mutateSingleton<FlappyBirdState>("FlappyState", (gs) => {
+        gs.pipeSpawnTimer += deltaTime;
+    });
+
     if (gameState.pipeSpawnTimer >= this.config.PIPE_SPAWN_INTERVAL) {
       const margin = 100;
       const gapY = RandomService.getGameplayRandom().nextInt(margin, this.config.SCREEN_HEIGHT - margin);
@@ -30,7 +33,9 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
         x: this.config.SCREEN_WIDTH + this.config.PIPE_WIDTH,
         gapY,
       });
-      gameState.pipeSpawnTimer = 0;
+      world.mutateSingleton<FlappyBirdState>("FlappyState", (gs) => {
+          gs.pipeSpawnTimer = 0;
+      });
     }
 
     // Remove pipes that are off-screen and update score
@@ -43,12 +48,14 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
           world.removeEntity(entity);
         } else if (!pipe.scored && pos.x < this.config.BIRD_X) {
           pipe.scored = true;
-          gameState.score += gameState.comboMultiplier || 1;
+          world.mutateSingleton<FlappyBirdState>("FlappyState", (gs) => {
+              gs.score += gs.comboMultiplier || 1;
+              if (gs.score > gs.highScore) {
+                gs.highScore = gs.score;
+              }
+          });
           const eventBus = world.getResource<EventBus>("EventBus");
           if (eventBus) eventBus.emit("pipe:passed");
-          if (gameState.score > gameState.highScore) {
-            gameState.highScore = gameState.score;
-          }
         }
       }
     });
@@ -65,13 +72,12 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
   public resetGameOverState(world?: World): void {
     const w = world || this._world;
     if (w) {
-        const state = this.getGameState(w);
-        if (state) {
+        w.mutateSingleton<FlappyBirdState>("FlappyState", (state) => {
             state.gameOverLogged = false;
             state.isGameOver = false;
             state.score = 0;
             state.pipeSpawnTimer = 0;
-        }
+        });
     }
   }
 }
