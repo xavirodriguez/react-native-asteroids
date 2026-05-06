@@ -976,7 +976,10 @@ export class World {
    *
    * @remarks
    * Convenient for unique components (e.g., GlobalGameState, Config).
-   * Use {@link mutateSingleton} for controlled updates.
+   *
+   * **Note on references**: Returns a live mutable reference to the component.
+   * Direct mutations of the returned object will **not** trigger versioning or
+   * rendering dirty flags. Use {@link mutateSingleton} for controlled updates.
    *
    * @param type - Component discriminator.
    * @returns Found instance or `undefined`.
@@ -994,7 +997,10 @@ export class World {
    *
    * @remarks
    * Preferred way to update unique state components. Automatically notifies
-   * changes by updating versions and {@link isRenderDirty}.
+   * changes by incrementing {@link stateVersion} and setting the {@link isRenderDirty} flag.
+   *
+   * Mandatory pattern for any state change that must be reflected in the Renderer,
+   * React UI (via version tracking), or Multiplayer replication.
    *
    * @param type - Component type discriminator.
    * @param updater - Callback for modification.

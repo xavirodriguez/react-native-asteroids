@@ -15,30 +15,40 @@ export class SpaceInvadersGameStateSystem extends BaseGameStateSystem<GameStateC
   protected updateGameState(world: World, gameState: GameStateComponent, deltaTime: number): void {
     // 1. Count remaining invaders
     const invaders = world.query("Invader");
-    gameState.invadersRemaining = invaders.length;
+    world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+        gs.invadersRemaining = invaders.length;
+    });
 
     // 2. Handle level progression
     const bosses = world.query("Boss");
     if (gameState.invadersRemaining === 0 && bosses.length === 0) {
-      gameState.level++;
+      world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+          gs.level++;
+      });
       spawnInvaderWave(world, gameState.level);
     }
 
     // 3. Update screen shake duration
     if (gameState.screenShake) {
-      gameState.screenShake.duration -= deltaTime;
-      if (gameState.screenShake.duration <= 0) {
-        gameState.screenShake = null;
-      }
+      world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+          if (gs.screenShake) {
+              gs.screenShake.duration -= deltaTime;
+              if (gs.screenShake.duration <= 0) {
+                gs.screenShake = null;
+              }
+          }
+      });
     }
 
     // 4. Update Combo Timer
     if (gameState.comboTimerRemaining > 0) {
-      gameState.comboTimerRemaining -= deltaTime;
-      if (gameState.comboTimerRemaining <= 0) {
-        gameState.combo = 0;
-        gameState.multiplier = 1;
-      }
+      world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+          gs.comboTimerRemaining -= deltaTime;
+          if (gs.comboTimerRemaining <= 0) {
+            gs.combo = 0;
+            gs.multiplier = 1;
+          }
+      });
     }
   }
 
@@ -53,15 +63,15 @@ export class SpaceInvadersGameStateSystem extends BaseGameStateSystem<GameStateC
   public resetGameOverState(world?: World): void {
     const w = world || this._world;
     if (!w) return;
-    const gameState = w.getSingleton<GameStateComponent>("GameState");
-    if (!gameState) return;
-    gameState.isGameOver = false;
-    gameState.gameOverLogged = false;
-    gameState.score = 0;
-    gameState.level = 1;
-    gameState.lives = 3;
-    gameState.combo = 0;
-    gameState.multiplier = 1;
-    gameState.comboTimerRemaining = 0;
+    w.mutateSingleton<GameStateComponent>("GameState", (gameState) => {
+        gameState.isGameOver = false;
+        gameState.gameOverLogged = false;
+        gameState.score = 0;
+        gameState.level = 1;
+        gameState.lives = 3;
+        gameState.combo = 0;
+        gameState.multiplier = 1;
+        gameState.comboTimerRemaining = 0;
+    });
   }
 }

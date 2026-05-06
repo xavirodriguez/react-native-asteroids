@@ -98,4 +98,14 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
     const maxCount = GAME_CONFIG.MAX_WAVE_ASTEROIDS;
     return Math.min(initialCount + level, maxCount);
   }
+
+  public override resetGameOverState(world?: World): void {
+    const w = world || this._world;
+    if (w) {
+      w.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+        gs.isGameOver = false;
+        gs.gameOverLogged = false;
+      });
+    }
+  }
 }
