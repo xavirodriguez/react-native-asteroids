@@ -64,7 +64,7 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
   } as BoundaryComponent);
   world.addComponent(ship, {
     type: "Render",
-    shape: "triangle",
+    shape: "ship_sprite",
     size: GAME_CONFIG.SHIP_RENDER_SIZE,
     color: "white",
     rotation: -Math.PI / 2,
