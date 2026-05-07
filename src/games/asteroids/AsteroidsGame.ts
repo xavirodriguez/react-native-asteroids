@@ -56,12 +56,13 @@ export class AsteroidsGame
   public readonly gameId = "asteroids";
   private config: typeof GAME_CONFIG;
 
-  constructor(config: { isMultiplayer?: boolean, seed?: number } = {}) {
+  constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown> } = {}) {
+    const seed = config.gameOptions?.seed as number || config.seed;
     super({
       pauseKey: GAME_CONFIG.KEYS.PAUSE,
       restartKey: GAME_CONFIG.KEYS.RESTART,
       isMultiplayer: config.isMultiplayer,
-      gameOptions: { seed: config.seed }
+      gameOptions: { ...config.gameOptions, seed }
     });
   }
 
