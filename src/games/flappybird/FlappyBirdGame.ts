@@ -41,12 +41,13 @@ export class FlappyBirdGame
   public readonly gameId = "flappybird";
   private config: typeof FLAPPY_CONFIG;
 
-  constructor(config: { isMultiplayer?: boolean, seed?: number } = {}) {
+  constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown> } = {}) {
+    const seed = config.gameOptions?.seed as number || config.seed;
     super({
       pauseKey: FLAPPY_CONFIG.KEYS.PAUSE,
       restartKey: FLAPPY_CONFIG.KEYS.RESTART,
       isMultiplayer: config.isMultiplayer,
-      gameOptions: { seed: config.seed }
+      gameOptions: { ...config.gameOptions, seed }
     });
   }
 

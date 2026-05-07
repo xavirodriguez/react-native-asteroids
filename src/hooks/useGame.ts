@@ -48,7 +48,7 @@ export function useGame<
   GameClass: GameConstructor<TGame, TState, TInput>,
   initialState: TState | null = null,
   isMultiplayer: boolean = false,
-  options: Omit<GameConfig, "isMultiplayer"> = DEFAULT_OPTIONS
+  options: GameConfig = DEFAULT_OPTIONS
 ): UseGameResult<TGame, TState, TInput> {
 
   const [game, setGame] = useState<TGame | null>(null);

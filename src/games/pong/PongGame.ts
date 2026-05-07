@@ -35,11 +35,13 @@ export class PongGame extends BaseGame<PongState, PongInput> {
   public readonly gameId = "pong";
   private config: typeof PONG_CONFIG;
 
-  constructor(config: { isMultiplayer?: boolean, seed?: number, mode?: PongMode } | PongMode = "local") {
+  constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown>, mode?: PongMode } | PongMode = "local") {
     const isConfig = typeof config === "object" && config !== null;
-    const mode = isConfig ? (config.mode || "local") : config;
+    const mode = isConfig
+      ? (config.gameOptions?.mode as PongMode || config.mode || "local")
+      : config;
     const isMultiplayer = isConfig ? config.isMultiplayer : false;
-    const seed = isConfig ? config.seed : undefined;
+    const seed = isConfig ? (config.gameOptions?.seed as number || config.seed) : undefined;
 
     super({
       pauseKey: "Escape",
