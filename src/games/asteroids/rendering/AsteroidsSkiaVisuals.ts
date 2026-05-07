@@ -9,6 +9,105 @@ import type { SkCanvas } from "@shopify/react-native-skia";
  * Factory for creating Skia drawers that encapsulate their own paint state.
  * This avoids module-level mutable singletons while preserving performance.
  */
+export const createSkiaShipSpriteDrawer = () => {
+    let paint: import("@shopify/react-native-skia").SkPaint | null = null;
+    let shipImage: import("@shopify/react-native-skia").SkImage | null = null;
+    let isLoading = false;
+
+    return (canvas: SkCanvas, entity: import("../../../engine/core/Entity").Entity, _pos: any, elapsedTime: number, render: any, world: import("../../../engine/core/World").World) => {
+        if (Platform.OS === "web") return;
+        try {
+            const { Skia, BlurStyle } = require("@shopify/react-native-skia");
+            if (typeof Skia === "undefined" || !Skia.Path || !Skia.Paint) return;
+            if (!paint) paint = Skia.Paint();
+            const p = paint!;
+
+            const size = render.size;
+            const input = world.getComponent<InputComponent>(entity, "Input");
+            const health = world.getComponent<HealthComponent>(entity, "Health");
+
+            // Invulnerability blink
+            const isInvulnerable = health && health.invulnerableRemaining > 0;
+            const gameState = world.getSingleton<GameStateComponent>("GameState");
+            const tick = gameState?.serverTick ?? Math.floor(elapsedTime / 16.66);
+            const blinkOpacity = isInvulnerable
+                ? Math.floor(tick / 10) % 2 === 0 ? 0.3 : 1.0
+                : 1.0;
+
+            p.setAlphaf(blinkOpacity);
+
+            // Thrust Propulsion Flame
+            if (input?.thrust) {
+                const thrusterPath = Skia.Path.Make();
+                thrusterPath.moveTo(-5, 3);
+                thrusterPath.lineTo(-15, 0);
+                thrusterPath.lineTo(-5, -3);
+                thrusterPath.close();
+
+                p.setColor(Skia.Color("#FF4400"));
+                if (Skia.MaskFilter) {
+                    p.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 5, true));
+                }
+                canvas.drawPath(thrusterPath, p);
+                p.setMaskFilter(null);
+                p.setColor(Skia.Color("#FFCC00"));
+                canvas.drawPath(thrusterPath, p);
+            }
+
+            // Load sprite if not loaded
+            if (!shipImage && !isLoading) {
+                isLoading = true;
+                try {
+                    const { Image } = require("react-native");
+                    // Path relative to this file: src/games/asteroids/rendering/AsteroidsSkiaVisuals.ts
+                    // assets/ship.png is in root/assets/ship.png
+                    // Going up: rendering -> asteroids -> games -> src -> root
+                    const asset = require("../../../../assets/ship.png");
+                    const source = Image.resolveAssetSource(asset);
+                    if (source && source.uri) {
+                        Skia.Data.fromURI(source.uri).then((data: any) => {
+                            if (data) {
+                                const img = Skia.Image.MakeImageFromEncoded(data);
+                                if (img) shipImage = img;
+                            }
+                        }).catch(() => {
+                            isLoading = false;
+                        });
+                    }
+                } catch (e) {
+                    console.error("Failed to load ship sprite for Skia:", e);
+                }
+            }
+
+            if (shipImage) {
+                canvas.drawImageRect(
+                    shipImage,
+                    Skia.XYWHRect(0, 0, shipImage.width(), shipImage.height()),
+                    Skia.XYWHRect(-size, -size, size * 2, size * 2),
+                    p
+                );
+            } else {
+                // Fallback to triangle while loading or if failed
+                const shipPath = Skia.Path.Make();
+                shipPath.moveTo(size, 0);
+                shipPath.lineTo(-size / 2, size / 2);
+                shipPath.lineTo(-size / 4, 0);
+                shipPath.lineTo(-size / 2, -size / 2);
+                shipPath.close();
+
+                p.setColor(Skia.Color("#DDDDDD"));
+                p.setStyle(Skia.PaintStyle.Fill);
+                canvas.drawPath(shipPath, p);
+
+                p.setColor(Skia.Color(render.color));
+                p.setStyle(Skia.PaintStyle.Stroke);
+                p.setStrokeWidth(1);
+                canvas.drawPath(shipPath, p);
+            }
+        } catch (_e) { /* ignore */ }
+    };
+};
+
 export const createSkiaShipDrawer = () => {
     let paint: import("@shopify/react-native-skia").SkPaint | null = null;
     return (canvas: SkCanvas, entity: import("../../../engine/core/Entity").Entity, _pos: any, elapsedTime: number, render: any, world: import("../../../engine/core/World").World) => {

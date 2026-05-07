@@ -1,5 +1,5 @@
 import { Renderer } from "../../../engine/rendering/Renderer";
-import { drawAsteroidsBullet, drawAsteroidsParticle, drawAsteroidsAsteroid } from "./AsteroidsCanvasVisuals";
+import { drawAsteroidsBullet, drawAsteroidsParticle, drawAsteroidsAsteroid, drawAsteroidsShipSprite } from "./AsteroidsCanvasVisuals";
 import { drawShip, drawUfo, drawFlash, drawAsteroidStarField, drawAsteroidCRTEffect, drawAsteroidShipTrailDrawer } from "./AsteroidShapeDrawers";
 import { GAME_CONFIG } from "../../../types/GameTypes";
 
@@ -12,11 +12,13 @@ export function initializeAsteroidsRenderer(renderer: Renderer): void {
 
     // Register Asteroids-specific shape drawers
     canvasRenderer.registerShapeDrawer("triangle", drawShip);
+    canvasRenderer.registerShapeDrawer("ship_sprite", drawAsteroidsShipSprite);
     canvasRenderer.registerShapeDrawer("ufo", drawUfo);
     canvasRenderer.registerShapeDrawer("flash", drawFlash);
 
     // Register post-entity drawers (drawn after ctx.restore())
     canvasRenderer.registerPostEntityDrawer("triangle", drawAsteroidShipTrailDrawer);
+    canvasRenderer.registerPostEntityDrawer("ship_sprite", drawAsteroidShipTrailDrawer);
 
     // Register custom hooks for Asteroids
     canvasRenderer.addPreRenderHook((ctx: CanvasRenderingContext2D, snapshot: import("../../../engine/rendering/RenderSnapshot").RenderSnapshot, world: import("../../../engine/core/World").World) => {

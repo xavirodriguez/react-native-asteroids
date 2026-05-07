@@ -3,6 +3,66 @@ import { TTLComponent, HealthComponent, VelocityComponent, TrailComponent } from
 import { RandomService } from "../../../engine/utils/RandomService";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 
+let shipImage: HTMLImageElement | null = null;
+
+/**
+ * Draws the ship using an image sprite.
+ */
+export const drawAsteroidsShipSprite: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, _elapsedTime, render, world) => {
+  const size = render.size;
+  const input = world.getComponent<InputComponent>(entity, "Input");
+  const health = world.getComponent<HealthComponent>(entity, "Health");
+
+  if (!shipImage) {
+    shipImage = new Image();
+    shipImage.src = "/assets/ship.png";
+  }
+
+  if (health && health.invulnerableRemaining > 0) {
+    if (Math.floor(health.invulnerableRemaining / 150) % 2 === 0) ctx.globalAlpha = 0.3;
+  }
+
+  if (render.hitFlashFrames && render.hitFlashFrames > 0) {
+    if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) ctx.globalAlpha = 0.3;
+  }
+
+  // Thrust Propulsion Flame
+  if (input?.thrust) {
+    ctx.save();
+    const renderRandom = RandomService.getInstance("render");
+    const flameLen = size * (1.2 + renderRandom.next() * 0.4);
+    const gradient = ctx.createLinearGradient(-size / 2, 0, -flameLen, 0);
+    gradient.addColorStop(0, "orange");
+    gradient.addColorStop(0.5, "yellow");
+    gradient.addColorStop(1, "rgba(255, 255, 0, 0)");
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.moveTo(-size / 2, size / 3);
+    ctx.lineTo(-flameLen, 0);
+    ctx.lineTo(-size / 2, -size / 3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  if (shipImage.complete && shipImage.naturalWidth !== 0) {
+    ctx.drawImage(shipImage, -size, -size, size * 2, size * 2);
+  } else {
+    // Fallback while loading
+    ctx.strokeStyle = "white";
+    ctx.beginPath();
+    ctx.moveTo(size, 0);
+    ctx.lineTo(-size / 2, size / 2);
+    ctx.lineTo(-size / 4, 0);
+    ctx.lineTo(-size / 2, -size / 2);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 1.0;
+};
+
 export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, _elapsedTime, render, world) => {
   const size = render.size;
 
