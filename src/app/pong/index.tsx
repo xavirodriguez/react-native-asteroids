@@ -1,53 +1,118 @@
-import { useState } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, Platform } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
 import { PongControls } from "@/components/PongControls";
 import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { usePongGame } from "@/hooks/usePongGame";
+import { useMultiplayer } from "@/multiplayer/useMultiplayer";
+import { SeedWidget } from "@/components/SeedWidget";
+import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
+import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
+import { DailyChallengeService } from "@/services/DailyChallengeService";
+import { LeaderboardService } from "@/services/LeaderboardService";
+import { PlayerProfileService } from "@/services/PlayerProfileService";
+import { MutatorService } from "@/services/MutatorService";
+import { MutatorBadge } from "@/components/MutatorBadge";
+import { Mutator } from "@/config/MutatorConfig";
+import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 
 export default function PongScreen() {
   const [started, setStarted] = useState(false);
-  const [mode, setMode] = useState<"local" | "ai">("local");
-  const { game, gameState, handleInput, isReady } = usePongGame(mode);
+  const [mode, setMode] = useState<"local" | "ai" | "online">("local");
+  const [isDaily, setIsDaily] = useState(false);
+  const [playerName, setPlayerName] = useState("Jugador");
+  const [initialSeed, setInitialSeed] = useState<number | undefined>();
+  const [showDailyResults, setShowDailyResults] = useState(false);
+  const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
+
+  const isMulti = mode === "online";
+  const { game, gameState, handleInput, isReady, seed, restartWithSeed } = usePongGame(mode, initialSeed);
+
+  const { room, connected, serverState, localTickRef } = useMultiplayer("pong", playerName, isMulti && started);
+
+  useEffect(() => {
+    if (isMulti && serverState && game) {
+      (game as any).updateFromServer(serverState);
+    }
+  }, [isMulti, serverState, game]);
+
+  useEffect(() => {
+    if (isMulti && room && started) {
+      room.send("ready");
+    }
+  }, [isMulti, room, started]);
+
+  useEffect(() => {
+    MutatorService.isMutatorModeEnabled().then(enabled => {
+      if (enabled) {
+        setActiveMutators(MutatorService.getActiveMutatorsForGame("pong"));
+      }
+    });
+  }, []);
+
+  const dailySubmittedRef = useRef(false);
+  useEffect(() => {
+    if (gameState?.isGameOver && isDaily && seed !== undefined && !dailySubmittedRef.current) {
+      const score = Math.max(gameState.scoreP1, gameState.scoreP2);
+      dailySubmittedRef.current = true;
+      DailyChallengeService.markAttemptAsUsed("pong", score, seed, 0);
+      PlayerProfileService.getProfile().then(profile => {
+        LeaderboardService.submitDailyScore(
+          "pong",
+          DailyChallengeService.getDateKey(),
+          score,
+          profile.playerId,
+          playerName,
+          seed
+        );
+      });
+      setShowDailyResults(true);
+    }
+    if (!gameState?.isGameOver) {
+      dailySubmittedRef.current = false;
+    }
+  }, [gameState?.isGameOver, isDaily, seed, gameState?.scoreP1, gameState?.scoreP2, playerName]);
 
   if (!game || !isReady) return null;
 
   if (!started) {
     return (
-      <View style={styles.startScreen}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backButtonText}>← MENÚ</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>PONG</Text>
-        <Text style={styles.instructions}>
-            {Platform.OS === "web" ? "P1: W/S  P2: Flechas" : "Modo Local"}
-        </Text>
-
-        <View style={styles.buttonRow}>
-            <TouchableOpacity
-                style={[styles.startButton, mode === 'local' && styles.activeButton]}
-                onPress={() => { setMode('local'); setStarted(true); }}
-            >
-                <Text style={[styles.startButtonText, mode === 'local' && styles.activeButtonText]}>LOCAL</Text>
-            </TouchableOpacity>
-            <View style={{ width: 20 }} />
-            <TouchableOpacity
-                style={[styles.startButton, mode === 'ai' && styles.activeButton]}
-                onPress={() => { setMode('ai'); setStarted(true); }}
-            >
-                <Text style={[styles.startButtonText, mode === 'ai' && styles.activeButtonText]}>VS AI</Text>
-            </TouchableOpacity>
-        </View>
-
-        <Text style={styles.betaText}>Online próximamente</Text>
-      </View>
+      <StartScreen
+        title="PONG"
+        onStart={(selectedMode) => {
+          setMode(selectedMode);
+          if (initialSeed !== undefined) {
+            restartWithSeed(initialSeed);
+          }
+          setStarted(true);
+        }}
+        playerName={playerName}
+        onPlayerNameChange={setPlayerName}
+        instructions={Platform.OS === "web" ? "P1: W/S  P2: Flechas" : "Modo Local"}
+        onSeedChange={setInitialSeed}
+        onStartDaily={(dailySeed) => {
+          setInitialSeed(dailySeed);
+          setIsDaily(true);
+          setMode("ai");
+          setStarted(true);
+        }}
+        activeMutators={activeMutators}
+      />
     );
   }
+
+  const handleGameInput = (input: any) => {
+      if (isMulti && room) {
+          room.send("input", {
+              tick: localTickRef.current,
+              input: input
+          });
+      } else {
+          handleInput(input);
+      }
+  };
 
   return (
     <SafeAreaProvider>
@@ -58,6 +123,12 @@ export default function PongScreen() {
         >
           <Text style={styles.backButtonText}>← MENÚ</Text>
         </TouchableOpacity>
+
+        {isMulti && !connected && (
+            <View style={styles.multiOverlay}>
+                <Text style={styles.overlayText}>Conectando...</Text>
+            </View>
+        )}
 
         <View style={styles.scoreBoard}>
             <Text style={styles.scoreText}>{gameState?.scoreP1 ?? 0}</Text>
@@ -72,16 +143,16 @@ export default function PongScreen() {
         />
 
         <PongControls
-          onP1Up={(pressed) => handleInput({ p1Up: pressed })}
-          onP1Down={(pressed) => handleInput({ p1Down: pressed })}
-          onP2Up={(pressed) => handleInput({ p2Up: pressed })}
-          onP2Down={(pressed) => handleInput({ p2Down: pressed })}
+          onP1Up={(pressed) => handleGameInput({ p1Up: pressed })}
+          onP1Down={(pressed) => handleGameInput({ p1Down: pressed })}
+          onP2Up={(pressed) => handleGameInput({ p2Up: pressed })}
+          onP2Down={(pressed) => handleGameInput({ p2Down: pressed })}
           showP2Controls={mode === "local"}
         />
 
         <DebugOverlay game={game} />
 
-        {gameState?.isGameOver && (
+        {gameState?.isGameOver && !isDaily && (
             <View style={styles.overlay}>
                 <Text style={styles.overlayText}>FIN DEL JUEGO</Text>
                 <TouchableOpacity style={styles.restartButton} onPress={() => game.restart()}>
@@ -89,27 +160,100 @@ export default function PongScreen() {
                 </TouchableOpacity>
             </View>
         )}
+
+        {showDailyResults && seed !== undefined && (
+          <View style={styles.overlay}>
+            <DailyResultsOverlay
+              gameId="pong"
+              score={Math.max(gameState?.scoreP1 || 0, gameState?.scoreP2 || 0)}
+              seed={seed}
+              onClose={() => setShowDailyResults(false)}
+            />
+          </View>
+        )}
       </View>
     </SafeAreaProvider>
   );
 }
 
+const StartScreen: React.FC<{
+  title: string;
+  onStart: (mode: "local" | "ai" | "online") => void;
+  playerName: string;
+  onPlayerNameChange: (name: string) => void;
+  instructions: string;
+  onSeedChange?: (seed: number) => void;
+  onStartDaily?: (seed: number) => void;
+  activeMutators?: Mutator[];
+}> = ({
+  title,
+  onStart,
+  playerName,
+  onPlayerNameChange,
+  instructions,
+  onSeedChange,
+  onStartDaily,
+  activeMutators = [],
+}) => {
+  return (
+    <SafeAreaProvider>
+      <View style={styles.startScreen}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>← MENÚ</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>{title}</Text>
+
+        <TextInput
+            style={styles.input}
+            value={playerName}
+            onChangeText={onPlayerNameChange}
+            placeholder="Tu nombre"
+            placeholderTextColor="#666"
+        />
+
+        <Text style={styles.instructions}>{instructions}</Text>
+
+        {onStartDaily && <DailyChallengeBanner gameId="pong" onPlay={onStartDaily} />}
+
+        <MutatorBadge mutators={activeMutators} />
+
+        {onSeedChange && (
+          <SeedWidget
+            seed={0}
+            onSeedEnter={onSeedChange}
+            style={{ marginBottom: 30 }}
+          />
+        )}
+
+        <View style={styles.buttonRow}>
+            <TouchableOpacity style={styles.startButton} onPress={() => onStart("local")}>
+                <Text style={styles.startButtonText}>LOCAL</Text>
+            </TouchableOpacity>
+            <View style={{ width: 10 }} />
+            <TouchableOpacity style={styles.startButton} onPress={() => onStart("ai")}>
+                <Text style={styles.startButtonText}>VS AI</Text>
+            </TouchableOpacity>
+
+            {MULTIPLAYER_CONFIG.STATE !== 'hidden' && (
+                <>
+                    <View style={{ width: 10 }} />
+                    <TouchableOpacity style={[styles.startButton, { backgroundColor: '#444' }]} onPress={() => onStart("online")}>
+                        <Text style={[styles.startButtonText, { color: 'white' }]}>
+                            MULTI {MULTIPLAYER_CONFIG.STATE === 'beta' ? '(BETA)' : ''}
+                        </Text>
+                    </TouchableOpacity>
+                </>
+            )}
+        </View>
+      </View>
+    </SafeAreaProvider>
+  );
+};
+
 const styles = StyleSheet.create({
-  buttonRow: {
-    flexDirection: 'row',
-  },
-  activeButton: {
-    backgroundColor: 'white',
-  },
-  activeButtonText: {
-    color: 'black',
-  },
-  betaText: {
-    marginTop: 40,
-    color: '#666',
-    fontFamily: 'monospace',
-    fontSize: 14,
-  },
   container: {
     flex: 1,
     backgroundColor: "black",
@@ -122,6 +266,7 @@ const styles = StyleSheet.create({
     backgroundColor: "black",
     alignItems: "center",
     justifyContent: "center",
+    width: '100%',
   },
   title: {
     fontSize: 48,
@@ -129,23 +274,41 @@ const styles = StyleSheet.create({
     fontFamily: "monospace",
     fontWeight: "bold",
     marginBottom: 40,
+    textAlign: "center",
   },
   instructions: {
-    fontSize: 18,
-    color: "#AAAAAA",
+    fontSize: 16,
+    color: "#CCCCCC",
     fontFamily: "monospace",
-    marginBottom: 40,
+    marginBottom: 10,
     textAlign: "center",
+    paddingHorizontal: 20,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+  },
+  input: {
+    backgroundColor: '#222',
+    color: 'white',
+    padding: 15,
+    borderRadius: 8,
+    width: 250,
+    marginBottom: 20,
+    fontFamily: 'monospace',
+    textAlign: 'center',
+    fontSize: 18,
   },
   startButton: {
     backgroundColor: "white",
-    paddingHorizontal: 30,
-    paddingVertical: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderRadius: 8,
+    minWidth: 100,
+    alignItems: 'center',
   },
   startButtonText: {
     color: "black",
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "bold",
   },
   scoreBoard: {
@@ -165,6 +328,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,
+  },
+  multiOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
   },
   overlayText: {
     color: 'white',
