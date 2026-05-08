@@ -327,7 +327,7 @@ export const createGameState = ({ world }: { world: World }) => {
     lives: GAME_CONFIG.SHIP_INITIAL_LIVES,
     stars: generateStarField(GAME_CONFIG.STAR_COUNT, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT),
     screenShake: null,
-    debugCRT: true,
+    debugCRT: false,
     type: "GameState"
   } as GameStateComponent);
   return gameState;

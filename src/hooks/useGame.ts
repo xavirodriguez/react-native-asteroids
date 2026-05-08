@@ -45,7 +45,7 @@ export function useGame<
   TState,
   TInput extends Record<string, boolean>
 >(
-  GameClass: GameConstructor<TGame, TState, TInput>,
+  GameClass: GameConstructor<TGame, TState, TInput> | null,
   initialState: TState | null = null,
   isMultiplayer: boolean = false,
   options: GameConfig = DEFAULT_OPTIONS
@@ -65,6 +65,12 @@ export function useGame<
   useKeepAwake(!isPaused && isReady);
 
   useEffect(() => {
+    if (!GameClass) {
+      setGame(null);
+      setIsReady(false);
+      return;
+    }
+
     let isMounted = true;
     const gameInstance = new GameClass({
       isMultiplayer,
