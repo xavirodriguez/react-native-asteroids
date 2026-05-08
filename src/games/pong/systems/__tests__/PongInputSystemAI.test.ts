@@ -1,0 +1,42 @@
+import { World } from "../../../../engine/core/World";
+import { PongInputSystem } from "../PongInputSystem";
+import { PongEntityFactory } from "../../EntityFactory";
+import { PONG_CONFIG } from "../../types";
+import { VelocityComponent, TagComponent, TransformComponent } from "../../../../engine/types/EngineTypes";
+
+describe("PongInputSystem AI", () => {
+  let world: World;
+  let system: PongInputSystem;
+
+  beforeEach(() => {
+    world = new World();
+    system = new PongInputSystem("medium");
+
+    PongEntityFactory.createBall(world);
+    PongEntityFactory.createPaddle(world, "left");
+    PongEntityFactory.createPaddle(world, "right");
+  });
+
+  it("should move right paddle according to ball position in AI mode", () => {
+    const ball = world.query("Ball", "Transform")[0];
+    const ballTransform = world.getComponent<TransformComponent>(ball, "Transform")!;
+    const rightPaddle = world.query("Paddle", "Tag").find(e =>
+      world.getComponent<TagComponent>(e, "Tag")!.tags.includes("right")
+    )!;
+    const paddleTransform = world.getComponent<TransformComponent>(rightPaddle, "Transform")!;
+    const paddleVelocity = world.getComponent<VelocityComponent>(rightPaddle, "Velocity")!;
+
+    // Place ball below paddle
+    ballTransform.y = paddleTransform.y + 100;
+
+    // First update might not move due to reaction delay, but medium has 100ms.
+    // AIPongController uses currentTime (seconds or ms?)
+    // In PongInputSystem: this.currentTime += deltaTime;
+    // AIPongController: if (currentTime - this.lastUpdate < this.reactionDelay) return this.lastInputs;
+
+    system.update(world, 200); // Pass enough time for reaction delay
+
+    expect(paddleVelocity.dy).toBeGreaterThan(0);
+    expect(paddleVelocity.dy).toBe(PONG_CONFIG.PADDLE_SPEED);
+  });
+});

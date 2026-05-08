@@ -3,10 +3,10 @@ import { useGame } from "../hooks/useGame";
 import { PongGame } from "../games/pong/PongGame";
 import type { PongState, PongInput } from "../games/pong/types";
 
-export const usePongGame = (mode: "local" | "ai" | "online", seed?: number) => {
-  const options = useMemo(() => ({
-    gameOptions: { mode, seed }
-  }), [mode, seed]);
+export const usePongGame = (mode: "local" | "ai" | null) => {
+  const config = useMemo(() => ({
+    gameOptions: { mode }
+  }), [mode]);
 
-  return useGame<PongGame, PongState, PongInput>(mode ? PongGame : null, null, false, options);
+  return useGame<PongGame, PongState, PongInput>(mode ? PongGame : null, config);
 };

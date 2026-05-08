@@ -46,9 +46,8 @@ export function useGame<
   TInput extends Record<string, boolean>
 >(
   GameClass: GameConstructor<TGame, TState, TInput> | null,
-  initialState: TState | null = null,
-  isMultiplayer: boolean = false,
-  options: GameConfig = DEFAULT_OPTIONS
+  config: GameConfig = DEFAULT_OPTIONS,
+  initialState: TState | null = null
 ): UseGameResult<TGame, TState, TInput> {
 
   const [game, setGame] = useState<TGame | null>(null);
@@ -68,14 +67,13 @@ export function useGame<
     if (!GameClass) {
       setGame(null);
       setIsReady(false);
+      setGameState(initialState);
+      gameStateRef.current = initialState;
       return;
     }
 
     let isMounted = true;
-    const gameInstance = new GameClass({
-      isMultiplayer,
-      ...options,
-    });
+    const gameInstance = new GameClass(config);
     setIsReady(false);
 
     // Async initialization
@@ -112,8 +110,8 @@ export function useGame<
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       gameInstance.destroy();
     };
-  // Re-initialize if multiplayer mode, game class or options change
-  }, [GameClass, isMultiplayer, options]);
+  // Re-initialize if game class or config change
+  }, [GameClass, config]);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
     game?.setInput(input as Record<string, boolean>);
