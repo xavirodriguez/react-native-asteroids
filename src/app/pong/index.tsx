@@ -10,9 +10,7 @@ import { usePongGame } from "@/hooks/usePongGame";
 export default function PongScreen() {
   const [started, setStarted] = useState(false);
   const [mode, setMode] = useState<"local" | "ai">("local");
-  const { game, gameState, handleInput, isReady } = usePongGame(mode);
-
-  if (!game || !isReady) return null;
+  const { game, gameState, handleInput, isReady } = usePongGame(started ? mode : null);
 
   if (!started) {
     return (
@@ -48,6 +46,8 @@ export default function PongScreen() {
       </View>
     );
   }
+
+  if (!game || !isReady) return null;
 
   return (
     <SafeAreaProvider>
