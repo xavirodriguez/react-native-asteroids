@@ -8,5 +8,5 @@ export const usePongGame = (mode: "local" | "ai" | "online", seed?: number) => {
     gameOptions: { mode, seed }
   }), [mode, seed]);
 
-  return useGame<PongGame, PongState, PongInput>(PongGame, null, false, options);
+  return useGame<PongGame, PongState, PongInput>(mode ? PongGame : null, null, false, options);
 };

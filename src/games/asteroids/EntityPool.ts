@@ -61,6 +61,7 @@ export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
         data.velocity.dx = 0; data.velocity.dy = 0;
         data.ttl.remaining = 0;
         data.ttl.total = 0;
+        data.render.rotation = 0;
       },
       initializer: (data, p) => {
         data.position.x = p.x; data.position.y = p.y;
@@ -108,6 +109,10 @@ export class ParticlePool extends PrefabPool<ParticleComponents, ParticleParams>
       }),
       reset: (data) => {
         data.position.x = 0; data.position.y = 0;
+        data.velocity.dx = 0; data.velocity.dy = 0;
+        data.ttl.remaining = 0;
+        data.ttl.total = 0;
+        data.render.rotation = 0;
       },
       initializer: (data, p) => {
         data.position.x = p.x; data.position.y = p.y;
