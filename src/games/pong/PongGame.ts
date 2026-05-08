@@ -88,7 +88,14 @@ export class PongGame extends BaseGame<PongState, PongInput> {
 
     this.stateSystem = new PongGameStateSystem(this.config);
     this.world.addSystem(this.unifiedInput);
-    this.world.addSystem(new PongInputSystem(aiDifficulty));
+
+    if (mode === "online") {
+      this.networkController = new NetworkController();
+      this.world.addSystem(new PongInputSystem(undefined, this.networkController));
+    } else {
+      this.world.addSystem(new PongInputSystem(aiDifficulty));
+    }
+
     this.world.addSystem(new MovementSystem());
     this.world.addSystem(new JuiceSystem());
     this.world.addSystem(new ScreenShakeSystem());
@@ -135,5 +142,16 @@ export class PongGame extends BaseGame<PongState, PongInput> {
       return !this.networkController.hasInputForTick((inputSystem as unknown as { currentTick: number })?.currentTick + 1 || 0);
     }
     return false;
+  }
+
+  public updateFromServer(state: any) {
+    if (this._config.gameOptions?.mode !== "online" || !state) return;
+
+    if (this.networkController && state.input_relay) {
+        this.networkController.onInputReceived({
+            tick: state.tick,
+            input: state.input
+        });
+    }
   }
 }
