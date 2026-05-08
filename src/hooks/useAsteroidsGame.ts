@@ -14,8 +14,9 @@ import type { GameStateComponent, InputState } from "../types/GameTypes";
  * y configuración del modo multijugador.
  */
 export function useAsteroidsGame(isMultiplayer: boolean = false) {
+  const config = useMemo(() => ({ isMultiplayer }), [isMultiplayer]);
   const { game, gameState, isPaused, isReady, handleInput, togglePause, restart } =
-    useGame<AsteroidsGame, GameStateComponent, InputState>(AsteroidsGame, INITIAL_GAME_STATE, isMultiplayer);
+    useGame<AsteroidsGame, GameStateComponent, InputState>(AsteroidsGame, config, INITIAL_GAME_STATE);
 
   const { highScore, updateHighScore } = useHighScore();
 

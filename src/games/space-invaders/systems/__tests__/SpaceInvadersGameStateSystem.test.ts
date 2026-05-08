@@ -13,6 +13,7 @@ describe("SpaceInvadersGameStateSystem", () => {
     world = new World();
     game = {
       getWorld: () => world,
+      pause: jest.fn(),
     } as unknown as ISpaceInvadersGame;
     system = new SpaceInvadersGameStateSystem(game);
   });
@@ -45,7 +46,8 @@ describe("SpaceInvadersGameStateSystem", () => {
     createGameState(world);
     const state = world.getSingleton<GameStateComponent>("GameState")!;
     state.lives = 0;
-    state.isGameOver = true;
+
+    system.update(world, 16.67);
 
     expect(system.isGameOver()).toBe(true);
   });
