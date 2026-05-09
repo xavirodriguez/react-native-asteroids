@@ -11,13 +11,13 @@ This document tracks the implementation status of the core Epics defined for the
 | **EPIC 5** | Secure & Usable Leaderboard | 🟢 Ready | P1 | Global ranking with salted hash integrity validation. |
 | **EPIC 6** | Weekly Mutators | 🟢 Ready | P2 | Deterministic rotation based on ISO week number. |
 | **EPIC 7** | Minimum Multiplatform Audio | 🟢 Ready | P2 | AudioSystem with preloading in all games. |
-| **EPIC 8** | Power-ups / Loot | 🟡 Partial | P3 | Asteroids (Advanced), Space Invaders (Basic drop). |
-| **EPIC 9** | Multiplayer | 🟢 Ready | P1 | Asteroids (Hardened) and Pong (Relay mode) implemented. |
+| **EPIC 8** | Power-ups / Loot | 🟢 Ready | P3 | Standardized LootSystem and PowerUpSystem across games. |
+| **EPIC 9** | Multiplayer | 🟢 Ready | P1 | Asteroids, Pong, Flappy and Space Invaders synchronized. |
 | **EPIC 10** | Replay & Debug | 🟢 Ready | P2 | Deterministic internal recorder for debugging. |
 | **EPIC 11** | Web/Native Rendering | 🟢 Ready | P0 | Unified Renderer supporting Canvas and Skia. |
 | **EPIC 12** | Basic Security & Anti-cheat | 🟢 Ready | P2 | Rate limiting and score payload integrity (salted hash). |
 | **EPIC 13** | Persistence & Data | 🟢 Ready | P0 | Local (AsyncStorage) and Server (SQLite) storage. |
-| **EPIC 14** | CI/CD, QA & Quality | 🟡 Partial | P2 | Core tests implemented. Smoke tests ongoing. |
+| **EPIC 14** | CI/CD, QA & Quality | 🟢 Ready | P2 | Core tests verified. Environment optimized for CI. |
 | **EPIC 15** | Documentation & Handoff | 🟢 Ready | P3 | README and Feature Matrix updated. |
 
 ## Legend
