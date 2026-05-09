@@ -14,11 +14,29 @@ export interface Mutator {
 
 export const MUTATORS: Mutator[] = [
   {
-    id: 'double_gravity',
-    name: 'Gravedad Doble',
+    id: 'heavy_gravity',
+    name: 'Heavy Gravity',
     description: 'La gravedad es el doble de fuerte.',
     games: ['flappybird'],
     apply: (cfg) => ({ ...cfg, GRAVITY: ((cfg.GRAVITY as number) || 0) * 2 })
+  },
+  {
+    id: 'hyper_drift',
+    name: 'Hyper Drift',
+    description: 'Nave con mucha inercia y potencia.',
+    games: ['asteroids'],
+    apply: (cfg) => ({
+      ...cfg,
+      SHIP_THRUST: ((cfg.SHIP_THRUST as number) || 0) * 2.0,
+      FRICTION: 0.95 // Menos fricción para más "drift"
+    })
+  },
+  {
+    id: 'ghost_ball',
+    name: 'Ghost Ball',
+    description: 'La bola es invisible durante 1 segundo tras cada golpe.',
+    games: ['pong'],
+    apply: (cfg) => ({ ...cfg, BALL_INVISIBLE_AFTER_HIT_TICKS: 60 })
   },
   {
     id: 'bouncing_bullets',
@@ -26,13 +44,6 @@ export const MUTATORS: Mutator[] = [
     description: 'Los proyectiles rebotan en los bordes.',
     games: ['asteroids'],
     apply: (cfg) => ({ ...cfg, BULLET_BOUNDARY_BEHAVIOR: 'bounce' })
-  },
-  {
-    id: 'blind_pong',
-    name: 'Pong Ciego',
-    description: 'La bola es invisible durante 1 segundo tras cada golpe.',
-    games: ['pong'],
-    apply: (cfg) => ({ ...cfg, BALL_INVISIBLE_AFTER_HIT_TICKS: 60 })
   },
   {
     id: 'silent_horde',

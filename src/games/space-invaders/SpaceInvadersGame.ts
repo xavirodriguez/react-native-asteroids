@@ -135,6 +135,16 @@ export class SpaceInvadersGame
         world.addComponent(i, { type: "Invader", row: 0, col: 0, points: 10 } as import("./types/SpaceInvadersTypes").InvaderComponent);
       });
     }
+
+    if (state.bullets && typeof state.bullets === 'object') {
+      Object.values(state.bullets).forEach((bullet: unknown) => {
+        const bulletState = bullet as { x: number, y: number };
+        const b = world.createEntity();
+        world.addComponent(b, { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+        world.addComponent(b, { type: "Render", shape: "player_bullet", size: 5, color: "yellow", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+        world.addComponent(b, { type: "PlayerBullet" } as import("../../engine/types/EngineTypes").Component);
+      });
+    }
   }
 
   public isGameOver(): boolean {

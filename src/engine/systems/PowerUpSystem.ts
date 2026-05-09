@@ -30,8 +30,8 @@ export class PowerUpSystem extends System {
       if (!events) continue;
 
       for (const other of events.triggersEntered) {
-        // Only ships can collect power-ups
-        if (world.hasComponent(other, "Ship")) {
+        // Only ships or players can collect power-ups
+        if (world.hasComponent(other, "Ship") || world.hasComponent(other, "Player")) {
           this.collectPowerUp(world, entity, other);
           break; // Entity destroyed, stop processing collisions for it
         }

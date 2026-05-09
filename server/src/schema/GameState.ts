@@ -48,9 +48,14 @@ export class Invader extends Schema {
   @type("boolean") alive: boolean = true;
 }
 
+export class SpaceInvadersBullet extends EntityState {
+  @type("string") ownerId: string = "";
+}
+
 export class SpaceInvadersState extends Schema {
   @type({ map: Player }) players = new MapSchema<Player>();
   @type({ map: Invader }) invaders = new MapSchema<Invader>();
+  @type({ map: SpaceInvadersBullet }) bullets = new MapSchema<SpaceInvadersBullet>();
   @type("boolean") gameStarted: boolean = false;
   @type("boolean") gameOver: boolean = false;
 }

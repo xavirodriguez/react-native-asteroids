@@ -110,7 +110,10 @@ export class SpaceInvadersCollisionSystem extends System {
       }
 
       const eventBus = world.getResource<EventBus>("EventBus");
-      if (eventBus) eventBus.emit("si:kill", { chain: gameState.combo });
+      if (eventBus) {
+        eventBus.emit("si:kill", { chain: gameState.combo });
+        eventBus.emit("entity:destroyed", { entity: invader, type: "Invader" });
+      }
 
       const render = world.getComponent<RenderComponent>(invader, "Render");
       if (render) render.hitFlashFrames = 4;
@@ -118,25 +121,6 @@ export class SpaceInvadersCollisionSystem extends System {
       const kamiComp = world.getComponent(invader, 'Kamikaze');
       if (kamiComp) {
         gameState.kamikazesActive--;
-      }
-
-      // 10% chance to drop loot
-      if (RandomService.getGameplayRandom().next() < 0.1) {
-        const loot = world.createEntity();
-        world.addComponent(loot, { type: "Transform", x: pos.x, y: pos.y, rotation: 0, scaleX: 1, scaleY: 1 });
-        world.addComponent(loot, {
-          type: "Loot",
-          table: "default",
-          rarity: "common",
-          autoCollect: false
-        } as import("../../../engine/systems/LootSystem").LootComponent);
-        world.addComponent(loot, {
-          type: "Render",
-          shape: "circle",
-          size: 10,
-          color: "#FFFF00",
-          rotation: 0
-        });
       }
 
       world.removeEntity(invader);

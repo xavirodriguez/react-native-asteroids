@@ -110,6 +110,16 @@ export function createInvader(world: World, x: number, y: number, row: number, c
     enabled: true
   } as Collider2DComponent);
   world.addComponent(invader, { type: "Invader", row, col, points });
+
+  // 10% chance to have a loot table (matching standard LootSystem logic)
+  world.addComponent(invader, {
+    type: "LootTable",
+    drops: [
+      { type: "speed", chance: 0.05, config: { value: 1.5, duration: 5000 } },
+      { type: "triple_shot", chance: 0.05, config: { duration: 8000 } }
+    ]
+  } as import("../../engine/core/CoreComponents").LootTableComponent);
+
   return invader;
 }
 
