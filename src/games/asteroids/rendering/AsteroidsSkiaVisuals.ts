@@ -38,10 +38,13 @@ export const createSkiaShipSpriteDrawer = () => {
 
             // Thrust Propulsion Flame
             if (input?.thrust) {
+                const renderRandom = RandomService.getInstance("render");
+                const flameLen = size * (1.2 + renderRandom.next() * 0.4);
+
                 const thrusterPath = Skia.Path.Make();
-                thrusterPath.moveTo(-5, 3);
-                thrusterPath.lineTo(-15, 0);
-                thrusterPath.lineTo(-5, -3);
+                thrusterPath.moveTo(-size / 2, size / 3);
+                thrusterPath.lineTo(-flameLen, 0);
+                thrusterPath.lineTo(-size / 2, -size / 3);
                 thrusterPath.close();
 
                 p.setColor(Skia.Color("#FF4400"));
