@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useGame } from "./useGame";
 import { useHighScore } from "./useHighScore";
 import { AsteroidsGame } from "../games/asteroids/AsteroidsGame";
