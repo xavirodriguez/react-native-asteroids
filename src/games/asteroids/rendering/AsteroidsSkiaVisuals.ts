@@ -27,24 +27,28 @@ export const createSkiaShipSpriteDrawer = () => {
             const health = world.getComponent<HealthComponent>(entity, "Health");
 
             // Invulnerability blink
-            const isInvulnerable = health && health.invulnerableRemaining > 0;
-            const gameState = world.getSingleton<GameStateComponent>("GameState");
-            const tick = gameState?.serverTick ?? Math.floor(elapsedTime / 16.66);
-            const blinkOpacity = isInvulnerable
-                ? Math.floor(tick / 10) % 2 === 0 ? 0.3 : 1.0
-                : 1.0;
+            let blinkOpacity = 1.0;
+            if (health && health.invulnerableRemaining > 0) {
+                blinkOpacity = Math.floor(health.invulnerableRemaining / 150) % 2 === 0 ? 0.3 : 1.0;
+            }
+
+            // Hit flash
+            if (render.hitFlashFrames && render.hitFlashFrames > 0) {
+                if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) blinkOpacity = 0.3;
+            }
 
             p.setAlphaf(blinkOpacity);
 
             // Thrust Propulsion Flame
             if (input?.thrust) {
                 const renderRandom = RandomService.getInstance("render");
-                const flameLen = size * (1.2 + renderRandom.next() * 0.4);
+                const flameStart = -size * 0.8;
+                const flameLen = size * (1.5 + renderRandom.next() * 0.5);
 
                 const thrusterPath = Skia.Path.Make();
-                thrusterPath.moveTo(-size / 2, size / 3);
+                thrusterPath.moveTo(flameStart, size / 3);
                 thrusterPath.lineTo(-flameLen, 0);
-                thrusterPath.lineTo(-size / 2, -size / 3);
+                thrusterPath.lineTo(flameStart, -size / 3);
                 thrusterPath.close();
 
                 p.setColor(Skia.Color("#FF4400"));
@@ -83,12 +87,18 @@ export const createSkiaShipSpriteDrawer = () => {
             }
 
             if (shipImage) {
+                // Apply rotation correction (+90 deg) because sprite points UP
+                canvas.save();
+                canvas.rotate(90, 0, 0); // Skia rotate uses degrees by default?
+                // Wait, check Skia documentation or existing code.
+                // Skia Canvas.rotate is in degrees.
                 canvas.drawImageRect(
                     shipImage,
                     Skia.XYWHRect(0, 0, shipImage.width(), shipImage.height()),
                     Skia.XYWHRect(-size, -size, size * 2, size * 2),
                     p
                 );
+                canvas.restore();
             } else {
                 // Fallback to triangle while loading or if failed
                 const shipPath = Skia.Path.Make();
@@ -124,12 +134,10 @@ export const createSkiaShipDrawer = () => {
         const input = world.getComponent<InputComponent>(entity, "Input");
         const health = world.getComponent<HealthComponent>(entity, "Health");
 
-        const isInvulnerable = health && health.invulnerableRemaining > 0;
-        const gameState = world.getSingleton<GameStateComponent>("GameState");
-        const tick = gameState?.serverTick ?? Math.floor(elapsedTime / 16.66);
-        const blinkOpacity = isInvulnerable
-            ? Math.floor(tick / 10) % 2 === 0 ? 0.3 : 1.0
-            : 1.0;
+        let blinkOpacity = 1.0;
+        if (health && health.invulnerableRemaining > 0) {
+            blinkOpacity = Math.floor(health.invulnerableRemaining / 150) % 2 === 0 ? 0.3 : 1.0;
+        }
 
         p.setAlphaf(blinkOpacity);
 

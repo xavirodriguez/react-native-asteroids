@@ -13,41 +13,50 @@ export const drawAsteroidsShipSprite: ShapeDrawer<CanvasRenderingContext2D> = (c
   const input = world.getComponent<InputComponent>(entity, "Input");
   const health = world.getComponent<HealthComponent>(entity, "Health");
 
-  if (!shipImage) {
+  if (typeof window !== "undefined" && !shipImage) {
     shipImage = new Image();
     shipImage.src = "/assets/ship.png";
   }
 
+  let alpha = 1.0;
   if (health && health.invulnerableRemaining > 0) {
-    if (Math.floor(health.invulnerableRemaining / 150) % 2 === 0) ctx.globalAlpha = 0.3;
+    if (Math.floor(health.invulnerableRemaining / 150) % 2 === 0) alpha = 0.3;
   }
 
   if (render.hitFlashFrames && render.hitFlashFrames > 0) {
-    if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) ctx.globalAlpha = 0.3;
+    if (Math.floor(render.hitFlashFrames / 2) % 2 === 0) alpha = 0.3;
   }
+  ctx.globalAlpha = alpha;
 
   // Thrust Propulsion Flame
   if (input?.thrust) {
     ctx.save();
     const renderRandom = RandomService.getInstance("render");
-    const flameLen = size * (1.2 + renderRandom.next() * 0.4);
-    const gradient = ctx.createLinearGradient(-size / 2, 0, -flameLen, 0);
-    gradient.addColorStop(0, "orange");
-    gradient.addColorStop(0.5, "yellow");
+    // Start flame from the back of the ship sprite (-size)
+    const flameStart = -size * 0.8;
+    const flameLen = size * (1.5 + renderRandom.next() * 0.5);
+    const gradient = ctx.createLinearGradient(flameStart, 0, -flameLen, 0);
+    gradient.addColorStop(0, "rgba(255, 165, 0, 0.8)");
+    gradient.addColorStop(0.5, "rgba(255, 255, 0, 0.5)");
     gradient.addColorStop(1, "rgba(255, 255, 0, 0)");
 
     ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.moveTo(-size / 2, size / 3);
+    ctx.moveTo(flameStart, size / 3);
     ctx.lineTo(-flameLen, 0);
-    ctx.lineTo(-size / 2, -size / 3);
+    ctx.lineTo(flameStart, -size / 3);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
   }
 
-  if (shipImage.complete && shipImage.naturalWidth !== 0) {
+  if (shipImage && shipImage.complete && shipImage.naturalWidth !== 0) {
+    // Ship sprite is pointing UP, but engine orientation is pointing RIGHT.
+    // We must apply a +90 deg (PI/2) rotation correction.
+    ctx.save();
+    ctx.rotate(Math.PI / 2);
     ctx.drawImage(shipImage, -size, -size, size * 2, size * 2);
+    ctx.restore();
   } else {
     // Fallback while loading
     ctx.strokeStyle = "white";

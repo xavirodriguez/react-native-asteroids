@@ -56,7 +56,7 @@ export function useKeepAwake(enabled: boolean = true): void {
     return () => {
       // Symmetric deactivation
       try {
-        if (!isWeb || supportsWakeLock) {
+        if (!isWeb) {
           deactivateKeepAwake();
         }
       } catch (_error) {
