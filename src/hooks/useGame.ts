@@ -47,6 +47,7 @@ export function useGame<
 >(
   GameClass: GameConstructor<TGame, TState, TInput> | null,
   config: GameConfig = DEFAULT_OPTIONS,
+  gameOptions: Record<string, unknown> = {},
   initialState: TState | null = null
 ): UseGameResult<TGame, TState, TInput> {
 
@@ -73,7 +74,7 @@ export function useGame<
     }
 
     let isMounted = true;
-    const gameInstance = new GameClass(config);
+    const gameInstance = new GameClass({ ...config, gameOptions: { ...config.gameOptions, ...gameOptions } });
     setIsReady(false);
 
     // Async initialization
@@ -111,7 +112,7 @@ export function useGame<
       gameInstance.destroy();
     };
   // Re-initialize if game class or config change
-  }, [GameClass, config]);
+  }, [GameClass, config, gameOptions]);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
     game?.setInput(input as Record<string, boolean>);

@@ -16,7 +16,7 @@ import type { GameStateComponent, InputState } from "../types/GameTypes";
 export function useAsteroidsGame(isMultiplayer: boolean = false) {
   const config = useMemo(() => ({ isMultiplayer }), [isMultiplayer]);
   const { game, gameState, isPaused, isReady, handleInput, togglePause, restart } =
-    useGame<AsteroidsGame, GameStateComponent, InputState>(AsteroidsGame, config, INITIAL_GAME_STATE);
+    useGame<AsteroidsGame, GameStateComponent, InputState>(AsteroidsGame, config, {}, INITIAL_GAME_STATE);
 
   const { highScore, updateHighScore } = useHighScore();
 

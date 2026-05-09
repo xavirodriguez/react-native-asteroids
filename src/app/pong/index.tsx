@@ -28,7 +28,7 @@ export default function PongScreen() {
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
   const isMulti = mode === "online";
-  const { game, gameState, handleInput, isReady, seed, restartWithSeed } = usePongGame(mode, initialSeed);
+  const { game, gameState, handleInput, isReady, restart } = usePongGame(started ? mode : null);
 
   const { room, connected, serverState, localTickRef } = useMultiplayer("pong", playerName, isMulti && started);
 
@@ -54,10 +54,10 @@ export default function PongScreen() {
 
   const dailySubmittedRef = useRef(false);
   useEffect(() => {
-    if (gameState?.isGameOver && isDaily && seed !== undefined && !dailySubmittedRef.current) {
+    if (gameState?.isGameOver && isDaily && game?.getSeed() !== undefined && !dailySubmittedRef.current) {
       const score = Math.max(gameState.scoreP1, gameState.scoreP2);
       dailySubmittedRef.current = true;
-      DailyChallengeService.markAttemptAsUsed("pong", score, seed, 0);
+      DailyChallengeService.markAttemptAsUsed("pong", score, game?.getSeed()!, 0);
       PlayerProfileService.getProfile().then(profile => {
         LeaderboardService.submitDailyScore(
           "pong",
@@ -73,7 +73,7 @@ export default function PongScreen() {
     if (!gameState?.isGameOver) {
       dailySubmittedRef.current = false;
     }
-  }, [gameState?.isGameOver, isDaily, seed, gameState?.scoreP1, gameState?.scoreP2, playerName]);
+  }, [gameState?.isGameOver, isDaily, game, gameState?.scoreP1, gameState?.scoreP2, playerName]);
 
   if (!game || !isReady) return null;
 
@@ -84,7 +84,7 @@ export default function PongScreen() {
         onStart={(selectedMode) => {
           setMode(selectedMode);
           if (initialSeed !== undefined) {
-            restartWithSeed(initialSeed);
+            restart(initialSeed);
           }
           setStarted(true);
         }}
@@ -145,8 +145,8 @@ export default function PongScreen() {
         <PongControls
           onP1Up={(pressed) => handleGameInput({ p1Up: pressed })}
           onP1Down={(pressed) => handleGameInput({ p1Down: pressed })}
-          onP2Up={(pressed) => handleGameInput({ p2Up: pressed })}
-          onP2Down={(pressed) => handleGameInput({ p2Down: pressed })}
+          onP2Up={(pressed) => { if (mode === "local") handleGameInput({ p2Up: pressed }); }}
+          onP2Down={(pressed) => { if (mode === "local") handleGameInput({ p2Down: pressed }); }}
           showP2Controls={mode === "local"}
         />
 
@@ -161,12 +161,12 @@ export default function PongScreen() {
             </View>
         )}
 
-        {showDailyResults && seed !== undefined && (
+        {showDailyResults && game?.getSeed() !== undefined && (
           <View style={styles.overlay}>
             <DailyResultsOverlay
               gameId="pong"
               score={Math.max(gameState?.scoreP1 || 0, gameState?.scoreP2 || 0)}
-              seed={seed}
+              seed={game?.getSeed()}
               onClose={() => setShowDailyResults(false)}
             />
           </View>
@@ -222,7 +222,7 @@ const StartScreen: React.FC<{
 
         {onSeedChange && (
           <SeedWidget
-            seed={0}
+            seed={initialSeed || 0}
             onSeedEnter={onSeedChange}
             style={{ marginBottom: 30 }}
           />
