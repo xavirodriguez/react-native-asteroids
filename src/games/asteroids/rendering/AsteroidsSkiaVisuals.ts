@@ -1,4 +1,4 @@
-import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
+import { EffectDrawer } from "../../../engine/rendering/Renderer";
 import { TransformComponent, HealthComponent, TTLComponent, Star } from "../../../engine/types/EngineTypes";
 import { Platform } from "react-native";
 import { RandomService } from "../../../engine/utils/RandomService";

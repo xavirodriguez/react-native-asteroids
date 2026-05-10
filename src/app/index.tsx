@@ -7,7 +7,6 @@ import { PlayerProfileService, PlayerProfile } from "../services/PlayerProfileSe
 import { PassportOverlay } from "../components/PassportOverlay";
 import { DailyChallengeCard } from "../components/DailyChallengeCard";
 import { LeaderboardOverlay } from "../components/LeaderboardOverlay";
-import { MULTIPLAYER_CONFIG } from "../config/MultiplayerConfig";
 
 interface GameEntry {
   id: string;

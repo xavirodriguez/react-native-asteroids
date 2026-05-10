@@ -2,7 +2,6 @@ import { defineServer, defineRoom, LocalPresence, LocalDriver } from "@colyseus/
 import { AsteroidsRoom } from "./AsteroidsRoom";
 import { SpaceInvadersRoom } from "./SpaceInvadersRoom";
 import { FlappyBirdRoom } from "./FlappyBirdRoom";
-import { PongRoom } from "./PongRoom";
 import { DailyLeaderboardStore } from "./DailyLeaderboardStore";
 
 const leaderboardStore = new DailyLeaderboardStore();

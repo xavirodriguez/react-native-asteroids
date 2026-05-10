@@ -1,6 +1,6 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
-import { InputFrame, EntitySnapshot, ReplayFrame } from "./NetTypes";
+import { InputFrame, ReplayFrame } from "./NetTypes";
 import { INITIAL_GAME_STATE, GameStateComponent } from "../../src/games/asteroids/types/AsteroidTypes";
 import { RandomService } from "../../src/engine/utils/RandomService";
 import { World } from "../../src/engine/core/World";
