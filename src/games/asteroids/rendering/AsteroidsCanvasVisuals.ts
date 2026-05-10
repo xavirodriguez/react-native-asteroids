@@ -28,45 +28,47 @@ export const drawAsteroidsShipSprite: ShapeDrawer<CanvasRenderingContext2D> = (c
   }
   ctx.globalAlpha = alpha;
 
-  // Thrust Propulsion Flame
-  if (input?.thrust) {
-    ctx.save();
-    const renderRandom = RandomService.getInstance("render");
-    // Start flame from the back of the ship sprite (-size)
-    const flameStart = -size * 0.8;
-    const flameLen = size * (1.5 + renderRandom.next() * 0.5);
-    const gradient = ctx.createLinearGradient(flameStart, 0, -flameLen, 0);
-    gradient.addColorStop(0, "rgba(255, 165, 0, 0.8)");
-    gradient.addColorStop(0.5, "rgba(255, 255, 0, 0.5)");
-    gradient.addColorStop(1, "rgba(255, 255, 0, 0)");
-
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.moveTo(flameStart, size / 3);
-    ctx.lineTo(-flameLen, 0);
-    ctx.lineTo(flameStart, -size / 3);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
-
   if (shipImage && shipImage.complete && shipImage.naturalWidth !== 0) {
     // Ship sprite is pointing UP, but engine orientation is pointing RIGHT.
     // We must apply a +90 deg (PI/2) rotation correction.
     ctx.save();
     ctx.rotate(Math.PI / 2);
+
+    // Thrust Propulsion Flame (drawn behind the ship but inside the same rotation block)
+    if (input?.thrust) {
+      const renderRandom = RandomService.getInstance("render");
+      // In the rotated coordinate system (pointing RIGHT), the rear is at Y = size
+      const flameStart = size * 0.6;
+      const flameLen = size * (1.5 + renderRandom.next() * 0.5);
+      const gradient = ctx.createLinearGradient(0, flameStart, 0, flameLen);
+      gradient.addColorStop(0, "rgba(255, 165, 0, 0.8)");
+      gradient.addColorStop(0.5, "rgba(255, 255, 0, 0.5)");
+      gradient.addColorStop(1, "rgba(255, 255, 0, 0)");
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(size / 3, flameStart);
+      ctx.lineTo(0, flameLen);
+      ctx.lineTo(-size / 3, flameStart);
+      ctx.closePath();
+      ctx.fill();
+    }
+
     ctx.drawImage(shipImage, -size, -size, size * 2, size * 2);
     ctx.restore();
   } else {
-    // Fallback while loading
+    // Fallback while loading - matching sprite orientation (+90 deg offset)
+    ctx.save();
+    ctx.rotate(Math.PI / 2);
     ctx.strokeStyle = "white";
     ctx.beginPath();
-    ctx.moveTo(size, 0);
+    ctx.moveTo(0, -size);
+    ctx.lineTo(size / 2, size / 2);
+    ctx.lineTo(0, size / 4);
     ctx.lineTo(-size / 2, size / 2);
-    ctx.lineTo(-size / 4, 0);
-    ctx.lineTo(-size / 2, -size / 2);
     ctx.closePath();
     ctx.stroke();
+    ctx.restore();
   }
 
   ctx.globalAlpha = 1.0;
