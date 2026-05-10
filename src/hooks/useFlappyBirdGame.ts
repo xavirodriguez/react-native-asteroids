@@ -1,7 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGame } from "./useGame";
 import { useHighScore } from "./useHighScore";
 import { FlappyBirdGame } from "../games/flappybird/FlappyBirdGame";
+import { MutatorService } from "../services/MutatorService";
+import type { Mutator } from "../config/MutatorConfig";
 import { INITIAL_FLAPPY_STATE } from "../games/flappybird/types/FlappyBirdTypes";
 import type { FlappyBirdState, FlappyBirdInput } from "../games/flappybird/types/FlappyBirdTypes";
 
@@ -9,7 +11,19 @@ import type { FlappyBirdState, FlappyBirdInput } from "../games/flappybird/types
  * Custom hook to manage the lifecycle of the Flappy Bird game engine.
  */
 export function useFlappyBirdGame(isMultiplayer: boolean = false) {
+  const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
+
+  useEffect(() => {
+    MutatorService.isMutatorModeEnabled().then(enabled => {
+      if (enabled) {
+        setActiveMutators(MutatorService.getActiveMutatorsForGame("flappybird"));
+      }
+    });
+  }, []);
+
   const config = useMemo(() => ({ isMultiplayer }), [isMultiplayer]);
+  const gameOptions = useMemo(() => ({ activeMutators }), [activeMutators]);
+
   const { game, gameState, isPaused, isReady, handleInput, togglePause, restart } =
     useGame<FlappyBirdGame, FlappyBirdState, FlappyBirdInput>(FlappyBirdGame, config, INITIAL_FLAPPY_STATE);
 

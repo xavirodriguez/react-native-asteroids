@@ -126,10 +126,22 @@ export function drawAsteroidCRTEffect(ctx: CanvasRenderingContext2D, width: numb
 }
 
 export function drawAsteroidShipTrail(ctx: CanvasRenderingContext2D, trail: TrailComponent, shipSize: number, headX?: number, headY?: number): void {
-    // Pre-calculate world-to-local transform if a specific head position (entity) is provided
-    // This drawer is called while the entity transform is active in the context.
+    // This drawer is called while the entity's LOCAL transform is active.
+    // To draw world-coordinate trail points, we must apply the inverse of the local transform.
+    // This ensures that the trail points (stored in world space) are drawn correctly
+    // relative to the ship's current position and orientation in the camera's viewport.
     const transform = ctx.getTransform();
     const inverse = transform.inverse();
+
+    // We must also account for the fact that 'p' is already in world space,
+    // but the camera transform is also active. However, inverse.transformPoint(p)
+    // mapped to the LOCAL space of the entity should be correct if the entity
+    // transform includes the camera transform.
+    // In CanvasRenderer, executeCommand is called AFTER camera transform is applied.
+    // So transform = CameraMatrix * EntityMatrix.
+    // inverse = (CameraMatrix * EntityMatrix)^-1 = EntityMatrix^-1 * CameraMatrix^-1.
+    // localP = EntityMatrix^-1 * CameraMatrix^-1 * WorldP.
+    // This is EXACTLY what we want to draw in the current (Camera*Entity) context.
 
     // Improvement 2: Trail cyan with alpha/size fade
     for (let i = 0; i < trail.count; i++) {
@@ -143,7 +155,7 @@ export function drawAsteroidShipTrail(ctx: CanvasRenderingContext2D, trail: Trai
 
       if (!p) continue;
 
-      // Transform world point p to local space because entity transform is active
+      // Map world point p to the current local coordinate system
       const localP = inverse.transformPoint(new DOMPoint(p.x, p.y));
 
       const ratio = i / trail.count;
