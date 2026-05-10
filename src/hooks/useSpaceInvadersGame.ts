@@ -1,7 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGame } from "./useGame";
 import { useHighScore } from "./useHighScore";
 import { SpaceInvadersGame } from "../games/space-invaders/SpaceInvadersGame";
+import { MutatorService } from "../services/MutatorService";
+import type { Mutator } from "../config/MutatorConfig";
 import { INITIAL_GAME_STATE } from "../games/space-invaders/types/SpaceInvadersTypes";
 import type { GameStateComponent, InputState } from "../games/space-invaders/types/SpaceInvadersTypes";
 
@@ -9,9 +11,21 @@ import type { GameStateComponent, InputState } from "../games/space-invaders/typ
  * Custom hook to manage the lifecycle of the Space Invaders game engine.
  */
 export function useSpaceInvadersGame(isMultiplayer: boolean = false) {
+  const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
+
+  useEffect(() => {
+    MutatorService.isMutatorModeEnabled().then(enabled => {
+      if (enabled) {
+        setActiveMutators(MutatorService.getActiveMutatorsForGame("spaceinvaders"));
+      }
+    });
+  }, []);
+
   const config = useMemo(() => ({ isMultiplayer }), [isMultiplayer]);
+  const gameOptions = useMemo(() => ({ activeMutators }), [activeMutators]);
+
   const { game, gameState, isPaused, isReady, handleInput, togglePause, restart } =
-    useGame<SpaceInvadersGame, GameStateComponent, InputState>(SpaceInvadersGame, config, {}, INITIAL_GAME_STATE);
+    useGame<SpaceInvadersGame, GameStateComponent, InputState>(SpaceInvadersGame, config, gameOptions, INITIAL_GAME_STATE);
 
   const { highScore, updateHighScore } = useHighScore("space-invaders-high-score");
 
