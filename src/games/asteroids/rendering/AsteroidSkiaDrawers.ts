@@ -147,8 +147,8 @@ export function drawSkiaAsteroidStarField(canvas: SkCanvas, stars: Star[], width
 export function drawSkiaAsteroidShipTrail(canvas: SkCanvas, trail: TrailComponent, paint: SkPaint, shipSize: number, headX?: number, headY?: number): void {
     if (typeof Skia === "undefined" || !Skia.Color) return;
 
-    // Pre-calculate inverse transform to map world coordinates to local space
-    // because the entity's transform is active on the canvas.
+    // This drawer is called while the entity's LOCAL transform is active.
+    // To draw world-coordinate trail points, we must apply the inverse of the local transform.
     const matrix = canvas.getTotalMatrix();
     const inverse = Skia.Matrix();
     const hasInverse = matrix.invert(inverse);

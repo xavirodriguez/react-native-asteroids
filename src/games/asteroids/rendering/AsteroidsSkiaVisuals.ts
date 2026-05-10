@@ -39,28 +39,6 @@ export const createSkiaShipSpriteDrawer = () => {
 
             p.setAlphaf(blinkOpacity);
 
-            // Thrust Propulsion Flame
-            if (input?.thrust) {
-                const renderRandom = RandomService.getInstance("render");
-                const flameStart = -size * 0.8;
-                const flameLen = size * (1.5 + renderRandom.next() * 0.5);
-
-                const thrusterPath = Skia.Path.Make();
-                thrusterPath.moveTo(flameStart, size / 3);
-                thrusterPath.lineTo(-flameLen, 0);
-                thrusterPath.lineTo(flameStart, -size / 3);
-                thrusterPath.close();
-
-                p.setColor(Skia.Color("#FF4400"));
-                if (Skia.MaskFilter) {
-                    p.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 5, true));
-                }
-                canvas.drawPath(thrusterPath, p);
-                p.setMaskFilter(null);
-                p.setColor(Skia.Color("#FFCC00"));
-                canvas.drawPath(thrusterPath, p);
-            }
-
             // Load sprite if not loaded
             if (!shipImage && !isLoading) {
                 isLoading = true;
@@ -89,9 +67,30 @@ export const createSkiaShipSpriteDrawer = () => {
             if (shipImage) {
                 // Apply rotation correction (+90 deg) because sprite points UP
                 canvas.save();
-                canvas.rotate(90, 0, 0); // Skia rotate uses degrees by default?
-                // Wait, check Skia documentation or existing code.
-                // Skia Canvas.rotate is in degrees.
+                canvas.rotate(90, 0, 0); // Skia rotate uses degrees
+
+                // Thrust Propulsion Flame (inside rotation block)
+                if (input?.thrust) {
+                    const renderRandom = RandomService.getInstance("render");
+                    const flameStart = size * 0.6;
+                    const flameLen = size * (1.5 + renderRandom.next() * 0.5);
+
+                    const thrusterPath = Skia.Path.Make();
+                    thrusterPath.moveTo(size / 3, flameStart);
+                    thrusterPath.lineTo(0, flameLen);
+                    thrusterPath.lineTo(-size / 3, flameStart);
+                    thrusterPath.close();
+
+                    p.setColor(Skia.Color("#FF4400"));
+                    if (Skia.MaskFilter) {
+                        p.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 5, true));
+                    }
+                    canvas.drawPath(thrusterPath, p);
+                    p.setMaskFilter(null);
+                    p.setColor(Skia.Color("#FFCC00"));
+                    canvas.drawPath(thrusterPath, p);
+                }
+
                 canvas.drawImageRect(
                     shipImage,
                     Skia.XYWHRect(0, 0, shipImage.width(), shipImage.height()),
@@ -100,12 +99,14 @@ export const createSkiaShipSpriteDrawer = () => {
                 );
                 canvas.restore();
             } else {
-                // Fallback to triangle while loading or if failed
+                // Fallback while loading - matching sprite orientation (+90 deg offset)
+                canvas.save();
+                canvas.rotate(90, 0, 0);
                 const shipPath = Skia.Path.Make();
-                shipPath.moveTo(size, 0);
+                shipPath.moveTo(0, -size);
+                shipPath.lineTo(size / 2, size / 2);
+                shipPath.lineTo(0, size / 4);
                 shipPath.lineTo(-size / 2, size / 2);
-                shipPath.lineTo(-size / 4, 0);
-                shipPath.lineTo(-size / 2, -size / 2);
                 shipPath.close();
 
                 p.setColor(Skia.Color("#DDDDDD"));
@@ -116,6 +117,7 @@ export const createSkiaShipSpriteDrawer = () => {
                 p.setStyle(Skia.PaintStyle.Stroke);
                 p.setStrokeWidth(1);
                 canvas.drawPath(shipPath, p);
+                canvas.restore();
             }
         } catch (_e) { /* ignore */ }
     };
