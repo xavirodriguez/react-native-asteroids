@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
 import { ComboDisplay } from "@/components/ComboDisplay";
 import { SpaceInvadersUI } from "@/components/SpaceInvadersUI";
@@ -21,12 +21,33 @@ import { SpaceInvadersGame } from "@/games/space-invaders/SpaceInvadersGame";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 
 export default function SpaceInvadersScreen() {
+  const params = useLocalSearchParams<{ seed?: string; isDaily?: string }>();
+  const [playerName, setPlayerName] = useState("Jugador");
+  const [initialSeed, setInitialSeed] = useState<number | undefined>();
   const [started, setStarted] = useState(false);
   const [isMulti, setIsMulti] = useState(false);
   const [isDaily, setIsDaily] = useState(false);
   const { game, gameState, handleInput, isPaused, isReady, togglePause, highScore, seed, restartWithSeed } = useSpaceInvadersGame(isMulti && started);
-  const [playerName, setPlayerName] = useState("Jugador");
-  const [initialSeed, setInitialSeed] = useState<number | undefined>();
+
+  // Handle incoming daily challenge parameters
+  useEffect(() => {
+    if (params.seed && params.isDaily === "true" && !started) {
+      const dailySeed = parseInt(params.seed, 10);
+      if (!isNaN(dailySeed)) {
+        setIsDaily(true);
+        setIsMulti(false);
+        setInitialSeed(dailySeed);
+        setStarted(true);
+      }
+    }
+  }, [params.seed, params.isDaily, started]);
+
+  // Ensure game starts with the correct seed if set via params
+  useEffect(() => {
+    if (started && isDaily && initialSeed !== undefined && isReady && seed !== initialSeed) {
+        restartWithSeed(initialSeed);
+    }
+  }, [started, isDaily, initialSeed, isReady, seed]);
   const [showDailyResults, setShowDailyResults] = useState(false);
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
@@ -46,7 +67,16 @@ export default function SpaceInvadersScreen() {
       const score = gameState.score;
       dailySubmittedRef.current = true;
       DailyChallengeService.markAttemptAsUsed("spaceinvaders", score, seed, 0);
-      LeaderboardService.submitDailyScore("spaceinvaders", DailyChallengeService.getDateKey(), score, playerName);
+      PlayerProfileService.getProfile().then(profile => {
+        LeaderboardService.submitDailyScore(
+          "spaceinvaders",
+          DailyChallengeService.getDateKey(),
+          score,
+          profile.playerId,
+          profile.displayName,
+          seed
+        );
+      });
       setShowDailyResults(true);
     }
     if (!gameState?.isGameOver) {

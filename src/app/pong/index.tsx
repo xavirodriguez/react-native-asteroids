@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
 import { PongControls } from "@/components/PongControls";
 import { DebugOverlay } from "@/components/debug/DebugOverlay";
@@ -19,11 +19,32 @@ import { Mutator } from "@/config/MutatorConfig";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 
 export default function PongScreen() {
+  const params = useLocalSearchParams<{ seed?: string; isDaily?: string }>();
+  const [playerName, setPlayerName] = useState("Jugador");
+  const [initialSeed, setInitialSeed] = useState<number | undefined>();
   const [started, setStarted] = useState(false);
   const [mode, setMode] = useState<"local" | "ai" | "online">("local");
   const [isDaily, setIsDaily] = useState(false);
-  const [playerName, setPlayerName] = useState("Jugador");
-  const [initialSeed, setInitialSeed] = useState<number | undefined>();
+
+  // Handle incoming daily challenge parameters
+  useEffect(() => {
+    if (params.seed && params.isDaily === "true" && !started) {
+      const dailySeed = parseInt(params.seed, 10);
+      if (!isNaN(dailySeed)) {
+        setIsDaily(true);
+        setMode("ai");
+        setInitialSeed(dailySeed);
+        setStarted(true);
+      }
+    }
+  }, [params.seed, params.isDaily, started]);
+
+  // Ensure game starts with the correct seed if set via params
+  useEffect(() => {
+    if (started && isDaily && initialSeed !== undefined && isReady && game?.getSeed() !== initialSeed) {
+        restart(initialSeed);
+    }
+  }, [started, isDaily, initialSeed, isReady, game]);
   const [showDailyResults, setShowDailyResults] = useState(false);
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
@@ -56,16 +77,17 @@ export default function PongScreen() {
   useEffect(() => {
     if (gameState?.isGameOver && isDaily && game?.getSeed() !== undefined && !dailySubmittedRef.current) {
       const score = Math.max(gameState.scoreP1, gameState.scoreP2);
+      const seedVal = game.getSeed()!;
       dailySubmittedRef.current = true;
-      DailyChallengeService.markAttemptAsUsed("pong", score, game?.getSeed()!, 0);
+      DailyChallengeService.markAttemptAsUsed("pong", score, seedVal, 0);
       PlayerProfileService.getProfile().then(profile => {
         LeaderboardService.submitDailyScore(
           "pong",
           DailyChallengeService.getDateKey(),
           score,
           profile.playerId,
-          playerName,
-          seed
+          profile.displayName,
+          seedVal
         );
       });
       setShowDailyResults(true);
