@@ -61,10 +61,10 @@ export class SpaceInvadersGame
     const audio = this.audio;
     try {
       await Promise.all([
-        audio.loadSFX("shoot", "/assets/audio/shoot.mp3"),
-        audio.loadSFX("explosion", "/assets/audio/explosion.mp3"),
-        audio.loadSFX("hit", "/assets/audio/hit.mp3"),
-        audio.loadSFX("game_over", "/assets/audio/game_over.mp3"),
+        audio.loadSFX("shoot", "/audio/shoot.mp3"),
+        audio.loadSFX("explosion", "/audio/explosion.mp3"),
+        audio.loadSFX("hit", "/audio/hit.mp3"),
+        audio.loadSFX("game_over", "/audio/game_over.mp3"),
       ]);
     } catch (e) {
       console.warn("[SpaceInvaders] Asset preloading failed.", e);
