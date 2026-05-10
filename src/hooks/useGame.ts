@@ -1,12 +1,10 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useKeepAwake } from "./useKeepAwake";
-import type { BaseGame } from "../engine/core/BaseGame";
+import type { BaseGame, BaseGameConfig } from "../engine/core/BaseGame";
 import type { DebugManager } from "../engine/debug/DebugManager";
 
-export type GameConfig = {
-  isMultiplayer?: boolean;
+export type GameConfig = BaseGameConfig & {
   seed?: number;
-  gameOptions?: Record<string, unknown>;
 };
 
 // Constructor type - accepts any class that extends BaseGame
@@ -47,7 +45,6 @@ export function useGame<
 >(
   GameClass: GameConstructor<TGame, TState, TInput> | null,
   config: GameConfig = DEFAULT_OPTIONS,
-  gameOptions: Record<string, unknown> = {},
   initialState: TState | null = null
 ): UseGameResult<TGame, TState, TInput> {
 
@@ -74,7 +71,7 @@ export function useGame<
     }
 
     let isMounted = true;
-    const gameInstance = new GameClass({ ...config, gameOptions: { ...config.gameOptions, ...gameOptions } });
+    const gameInstance = new GameClass(config);
     setIsReady(false);
 
     // Async initialization
@@ -112,7 +109,7 @@ export function useGame<
       gameInstance.destroy();
     };
   // Re-initialize if game class or config change
-  }, [GameClass, config, gameOptions]);
+  }, [GameClass, config, initialState]);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
     game?.setInput(input as Record<string, boolean>);

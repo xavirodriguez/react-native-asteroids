@@ -25,7 +25,7 @@ export function useSpaceInvadersGame(isMultiplayer: boolean = false) {
   const gameOptions = useMemo(() => ({ activeMutators }), [activeMutators]);
 
   const { game, gameState, isPaused, isReady, handleInput, togglePause, restart } =
-    useGame<SpaceInvadersGame, GameStateComponent, InputState>(SpaceInvadersGame, config, gameOptions, INITIAL_GAME_STATE);
+    useGame<SpaceInvadersGame, GameStateComponent, InputState>(SpaceInvadersGame, config, INITIAL_GAME_STATE);
 
   const { highScore, updateHighScore } = useHighScore("space-invaders-high-score");
 
