@@ -26,6 +26,12 @@ export default function PongScreen() {
   const [mode, setMode] = useState<"local" | "ai" | "online">("local");
   const [isDaily, setIsDaily] = useState(false);
 
+  const [showDailyResults, setShowDailyResults] = useState(false);
+  const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
+
+  const isMulti = mode === "online";
+  const { game, gameState, handleInput, isReady, restart } = usePongGame(started ? mode : null, initialSeed);
+
   // Handle incoming daily challenge parameters
   useEffect(() => {
     if (params.seed && params.isDaily === "true" && !started) {
@@ -44,12 +50,7 @@ export default function PongScreen() {
     if (started && isDaily && initialSeed !== undefined && isReady && game?.getSeed() !== initialSeed) {
         restart(initialSeed);
     }
-  }, [started, isDaily, initialSeed, isReady, game]);
-  const [showDailyResults, setShowDailyResults] = useState(false);
-  const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
-
-  const isMulti = mode === "online";
-  const { game, gameState, handleInput, isReady, restart } = usePongGame(started ? mode : null);
+  }, [started, isDaily, initialSeed, isReady, game, restart]);
 
   const { room, connected, serverState, localTickRef } = useMultiplayer("pong", playerName, isMulti && started);
 
@@ -113,6 +114,7 @@ export default function PongScreen() {
         playerName={playerName}
         onPlayerNameChange={setPlayerName}
         instructions={Platform.OS === "web" ? "P1: W/S  P2: Flechas" : "Modo Local"}
+        initialSeed={initialSeed}
         onSeedChange={setInitialSeed}
         onStartDaily={(dailySeed) => {
           setInitialSeed(dailySeed);
@@ -204,6 +206,7 @@ const StartScreen: React.FC<{
   playerName: string;
   onPlayerNameChange: (name: string) => void;
   instructions: string;
+  initialSeed?: number;
   onSeedChange?: (seed: number) => void;
   onStartDaily?: (seed: number) => void;
   activeMutators?: Mutator[];
@@ -213,6 +216,7 @@ const StartScreen: React.FC<{
   playerName,
   onPlayerNameChange,
   instructions,
+  initialSeed,
   onSeedChange,
   onStartDaily,
   activeMutators = [],

@@ -1,11 +1,18 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useKeepAwake } from "./useKeepAwake";
 import type { BaseGame, BaseGameConfig } from "../engine/core/BaseGame";
 import type { DebugManager } from "../engine/debug/DebugManager";
 
 export type GameConfig = BaseGameConfig & {
   seed?: number;
+  gameOptions?: Record<string, any>;
 };
+
+export interface GameOptions<TState> {
+  seed?: number;
+  gameOptions?: Record<string, any>;
+  initialState?: TState | null;
+}
 
 // Constructor type - accepts any class that extends BaseGame
 type GameConstructor<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, unknown>> =
@@ -36,17 +43,22 @@ export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, T
  *    previniendo fugas de memoria (timers, event listeners).
  * 4. **Keep Awake**: Mantiene la pantalla encendida mientras el juego está activo.
  */
-const DEFAULT_OPTIONS = {};
-
 export function useGame<
   TGame extends BaseGame<TState, TInput>,
   TState,
   TInput extends Record<string, boolean>
 >(
   GameClass: GameConstructor<TGame, TState, TInput> | null,
-  config: GameConfig = DEFAULT_OPTIONS,
-  initialState: TState | null = null
+  isMultiplayer: boolean = false,
+  options: GameOptions<TState> = {}
 ): UseGameResult<TGame, TState, TInput> {
+  const { seed, gameOptions, initialState = null } = options;
+
+  const config = useMemo(() => ({
+    isMultiplayer,
+    seed,
+    gameOptions
+  }), [isMultiplayer, seed, gameOptions]);
 
   const [game, setGame] = useState<TGame | null>(null);
   const [isReady, setIsReady] = useState(false);

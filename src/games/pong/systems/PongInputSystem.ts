@@ -4,6 +4,7 @@ import { VelocityComponent, TagComponent, InputStateComponent } from "../../../e
 import { PONG_CONFIG, type PongInput } from "../types";
 import { InputUtils } from "../../../engine/utils/ComponentUtils";
 import { AIPongController } from "../input/AIPongController";
+import { NetworkController } from "../input/NetworkController";
 
 /**
  * System that translates aggregated input into paddle movement.
@@ -11,15 +12,17 @@ import { AIPongController } from "../input/AIPongController";
  */
 export class PongInputSystem extends System {
   private aiController?: AIPongController;
+  private networkController?: NetworkController;
 
-  constructor(aiDifficulty?: "easy" | "medium" | "hard") {
+  constructor(aiDifficulty?: "easy" | "medium" | "hard", networkController?: NetworkController) {
     super();
     if (aiDifficulty) {
       this.aiController = new AIPongController(aiDifficulty);
     }
+    this.networkController = networkController;
   }
 
-  private currentTick = 0;
+  public currentTick = 0;
   private currentTime = 0;
 
   public update(world: World, deltaTime: number): void {
@@ -46,7 +49,13 @@ export class PongInputSystem extends System {
           if (InputUtils.isPressed(inputState, "p1Down")) moveDir += 1;
         }
       } else if (tags.tags.includes("right")) {
-        if (this.aiController && aiInputs) {
+        if (this.networkController) {
+          const networkInput = this.networkController.getInputForTick(this.currentTick);
+          if (networkInput) {
+            if (networkInput.p2Up) moveDir -= 1;
+            if (networkInput.p2Down) moveDir += 1;
+          }
+        } else if (this.aiController && aiInputs) {
           if (aiInputs.p2Up) moveDir -= 1;
           if (aiInputs.p2Down) moveDir += 1;
         } else if (inputState) {

@@ -21,11 +21,14 @@ export function useFlappyBirdGame(isMultiplayer: boolean = false) {
     });
   }, []);
 
-  const config = useMemo(() => ({ isMultiplayer }), [isMultiplayer]);
   const gameOptions = useMemo(() => ({ activeMutators }), [activeMutators]);
 
   const { game, gameState, isPaused, isReady, handleInput, togglePause, restart } =
-    useGame<FlappyBirdGame, FlappyBirdState, FlappyBirdInput>(FlappyBirdGame, config, INITIAL_FLAPPY_STATE);
+    useGame<FlappyBirdGame, FlappyBirdState, FlappyBirdInput>(
+      FlappyBirdGame,
+      isMultiplayer,
+      { gameOptions, initialState: INITIAL_FLAPPY_STATE }
+    );
 
   const { highScore, updateHighScore } = useHighScore("flappy-high-score");
 
