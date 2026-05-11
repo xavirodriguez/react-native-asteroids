@@ -114,10 +114,11 @@ export function useGame<
       }
     });
 
+    const currentTimeout = timeoutRef.current;
     return () => {
       isMounted = false;
       unsubscribe();
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (currentTimeout) clearTimeout(currentTimeout);
       gameInstance.destroy();
     };
   // Re-initialize if game class or config change

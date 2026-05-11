@@ -14,6 +14,7 @@ import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
 import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
 import { DailyChallengeService } from "@/services/DailyChallengeService";
 import { LeaderboardService } from "@/services/LeaderboardService";
+import { PlayerProfileService } from "@/services/PlayerProfileService";
 import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
@@ -47,7 +48,7 @@ export default function SpaceInvadersScreen() {
     if (started && isDaily && initialSeed !== undefined && isReady && seed !== initialSeed) {
         restartWithSeed(initialSeed);
     }
-  }, [started, isDaily, initialSeed, isReady, seed]);
+  }, [started, isDaily, initialSeed, isReady, seed, restartWithSeed]);
   const [showDailyResults, setShowDailyResults] = useState(false);
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 

@@ -24,7 +24,7 @@ export const ComboDisplay: React.FC<ComboDisplayProps> = ({ multiplier, isActive
         }),
       ]).start();
     }
-  }, [multiplier, isActive]);
+  }, [multiplier, isActive, scaleAnim]);
 
   if (!isActive || multiplier <= 1) return null;
 

@@ -25,8 +25,6 @@ type TabType = 'Frame' | 'Systems' | 'Entities' | 'Events' | 'Colliders';
  * Designed to be tree-shakeable and only active in development environments.
  */
 export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
-  if (!__DEV__) return null;
-
   const debugManager = useDebugManager(game);
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('Frame');
@@ -63,6 +61,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
     return () => clearInterval(interval);
   }, [debugManager, isOpen, activeTab, showCollidersOverlay]);
 
+  if (!__DEV__) return null;
   if (!game || !debugManager) return null;
 
   const renderTabButton = (tab: TabType) => (
