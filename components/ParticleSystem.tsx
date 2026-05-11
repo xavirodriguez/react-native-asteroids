@@ -20,7 +20,7 @@ export const ParticleSystem: React.FC<ParticleSystemProps> = ({ world }) => {
       const render = world.getComponent<RenderComponent>(entity, "Render");
       return render?.shape === "particle";
     });
-  }, [world.version]);
+  }, [world]);
 
   return (
     <Group>

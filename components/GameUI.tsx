@@ -164,7 +164,7 @@ const Score: React.FC<{ score: number }> = ({ score }) => {
       withSpring(1.2, { damping: 2, stiffness: 80 }),
       withSpring(1)
     );
-  }, [score]);
+  }, [score, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }]
