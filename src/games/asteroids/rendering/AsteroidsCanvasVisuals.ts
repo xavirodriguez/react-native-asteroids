@@ -15,7 +15,7 @@ export const drawAsteroidsShipSprite: ShapeDrawer<CanvasRenderingContext2D> = (c
 
   if (typeof window !== "undefined" && !shipImage) {
     shipImage = new Image();
-    shipImage.src = "/ship.png";
+    shipImage.src = "/assets/ship.png";
   }
 
   let alpha = 1.0;
