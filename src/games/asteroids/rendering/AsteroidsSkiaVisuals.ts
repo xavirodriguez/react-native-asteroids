@@ -72,7 +72,7 @@ export const createSkiaShipSpriteDrawer = () => {
                 // Thrust Propulsion Flame (inside rotation block)
                 if (input?.thrust) {
                     const renderRandom = RandomService.getInstance("render");
-                    const flameStart = size * 0.6;
+                    const flameStart = size * 0.8;
                     const flameLen = size * (1.5 + renderRandom.next() * 0.5);
 
                     const thrusterPath = Skia.Path.Make();

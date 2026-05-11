@@ -123,16 +123,14 @@ export class AudioSystem {
             source.connect(gain);
             gain.connect(this.ctx.destination);
             source.start();
-        } else {
-            // Fallback
-            const audio = new Audio(`/assets/audio/${name}.mp3`);
-            audio.volume = this.masterVolume;
-            audio.play().catch(() => {});
         }
     } else if (AudioNative) {
+        const source = this.sfxMap.get(name);
+        if (!source) return;
+
         try {
             const { sound } = await AudioNative.Sound.createAsync(
-                { uri: this.sfxMap.get(name) || `/assets/audio/${name}.mp3` },
+                typeof source === "string" ? { uri: source } : source,
                 { volume: this.masterVolume }
             );
             await sound.playAsync();
@@ -163,10 +161,13 @@ export class AudioSystem {
             this.currentMusicSource.start();
         }
     } else if (AudioNative) {
+        const source = this.musicMap.get(name);
+        if (!source) return;
+
         this.stopMusic();
         try {
             const { sound } = await AudioNative.Sound.createAsync(
-                { uri: this.musicMap.get(name) },
+                typeof source === "string" ? { uri: source } : source,
                 {
                     shouldPlay: true,
                     isLooping: options.loop,

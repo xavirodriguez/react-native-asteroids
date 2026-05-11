@@ -15,7 +15,7 @@ export const drawAsteroidsShipSprite: ShapeDrawer<CanvasRenderingContext2D> = (c
 
   if (typeof window !== "undefined" && !shipImage) {
     shipImage = new Image();
-    shipImage.src = "/assets/ship.png";
+    shipImage.src = "/ship.png";
   }
 
   let alpha = 1.0;
@@ -38,7 +38,7 @@ export const drawAsteroidsShipSprite: ShapeDrawer<CanvasRenderingContext2D> = (c
     if (input?.thrust) {
       const renderRandom = RandomService.getInstance("render");
       // In the rotated coordinate system (pointing RIGHT), the rear is at Y = size
-      const flameStart = size * 0.6;
+      const flameStart = size * 0.8;
       const flameLen = size * (1.5 + renderRandom.next() * 0.5);
       const gradient = ctx.createLinearGradient(0, flameStart, 0, flameLen);
       gradient.addColorStop(0, "rgba(255, 165, 0, 0.8)");
