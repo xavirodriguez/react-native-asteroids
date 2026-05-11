@@ -62,7 +62,17 @@ export default tseslint.config(
         }
       ],
       "@typescript-eslint/no-require-imports": ["error", {
-        "allow": ["../src/engine/rendering/SkiaRenderer", "@shopify/react-native-skia", "./EntityFactory", "./AsteroidsSkiaVisuals"]
+        "allow": [
+          "../src/engine/rendering/SkiaRenderer",
+          "@shopify/react-native-skia",
+          "./EntityFactory",
+          "./AsteroidsSkiaVisuals",
+          "./AsteroidSkiaDrawers",
+          "expo-av",
+          "react-native",
+          "../../../../assets/ship.png",
+          "../engine/debug/DebugManager"
+        ]
       }],
     },
   },

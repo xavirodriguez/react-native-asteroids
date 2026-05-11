@@ -117,9 +117,11 @@ export class XPSystem extends System {
       await PlayerProfileService.updateStats("all", this.pendingStats);
 
       // Reset pending stats
-      Object.keys(this.pendingStats).forEach(key => {
-          (this.pendingStats as any)[key] = 0;
-      });
+      for (const key in this.pendingStats) {
+        if (Object.prototype.hasOwnProperty.call(this.pendingStats, key)) {
+          (this.pendingStats as Record<string, number>)[key] = 0;
+        }
+      }
     });
   }
 

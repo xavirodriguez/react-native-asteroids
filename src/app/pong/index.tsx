@@ -56,7 +56,7 @@ export default function PongScreen() {
 
   useEffect(() => {
     if (isMulti && serverState && game) {
-      (game as any).updateFromServer(serverState);
+      game.updateFromServer(serverState);
     }
   }, [isMulti, serverState, game]);
 
@@ -127,7 +127,7 @@ export default function PongScreen() {
     );
   }
 
-  const handleGameInput = (input: any) => {
+  const handleGameInput = (input: Record<string, boolean>) => {
       if (isMulti && room) {
           room.send("input", {
               tick: localTickRef.current,

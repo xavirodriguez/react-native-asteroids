@@ -27,7 +27,7 @@ export class InterestManagerSystem extends System {
   public update(world: World, _deltaTime: number): void {
     // Note: In this codebase, SpatialGrid is the resource name used in AsteroidsRoom.
     // SpatialGrid is a more modern version of SpatialHash used in this engine's USSC.
-    const grid = world.getResource<any>("SpatialGrid");
+    const grid = world.getResource<{ query: (aabb: { minX: number, maxX: number, minY: number, maxY: number }, result: Set<number>) => void }>("SpatialGrid");
     if (!grid) return;
 
     const detailedInterestMap = new Map<string, InterestedEntity[]>();

@@ -14,7 +14,7 @@ export const createSkiaShipSpriteDrawer = () => {
     let shipImage: import("@shopify/react-native-skia").SkImage | null = null;
     let isLoading = false;
 
-    return (canvas: SkCanvas, entity: import("../../../engine/core/Entity").Entity, _pos: any, elapsedTime: number, render: any, world: import("../../../engine/core/World").World) => {
+    return (canvas: SkCanvas, entity: import("../../../engine/core/Entity").Entity, _pos: { x: number, y: number }, elapsedTime: number, render: { size: number, hitFlashFrames?: number, color: string }, world: import("../../../engine/core/World").World) => {
         if (Platform.OS === "web") return;
         try {
             const { Skia, BlurStyle } = require("@shopify/react-native-skia");
@@ -50,7 +50,7 @@ export const createSkiaShipSpriteDrawer = () => {
                     const asset = require("../../../../assets/ship.png");
                     const source = Image.resolveAssetSource(asset);
                     if (source && source.uri) {
-                        Skia.Data.fromURI(source.uri).then((data: any) => {
+                        Skia.Data.fromURI(source.uri).then((data: import("@shopify/react-native-skia").SkData | null) => {
                             if (data) {
                                 const img = Skia.Image.MakeImageFromEncoded(data);
                                 if (img) shipImage = img;
@@ -126,7 +126,7 @@ export const createSkiaShipSpriteDrawer = () => {
 
 export const createSkiaShipDrawer = () => {
     let paint: import("@shopify/react-native-skia").SkPaint | null = null;
-    return (canvas: SkCanvas, entity: import("../../../engine/core/Entity").Entity, _pos: any, elapsedTime: number, render: any, world: import("../../../engine/core/World").World) => {
+    return (canvas: SkCanvas, entity: import("../../../engine/core/Entity").Entity, _pos: { x: number, y: number }, elapsedTime: number, render: { size: number, color: string }, world: import("../../../engine/core/World").World) => {
         if (Platform.OS === "web") return;
         try {
             const { Skia, BlurStyle } = require("@shopify/react-native-skia");
@@ -191,7 +191,7 @@ export const createSkiaShipDrawer = () => {
 
 export const createSkiaUfoDrawer = () => {
     let paint: import("@shopify/react-native-skia").SkPaint | null = null;
-    return (canvas: SkCanvas, _entity: import("../../../engine/core/Entity").Entity, _pos: any, _elapsedTime: number, render: any) => {
+    return (canvas: SkCanvas, _entity: import("../../../engine/core/Entity").Entity, _pos: { x: number, y: number }, _elapsedTime: number, render: { size: number, color: string }) => {
         if (Platform.OS === "web") return;
         try {
             const { Skia, BlurStyle } = require("@shopify/react-native-skia");
@@ -287,7 +287,7 @@ export const skiaScreenShakeEffect: EffectDrawer<SkCanvas> = (canvas, _snapshot,
 
 export const createSkiaParticleDrawer = () => {
     let paint: import("@shopify/react-native-skia").SkPaint | null = null;
-    return (canvas: SkCanvas, entity: import("../../../engine/core/Entity").Entity, _pos: any, _elapsedTime: number, render: any, world: import("../../../engine/core/World").World) => {
+    return (canvas: SkCanvas, entity: import("../../../engine/core/Entity").Entity, _pos: { x: number, y: number }, _elapsedTime: number, render: { size: number }, world: import("../../../engine/core/World").World) => {
         if (Platform.OS === "web") return;
         try {
             const { Skia } = require("@shopify/react-native-skia");
@@ -315,7 +315,7 @@ export const createSkiaParticleDrawer = () => {
 
 export const createSkiaBulletDrawer = () => {
     let paint: import("@shopify/react-native-skia").SkPaint | null = null;
-    return (canvas: SkCanvas, _entity: import("../../../engine/core/Entity").Entity, _pos: any, _elapsedTime: number, render: any) => {
+    return (canvas: SkCanvas, _entity: import("../../../engine/core/Entity").Entity, _pos: { x: number, y: number }, _elapsedTime: number, render: { size: number }) => {
         if (Platform.OS === "web") return;
         try {
             const { Skia, BlurStyle } = require("@shopify/react-native-skia");

@@ -87,7 +87,7 @@ export class ReplayRecorder {
   private isEnabled(): boolean {
     // Only enable in development or if debug flag is set
     try {
-        return (__DEV__ || (globalThis as any).DEBUG_REPLAY === true);
+        return (__DEV__ || (globalThis as unknown as { DEBUG_REPLAY: boolean }).DEBUG_REPLAY === true);
     } catch {
         return false;
     }

@@ -120,7 +120,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
 
         joinedRoom.onMessage("world_delta_bin", (data: Uint8Array) => {
             try {
-                const deltaPacket = BinaryCompression.unpack<any>(data);
+                const deltaPacket = BinaryCompression.unpack<{ tick?: number, stateVersion?: number }>(data);
                 if (deltaPacket.tick !== undefined && deltaPacket.tick <= lastProcessedTickRef.current) return;
 
                 let versionChanged = false;

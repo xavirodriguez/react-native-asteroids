@@ -46,7 +46,7 @@ export class MutatorSystem extends System {
     // Ghost Ball: Manejar el temporizador de visibilidad
     const balls = world.query("Ball");
     balls.forEach(entity => {
-      const ball = world.getComponent<any>(entity, "Ball");
+      const ball = world.getComponent<unknown>(entity, "Ball") as { visibilityTimer?: number };
       if (ball && ball.visibilityTimer !== undefined && ball.visibilityTimer > 0) {
         // Decrease by deltaTime-based ticks (approx 60fps)
         const ticksToSub = Math.max(1, Math.round(_deltaTime / 16.66));

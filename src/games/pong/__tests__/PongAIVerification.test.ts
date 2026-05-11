@@ -22,11 +22,11 @@ describe("Pong AI Verification", () => {
     await game.init();
 
     const world = game.getWorld();
-    const systems = (world as any).systemsList;
-    const inputSystem = systems.find((s: any) => s instanceof PongInputSystem);
+    const systems = world.systemsList;
+    const inputSystem = systems.find((s): s is PongInputSystem => s instanceof PongInputSystem);
 
     expect(inputSystem).toBeDefined();
-    expect((inputSystem as any).aiController).toBeDefined();
+    expect((inputSystem as unknown as { aiController: unknown }).aiController).toBeDefined();
   });
 
   it("should NOT initialize with AI controller when mode is local", async () => {
@@ -34,10 +34,10 @@ describe("Pong AI Verification", () => {
     await game.init();
 
     const world = game.getWorld();
-    const systems = (world as any).systemsList;
-    const inputSystem = systems.find((s: any) => s instanceof PongInputSystem);
+    const systems = world.systemsList;
+    const inputSystem = systems.find((s): s is PongInputSystem => s instanceof PongInputSystem);
 
     expect(inputSystem).toBeDefined();
-    expect((inputSystem as any).aiController).toBeUndefined();
+    expect((inputSystem as unknown as { aiController: unknown }).aiController).toBeUndefined();
   });
 });

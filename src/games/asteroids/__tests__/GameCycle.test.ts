@@ -40,7 +40,7 @@ describe("AsteroidsGame Integration", () => {
     expect(game.getGameState().score).toBe(0);
 
     // 4. Game Over (force lives to 0)
-    world.mutateSingleton<any>("GameState", (gs) => {
+    world.mutateSingleton<import("../types/AsteroidTypes").GameStateComponent>("GameState", (gs) => {
         gs.lives = 0;
     });
 
@@ -48,7 +48,7 @@ describe("AsteroidsGame Integration", () => {
     // Let's force all ships to have 0 health or just remove them.
     const ships = world.query("Ship", "Health");
     ships.forEach(s => {
-        world.mutateComponent<any>(s, "Health", (h) => {
+        world.mutateComponent<import("../../../engine/types/EngineTypes").HealthComponent>(s, "Health", (h) => {
             h.current = 0;
         });
     });

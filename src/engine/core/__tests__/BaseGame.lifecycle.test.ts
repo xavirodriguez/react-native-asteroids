@@ -211,9 +211,9 @@ describe("BaseGame Lifecycle", () => {
   test("subscribe() should be guarded when UNINITIALIZED", () => {
     expect(game.getStatus()).toBe(GameStatus.UNINITIALIZED);
 
-    let called = false;
-    const unsubscribe = game.subscribe(() => { called = true; });
-    expect((game as any)._listeners.size).toBe(0);
+    let _called = false;
+    const unsubscribe = game.subscribe(() => { _called = true; });
+    expect((game as unknown as { _listeners: Set<unknown> })._listeners.size).toBe(0);
     expect(typeof unsubscribe).toBe("function");
   });
 

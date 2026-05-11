@@ -5,12 +5,12 @@ import type { DebugManager } from "../engine/debug/DebugManager";
 
 export type GameConfig = BaseGameConfig & {
   seed?: number;
-  gameOptions?: Record<string, any>;
+  gameOptions?: Record<string, unknown>;
 };
 
 export interface GameOptions<TState> {
   seed?: number;
-  gameOptions?: Record<string, any>;
+  gameOptions?: Record<string, unknown>;
   initialState?: TState | null;
 }
 
@@ -156,7 +156,7 @@ export function useGame<
 /**
  * Hook to manage the DebugManager lifecycle.
  */
-export function useDebugManager(game: BaseGame<any, any> | null): DebugManager | null {
+export function useDebugManager(game: BaseGame<Record<string, unknown>, Record<string, boolean>> | null): DebugManager | null {
   const [manager, setManager] = useState<DebugManager | null>(null);
 
   useEffect(() => {

@@ -33,7 +33,7 @@ describe("NetworkDeltaSystem", () => {
     system.generateDelta(world, "client1", 1, 0, new Set([entity]), true);
 
     // Mutate
-    world.mutateComponent(entity, "Transform", t => { (t as any).x = 100; });
+    world.mutateComponent(entity, "Transform", t => { (t as unknown as { x: number }).x = 100; });
 
     const packet = system.generateDelta(world, "client1", 2, 1, new Set([entity]), false);
 
@@ -42,7 +42,7 @@ describe("NetworkDeltaSystem", () => {
     expect(packet.updated.length).toBe(1);
     expect(packet.updated[0].components.Transform).toBeDefined();
     // Quantized value for 100 with scale 10 is 1000
-    expect((packet.updated[0].components.Transform as any).x).toBe(1000);
+    expect((packet.updated[0].components.Transform as { x: number }).x).toBe(1000);
   });
 
   test("should not include unchanged components in delta", () => {
@@ -54,7 +54,7 @@ describe("NetworkDeltaSystem", () => {
     system.generateDelta(world, "client1", 1, 0, new Set([entity]), true);
 
     // Mutate only Transform - this should increment world.stateVersion
-    world.mutateComponent(entity, "Transform", t => { (t as any).x = 100; });
+    world.mutateComponent(entity, "Transform", t => { (t as unknown as { x: number }).x = 100; });
 
     const packet = system.generateDelta(world, "client1", 2, 1, new Set([entity]), false);
 

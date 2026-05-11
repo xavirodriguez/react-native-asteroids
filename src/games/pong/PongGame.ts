@@ -144,13 +144,13 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     return false;
   }
 
-  public updateFromServer(state: any) {
+  public updateFromServer(state: Record<string, unknown>) {
     if (this._config.gameOptions?.mode !== "online" || !state) return;
 
     if (this.networkController && state.input_relay) {
         this.networkController.onInputReceived({
-            tick: state.tick,
-            input: state.input
+            tick: state.tick as number,
+            input: state.input as PongInput
         });
     }
   }

@@ -9,7 +9,7 @@ import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem
  */
 export class SpaceInvadersGameStateSystem extends BaseGameStateSystem<GameStateComponent> {
   constructor(game: ISpaceInvadersGame) {
-    super(game as any);
+    super(game as unknown as import("../../../engine/core/BaseGame").BaseGame<Record<string, unknown>, Record<string, unknown>>);
   }
 
   protected updateGameState(world: World, gameState: GameStateComponent, deltaTime: number): void {

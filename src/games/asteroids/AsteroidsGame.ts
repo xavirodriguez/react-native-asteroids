@@ -179,7 +179,7 @@ export class AsteroidsGame
     const serverTick = serverState.tick as number;
     if (serverTick <= this.lastAuthoritativeTick) return;
 
-    const delta = serverState.delta as any;
+    const delta = serverState.delta as unknown as import("../../engine/network/types/ReplicationTypes").DeltaPacket & import("../../engine/types/EngineTypes").WorldSnapshot;
 
     let authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot;
 
@@ -252,14 +252,14 @@ export class AsteroidsGame
     this.performReconciliation(serverTick, authoritativeSnapshot, localSessionId);
   }
 
-  private applyDeltaToSnapshot(snapshot: import("../../engine/types/EngineTypes").WorldSnapshot, delta: any) {
+  private applyDeltaToSnapshot(snapshot: import("../../engine/types/EngineTypes").WorldSnapshot, delta: import("../../engine/network/types/ReplicationTypes").DeltaPacket & import("../../engine/types/EngineTypes").WorldSnapshot) {
     const entitySet = new Set(snapshot.entities);
 
     if (delta.created || delta.updated || delta.removed) {
       // DeltaPacket format (Iteration 3+)
       if (delta.created) {
-        delta.created.forEach((payload: any) => {
-          const entityId = payload.entityId;
+        delta.created.forEach((payload) => {
+          const entityId = parseInt(payload.entityId);
           if (!entitySet.has(entityId)) {
             entitySet.add(entityId);
             snapshot.entities.push(entityId);
@@ -271,8 +271,8 @@ export class AsteroidsGame
         });
       }
       if (delta.updated) {
-        delta.updated.forEach((payload: any) => {
-          const entityId = payload.entityId;
+        delta.updated.forEach((payload) => {
+          const entityId = parseInt(payload.entityId);
           for (const type in payload.components) {
             if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
             snapshot.componentData[type][entityId] = payload.components[type];
