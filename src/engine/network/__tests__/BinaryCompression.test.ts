@@ -12,7 +12,7 @@ describe("BinaryCompression", () => {
     const packed = BinaryCompression.pack(data);
     expect(packed).toBeInstanceOf(Uint8Array);
 
-    const unpacked = BinaryCompression.unpack<any>(packed);
+    const unpacked = BinaryCompression.unpack<typeof data>(packed);
     expect(unpacked).toEqual(data);
   });
 });

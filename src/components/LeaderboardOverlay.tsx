@@ -2,6 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { LeaderboardService } from '../services/LeaderboardService';
 
+interface LeaderboardEntry {
+  playerId: string;
+  score: number;
+  displayName?: string;
+}
+
 interface LeaderboardOverlayProps {
   gameId: string;
   onClose: () => void;
@@ -9,7 +15,7 @@ interface LeaderboardOverlayProps {
 
 export const LeaderboardOverlay: React.FC<LeaderboardOverlayProps> = ({ gameId, onClose }) => {
   const [loading, setLoading] = useState(true);
-  const [scores, setScores] = useState<any[]>([]);
+  const [scores, setScores] = useState<LeaderboardEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -18,7 +24,7 @@ export const LeaderboardOverlay: React.FC<LeaderboardOverlayProps> = ({ gameId, 
         const dateKey = new Date().toISOString().split('T')[0].replace(/-/g, '');
         const data = await LeaderboardService.fetchDailyLeaderboard(gameId, dateKey);
         setScores(data);
-      } catch (e) {
+      } catch (_e) {
         setError("No se pudo cargar el ranking");
       } finally {
         setLoading(false);

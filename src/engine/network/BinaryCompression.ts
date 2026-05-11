@@ -31,7 +31,7 @@ export class BinaryCompression {
   /**
    * Packs a JS object into a binary Buffer.
    */
-  public static pack(data: any): Uint8Array {
+  public static pack(data: unknown): Uint8Array {
     return this.packr.pack(data);
   }
 

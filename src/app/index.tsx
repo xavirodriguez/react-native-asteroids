@@ -51,7 +51,7 @@ export default function HomeScreen() {
 
       // For MVP we just navigate to asteroids with the seed
       router.push({
-          pathname: path as any,
+          pathname: path as Href<string>,
           params: { seed: seed.toString(), isDaily: "true" }
       });
   };

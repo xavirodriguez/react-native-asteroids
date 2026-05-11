@@ -14,6 +14,7 @@ const MUTE_KEY = "settings:audio_muted";
 const VOLUME_KEY = "settings:audio_volume";
 
 // Conditionally import expo-av for native
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let AudioNative: any = null;
 if (Platform.OS !== "web") {
     try {
@@ -32,18 +33,18 @@ if (Platform.OS !== "web") {
  */
 export class AudioSystem {
   private ctx: AudioContext | null = null;
-  private sfxMap = new Map<string, AudioBuffer | any>();
-  private musicMap = new Map<string, AudioBuffer | any>();
-  private currentMusicSource: any = null;
-  private currentMusicGain: any = null;
-  private nativeSounds = new Map<string, any>();
+  private sfxMap = new Map<string, AudioBuffer | string | number>();
+  private musicMap = new Map<string, AudioBuffer | string | number>();
+  private currentMusicSource: AudioBufferSourceNode | unknown = null;
+  private currentMusicGain: GainNode | null = null;
+  private nativeSounds = new Map<string, unknown>();
 
   private masterVolume: number = 1.0;
   private muted: boolean = false;
 
   constructor() {
     if (Platform.OS === "web") {
-      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioContextClass) {
         this.ctx = new AudioContextClass();
       }
@@ -135,7 +136,7 @@ export class AudioSystem {
             );
             await sound.playAsync();
             // Automatically unload after playing to prevent leaks
-            sound.setOnPlaybackStatusUpdate((status: any) => {
+            sound.setOnPlaybackStatusUpdate((status: { didJustFinish: boolean }) => {
                 if (status.didJustFinish) sound.unloadAsync();
             });
         } catch (e) {
@@ -149,16 +150,17 @@ export class AudioSystem {
 
     if (Platform.OS === "web") {
         const buffer = this.musicMap.get(name);
-        if (buffer && this.ctx) {
+        if (buffer && this.ctx && buffer instanceof AudioBuffer) {
             this.stopMusic();
-            this.currentMusicSource = this.ctx.createBufferSource();
+            const source = this.ctx.createBufferSource();
+            this.currentMusicSource = source;
             this.currentMusicGain = this.ctx.createGain();
-            this.currentMusicSource.buffer = buffer;
-            this.currentMusicSource.loop = options.loop || false;
+            source.buffer = buffer;
+            source.loop = options.loop || false;
             this.currentMusicGain.gain.value = this.masterVolume * (options.volume || 1.0);
-            this.currentMusicSource.connect(this.currentMusicGain);
+            source.connect(this.currentMusicGain);
             this.currentMusicGain.connect(this.ctx.destination);
-            this.currentMusicSource.start();
+            source.start();
         }
     } else if (AudioNative) {
         const source = this.musicMap.get(name);
@@ -182,13 +184,14 @@ export class AudioSystem {
   }
 
   public async stopMusic(): Promise<void> {
-    if (Platform.OS === "web" && this.currentMusicSource) {
+    if (Platform.OS === "web" && this.currentMusicSource && this.currentMusicSource instanceof AudioBufferSourceNode) {
       this.currentMusicSource.stop();
       this.currentMusicSource = null;
       this.currentMusicGain = null;
     } else if (AudioNative && this.currentMusicSource) {
-        await this.currentMusicSource.stopAsync();
-        await this.currentMusicSource.unloadAsync();
+        const sound = this.currentMusicSource as { stopAsync: () => Promise<void>, unloadAsync: () => Promise<void> };
+        await sound.stopAsync();
+        await sound.unloadAsync();
         this.currentMusicSource = null;
     }
   }
@@ -199,7 +202,7 @@ export class AudioSystem {
       const response = await fetch(url);
       const arrayBuffer = await response.arrayBuffer();
       return await this.ctx.decodeAudioData(arrayBuffer);
-    } catch (e) {
+    } catch (_e) {
       console.warn(`[AudioSystem] Failed to load buffer: ${url}`);
       return null;
     }

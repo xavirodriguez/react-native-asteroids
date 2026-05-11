@@ -249,10 +249,10 @@ export class World {
         }
 
         if (type === "Juice") {
-          const juiceComp = serializedComp as any;
+          const juiceComp = serializedComp as unknown as { animations: Array<{ onComplete?: unknown }> };
           if (Array.isArray(juiceComp.animations)) {
-            juiceComp.animations = juiceComp.animations.map((anim: any) => {
-              const { onComplete, ...rest } = anim;
+            juiceComp.animations = juiceComp.animations.map((anim) => {
+              const { onComplete: _, ...rest } = anim;
               return rest;
             });
           }

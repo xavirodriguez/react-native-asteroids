@@ -140,15 +140,15 @@ export class NetworkDeltaSystem {
     };
   }
 
-  private serializeComponent(component: any): any {
+  private serializeComponent(component: Record<string, unknown>): Record<string, unknown> {
     if (component.type === "Transform") {
         return {
             type: "Transform",
-            ...Quantization.quantizeTransform(component.x, component.y, component.rotation)
+            ...Quantization.quantizeTransform(component.x as number, component.y as number, component.rotation as number)
         };
     }
 
-    const serialized: any = {};
+    const serialized: Record<string, unknown> = {};
     for (const key in component) {
       if (typeof component[key] !== "function" && key !== "onReclaim") {
         serialized[key] = component[key];

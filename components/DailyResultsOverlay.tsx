@@ -7,6 +7,7 @@ import { seedToString } from "../src/utils/SeedUtils";
 interface LeaderboardEntry {
   playerId: string;
   score: number;
+  displayName?: string;
 }
 
 interface DailyResultsOverlayProps {
@@ -80,7 +81,7 @@ export const DailyResultsOverlay: React.FC<DailyResultsOverlayProps> = ({
           leaderboard.map((entry, i) => (
             <View key={i} style={styles.entry}>
               <Text style={styles.rank}>{i + 1}.</Text>
-              <Text style={styles.playerName}>{(entry as any).displayName || entry.playerId.slice(0, 8)}</Text>
+              <Text style={styles.playerName}>{entry.displayName || entry.playerId.slice(0, 8)}</Text>
               <Text style={styles.playerScore}>{entry.score.toLocaleString()}</Text>
             </View>
           ))

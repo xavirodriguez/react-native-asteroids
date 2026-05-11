@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useGame } from "./useGame";
 import { useHighScore } from "./useHighScore";
 import { AsteroidsGame } from "../games/asteroids/AsteroidsGame";
@@ -13,7 +13,6 @@ import type { GameStateComponent, InputState } from "../types/GameTypes";
  * la lógica de inicialización de la escena, carga de assets específicos
  * y configuración del modo multijugador.
  */
-const EMPTY_OPTIONS = {};
 
 export function useAsteroidsGame(isMultiplayer: boolean = false) {
   const { game, gameState, isPaused, isReady, handleInput, togglePause, restart } =

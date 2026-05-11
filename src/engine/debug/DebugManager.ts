@@ -29,7 +29,7 @@ export interface ColliderShapeInfo {
   x: number;
   y: number;
   rotation: number;
-  shape: any;
+  shape: { radius?: number; halfWidth?: number; halfHeight?: number };
   isTrigger: boolean;
 }
 
@@ -56,7 +56,7 @@ export interface ColliderShapeInfo {
  */
 export class DebugManager {
   private static instance: DebugManager | null = null;
-  private game: BaseGame<any, any> | null = null;
+  private game: BaseGame<Record<string, unknown>, Record<string, boolean>> | null = null;
   private enabled = false;
   private startTime = performance.now();
   private lastWorld: World | null = null;
@@ -93,7 +93,7 @@ export class DebugManager {
   /**
    * Connects the manager to a game instance.
    */
-  public attach(game: BaseGame<any, any>): void {
+  public attach(game: BaseGame<Record<string, unknown>, Record<string, boolean>>): void {
     if (this.game === game) return;
     this.detach();
     this.game = game;
@@ -322,8 +322,8 @@ export class DebugManager {
     const entities = world.query("Transform", "Collider2D");
 
     return entities.map(entity => {
-      const transform = world.getComponent(entity, "Transform") as any;
-      const collider = world.getComponent(entity, "Collider2D") as any;
+      const transform = world.getComponent(entity, "Transform") as unknown as { worldX?: number, x: number, worldY?: number, y: number, worldRotation?: number, rotation: number };
+      const collider = world.getComponent(entity, "Collider2D") as unknown as { shape: { type: string, radius?: number, halfWidth?: number, halfHeight?: number }, offsetX: number, offsetY: number, isTrigger: boolean };
 
       return {
         entity,

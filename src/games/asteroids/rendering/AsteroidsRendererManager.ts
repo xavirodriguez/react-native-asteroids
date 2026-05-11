@@ -45,7 +45,7 @@ export function initializeAsteroidsRenderer(renderer: Renderer<unknown>): void {
     // renderer.registerForegroundEffect("crt", asteroidsCRTEffect);
   } else if (renderer.type === "skia") {
     try {
-      const { createSkiaAsteroidShipTrailDrawer, drawSkiaShip, drawSkiaUfo } = require("./AsteroidSkiaDrawers");
+      const { createSkiaAsteroidShipTrailDrawer } = require("./AsteroidSkiaDrawers");
       const {
         createSkiaShipDrawer,
         createSkiaShipSpriteDrawer,

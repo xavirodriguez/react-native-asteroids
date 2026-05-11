@@ -23,15 +23,12 @@ export class StatusEffectSystem extends System {
       const entity = entities[i];
 
       world.mutateComponent(entity, "ModifierStack", (stack: ModifierStackComponent) => {
-        let changed = false;
-
         for (let j = stack.modifiers.length - 1; j >= 0; j--) {
           const mod = stack.modifiers[j];
           mod.remaining -= deltaTime;
 
           if (mod.remaining <= 0) {
             stack.modifiers.splice(j, 1);
-            changed = true;
           }
         }
 

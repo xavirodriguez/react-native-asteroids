@@ -33,6 +33,7 @@ import { RandomService } from "../utils/RandomService";
  */
 export class LootSystem extends System {
   private registeredWorld: World | null = null;
+  private _listenersRegistered = false;
 
   constructor() {
     super();
@@ -52,7 +53,7 @@ export class LootSystem extends System {
     // Ensure we don't have multiple listeners if this system is re-added
     // Although the system instance check in World.addSystem and BaseGame.eventBus.clear()
     // handle most cases, we also check a internal flag.
-    if ((this as any)._listenersRegistered) return;
+    if (this._listenersRegistered) return;
 
     const eventBus = world.getResource<EventBus>("EventBus");
     if (eventBus) {
@@ -68,7 +69,7 @@ export class LootSystem extends System {
         }
       });
 
-      (this as any)._listenersRegistered = true;
+      this._listenersRegistered = true;
     }
   }
 
@@ -87,7 +88,7 @@ export class LootSystem extends System {
     }
   }
 
-  private spawnPowerUp(world: World, x: number, y: number, drop: any): void {
+  private spawnPowerUp(world: World, x: number, y: number, drop: { type: string, config?: { value?: number, duration?: number } }): void {
     const powerUp = world.createEntity();
 
     // Physical presence
