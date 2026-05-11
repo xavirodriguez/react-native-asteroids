@@ -60,7 +60,7 @@ export class FlappyBirdInputSystem extends System {
 
         // Apply gravity
         const dt = deltaTime / 1000;
-        vel.dy += this.config.GRAVITY * dt;
+        vel.dy += (this.config.GRAVITY || FLAPPY_CONFIG.GRAVITY) * dt;
 
         // Sync bird component velocityY
         bird.velocityY = vel.dy;
