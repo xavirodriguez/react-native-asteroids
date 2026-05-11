@@ -13,8 +13,12 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ onPlay }
   const [score, setScore] = useState<number | null>(null);
 
   useEffect(() => {
-    // For MVP, daily challenge is asteroids. In a real app, this could rotate.
-    const todayGameId = "asteroids";
+    // Deterministic daily game rotation
+    const availableGames = ["asteroids", "pong", "flappybird", "space-invaders"];
+    const dateKey = DailyChallengeService.getDateKey();
+    const dateNum = parseInt(dateKey, 10);
+    const todayGameId = availableGames[dateNum % availableGames.length];
+
     setGameId(todayGameId);
 
     DailyChallengeService.hasTodayAttemptBeenUsed(todayGameId).then(setPlayed);

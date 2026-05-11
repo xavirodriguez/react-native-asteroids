@@ -6,6 +6,7 @@ export interface BallComponent {
   type: "Ball";
   spinFactor: number;
   spinDecay: number;
+  visibilityTimer?: number;
 }
 
 export interface PaddleComponent {

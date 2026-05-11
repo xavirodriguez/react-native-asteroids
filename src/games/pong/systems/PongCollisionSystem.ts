@@ -103,6 +103,11 @@ export class PongCollisionSystem extends System {
 
         // Juice: Screen shake (pequeño)
         Juice.shake(world, 3, 100);
+
+        // Ghost Ball Mutator
+        if (ballComp && PONG_CONFIG.BALL_INVISIBLE_AFTER_HIT_TICKS) {
+          ballComp.visibilityTimer = PONG_CONFIG.BALL_INVISIBLE_AFTER_HIT_TICKS;
+        }
     }
   }
 

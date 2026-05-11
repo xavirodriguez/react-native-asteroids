@@ -16,9 +16,9 @@ interface GameEntry {
 
 const GAMES: GameEntry[] = [
   { id: "asteroids", label: "ASTEROIDES", href: "/asteroids" },
-  { id: "space-invaders", label: "SPACE INVADERS (BETA)", href: "/space-invaders" },
+  { id: "space-invaders", label: "SPACE INVADERS", href: "/space-invaders" },
   { id: "flappybird", label: "FLAPPY BIRD", href: "/flappybird" },
-  { id: "pong", label: "PONG (BETA)", href: "/pong" },
+  { id: "pong", label: "PONG", href: "/pong" },
 ];
 
 export default function HomeScreen() {

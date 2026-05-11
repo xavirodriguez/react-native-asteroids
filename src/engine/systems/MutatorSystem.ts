@@ -42,11 +42,16 @@ export class MutatorSystem extends System {
    */
   public update(world: World, _deltaTime: number): void {
     // Dynamic effects that cannot be solved with static config scaling
-    // Example: Pong Ciego (Blind Pong)
-    if (this.activeMutators.some(m => m.id === 'blind_pong')) {
-      const _balls = world.query("Ball", "Render");
-      // Logic would go here to hide the ball based on ticks since last hit
-      // (This requires monitoring collision events)
-    }
+
+    // Ghost Ball: Manejar el temporizador de visibilidad
+    const balls = world.query("Ball");
+    balls.forEach(entity => {
+      const ball = world.getComponent<any>(entity, "Ball");
+      if (ball && ball.visibilityTimer !== undefined && ball.visibilityTimer > 0) {
+        // Decrease by deltaTime-based ticks (approx 60fps)
+        const ticksToSub = Math.max(1, Math.round(_deltaTime / 16.66));
+        ball.visibilityTimer = Math.max(0, ball.visibilityTimer - ticksToSub);
+      }
+    });
   }
 }

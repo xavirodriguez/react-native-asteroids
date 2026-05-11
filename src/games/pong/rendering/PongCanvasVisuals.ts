@@ -11,6 +11,10 @@ export const drawPongBall: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity,
   const { size, color } = render;
   const ballComp = world.getComponent<BallComponent>(entity, "Ball");
 
+  if (ballComp && ballComp.visibilityTimer !== undefined && ballComp.visibilityTimer > 0) {
+    return;
+  }
+
   // Draw core ball
   ctx.fillStyle = color;
   ctx.beginPath();
