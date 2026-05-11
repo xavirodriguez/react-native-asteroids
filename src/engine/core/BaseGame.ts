@@ -497,6 +497,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * @postcondition World is configured and ready for simulation.
    */
   public async init(): Promise<void> {
+    if (this._status === GameStatus.DESTROYED) return;
     if (this._status !== GameStatus.UNINITIALIZED) {
       throw new Error(`BaseGame: Cannot initialize from state ${this._status}`);
     }

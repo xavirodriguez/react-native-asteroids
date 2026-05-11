@@ -1,5 +1,5 @@
 import { World } from "../core/World";
-import { Entity } from "../types/EngineTypes";
+import { Entity, Component } from "../types/EngineTypes";
 import { ReplicationStateTracker } from "./ReplicationStateTracker";
 import { DeltaPacket, EntityPayload, EntityDeltaPayload } from "./types/ReplicationTypes";
 import { ReplicationPolicy } from "./ReplicationPolicy";
@@ -140,18 +140,19 @@ export class NetworkDeltaSystem {
     };
   }
 
-  private serializeComponent(component: Record<string, unknown>): Record<string, unknown> {
+  private serializeComponent(component: Component): Record<string, unknown> {
+    const compAsRecord = component as unknown as Record<string, unknown>;
     if (component.type === "Transform") {
         return {
             type: "Transform",
-            ...Quantization.quantizeTransform(component.x as number, component.y as number, component.rotation as number)
+            ...Quantization.quantizeTransform(compAsRecord.x as number, compAsRecord.y as number, compAsRecord.rotation as number)
         };
     }
 
     const serialized: Record<string, unknown> = {};
-    for (const key in component) {
-      if (typeof component[key] !== "function" && key !== "onReclaim") {
-        serialized[key] = component[key];
+    for (const key in compAsRecord) {
+      if (typeof compAsRecord[key] !== "function" && key !== "onReclaim") {
+        serialized[key] = compAsRecord[key];
       }
     }
     return serialized;

@@ -116,7 +116,7 @@ export class AudioSystem {
 
     if (Platform.OS === "web") {
         const buffer = this.sfxMap.get(name);
-        if (buffer && this.ctx) {
+        if (buffer && this.ctx && buffer instanceof AudioBuffer) {
             const source = this.ctx.createBufferSource();
             const gain = this.ctx.createGain();
             source.buffer = buffer;
