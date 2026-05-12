@@ -1,3 +1,5 @@
+import { generateScoreSignature } from "../utils/SecurityUtils";
+
 /**
  * Service to interact with the global daily leaderboard.
  */
@@ -16,6 +18,7 @@ export class LeaderboardService {
     seed?: number
   ): Promise<boolean> {
     try {
+      const signature = generateScoreSignature(gameId, dateKey, playerId, score);
       const response = await fetch(`${this.BASE_URL}/daily-score`, {
         method: "POST",
         headers: {
@@ -28,6 +31,7 @@ export class LeaderboardService {
           playerId,
           displayName,
           seed,
+          signature,
           clientVersion: "1.0.0"
         }),
       });

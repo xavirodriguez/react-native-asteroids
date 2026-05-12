@@ -10,10 +10,11 @@
   "dependencies": {
     "@colyseus/core": "^0.17.0",
     "@colyseus/schema": "^4.0.19",
-    "@colyseus/ws-transport": "^0.17.0",
+    "@colyseus/ws-transport": "^0.17.13",
     "better-sqlite3": "^12.9.0",
     "colyseus": "^0.17.0",
-    "msgpackr": "^1.11.10"
+    "express": "^5.2.1",
+    "msgpackr": "^1.11.12"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

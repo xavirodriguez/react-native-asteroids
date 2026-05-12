@@ -256,7 +256,7 @@ const StartScreen: React.FC<{
                     <View style={{ width: 20 }} />
                     <TouchableOpacity style={[styles.startButton, { backgroundColor: '#444' }]} onPress={onStartMulti}>
                         <Text style={[styles.startButtonText, { color: 'white' }]}>
-                            MULTI {MULTIPLAYER_CONFIG.STATE === 'beta' ? '(BETA)' : ''}
+                            MULTI
                         </Text>
                     </TouchableOpacity>
                 </>

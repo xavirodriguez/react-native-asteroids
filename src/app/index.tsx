@@ -4,6 +4,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from "react-nati
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import type { Href } from "expo-router";
 import { PlayerProfileService, PlayerProfile } from "../services/PlayerProfileService";
+import { AudioSettingsService } from "../services/AudioSettingsService";
 import { PassportOverlay } from "../components/PassportOverlay";
 import { DailyChallengeCard } from "../components/DailyChallengeCard";
 import { LeaderboardOverlay } from "../components/LeaderboardOverlay";
@@ -23,6 +24,7 @@ const GAMES: GameEntry[] = [
 
 export default function HomeScreen() {
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
   const [showPassport, setShowPassport] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState<string | null>(null);
 
@@ -32,6 +34,9 @@ export default function HomeScreen() {
 
   useEffect(() => {
     refreshProfile();
+    AudioSettingsService.init().then(() => {
+      setIsMuted(AudioSettingsService.isMuted());
+    });
 
     // Listen for level up events to refresh the profile summary
     // Since index.tsx is the entry point, we can rely on it being mounted
@@ -42,6 +47,11 @@ export default function HomeScreen() {
     const interval = setInterval(refreshProfile, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const toggleMute = async () => {
+    const newState = await AudioSettingsService.toggleMute();
+    setIsMuted(newState);
+  };
 
   const handlePlayDaily = (gameId: string, seed: number) => {
       const path = gameId === "asteroids" ? "/asteroids" :
@@ -62,11 +72,17 @@ export default function HomeScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Text style={styles.title}>RETRO ARCADE</Text>
 
-          {profile && (
-            <TouchableOpacity style={styles.profileSummary} onPress={() => setShowPassport(true)}>
-              <Text style={styles.profileText}>{profile.displayName} - NIVEL {profile.level}</Text>
+          <View style={styles.headerRow}>
+            {profile && (
+              <TouchableOpacity style={styles.profileSummary} onPress={() => setShowPassport(true)}>
+                <Text style={styles.profileText}>{profile.displayName} - NIVEL {profile.level}</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity style={styles.muteButton} onPress={toggleMute}>
+              <Text style={styles.muteButtonText}>{isMuted ? "🔇" : "🔊"}</Text>
             </TouchableOpacity>
-          )}
+          </View>
 
           {GAMES.map((game) => (
             <View key={game.id} style={styles.menuRow}>
@@ -143,6 +159,26 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  muteButton: {
+    backgroundColor: '#222',
+    padding: 10,
+    borderRadius: 20,
+    marginLeft: 10,
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  muteButtonText: {
+    fontSize: 20,
   },
   menuRow: {
     flexDirection: 'row',
