@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AudioSettingsService } from "../../services/AudioSettingsService";
 
 export type SoundId =
   | 'shoot'
@@ -112,7 +113,7 @@ export class AudioSystem {
   }
 
   public async playSFX(name: string): Promise<void> {
-    if (this.muted) return;
+    if (this.muted || AudioSettingsService.isMuted()) return;
 
     if (Platform.OS === "web") {
         const buffer = this.sfxMap.get(name);
@@ -146,7 +147,7 @@ export class AudioSystem {
   }
 
   public async playMusic(name: string, options: { loop?: boolean; volume?: number } = {}): Promise<void> {
-    if (this.muted) return;
+    if (this.muted || AudioSettingsService.isMuted()) return;
 
     if (Platform.OS === "web") {
         const buffer = this.musicMap.get(name);
