@@ -87,13 +87,17 @@ export function useGame<
     setIsReady(false);
 
     // Async initialization
-    gameInstance.init().then(() => {
-      if (isMounted) {
-        gameInstance.start();
-        setGame(gameInstance);
-        setIsReady(true);
-      }
-    }).catch(console.error);
+    if (isMounted) {
+      gameInstance.init().then(() => {
+        if (isMounted) {
+          gameInstance.start();
+          setGame(gameInstance);
+          setIsReady(true);
+        }
+      }).catch((err) => {
+        if (isMounted) console.error(err);
+      });
+    }
 
     let lastUpdateTime = 0;
     const UI_UPDATE_INTERVAL = 1000 / 15; // Throttled to 15 FPS for UI components
