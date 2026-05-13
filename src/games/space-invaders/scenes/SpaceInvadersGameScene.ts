@@ -23,6 +23,8 @@ import {
 } from "../EntityFactory";
 import { GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";
+import { MutatorSystem } from "../../../engine/systems/MutatorSystem";
+import { MutatorService } from "../../../services/MutatorService";
 
 /**
  * Main gameplay scene for Space Invaders.
@@ -74,6 +76,9 @@ export class SpaceInvadersGameScene extends Scene {
     this.world.addSystem(new BossSystem());
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(new SpaceInvadersGameStateSystem(this.game));
+
+    const activeMutators = MutatorService.getActiveMutatorsForGame(this.game.gameId);
+    this.world.addSystem(new MutatorSystem(activeMutators));
     this.world.addSystem(new RenderUpdateSystem(0)); // No trails
     this.world.addSystem(new SpaceInvadersRenderSystem());
 

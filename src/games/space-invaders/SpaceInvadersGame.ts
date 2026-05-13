@@ -51,6 +51,7 @@ export class SpaceInvadersGame
     this.config = enabled
       ? mutators.reduce((cfg, m) => m.apply(cfg), { ...GAME_CONFIG }) as typeof GAME_CONFIG
       : { ...GAME_CONFIG };
+    this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     await this.onPreloadAssets();
     await super.init();
