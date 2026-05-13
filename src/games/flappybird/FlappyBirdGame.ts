@@ -25,6 +25,7 @@ import {
   scrollingBackgroundEffect
 } from "./rendering/FlappyBirdCanvasVisuals";
 import { MutatorService } from "../../services/MutatorService";
+import { MutatorSystem } from "../../engine/systems/MutatorSystem";
 
 /**
  * Controlador principal del juego Flappy Bird.
@@ -57,6 +58,7 @@ export class FlappyBirdGame
     this.config = enabled
       ? mutators.reduce((cfg, m) => m.apply(cfg), { ...FLAPPY_CONFIG })
       : { ...FLAPPY_CONFIG };
+    this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     await this.onPreloadAssets();
     await super.init();
@@ -94,6 +96,9 @@ export class FlappyBirdGame
     this.world.addSystem(new CollisionSystem2D());
     this.world.addSystem(new FlappyBirdCollisionSystem(this));
     this.world.addSystem(this.gameStateSystem);
+
+    const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
+    this.world.addSystem(new MutatorSystem(activeMutators));
     this.world.addSystem(new FlappyBirdRenderSystem());
   }
 

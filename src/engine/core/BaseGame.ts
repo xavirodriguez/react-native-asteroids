@@ -179,6 +179,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     // Semantic Audio Bridge: Mapping game events to audio effects
     // Uses emitDeferred to decouple from simulation
     this.eventBus.on("asteroid:destroyed", () => {
+      if ((this._config.gameOptions as Record<string, unknown>)?.ENEMY_SFX_ENABLED === false) return;
       this.eventBus.emitDeferred("audio:play_sfx", { name: "explosion" });
     });
 
@@ -192,6 +193,16 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
     this.eventBus.on("game:over", () => {
       this.eventBus.emitDeferred("audio:play_sfx", { name: "game_over" });
+    });
+
+    this.eventBus.on("si:kill", () => {
+      if ((this._config.gameOptions as Record<string, unknown>)?.ENEMY_SFX_ENABLED === false) return;
+      this.eventBus.emitDeferred("audio:play_sfx", { name: "explosion" });
+    });
+
+    this.eventBus.on("si:boss_defeated", () => {
+      if ((this._config.gameOptions as Record<string, unknown>)?.ENEMY_SFX_ENABLED === false) return;
+      this.eventBus.emitDeferred("audio:play_sfx", { name: "explosion" });
     });
 
     this.eventBus.on("powerup:collected", () => {

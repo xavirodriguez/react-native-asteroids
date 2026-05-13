@@ -9,14 +9,10 @@ import { GenericComponent } from "../core/Component";
  * de las entidades frame a frame basado en condiciones activas.
  *
  * @responsibility Aplicar lógica transitoria basada en mutadores seleccionados para la sesión.
- * @queries `Ball`, `Render` (ejemplo en comentario).
+ * @queries `Ball`, `Render`.
  * @mutates Entidades que coincidan con la lógica específica del mutador.
  * @dependsOn `MutatorConfig`.
- * @executionOrder Logic Phase (preferiblemente después de los sistemas de movimiento/física).
- * @conceptualRisk [STUB] El sistema es actualmente un esqueleto. La lógica de mutadores específicos
- * como 'blind_pong' no está implementada, dejando el sistema inoperativo para efectos reales.
- * @conceptualRisk [PERFORMANCE] El uso de `some()` en cada `update` para cada mutador puede escalar
- * pobremente si el número de mutadores activos crece.
+ * @executionOrder Logic Phase.
  */
 export class MutatorSystem extends System {
   /**
@@ -33,26 +29,20 @@ export class MutatorSystem extends System {
    *
    * @param world - El estado actual del motor ECS.
    * @param deltaTime - El tiempo transcurrido en milisegundos.
-   *
-   * @remarks
-   * Actualmente solo contiene un ejemplo comentado para 'blind_pong'.
-   *
-   * @conceptualRisk [LOGIC_DRIFT] El comentario sugiere monitorear eventos de colisión,
-   * pero los sistemas ECS estándar procesan estados, no eventos acumulados, a menos
-   * que se use un búfer de eventos.
    */
   public update(world: World, _deltaTime: number): void {
-    // Dynamic effects that cannot be solved with static config scaling
-
     // Ghost Ball: Manejar el temporizador de visibilidad
-    const balls = world.query("Ball");
-    balls.forEach(entity => {
-      const ball = world.getComponent<GenericComponent>(entity, "Ball") as { visibilityTimer?: number };
-      if (ball && ball.visibilityTimer !== undefined && ball.visibilityTimer > 0) {
-        // Decrease by deltaTime-based ticks (approx 60fps)
-        const ticksToSub = Math.max(1, Math.round(_deltaTime / 16.66));
-        ball.visibilityTimer = Math.max(0, ball.visibilityTimer - ticksToSub);
-      }
-    });
+    const hasGhostBall = this.activeMutators.some(m => m.id === 'ghost_ball');
+    if (hasGhostBall) {
+      const balls = world.query("Ball");
+      balls.forEach(entity => {
+        const ball = world.getComponent<GenericComponent>(entity, "Ball") as { visibilityTimer?: number };
+        if (ball && ball.visibilityTimer !== undefined && ball.visibilityTimer > 0) {
+          // Decrease by deltaTime-based ticks (approx 60fps)
+          const ticksToSub = Math.max(1, Math.round(_deltaTime / 16.66));
+          ball.visibilityTimer = Math.max(0, ball.visibilityTimer - ticksToSub);
+        }
+      });
+    }
   }
 }

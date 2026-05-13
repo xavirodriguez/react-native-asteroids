@@ -12,6 +12,7 @@ import { LootSystem } from "../../engine/systems/LootSystem";
 import { ModifierSystem } from "../../engine/systems/ModifierSystem";
 import { PowerUpSystem } from "../../engine/systems/PowerUpSystem";
 import { JuiceSystem } from "../../engine/systems/JuiceSystem";
+import { MutatorSystem } from "../../engine/systems/MutatorSystem";
 import { SpatialPartitioningSystem } from "../../engine/systems/SpatialPartitioningSystem";
 import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
 import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
@@ -72,6 +73,7 @@ export class AsteroidsGame
     this.config = enabled
       ? mutators.reduce((cfg, m) => m.apply(cfg), { ...GAME_CONFIG })
       : { ...GAME_CONFIG };
+    this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     await this.onPreloadAssets();
     await super.init();
@@ -500,6 +502,9 @@ export class AsteroidsGame
     this.world.addSystem(new LootSystem());
     this.world.addSystem(new PowerUpSystem());
     this.world.addSystem(new ModifierSystem());
+
+    const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
+    this.world.addSystem(new MutatorSystem(activeMutators));
 
     this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
     this.world.addSystem(new AsteroidRenderSystem()); // Handle trails

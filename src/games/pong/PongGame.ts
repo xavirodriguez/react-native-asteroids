@@ -17,6 +17,7 @@ import { PONG_CONFIG, type PongState, type PongInput } from "./types";
 import { Renderer } from "../../engine/rendering/Renderer";
 import { drawPongBall } from "./rendering/PongCanvasVisuals";
 import { MutatorService } from "../../services/MutatorService";
+import { MutatorSystem } from "../../engine/systems/MutatorSystem";
 
 export type PongMode = "local" | "ai" | "online";
 
@@ -57,6 +58,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     this.config = enabled
       ? mutators.reduce((cfg, m) => m.apply(cfg), { ...PONG_CONFIG }) as typeof PONG_CONFIG
       : { ...PONG_CONFIG };
+    this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     await this.onPreloadAssets();
     await super.init();
@@ -100,11 +102,14 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     this.world.addSystem(new JuiceSystem());
     this.world.addSystem(new ScreenShakeSystem());
     this.world.addSystem(new CollisionSystem2D());
-    this.world.addSystem(new PongCollisionSystem());
+    this.world.addSystem(new PongCollisionSystem(this.config));
     this.world.addSystem(new PongSpinSystem());
     this.world.addSystem(new BoundarySystem());
     this.world.addSystem(new RenderUpdateSystem());
     this.world.addSystem(this.stateSystem);
+
+    const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
+    this.world.addSystem(new MutatorSystem(activeMutators));
   }
 
   protected initializeEntities(): void {
