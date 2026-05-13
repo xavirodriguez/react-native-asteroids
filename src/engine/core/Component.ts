@@ -25,6 +25,6 @@ export interface Component {
  * @conceptualRisk [TYPE_SAFETY][LOW] Aunque es genérico, el uso inapropiado de tipos amplios
  * puede debilitar la seguridad. Úsese con tipos de datos específicos (POJOs).
  *
- * @template T - La estructura de datos esperada, por defecto un objeto de claves string y valores unknown.
+ * Type parameter T: T - La estructura de datos esperada, por defecto un objeto de claves string y valores unknown.
  */
 export type GenericComponent<T extends Record<string, unknown> = Record<string, unknown>> = Component & T;

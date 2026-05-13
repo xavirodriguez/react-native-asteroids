@@ -6,7 +6,7 @@ import { ObjectPool } from "./ObjectPool";
  * Generic ComponentSetPool that manages a pool of component sets.
  * Reduces GC pressure by reusing component objects across entities.
  *
- * @template T - A record of component types that form the pooled entity.
+ * Type parameter T: T - A record of component types that form the pooled entity.
  */
 export class ComponentSetPool<T extends Record<string, Component>> {
   private pool: ObjectPool<T>;

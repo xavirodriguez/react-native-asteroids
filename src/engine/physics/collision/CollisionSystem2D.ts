@@ -32,7 +32,7 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
  * 3. **Narrowphase Phase**: Uses `NarrowPhase.test` (SAT/GJK) to generate precise {@link CollisionManifold}s.
  * 4. **Event Dispatch**: Populates {@link CollisionEventsComponent} and executes registered callbacks.
  *
- * @warning **Safety**: Do NOT perform structural world changes (entity creation/deletion)
+ * Warning: **Safety**: Do NOT perform structural world changes (entity creation/deletion)
  * inside collision callbacks directly if iterating. Use `world.getCommandBuffer()`.
  *
  * @conceptualRisk [TUNNELING] Fast objects without CCD enabled will skip collisions.

@@ -12,6 +12,21 @@ import { Entity } from "../types/EngineTypes";
  * The {@link World} notifies relevant queries when structural changes occur,
  * enabling O(1) or O(N_matching) access to relevant entities.
  *
+ * ### Internals: Reactive Indexing
+ * The Query system uses a **Reactive Pull-Push** model:
+ * 1. **Registration**: When a system calls `world.query('A', 'B')`, the World checks its cache.
+ * 2. **Initial Matching**: If new, it performs an O(N_entities) scan to find matches.
+ * 3. **Reactive Updates**: Every time a component is added/removed, the World identifies which
+ *    Queries are "interested" based on component types and notifies them.
+ * 4. **Deferred Sorting**: Queries maintain an internal `Set` for O(1) membership changes,
+ *    but `getEntities()` returns a sorted array. Sorting is deferred until the first
+ *    access after a mutation (Lazy Evaluation).
+ *
+ * ### Performance Invariants:
+ * - **Membership Check**: O(1) using internal `Set`.
+ * - **Retrieval**: O(N log N) for the first access after change (due to sorting), O(1) subsequently.
+ * - **Memory**: Retains references to active Entity IDs.
+ *
  * @conceptualRisk [MUTABLE_CACHE_LEAK][MITIGATED] `getEntities()` returns a defensive
  * copy to prevent external state corruption.
  *
@@ -47,7 +62,7 @@ export class Query {
    * @param entity - Entity ID to add.
    *
    * @precondition The entity must match the query's signature.
-   * @postcondition If the entity was new, {@link needsUpdateArray} is marked true.
+   * @postcondition If the entity was new, `needsUpdateArray` is marked true.
    */
   public add(entity: Entity): void {
     if (!this.entities.has(entity)) {
@@ -61,7 +76,7 @@ export class Query {
    *
    * @param entity - Entity ID to remove.
    *
-   * @postcondition If the entity was present, {@link needsUpdateArray} is marked true.
+   * @postcondition If the entity was present, `needsUpdateArray` is marked true.
    */
   public remove(entity: Entity): void {
     if (this.entities.delete(entity)) {
@@ -81,7 +96,7 @@ export class Query {
    * 1. **Deterministic Order**: The returned array is always sorted by Entity ID.
    * 2. **Caching**: If the internal Set hasn't changed, the existing sorted array is reused.
    *
-   * @warning **Dynamic Query Cost**: Avoid calling `world.query()` with new arrays inside loops.
+   * Warning: **Dynamic Query Cost**: Avoid calling `world.query()` with new arrays inside loops.
    * Reuse specific query instances to benefit from persistent caching.
    *
    * @returns A read-only array of matching {@link Entity} IDs.
@@ -119,8 +134,8 @@ export class Query {
    * @param allEntities - Set of all active entities in the world.
    * @param entityComponentSets - Map containing component sets for each entity.
    *
-   * @postcondition {@link entities} Set reflects the provided world state.
-   * @postcondition Marks {@link needsUpdateArray} as true.
+   * @postcondition `entities` Set reflects the provided world state.
+   * @postcondition Marks `needsUpdateArray` as true.
    */
   public rebuild(allEntities: Set<Entity>, entityComponentSets: Map<Entity, Set<string>>): void {
     this.entities.clear();

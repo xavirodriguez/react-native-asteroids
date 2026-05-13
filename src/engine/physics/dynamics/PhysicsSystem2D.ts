@@ -9,6 +9,21 @@ import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, C
  * @responsibility Impulse-based collision response satisfying contact and friction constraints.
  * @responsibility Positional correction to mitigate numerical "sinking".
  *
+ * ### Integration Model: Semi-Implicit Euler
+ * This system uses a **Semi-Implicit Euler** integrator (also known as Symplectic Euler).
+ * Unlike Forward Euler, it calculates velocity for the next step first, then uses that
+ * new velocity to update the position:
+ * 1. `v(t + dt) = v(t) + a(t) * dt`
+ * 2. `x(t + dt) = x(t) + v(t + dt) * dt`
+ *
+ * This provides significantly better energy conservation and stability for oscillating
+ * systems (like springs) and orbital mechanics compared to standard Euler.
+ *
+ * ### World Coordinates vs Local Coordinates
+ * While `TransformComponent` stores local `x/y`, this system and the collision detection
+ * pipeline rely on `worldX/worldY` calculated by the {@link HierarchySystem}.
+ * In the absence of a hierarchy, local coordinates are used as world coordinates.
+ *
  * @remarks
  * This system manages rigid body dynamics. It uses semi-implicit linear Euler integration,
  * which is efficient but may exhibit "tunneling" at high speeds relative to the frame rate.

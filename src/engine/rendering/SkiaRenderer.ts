@@ -224,7 +224,7 @@ export class SkiaRenderer implements Renderer {
    *
    * @precondition El lienzo (SkCanvas) debería estar listo para recibir comandos.
    * @postcondition Se genera la imagen del frame actual con el fin de aplicar interpolación.
-   * @warning Se recomienda no mutar componentes de simulación (e.g. Transform, Velocity) durante el renderizado.
+   * Warning: Se recomienda no mutar componentes de simulación (e.g. Transform, Velocity) durante el renderizado.
    * @sideEffect Limpia el lienzo con el color negro antes de dibujar.
    * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia
    * puede perderse si la app pasa a segundo plano de forma prolongada.

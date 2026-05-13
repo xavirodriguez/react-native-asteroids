@@ -13,6 +13,13 @@ import { World } from "../core/World";
  * Each scene typically has its own set of systems and entities,
  * simplifying memory management and reducing architectural coupling.
  *
+ * ### Lifecycle Hooks:
+ * 1. **`init`**: Asynchronous setup (e.g., loading assets). Called before `onEnter`.
+ * 2. **`onEnter`**: Triggered when the scene becomes active. Used for initial entity spawning.
+ * 3. **`onUpdate`**: Executed every fixed tick. Defaults to updating the scene's ECS World.
+ * 4. **`onRender`**: Executed every frame for visual effects and interpolation.
+ * 5. **`onExit`**: Triggered before transitioning to a new scene. Used for cleanup.
+ *
  * @public
  */
 export abstract class Scene {
@@ -109,7 +116,7 @@ export abstract class Scene {
   // ==========================================================================
 
   /**
-   * @deprecated Use the standard {@link onUpdate} flow.
+   * @deprecated Use the standard onUpdate flow.
    */
   public update(dt: number): void {
     this.onUpdate(dt, this.world);
