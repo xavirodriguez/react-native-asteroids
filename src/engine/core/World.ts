@@ -24,11 +24,36 @@ interface RegisteredSystem {
  * The `World` is the core of the ECS architecture. It is designed to minimize GC pressure
  * through entity ID pooling and utilizes reactive cached queries to optimize system lookups.
  *
- * ### State Versioning System:
- * - **structureVersion**: Incremented on structural changes (adding/removing entities or components).
- *   Used to invalidate cached query results.
- * - **stateVersion**: Incremented on data mutations (via `mutateComponent` or `mutateSingleton`).
- *   Fundamental for the **Delta Replication** system to detect what changed since the last ACK.
+ * ### State Versioning and Delta Replication:
+ * The World maintains two high-level version counters to support efficient network synchronization:
+ *
+ * 1. **structureVersion**: Incremented on **Structural Changes**.
+ *    - Triggered by: `createEntity`, `removeEntity`, `addComponent`, `removeComponent`.
+ *    - Purpose: Signals that the "shape" of the world changed. Used to invalidate cached
+ *      Query results and notify clients about new/destroyed entities.
+ *
+ * 2. **stateVersion**: Incremented on **Data Mutations**.
+ *    - Triggered by: `mutateComponent`, `mutateSingleton`, `mutateResource`, or `notifyStateChange`.
+ *    - Component-Level Tracking: The World also tracks a per-component `stateVersion` in `componentVersions`.
+ *    - **Delta Replication**: The networking system uses these versions to perform "Partial Snapshots".
+ *      By comparing the last-known-version from a client with the current component versions,
+ *      only the properties that actually changed are sent over the wire, significantly
+ *      reducing bandwidth usage.
+ *
+ * ### World Mutation Policy:
+ * To maintain simulation consistency, especially during multiplayer synchronization and rollback,
+ * the following rules MUST be followed:
+ *
+ * 1. **Data Mutation**: Use `mutateComponent` or `mutateSingleton` for any change to component properties.
+ *    - This increments `stateVersion`, which is required for Delta Replication and Render updates.
+ *    - Direct property access (e.g. `transform.x = 10`) should be avoided in simulation systems.
+ * 2. **Structural Changes**: Adding/removing entities or components DURING `update()` MUST use the `WorldCommandBuffer`.
+ *    - Direct calls to `createEntity`, `addComponent`, or `removeEntity` during system execution will
+ *      invalidate active query iterators and cause undefined behavior.
+ * 3. **Resource Mutation**: Use `mutateResource` to update global shared state.
+ * 4. **Versioning**:
+ *    - `structureVersion`: Increments on entity/component addition or removal.
+ *    - `stateVersion`: Increments on any component or resource data change.
  *
  * ### Performance Invariants:
  * 1. **Structural Buffering**: During `update()`, structural changes are deferred to a
@@ -38,10 +63,10 @@ interface RegisteredSystem {
  *
  * @conceptualRisk [VERSION_OVERFLOW][LOW] Versions are 32-bit integers; sessions lasting
  * years might trigger overflow, though engine resets usually happen much earlier.
- * @conceptualRisk [GC_PRESSURE][MEDIUM] Frequent snapshots in worlds with >1000 entities
+ * @conceptualRisk [GC_PRESSURE][MEDIUM] Frequent snapshots in worlds with \>1000 entities
  * will increase garbage collection frequency.
  *
- * @example
+ * Example:
  * ```ts
  * const world = new World();
  * const player = world.createEntity();
@@ -81,7 +106,7 @@ export class World {
    * Whether system profiling is enabled.
    *
    * @remarks
-   * When enabled, the world tracks execution time for each system, accessible via {@link getSystemTiming}.
+   * When enabled, the world tracks execution time for each system, accessible via {@link World.getSystemTiming}.
    */
   public debugMode = false;
   /** @internal */
@@ -143,7 +168,7 @@ export class World {
    *
    * @remarks
    * Used by external orchestrators (e.g., room handlers) that manage simulation timing.
-   * Does not trigger a system update; use {@link update} for that.
+   * Does not trigger a system update; use {@link World.update} for that.
    */
   public advanceTick(): void {
     this._tick++;
@@ -156,7 +181,7 @@ export class World {
    * Sorted list of all active entities in the world.
    *
    * @remarks
-   * Employs a reactive caching mechanism based on {@link structureVersion} to avoid
+   * Employs a reactive caching mechanism based on {@link World.structureVersion} to avoid
    * expensive re-sorting. In development, the returned array is frozen.
    *
    * @returns A read-only array of {@link Entity} IDs.
@@ -210,7 +235,7 @@ export class World {
    *
    * @returns A plain object containing the captured serializable state.
    *
-   * @warning Serialization is limited to POJO-compatible properties. Functions, Symbols,
+   * Warning: Serialization is limited to POJO-compatible properties. Functions, Symbols,
    * and non-serializable objects (Maps, Sets) are omitted or may lose fidelity.
    *
    * @precondition Recommended to call outside of an active system update to ensure logical consistency.
@@ -355,9 +380,9 @@ export class World {
    *
    * @remarks
    * Employs ID recycling to mitigate GC pressure during high-frequency spawn/despawn cycles.
-   * Increments {@link structureVersion} to signal topological changes.
+   * Increments {@link World.structureVersion} to signal topological changes.
    *
-   * If called during {@link update}, creation is deferred via {@link WorldCommandBuffer}
+   * If called during {@link World.update}, creation is deferred via {@link WorldCommandBuffer}
    * until the simulation phase completes.
    *
    * @param id - Optional manual Entity ID. Primary use is state restoration or internal orchestration.
@@ -389,7 +414,7 @@ export class World {
    * Unregisters all systems from all execution phases.
    *
    * @postcondition The system execution list is empty.
-   * @sideEffect Increments {@link structureVersion}.
+   * @sideEffect Increments {@link World.structureVersion}.
    */
   clearSystems(): void {
     this.systems = [];
@@ -404,19 +429,19 @@ export class World {
    *
    * @remarks
    * Validates hierarchical integrity if the component is a 'Transform'.
-   * Triggers incremental query index updates via {@link notifyQueries}.
+   * Triggers incremental query index updates via notifyQueries.
    *
-   * If called during {@link update}, the operation is buffered to prevent iterator invalidation.
+   * If called during {@link World.update}, the operation is buffered to prevent iterator invalidation.
    *
    * @param entity - Target Entity ID.
    * @param component - Component instance (must have a `type` discriminator).
    * @returns The added component.
    *
    * @precondition Entity must exist in the world.
-   * @postcondition Component is accessible via {@link getComponent} or {@link query}.
+   * @postcondition Component is accessible via {@link World.getComponent} or {@link World.query}.
    * @throws {Error} If assigning an entity as its own parent in a Transform.
-   * @sideEffect Increments {@link stateVersion}.
-   * @sideEffect Increments {@link structureVersion} if the component type is new for this entity.
+   * @sideEffect Increments {@link World.stateVersion}.
+   * @sideEffect Increments {@link World.structureVersion} if the component type is new for this entity.
    */
   addComponent<T extends Component>(entity: Entity, component: T): Readonly<T> {
     if (this.isUpdating) {
@@ -464,8 +489,8 @@ export class World {
    *
    * @remarks
    * Direct mutations of the returned object bypass engine state tracking unless
-   * manually notified via {@link notifyStateChange}.
-   * Prefer {@link mutateComponent} for controlled mutations that update versioning automatically.
+   * manually notified via notifyStateChange.
+   * Prefer {@link World.mutateComponent} for controlled mutations that update versioning automatically.
    *
    * @param entity - The entity to query.
    * @param type - The discriminator name of the component.
@@ -482,14 +507,14 @@ export class World {
    *
    * @remarks
    * Recommended pattern for component state changes.
-   * Updates {@link stateVersion}, component-specific versions, and marks {@link isRenderDirty}.
+   * Updates {@link World.stateVersion}, component-specific versions, and marks isRenderDirty.
    *
    * @param entity - The owner entity.
    * @param type - The component type discriminator.
    * @param updater - Callback receiving the mutable component instance.
    * @returns `true` if the component exists and was mutated, `false` otherwise.
    *
-   * @example
+   * Example:
    * ```ts
    * world.mutateComponent(player, 'Transform', t => {
    *   t.x += 10;
@@ -547,14 +572,14 @@ export class World {
    *
    * @remarks
    * Notifies reactive queries to update their indices.
-   * If called during {@link update}, removal is buffered.
+   * If called during {@link World.update}, removal is buffered.
    *
    * @param entity - Target entity.
    * @param type - Component type to remove.
    *
    * @precondition Entity should exist in the world.
    * @postcondition Queries depending on this component will no longer include this entity.
-   * @sideEffect Increments {@link structureVersion}.
+   * @sideEffect Increments {@link World.structureVersion}.
    */
   removeComponent(entity: Entity, type: string): void {
     if (this.isUpdating) {
@@ -586,10 +611,10 @@ export class World {
    * @param componentTypes - Component types defining the query signature.
    * @returns A read-only array of matching {@link Entity} IDs, sorted.
    *
-   * @warning **Dynamic Queries**: Avoid dynamic signatures inside update loops.
+   * Warning: **Dynamic Queries**: Avoid dynamic signatures inside update loops.
    * Signature sorting and key generation have O(N log N) cost.
    *
-   * @example
+   * Example:
    * ```ts
    * const dynamicEntities = world.query('Transform', 'Velocity');
    * for (const id of dynamicEntities) { ... }
@@ -629,11 +654,11 @@ export class World {
    * Releases the ID for future recycling. Clears all component indices and
    * query associations.
    *
-   * If called during {@link update}, destruction is deferred.
+   * If called during {@link World.update}, destruction is deferred.
    *
    * @param entity - Entity ID to destroy.
    * @postcondition Entity is inaccessible and its components are deleted.
-   * @sideEffect Increments {@link structureVersion}.
+   * @sideEffect Increments {@link World.structureVersion}.
    */
   public removeEntity(entity: Entity): void {
     if (this.isUpdating) {
@@ -668,7 +693,7 @@ export class World {
    * Consolidates all buffered structural mutations.
    *
    * @remarks
-   * Automatically called at the end of {@link update}. Should be called
+   * Automatically called at the end of {@link World.update}. Should be called
    * manually if using the command buffer outside the standard loop.
    *
    * @sideEffect Executes deferred creations, additions, and removals.
@@ -739,7 +764,7 @@ export class World {
    * Systems registration remains intact.
    *
    * @postcondition World is empty.
-   * @sideEffect Increments {@link structureVersion}.
+   * @sideEffect Increments {@link World.structureVersion}.
    */
   public clear(): void {
     this.activeEntities.clear();
@@ -761,10 +786,16 @@ export class World {
    * Resources are shared services or configurations not attached to entities
    * (e.g., EventBus, AssetLoader).
    *
+   * ### Resources vs. Singleton Components:
+   * - **Resources**: Intended for stateless services, heavy objects, or logic-heavy
+   *   subsystems (Audio, Input, Networking). They are NOT serialized or replicated.
+   * - **Singleton Components**: Intended for unique gameplay state (GlobalScore, GameTimer).
+   *   They ARE serialized, replicated, and tracked via `stateVersion`.
+   *
    * @param name - Resource identifier.
    * @param resource - Instance or data object.
    *
-   * @postcondition Resource is accessible via {@link getResource}.
+   * @postcondition Resource is accessible via {@link World.getResource}.
    * @sideEffect Overwrites any existing resource with the same name.
    */
   setResource<T>(name: string, resource: T): void {
@@ -785,12 +816,12 @@ export class World {
    * Performs a controlled mutation on a global resource.
    *
    * @remarks
-   * Automatically notifies the engine of state changes by incrementing {@link stateVersion}.
+   * Automatically notifies the engine of state changes by incrementing {@link World.stateVersion}.
    *
    * @param name - Resource to mutate.
    * @param mutator - Callback receiving the mutable resource.
    *
-   * @postcondition {@link stateVersion} is incremented.
+   * @postcondition {@link World.stateVersion} is incremented.
    */
   mutateResource<T>(name: string, mutator: (resource: T) => void): void {
     const resource = this.resources.get(name) as T;
@@ -818,7 +849,7 @@ export class World {
    * Registers a system to participate in the simulation loop.
    *
    * @remarks
-   * Systems are sorted by phase and priority during the next {@link update}.
+   * Systems are sorted by phase and priority during the next {@link World.update}.
    *
    * @param system - System instance.
    * @param config - Execution configuration (phase, priority).
@@ -846,7 +877,7 @@ export class World {
    * Execution Flow:
    * 1. Re-sort systems if needed.
    * 2. Sequential execution by phase (Input -> Simulation -> Collision -> GameRules -> Presentation).
-   * 3. Consolidate structural changes via {@link flush}.
+   * 3. Consolidate structural changes via {@link World.flush}.
    *
    * @param deltaTime - Elapsed time since last tick in milliseconds.
    *
@@ -881,7 +912,7 @@ export class World {
    * Returns the average execution time (ms) of a system.
    *
    * @remarks
-   * Requires {@link debugMode} to be enabled.
+   * Requires {@link World.debugMode} to be enabled.
    */
   getSystemTiming(system: System): number {
     return this.profilers.get(system)?.getAverageTime() ?? 0;
@@ -949,8 +980,8 @@ export class World {
    * Manually notifies the engine of a global state change.
    *
    * @remarks
-   * Increments {@link stateVersion} and marks {@link isRenderDirty}.
-   * Use this when mutating component data directly without using {@link mutateComponent}.
+   * Increments {@link World.stateVersion} and marks isRenderDirty.
+   * Use this when mutating component data directly without using {@link World.mutateComponent}.
    */
   public notifyStateChange(): void {
     this._stateVersion++;
@@ -979,7 +1010,7 @@ export class World {
    *
    * **Note on references**: Returns a live mutable reference to the component.
    * Direct mutations of the returned object will **not** trigger versioning or
-   * rendering dirty flags. Use {@link mutateSingleton} for controlled updates.
+   * rendering dirty flags. Use {@link World.mutateSingleton} for controlled updates.
    *
    * @param type - Component discriminator.
    * @returns Found instance or `undefined`.
@@ -997,7 +1028,7 @@ export class World {
    *
    * @remarks
    * Preferred way to update unique state components. Automatically notifies
-   * changes by incrementing {@link stateVersion} and setting the {@link isRenderDirty} flag.
+   * changes by incrementing {@link World.stateVersion} and setting the isRenderDirty flag.
    *
    * Mandatory pattern for any state change that must be reflected in the Renderer,
    * React UI (via version tracking), or Multiplayer replication.
@@ -1037,21 +1068,21 @@ export class World {
   // ==========================================================================
 
   /**
-   * @deprecated Use {@link structureVersion} or {@link stateVersion} instead.
+   * @deprecated Use {@link World.structureVersion} or {@link World.stateVersion} instead.
    */
   public get version(): number {
     return this._structureVersion + this._stateVersion;
   }
 
   /**
-   * Alias of {@link query} for entities with a specific signature.
-   * @deprecated Use {@link query} directly.
+   * Alias of {@link World.query} for entities with a specific signature.
+   * @deprecated Use {@link World.query} directly.
    */
   public getEntitiesWith(...componentTypes: string[]): ReadonlyArray<Entity> {
     return this.query(...componentTypes);
   }
 
-  /** @deprecated Use {@link entities} getter. */
+  /** @deprecated Use {@link World.entities} getter. */
   public getAllEntities(): ReadonlyArray<Entity> {
     return this.entities;
   }

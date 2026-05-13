@@ -50,7 +50,7 @@ export function createJuiceComponent(): JuiceComponent {
  * Sistema encargado de procesar animaciones procedimentales (Juice) sobre las entidades.
  *
  * @responsibility Animar propiedades de componentes de forma elástica o interpolada.
- * @responsibility Actualizar el progreso de cada {@link JuiceAnimation}.
+ * @responsibility Actualizar el progreso de cada {@link JuiceSystem.JuiceAnimation}.
  * @responsibility Interpolar y aplicar valores a {@link VisualOffsetComponent} o {@link RenderComponent}.
  * @responsibility Notificar la finalización mediante callbacks {@link JuiceAnimation.onComplete}.
  *
@@ -82,7 +82,7 @@ export class JuiceSystem extends System {
    * @param world - El mundo ECS.
    * @param deltaTime - Tiempo transcurrido en milisegundos.
    *
-   * @precondition Las entidades deben poseer un {@link JuiceComponent}.
+   * @precondition Las entidades deben poseer un {@link JuiceSystem.JuiceComponent}.
    * @postcondition Los valores interpolados se aplican a {@link VisualOffsetComponent} o {@link RenderComponent}.
    */
   public update(world: World, deltaTime: number): void {

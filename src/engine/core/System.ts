@@ -12,6 +12,13 @@ import { World } from "./World";
  * 5. `Transform` - Hierarchy propagation and world matrix calculation.
  * 6. `Presentation` - Audio, visual effects, and preparing data for the renderer.
  *
+ * Mutation Rules per Phase:
+ * - `Input`: Must NOT mutate component data.
+ * - `Simulation`: Free mutation of data. Structural changes MUST be deferred.
+ * - `Collision`: READ-ONLY access to Transform/Collider. Must NOT mutate position.
+ * - `GameRules`: High-level state changes.
+ * - `Transform`: Write-only to world-space properties of `Transform`.
+ *
  * @public
  */
 export enum SystemPhase {
@@ -82,7 +89,7 @@ export abstract class System {
    * transformations. To support reproducibility and rollbacks, minimize the
    * use of non-serializable internal mutable state.
    *
-   * @warning **Structural Mutations**: Creating/removing entities or components
+   * Warning: **Structural Mutations**: Creating/removing entities or components
    * during query iteration can invalidate iterators. Use {@link World.getCommandBuffer}
    * to buffer these operations for the end of the tick.
    *

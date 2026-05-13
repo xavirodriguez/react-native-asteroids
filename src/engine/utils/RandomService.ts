@@ -16,7 +16,7 @@
  *    - Not synchronized; does not affect simulation state.
  * 3. **Global Stream**: Standard fallback for non-deterministic utilities.
  *
- * @warning **Determinism Violation**: Accessing non-gameplay streams while
+ * Warning: **Determinism Violation**: Accessing non-gameplay streams while
  * `lockGameplayContext` is active will throw an error to prevent accidental desyncs.
  *
  * @conceptualRisk [SEED_DRIFT] Consuming gameplay randoms during cosmetic steps

@@ -15,7 +15,7 @@ export interface IGameState extends Component {
  * Abstract base system for managing game state.
  * Standardizes how Game Over is detected and reported.
  *
- * @template TState - The type of the game state component.
+ * Type parameter T: TState - The type of the game state component.
  */
 export abstract class BaseGameStateSystem<TState extends IGameState> extends System {
   protected gameOverLogged = false;

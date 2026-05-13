@@ -112,6 +112,14 @@ export class EventBus {
    *
    * @param event - Event name.
    * @param payload - Event data.
+   *
+   * ### Determinism and Side-Effects:
+   * `emitDeferred` is critical for maintaining simulation determinism. Logic inside
+   * ECS systems should use deferred events for any action that produces side-effects
+   * external to the ECS World (e.g., playing SFX, logging, triggering UI animations).
+   *
+   * This ensures that if a simulation tick is rolled back or re-simulated, the
+   * side-effects are only executed once at the end of the real-time frame.
    */
   public emitDeferred<T = unknown>(event: string, payload?: T): void {
     this.deferredQueue.push({ event, payload });

@@ -159,7 +159,7 @@ export class GameLoop {
     while (this.accumulator >= this.fixedDeltaTime) {
       if (updatesThisFrame >= this.maxUpdatesPerFrame) {
         /**
-         * @warning Spiral of Death detected.
+         * Warning: Spiral of Death detected.
          * Se descarta el tiempo acumulado sobrante para mitigar el bloqueo del hilo principal.
          * Esto sacrifica la precisión temporal absoluta en favor de la estabilidad del entorno.
          */

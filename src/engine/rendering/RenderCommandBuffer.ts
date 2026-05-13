@@ -164,7 +164,7 @@ export class RenderCommandBuffer {
   /**
    * Returns the command pool.
    * @remarks
-   * Only the first {@link getCount} elements contain valid data for the current frame.
+   * Only the first getCount elements contain valid data for the current frame.
    */
   public getCommands(): readonly DrawCommand[] {
     return this.pool;

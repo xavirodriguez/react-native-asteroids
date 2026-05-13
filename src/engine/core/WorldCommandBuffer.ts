@@ -38,6 +38,11 @@ type Command =
  *    a command to add a component to that new entity within the same frame.
  * 3. **Visibility**: Structural changes are NOT reflected in the `World` until `flush()`
  *    is called (typically at the end of the `Simulation` phase).
+ *
+ * Mutation rule:
+ * - Systems MUST use `WorldCommandBuffer` for all structural changes (entity creation/deletion,
+ *   component addition/removal) during their `update` method.
+ * - This prevents iterator invalidation and ensures a deterministic "end-of-frame" state transition.
  */
 export class WorldCommandBuffer {
   private commands: Command[] = [];

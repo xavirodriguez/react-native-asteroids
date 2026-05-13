@@ -60,13 +60,32 @@ export enum GameStatus {
  * and ensuring a predictable execution pipeline. It utilizes a transition lock to
  * prevent race conditions during asynchronous initialization and scene swaps.
  *
- * ### Update Pipeline (Fixed Update):
- * 1. **PRE-UPDATE**: `InterpolationPrepSystem` captures previous states for visual smoothing.
- * 2. **INPUT**: Hardware events are translated into semantic actions.
- * 3. **SIMULATION**: ECS systems and scene logic execute with a fixed time step.
- * 4. **TRANSFORM**: `HierarchySystem` propagates world matrices (Top-Down).
- * 5. **REPLAY**: `ReplayRecorder` captures input frames for deterministic playback.
- * 6. **DEFERRED**: `EventBus` flushes the deferred queue to isolate side effects from core simulation.
+ * ### Deterministic Simulation vs. Visual Presentation:
+ * The engine enforces a strict boundary between the authoritative **Deterministic Simulation**
+ * and the **Visual Presentation** layer:
+ *
+ * - **Deterministic Simulation**: Operates on a fixed time step (`FIXED_DELTA_TIME`). All logic
+ *   affecting gameplay (physics, health, scores) MUST happen here. It is designed to be
+ *   replayable and synchronized across network clients.
+ * - **Visual Presentation**: Operates at the display's variable refresh rate. It uses
+ *   interpolation between the previous and current simulation states (via `PreviousTransformComponent`)
+ *   to provide smooth motion regardless of the simulation tick rate. Visual-only effects
+ *   (Juice, Particles, UI) should reside here and NOT affect the simulation state.
+ *
+ * ### Canonical Execution Pipeline (Fixed Update):
+ *
+ * | Order | Phase | typical Systems | Mutation Rules |
+ * | :--- | :--- | :--- | :--- |
+ * | 1 | **PRE-UPDATE** | `InterpolationPrepSystem` | May read current Transform, Must mutate `PreviousTransform`. |
+ * | 2 | **INPUT** | `UnifiedInputSystem` | Must NOT mutate simulation state. Mutates `InputState` resource. |
+ * | 3 | **SIMULATION** (Logic) | `TTLSystem`, `StateMachineSystem`, Game Logic | May mutate any component via `World.mutateComponent`. Structural changes via `WorldCommandBuffer`. |
+ * | 4 | **SIMULATION** (Physics) | `MovementSystem`, `FrictionSystem` | Updates `Transform` based on `Velocity`. |
+ * | 5 | **COLLISION** | `CollisionSystem2D` | Must NOT mutate Transform/Velocity. Updates `CollisionEvents`. |
+ * | 6 | **GAME RULES** | `PhysicsSystem2D` (Resolution), Health/Damage | Resolves physics, applies damage, triggers game-over. |
+ * | 7 | **TRANSFORM** | `HierarchySystem` | Propagates world matrices. Must NOT mutate local Transform. |
+ * | 8 | **PRESENTATION** | `JuiceSystem`, `ParticleSystem`, `AudioSystem` | Visual-only mutations. Triggers deferred events (SFX). |
+ * | 9 | **REPLAY/FLUSH** | `ReplayRecorder`, `World.flush` | Captures state. Applies deferred structural changes. |
+ * | 10 | **DEFERRED** | `EventBus.processDeferred` | Side effects (SFX, logs) isolated from core simulation. |
  *
  * ### Initialization Machine:
  * UNINITIALIZED --(init)--> INITIALIZING --(register systems)--> READY --(start)--> RUNNING
@@ -297,7 +316,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   /**
    * Starts the simulation loop.
    *
-   * @throws Error - If called before {@link init} or on a destroyed game.
+   * @throws Error - If called before `init` or on a destroyed game.
    * @postcondition {@link GameLoop} begins dispatching updates.
    * @postcondition Status transitions to `RUNNING`.
    */
@@ -340,7 +359,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * @remarks
    * Idempotent. Only effective if status is `RUNNING`.
    *
-   * @postcondition {@link _isPaused} set to `true`.
+   * @postcondition `_isPaused` set to `true`.
    * @sideEffect Notifies current scene and external subscribers.
    */
   public pause(): void {
@@ -356,7 +375,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * @remarks
    * Idempotent. Only effective if currently paused.
    *
-   * @postcondition {@link _isPaused} set to `false`.
+   * @postcondition `_isPaused` set to `false`.
    */
   public resume(): void {
     if (this._status !== GameStatus.RUNNING || !this._isPaused) return;
@@ -387,7 +406,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    *
    * @param seed - Optional new seed for deterministic PRNG.
    * @postcondition Tick counter reset to 0.
-   * @sideEffect Clears {@link EventBus}, {@link spatialGrid}, and {@link World}.
+   * @sideEffect Clears `EventBus`, `spatialGrid`, and {@link World}.
    */
   public async restart(seed?: number): Promise<void> {
     if (this._status === GameStatus.DESTROYED) {
@@ -495,8 +514,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * Initializes the game and its subsystems asynchronously.
    *
    * @remarks
-   * Critical initialization process that MUST occur before {@link start}.
-   * Atomic transition managed via `_transitionLock`.
+   * Critical initialization process that MUST occur before {@link BaseGame.start}.
+   *
+   * ### Concurrency Control:
+   * The process uses an internal `_transitionLock` (Promise-based lock) to ensure that
+   * multiple calls to `init()` or `restart()` do not overlap, preventing inconsistent
+   * engine states and race conditions during system registration.
    *
    * Flow:
    * 1. Register Essential Resources (EventBus, Input, Audio, SpatialGrid).

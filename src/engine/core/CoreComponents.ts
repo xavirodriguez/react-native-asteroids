@@ -29,9 +29,9 @@ export interface TransformComponent extends Component {
   y: number;
   /** [rad] Rotación local en radianes. */
   rotation: number;
-  /** Multiplicador de escala horizontal. */
+  /** [unitless] Multiplicador de escala horizontal. */
   scaleX: number;
-  /** Multiplicador de escala vertical. */
+  /** [unitless] Multiplicador de escala vertical. */
   scaleY: number;
 
   parent?: Entity;
@@ -43,9 +43,9 @@ export interface TransformComponent extends Component {
   worldY?: number;
   /** [rad] Rotación absoluta en el mundo. */
   worldRotation?: number;
-  /** Multiplicador de escala horizontal absoluto. */
+  /** [unitless] Multiplicador de escala horizontal absoluto. */
   worldScaleX?: number;
-  /** Multiplicador de escala vertical absoluto. */
+  /** [unitless] Multiplicador de escala vertical absoluto. */
   worldScaleY?: number;
 }
 
@@ -206,11 +206,11 @@ export interface PhysicsBody2DComponent extends Component {
   velocityY: number;
   /** [rad/s] Velocidad angular. */
   angularVelocity: number;
-  /** [N] Fuerza acumulada en X. */
+  /** [px/s^2] Fuerza acumulada en X. */
   forceX: number;
-  /** [N] Fuerza acumulada en Y. */
+  /** [px/s^2] Fuerza acumulada en Y. */
   forceY: number;
-  /** [N*m] Torque acumulado. */
+  /** [rad/s^2] Torque acumulado. */
   torque: number;
   /** [kg] Masa del cuerpo. */
   mass: number;
@@ -220,11 +220,13 @@ export interface PhysicsBody2DComponent extends Component {
   inertia: number;
   /** Pre-calculated 1/inertia. */
   readonly inverseInertia: number;
-  /** Bounciness [0, 1]. */
+  /** [unitless] Bounciness [0, 1]. */
   restitution: number;
+  /** [unitless] Static friction coefficient. */
   staticFriction: number;
+  /** [unitless] Dynamic friction coefficient. */
   dynamicFriction: number;
-  /** Multiplier for global gravity. */
+  /** [unitless] Multiplier for global gravity. */
   gravityScale: number;
   /** If true, the entity will not rotate due to torque or collisions. */
   fixedRotation: boolean;
@@ -462,8 +464,8 @@ export interface VisualOffsetComponent extends Component {
   x: number;
   y: number;
   rotation: number;
-  scaleX: number;
-  scaleY: number;
+  /** [unitless] */ scaleX: number;
+  /** [unitless] */ scaleY: number;
 }
 
 /**
