@@ -16,6 +16,7 @@ import { PlayerProfileService } from "@/services/PlayerProfileService";
 import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
+import { GameErrorBoundary } from "@/components/GameErrorBoundary";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 
 export default function PongScreen() {
@@ -139,6 +140,7 @@ export default function PongScreen() {
   };
 
   return (
+    <GameErrorBoundary gameId="pong">
     <SafeAreaProvider>
       <View style={styles.container}>
         <TouchableOpacity
@@ -197,6 +199,7 @@ export default function PongScreen() {
         )}
       </View>
     </SafeAreaProvider>
+    </GameErrorBoundary>
   );
 }
 

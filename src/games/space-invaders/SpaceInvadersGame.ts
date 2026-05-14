@@ -8,6 +8,7 @@ import { SpaceInvadersGameScene } from "./scenes/SpaceInvadersGameScene";
 import { Renderer } from "../../engine/rendering/Renderer";
 import { LootSystem } from "../../engine/systems/LootSystem";
 import { PowerUpSystem } from "../../engine/systems/PowerUpSystem";
+import { InterpolationBuffer } from "../../multiplayer/InterpolationSystem";
 import {
   drawSpaceInvadersPlayer,
   drawSpaceInvadersInvader,
@@ -32,6 +33,9 @@ export class SpaceInvadersGame
   private playerBulletPool!: PlayerBulletPool;
   private enemyBulletPool!: EnemyBulletPool;
   private particlePool!: ParticlePool;
+  private serverEntities = new Map<string, number>();
+  private entityInterpolationBuffers = new Map<number, InterpolationBuffer>();
+  private interpolationDelay = 100;
   public readonly gameId = "spaceinvaders";
   private config!: typeof GAME_CONFIG;
 
@@ -114,38 +118,99 @@ export class SpaceInvadersGame
   public updateFromServer(state: Record<string, unknown>) {
     if (!this.isMultiplayer || !state) return;
     const world = this.getWorld();
-    world.clear();
 
+    const currentServerEntities = new Set<string>();
+
+    // Update Players
     if (state.players && typeof state.players === 'object') {
-      Object.values(state.players).forEach((player: unknown) => {
-        const p = world.createEntity();
-        const playerState = player as { x: number, y: number, alive: boolean };
-        world.addComponent(p, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-        world.addComponent(p, { type: "Render", shape: "player_ship", size: 20, color: playerState.alive ? "green" : "red", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
-        world.addComponent(p, { type: "Player" } as import("../../engine/types/EngineTypes").Component);
+      const players = state.players as Record<string, { x: number, y: number, alive: boolean, sessionId?: string }>;
+      Object.entries(players).forEach(([sessionId, playerState]) => {
+        const serverId = `player_${sessionId}`;
+        currentServerEntities.add(serverId);
+
+        let entity = this.serverEntities.get(serverId);
+        if (entity === undefined || !world.hasEntity(entity)) {
+          entity = world.createEntity();
+          this.serverEntities.set(serverId, entity);
+          world.addComponent(entity, { type: "Player" } as import("../../engine/types/EngineTypes").Component);
+          world.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+          world.addComponent(entity, { type: "Render", shape: "player_ship", size: 20, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+        }
+
+        this.updateInterpolationBuffer(entity, playerState.x, playerState.y);
+
+        const render = world.getComponent<import("../../engine/types/EngineTypes").RenderComponent>(entity, "Render");
+        if (render) {
+          render.color = playerState.alive ? "green" : "red";
+        }
       });
     }
 
+    // Update Invaders
     if (state.invaders && typeof state.invaders === 'object') {
-      Object.values(state.invaders).forEach((invader: unknown) => {
-        const invaderState = invader as { x: number, y: number, alive: boolean };
+      const invaders = state.invaders as Record<string, { x: number, y: number, alive: boolean, id: string }>;
+      Object.entries(invaders).forEach(([id, invaderState]) => {
         if (!invaderState.alive) return;
-        const i = world.createEntity();
-        world.addComponent(i, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-        world.addComponent(i, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
-        world.addComponent(i, { type: "Invader", row: 0, col: 0, points: 10 } as import("./types/SpaceInvadersTypes").InvaderComponent);
+        const serverId = `invader_${id}`;
+        currentServerEntities.add(serverId);
+
+        let entity = this.serverEntities.get(serverId);
+        if (entity === undefined || !world.hasEntity(entity)) {
+          entity = world.createEntity();
+          this.serverEntities.set(serverId, entity);
+          world.addComponent(entity, { type: "Invader", row: 0, col: 0, points: 10 } as import("./types/SpaceInvadersTypes").InvaderComponent);
+          world.addComponent(entity, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+          world.addComponent(entity, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+        }
+
+        this.updateInterpolationBuffer(entity, invaderState.x, invaderState.y);
       });
     }
 
+    // Update Bullets
     if (state.bullets && typeof state.bullets === 'object') {
-      Object.values(state.bullets).forEach((bullet: unknown) => {
-        const bulletState = bullet as { x: number, y: number };
-        const b = world.createEntity();
-        world.addComponent(b, { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-        world.addComponent(b, { type: "Render", shape: "player_bullet", size: 5, color: "yellow", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
-        world.addComponent(b, { type: "PlayerBullet" } as import("../../engine/types/EngineTypes").Component);
+      const bullets = state.bullets as Record<string, { x: number, y: number, ownerId: string }>;
+      Object.entries(bullets).forEach(([id, bulletState]) => {
+        const serverId = `bullet_${id}`;
+        currentServerEntities.add(serverId);
+
+        let entity = this.serverEntities.get(serverId);
+        if (entity === undefined || !world.hasEntity(entity)) {
+          entity = world.createEntity();
+          this.serverEntities.set(serverId, entity);
+          world.addComponent(entity, { type: "PlayerBullet" } as import("../../engine/types/EngineTypes").Component);
+          world.addComponent(entity, { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+          world.addComponent(entity, { type: "Render", shape: "player_bullet", size: 5, color: "yellow", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+        }
+
+        this.updateInterpolationBuffer(entity, bulletState.x, bulletState.y);
       });
     }
+
+    // Cleanup removed entities
+    this.serverEntities.forEach((entity, serverId) => {
+      if (!currentServerEntities.has(serverId)) {
+        if (world.hasEntity(entity)) {
+          world.removeEntity(entity);
+        }
+        this.serverEntities.delete(serverId);
+        this.entityInterpolationBuffers.delete(entity);
+      }
+    });
+  }
+
+  private updateInterpolationBuffer(entityId: number, x: number, y: number) {
+    let buffer = this.entityInterpolationBuffers.get(entityId);
+    if (!buffer) {
+      buffer = new InterpolationBuffer();
+      this.entityInterpolationBuffers.set(entityId, buffer);
+    }
+    buffer.push({
+      tick: 0, // Not used for this simple interpolation
+      x,
+      y,
+      timestamp: Date.now()
+    });
   }
 
   public isGameOver(): boolean {
@@ -182,6 +247,24 @@ export class SpaceInvadersGame
     const sceneWorld = gameScene.getWorld();
     sceneWorld.addSystem(new LootSystem());
     sceneWorld.addSystem(new PowerUpSystem());
+
+    if (this.isMultiplayer) {
+      sceneWorld.addSystem({
+        update: (world) => {
+          const targetTime = Date.now() - this.interpolationDelay;
+          this.entityInterpolationBuffers.forEach((buffer, entityId) => {
+            const data = buffer.getAt(targetTime);
+            if (data) {
+              const transform = world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(entityId, "Transform");
+              if (transform) {
+                transform.x = data.prev.x + (data.next.x - data.prev.x) * data.alpha;
+                transform.y = data.prev.y + (data.next.y - data.prev.y) * data.alpha;
+              }
+            }
+          });
+        }
+      });
+    }
 
     await this.sceneManager.transitionTo(gameScene);
   }

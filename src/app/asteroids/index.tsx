@@ -19,6 +19,7 @@ import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
 import { AsteroidsGame } from "@/games/asteroids/AsteroidsGame";
+import { GameErrorBoundary } from "@/components/GameErrorBoundary";
 import { InputState } from "@/games/asteroids/types/AsteroidTypes";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 
@@ -151,6 +152,7 @@ export default function AsteroidsScreen() {
   };
 
   return (
+    <GameErrorBoundary gameId="asteroids">
     <SafeAreaProvider>
       <View style={styles.container}>
         <TouchableOpacity
@@ -203,6 +205,7 @@ export default function AsteroidsScreen() {
         )}
       </View>
     </SafeAreaProvider>
+    </GameErrorBoundary>
   );
 }
 
