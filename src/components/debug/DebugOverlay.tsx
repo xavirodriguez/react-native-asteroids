@@ -7,7 +7,9 @@ import {
   ScrollView,
   FlatList,
   TextInput,
-  Platform
+  Platform,
+  Alert,
+  Clipboard
 } from 'react-native';
 import { BaseGame } from '../../engine/core/BaseGame';
 import type { EventLogEntry, FrameStats, ColliderShapeInfo } from '../../engine/debug/DebugManager';
@@ -18,7 +20,7 @@ interface DebugOverlayProps {
   game: BaseGame<Record<string, unknown>, Record<string, boolean>> | null;
 }
 
-type TabType = 'Frame' | 'Systems' | 'Entities' | 'Events' | 'Colliders';
+type TabType = 'Frame' | 'Systems' | 'Entities' | 'Events' | 'Colliders' | 'Replay';
 
 /**
  * DebugOverlay component that renders a floating panel with real-time engine metrics.
@@ -175,6 +177,48 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
     </View>
   );
 
+  const exportReplay = () => {
+    if (!game) return;
+    try {
+      const recorder = (game as unknown as { replayRecorder: import('../../engine/debug/ReplayRecorder').ReplayRecorder }).replayRecorder;
+      const data = recorder.stopRecording();
+      const json = JSON.stringify(data, null, 2);
+
+      if (Platform.OS === 'web') {
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `replay_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        Clipboard.setString(json);
+        Alert.alert('Replay Exported', 'Replay data has been copied to clipboard as JSON.');
+      }
+
+      // Resume recording after export
+      recorder.startRecording();
+    } catch (e) {
+      console.error('Failed to export replay:', e);
+      Alert.alert('Export Failed', 'An error occurred while exporting replay data.');
+    }
+  };
+
+  const renderReplayTab = () => (
+    <View style={styles.tabContent}>
+      <Text style={styles.statText}>Replay System</Text>
+      <Text style={styles.statLabel}>
+        Captures the last 60 seconds of input for debugging and deterministic reproduction.
+      </Text>
+      <TouchableOpacity style={styles.exportButton} onPress={exportReplay}>
+        <Text style={styles.exportButtonText}>
+          {Platform.OS === 'web' ? 'Download Replay JSON' : 'Copy Replay to Clipboard'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <View style={styles.container} pointerEvents="box-none">
       {showCollidersOverlay && (
@@ -229,6 +273,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
             {renderTabButton('Entities')}
             {renderTabButton('Events')}
             {renderTabButton('Colliders')}
+            {renderTabButton('Replay')}
           </View>
           <View style={styles.content}>
             {activeTab === 'Frame' && renderFrameTab()}
@@ -236,6 +281,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
             {activeTab === 'Entities' && renderEntitiesTab()}
             {activeTab === 'Events' && renderEventsTab()}
             {activeTab === 'Colliders' && renderCollidersTab()}
+            {activeTab === 'Replay' && renderReplayTab()}
           </View>
         </View>
       )}
@@ -482,6 +528,18 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     color: '#fff',
+    fontSize: 14,
+  },
+  exportButton: {
+    backgroundColor: '#00ff00',
+    padding: 12,
+    borderRadius: 4,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  exportButtonText: {
+    color: '#000',
+    fontWeight: 'bold',
     fontSize: 14,
   },
 });

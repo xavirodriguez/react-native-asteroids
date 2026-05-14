@@ -19,6 +19,7 @@ import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
 import { SpaceInvadersGame } from "@/games/space-invaders/SpaceInvadersGame";
+import { GameErrorBoundary } from "@/components/GameErrorBoundary";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 
 export default function SpaceInvadersScreen() {
@@ -136,6 +137,7 @@ export default function SpaceInvadersScreen() {
   };
 
   return (
+    <GameErrorBoundary gameId="space-invaders">
     <SafeAreaProvider>
       <View style={styles.container}>
         <TouchableOpacity
@@ -186,6 +188,7 @@ export default function SpaceInvadersScreen() {
         )}
       </View>
     </SafeAreaProvider>
+    </GameErrorBoundary>
   );
 }
 

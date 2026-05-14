@@ -26,6 +26,7 @@ import {
 } from "./rendering/FlappyBirdCanvasVisuals";
 import { MutatorService } from "../../services/MutatorService";
 import { MutatorSystem } from "../../engine/systems/MutatorSystem";
+import { InterpolationBuffer } from "../../multiplayer/InterpolationSystem";
 
 /**
  * Controlador principal del juego Flappy Bird.
@@ -39,6 +40,9 @@ export class FlappyBirdGame
   implements IFlappyBirdGame {
 
   private gameStateSystem: FlappyBirdGameStateSystem;
+  private serverEntities = new Map<string, number>();
+  private entityInterpolationBuffers = new Map<number, InterpolationBuffer>();
+  private interpolationDelay = 100;
   public readonly gameId = "flappybird";
   private config: typeof FLAPPY_CONFIG;
 
@@ -100,6 +104,24 @@ export class FlappyBirdGame
     const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     this.world.addSystem(new MutatorSystem(activeMutators));
     this.world.addSystem(new FlappyBirdRenderSystem());
+
+    if (this.isMultiplayer) {
+      this.world.addSystem({
+        update: (world) => {
+          const targetTime = Date.now() - this.interpolationDelay;
+          this.entityInterpolationBuffers.forEach((buffer, entityId) => {
+            const data = buffer.getAt(targetTime);
+            if (data) {
+              const transform = world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(entityId, "Transform");
+              if (transform) {
+                transform.x = data.prev.x + (data.next.x - data.prev.x) * data.alpha;
+                transform.y = data.prev.y + (data.next.y - data.prev.y) * data.alpha;
+              }
+            }
+          });
+        }
+      });
+    }
   }
 
   public setMultiplayerMode(active: boolean) {
@@ -108,31 +130,89 @@ export class FlappyBirdGame
 
   public updateFromServer(state: Record<string, unknown>) {
     if (!this.isMultiplayer || !state) return;
-    this.world.clear();
+    const world = this.getWorld();
 
-    if (state.players && Array.isArray(state.players)) {
-        state.players.forEach((player: { x: number, y: number, alive: boolean, velocityY: number }) => {
-            const b = this.world.createEntity();
-            this.world.addComponent(b, { type: "Transform", x: player.x, y: player.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-            this.world.addComponent(b, { type: "Render", shape: "bird", size: 15, color: player.alive ? "yellow" : "gray", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
-            this.world.addComponent(b, {
-                type: "Bird",
-                velocityY: player.velocityY,
-                isAlive: player.alive,
-                isGliding: false,
-                nearMissTimer: 0
-            } as import("./EntityFactory").BirdComponent);
-        });
+    const currentServerEntities = new Set<string>();
+
+    if (state.players && typeof state.players === 'object') {
+      const players = state.players as Record<string, { x: number, y: number, alive: boolean, velocityY: number }>;
+      Object.entries(players).forEach(([sessionId, playerState]) => {
+        const serverId = `player_${sessionId}`;
+        currentServerEntities.add(serverId);
+
+        let entity = this.serverEntities.get(serverId);
+        if (entity === undefined || !world.hasEntity(entity)) {
+          entity = world.createEntity();
+          this.serverEntities.set(serverId, entity);
+          world.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+          world.addComponent(entity, { type: "Render", shape: "bird", size: 15, color: "yellow", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+          world.addComponent(entity, {
+            type: "Bird",
+            velocityY: playerState.velocityY,
+            isAlive: playerState.alive,
+            isGliding: false,
+            nearMissTimer: 0
+          } as import("./EntityFactory").BirdComponent);
+        }
+
+        this.updateInterpolationBuffer(entity, playerState.x, playerState.y);
+
+        const bird = world.getComponent<import("./EntityFactory").BirdComponent>(entity, "Bird");
+        if (bird) {
+          bird.isAlive = playerState.alive;
+          bird.velocityY = playerState.velocityY;
+        }
+
+        const render = world.getComponent<import("../../engine/types/EngineTypes").RenderComponent>(entity, "Render");
+        if (render) {
+          render.color = playerState.alive ? "yellow" : "gray";
+        }
+      });
     }
 
-    if (state.pipes && Array.isArray(state.pipes)) {
-        state.pipes.forEach((pipe: { x: number, gapY: number }) => {
-            const p = this.world.createEntity();
-            this.world.addComponent(p, { type: "Transform", x: pipe.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-            this.world.addComponent(p, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
-            this.world.addComponent(p, { type: "Pipe", gapY: pipe.gapY, gapSize: 140, scored: false } as import("./EntityFactory").PipeComponent);
-        });
+    if (state.pipes && typeof state.pipes === 'object') {
+      const pipes = state.pipes as Record<string, { x: number, gapY: number, id: string }>;
+      Object.entries(pipes).forEach(([id, pipeState]) => {
+        const serverId = `pipe_${id}`;
+        currentServerEntities.add(serverId);
+
+        let entity = this.serverEntities.get(serverId);
+        if (entity === undefined || !world.hasEntity(entity)) {
+          entity = world.createEntity();
+          this.serverEntities.set(serverId, entity);
+          world.addComponent(entity, { type: "Transform", x: pipeState.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+          world.addComponent(entity, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+          world.addComponent(entity, { type: "Pipe", gapY: pipeState.gapY, gapSize: 140, scored: false } as import("./EntityFactory").PipeComponent);
+        }
+
+        this.updateInterpolationBuffer(entity, pipeState.x, 0);
+      });
     }
+
+    // Cleanup removed entities
+    this.serverEntities.forEach((entity, serverId) => {
+      if (!currentServerEntities.has(serverId)) {
+        if (world.hasEntity(entity)) {
+          world.removeEntity(entity);
+        }
+        this.serverEntities.delete(serverId);
+        this.entityInterpolationBuffers.delete(entity);
+      }
+    });
+  }
+
+  private updateInterpolationBuffer(entityId: number, x: number, y: number) {
+    let buffer = this.entityInterpolationBuffers.get(entityId);
+    if (!buffer) {
+      buffer = new InterpolationBuffer();
+      this.entityInterpolationBuffers.set(entityId, buffer);
+    }
+    buffer.push({
+      tick: 0,
+      x,
+      y,
+      timestamp: Date.now()
+    });
   }
 
   protected initializeEntities(): void {

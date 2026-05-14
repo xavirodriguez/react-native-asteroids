@@ -19,6 +19,7 @@ import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
 import { FlappyBirdGame } from "@/games/flappybird/FlappyBirdGame";
+import { GameErrorBoundary } from "@/components/GameErrorBoundary";
 import { FlappyBirdInput } from "@/games/flappybird/types/FlappyBirdTypes";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 
@@ -137,6 +138,7 @@ export default function FlappyBirdScreen() {
   };
 
   return (
+    <GameErrorBoundary gameId="flappybird">
     <SafeAreaProvider>
       <View style={styles.container}>
         <TouchableOpacity
@@ -185,6 +187,7 @@ export default function FlappyBirdScreen() {
         )}
       </View>
     </SafeAreaProvider>
+    </GameErrorBoundary>
   );
 }
 
