@@ -2,6 +2,10 @@ import { InputFrame } from "../../multiplayer/NetTypes";
 
 /**
  * Input frame synchronization manager for lockstep-style networking.
+ *
+ * API status: Internal
+ *
+ * @remarks
  * Designed to buffer local and remote inputs, aiming to ensure they are applied at the correct tick.
  */
 export class InputBuffer {

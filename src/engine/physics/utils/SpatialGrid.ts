@@ -2,15 +2,17 @@ import { Entity, AABB } from "../../types/EngineTypes";
 import { ObjectPool } from "../../utils/ObjectPool";
 
 /**
- * Grid Espacial para optimización de fase ancha (Broadphase).
+ * Spatial Grid for broad-phase optimization.
  *
- * @responsibility Dividir el mundo en celdas cuadradas para acelerar consultas espaciales.
- * @responsibility Proporcionar acceso O(1) a celdas y consultas O(M) sobre AABBs.
+ * API status: Public
+ *
+ * Responsibility: Divide the world into square cells to accelerate spatial queries.
+ * Responsibility: Provide O(1) access to cells and O(M) queries over AABBs.
  *
  * @remarks
- * Implementa una estrategia de **Hash Espacial** donde las entidades se indexan en
- * una o más celdas basadas en su AABB. Esto reduce la complejidad de detección de
- * colisiones de O(N^2) a aproximadamente O(N).
+ * Implements a **Spatial Hash** strategy where entities are indexed in
+ * one or more cells based on their AABB. This reduces collision detection
+ * complexity from O(N^2) to approximately O(N).
  *
  * ### Configuración:
  * - **cellSize**: Tamaño de cada celda en píxeles. Debe ser mayor que el objeto más grande

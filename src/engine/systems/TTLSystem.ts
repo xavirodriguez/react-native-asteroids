@@ -3,33 +3,39 @@ import { World } from "../core/World";
 import { TTLComponent, ReclaimableComponent } from "../types/EngineTypes";
 
 /**
- * Sistema responsable de gestionar el tiempo de vida (Time To Live) de las entidades.
- * Automatiza la destrucción de proyectiles, partículas o efectos temporales.
+ * System responsible for managing the lifetime (Time To Live) of entities.
+ * Automates the destruction of projectiles, particles, or temporary effects.
  *
- * @responsibility Decrementar el tiempo restante en {@link TTLComponent}.
- * @responsibility Destruir la entidad cuando el tiempo llega a cero.
- * @responsibility Notificar a los pools de reciclaje mediante {@link ReclaimableComponent}.
+ * API status: Public
  *
- * @queries TTL
- * @mutates TTL.remaining, World (entity removal)
- * @emits onComplete
- * @executionOrder Fase: Simulation. Normalmente al final de la fase física.
+ * Responsibility: Decrement the remaining time in {@link TTLComponent}.
+ *
+ * Responsibility: Destroy the entity when time reaches zero.
+ *
+ * Responsibility: Notify recycling pools via {@link ReclaimableComponent}.
  *
  * @remarks
- * El sistema intenta invocar el callback `onComplete` definido en el componente antes de
- * solicitar la eliminación de la entidad del mundo.
+ * The system attempts to invoke the `onComplete` callback defined in the component before
+ * requesting the entity's removal from the world.
  *
- * @public
+ * Queries: TTL
+ *
+ * Mutates: TTL.remaining, World (entity removal)
+ *
+ * Emits: onComplete
+ *
+ * Execution Order: Simulation Phase. Usually at the end of the physics phase.
  */
 export class TTLSystem extends System {
   /**
-   * Actualiza el tiempo de vida de las entidades.
+   * Updates the lifetime of entities.
    *
-   * @param world - El mundo ECS.
-   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   * @param world - The ECS world.
+   * @param deltaTime - Elapsed time in milliseconds [ms].
    *
-   * @precondition Las entidades deben poseer un {@link TTLComponent}.
-   * @postcondition Se reduce `remaining`. Si llega a <= 0, la entidad es eliminada.
+   * Precondition: Entities must possess a {@link TTLComponent}.
+   *
+   * Postcondition: `remaining` is reduced. If it reaches \<= 0, the entity is removed.
    */
   public update(world: World, deltaTime: number): void {
     const ttlEntities = world.query("TTL");

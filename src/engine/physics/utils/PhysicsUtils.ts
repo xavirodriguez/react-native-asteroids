@@ -177,7 +177,7 @@ export class PhysicsUtils {
    * as the engine uses inverse properties for impulse calculations.
    *
    * @param body - The rigid body component to update.
-   * @param mass - [kg] New mass (> 0 for dynamic, 0 for static).
+   * @param mass - [kg] New mass (\> 0 for dynamic, 0 for static).
    * @param inertia - New rotational inertia.
    *
    * @sideEffect Mutates `inverseMass` and `inverseInertia` properties.

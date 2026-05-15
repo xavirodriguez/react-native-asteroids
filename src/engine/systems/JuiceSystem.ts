@@ -3,41 +3,44 @@ import { System } from "../core/System";
 import { World } from "../core/World";
 
 /**
- * Configuración de una animación individual gestionada por el JuiceSystem.
+ * Configuration for an individual animation managed by the JuiceSystem.
  *
- * @public
+ * API status: Public
  */
 export interface JuiceAnimation {
-  /** Propiedad del Transform o Render que será animada. */
+  /** Property of the Transform or Render that will be animated. */
   property: "scaleX" | "scaleY" | "rotation" | "x" | "y" | "opacity";
-  /** Valor final deseado tras completar la duración. */
+  /** Desired final value after completing the duration. */
   target: number;
-  /** Duración total de la animación en milisegundos. */
+  /** Total duration of the animation in milliseconds [ms]. */
   duration: number;
-  /** Tiempo transcurrido desde el inicio de la animación en milisegundos. */
+  /** Time elapsed since the start of the animation in milliseconds [ms]. */
   elapsed: number;
-  /** Valor capturado al inicio de la animación para interpolación. */
+  /** Value captured at the start of the animation for interpolation. */
   startValue?: number;
-  /** Función de suavizado para la interpolación. Por defecto "linear". */
+  /** Easing function for interpolation. Defaults to "linear". */
   easing?: "linear" | "easeIn" | "easeOut" | "easeInOut" | "elasticOut";
-  /** Callback opcional ejecutado al finalizar la animación. */
+  /** Optional callback executed when the animation finishes. */
   onComplete?: (entity: Entity) => void;
 }
 
 /**
- * Componente que almacena una cola de animaciones procedimentales (tweens).
+ * Component that stores a queue of procedural animations (tweens).
  *
- * @public
+ * API status: Public
  */
 export interface JuiceComponent extends Component {
   type: "Juice";
-  /** Lista de animaciones activas sobre la entidad. */
+  /** List of active animations on the entity. */
   animations: JuiceAnimation[];
 }
 
 /**
- * Helper para crear un JuiceComponent inicializado.
- * @returns Instancia de JuiceComponent con lista de animaciones vacía.
+ * Helper to create an initialized JuiceComponent.
+ *
+ * API status: Public
+ *
+ * @returns Instance of JuiceComponent with an empty animation list.
  */
 export function createJuiceComponent(): JuiceComponent {
   return {
@@ -47,43 +50,45 @@ export function createJuiceComponent(): JuiceComponent {
 }
 
 /**
- * Sistema encargado de procesar animaciones procedimentales (Juice) sobre las entidades.
+ * System responsible for processing procedural animations (Juice) on entities.
  *
- * @responsibility Animar propiedades de componentes de forma elástica o interpolada.
- * @responsibility Actualizar el progreso de cada {@link JuiceSystem.JuiceAnimation}.
- * @responsibility Interpolar y aplicar valores a {@link VisualOffsetComponent} o {@link RenderComponent}.
- * @responsibility Notificar la finalización mediante callbacks {@link JuiceAnimation.onComplete}.
+ * API status: Public
  *
- * @remarks
- * Es una pieza clave para la **"reconciliación suave"** en red. Cuando el servidor corrige
- * la posición de una nave, este sistema interpola el error visual (`VisualOffset`)
- * gradualmente hacia cero, evitando que el jugador perciba saltos bruscos.
- *
- * @queries Juice, VisualOffset, Render
- * @mutates VisualOffset.x, VisualOffset.y, VisualOffset.scaleX, VisualOffset.scaleY, VisualOffset.rotation
- * @mutates Render.rotation, Render.opacity
- * @executionOrder Fase: Presentation. Debe ejecutarse después de Simulation para sobreescribir visuales.
+ * Responsibility: Animate component properties in an elastic or interpolated way.
+ * Responsibility: Update the progress of each `JuiceAnimation`.
+ * Responsibility: Interpolate and apply values to `VisualOffsetComponent` or `RenderComponent`.
+ * Responsibility: Notify completion through `onComplete` callbacks.
  *
  * @remarks
- * El sistema utiliza un integrador basado en tiempo real. Se recomienda para efectos
- * estéticos que no deben interferir con la lógica de colisiones o física.
+ * It is a key piece for **"smooth reconciliation"** in networking. When the server corrects
+ * a ship's position, this system gradually interpolates the visual error (`VisualOffset`)
+ * towards zero, preventing the player from perceiving sudden jumps.
  *
- * @conceptualRisk [DETERMINISM][LOW] JuiceSystem ahora muta VisualOffsetComponent en lugar de Transform,
- * eliminando el riesgo de desincronización en la simulación física.
- * @conceptualRisk [MUTATION][LOW] Las animaciones se eliminan del array durante la iteración
- * inversa; el diseño es seguro ante mutaciones estructurales locales.
+ * Queries: Juice, VisualOffset, Render
+ * Mutates: VisualOffset.x, VisualOffset.y, VisualOffset.scaleX, VisualOffset.scaleY, VisualOffset.rotation
+ * Mutates: Render.rotation, Render.opacity
+ * Execution Order: Presentation Phase. Must be executed after Simulation to override visuals.
  *
- * @public
+ * @remarks
+ * The system uses a real-time based integrator. Recommended for aesthetic effects
+ * that should not interfere with collision or physics logic.
+ *
+ * Conceptual Risk: [DETERMINISM][LOW] JuiceSystem now mutates VisualOffsetComponent instead of Transform,
+ * eliminating the risk of desynchronization in the physics simulation.
+ * Conceptual Risk: [MUTATION][LOW] Animations are removed from the array during reverse iteration;
+ * the design is safe against local structural mutations.
  */
 export class JuiceSystem extends System {
   /**
-   * Actualiza las animaciones procedimentales de Juice.
+   * Updates procedural Juice animations.
    *
-   * @param world - El mundo ECS.
-   * @param deltaTime - Tiempo transcurrido en milisegundos.
+   * API status: Public
    *
-   * @precondition Las entidades deben poseer un {@link JuiceSystem.JuiceComponent}.
-   * @postcondition Los valores interpolados se aplican a {@link VisualOffsetComponent} o {@link RenderComponent}.
+   * @param world - The ECS world.
+   * @param deltaTime - Elapsed time in milliseconds [ms].
+   *
+   * Precondition: Entities must possess a `JuiceComponent`.
+   * Postcondition: Interpolated values are applied to `VisualOffsetComponent` or `RenderComponent`.
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Juice");
@@ -106,7 +111,7 @@ export class JuiceSystem extends System {
       for (let j = juice.animations.length - 1; j >= 0; j--) {
         const anim = juice.animations[j];
 
-        // Inicializar valor de inicio si es necesario
+        // Initialize start value if needed
         if (anim.startValue === undefined) {
           anim.startValue = this.getPropertyValue(anim.property, offset, render);
         }
@@ -170,7 +175,9 @@ export class JuiceSystem extends System {
   }
 
   /**
-   * Helper estático para añadir una animación a una entidad.
+   * Static helper to add an animation to an entity.
+   *
+   * API status: Public
    */
   public static add(world: World, entity: Entity, anim: Omit<JuiceAnimation, "elapsed">): void {
     let juice = world.getComponent<JuiceComponent>(entity, "Juice");
