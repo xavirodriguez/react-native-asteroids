@@ -31,7 +31,7 @@ export class UIFactory {
     }): Entity {
         const commands = world.getCommandBuffer();
         const entity = world.isUpdating ? world.reserveEntityId() : world.createEntity();
-        
+
         if (world.isUpdating) {
             commands.createEntity(entity);
         }
@@ -172,7 +172,7 @@ export class UIFactory {
         });
 
         const commands = world.getCommandBuffer();
-        
+
         const btnState: UIButtonStateComponent = {
             type: "UIButtonState",
             state: "idle",

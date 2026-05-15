@@ -22,7 +22,7 @@ export class DamageNumberSystem extends System {
         });
 
         const commands = world.getCommandBuffer();
-        
+
         commands.mutateComponent<UIElementComponent>(entity, "UIElement", element => {
             element.offsetX = x;
             element.offsetY = y;

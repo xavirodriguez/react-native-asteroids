@@ -5,7 +5,7 @@ import { ModifierStackComponent } from "../core/CoreComponents";
 /**
  * System that manages the duration and removal of temporary modifiers.
  * Supports both temporal and permanent modifiers.
- * 
+ *
  * @responsibility Decrement remaining duration of temporal modifiers.
  * @responsibility Remove modifiers that have expired.
  * @responsibility Emit event when modifiers expire.
@@ -21,7 +21,7 @@ export class ModifierSystem extends System {
 
       world.mutateComponent(entity, "ModifierStack", (stack: ModifierStackComponent) => {
         const initialCount = stack.modifiers.length;
-        
+
         // Decrease remaining time for each temporal modifier
         for (let i = stack.modifiers.length - 1; i >= 0; i--) {
           const mod = stack.modifiers[i];

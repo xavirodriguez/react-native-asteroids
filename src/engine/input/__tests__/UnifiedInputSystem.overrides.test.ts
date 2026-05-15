@@ -87,10 +87,10 @@ describe("UnifiedInputSystem Overrides", () => {
     // First update: triggers creation of InputState via CommandBuffer
     inputSystem.update(world, 16);
     world.flush();
-    
+
     // Second update: populates the now-existing InputState
     inputSystem.update(world, 16);
-    
+
     const inputComponent = world.getSingleton<InputStateComponent>("InputState")!;
     const snapshot = inputSystem.getInputState();
 
@@ -121,7 +121,7 @@ describe("UnifiedInputSystem Overrides", () => {
 
     // Second update: populates InputState
     inputSystem.update(world, 16);
-    
+
     const inputComponent = world.getSingleton<InputStateComponent>("InputState")!;
     expect(inputComponent.axes.get("fire")).toBe(1);
   });

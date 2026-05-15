@@ -98,7 +98,7 @@ export class JuiceSystem extends System {
           const easedProgress = this.applyEasing(progress, anim.easing || "linear");
 
           const currentValue = anim.startValue + (anim.target - anim.startValue) * easedProgress;
-          
+
           if (anim.property === "opacity") {
               world.mutateComponent<RenderComponent>(entity, "Render", r => {
                   if (!r.data) r.data = {};
@@ -162,13 +162,13 @@ export class JuiceSystem extends System {
   public static add(world: World, entity: Entity, anim: Omit<JuiceAnimation, "elapsed">): void {
     const commands = world.getCommandBuffer();
     let juice = world.getComponent<JuiceComponent>(entity, "Juice");
-    
+
     if (!juice) {
       juice = createJuiceComponent();
       // If we are in update(), we must use CommandBuffer
       commands.addComponent(entity, juice);
     }
-    
+
     commands.mutateComponent(entity, "Juice", (jComp: JuiceComponent) => {
         jComp.animations.push({ ...anim, elapsed: 0 });
     });

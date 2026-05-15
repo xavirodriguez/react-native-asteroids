@@ -29,7 +29,7 @@ export class TTLSystem extends System {
 
       if (expired) {
         const ttl = world.getComponent<TTLComponent>(entity, "TTL")!;
-        
+
         // Trigger onComplete callback if present
         if (ttl.onComplete) {
           ttl.onComplete();

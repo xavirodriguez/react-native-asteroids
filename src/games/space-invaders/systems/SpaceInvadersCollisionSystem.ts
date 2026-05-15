@@ -58,7 +58,7 @@ export class SpaceInvadersCollisionSystem extends System {
         world.mutateComponent<BossComponent>(boss, "Boss", b => {
             b.hp -= 1;
         });
-        
+
         world.mutateSingleton<GameStateComponent>("GameState", gs => {
             gs.score += 100;
         });
@@ -116,7 +116,7 @@ export class SpaceInvadersCollisionSystem extends System {
             } as RenderComponent);
             world.getCommandBuffer().addComponent(popup, { type: "UIText", content: `x${gameState.multiplier}` } as any);
             world.getCommandBuffer().addComponent(popup, { type: "TTL", remaining: 1000, total: 1000 } as any);
-            
+
             // Side-effects like Juice are deferred naturally or can be applied here
             JuiceSystem.add(world, popup, { property: "y", target: -40, duration: 1000, easing: "easeOut" });
             JuiceSystem.add(world, popup, { property: "opacity", target: 0, duration: 1000, easing: "easeIn" });
@@ -202,7 +202,7 @@ export class SpaceInvadersCollisionSystem extends System {
       shield.hp -= 1;
       expired = shield.hp <= 0;
     });
-    
+
     if (expired) {
       world.getCommandBuffer().removeEntity(shieldEntity);
     } else {

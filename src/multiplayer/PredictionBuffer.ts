@@ -43,7 +43,7 @@ export class PredictionBuffer {
 
     this.buffer.push(state);
     this.lookup.set(state.tick, state);
-    
+
     if (this.buffer.length > this.maxSize) {
       const oldest = this.buffer.shift();
       if (oldest) {

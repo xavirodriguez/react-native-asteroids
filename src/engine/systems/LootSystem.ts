@@ -68,7 +68,7 @@ export class LootSystem extends System {
 
   private spawnPowerUp(world: World, x: number, y: number, drop: { type: string, config?: { value?: number, duration?: number } }): void {
     const commands = world.getCommandBuffer();
-    
+
     commands.createEntity((powerUp) => {
         // Physical presence
         commands.addComponent(powerUp, {

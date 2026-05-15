@@ -11,7 +11,7 @@ describe("StatusEffectSystem (Deprecated)", () => {
   });
 
   it("should be a no-op", () => {
-     // This test ensures the system exists but does nothing, 
+     // This test ensures the system exists but does nothing,
      // as logic was moved to ModifierSystem to prevent double-decrements.
      expect(() => system.update(world, 16)).not.toThrow();
   });
