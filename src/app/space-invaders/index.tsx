@@ -29,7 +29,7 @@ export default function SpaceInvadersScreen() {
   const [started, setStarted] = useState(false);
   const [isMulti, setIsMulti] = useState(false);
   const [isDaily, setIsDaily] = useState(false);
-  const { game, gameState, handleInput, isPaused, isReady, togglePause, highScore, seed, restartWithSeed } = useSpaceInvadersGame(isMulti && started);
+  const { game, gameState, handleInput, isPaused, isReady, togglePause, highScore, seed, restartWithSeed } = useSpaceInvadersGame(isMulti && started, initialSeed);
 
   // Handle incoming daily challenge parameters
   useEffect(() => {
@@ -43,13 +43,6 @@ export default function SpaceInvadersScreen() {
       }
     }
   }, [params.seed, params.isDaily, started]);
-
-  // Ensure game starts with the correct seed if set via params
-  useEffect(() => {
-    if (started && isDaily && initialSeed !== undefined && isReady && seed !== initialSeed) {
-        restartWithSeed(initialSeed);
-    }
-  }, [started, isDaily, initialSeed, isReady, seed, restartWithSeed]);
   const [showDailyResults, setShowDailyResults] = useState(false);
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
