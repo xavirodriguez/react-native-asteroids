@@ -30,7 +30,7 @@ describe("FlappyBirdCollisionSystem", () => {
     world.flush();
     physicsSystem.update(world, 16.6);
     world.flush();
-    
+
     system.update(world, 16.6);
     world.flush();
 
@@ -47,7 +47,7 @@ describe("FlappyBirdCollisionSystem", () => {
     world.flush();
     physicsSystem.update(world, 16.6);
     world.flush();
-    
+
     system.update(world, 16.6);
     world.flush();
 
@@ -64,7 +64,7 @@ describe("FlappyBirdCollisionSystem", () => {
     world.flush();
     physicsSystem.update(world, 16.6);
     world.flush();
-    
+
     system.update(world, 16.6);
     world.flush();
 

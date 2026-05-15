@@ -28,7 +28,7 @@ describe("AsteroidCollisionSystem", () => {
     // First update ensures CollisionEvents component exists
     physicsSystem.update(world, 16.66);
     world.flush();
-    
+
     // Second update records the actual collision
     physicsSystem.update(world, 16.66);
     world.flush();
@@ -49,7 +49,7 @@ describe("AsteroidCollisionSystem", () => {
     world.flush();
     physicsSystem.update(world, 16.66);
     world.flush();
-    
+
     system.update(world, 16.66);
     world.flush();
 

@@ -166,7 +166,7 @@ describe("Asteroids Gameplay Integration", () => {
     world.flush();
     physicsSystem.update(world, 16.66);
     world.flush();
-    
+
     collisionSystem.update(world, 16.66);
     world.flush();
 

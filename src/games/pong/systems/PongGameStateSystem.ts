@@ -28,12 +28,12 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
             world.mutateSingleton<PongState>("PongState", (gs) => {
                 gs.scoreP2++;
             });
-            this.resetBall(pos, vel, "right");
+            this.resetBall(world, ballEntity, pos, vel, "right");
         } else if (pos.x > this.config.WIDTH) {
             world.mutateSingleton<PongState>("PongState", (gs) => {
                 gs.scoreP1++;
             });
-            this.resetBall(pos, vel, "left");
+            this.resetBall(world, ballEntity, pos, vel, "left");
         }
 
         const currentState = this.getGameState(world);
@@ -44,7 +44,7 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
             });
             const eventBus = world.getResource<EventBus>("EventBus");
             if (eventBus) {
-                eventBus.emit("pong:set_won");
+                eventBus.emitDeferred("pong:set_won");
             }
         } else if (currentState && currentState.scoreP2 >= this.config.WIN_SCORE) {
             world.mutateSingleton<PongState>("PongState", (gs) => {
@@ -55,12 +55,18 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
     });
   }
 
-  private resetBall(pos: TransformComponent, vel: VelocityComponent, direction: "left" | "right"): void {
-    pos.x = this.config.WIDTH / 2;
-    pos.y = this.config.HEIGHT / 2;
+  private resetBall(world: World, entity: number, _pos: TransformComponent, _vel: VelocityComponent, direction: "left" | "right"): void {
     const gameplayRandom = RandomService.getInstance("gameplay");
-    vel.dx = direction === "right" ? -this.config.BALL_SPEED_START : this.config.BALL_SPEED_START;
-    vel.dy = (gameplayRandom.next() - 0.5) * this.config.BALL_SPEED_START;
+
+    world.mutateComponent<TransformComponent>(entity, "Transform", pos => {
+        pos.x = this.config.WIDTH / 2;
+        pos.y = this.config.HEIGHT / 2;
+    });
+
+    world.mutateComponent<VelocityComponent>(entity, "Velocity", vel => {
+        vel.dx = direction === "right" ? -this.config.BALL_SPEED_START : this.config.BALL_SPEED_START;
+        vel.dy = (gameplayRandom.next() - 0.5) * this.config.BALL_SPEED_START;
+    });
   }
 
   protected getGameState(world: World): PongState | undefined {

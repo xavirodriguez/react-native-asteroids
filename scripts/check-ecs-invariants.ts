@@ -53,7 +53,7 @@ function checkFile(filepath: string): number {
         const lineStart = content.lastIndexOf('\n', match.index!) + 1;
         const lineEnd = content.indexOf('\n', match.index!);
         const line = content.substring(lineStart, lineEnd === -1 ? content.length : lineEnd);
-        
+
         // Skip if it uses commandBuffer or if it's checking for existence
         if (line.includes('getCommandBuffer()') || line.includes('commands.') || line.includes('buffer.')) continue;
         if (line.includes('if (') && line.includes('.hasComponent')) continue;

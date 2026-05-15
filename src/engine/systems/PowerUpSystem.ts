@@ -39,7 +39,7 @@ export class PowerUpSystem extends System {
 
   private applyPowerUp(world: World, shipEntity: number, powerUp: PowerUpComponent, powerUpEntity: number): void {
     const commands = world.getCommandBuffer();
-    
+
     // Add ModifierStack if missing
     if (!world.hasComponent(shipEntity, "ModifierStack")) {
       commands.addComponent(shipEntity, {

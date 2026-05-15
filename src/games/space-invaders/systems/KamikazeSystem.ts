@@ -105,11 +105,11 @@ export class KamikazeSystem extends System {
         originY: pos.y,
         diveSpeed: 150,
       } as KamikazeComponent);
-      
+
       world.mutateComponent<RenderComponent>(invader, "Render", render => {
           render.color = "#FF4444";
       });
-      
+
       world.mutateSingleton<GameStateComponent>("GameState", gs => {
           gs.kamikazesActive++;
       });

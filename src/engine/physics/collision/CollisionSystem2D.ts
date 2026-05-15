@@ -54,12 +54,12 @@ export class CollisionSystem2D extends System {
     const entities = world.query("Transform", "Collider2D");
     const currentFramePairs = new Set<string>();
     const eventEntities = world.query("CollisionEvents");
-    
+
     for (let i = 0; i < eventEntities.length; i++) {
       const entity = eventEntities[i];
       world.mutateComponent<CollisionEventsComponent>(entity, "CollisionEvents", events => {
-          events.collisions.length = 0; 
-          events.triggersEntered.length = 0; 
+          events.collisions.length = 0;
+          events.triggersEntered.length = 0;
           events.triggersExited.length = 0;
       });
     }
@@ -202,7 +202,7 @@ export class CollisionSystem2D extends System {
   private addCollisionToComponent(world: World, entity: Entity, other: Entity, manifold: CollisionManifold, flipNormal: boolean): void {
     const commands = world.getCommandBuffer();
     let events = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
-    if (!events) { 
+    if (!events) {
         commands.addComponent(entity, { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] } as CollisionEventsComponent);
         // We skip recording this collision for this frame as the component won't be available yet
         return;
@@ -215,7 +215,7 @@ export class CollisionSystem2D extends System {
   private addTriggerToComponent(world: World, entity: Entity, other: Entity, phase: "enter" | "stay" | "exit"): void {
     const commands = world.getCommandBuffer();
     let events = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
-    if (!events) { 
+    if (!events) {
         commands.addComponent(entity, { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] } as CollisionEventsComponent);
         return;
     }

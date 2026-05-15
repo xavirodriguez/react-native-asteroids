@@ -297,7 +297,7 @@ export class World {
 
     // Incremented in reserveEntityId or here if id was provided
     if (id !== undefined) this._structureVersion++;
-    
+
     return entityId;
   }
 

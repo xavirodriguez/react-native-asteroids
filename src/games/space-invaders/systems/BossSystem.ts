@@ -70,7 +70,7 @@ export class BossSystem extends System {
   private spawnBoss(world: World, level: number): void {
     const commands = world.getCommandBuffer();
     const hp = 50 + (level / 5) * 50;
-    
+
     commands.createEntity(boss => {
         commands.addComponent(boss, { type: "Transform", x: GAME_CONFIG.SCREEN_WIDTH / 2, y: 100, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
         commands.addComponent(boss, { type: "Render", shape: "invader", size: 80, color: "#FF00FF", rotation: 0 } as RenderComponent);
@@ -102,14 +102,14 @@ export class BossSystem extends System {
         loop: false
     });
     Juice.shake(world, 10, 1000);
-    
+
     world.mutateSingleton<GameStateComponent>("GameState", gs => {
         gs.score += 5000;
     });
 
     const eventBus = world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
     if (eventBus) eventBus.emitDeferred("si:boss_defeated");
-    
+
     world.getCommandBuffer().removeEntity(entity);
   }
 }

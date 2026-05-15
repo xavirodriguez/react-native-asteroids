@@ -43,15 +43,15 @@ export class ComponentSetPool<T extends Record<string, Component>> {
    */
   public acquire(world: World): { entity: Entity; components: T } {
     const components = this.pool.acquire();
-    
+
     if (world.isUpdating) {
         // Reserve ID immediately but defer activation
         const entity = world.reserveEntityId();
         const commands = world.getCommandBuffer();
-        
+
         // CommandBuffer creation logic
         commands.createEntity(entity);
-        
+
         for (const key in components) {
           const comp = components[key];
           if (comp.type === "Reclaimable") {
@@ -59,7 +59,7 @@ export class ComponentSetPool<T extends Record<string, Component>> {
           }
           commands.addComponent(entity, comp);
         }
-        
+
         return { entity, components };
     }
 
