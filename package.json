@@ -30,10 +30,6 @@
     "@expo/ngrok": "4.1.0",
     "@expo/vector-icons": "^15.0.2",
     "@hookform/resolvers": "^5.2.1",
-    "@microsoft/api-documenter": "^7.28.9",
-    "@microsoft/api-extractor": "^7.56.3",
-    "@microsoft/tsdoc": "^0.16.0",
-    "@microsoft/tsdoc-config": "^0.18.1",
     "@react-native-async-storage/async-storage": "^3.0.1",
     "@react-navigation/native": "^7.1.6",
     "@shopify/react-native-skia": "^2.5.3",
@@ -84,6 +80,10 @@
     "zod": "^4.1.4"
   },
   "devDependencies": {
+    "@microsoft/api-documenter": "^7.28.9",
+    "@microsoft/api-extractor": "^7.56.3",
+    "@microsoft/tsdoc": "^0.16.0",
+    "@microsoft/tsdoc-config": "^0.18.1",
     "@babel/core": "^7.25.2",
     "@eslint/js": "^9.34.0",
     "@types/jest": "^29.5.14",
