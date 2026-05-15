@@ -13,13 +13,6 @@ import {
 
 /**
  * Factoría para la creación simplificada de elementos de interfaz de usuario.
- *
- * @responsibility Instanciar entidades de UI con la composición correcta de componentes (Element, Style, Text).
- *
- * @remarks
- * Encapsula las jerarquías de componentes necesarias para widgets comunes como
- * etiquetas, paneles, botones y barras de progreso. Asigna valores por defecto
- * consistentes para facilitar el desarrollo rápido de interfaces.
  */
 export class UIFactory {
     /**
@@ -36,7 +29,13 @@ export class UIFactory {
         zIndex?: number;
         parentEntity?: Entity | null;
     }): Entity {
-        const entity = world.createEntity();
+        const commands = world.getCommandBuffer();
+        const entity = world.isUpdating ? world.reserveEntityId() : world.createEntity();
+
+        if (world.isUpdating) {
+            commands.createEntity(entity);
+        }
+
         const element: UIElementComponent = {
             type: "UIElement",
             elementType: "label",
@@ -73,9 +72,15 @@ export class UIFactory {
             maxLines: 0
         };
 
-        world.addComponent(entity, element);
-        world.addComponent(entity, style);
-        world.addComponent(entity, text);
+        if (world.isUpdating) {
+            commands.addComponent(entity, element);
+            commands.addComponent(entity, style);
+            commands.addComponent(entity, text);
+        } else {
+            world.addComponent(entity, element);
+            world.addComponent(entity, style);
+            world.addComponent(entity, text);
+        }
 
         return entity;
     }
@@ -92,7 +97,13 @@ export class UIFactory {
         zIndex?: number;
         parentEntity?: Entity | null;
     }): Entity {
-        const entity = world.createEntity();
+        const commands = world.getCommandBuffer();
+        const entity = world.isUpdating ? world.reserveEntityId() : world.createEntity();
+
+        if (world.isUpdating) {
+            commands.createEntity(entity);
+        }
+
         const padding: UIEdgeInsets = {
             top: config.padding?.top ?? 0,
             right: config.padding?.right ?? 0,
@@ -129,8 +140,13 @@ export class UIFactory {
             fontFamily: "monospace"
         };
 
-        world.addComponent(entity, element);
-        world.addComponent(entity, style);
+        if (world.isUpdating) {
+            commands.addComponent(entity, element);
+            commands.addComponent(entity, style);
+        } else {
+            world.addComponent(entity, element);
+            world.addComponent(entity, style);
+        }
 
         return entity;
     }
@@ -155,9 +171,7 @@ export class UIFactory {
             parentEntity: config.parentEntity
         });
 
-        const element = world.getComponent<UIElementComponent>(entity, "UIElement")!;
-        element.elementType = "button";
-        element.interactive = true;
+        const commands = world.getCommandBuffer();
 
         const btnState: UIButtonStateComponent = {
             type: "UIButtonState",
@@ -173,12 +187,29 @@ export class UIFactory {
             maxLines: 0
         };
 
-        const style = world.getComponent<UIStyleComponent>(entity, "UIStyle")!;
-        style.textAlign = "center";
-        style.textColor = config.textColor ?? "white";
+        if (world.isUpdating) {
+            commands.mutateComponent<UIElementComponent>(entity, "UIElement", element => {
+                element.elementType = "button";
+                element.interactive = true;
+            });
+            commands.mutateComponent<UIStyleComponent>(entity, "UIStyle", style => {
+                style.textAlign = "center";
+                style.textColor = config.textColor ?? "white";
+            });
+            commands.addComponent(entity, btnState);
+            commands.addComponent(entity, text);
+        } else {
+            const element = world.getComponent<UIElementComponent>(entity, "UIElement")!;
+            element.elementType = "button";
+            element.interactive = true;
 
-        world.addComponent(entity, btnState);
-        world.addComponent(entity, text);
+            const style = world.getComponent<UIStyleComponent>(entity, "UIStyle")!;
+            style.textAlign = "center";
+            style.textColor = config.textColor ?? "white";
+
+            world.addComponent(entity, btnState);
+            world.addComponent(entity, text);
+        }
 
         return entity;
     }
@@ -193,7 +224,13 @@ export class UIFactory {
         zIndex?: number;
         parentEntity?: Entity | null;
     }): Entity {
-        const entity = world.createEntity();
+        const commands = world.getCommandBuffer();
+        const entity = world.isUpdating ? world.reserveEntityId() : world.createEntity();
+
+        if (world.isUpdating) {
+            commands.createEntity(entity);
+        }
+
         const element: UIElementComponent = {
             type: "UIElement",
             elementType: "progressBar",
@@ -219,8 +256,13 @@ export class UIFactory {
             direction: "left-to-right"
         };
 
-        world.addComponent(entity, element);
-        world.addComponent(entity, pb);
+        if (world.isUpdating) {
+            commands.addComponent(entity, element);
+            commands.addComponent(entity, pb);
+        } else {
+            world.addComponent(entity, element);
+            world.addComponent(entity, pb);
+        }
 
         return entity;
     }

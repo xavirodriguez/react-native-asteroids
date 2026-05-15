@@ -32,6 +32,7 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
         world,
         x: this.config.SCREEN_WIDTH + this.config.PIPE_WIDTH,
         gapY,
+        deferred: true
       });
       world.mutateSingleton<FlappyBirdState>("FlappyState", (gs) => {
           gs.pipeSpawnTimer = 0;
@@ -45,9 +46,11 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
       const pipe = world.getComponent<PipeComponent>(entity, "Pipe");
       if (pos && pipe) {
         if (pos.x < -this.config.PIPE_WIDTH) {
-          world.removeEntity(entity);
+          world.getCommandBuffer().removeEntity(entity);
         } else if (!pipe.scored && pos.x < this.config.BIRD_X) {
-          pipe.scored = true;
+          world.mutateComponent<PipeComponent>(entity, "Pipe", p => {
+             p.scored = true;
+          });
           world.mutateSingleton<FlappyBirdState>("FlappyState", (gs) => {
               gs.score += gs.comboMultiplier || 1;
               if (gs.score > gs.highScore) {
@@ -55,7 +58,7 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
               }
           });
           const eventBus = world.getResource<EventBus>("EventBus");
-          if (eventBus) eventBus.emit("pipe:passed");
+          if (eventBus) eventBus.emitDeferred("pipe:passed");
         }
       }
     });

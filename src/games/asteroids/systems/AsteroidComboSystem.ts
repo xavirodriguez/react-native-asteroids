@@ -26,7 +26,7 @@ export class AsteroidComboSystem extends System {
 
         if (gs.comboMultiplier !== oldMultiplier) {
           const eventBus = world.getResource<EventBus>("EventBus");
-          if (eventBus) eventBus.emit("asteroid:combo_changed", { multiplier: gs.comboMultiplier });
+          if (eventBus) eventBus.emitDeferred("asteroid:combo_changed", { multiplier: gs.comboMultiplier });
         }
       });
     }

@@ -1,21 +1,5 @@
 /**
  * Core simulation orchestrator for the Asteroids game logic.
- *
- * This module centralizes all state-altering logic in a way that is reproducible across
- * different platforms and network clients. It strictly follows a fixed-step update
- * pattern and relies on deterministic services.
- *
- * @remarks
- * To maintain determinism, developers MUST follow these rules:
- * 1. **Pure State Logic**: Only use `RandomService.getInstance("gameplay")` for state-altering logic.
- * 2. **No External Clocks**: Avoid using `Date.now()`, `performance.now()`, or `Math.random()`.
- * 3. **Fixed Execution Order**: Ensure systems are updated in a consistent sequence across all clients.
- * 4. **Side Effect Suppression**: Use `ctx.isResimulating` to disable non-deterministic side effects
- *    like SFX or visual particles during rollbacks.
- * 5. **Floating Point Care**: Be aware that JS floating point math can vary slightly across architectures;
- *    important values should ideally be quantized.
- *
- * @packageDocumentation
  */
 
 import { World } from "../engine/core/World";
@@ -41,7 +25,6 @@ export type SimulationContext = {
 
 /**
  * Configuration mapping for asteroid fragmentation.
- * Defines the next size and position offset when an asteroid is destroyed.
  */
 const ASTEROID_SPLIT_CONFIG: Record<
   string,
@@ -54,41 +37,13 @@ const ASTEROID_SPLIT_CONFIG: Record<
 
 /**
  * Core simulation orchestrator designed for perfect reproducibility (Determinism).
- *
- * @remarks
- * This module centralizes the fixed-step update loop for Asteroids. It coordinates
- * movement, collisions, spawning, and lifecycle management such that, given the same
- * seed and input sequence, the resulting state is identical across all clients and servers.
- *
- * ### Golden Rules of Determinism:
- * 1. **Fixed Execution Order**: Systems MUST execute in the exact same sequence (`internalUpdate`).
- * 2. **Protected RNG**: Use only `RandomService.getInstance("gameplay")` for state changes.
- * 3. **No External Clocks**: Never use `Date.now()`, `performance.now()`, or `Math.random()`.
- * 4. **Side-Effect Isolation**: Use `ctx.isResimulating` to suppress sounds/particles during rollbacks.
- * 5. **Fixed Time Step**: `deltaTime` must be constant (16.66ms) regardless of render framerate.
- *
- * @conceptualRisk [PRECISION_DRIFT][MEDIUM] IEEE 754 floating point accumulations over
- * extremely long sessions (hours) may lead to architecture-dependent desyncs.
  */
 export class DeterministicSimulation {
     /**
      * Punto de entrada para un tick de simulación individual.
-     *
-     * @remarks
-     * Manages the PRNG context locking. During resimulation (rollback), the gameplay
-     * context is locked to ensure that the RNG stream remains perfectly aligned
-     * with the tick count, preventing visual-only effects from consuming gameplay entropy.
-     *
-     * @param world - The ECS world to update.
-     * @param deltaTime - Fixed time step in milliseconds (expected to be 16.66ms).
-     * @param ctx - Execution context (Forward vs Resimulation).
-     * @param world - El mundo ECS a actualizar.
-     * @param deltaTime - Paso de tiempo fijo en milisegundos (16.66ms @ 60fps).
-     * @param ctx - Contexto de ejecución (Forward vs Resimulation/Rollback).
      */
     public static update(world: World, deltaTime: number, ctx: SimulationContext) {
         // Only lock gameplay context during resimulation.
-        // Forward simulation may legitimately trigger visual effects that use the render RNG.
         if (ctx.isResimulating) {
             RandomService.lockGameplayContext = true;
         }
@@ -101,64 +56,45 @@ export class DeterministicSimulation {
 
     /**
      * Secuencia interna de fases de simulación.
-     *
-     * @remarks
-     * EL ORDEN ES CRÍTICO. Cambiar el orden de estas fases romperá la compatibilidad
-     * con replays anteriores y causará desincronización inmediata en multijugador.
-     *
-     * Pipeline:
-     * 1. Sincronización de Tick (Autoridad temporal).
-     * 2. Intención del Jugador (Física de Naves).
-     * 3. Cinemática (Integración de movimiento).
-     * 4. Ciclo de Vida (TTL).
-     * 5. Resolución de Conflictos (Colisiones).
-     * 6. Lógica de Nivel (UFO/Waves).
      */
     private static internalUpdate(world: World, deltaTime: number, ctx: SimulationContext) {
         const dtSeconds = deltaTime / 1000;
 
-        // 0. Sincronización del tick del servidor en el singleton GameState.
-        // Actúa como la referencia temporal absoluta para el netcode.
+        // 0. Sincronización del tick del servidor.
         world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
             if (gs.serverTick === undefined) gs.serverTick = 0;
             gs.serverTick++;
         });
 
-        // 1. Procesar Inputs y Física de Naves (Incluye Integración y Límites para naves).
-        // Se ejecuta primero para permitir la predicción inmediata en el cliente.
+        // 1. Procesar Inputs y Física de Naves.
         this.updateShips(world, deltaTime, ctx);
 
-        // 2. Integración de Movimiento y Envoltura de Límites (Para entidades que no son naves).
+        // 2. Integración de Movimiento.
         this.integrateMovement(world, dtSeconds);
 
-        // 3. TTL (Time To Live) - Eliminación de proyectiles y partículas expiradas.
+        // 3. TTL (Time To Live).
         this.updateTTL(world, deltaTime);
 
         // 4. Detección y Resolución de Colisiones.
-        // Debe ocurrir después del movimiento para resolver el estado final del tick.
         this.updateCollisions(world, ctx, deltaTime);
 
-        // 5. Lógica de comportamiento de UFOs (IA simple).
+        // 5. Lógica de comportamiento de UFOs.
         this.updateUfos(world, dtSeconds);
 
-        // 6. Lógica de Spawning (Oleadas de asteroides y UFOs aleatorios).
+        // 6. Lógica de Spawning.
         this.updateSpawning(world, ctx);
     }
 
     private static updateUfos(world: World, dtSeconds: number) {
         const ufos = world.query("Ufo", "Transform", "Velocity");
         ufos.forEach((entity) => {
-          const pos = world.getComponent<TransformComponent>(entity, "Transform");
           const ufo = world.getComponent<UfoComponent>(entity, "Ufo");
 
-          if (pos && ufo) {
+          if (ufo) {
             world.mutateComponent(entity, "Ufo", (u: UfoComponent) => {
                 u.time += dtSeconds;
             });
 
-            // Actualizar posición vertical con oscilación sinusoidal
-            // Amplitud: 30 píxeles, Frecuencia: 2 rad/s
-            // Estos valores son heurísticas de diseño para el patrón de vuelo del UFO.
             const UFO_OSCILLATION_AMPLITUDE = 30;
             const UFO_OSCILLATION_FREQUENCY = 2;
 
@@ -167,8 +103,9 @@ export class DeterministicSimulation {
             });
 
             // UFOs that go off-screen horizontally are removed
+            const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
             if (pos.x < -50 || pos.x > GAME_CONFIG.SCREEN_WIDTH + 50) {
-              world.removeEntity(entity);
+              world.getCommandBuffer().removeEntity(entity);
             }
           }
         });
@@ -199,7 +136,6 @@ export class DeterministicSimulation {
     }
 
     private static integrateMovement(world: World, dtSeconds: number) {
-        // We exclude entities with "ManualMovement" as they are processed elsewhere (e.g. ships)
         const moveables = world.query("Transform", "Velocity");
         moveables.forEach(entity => {
             if (world.hasComponent(entity, "ManualMovement")) return;
@@ -224,35 +160,31 @@ export class DeterministicSimulation {
     private static updateTTL(world: World, deltaTime: number) {
         const ttls = world.query("TTL");
         ttls.forEach(entity => {
-            const ttl = world.getComponent<TTLComponent>(entity, "TTL");
-            if (ttl) {
-                world.mutateComponent(entity, "TTL", (t: TTLComponent) => {
-                    t.remaining -= deltaTime;
-                });
-                if (ttl.remaining <= 0) {
-                    world.removeEntity(entity);
-                }
+            let expired = false;
+            world.mutateComponent<TTLComponent>(entity, "TTL", (t) => {
+                t.remaining -= deltaTime;
+                expired = t.remaining <= 0;
+            });
+            if (expired) {
+                world.getCommandBuffer().removeEntity(entity);
             }
         });
     }
 
     private static updateCollisions(world: World, ctx: SimulationContext, deltaTime: number) {
-        // Handle invulnerability cooldown for ships
         const ships = world.query("Ship", "Health");
         ships.forEach(ship => {
-            const sHealth = world.getComponent<HealthComponent>(ship, "Health")!;
-            if (sHealth.invulnerableRemaining > 0) {
-                world.mutateComponent(ship, "Health", (h: HealthComponent) => {
+            world.mutateComponent(ship, "Health", (h: HealthComponent) => {
+                if (h.invulnerableRemaining > 0) {
                     h.invulnerableRemaining -= deltaTime;
                     if (h.invulnerableRemaining < 0) h.invulnerableRemaining = 0;
-                });
-            }
+                }
+            });
         });
 
         const bullets = world.query("Bullet", "Transform", "Collider2D");
         const asteroids = world.query("Asteroid", "Transform", "Collider2D");
 
-        // Bullet vs Asteroid
         bullets.forEach(bullet => {
             const bPos = world.getComponent<TransformComponent>(bullet, "Transform")!;
             const bCol = world.getComponent<Collider2DComponent>(bullet, "Collider2D")!;
@@ -275,7 +207,6 @@ export class DeterministicSimulation {
             });
         });
 
-        // Ship vs Asteroid
         ships.forEach(ship => {
             const sPos = world.getComponent<TransformComponent>(ship, "Transform")!;
             const sCol = world.getComponent<Collider2DComponent>(ship, "Collider2D");
@@ -310,11 +241,11 @@ export class DeterministicSimulation {
         if (!ctx.isResimulating) {
             this.spawnExplosion(world, aPos);
             const eventBus = world.getResource<EventBus>("EventBus");
-            if (eventBus) eventBus.emit("asteroid:destroyed", { size });
+            if (eventBus) eventBus.emitDeferred("asteroid:destroyed", { size });
         }
 
         this.splitAsteroid(world, asteroid);
-        world.removeEntity(bullet);
+        world.getCommandBuffer().removeEntity(bullet);
 
         world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
             gs.score += GAME_CONFIG.ASTEROID_SCORE;
@@ -335,12 +266,12 @@ export class DeterministicSimulation {
                  shake.remaining = GAME_CONFIG.SHAKE_DURATION_IMPACT;
              });
              const eventBus = world.getResource<EventBus>("EventBus");
-             if (eventBus) eventBus.emit("ship:hit");
+             if (eventBus) eventBus.emitDeferred("ship:hit");
         }
 
         if (isDead) {
              const eventBus = world.getResource<EventBus>("EventBus");
-             if (eventBus) eventBus.emit("game:over");
+             if (eventBus) eventBus.emitDeferred("game:over");
         }
     }
 
@@ -350,19 +281,14 @@ export class DeterministicSimulation {
         const config = ASTEROID_SPLIT_CONFIG[asteroid.size];
 
         if (config) {
-            createAsteroid({ world, x: position.x + config.offset, y: position.y + config.offset, size: config.nextSize });
-            createAsteroid({ world, x: position.x - config.offset, y: position.y - config.offset, size: config.nextSize });
+            createAsteroid({ world, x: position.x + config.offset, y: position.y + config.offset, size: config.nextSize, deferred: true });
+            createAsteroid({ world, x: position.x - config.offset, y: position.y - config.offset, size: config.nextSize, deferred: true });
         }
-        world.removeEntity(asteroidEntity);
+        world.getCommandBuffer().removeEntity(asteroidEntity);
     }
 
-    /**
-     * Spawns cosmetic particles at the given position.
-     * Uses `renderRandom` to ensure particle patterns don't affect gameplay determinism.
-     */
     private static spawnExplosion(world: World, position: TransformComponent) {
         const renderRandom = RandomService.getRenderRandom();
-        // Base velocity multiplier for explosion spread
         const EXPLOSION_VELOCITY_SCALE = 160;
 
         for (let i = 0; i < GAME_CONFIG.PARTICLE_COUNT; i++) {
@@ -372,7 +298,8 @@ export class DeterministicSimulation {
             y: position.y,
             dx: (renderRandom.next() - 0.5) * EXPLOSION_VELOCITY_SCALE,
             dy: (renderRandom.next() - 0.5) * EXPLOSION_VELOCITY_SCALE,
-            color: i % 2 === 0 ? "#FF8800" : "#FFDD00", // Standard orange/yellow fire colors
+            color: i % 2 === 0 ? "#FF8800" : "#FFDD00",
+            deferred: true
           });
         }
     }
@@ -382,27 +309,26 @@ export class DeterministicSimulation {
         const gameplayRandom = RandomService.getInstance("gameplay");
 
         if (asteroids.length === 0) {
-            // Spawn next wave
             if (!ctx.isResimulating) {
                 const eventBus = world.getResource<EventBus>("EventBus");
-                if (eventBus) eventBus.emit("wave:complete");
+                if (eventBus) eventBus.emitDeferred("wave:complete");
             }
 
-            // Spawn 6 large asteroids at random positions to start a new wave.
             const ASTEROIDS_PER_WAVE = 6;
             for (let i = 0; i < ASTEROIDS_PER_WAVE; i++) {
                 createAsteroid({
                     world,
                     x: gameplayRandom.nextRange(0, GAME_CONFIG.SCREEN_WIDTH),
                     y: gameplayRandom.nextRange(0, GAME_CONFIG.SCREEN_HEIGHT),
-                    size: "large"
+                    size: "large",
+                    deferred: true
                 });
             }
         }
 
         // Random UFO spawn
         if (world.query("Ufo").length === 0 && gameplayRandom.chance(GAME_CONFIG.UFO_SPAWN_CHANCE)) {
-          createUfo({ world });
+          createUfo({ world, deferred: true });
         }
     }
 }

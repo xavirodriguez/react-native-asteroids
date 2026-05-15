@@ -1,22 +1,5 @@
 /**
  * Loot Generation System - Item spawning upon entity destruction.
- *
- * @remarks
- * Decouples entity destruction from reward generation by utilizing an event-based
- * architecture. It processes the `LootTableComponent` of destroyed entities to
- * determine item drops via PRNG.
- *
- * ### Event Contract:
- * - **`entity:destroyed`**: `{ entity: Entity, type: string }`
- * - **`asteroid:destroyed`**: `{ entity: Entity, size: string }`
- *
- * ### Spawning Logic:
- * 1. An entity is destroyed.
- * 2. `LootSystem` retrieves its `LootTableComponent`.
- * 3. For each entry in `drops`, it rolls a PRNG check against `drop.chance`.
- * 4. If successful, it creates a new "PowerUp" entity with a `TTLComponent`.
- *
- * @packageDocumentation
  */
 
 import { System } from "../core/System";
@@ -50,19 +33,14 @@ export class LootSystem extends System {
   }
 
   private registerListeners(world: World): void {
-    // Ensure we don't have multiple listeners if this system is re-added
-    // Although the system instance check in World.addSystem and BaseGame.eventBus.clear()
-    // handle most cases, we also check a internal flag.
     if (this._listenersRegistered) return;
 
     const eventBus = world.getResource<EventBus>("EventBus");
     if (eventBus) {
-      // We listen for a generic destruction event that games should emit
       eventBus.on("entity:destroyed", (payload: { entity: Entity, type: string }) => {
         this.handleEntityDestruction(world, payload.entity);
       });
 
-      // Specific for Asteroids if they don't use the generic one yet
       eventBus.on("asteroid:destroyed", (payload: { entity?: Entity }) => {
         if (payload.entity !== undefined) {
            this.handleEntityDestruction(world, payload.entity);
@@ -89,63 +67,65 @@ export class LootSystem extends System {
   }
 
   private spawnPowerUp(world: World, x: number, y: number, drop: { type: string, config?: { value?: number, duration?: number } }): void {
-    const powerUp = world.createEntity();
+    const commands = world.getCommandBuffer();
 
-    // Physical presence
-    world.addComponent(powerUp, {
-      type: "Transform",
-      x, y, rotation: 0, scaleX: 1, scaleY: 1
-    } as TransformComponent);
+    commands.createEntity((powerUp) => {
+        // Physical presence
+        commands.addComponent(powerUp, {
+          type: "Transform",
+          x, y, rotation: 0, scaleX: 1, scaleY: 1
+        } as TransformComponent);
 
-    const random = RandomService.getGameplayRandom();
-    world.addComponent(powerUp, {
-      type: "Velocity",
-      dx: (random.next() - 0.5) * 50,
-      dy: (random.next() - 0.5) * 50
-    } as VelocityComponent);
+        const random = RandomService.getGameplayRandom();
+        commands.addComponent(powerUp, {
+          type: "Velocity",
+          dx: (random.next() - 0.5) * 50,
+          dy: (random.next() - 0.5) * 50
+        } as VelocityComponent);
 
-    // Visuals
-    world.addComponent(powerUp, {
-      type: "Render",
-      shape: "circle",
-      size: 10,
-      color: this.getColorForType(drop.type),
-      zIndex: 10
-    } as RenderComponent);
+        // Visuals
+        commands.addComponent(powerUp, {
+          type: "Render",
+          shape: "circle",
+          size: 10,
+          color: this.getColorForType(drop.type),
+          zIndex: 10
+        } as RenderComponent);
 
-    // Collision
-    world.addComponent(powerUp, {
-      type: "Collider2D",
-      shape: { type: "circle", radius: 10 },
-      offsetX: 0, offsetY: 0,
-      layer: 0b01000000, // CollisionLayers.PICKUP
-      mask: 0b00000010,  // CollisionLayers.PLAYER
-      isTrigger: true,
-      enabled: true
-    } as Collider2DComponent);
+        // Collision
+        commands.addComponent(powerUp, {
+          type: "Collider2D",
+          shape: { type: "circle", radius: 10 },
+          offsetX: 0, offsetY: 0,
+          layer: 0b01000000, // CollisionLayers.PICKUP
+          mask: 0b00000010,  // CollisionLayers.PLAYER
+          isTrigger: true,
+          enabled: true
+        } as Collider2DComponent);
 
-    // PowerUp logic
-    world.addComponent(powerUp, {
-      type: "PowerUp",
-      powerUpType: drop.type,
-      value: drop.config?.value ?? 1,
-      duration: drop.config?.duration ?? 5000
-    } as PowerUpComponent);
+        // PowerUp logic
+        commands.addComponent(powerUp, {
+          type: "PowerUp",
+          powerUpType: drop.type,
+          value: drop.config?.value ?? 1,
+          duration: drop.config?.duration ?? 5000
+        } as PowerUpComponent);
 
-    // Lifetime
-    world.addComponent(powerUp, {
-      type: "TTL",
-      remaining: 10000, // 10 seconds to collect
-      total: 10000
-    } as TTLComponent);
+        // Lifetime
+        commands.addComponent(powerUp, {
+          type: "TTL",
+          remaining: 10000, // 10 seconds to collect
+          total: 10000
+        } as TTLComponent);
 
-    // Screen wrapping
-    world.addComponent(powerUp, {
-        type: "Boundary",
-        width: 800, // Should be dynamic ideally
-        height: 600,
-        behavior: "wrap"
-    } as BoundaryComponent);
+        // Screen wrapping
+        commands.addComponent(powerUp, {
+            type: "Boundary",
+            width: 800, // Should be dynamic ideally
+            height: 600,
+            behavior: "wrap"
+        } as BoundaryComponent);
+    });
   }
 
   private getColorForType(type: string): string {

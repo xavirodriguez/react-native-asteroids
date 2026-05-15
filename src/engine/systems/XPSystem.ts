@@ -21,17 +21,12 @@ export interface XPAccumulatorComponent {
  * Gestiona la persistencia asíncrona al finalizar el estado de juego.
  *
  * @responsibility Escuchar hitos de gameplay y acumular XP en el perfil del jugador.
- * @queries Ninguna.
- * @mutates `XPAccumulatorComponent` (Resource).
- * @emits `level:up` cuando el servicio de perfil confirma un incremento de nivel.
- * @dependsOn `EventBus`, `PlayerProfileService`, `XP_TABLE`.
- * @executionOrder Logic Phase (independiente, pero suele ejecutarse al final de la lógica).
- * @conceptualRisk [ASYNC_RACE] El sistema dispara una llamada asíncrona a `PlayerProfileService` en el evento `game:over`.
- * Si el motor se destruye o se reinicia antes de que la promesa resuelva, el evento `level:up` podría emitirse en un contexto inválido.
- * @conceptualRisk [SINGLETON_DRIFT] Registra el acumulador como recurso en cada `update`, lo cual es redundante tras la primera ejecución.
+ *
+ * API status: Public
  */
 export class XPSystem extends System {
   private accumulator: XPAccumulatorComponent;
+  private isDestroyed = false;
   private pendingStats: Partial<import("../../services/PlayerProfileService").PlayerProfile["stats"]> = {
     asteroidsDestroyed: 0,
     pipesPassed: 0,
@@ -53,13 +48,6 @@ export class XPSystem extends System {
 
   /**
    * Configura las suscripciones a eventos de diversos juegos para otorgar XP.
-   *
-   * @remarks
-   * Los valores de XP se obtienen de `XP_TABLE`.
-   * El evento `game:over` dispara la persistencia asíncrona.
-   *
-   * @sideEffect Modifica `this.accumulator.pendingXP` en respuesta a eventos.
-   * @sideEffect Llama a `PlayerProfileService.addXP` (asíncrono) al recibir `game:over`.
    */
   private setupListeners() {
     this.eventBus.on("asteroid:destroyed", (data: { size: string }) => {
@@ -105,36 +93,37 @@ export class XPSystem extends System {
     });
 
     this.eventBus.on("game:over", async () => {
-      if (this.accumulator.pendingXP > 0) {
-        const { leveledUp, newLevel } = await PlayerProfileService.addXP(this.accumulator.pendingXP);
-        if (leveledUp) {
-          this.eventBus.emit("level:up", { level: newLevel });
-        }
-        this.accumulator.pendingXP = 0;
-      }
-
-      // Persist stats
-      await PlayerProfileService.updateStats("all", this.pendingStats);
-
-      // Reset pending stats
-      for (const key in this.pendingStats) {
-        if (Object.prototype.hasOwnProperty.call(this.pendingStats, key)) {
-          (this.pendingStats as Record<string, number>)[key] = 0;
-        }
-      }
+      if (this.isDestroyed) return;
+      await this.flushPendingAsync();
     });
   }
 
   /**
+   * Persiste el XP y las estadísticas acumuladas al servicio de perfil.
+   * API status: Public
+   */
+  public async flushPendingAsync(): Promise<void> {
+    if (this.accumulator.pendingXP > 0) {
+        const { leveledUp, newLevel } = await PlayerProfileService.addXP(this.accumulator.pendingXP);
+        if (leveledUp && !this.isDestroyed) {
+          this.eventBus.emitDeferred("level:up", { level: newLevel });
+        }
+        this.accumulator.pendingXP = 0;
+    }
+
+    // Persist stats
+    await PlayerProfileService.updateStats("all", this.pendingStats);
+
+    // Reset pending stats
+    for (const key in this.pendingStats) {
+      if (Object.prototype.hasOwnProperty.call(this.pendingStats, key)) {
+        (this.pendingStats as Record<string, number>)[key] = 0;
+      }
+    }
+  }
+
+  /**
    * Actualiza el sistema y asegura que el acumulador esté disponible en el mundo.
-   *
-   * @param world - Referencia al mundo ECS.
-   * @param deltaTime - Tiempo transcurrido desde el último frame (en ms).
-   *
-   * @precondition El objeto `world` debe estar inicializado.
-   * @postcondition El recurso "XPAccumulator" estará presente en el mundo.
-   *
-   * @conceptualRisk [REDUNDANCY] Verificar la existencia del recurso en cada frame tiene un coste O(1) despreciable pero innecesario.
    */
   public update(world: World, _deltaTime: number): void {
     // Singleton registration if not present
@@ -144,5 +133,10 @@ export class XPSystem extends System {
 
     // Accumulate playtime ticks
     this.pendingStats.totalPlaytimeTicks!++;
+  }
+
+  public override dispose(): void {
+      this.isDestroyed = true;
+      // We don't wait for flush here as it's async, but we could if BaseGame.destroy was async.
   }
 }

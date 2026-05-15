@@ -55,12 +55,23 @@ export class SpaceInvadersCollisionSystem extends System {
       const health = world.getComponent<HealthComponent>(boss, "Health");
 
       if (bossComp) {
-        bossComp.hp -= 1;
-        gameState.score += 100;
-        if (health) health.current = bossComp.hp;
+        world.mutateComponent<BossComponent>(boss, "Boss", b => {
+            b.hp -= 1;
+        });
 
-        const render = world.getComponent<RenderComponent>(boss, "Render");
-        if (render) render.hitFlashFrames = 5;
+        world.mutateSingleton<GameStateComponent>("GameState", gs => {
+            gs.score += 100;
+        });
+
+        if (health) {
+            world.mutateComponent<HealthComponent>(boss, "Health", h => {
+                h.current = bossComp.hp;
+            });
+        }
+
+        world.mutateComponent<RenderComponent>(boss, "Render", r => {
+            r.hitFlashFrames = 5;
+        });
 
         const pos = world.getComponent<TransformComponent>(boss, "Transform");
         if (pos) {
@@ -68,7 +79,7 @@ export class SpaceInvadersCollisionSystem extends System {
         }
       }
 
-      world.removeEntity(bullet);
+      world.getCommandBuffer().removeEntity(bullet);
       return;
     }
 
@@ -78,53 +89,59 @@ export class SpaceInvadersCollisionSystem extends System {
       const invaderComp = world.getComponent<InvaderComponent>(invader, "Invader");
 
       // Lógica de Combo
-      gameState.combo += 1;
-      gameState.multiplier = Math.min(GAME_CONFIG.MAX_MULTIPLIER, 1 + Math.floor(gameState.combo / 5));
-      gameState.comboTimerRemaining = GAME_CONFIG.COMBO_TIMEOUT;
-
-      if (invaderComp) {
-        gameState.score += invaderComp.points * gameState.multiplier;
-      }
+      world.mutateSingleton<GameStateComponent>("GameState", gs => {
+          gs.combo += 1;
+          gs.multiplier = Math.min(GAME_CONFIG.MAX_MULTIPLIER, 1 + Math.floor(gs.combo / 5));
+          gs.comboTimerRemaining = GAME_CONFIG.COMBO_TIMEOUT;
+          if (invaderComp) {
+            gs.score += invaderComp.points * gs.multiplier;
+          }
+      });
 
       const pos = world.getComponent<TransformComponent>(invader, "Transform");
       if (pos) {
         this.createExplosion(world, pos.x, pos.y, "#FFFFFF");
 
         // Popup de combo flotante
-        const popup = world.createEntity();
-        world.addComponent(popup, { type: "Transform", x: pos.x, y: pos.y - 20, rotation: 0, scaleX: 1, scaleY: 1 });
-        world.addComponent(popup, {
-          type: "Render",
-          shape: "text",
-          size: 16,
-          color: "#FFFF00",
-          rotation: 0,
-          zIndex: 100,
-          data: { content: `x${gameState.multiplier}` }
-        });
-        world.addComponent(popup, { type: "UIText", content: `x${gameState.multiplier}` });
-        world.addComponent(popup, { type: "TTL", remaining: 1000, total: 1000 });
+        world.getCommandBuffer().createEntity(popup => {
+            world.getCommandBuffer().addComponent(popup, { type: "Transform", x: pos.x, y: pos.y - 20, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+            world.getCommandBuffer().addComponent(popup, {
+              type: "Render",
+              shape: "text",
+              size: 16,
+              color: "#FFFF00",
+              rotation: 0,
+              zIndex: 100,
+              data: { content: `x${gameState.multiplier}` }
+            } as RenderComponent);
+            world.getCommandBuffer().addComponent(popup, { type: "UIText", content: `x${gameState.multiplier}` } as any);
+            world.getCommandBuffer().addComponent(popup, { type: "TTL", remaining: 1000, total: 1000 } as any);
 
-        JuiceSystem.add(world, popup, { property: "y", target: -40, duration: 1000, easing: "easeOut" });
-        JuiceSystem.add(world, popup, { property: "opacity", target: 0, duration: 1000, easing: "easeIn" });
+            // Side-effects like Juice are deferred naturally or can be applied here
+            JuiceSystem.add(world, popup, { property: "y", target: -40, duration: 1000, easing: "easeOut" });
+            JuiceSystem.add(world, popup, { property: "opacity", target: 0, duration: 1000, easing: "easeIn" });
+        });
       }
 
       const eventBus = world.getResource<EventBus>("EventBus");
       if (eventBus) {
-        eventBus.emit("si:kill", { chain: gameState.combo });
-        eventBus.emit("entity:destroyed", { entity: invader, type: "Invader" });
+        eventBus.emitDeferred("si:kill", { chain: gameState.combo });
+        eventBus.emitDeferred("entity:destroyed", { entity: invader, type: "Invader" });
       }
 
-      const render = world.getComponent<RenderComponent>(invader, "Render");
-      if (render) render.hitFlashFrames = 4;
+      world.mutateComponent<RenderComponent>(invader, "Render", render => {
+          render.hitFlashFrames = 4;
+      });
 
       const kamiComp = world.getComponent(invader, 'Kamikaze');
       if (kamiComp) {
-        gameState.kamikazesActive--;
+        world.mutateSingleton<GameStateComponent>("GameState", gs => {
+            gs.kamikazesActive--;
+        });
       }
 
-      world.removeEntity(invader);
-      world.removeEntity(bullet);
+      world.getCommandBuffer().removeEntity(invader);
+      world.getCommandBuffer().removeEntity(bullet);
       return;
     }
 
@@ -134,7 +151,7 @@ export class SpaceInvadersCollisionSystem extends System {
       const bullet = (bulletShield as Record<string, Entity>).PlayerBullet || (bulletShield as Record<string, Entity>).EnemyBullet;
       const shield = (bulletShield as Record<string, Entity>).Shield;
       this.damageShield(world, shield);
-      world.removeEntity(bullet);
+      world.getCommandBuffer().removeEntity(bullet);
       return;
     }
 
@@ -143,46 +160,55 @@ export class SpaceInvadersCollisionSystem extends System {
       const { EnemyBullet: bullet, Player: player } = enemyBulletPlayer;
       const health = world.getComponent<HealthComponent>(player, "Health");
       if (health && health.invulnerableRemaining <= 0) {
-        health.current -= 1;
-        health.invulnerableRemaining = 1500;
+        world.mutateComponent<HealthComponent>(player, "Health", h => {
+            h.current -= 1;
+            h.invulnerableRemaining = 1500;
+        });
 
-        const render = world.getComponent<RenderComponent>(player, "Render");
-        if (render) render.hitFlashFrames = 10;
+        world.mutateComponent<RenderComponent>(player, "Render", render => {
+            render.hitFlashFrames = 10;
+        });
 
-        gameState.lives = health.current;
-        gameState.screenShake = { intensity: 10, duration: 300 };
-
-        if (health.current <= 0) {
-          gameState.isGameOver = true;
-        }
+        world.mutateSingleton<GameStateComponent>("GameState", gs => {
+            gs.lives = health.current;
+            gs.screenShake = { intensity: 10, duration: 300 };
+            if (health.current <= 0) {
+                gs.isGameOver = true;
+            }
+        });
       }
-      world.removeEntity(bullet);
+      world.getCommandBuffer().removeEntity(bullet);
       return;
     }
 
     const invaderPlayer = this.matchPair(world, e1, e2, "Invader", "Player");
     if (invaderPlayer) {
-      gameState.isGameOver = true;
+      world.mutateSingleton<GameStateComponent>("GameState", gs => {
+          gs.isGameOver = true;
+      });
       return;
     }
 
     const invaderShield = this.matchPair(world, e1, e2, "Invader", "Shield");
     if (invaderShield) {
-      world.removeEntity(invaderShield.Shield);
+      world.getCommandBuffer().removeEntity(invaderShield.Shield);
       return;
     }
   }
 
   private damageShield(world: World, shieldEntity: number): void {
-    const shield = world.getComponent<ShieldComponent>(shieldEntity, "Shield");
-    if (shield) {
+    let expired = false;
+    world.mutateComponent<ShieldComponent>(shieldEntity, "Shield", shield => {
       shield.hp -= 1;
-      if (shield.hp <= 0) {
-        world.removeEntity(shieldEntity);
-      } else {
-        const render = world.getComponent<RenderComponent>(shieldEntity, "Render");
-        if (render) render.hitFlashFrames = 5;
-      }
+      expired = shield.hp <= 0;
+    });
+
+    if (expired) {
+      world.getCommandBuffer().removeEntity(shieldEntity);
+    } else {
+      world.mutateComponent<RenderComponent>(shieldEntity, "Render", render => {
+        render.hitFlashFrames = 5;
+      });
     }
   }
 
@@ -198,7 +224,8 @@ export class SpaceInvadersCollisionSystem extends System {
         Math.cos(angle) * speed,
         Math.sin(angle) * speed,
         color,
-        this._particlePool
+        this._particlePool,
+        true // deferred
       );
     }
   }
@@ -210,7 +237,9 @@ export class SpaceInvadersCollisionSystem extends System {
     for (const invader of invaders) {
       const pos = world.getComponent<TransformComponent>(invader, "Transform");
       if (pos && pos.y > limit) {
-        gameState.isGameOver = true;
+        world.mutateSingleton<GameStateComponent>("GameState", gs => {
+            gs.isGameOver = true;
+        });
         break;
       }
     }

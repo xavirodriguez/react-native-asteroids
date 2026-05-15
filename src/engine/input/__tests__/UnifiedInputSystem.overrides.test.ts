@@ -84,8 +84,13 @@ describe("UnifiedInputSystem Overrides", () => {
     inputSystem.setOverride("jump", true);
     inputSystem.setAxisOverride("vertical", 1);
 
-    // Run update to sync with World
+    // First update: triggers creation of InputState via CommandBuffer
     inputSystem.update(world, 16);
+    world.flush();
+
+    // Second update: populates the now-existing InputState
+    inputSystem.update(world, 16);
+
     const inputComponent = world.getSingleton<InputStateComponent>("InputState")!;
     const snapshot = inputSystem.getInputState();
 
@@ -110,7 +115,13 @@ describe("UnifiedInputSystem Overrides", () => {
     const snapshot = inputSystem.getInputState();
     expect(snapshot.axes["fire"]).toBe(1);
 
+    // First update: triggers creation of InputState
     inputSystem.update(world, 16);
+    world.flush();
+
+    // Second update: populates InputState
+    inputSystem.update(world, 16);
+
     const inputComponent = world.getSingleton<InputStateComponent>("InputState")!;
     expect(inputComponent.axes.get("fire")).toBe(1);
   });

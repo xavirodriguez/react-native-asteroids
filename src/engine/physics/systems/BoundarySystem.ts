@@ -14,14 +14,8 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * o destrucción de entidades cuando salen de los límites de pantalla definidos.
  *
  * @responsibility Mantener las entidades dentro del área de juego o destruirlas si salen.
- * @queries Transform, Boundary
- * @mutates Transform, Velocity, World (Entity removal)
- * @dependsOn {@link PhysicsUtils.wrapBoundary}, {@link PhysicsUtils.bounceBoundary}
- * @executionOrder Fase: Simulation. Debe ejecutarse después de MovementSystem.
  *
- * @remarks
- * Este sistema está diseñado para gestionar entidades que salen del área de juego definida.
- * Soporta comportamientos de teletransporte (wrap), rebote (bounce) o eliminación (destroy).
+ * API status: Public
  */
 export class BoundarySystem extends System {
   public update(world: World, deltaTime: number): void {
@@ -55,11 +49,17 @@ export class BoundarySystem extends System {
 
     switch (behavior) {
       case "wrap":
-        PhysicsUtils.wrapBoundary(pos, width, height, x, y);
+        world.mutateComponent<TransformComponent>(entity, "Transform", p => {
+            PhysicsUtils.wrapBoundary(p, width, height, x, y);
+        });
         break;
       case "bounce":
         if (vel) {
-          PhysicsUtils.bounceBoundary(pos, vel, width, height, x, y, boundary.bounceX, boundary.bounceY);
+          world.mutateComponent<TransformComponent>(entity, "Transform", p => {
+              world.mutateComponent<VelocityComponent>(entity, "Velocity", v => {
+                PhysicsUtils.bounceBoundary(p, v, width, height, x, y, boundary.bounceX, boundary.bounceY);
+              });
+          });
         }
         break;
       case "destroy":
@@ -73,6 +73,6 @@ export class BoundarySystem extends System {
     if (reclaimable) {
       reclaimable.onReclaim(world, entity);
     }
-    world.removeEntity(entity);
+    world.getCommandBuffer().removeEntity(entity);
   }
 }

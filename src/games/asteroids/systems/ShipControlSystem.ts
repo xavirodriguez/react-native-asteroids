@@ -36,15 +36,14 @@ export class ShipControlSystem extends System {
         this.config,
         (bullet) => {
           // Listen for TTL destruction (miss)
-          const ttl = world.getComponent<import("../../../engine/core/CoreComponents").TTLComponent>(bullet, "TTL");
-          if (ttl) {
-            const originalOnComplete = ttl.onComplete;
-            ttl.onComplete = () => {
-              if (originalOnComplete) originalOnComplete();
-              const eventBus = world.getResource<EventBus>("EventBus");
-              if (eventBus) eventBus.emit("asteroid:bullet_missed");
-            };
-          }
+          world.mutateComponent<import("../../../engine/core/CoreComponents").TTLComponent>(bullet, "TTL", (ttl) => {
+              const originalOnComplete = ttl.onComplete;
+              ttl.onComplete = () => {
+                if (originalOnComplete) originalOnComplete();
+                const eventBus = world.getResource<EventBus>("EventBus");
+                if (eventBus) eventBus.emitDeferred("asteroid:bullet_missed");
+              };
+          });
           hapticShoot();
         }
       );

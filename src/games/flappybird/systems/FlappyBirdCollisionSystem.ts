@@ -2,7 +2,7 @@ import { World } from "../../../engine/core/World";
 import { System } from "../../../engine/core/System";
 import { Entity, TransformComponent, CollisionEventsComponent, Collider2DComponent, RenderComponent } from "../../../engine/types/EngineTypes";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
-import { FlappyBirdState, BirdComponent } from "../types/FlappyBirdTypes";
+import { FlappyBirdState, BirdComponent, PipeComponent } from "../types/FlappyBirdTypes";
 import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
 import { Juice } from "../../../engine/utils/Juice";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
@@ -97,12 +97,16 @@ export class FlappyBirdCollisionSystem extends System {
 
         if (dist > 0 && dist < 12) {
            if (birdComp.nearMissTimer <= 0) {
-             birdComp.nearMissTimer = 300;
-             const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
-             if (gameState) gameState.score += 50;
+             world.mutateComponent<BirdComponent>(bird, "Bird", b => {
+                b.nearMissTimer = 300;
+             });
+
+             world.mutateSingleton<FlappyBirdState>("FlappyState", gs => {
+                 gs.score += 50;
+             });
 
              const eventBus = world.getResource<EventBus>("EventBus");
-             if (eventBus) eventBus.emit("flappy:near_miss", { points: 50 });
+             if (eventBus) eventBus.emitDeferred("flappy:near_miss", { points: 50 });
 
              Juice.shake(world, 2, 100);
              createEmitter(world, {
@@ -124,15 +128,19 @@ export class FlappyBirdCollisionSystem extends System {
   private triggerGameOver(world: World): void {
     const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
     if (gameState && !gameState.isGameOver) {
-      gameState.isGameOver = true;
+      world.mutateSingleton<FlappyBirdState>("FlappyState", gs => {
+          gs.isGameOver = true;
+      });
 
       const birds = world.query("Bird");
       birds.forEach(birdEntity => {
-        const bird = world.getComponent<BirdComponent>(birdEntity, "Bird");
-        if (bird) bird.isAlive = false;
+        world.mutateComponent<BirdComponent>(birdEntity, "Bird", b => {
+            b.isAlive = false;
+        });
 
-        const render = world.getComponent<RenderComponent>(birdEntity, "Render");
-        if (render) render.hitFlashFrames = 8;
+        world.mutateComponent<RenderComponent>(birdEntity, "Render", render => {
+            render.hitFlashFrames = 8;
+        });
 
         JuiceSystem.add(world, birdEntity, {
           property: "scaleX",

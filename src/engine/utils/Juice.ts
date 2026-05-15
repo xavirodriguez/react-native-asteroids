@@ -10,20 +10,19 @@ export class Juice {
    * Aplica un efecto de parpadeo blanco (hit flash) a una entidad.
    */
   public static flash(world: World, entity: Entity, frames: number = 5): void {
-    const render = world.getComponent<RenderComponent>(entity, "Render");
-    if (render) {
+    world.mutateComponent<RenderComponent>(entity, "Render", render => {
       render.hitFlashFrames = frames;
-    }
+    });
   }
 
   /**
    * Aplica un temblor de pantalla.
    */
   public static shake(world: World, intensity: number = 5, duration: number = 200): void {
+    const commands = world.getCommandBuffer();
     let [shakeEntity] = world.query("ScreenShake");
 
     if (shakeEntity === undefined) {
-      // Intentamos reutilizar una entidad de estado existente o creamos una nueva
       const states = ["GameState", "FlappyState", "PongState", "AsteroidsState"];
       for (const stateType of states) {
         const [entity] = world.query(stateType);
@@ -34,16 +33,25 @@ export class Juice {
       }
 
       if (shakeEntity === undefined) {
-        shakeEntity = world.createEntity();
+        shakeEntity = world.isUpdating ? world.reserveEntityId() : world.createEntity();
+        if (world.isUpdating) {
+            commands.createEntity(shakeEntity);
+        }
       }
     }
 
-    world.addComponent(shakeEntity, {
+    const component = {
       type: "ScreenShake",
       intensity,
       duration,
       remaining: duration
-    });
+    } as any;
+
+    if (world.isUpdating) {
+        commands.addComponent(shakeEntity, component);
+    } else {
+        world.addComponent(shakeEntity, component);
+    }
   }
 
   /**

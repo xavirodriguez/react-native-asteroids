@@ -28,15 +28,17 @@ describe("Asteroids Gameplay Integration", () => {
 
     const gameStateEntity = createGameState({ world });
     // Ensure asteroidsRemaining starts at 0 to trigger initial wave
-    const gs = world.getComponent<import("../../types/AsteroidTypes").GameStateComponent>(gameStateEntity, "GameState")!;
-    gs.asteroidsRemaining = 0;
-    gs.level = 0; // It will increment to 1
+    world.mutateComponent<import("../../types/AsteroidTypes").GameStateComponent>(gameStateEntity, "GameState", gs => {
+        gs.asteroidsRemaining = 0;
+        gs.level = 0; // It will increment to 1
+    });
 
     // AsteroidGameStateSystem will spawn a wave if it sees asteroidsRemaining is 0
-    // But it updates asteroidsRemaining based on world.query("Asteroid")
     gameStateSystem.update(world, 16.66);
+    world.flush();
     // Call it twice: once to spawn (detecting 0), once to update count (detecting newly spawned)
     gameStateSystem.update(world, 16.66);
+    world.flush();
   });
 
   it("should verify that asteroids were spawned", () => {
@@ -75,13 +77,20 @@ describe("Asteroids Gameplay Integration", () => {
 
     // 2. Run collision systems
     physicsSystem.update(world, 16.66);
+    world.flush();
+    // Need two updates for CollisionEvents to be fully processed in some test setups
+    physicsSystem.update(world, 16.66);
+    world.flush();
+
     collisionSystem.update(world, 16.66);
+    world.flush();
 
     // 3. Verify target asteroid is gone (or replaced by splits)
-    expect(world.getAllEntities()).not.toContain(targetAsteroid);
+    expect(world.entities).not.toContain(targetAsteroid);
 
     // 4. Update game state to recount asteroids
     gameStateSystem.update(world, 16.66);
+    world.flush();
 
     // 5. Check score increase
     expect(world.getSingleton<GameStateComponent>("GameState")!.score).toBe(initialScore + GAME_CONFIG.ASTEROID_SCORE);
@@ -98,16 +107,20 @@ describe("Asteroids Gameplay Integration", () => {
 
     // 1. Destroy all asteroids
     const asteroids = world.query("Asteroid");
-    asteroids.forEach(a => world.removeEntity(a));
+    asteroids.forEach(a => world.getCommandBuffer().removeEntity(a));
+    world.flush();
 
     // 2. Update game state system
     gameStateSystem.update(world, 16.66); // Recount (sets to 0)
+    world.flush();
     gameStateSystem.update(world, 16.66); // Advance and spawn
+    world.flush();
 
     // 3. Verify level advanced
     expect(world.getSingleton<GameStateComponent>("GameState")!.level).toBe(initialLevel + 1);
 
     gameStateSystem.update(world, 16.66); // Recount new ones
+    world.flush();
     // 4. Verify new asteroids spawned
     expect(world.getSingleton<GameStateComponent>("GameState")!.asteroidsRemaining).toBeGreaterThan(0);
   });
@@ -127,10 +140,6 @@ describe("Asteroids Gameplay Integration", () => {
     world.addComponent(largeAsteroid, { type: "Asteroid", size: "large" });
 
     // 2. Create a small bullet that should collide with the large asteroid
-    // The bullet is at x=110.
-    // Large asteroid minX = 200 - 100 = 100.
-    // Large asteroid maxX = 200 + 100 = 300.
-    // Bullet is inside the X-range [100, 300].
     const bullet = world.createEntity();
     world.addComponent(bullet, { type: "Transform", x: 110, y: 200, rotation: 0, scaleX: 1, scaleY: 1 });
     world.addComponent(bullet, {
@@ -154,11 +163,16 @@ describe("Asteroids Gameplay Integration", () => {
     const initialScore = world.getSingleton<GameStateComponent>("GameState")!.score;
 
     physicsSystem.update(world, 16.66);
+    world.flush();
+    physicsSystem.update(world, 16.66);
+    world.flush();
+
     collisionSystem.update(world, 16.66);
+    world.flush();
 
     // If collision was detected, bullet and asteroid should be handled (destroyed/split)
     // and score should increase.
-    expect(world.getAllEntities()).not.toContain(bullet);
+    expect(world.entities).not.toContain(bullet);
     expect(world.getSingleton<GameStateComponent>("GameState")!.score).toBeGreaterThan(initialScore);
   });
 });

@@ -38,15 +38,22 @@ export class ReplayManager {
     const frame = this.replayData.frames[this.currentFrameIndex];
 
     // Process all recorded inputs for this tick
-    Object.entries(frame.inputs).forEach(([_sessionId, frames]) => {
+    Object.entries(frame.inputs).forEach(([sessionId, frames]) => {
+      // Find the entity for this sessionId
+      const ships = game.getWorld().query("Ship");
+      const entity = ships.find(e => {
+        const ship = game.getWorld().getComponent<import("../games/asteroids/types/AsteroidTypes").ShipComponent>(e, "Ship");
+        return ship && ship.sessionId === sessionId;
+      });
+
+      if (entity !== undefined) {
         frames.forEach((inputFrame: InputFrame) => {
-            // We use predictLocalPlayer because it's the logic that applies inputs
-            // to a specific ship. We need to tell the game which ship to apply it to.
-            // For replay purposes, we can assume the game already has ships created
-            // from the initial state of the replay.
-            game.predictLocalPlayer(inputFrame, deltaTime);
+          game.applyInputToEntity(entity, inputFrame);
         });
+      }
     });
+
+    import("../simulation/DeterministicSimulation").DeterministicSimulation.update(game.getWorld(), deltaTime, { isResimulating: false });
 
     this.currentFrameIndex++;
   }

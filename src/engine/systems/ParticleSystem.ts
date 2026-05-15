@@ -21,26 +21,6 @@ export interface ParticleParams {
 
 /**
  * Sistema encargado de gestionar emisores de partículas declarativos.
- * Utiliza un {@link PrefabPool} diseñado para instanciar partículas reduciendo
- * las alocaciones por frame y la presión sobre el recolector de basura.
- *
- * @responsibility Orquestar la emisión continua y por ráfagas (burst) según la configuración.
- * @responsibility Delegar la creación física de entidades de partícula al pool.
- * @queries ParticleEmitter
- * @mutates ParticleEmitter.elapsed, ParticleEmitter.active
- * @executionOrder Fase: Simulation.
- *
- * @remarks
- * El sistema opera en segundos para la tasa de emisión (rate) y ráfagas.
- * Las partículas individuales suelen ser gestionadas posteriormente por {@link TTLSystem} y {@link MovementSystem}.
- *
- * @conceptualRisk [PERFORMANCE][HIGH] Un número excesivo de emisores activos o una tasa (rate)
- * muy alta puede saturar el {@link World} con entidades de corta duración, degradando el rendimiento
- * de todas las queries del motor.
- * @conceptualRisk [DETERMINISM][LOW] Utiliza `RandomService.getRenderRandom()` para las propiedades
- * de la partícula, buscando que la simulación de gameplay no se vea afectada por efectos visuales.
- *
- * @public
  */
 export class ParticleSystem extends System {
   private particlePool: PrefabPool<Record<string, Component>, ParticleParams>;
@@ -57,7 +37,6 @@ export class ParticleSystem extends System {
     for (let i = 0; i < emitters.length; i++) {
       const entity = emitters[i];
 
-      // Simulation Culling: Skip if SpatialNode exists and is inactive
       const node = world.getComponent<SpatialNodeComponent>(entity, "SpatialNode");
       if (node && !node.active) continue;
 
@@ -72,20 +51,26 @@ export class ParticleSystem extends System {
           this.spawnParticle(world, config);
         }
         if (!config.loop && config.rate === 0) {
-            emitter.active = false;
+            world.mutateComponent<ParticleEmitterComponent>(entity, "ParticleEmitter", e => {
+                e.active = false;
+            });
         }
       }
 
       // Handle continuous emission
       if (config.rate > 0) {
-          emitter.elapsed += dtSeconds;
-          const particlesToSpawn = Math.floor(emitter.elapsed * config.rate);
-          for (let i = 0; i < particlesToSpawn; i++) {
-            this.spawnParticle(world, config);
-          }
-          emitter.elapsed %= (1 / config.rate);
+          world.mutateComponent<ParticleEmitterComponent>(entity, "ParticleEmitter", e => {
+              e.elapsed += dtSeconds;
+              const particlesToSpawn = Math.floor(e.elapsed * config.rate);
+              for (let j = 0; j < particlesToSpawn; j++) {
+                this.spawnParticle(world, config);
+              }
+              e.elapsed %= (1 / config.rate);
+          });
       } else {
-          emitter.elapsed += dtSeconds; // Still advance elapsed for non-rate emitters
+          world.mutateComponent<ParticleEmitterComponent>(entity, "ParticleEmitter", e => {
+              e.elapsed += dtSeconds;
+          });
       }
     }
   }
@@ -123,12 +108,22 @@ export class ParticleSystem extends System {
  * Convenience method to create a ParticleEmitter entity.
  */
 export function createEmitter(world: World, config: ParticleEmitterConfig): Entity {
-  const entity = world.createEntity();
-  world.addComponent(entity, {
+  const commands = world.getCommandBuffer();
+  const entity = world.isUpdating ? world.reserveEntityId() : world.createEntity();
+
+  const component = {
     type: "ParticleEmitter",
     config,
     active: true,
     elapsed: 0,
-  } as ParticleEmitterComponent);
+  } as ParticleEmitterComponent;
+
+  if (world.isUpdating) {
+      commands.createEntity(entity);
+      commands.addComponent(entity, component);
+  } else {
+      world.addComponent(entity, component);
+  }
+
   return entity;
 }

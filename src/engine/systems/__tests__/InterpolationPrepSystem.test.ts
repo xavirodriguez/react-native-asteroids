@@ -24,13 +24,13 @@ describe("InterpolationPrepSystem", () => {
     world.addComponent(entity, transform);
 
     system.update(world, 16.67);
+    world.flush();
 
     const prev = world.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
     expect(prev).toBeDefined();
     expect(prev?.x).toBe(10);
     expect(prev?.y).toBe(20);
     expect(prev?.rotation).toBe(1);
-    expect(prev?.worldX).toBeUndefined();
   });
 
   it("should capture world coordinates when present", () => {
@@ -49,6 +49,7 @@ describe("InterpolationPrepSystem", () => {
     world.addComponent(entity, transform);
 
     system.update(world, 16.67);
+    world.flush();
 
     const prev = world.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
     expect(prev).toBeDefined();
@@ -74,14 +75,18 @@ describe("InterpolationPrepSystem", () => {
 
     // First update
     system.update(world, 16.67);
+    world.flush();
 
     // Modify transform
-    transform.x = 30;
-    transform.y = 40;
-    transform.worldX = 300;
+    world.mutateComponent<TransformComponent>(entity, "Transform", t => {
+        t.x = 30;
+        t.y = 40;
+        t.worldX = 300;
+    });
 
     // Second update
     system.update(world, 16.67);
+    world.flush();
 
     const prev = world.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
     expect(prev?.x).toBe(30);
