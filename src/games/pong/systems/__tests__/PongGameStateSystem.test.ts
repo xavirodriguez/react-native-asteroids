@@ -1,7 +1,8 @@
 import { World } from "../../../../engine/core/World";
 import { PongGameStateSystem } from "../PongGameStateSystem";
-import { PongState, PONG_CONFIG } from "../../types";
+import { PongState, PONG_CONFIG, BallComponent } from "../../types";
 import { TransformComponent, VelocityComponent } from "../../../../engine/types/EngineTypes";
+import { PongStateComponent } from "../../EntityFactory";
 
 describe("PongGameStateSystem", () => {
   let world: World;
@@ -17,13 +18,14 @@ describe("PongGameStateSystem", () => {
       scoreP1: 0,
       scoreP2: 0,
       isGameOver: false,
-      comboMultiplier: 1
-    } as import("../../EntityFactory").PongStateComponent);
+      comboMultiplier: 1,
+      gameOverLogged: false
+    } as PongStateComponent);
   });
 
   it("should detect scoring for Player 1", () => {
     const ball = world.createEntity();
-    world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as import("../../EntityFactory").BallComponent);
+    world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as BallComponent);
     world.addComponent(ball, { type: "Transform", x: PONG_CONFIG.WIDTH + 10, y: 100 } as TransformComponent);
     world.addComponent(ball, { type: "Velocity", dx: 100, dy: 0 } as VelocityComponent);
 
@@ -36,7 +38,7 @@ describe("PongGameStateSystem", () => {
 
   it("should detect scoring for Player 2", () => {
     const ball = world.createEntity();
-    world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as import("../../EntityFactory").BallComponent);
+    world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as BallComponent);
     world.addComponent(ball, { type: "Transform", x: -10, y: 100 } as TransformComponent);
     world.addComponent(ball, { type: "Velocity", dx: -100, dy: 0 } as VelocityComponent);
 
@@ -48,11 +50,11 @@ describe("PongGameStateSystem", () => {
   });
 
   it("should detect win condition", () => {
-    const state = world.getComponent<import("../../EntityFactory").PongStateComponent>(stateEntity, "PongState")!;
+    const state = world.getComponent<PongStateComponent>(stateEntity, "PongState")!;
     state.scoreP1 = PONG_CONFIG.WIN_SCORE - 1;
 
     const ball = world.createEntity();
-    world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as import("../../EntityFactory").BallComponent);
+    world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as BallComponent);
     world.addComponent(ball, { type: "Transform", x: PONG_CONFIG.WIDTH + 10, y: 100 } as TransformComponent);
     world.addComponent(ball, { type: "Velocity", dx: 100, dy: 0 } as VelocityComponent);
 

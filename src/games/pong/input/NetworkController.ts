@@ -46,4 +46,11 @@ export class NetworkController extends InputController<PongInput> {
   public hasInputForTick(tick: number): boolean {
     return this.inputBuffer.has(tick);
   }
+
+  /**
+   * Returns the input for a specific tick without side effects.
+   */
+  public getInputForTick(tick: number): PongInput | undefined {
+    return this.inputBuffer.get(tick);
+  }
 }

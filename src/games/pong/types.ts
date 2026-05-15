@@ -1,3 +1,19 @@
+import { Component } from "../../engine/types/EngineTypes";
+
+export interface BallComponent extends Component {
+  type: "Ball";
+  spinFactor: number;
+  spinDecay: number;
+  visibilityTimer?: number;
+}
+
+export interface PaddleComponent extends Component {
+  type: "Paddle";
+  side: "left" | "right";
+  previousY: number;
+  lastVelocityY: number;
+}
+
 export interface PongState {
   type: "PongState";
   scoreP1: number;
@@ -5,6 +21,7 @@ export interface PongState {
   isGameOver: boolean;
   winner?: number;
   comboMultiplier: number;
+  gameOverLogged?: boolean;
 }
 
 export interface PongInput extends Record<string, boolean> {
