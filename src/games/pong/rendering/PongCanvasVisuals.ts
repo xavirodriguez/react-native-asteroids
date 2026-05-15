@@ -1,5 +1,5 @@
 import { ShapeDrawer } from "../../../engine/rendering/Renderer";
-import { BallComponent } from "../systems/PongSpinSystem";
+import { BallComponent } from "../types";
 
 /**
  * Drawer especializado para la pelota de Pong que incluye efectos de rotación (spin).

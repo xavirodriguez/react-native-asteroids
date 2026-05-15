@@ -1,21 +1,8 @@
 import { World } from "../../engine/core/World";
-import { PONG_CONFIG, PongState } from "./types";
+import { PONG_CONFIG, PongState, BallComponent, PaddleComponent } from "./types";
 import { Component, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, BoundaryComponent, TagComponent, Entity } from "../../engine/types/EngineTypes";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import { RandomService } from "../../engine/utils/RandomService";
-
-export interface BallComponent extends Component {
-  type: "Ball";
-  spinFactor: number;
-  spinDecay: number;
-}
-
-export interface PaddleComponent extends Component {
-  type: "Paddle";
-  side: "left" | "right";
-  previousY: number;
-  lastVelocityY: number;
-}
 
 export interface PongStateComponent extends Component, PongState {
   type: "PongState";
@@ -114,7 +101,7 @@ export const PongEntityFactory = {
 
   createGameState(world: World) {
     const { entity: state, add } = createBaseEntity(world);
-    add({ type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1 } as PongStateComponent);
+    add({ type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1, gameOverLogged: false } as PongStateComponent);
     return state;
   }
 };

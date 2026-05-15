@@ -1,20 +1,7 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
-
-export interface BallComponent {
-  type: "Ball";
-  spinFactor: number;
-  spinDecay: number;
-  visibilityTimer?: number;
-}
-
-export interface PaddleComponent {
-  type: "Paddle";
-  side: "left" | "right";
-  previousY: number;
-  lastVelocityY: number;
-}
+import { BallComponent, PaddleComponent } from "../types";
 
 export class PongSpinSystem extends System {
   public update(world: World, deltaTime: number): void {

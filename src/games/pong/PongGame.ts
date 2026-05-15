@@ -34,7 +34,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
   private aiController?: AIPongController;
   private networkController?: NetworkController;
   public readonly gameId = "pong";
-  private config: typeof PONG_CONFIG;
+  private config: typeof PONG_CONFIG = PONG_CONFIG;
 
   constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown>, mode?: PongMode } | PongMode = "local") {
     const isConfig = typeof config === "object" && config !== null;
