@@ -78,10 +78,18 @@ export class PhysicsUtils {
     const dxKey = hasDelta ? "dx" : "velocityX";
     const dyKey = hasDelta ? "dy" : "velocityY";
 
-    const currentX = (pos[xKey] as number) || 0;
-    const currentY = (pos[yKey] as number) || 0;
-    const vx = (vel[dxKey] as number) || 0;
-    const vy = (vel[dyKey] as number) || 0;
+    const currentX = (pos[xKey] as number);
+    const currentY = (pos[yKey] as number);
+    const vx = (vel[dxKey] as number);
+    const vy = (vel[dyKey] as number);
+
+    if (isNaN(currentX) || isNaN(currentY) || isNaN(vx) || isNaN(vy) ||
+        currentX === undefined || currentY === undefined || vx === undefined || vy === undefined) {
+      if (__DEV__) {
+        console.warn(`[PhysicsUtils] Invalid movement data detected: pos(${currentX}, ${currentY}), vel(${vx}, ${vy})`);
+      }
+      return;
+    }
 
     (pos as Record<string, number>)[xKey] = currentX + vx * deltaTimeInSeconds;
     (pos as Record<string, number>)[yKey] = currentY + vy * deltaTimeInSeconds;
@@ -190,3 +198,5 @@ export class PhysicsUtils {
     mutableBody.inverseInertia = inertia > 0 ? 1 / inertia : 0;
   }
 }
+
+const __DEV__ = process.env.NODE_ENV !== "production";
