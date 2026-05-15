@@ -1,5 +1,5 @@
 import { World } from "../../engine/core/World";
-import { Entity } from "../../engine/types/EngineTypes";
+import { Entity, Component } from "../../engine/types/EngineTypes";
 import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
@@ -16,21 +16,45 @@ import { Collider2DComponent, BoundaryComponent } from "../../engine/core/CoreCo
  */
 
 /**
+ * Helper to handle deferred or immediate entity creation and component attachment.
+ */
+const createBaseEntity = (world: World): { entity: Entity, add: (comp: Component) => void } => {
+    const isDeferred = world.isUpdating;
+    const commands = world.getCommandBuffer();
+    const entity = isDeferred ? world.reserveEntityId() : world.createEntity();
+
+    if (isDeferred) {
+        commands.createEntity(entity);
+    }
+
+    return {
+        entity,
+        add: (comp: Component) => {
+            if (isDeferred) {
+                commands.addComponent(entity, comp);
+            } else {
+                world.addComponent(entity, comp);
+            }
+        }
+    };
+};
+
+/**
  * Creates the player ship entity.
  * Includes input handling, health, and boundary constraints.
  */
 export function createPlayer(world: World, x: number, y: number): Entity {
-  const player = world.createEntity();
-  world.addComponent(player, { type: "Transform", x, y });
-  world.addComponent(player, { type: "Velocity", dx: 0, dy: 0 });
-  world.addComponent(player, {
+  const { entity: player, add } = createBaseEntity(world);
+  add({ type: "Transform", x, y });
+  add({ type: "Velocity", dx: 0, dy: 0 });
+  add({
     type: "Render",
     shape: "player_ship",
     size: GAME_CONFIG.PLAYER_RENDER_WIDTH, // Using width as size for simplicity
     color: "#00FF00",
     rotation: 0,
   });
-  world.addComponent(player, {
+  add({
     type: "Collider2D",
     shape: { type: "circle", radius: GAME_CONFIG.PLAYER_COLLIDER_RADIUS },
     layer: CollisionLayers.PLAYER,
@@ -40,21 +64,21 @@ export function createPlayer(world: World, x: number, y: number): Entity {
     isTrigger: false,
     enabled: true
   } as Collider2DComponent);
-  world.addComponent(player, {
+  add({
     type: "Health",
     current: GAME_CONFIG.PLAYER_INITIAL_LIVES,
     max: GAME_CONFIG.PLAYER_INITIAL_LIVES,
     invulnerableRemaining: 0,
   });
-  world.addComponent(player, {
+  add({
     type: "Input",
     moveLeft: false,
     moveRight: false,
     shoot: false,
     shootCooldownRemaining: 0,
   });
-  world.addComponent(player, { type: "Player" });
-  world.addComponent(player, {
+  add({ type: "Player" });
+  add({
     type: "Boundary",
     width: GAME_CONFIG.SCREEN_WIDTH - GAME_CONFIG.PLAYER_RENDER_WIDTH,
     height: GAME_CONFIG.SCREEN_HEIGHT,
@@ -85,21 +109,21 @@ export function createPlayer(world: World, x: number, y: number): Entity {
  * Points are assigned based on the row (classic Space Invaders scoring).
  */
 export function createInvader(world: World, x: number, y: number, row: number, col: number): Entity {
-  const invader = world.createEntity();
-  world.addComponent(invader, { type: "Transform", x, y });
-  world.addComponent(invader, { type: "Velocity", dx: 0, dy: 0 });
+  const { entity: invader, add } = createBaseEntity(world);
+  add({ type: "Transform", x, y });
+  add({ type: "Velocity", dx: 0, dy: 0 });
 
   // Points based on row (classic: top rows more points)
   const points = (5 - row) * 10;
 
-  world.addComponent(invader, {
+  add({
     type: "Render",
     shape: "invader",
     size: 30,
     color: "#FFFFFF",
     rotation: 0,
   });
-  world.addComponent(invader, {
+  add({
     type: "Collider2D",
     shape: { type: "circle", radius: 15 },
     layer: CollisionLayers.ENEMY,
@@ -109,10 +133,10 @@ export function createInvader(world: World, x: number, y: number, row: number, c
     isTrigger: false,
     enabled: true
   } as Collider2DComponent);
-  world.addComponent(invader, { type: "Invader", row, col, points });
+  add({ type: "Invader", row, col, points });
 
   // 10% chance to have a loot table (matching standard LootSystem logic)
-  world.addComponent(invader, {
+  add({
     type: "LootTable",
     drops: [
       { type: "speed", chance: 0.05, config: { value: 1.5, duration: 5000 } },
@@ -159,16 +183,16 @@ export function createEnemyBullet(world: World, x: number, y: number, pool: Enem
  * Creates a single destructible block of a shield/bunker.
  */
 export function createShieldSegment(world: World, x: number, y: number, row: number, col: number): Entity {
-  const segment = world.createEntity();
-  world.addComponent(segment, { type: "Transform", x, y });
-  world.addComponent(segment, {
+  const { entity: segment, add } = createBaseEntity(world);
+  add({ type: "Transform", x, y });
+  add({
     type: "Render",
     shape: "shield_block",
     size: 15,
     color: "#00FF00",
     rotation: 0,
   });
-  world.addComponent(segment, {
+  add({
     type: "Collider2D",
     shape: { type: "aabb", halfWidth: 7.5, halfHeight: 7.5 },
     layer: CollisionLayers.DEBRIS,
@@ -178,7 +202,7 @@ export function createShieldSegment(world: World, x: number, y: number, row: num
     isTrigger: false,
     enabled: true
   } as Collider2DComponent);
-  world.addComponent(segment, {
+  add({
     type: "Shield",
     hp: GAME_CONFIG.SHIELD_SEGMENT_HP,
     maxHp: GAME_CONFIG.SHIELD_SEGMENT_HP,
@@ -191,8 +215,8 @@ export function createShieldSegment(world: World, x: number, y: number, row: num
  * Creates the global game state entity.
  */
 export function createGameState(world: World): Entity {
-  const gameState = world.createEntity();
-  world.addComponent(gameState, {
+  const { entity: gameState, add } = createBaseEntity(world);
+  add({
     type: "GameState",
     lives: GAME_CONFIG.PLAYER_INITIAL_LIVES,
     score: 0,
@@ -212,8 +236,8 @@ export function createGameState(world: World): Entity {
  * Creates the singleton entity that coordinates the invader grid movement.
  */
 export function createFormationController(world: World): Entity {
-  const controller = world.createEntity();
-  world.addComponent(controller, {
+  const { entity: controller, add } = createBaseEntity(world);
+  add({
     type: "Formation",
     direction: 1,
     stepDownPending: false,

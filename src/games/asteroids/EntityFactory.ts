@@ -25,6 +25,7 @@ import {
     UfoComponent,
     GameStateComponent
 } from "./types/AsteroidTypes";
+import { Component, Entity } from "../../engine/types/EngineTypes";
 
 /**
  * Factoría de entidades para el dominio del juego Asteroids.
@@ -41,35 +42,60 @@ import {
  */
 
 /**
+ * Helper to handle deferred or immediate entity creation and component attachment.
+ */
+const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, add: (comp: Component) => void } => {
+    const isDeferred = deferred || world.isUpdating;
+    const commands = world.getCommandBuffer();
+    const entity = isDeferred ? world.reserveEntityId() : world.createEntity();
+
+    if (isDeferred) {
+        commands.createEntity(entity);
+    }
+
+    return {
+        entity,
+        add: (comp: Component) => {
+            if (isDeferred) {
+                commands.addComponent(entity, comp);
+            } else {
+                world.addComponent(entity, comp);
+            }
+        }
+    };
+};
+
+/**
  * Crea la entidad de la nave del jugador.
  * @param world - Mundo ECS.
  * @param x - Posición inicial X.
  * @param y - Posición inicial Y.
  * @returns ID de la entidad creada.
  */
-export const createShip = ({ world, x, y }: { world: World; x: number; y: number }) => {
-  const ship = world.createEntity();
-  world.addComponent(ship, { type: "Transform", x, y, rotation: -Math.PI / 2, scaleX: 1, scaleY: 1 } as TransformComponent);
-  world.addComponent(ship, { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent);
-  world.addComponent(ship, {
+export const createShip = ({ world, x, y, deferred }: { world: World; x: number; y: number, deferred?: boolean }) => {
+  const { entity: ship, add } = createBaseEntity(world, deferred);
+
+  add({ type: "Transform", x, y, rotation: -Math.PI / 2, scaleX: 1, scaleY: 1 } as TransformComponent);
+  add({ type: "Velocity", dx: 0, dy: 0 } as VelocityComponent);
+  add({
     type: "Friction",
     value: GAME_CONFIG.SHIP_FRICTION,
   } as FrictionComponent);
-  world.addComponent(ship, {
+  add({
     type: "Boundary",
     x: 0, y: 0,
     width: GAME_CONFIG.SCREEN_WIDTH,
     height: GAME_CONFIG.SCREEN_HEIGHT,
     behavior: "wrap",
   } as BoundaryComponent);
-  world.addComponent(ship, {
+  add({
     type: "Render",
     shape: "ship_sprite",
     size: GAME_CONFIG.SHIP_RENDER_SIZE,
     color: "white",
     rotation: -Math.PI / 2,
   } as RenderComponent);
-  world.addComponent(ship, {
+  add({
     type: "Collider2D",
     shape: { type: "circle", radius: GAME_CONFIG.SHIP_COLLIDER_RADIUS },
     layer: CollisionLayers.PLAYER,
@@ -79,18 +105,18 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
     isTrigger: false,
     enabled: true
   } as Collider2DComponent);
-  world.addComponent(ship, { type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0 } as ShipComponent);
-  world.addComponent(ship, {
+  add({ type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0 } as ShipComponent);
+  add({
     type: "Trail",
     points: new Array(GAME_CONFIG.TRAIL_MAX_LENGTH),
     currentIndex: 0,
     count: 0,
     maxLength: GAME_CONFIG.TRAIL_MAX_LENGTH
   } as TrailComponent);
-  world.addComponent(ship, { type: "Input", thrust: false, rotateLeft: false, rotateRight: false, shoot: false, hyperspace: false, shootCooldownRemaining: 0 } as InputComponent);
-  world.addComponent(ship, { type: "Health", current: 3, max: 3, invulnerableRemaining: GAME_CONFIG.INVULNERABILITY_DURATION } as HealthComponent);
-  world.addComponent(ship, { type: "ManualMovement" } as ManualMovementComponent);
-  world.addComponent(ship, { type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
+  add({ type: "Input", thrust: false, rotateLeft: false, rotateRight: false, shoot: false, hyperspace: false, shootCooldownRemaining: 0 } as InputComponent);
+  add({ type: "Health", current: 3, max: 3, invulnerableRemaining: GAME_CONFIG.INVULNERABILITY_DURATION } as HealthComponent);
+  add({ type: "ManualMovement" } as ManualMovementComponent);
+  add({ type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
 
   // Tutorialization particles
   createEmitter(world, {
@@ -116,15 +142,15 @@ export const createShip = ({ world, x, y }: { world: World; x: number; y: number
  * @param angle - Movement angle in radians.
  * @param ownerId - Optional sessionId of the player who fired the bullet.
  */
-export const createBullet = ({ world, x, y, angle, ownerId }: { world: World; x: number; y: number; angle: number; ownerId?: string }) => {
-  const bullet = world.createEntity();
+export const createBullet = ({ world, x, y, angle, ownerId, deferred }: { world: World; x: number; y: number; angle: number; ownerId?: string, deferred?: boolean }) => {
+  const { entity: bullet, add } = createBaseEntity(world, deferred);
   const dx = Math.cos(angle) * GAME_CONFIG.BULLET_SPEED;
   const dy = Math.sin(angle) * GAME_CONFIG.BULLET_SPEED;
 
-  world.addComponent(bullet, { type: "Transform", x, y, rotation: angle, scaleX: 1, scaleY: 1 } as TransformComponent);
-  world.addComponent(bullet, { type: "Velocity", dx, dy } as VelocityComponent);
-  world.addComponent(bullet, { type: "Render", shape: "circle", size: GAME_CONFIG.BULLET_SIZE, color: "white", rotation: 0 } as RenderComponent);
-  world.addComponent(bullet, {
+  add({ type: "Transform", x, y, rotation: angle, scaleX: 1, scaleY: 1 } as TransformComponent);
+  add({ type: "Velocity", dx, dy } as VelocityComponent);
+  add({ type: "Render", shape: "circle", size: GAME_CONFIG.BULLET_SIZE, color: "white", rotation: 0 } as RenderComponent);
+  add({
     type: "Collider2D",
     shape: { type: "circle", radius: GAME_CONFIG.BULLET_SIZE },
     layer: CollisionLayers.PROJECTILE,
@@ -134,10 +160,10 @@ export const createBullet = ({ world, x, y, angle, ownerId }: { world: World; x:
     isTrigger: false,
     enabled: true
   } as Collider2DComponent);
-  world.addComponent(bullet, { type: "TTL", remaining: GAME_CONFIG.BULLET_TTL, total: GAME_CONFIG.BULLET_TTL } as TTLComponent);
-  world.addComponent(bullet, { type: "Bullet", ownerId } as BulletComponent);
-  world.addComponent(bullet, { type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
-  world.addComponent(bullet, {
+  add({ type: "TTL", remaining: GAME_CONFIG.BULLET_TTL, total: GAME_CONFIG.BULLET_TTL } as TTLComponent);
+  add({ type: "Bullet", ownerId } as BulletComponent);
+  add({ type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
+  add({
     type: "Boundary",
     x: 0, y: 0,
     width: GAME_CONFIG.SCREEN_WIDTH,
@@ -160,8 +186,8 @@ export const createBullet = ({ world, x, y, angle, ownerId }: { world: World; x:
  * @param y - Spawn Y coordinate.
  * @param size - Enum determining radius and loot probabilities.
  */
-export const createAsteroid = ({ world, x, y, size }: { world: World; x: number; y: number; size: "large" | "medium" | "small" }) => {
-  const asteroid = world.createEntity();
+export const createAsteroid = ({ world, x, y, size, deferred }: { world: World; x: number; y: number; size: "large" | "medium" | "small", deferred?: boolean }) => {
+  const { entity: asteroid, add } = createBaseEntity(world, deferred);
   const radius = GAME_CONFIG.ASTEROID_RADII[size];
   const gameplayRandom = RandomService.getInstance("gameplay");
   const angle = gameplayRandom.next() * Math.PI * 2;
@@ -185,9 +211,9 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
 
   const colors = { large: "#555555", medium: "#8B4513", small: "#AAAAAA" };
 
-  world.addComponent(asteroid, { type: "Transform", x, y, rotation: gameplayRandom.next() * Math.PI * 2, scaleX: 1, scaleY: 1 } as TransformComponent);
-  world.addComponent(asteroid, { type: "Velocity", dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed } as VelocityComponent);
-  world.addComponent(asteroid, {
+  add({ type: "Transform", x, y, rotation: gameplayRandom.next() * Math.PI * 2, scaleX: 1, scaleY: 1 } as TransformComponent);
+  add({ type: "Velocity", dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed } as VelocityComponent);
+  add({
     type: "Render",
     shape: "polygon",
     size: radius,
@@ -197,7 +223,7 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
     vertices,
     data: { internalLines }
   } as RenderComponent);
-  world.addComponent(asteroid, {
+  add({
     type: "Collider2D",
     shape: { type: "circle", radius },
     layer: CollisionLayers.ENEMY,
@@ -207,8 +233,8 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
     isTrigger: false,
     enabled: true
   } as Collider2DComponent);
-  world.addComponent(asteroid, { type: "Asteroid", size } as AsteroidComponent);
-  world.addComponent(asteroid, { type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
+  add({ type: "Asteroid", size } as AsteroidComponent);
+  add({ type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
 
   // Add LootTable based on asteroid size
   const lootTable: import("../../engine/core/CoreComponents").LootTableComponent = {
@@ -219,9 +245,9 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
       { type: "speed", chance: 0.05, config: { duration: 6000 } }
     ]
   };
-  world.addComponent(asteroid, lootTable);
+  add(lootTable);
 
-  world.addComponent(asteroid, {
+  add({
     type: "Boundary",
     x: 0,
     y: 0,
@@ -240,7 +266,7 @@ export const createAsteroid = ({ world, x, y, size }: { world: World; x: number;
  * @param world - ECS World.
  * @param count - Number of large asteroids to spawn.
  */
-export const spawnAsteroidWave = ({ world, count }: { world: World; count: number }) => {
+export const spawnAsteroidWave = ({ world, count, deferred }: { world: World; count: number, deferred?: boolean }) => {
   const gameplayRandom = RandomService.getInstance("gameplay");
   for (let i = 0; i < count; i++) {
     let x, y, dist;
@@ -250,23 +276,23 @@ export const spawnAsteroidWave = ({ world, count }: { world: World; count: numbe
       dist = Math.sqrt(Math.pow(x - GAME_CONFIG.SCREEN_CENTER_X, 2) + Math.pow(y - GAME_CONFIG.SCREEN_CENTER_Y, 2));
     } while (dist < GAME_CONFIG.INITIAL_ASTEROID_SPAWN_RADIUS);
 
-    createAsteroid({ world, x, y, size: "large" });
+    createAsteroid({ world, x, y, size: "large", deferred });
   }
 };
 
 /**
  * Creates a UFO entity that traverses the screen horizontally.
  */
-export const createUfo = ({ world }: { world: World }) => {
-  const ufo = world.createEntity();
+export const createUfo = ({ world, deferred }: { world: World, deferred?: boolean }) => {
+  const { entity: ufo, add } = createBaseEntity(world, deferred);
   const gameplayRandom = RandomService.getInstance("gameplay");
   const side = gameplayRandom.next() > 0.5 ? 0 : GAME_CONFIG.SCREEN_WIDTH;
   const y = gameplayRandom.nextRange(0, GAME_CONFIG.SCREEN_HEIGHT);
 
-  world.addComponent(ufo, { type: "Transform", x: side, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-  world.addComponent(ufo, { type: "Velocity", dx: side === 0 ? GAME_CONFIG.UFO_SPEED : -GAME_CONFIG.UFO_SPEED, dy: 0 } as VelocityComponent);
-  world.addComponent(ufo, { type: "Render", shape: "ufo", size: GAME_CONFIG.UFO_SIZE, color: "#00FF00", rotation: 0 } as RenderComponent);
-  world.addComponent(ufo, {
+  add({ type: "Transform", x: side, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+  add({ type: "Velocity", dx: side === 0 ? GAME_CONFIG.UFO_SPEED : -GAME_CONFIG.UFO_SPEED, dy: 0 } as VelocityComponent);
+  add({ type: "Render", shape: "ufo", size: GAME_CONFIG.UFO_SIZE, color: "#00FF00", rotation: 0 } as RenderComponent);
+  add({
     type: "Collider2D",
     shape: { type: "circle", radius: GAME_CONFIG.UFO_SIZE },
     layer: CollisionLayers.ENEMY,
@@ -276,8 +302,8 @@ export const createUfo = ({ world }: { world: World }) => {
     isTrigger: false,
     enabled: true
   } as Collider2DComponent);
-  world.addComponent(ufo, { type: "Ufo", baseY: y, time: 0 } as UfoComponent);
-  world.addComponent(ufo, { type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
+  add({ type: "Ufo", baseY: y, time: 0 } as UfoComponent);
+  add({ type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
   return ufo;
 };
 
@@ -290,39 +316,40 @@ export interface CreateParticleParams {
     color: string;
     ttl?: number;
     size?: number;
+    deferred?: boolean;
 }
 
 /**
  * Creates a temporary visual particle.
  */
 export const createParticle = (params: CreateParticleParams) => {
-  const { world, x, y, dx, dy, color, ttl = GAME_CONFIG.PARTICLE_TTL_BASE, size = 2 } = params;
-  const particle = world.createEntity();
+  const { world, x, y, dx, dy, color, ttl = GAME_CONFIG.PARTICLE_TTL_BASE, size = 2, deferred } = params;
+  const { entity: particle, add } = createBaseEntity(world, deferred);
 
-  world.addComponent(particle, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-  world.addComponent(particle, { type: "Velocity", dx, dy } as VelocityComponent);
-  world.addComponent(particle, { type: "Render", shape: "particle", size, color, rotation: 0 } as RenderComponent);
-  world.addComponent(particle, { type: "TTL", remaining: ttl, total: ttl } as TTLComponent);
+  add({ type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+  add({ type: "Velocity", dx, dy } as VelocityComponent);
+  add({ type: "Render", shape: "particle", size, color, rotation: 0 } as RenderComponent);
+  add({ type: "TTL", remaining: ttl, total: ttl } as TTLComponent);
   return particle;
 };
 
 /**
  * Creates a temporary "hit flash" or explosion spark.
  */
-export const createFlash = ({ world, x, y, size }: { world: World; x: number; y: number; size: number }) => {
-  const flash = world.createEntity();
-  world.addComponent(flash, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-  world.addComponent(flash, { type: "Render", shape: "flash", size, color: "white", rotation: 0 } as RenderComponent);
-  world.addComponent(flash, { type: "TTL", remaining: 100, total: 100 } as TTLComponent);
+export const createFlash = ({ world, x, y, size, deferred }: { world: World; x: number; y: number; size: number, deferred?: boolean }) => {
+  const { entity: flash, add } = createBaseEntity(world, deferred);
+  add({ type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+  add({ type: "Render", shape: "flash", size, color: "white", rotation: 0 } as RenderComponent);
+  add({ type: "TTL", remaining: 100, total: 100 } as TTLComponent);
   return flash;
 };
 
 /**
  * Initializes the global game state singleton for Asteroids.
  */
-export const createGameState = ({ world }: { world: World }) => {
-  const gameState = world.createEntity();
-  world.addComponent(gameState, {
+export const createGameState = ({ world, deferred }: { world: World, deferred?: boolean }) => {
+  const { entity: gameState, add } = createBaseEntity(world, deferred);
+  add({
     ...INITIAL_GAME_STATE,
     lives: GAME_CONFIG.SHIP_INITIAL_LIVES,
     stars: generateStarField(GAME_CONFIG.STAR_COUNT, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT),
