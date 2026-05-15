@@ -21,7 +21,8 @@
     "docs:build": "npm run docs:extract && npm run docs:generate"
   },
   "jest": {
-    "preset": "jest-expo"
+    "preset": "jest-expo",
+     "testPathIgnorePatterns": ["/"]  
   },
   "dependencies": {
     "@colyseus/sdk": "^0.17.37",
