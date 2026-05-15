@@ -51,6 +51,7 @@ export class AsteroidsGame
   private serverEntities = new Map<string, number>();
   private inputHistory: InputFrame[] = [];
   private stateHistory = new Map<number, import("../../engine/types/EngineTypes").WorldSnapshot>();
+  private readonly MAX_HISTORY = 120;
   private interpolationDelay = 100; // ms
   private lastAuthoritativeTick = 0;
   private lastProcessedFullStateVersion = -1;
@@ -101,6 +102,39 @@ export class AsteroidsGame
   }
 
   /**
+   * Applies an input frame to a specific player ship entity.
+   * Side-effect free (only mutates the component data in the world).
+   */
+  public applyInputToEntity(entityId: number, input: InputFrame) {
+    this.world.mutateComponent<import("./types/AsteroidTypes").InputComponent>(entityId, "Input", inputComp => {
+      inputComp.rotateLeft = input.actions.includes("rotateLeft") || (input.axes?.rotate_left ?? 0) > 0;
+      inputComp.rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;
+      inputComp.thrust = input.actions.includes("thrust") || (input.axes?.thrust ?? 0) > 0;
+      inputComp.shoot = input.actions.includes("shoot");
+      inputComp.hyperspace = input.actions.includes("hyperspace");
+    });
+  }
+
+  /**
+   * Sets a state snapshot for a specific tick in history.
+   * Ensures history size limits are respected.
+   */
+  private setStateHistory(tick: number, snapshot: import("../../engine/types/EngineTypes").WorldSnapshot) {
+    this.stateHistory.set(tick, snapshot);
+
+    if (this.stateHistory.size > this.MAX_HISTORY) {
+      // Find oldest tick to delete
+      let oldestTick = Infinity;
+      for (const t of this.stateHistory.keys()) {
+        if (t < oldestTick) oldestTick = t;
+      }
+      if (oldestTick !== Infinity) {
+        this.stateHistory.delete(oldestTick);
+      }
+    }
+  }
+
+  /**
    * Performs local player movement prediction using the shared simulation.
    *
    * @remarks
@@ -111,14 +145,7 @@ export class AsteroidsGame
 
     const localPlayer = this.world.query("LocalPlayer")[0];
     if (localPlayer !== undefined) {
-        const inputComp = this.world.getComponent<import("./types/AsteroidTypes").InputComponent>(localPlayer, "Input");
-        if (inputComp) {
-            inputComp.rotateLeft = input.actions.includes("rotateLeft") || (input.axes?.rotate_left ?? 0) > 0;
-            inputComp.rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;
-            inputComp.thrust = input.actions.includes("thrust") || (input.axes?.thrust ?? 0) > 0;
-            inputComp.shoot = input.actions.includes("shoot");
-            inputComp.hyperspace = input.actions.includes("hyperspace");
-        }
+      this.applyInputToEntity(localPlayer, input);
     }
 
     DeterministicSimulation.update(this.world, deltaTime, { isResimulating: false });
@@ -126,24 +153,24 @@ export class AsteroidsGame
     // Store for reconciliation
     const lp = this.world.query("LocalPlayer")[0];
     if (lp !== undefined) {
-        const trans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(lp, "Transform");
-        const vel = this.world.getComponent<import("../../engine/types/EngineTypes").VelocityComponent>(lp, "Velocity");
-        if (trans && vel) {
-            this.predictionBuffer.save({
-                tick: input.tick,
-                entityId: lp.toString(),
-                state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation }
-            });
-        }
+      const trans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(lp, "Transform");
+      const vel = this.world.getComponent<import("../../engine/types/EngineTypes").VelocityComponent>(lp, "Velocity");
+      if (trans && vel) {
+        this.predictionBuffer.save({
+          tick: input.tick,
+          entityId: lp.toString(),
+          state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation }
+        });
+      }
     }
 
     // Attempts to capture state after simulation for potential reconciliation
-    this.stateHistory.set(input.tick, this.world.snapshot());
+    this.setStateHistory(input.tick, this.world.snapshot());
 
-    // Keep history manageable
-    if (this.inputHistory.length > 120) this.inputHistory.shift();
-    const oldestTick = input.tick - 120;
-    if (this.stateHistory.has(oldestTick)) this.stateHistory.delete(oldestTick);
+    // Keep input history manageable
+    if (this.inputHistory.length > this.MAX_HISTORY) {
+      this.inputHistory.shift();
+    }
   }
 
   /**
@@ -324,7 +351,7 @@ export class AsteroidsGame
     const predicted = this.predictionBuffer.getAt(serverTick);
 
     // Record the authoritative state for this tick to prevent redundant rollbacks
-    this.stateHistory.set(serverTick, authoritativeSnapshot);
+    this.setStateHistory(serverTick, authoritativeSnapshot);
 
     let needsRollback = false;
     let localPlayerId: number | undefined;
@@ -400,32 +427,25 @@ export class AsteroidsGame
         .forEach(input => {
           const lp = this.world.query("LocalPlayer")[0];
           if (lp !== undefined) {
-            const inputComp = this.world.getComponent<import("./types/AsteroidTypes").InputComponent>(lp, "Input");
-            if (inputComp) {
-              inputComp.rotateLeft = input.actions.includes("rotateLeft") || (input.axes?.rotate_left ?? 0) > 0;
-              inputComp.rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;
-              inputComp.thrust = input.actions.includes("thrust") || (input.axes?.thrust ?? 0) > 0;
-              inputComp.shoot = input.actions.includes("shoot");
-              inputComp.hyperspace = input.actions.includes("hyperspace");
-            }
+            this.applyInputToEntity(lp, input);
           }
           DeterministicSimulation.update(this.world, 16.66, { isResimulating: true });
 
           // Re-save prediction after re-simulation
           const lp_resim = this.world.query("LocalPlayer")[0];
           if (lp_resim !== undefined) {
-              const trans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(lp_resim, "Transform");
-              const vel = this.world.getComponent<import("../../engine/types/EngineTypes").VelocityComponent>(lp_resim, "Velocity");
-              if (trans && vel) {
-                  this.predictionBuffer.save({
-                      tick: input.tick,
-                      entityId: lp_resim.toString(),
-                      state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation }
-                  });
-              }
+            const trans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(lp_resim, "Transform");
+            const vel = this.world.getComponent<import("../../engine/types/EngineTypes").VelocityComponent>(lp_resim, "Velocity");
+            if (trans && vel) {
+              this.predictionBuffer.save({
+                tick: input.tick,
+                entityId: lp_resim.toString(),
+                state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation }
+              });
+            }
           }
 
-          this.stateHistory.set(input.tick, this.world.snapshot());
+          this.setStateHistory(input.tick, this.world.snapshot());
         });
 
       // Apply Visual Smoothing (Smooth Error Correction)

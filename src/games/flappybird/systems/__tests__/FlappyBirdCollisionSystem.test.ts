@@ -23,28 +23,33 @@ describe("FlappyBirdCollisionSystem", () => {
 
   it("should trigger game over when bird hits top pipe", () => {
     createGameState(world);
-    const _bird = createBird({ world, x: 100, y: 100 });
-    // Pipe at x=100, gap at y=300, gapSize=140.
-    // Top pipe ends at 300 - 70 = 230.
-    // Bird at y=100 (radius 15) is definitely hitting the top pipe (0 to 230).
+    createBird({ world, x: 100, y: 100 });
     createPipe({ world, x: 100, gapY: 300 });
 
     physicsSystem.update(world, 16.6);
+    world.flush();
+    physicsSystem.update(world, 16.6);
+    world.flush();
+    
     system.update(world, 16.6);
+    world.flush();
 
     const gameState = world.getSingleton<FlappyBirdState>("FlappyState")!;
     expect(gameState.isGameOver).toBe(true);
-    // expect(mockGame.pause).toHaveBeenCalled(); // triggerGameOver in FlappyBirdCollisionSystem.ts does not call pause
   });
 
   it("should not trigger game over when bird is in the gap", () => {
     createGameState(world);
-    // Gap is 230 to 370. Bird at y=300 is in the middle.
     createBird({ world, x: 100, y: 300 });
     createPipe({ world, x: 100, gapY: 300 });
 
     physicsSystem.update(world, 16.6);
+    world.flush();
+    physicsSystem.update(world, 16.6);
+    world.flush();
+    
     system.update(world, 16.6);
+    world.flush();
 
     const gameState = world.getSingleton<FlappyBirdState>("FlappyState")!;
     expect(gameState.isGameOver).toBe(false);
@@ -52,13 +57,16 @@ describe("FlappyBirdCollisionSystem", () => {
 
   it("should trigger game over when bird hits bottom pipe", () => {
     createGameState(world);
-    // Bottom pipe starts at 300 + 70 = 370.
-    // Bird at y=400 is hitting it.
     createBird({ world, x: 100, y: 400 });
     createPipe({ world, x: 100, gapY: 300 });
 
     physicsSystem.update(world, 16.6);
+    world.flush();
+    physicsSystem.update(world, 16.6);
+    world.flush();
+    
     system.update(world, 16.6);
+    world.flush();
 
     const gameState = world.getSingleton<FlappyBirdState>("FlappyState")!;
     expect(gameState.isGameOver).toBe(true);

@@ -25,8 +25,16 @@ describe("AsteroidCollisionSystem", () => {
 
     const initialScore = world.getSingleton<GameStateComponent>("GameState")!.score;
 
+    // First update ensures CollisionEvents component exists
     physicsSystem.update(world, 16.66);
+    world.flush();
+    
+    // Second update records the actual collision
+    physicsSystem.update(world, 16.66);
+    world.flush();
+
     system.update(world, 16.66);
+    world.flush();
 
     expect(world.getAllEntities()).not.toContain(_asteroid);
     expect(world.getAllEntities()).not.toContain(bullet);
@@ -38,7 +46,12 @@ describe("AsteroidCollisionSystem", () => {
     createBullet({ world, x: 100, y: 100, angle: 0 });
 
     physicsSystem.update(world, 16.66);
+    world.flush();
+    physicsSystem.update(world, 16.66);
+    world.flush();
+    
     system.update(world, 16.66);
+    world.flush();
 
     const asteroids = world.query("Asteroid");
     expect(asteroids.length).toBe(2);
@@ -51,31 +64,43 @@ describe("AsteroidCollisionSystem", () => {
   it("should decrease ship health on asteroid collision", () => {
     const ship = createShip({ world, x: 100, y: 100 });
     // Reset invulnerability for testing
-    const h = world.getComponent<import("../../types/AsteroidTypes").HealthComponent>(ship, "Health")!;
-    h.invulnerableRemaining = 0;
+    world.mutateComponent<import("../../types/AsteroidTypes").HealthComponent>(ship, "Health", h => {
+        h.invulnerableRemaining = 0;
+    });
 
     createAsteroid({ world, x: 100, y: 100, size: "small" });
 
-    const initialHealth = h.current;
-
     physicsSystem.update(world, 16.66);
-    system.update(world, 16.66);
+    world.flush();
+    physicsSystem.update(world, 16.66);
+    world.flush();
 
-    expect(h.current).toBe(initialHealth - 1);
+    system.update(world, 16.66);
+    world.flush();
+
+    const h = world.getComponent<import("../../types/AsteroidTypes").HealthComponent>(ship, "Health")!;
+    expect(h.current).toBe(2); // 3 - 1
     expect(h.invulnerableRemaining).toBeGreaterThan(0);
   });
 
   it("should not decrease health if ship is invulnerable", () => {
     const ship = createShip({ world, x: 100, y: 100 });
-    const health = world.getComponent<import("../../types/AsteroidTypes").HealthComponent>(ship, "Health")!;
-    health.invulnerableRemaining = 1000;
-    const initialHealth = health.current;
+    world.mutateComponent<import("../../types/AsteroidTypes").HealthComponent>(ship, "Health", h => {
+        h.invulnerableRemaining = 1000;
+    });
+    const initialHealth = world.getComponent<import("../../types/AsteroidTypes").HealthComponent>(ship, "Health")!.current;
 
     createAsteroid({ world, x: 100, y: 100, size: "small" });
 
     physicsSystem.update(world, 16.66);
-    system.update(world, 16.66);
+    world.flush();
+    physicsSystem.update(world, 16.66);
+    world.flush();
 
+    system.update(world, 16.66);
+    world.flush();
+
+    const health = world.getComponent<import("../../types/AsteroidTypes").HealthComponent>(ship, "Health")!;
     expect(health.current).toBe(initialHealth);
   });
 });

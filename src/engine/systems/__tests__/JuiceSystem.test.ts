@@ -30,18 +30,32 @@ describe("JuiceSystem", () => {
       duration: 100,
       easing: "linear"
     });
+    world.flush();
 
     // Initial state
     system.update(world, 0);
-    const offset = world.getComponent<VisualOffsetComponent>(entity, "VisualOffset");
+    world.flush();
+    
+    let offset = world.getComponent<VisualOffsetComponent>(entity, "VisualOffset");
+    // VisualOffset is added via CommandBuffer in first update, so we need one more flush/update if we want it immediately
+    // or just check after it's been flushed.
+    
+    if (!offset) {
+        system.update(world, 0); // Triggers addComponent via buffer
+        world.flush();
+        offset = world.getComponent<VisualOffsetComponent>(entity, "VisualOffset");
+    }
+    
     expect(offset?.scaleX).toBe(0);
 
     // Half way
     system.update(world, 50);
+    world.flush();
     expect(offset?.scaleX).toBe(0.5);
 
     // Complete
     system.update(world, 50);
+    world.flush();
     expect(offset?.scaleX).toBe(1);
 
     // Animation should be removed
@@ -60,8 +74,14 @@ describe("JuiceSystem", () => {
       duration: 100,
       onComplete
     });
+    world.flush();
 
-    system.update(world, 100);
+    // Need to run until VisualOffset is added AND animation completes
+    system.update(world, 0); // Adds VisualOffset
+    world.flush();
+    system.update(world, 100); // Completes animation
+    world.flush();
+    
     expect(onComplete).toHaveBeenCalledWith(entity);
   });
 });

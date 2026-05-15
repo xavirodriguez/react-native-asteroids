@@ -4,30 +4,45 @@ import { ModifierStackComponent } from "../core/CoreComponents";
 
 /**
  * System that manages the duration and removal of temporary modifiers.
+ * Supports both temporal and permanent modifiers.
+ * 
+ * @responsibility Decrement remaining duration of temporal modifiers.
+ * @responsibility Remove modifiers that have expired.
+ * @responsibility Emit event when modifiers expire.
+ *
+ * API status: Public
  */
 export class ModifierSystem extends System {
   public update(world: World, deltaTime: number): void {
     const entities = world.query("ModifierStack");
 
     for (const entity of entities) {
+      let expiredAny = false;
+
       world.mutateComponent(entity, "ModifierStack", (stack: ModifierStackComponent) => {
-        // Decrease remaining time for each modifier
-        for (const mod of stack.modifiers) {
+        const initialCount = stack.modifiers.length;
+        
+        // Decrease remaining time for each temporal modifier
+        for (let i = stack.modifiers.length - 1; i >= 0; i--) {
+          const mod = stack.modifiers[i];
           if (mod.remaining !== undefined) {
             mod.remaining -= deltaTime;
+            if (mod.remaining <= 0) {
+              stack.modifiers.splice(i, 1);
+              expiredAny = true;
+            }
           }
         }
 
-        // Filter out expired modifiers
-        const initialCount = stack.modifiers.length;
-        stack.modifiers = stack.modifiers.filter(mod => mod.remaining === undefined || mod.remaining > 0);
-
-        if (stack.modifiers.length < initialCount) {
-            // Something expired
-            const eventBus = world.getResource<import("../core/EventBus").EventBus>("EventBus");
-            if (eventBus) eventBus.emit("modifiers:expired", { entity });
-        }
+        expiredAny = expiredAny || (stack.modifiers.length < initialCount);
       });
+
+      if (expiredAny) {
+        const eventBus = world.getResource<import("../core/EventBus").EventBus>("EventBus");
+        if (eventBus) {
+          eventBus.emitDeferred("modifiers:expired", { entity });
+        }
+      }
     }
   }
 }

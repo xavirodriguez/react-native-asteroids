@@ -1,75 +1,88 @@
-/**
- * System that manages the collection and application of power-up effects.
- *
- * This system monitors collision events between entities marked as "PowerUp"
- * and other entities. When a collision occurs, it applies the corresponding
- * `Modifier` to the collector and destroys the power-up entity.
- *
- * @packageDocumentation
- */
-
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { CollisionEventsComponent, PowerUpComponent, ModifierStackComponent, Modifier } from "../core/CoreComponents";
+import { PowerUpComponent } from "../types/EngineTypes";
 import { EventBus } from "../core/EventBus";
 
 /**
- * Coordinates the logic for collecting power-ups and applying their buffs.
- *
- * @public
+ * System that handles the collection and application of power-ups.
+ * Power-ups are collected when a ship collides with them.
  */
 export class PowerUpSystem extends System {
-  /**
-   * Scans for collisions involving PowerUp entities.
-   */
   public update(world: World, _deltaTime: number): void {
-    const powerUps = world.query("PowerUp", "CollisionEvents");
+    const collisions = world.query("CollisionEvents");
 
-    for (const entity of powerUps) {
-      const events = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
-      if (!events) continue;
+    for (const entity of collisions) {
+      const eventsComp = world.getComponent<import("../types/EngineTypes").CollisionEventsComponent>(entity, "CollisionEvents");
+      if (!eventsComp) continue;
 
-      for (const other of events.triggersEntered) {
-        // Only ships or players can collect power-ups
-        if (world.hasComponent(other, "Ship") || world.hasComponent(other, "Player")) {
-          this.collectPowerUp(world, entity, other);
-          break; // Entity destroyed, stop processing collisions for it
-        }
+      for (const event of eventsComp.collisions) {
+        // We only process each pair once
+        if (entity > event.otherEntity) continue;
+
+        this.handleCollision(world, entity, event.otherEntity);
       }
     }
   }
 
-  private collectPowerUp(world: World, powerUpEntity: number, shipEntity: number): void {
-    const powerUp = world.getComponent<PowerUpComponent>(powerUpEntity, "PowerUp");
-    if (!powerUp) return;
+  private handleCollision(world: World, e1: number, e2: number): void {
+    const match = this.matchPair(world, e1, e2, "Ship", "PowerUp");
+    if (!match) return;
 
-    // Ensure ship has a ModifierStack
+    const shipEntity = match.Ship;
+    const powerUpEntity = match.PowerUp;
+    const powerUp = world.getComponent<PowerUpComponent>(powerUpEntity, "PowerUp");
+
+    if (powerUp) {
+      this.applyPowerUp(world, shipEntity, powerUp, powerUpEntity);
+    }
+  }
+
+  private applyPowerUp(world: World, shipEntity: number, powerUp: PowerUpComponent, powerUpEntity: number): void {
+    const commands = world.getCommandBuffer();
+    
+    // Add ModifierStack if missing
     if (!world.hasComponent(shipEntity, "ModifierStack")) {
-      world.addComponent(shipEntity, {
+      commands.addComponent(shipEntity, {
         type: "ModifierStack",
         modifiers: []
-      } as ModifierStackComponent);
+      } as import("../core/CoreComponents").ModifierStackComponent);
     }
 
-    // Apply the modifier
-    world.mutateComponent(shipEntity, "ModifierStack", (stack: ModifierStackComponent) => {
-      const modifier: Modifier = {
-        id: `powerup_${powerUp.powerUpType}_${Date.now()}`,
+    // Apply modifier via mutation if stack exists, or queue it
+    // For now, we always use mutateComponent which works if the component exists.
+    // If it was just added via command buffer, it won't be available until next frame.
+    // So we use the CommandBuffer.mutateComponent which is designed for this.
+    commands.mutateComponent(shipEntity, "ModifierStack", (stack: import("../core/CoreComponents").ModifierStackComponent) => {
+      stack.modifiers.push({
+        id: `pw_${powerUp.powerUpType}_${Date.now()}`,
         type: powerUp.powerUpType,
         value: powerUp.value,
         duration: powerUp.duration,
         remaining: powerUp.duration
-      };
-      stack.modifiers.push(modifier);
+      });
     });
 
-    // Notify collection
     const eventBus = world.getResource<EventBus>("EventBus");
     if (eventBus) {
-      eventBus.emit("powerup:collected", { type: powerUp.powerUpType, entity: shipEntity });
+      eventBus.emitDeferred("powerup:collected", { type: powerUp.powerUpType, entity: shipEntity });
     }
 
-    // Remove the power-up entity
-    world.removeEntity(powerUpEntity);
+    commands.removeEntity(powerUpEntity);
+  }
+
+  private matchPair<T1 extends string, T2 extends string>(
+    world: World,
+    entityA: number,
+    entityB: number,
+    type1: T1,
+    type2: T2
+  ): Record<T1 | T2, number> | undefined {
+    if (world.hasComponent(entityA, type1) && world.hasComponent(entityB, type2)) {
+      return { [type1]: entityA, [type2]: entityB } as Record<T1 | T2, number>;
+    }
+    if (world.hasComponent(entityB, type1) && world.hasComponent(entityA, type2)) {
+      return { [type1]: entityB, [type2]: entityA } as Record<T1 | T2, number>;
+    }
+    return undefined;
   }
 }

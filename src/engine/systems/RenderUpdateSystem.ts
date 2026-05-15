@@ -4,23 +4,6 @@ import { RenderComponent, TransformComponent, TrailComponent } from "../core/Cor
 
 /**
  * Sistema de preparación visual y efectos cosméticos.
- *
- * @responsibility Gestionar efectos visuales temporales como estelas (trails) y destellos (flashes).
- * @responsibility Actualizar la rotación cosmética basada en la velocidad angular.
- * @responsibility Sincronizar la versión de estado del mundo para disparar re-renders en la UI.
- * @queries Transform, Render, Trail
- * @mutates Trail.points, Trail.currentIndex, Trail.count, Render.rotation, Render.hitFlashFrames, World.stateVersion
- * @executionOrder Fase: Presentation. Ejecutar al final del pipeline de simulación.
- *
- * @remarks
- * Este sistema prepara datos visuales para el renderizado.
- * Incrementa {@link World.stateVersion} para notificar que existen cambios que podrían
- * requerir una actualización de la UI.
- *
- * @conceptualRisk [GC_PRESSURE][FIXED] El crecimiento ilimitado de estelas fue resuelto
- * mediante `TrailComponent` y un buffer circular pre-asignado.
- * @conceptualRisk [DETERMINISM][LOW] Mutar `Render.rotation` puede causar desincronización
- * si la lógica de colisiones u otra lógica de simulación depende accidentalmente de este valor.
  */
 export class RenderUpdateSystem extends System {
   protected trailMaxLength: number;
@@ -30,16 +13,6 @@ export class RenderUpdateSystem extends System {
     this.trailMaxLength = trailMaxLength;
   }
 
-  /**
-   * Ejecuta las actualizaciones visuales secundarias.
-   *
-   * @param world - El mundo ECS.
-   * @param deltaTime - Tiempo transcurrido en milisegundos.
-   *
-   * @precondition El mundo debe estar inicializado y contener entidades con Render.
-   * @postcondition Se actualizan estelas, rotaciones cosméticas y contadores de flashes.
-   * @sideEffect Incrementa {@link World.stateVersion} para disparar re-renderizado.
-   */
   public update(world: World, deltaTime: number): void {
     this.updateTrails(world);
     this.updateRotation(world, deltaTime);
@@ -47,25 +20,15 @@ export class RenderUpdateSystem extends System {
     world.notifyStateChange();
   }
 
-  /**
-   * Actualiza el buffer circular de las estelas.
-   *
-   * @remarks
-   * Utiliza una estrategia de buffer circular sobre un array de tamaño fijo
-   * para evitar re-asignaciones de memoria y presión de GC.
-   */
   protected updateTrails(world: World): void {
     const entities = world.query("Transform", "Trail");
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
       const pos = world.getComponent<TransformComponent>(entity, "Transform");
-      const trail = world.getComponent<TrailComponent>(entity, "Trail");
+      if (!pos) continue;
 
-      if (pos && trail) {
-        // Calcular nuevo índice en el buffer circular
+      world.mutateComponent<TrailComponent>(entity, "Trail", trail => {
         trail.currentIndex = (trail.currentIndex + 1) % trail.maxLength;
-
-        // Reutilizar objeto de posición si es posible o asignar nuevo solo una vez por slot
         if (!trail.points[trail.currentIndex]) {
           trail.points[trail.currentIndex] = { x: pos.x, y: pos.y };
         } else {
@@ -73,12 +36,10 @@ export class RenderUpdateSystem extends System {
           point.x = pos.x;
           point.y = pos.y;
         }
-
-        // Incrementar contador de puntos válidos hasta el máximo
         if (trail.count < trail.maxLength) {
           trail.count++;
         }
-      }
+      });
     }
   }
 
@@ -88,16 +49,17 @@ export class RenderUpdateSystem extends System {
       const entity = entities[i];
       const render = world.getComponent<RenderComponent>(entity, "Render");
 
-      // Principle: Unified rotation authority is TransformComponent.
-      // Cosmetic rotations (like debris) must use VisualOffsetComponent.
       if (render && render.angularVelocity) {
-        let offset = world.getComponent<import("../core/CoreComponents").VisualOffsetComponent>(entity, "VisualOffset");
+        const offset = world.getComponent<import("../core/CoreComponents").VisualOffsetComponent>(entity, "VisualOffset");
         if (!offset) {
-          offset = world.addComponent(entity, {
+          world.getCommandBuffer().addComponent(entity, {
             type: "VisualOffset", x: 0, y: 0, rotation: 0, scaleX: 0, scaleY: 0
           } as import("../core/CoreComponents").VisualOffsetComponent);
+        } else {
+          world.mutateComponent(entity, "VisualOffset", (v: import("../core/CoreComponents").VisualOffsetComponent) => {
+            v.rotation += render.angularVelocity! * (deltaTime / 16.67);
+          });
         }
-        offset.rotation += render.angularVelocity * (deltaTime / 16.67);
       }
     }
   }
@@ -106,10 +68,11 @@ export class RenderUpdateSystem extends System {
     const entities = world.query("Render");
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
-      const render = world.getComponent<RenderComponent>(entity, "Render");
-      if (render && render.hitFlashFrames && render.hitFlashFrames > 0) {
-        render.hitFlashFrames--;
-      }
+      world.mutateComponent<RenderComponent>(entity, "Render", render => {
+        if (render.hitFlashFrames && render.hitFlashFrames > 0) {
+          render.hitFlashFrames--;
+        }
+      });
     }
   }
 }

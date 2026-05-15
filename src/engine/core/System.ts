@@ -103,4 +103,10 @@ export abstract class System {
    * division by 1000.
    */
   abstract update(world: World, deltaTime: number): void;
+
+  /**
+   * Cleanup system resources when it's removed or the game is destroyed.
+   * API status: Public
+   */
+  public dispose(): void {}
 }

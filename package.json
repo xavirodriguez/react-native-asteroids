@@ -7,7 +7,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "echo \"Tests disabled temporarily\" && exit 0",
+    "test": "tsc -p tsconfig.doc.json && jest --watchAll",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "build:dev": "eas build --profile development --platform all",
@@ -21,8 +21,7 @@
     "docs:build": "npm run docs:extract && npm run docs:generate"
   },
   "jest": {
-    "preset": "jest-expo",
-     "testPathIgnorePatterns": ["/"]  
+    "preset": "jest-expo"
   },
   "dependencies": {
     "@colyseus/sdk": "^0.17.37",
@@ -81,12 +80,12 @@
     "zod": "^4.1.4"
   },
   "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@eslint/js": "^9.34.0",
     "@microsoft/api-documenter": "^7.28.9",
     "@microsoft/api-extractor": "^7.56.3",
     "@microsoft/tsdoc": "^0.16.0",
     "@microsoft/tsdoc-config": "^0.18.1",
-    "@babel/core": "^7.25.2",
-    "@eslint/js": "^9.34.0",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.14",
     "@typescript-eslint/eslint-plugin": "^8.41.0",

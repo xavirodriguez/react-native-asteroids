@@ -23,20 +23,25 @@ export class BossSystem extends System {
     bosses.forEach(entity => {
       const boss = world.getComponent<BossComponent>(entity, "Boss")!;
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
-      const _render = world.getComponent<RenderComponent>(entity, "Render")!;
 
-      boss.timer += deltaTime;
+      world.mutateComponent<BossComponent>(entity, "Boss", b => {
+          b.timer += deltaTime;
+      });
 
       // Simple side to side movement
-      pos.x = GAME_CONFIG.SCREEN_WIDTH / 2 + Math.sin(boss.timer / 1000) * 200;
+      world.mutateComponent<TransformComponent>(entity, "Transform", p => {
+          p.x = GAME_CONFIG.SCREEN_WIDTH / 2 + Math.sin(boss.timer / 1000) * 200;
+      });
 
       // Phase changes
-      const hpPercent = boss.hp / boss.maxHp;
-      if (hpPercent < 0.33) boss.phase = 3;
-      else if (hpPercent < 0.66) boss.phase = 2;
-      else boss.phase = 1;
+      world.mutateComponent<BossComponent>(entity, "Boss", b => {
+          const hpPercent = b.hp / b.maxHp;
+          if (hpPercent < 0.33) b.phase = 3;
+          else if (hpPercent < 0.66) b.phase = 2;
+          else b.phase = 1;
+      });
 
-      // Shooting patterns (Placeholder: in a real implementation we would spawn bullets)
+      // Shooting patterns
       if (Math.floor(boss.timer / 1000) % 2 === 0 && Math.floor((boss.timer - deltaTime) / 1000) % 2 !== 0) {
          // Burst effect when "shooting"
          createEmitter(world, {
@@ -52,7 +57,7 @@ export class BossSystem extends System {
       }
 
       if (boss.hp <= 0) {
-        this.destroyBoss(world, entity, gameState);
+        this.destroyBoss(world, entity);
       }
     });
 
@@ -63,25 +68,28 @@ export class BossSystem extends System {
   }
 
   private spawnBoss(world: World, level: number): void {
-    const boss = world.createEntity();
+    const commands = world.getCommandBuffer();
     const hp = 50 + (level / 5) * 50;
-    world.addComponent(boss, { type: "Transform", x: GAME_CONFIG.SCREEN_WIDTH / 2, y: 100, rotation: 0, scaleX: 1, scaleY: 1 });
-    world.addComponent(boss, { type: "Render", shape: "invader", size: 80, color: "#FF00FF", rotation: 0 });
-    world.addComponent(boss, {
-      type: "Collider2D",
-      shape: { type: "circle", radius: 40 },
-      layer: CollisionLayers.ENEMY,
-      mask: CollisionLayers.PLAYER | CollisionLayers.PROJECTILE,
-      offsetX: 0,
-      offsetY: 0,
-      isTrigger: false,
-      enabled: true
-    } as Collider2DComponent);
-    world.addComponent(boss, { type: "Boss", hp, maxHp: hp, timer: 0, phase: 1 });
-    world.addComponent(boss, { type: "Health", current: hp, max: hp, invulnerableRemaining: 0 });
+    
+    commands.createEntity(boss => {
+        commands.addComponent(boss, { type: "Transform", x: GAME_CONFIG.SCREEN_WIDTH / 2, y: 100, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+        commands.addComponent(boss, { type: "Render", shape: "invader", size: 80, color: "#FF00FF", rotation: 0 } as RenderComponent);
+        commands.addComponent(boss, {
+          type: "Collider2D",
+          shape: { type: "circle", radius: 40 },
+          layer: CollisionLayers.ENEMY,
+          mask: CollisionLayers.PLAYER | CollisionLayers.PROJECTILE,
+          offsetX: 0,
+          offsetY: 0,
+          isTrigger: false,
+          enabled: true
+        } as Collider2DComponent);
+        commands.addComponent(boss, { type: "Boss", hp, maxHp: hp, timer: 0, phase: 1 } as BossComponent);
+        commands.addComponent(boss, { type: "Health", current: hp, max: hp, invulnerableRemaining: 0 } as import("../../../engine/types/EngineTypes").HealthComponent);
+    });
   }
 
-  private destroyBoss(world: World, entity: number, gameState: GameStateComponent): void {
+  private destroyBoss(world: World, entity: number): void {
     const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
     createEmitter(world, {
         position: { x: pos.x, y: pos.y },
@@ -94,9 +102,14 @@ export class BossSystem extends System {
         loop: false
     });
     Juice.shake(world, 10, 1000);
-    gameState.score += 5000;
+    
+    world.mutateSingleton<GameStateComponent>("GameState", gs => {
+        gs.score += 5000;
+    });
+
     const eventBus = world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
-    if (eventBus) eventBus.emit("si:boss_defeated");
-    world.removeEntity(entity);
+    if (eventBus) eventBus.emitDeferred("si:boss_defeated");
+    
+    world.getCommandBuffer().removeEntity(entity);
   }
 }

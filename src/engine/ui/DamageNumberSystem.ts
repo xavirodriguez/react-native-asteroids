@@ -21,22 +21,21 @@ export class DamageNumberSystem extends System {
             zIndex: 1000
         });
 
-        const element = world.getComponent<UIElementComponent>(entity, "UIElement")!;
-        // We use computedX/Y for initial placement, but UILayoutSystem will overwrite
-        // root elements if they don't have parentEntity.
-        // To allow manual movement, we either need a parent or a special flag.
-        // For root elements, UILayoutSystem uses anchor + offsetX/Y.
-        element.offsetX = x;
-        element.offsetY = y;
+        const commands = world.getCommandBuffer();
+        
+        commands.mutateComponent<UIElementComponent>(entity, "UIElement", element => {
+            element.offsetX = x;
+            element.offsetY = y;
+        });
 
         const gameplayRandom = RandomService.getInstance("gameplay");
-        world.addComponent(entity, {
+        commands.addComponent(entity, {
             type: "DamageNumber",
             value,
             velocity: { x: (gameplayRandom.next() - 0.5) * 40, y: -60 - gameplayRandom.next() * 40 }
         } as DamageNumberComponent);
 
-        world.addComponent(entity, {
+        commands.addComponent(entity, {
             type: "TTL",
             remaining: 1000,
             total: 1000
@@ -48,15 +47,15 @@ export class DamageNumberSystem extends System {
         const dt = deltaTime / 1000;
 
         for (const entity of entities) {
-            const dn = world.getComponent<DamageNumberComponent>(entity, "DamageNumber")!;
-            const element = world.getComponent<UIElementComponent>(entity, "UIElement")!;
-            const ttl = world.getComponent<TTLComponent>(entity, "TTL")!;
-
-            element.offsetX += dn.velocity.x * dt;
-            element.offsetY += dn.velocity.y * dt;
-            element.opacity = ttl.remaining / ttl.total;
-
-            dn.velocity.y += 100 * dt;
+            world.mutateComponent<DamageNumberComponent>(entity, "DamageNumber", dn => {
+                world.mutateComponent<UIElementComponent>(entity, "UIElement", element => {
+                    const ttl = world.getComponent<TTLComponent>(entity, "TTL")!;
+                    element.offsetX += dn.velocity.x * dt;
+                    element.offsetY += dn.velocity.y * dt;
+                    element.opacity = ttl.remaining / ttl.total;
+                    dn.velocity.y += 100 * dt;
+                });
+            });
         }
     }
 }

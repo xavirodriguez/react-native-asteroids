@@ -3,7 +3,7 @@ import { RandomService } from "../RandomService";
 describe("RandomService", () => {
   beforeEach(() => {
     // Reset state before each test
-    RandomService.lockGameplayContext = false;
+     (RandomService as any).lockGameplayContext = false;
     // We can't easily reset namedInstances but we can re-seed them
     RandomService.getGameplayRandom().setSeed(12345);
     RandomService.getRenderRandom().setSeed(12345);
@@ -95,28 +95,28 @@ describe("RandomService", () => {
     });
 
     it("should throw when accessing 'render' during gameplay lock", () => {
-      RandomService.lockGameplayContext = true;
+       (RandomService as any).lockGameplayContext = true;
       expect(() => RandomService.getInstance("render")).toThrow(/Deterministic violation/);
       expect(() => RandomService.getRenderRandom()).toThrow(/Deterministic violation/);
     });
 
     it("should throw when accessing 'global' during gameplay lock", () => {
-      RandomService.lockGameplayContext = true;
+       (RandomService as any).lockGameplayContext = true;
       expect(() => RandomService.getInstance("global")).toThrow(/Deterministic violation/);
     });
 
     it("should throw when calling static methods during gameplay lock", () => {
-      RandomService.lockGameplayContext = true;
-      expect(() => RandomService.next()).toThrow(/Deterministic violation/);
-      expect(() => RandomService.nextInt(0, 10)).toThrow(/Deterministic violation/);
-      expect(() => RandomService.nextRange(0, 10)).toThrow(/Deterministic violation/);
-      expect(() => RandomService.chance(0.5)).toThrow(/Deterministic violation/);
-      expect(() => RandomService.nextSign()).toThrow(/Deterministic violation/);
-      expect(() => RandomService.setSeed(123)).toThrow(/Deterministic violation/);
+       (RandomService as any).lockGameplayContext = true;
+      expect(() =>  (RandomService as any).next()).toThrow(/Deterministic violation/);
+      expect(() =>  (RandomService as any).nextInt(0, 10)).toThrow(/Deterministic violation/);
+      expect(() =>  (RandomService as any).nextRange(0, 10)).toThrow(/Deterministic violation/);
+      expect(() =>  (RandomService as any).chance(0.5)).toThrow(/Deterministic violation/);
+      expect(() =>  (RandomService as any).nextSign()).toThrow(/Deterministic violation/);
+      expect(() =>  (RandomService as any).setSeed(123)).toThrow(/Deterministic violation/);
     });
 
     it("should ALLOW accessing 'gameplay' during gameplay lock", () => {
-      RandomService.lockGameplayContext = true;
+       (RandomService as any).lockGameplayContext = true;
       expect(() => RandomService.getGameplayRandom()).not.toThrow();
       expect(() => RandomService.getInstance("gameplay")).not.toThrow();
     });

@@ -53,30 +53,6 @@ export function createJuiceComponent(): JuiceComponent {
  * System responsible for processing procedural animations (Juice) on entities.
  *
  * API status: Public
- *
- * Responsibility: Animate component properties in an elastic or interpolated way.
- * Responsibility: Update the progress of each `JuiceAnimation`.
- * Responsibility: Interpolate and apply values to `VisualOffsetComponent` or `RenderComponent`.
- * Responsibility: Notify completion through `onComplete` callbacks.
- *
- * @remarks
- * It is a key piece for **"smooth reconciliation"** in networking. When the server corrects
- * a ship's position, this system gradually interpolates the visual error (`VisualOffset`)
- * towards zero, preventing the player from perceiving sudden jumps.
- *
- * Queries: Juice, VisualOffset, Render
- * Mutates: VisualOffset.x, VisualOffset.y, VisualOffset.scaleX, VisualOffset.scaleY, VisualOffset.rotation
- * Mutates: Render.rotation, Render.opacity
- * Execution Order: Presentation Phase. Must be executed after Simulation to override visuals.
- *
- * @remarks
- * The system uses a real-time based integrator. Recommended for aesthetic effects
- * that should not interfere with collision or physics logic.
- *
- * Conceptual Risk: [DETERMINISM][LOW] JuiceSystem now mutates VisualOffsetComponent instead of Transform,
- * eliminating the risk of desynchronization in the physics simulation.
- * Conceptual Risk: [MUTATION][LOW] Animations are removed from the array during reverse iteration;
- * the design is safe against local structural mutations.
  */
 export class JuiceSystem extends System {
   /**
@@ -86,9 +62,6 @@ export class JuiceSystem extends System {
    *
    * @param world - The ECS world.
    * @param deltaTime - Elapsed time in milliseconds [ms].
-   *
-   * Precondition: Entities must possess a `JuiceComponent`.
-   * Postcondition: Interpolated values are applied to `VisualOffsetComponent` or `RenderComponent`.
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Juice");
@@ -103,31 +76,46 @@ export class JuiceSystem extends System {
 
       // Ensure VisualOffset exists if we have animations that need it
       if (!offset && juice.animations.some(a => a.property !== "opacity")) {
-        offset = world.addComponent(entity, {
+        world.getCommandBuffer().addComponent(entity, {
           type: "VisualOffset", x: 0, y: 0, rotation: 0, scaleX: 0, scaleY: 0
         } as VisualOffsetComponent);
+        // We skip this frame for this entity because mutateComponent below would fail
+        // since the component is not yet in the world.
+        continue;
       }
 
-      for (let j = juice.animations.length - 1; j >= 0; j--) {
-        const anim = juice.animations[j];
+      world.mutateComponent<JuiceComponent>(entity, "Juice", jComp => {
+        for (let j = jComp.animations.length - 1; j >= 0; j--) {
+          const anim = jComp.animations[j];
 
-        // Initialize start value if needed
-        if (anim.startValue === undefined) {
-          anim.startValue = this.getPropertyValue(anim.property, offset, render);
+          // Initialize start value if needed
+          if (anim.startValue === undefined) {
+            anim.startValue = this.getPropertyValue(anim.property, offset, render);
+          }
+
+          anim.elapsed += deltaTime;
+          const progress = Math.min(anim.elapsed / anim.duration, 1);
+          const easedProgress = this.applyEasing(progress, anim.easing || "linear");
+
+          const currentValue = anim.startValue + (anim.target - anim.startValue) * easedProgress;
+          
+          if (anim.property === "opacity") {
+              world.mutateComponent<RenderComponent>(entity, "Render", r => {
+                  if (!r.data) r.data = {};
+                  r.data.opacity = currentValue;
+              });
+          } else {
+              world.mutateComponent<VisualOffsetComponent>(entity, "VisualOffset", off => {
+                  this.setPropertyValue(anim.property, currentValue, off);
+              });
+          }
+
+          if (progress >= 1) {
+            jComp.animations.splice(j, 1);
+            if (anim.onComplete) anim.onComplete(entity);
+          }
         }
-
-        anim.elapsed += deltaTime;
-        const progress = Math.min(anim.elapsed / anim.duration, 1);
-        const easedProgress = this.applyEasing(progress, anim.easing || "linear");
-
-        const currentValue = anim.startValue + (anim.target - anim.startValue) * easedProgress;
-        this.setPropertyValue(anim.property, currentValue, offset, render);
-
-        if (progress >= 1) {
-          juice.animations.splice(j, 1);
-          if (anim.onComplete) anim.onComplete(entity);
-        }
-      }
+      });
     }
   }
 
@@ -143,21 +131,13 @@ export class JuiceSystem extends System {
     }
   }
 
-  private setPropertyValue(prop: string, value: number, offset?: VisualOffsetComponent, render?: RenderComponent): void {
+  private setPropertyValue(prop: string, value: number, offset: VisualOffsetComponent): void {
     switch (prop) {
-      case "scaleX": if (offset) offset.scaleX = value; break;
-      case "scaleY": if (offset) offset.scaleY = value; break;
-      case "rotation":
-        if (offset) offset.rotation = value;
-        break;
-      case "x": if (offset) offset.x = value; break;
-      case "y": if (offset) offset.y = value; break;
-      case "opacity":
-        if (render) {
-            if (!render.data) render.data = {};
-            render.data.opacity = value;
-        }
-        break;
+      case "scaleX": offset.scaleX = value; break;
+      case "scaleY": offset.scaleY = value; break;
+      case "rotation": offset.rotation = value; break;
+      case "x": offset.x = value; break;
+      case "y": offset.y = value; break;
     }
   }
 
@@ -180,11 +160,17 @@ export class JuiceSystem extends System {
    * API status: Public
    */
   public static add(world: World, entity: Entity, anim: Omit<JuiceAnimation, "elapsed">): void {
+    const commands = world.getCommandBuffer();
     let juice = world.getComponent<JuiceComponent>(entity, "Juice");
+    
     if (!juice) {
       juice = createJuiceComponent();
-      world.addComponent(entity, juice);
+      // If we are in update(), we must use CommandBuffer
+      commands.addComponent(entity, juice);
     }
-    juice.animations.push({ ...anim, elapsed: 0 });
+    
+    commands.mutateComponent(entity, "Juice", (jComp: JuiceComponent) => {
+        jComp.animations.push({ ...anim, elapsed: 0 });
+    });
   }
 }

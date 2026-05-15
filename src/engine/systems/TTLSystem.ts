@@ -7,24 +7,6 @@ import { TTLComponent, ReclaimableComponent } from "../types/EngineTypes";
  * Automates the destruction of projectiles, particles, or temporary effects.
  *
  * API status: Public
- *
- * Responsibility: Decrement the remaining time in {@link TTLComponent}.
- *
- * Responsibility: Destroy the entity when time reaches zero.
- *
- * Responsibility: Notify recycling pools via {@link ReclaimableComponent}.
- *
- * @remarks
- * The system attempts to invoke the `onComplete` callback defined in the component before
- * requesting the entity's removal from the world.
- *
- * Queries: TTL
- *
- * Mutates: TTL.remaining, World (entity removal)
- *
- * Emits: onComplete
- *
- * Execution Order: Simulation Phase. Usually at the end of the physics phase.
  */
 export class TTLSystem extends System {
   /**
@@ -32,33 +14,34 @@ export class TTLSystem extends System {
    *
    * @param world - The ECS world.
    * @param deltaTime - Elapsed time in milliseconds [ms].
-   *
-   * Precondition: Entities must possess a {@link TTLComponent}.
-   *
-   * Postcondition: `remaining` is reduced. If it reaches \<= 0, the entity is removed.
    */
   public update(world: World, deltaTime: number): void {
     const ttlEntities = world.query("TTL");
 
     for (let i = 0; i < ttlEntities.length; i++) {
       const entity = ttlEntities[i];
-      const ttl = world.getComponent<TTLComponent>(entity, "TTL");
-      if (ttl) {
+      let expired = false;
+
+      world.mutateComponent<TTLComponent>(entity, "TTL", (ttl) => {
         ttl.remaining -= deltaTime;
-        if (ttl.remaining <= 0) {
-          // Trigger onComplete callback if present
-          if (ttl.onComplete) {
-            ttl.onComplete();
-          }
+        expired = ttl.remaining <= 0;
+      });
 
-          // Notify pool before removal if reclaimable
-          const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
-          if (reclaimable) {
-            reclaimable.onReclaim(world, entity);
-          }
-
-          world.removeEntity(entity);
+      if (expired) {
+        const ttl = world.getComponent<TTLComponent>(entity, "TTL")!;
+        
+        // Trigger onComplete callback if present
+        if (ttl.onComplete) {
+          ttl.onComplete();
         }
+
+        // Notify pool before removal if reclaimable
+        const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
+        if (reclaimable) {
+          reclaimable.onReclaim(world, entity);
+        }
+
+        world.getCommandBuffer().removeEntity(entity);
       }
     }
   }

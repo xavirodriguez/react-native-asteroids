@@ -22,24 +22,7 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
  * @responsibility Manage lifecycle events for triggers (Enter, Stay, Exit).
  * @responsibility Provide Continuous Collision Detection (CCD) to mitigate tunneling for fast objects.
  *
- * @remarks
- * ### Detection Pipeline:
- * 1. **Broadphase Selection**:
- *    - If `useSpatialHash` is enabled: Queries the `SpatialGrid` resource for O(1) candidate selection.
- *    - Fallback: Uses `Sweep and Prune` (1D sorting) for sparse environments.
- * 2. **CCD Phase**: For entities with `ContinuousColliderComponent`, performs swept tests to
- *    calculate Time of Impact (TOI).
- * 3. **Narrowphase Phase**: Uses `NarrowPhase.test` (SAT/GJK) to generate precise {@link CollisionManifold}s.
- * 4. **Event Dispatch**: Populates {@link CollisionEventsComponent} and executes registered callbacks.
- *
- * Warning: **Safety**: Do NOT perform structural world changes (entity creation/deletion)
- * inside collision callbacks directly if iterating. Use `world.getCommandBuffer()`.
- *
- * @conceptualRisk [TUNNELING] Fast objects without CCD enabled will skip collisions.
- * @conceptualRisk [STALE_GRID] Relies on `SpatialPartitioningSystem` (USSC) having
- * updated the grid in a previous phase.
- *
- * @public
+ * API status: Public
  */
 export class CollisionSystem2D extends System {
   private onCollisionCallbacks: CollisionCallback[] = [];
@@ -66,22 +49,19 @@ export class CollisionSystem2D extends System {
    *
    * @param world - The ECS world instance.
    * @param _deltaTime - Time elapsed in milliseconds.
-   *
-   * @remarks
-   * 1. Resets per-frame collision/trigger events on all entities with `CollisionEventsComponent`.
-   * 2. Selects Broad-phase candidates.
-   * 3. Performs CCD for enabled entities, moving them to their Time of Impact (TOI).
-   * 4. Executes Narrow-phase tests.
-   * 5. Notifies callbacks and populates event components.
    */
   update(world: World, _deltaTime: number): void {
     const entities = world.query("Transform", "Collider2D");
     const currentFramePairs = new Set<string>();
     const eventEntities = world.query("CollisionEvents");
+    
     for (let i = 0; i < eventEntities.length; i++) {
       const entity = eventEntities[i];
-      const events = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents")!;
-      events.collisions.length = 0; events.triggersEntered.length = 0; events.triggersExited.length = 0;
+      world.mutateComponent<CollisionEventsComponent>(entity, "CollisionEvents", events => {
+          events.collisions.length = 0; 
+          events.triggersEntered.length = 0; 
+          events.triggersExited.length = 0;
+      });
     }
 
     let candidates: Array<[Entity, Entity]>;
@@ -162,7 +142,7 @@ export class CollisionSystem2D extends System {
                   if (velA) {
                       const moveX = velA.dx * dtSeconds * ccdResult.timeOfImpact;
                       const moveY = velA.dy * dtSeconds * ccdResult.timeOfImpact;
-                      world.mutateComponent(entityA, "Transform", t => {
+                      world.mutateComponent<TransformComponent>(entityA, "Transform", t => {
                         t.x += moveX;
                         t.y += moveY;
                       });
@@ -170,7 +150,7 @@ export class CollisionSystem2D extends System {
                   if (velB) {
                       const moveX = velB.dx * dtSeconds * ccdResult.timeOfImpact;
                       const moveY = velB.dy * dtSeconds * ccdResult.timeOfImpact;
-                      world.mutateComponent(entityB, "Transform", t => {
+                      world.mutateComponent<TransformComponent>(entityB, "Transform", t => {
                         t.x += moveX;
                         t.y += moveY;
                       });
@@ -220,16 +200,29 @@ export class CollisionSystem2D extends System {
   private getPairId(a: Entity, b: Entity): string { return a < b ? `${a},${b}` : `${b},${a}`; }
   private notifyCollisionEvent(world: World, a: Entity, b: Entity, manifold: CollisionManifold): void { this.addCollisionToComponent(world, a, b, manifold, false); this.addCollisionToComponent(world, b, a, manifold, true); }
   private addCollisionToComponent(world: World, entity: Entity, other: Entity, manifold: CollisionManifold, flipNormal: boolean): void {
+    const commands = world.getCommandBuffer();
     let events = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
-    if (!events) { events = { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] }; world.addComponent(entity, events); }
-    events.collisions.push({ otherEntity: other, normalX: flipNormal ? -manifold.normalX : manifold.normalX, normalY: flipNormal ? -manifold.normalY : manifold.normalY, depth: manifold.depth, contactPoints: manifold.contactPoints });
+    if (!events) { 
+        commands.addComponent(entity, { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] } as CollisionEventsComponent);
+        // We skip recording this collision for this frame as the component won't be available yet
+        return;
+    }
+    world.mutateComponent<CollisionEventsComponent>(entity, "CollisionEvents", eComp => {
+        eComp.collisions.push({ otherEntity: other, normalX: flipNormal ? -manifold.normalX : manifold.normalX, normalY: flipNormal ? -manifold.normalY : manifold.normalY, depth: manifold.depth, contactPoints: manifold.contactPoints });
+    });
   }
   private notifyTriggerEvent(world: World, a: Entity, b: Entity, phase: "enter" | "stay" | "exit"): void { this.addTriggerToComponent(world, a, b, phase); this.addTriggerToComponent(world, b, a, phase); }
   private addTriggerToComponent(world: World, entity: Entity, other: Entity, phase: "enter" | "stay" | "exit"): void {
+    const commands = world.getCommandBuffer();
     let events = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
-    if (!events) { events = { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] }; world.addComponent(entity, events); }
-    if (phase === "enter") { events.triggersEntered.push(other); events.activeTriggers.push(other); }
-    else if (phase === "stay") { if (!events.activeTriggers.includes(other)) events.activeTriggers.push(other); }
-    else if (phase === "exit") { events.triggersExited.push(other); events.activeTriggers = events.activeTriggers.filter(id => id !== other); }
+    if (!events) { 
+        commands.addComponent(entity, { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] } as CollisionEventsComponent);
+        return;
+    }
+    world.mutateComponent<CollisionEventsComponent>(entity, "CollisionEvents", eComp => {
+        if (phase === "enter") { eComp.triggersEntered.push(other); eComp.activeTriggers.push(other); }
+        else if (phase === "stay") { if (!eComp.activeTriggers.includes(other)) eComp.activeTriggers.push(other); }
+        else if (phase === "exit") { eComp.triggersExited.push(other); eComp.activeTriggers = eComp.activeTriggers.filter(id => id !== other); }
+    });
   }
 }
