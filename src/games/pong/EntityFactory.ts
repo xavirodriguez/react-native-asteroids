@@ -1,6 +1,6 @@
 import { World } from "../../engine/core/World";
 import { PONG_CONFIG, PongState } from "./types";
-import { Component, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, BoundaryComponent, TagComponent } from "../../engine/types/EngineTypes";
+import { Component, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, BoundaryComponent, TagComponent, Entity } from "../../engine/types/EngineTypes";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import { RandomService } from "../../engine/utils/RandomService";
 
@@ -22,6 +22,30 @@ export interface PongStateComponent extends Component, PongState {
 }
 
 /**
+ * Helper to handle deferred or immediate entity creation and component attachment.
+ */
+const createBaseEntity = (world: World): { entity: Entity, add: (comp: Component) => void } => {
+    const isDeferred = world.isUpdating;
+    const commands = world.getCommandBuffer();
+    const entity = isDeferred ? world.reserveEntityId() : world.createEntity();
+
+    if (isDeferred) {
+        commands.createEntity(entity);
+    }
+
+    return {
+        entity,
+        add: (comp: Component) => {
+            if (isDeferred) {
+                commands.addComponent(entity, comp);
+            } else {
+                world.addComponent(entity, comp);
+            }
+        }
+    };
+};
+
+/**
  * Factoría para la creación de entidades de Pong.
  *
  * @responsibility Instanciar la bola, las paletas y el estado global con los componentes correctos.
@@ -36,11 +60,11 @@ export const PongEntityFactory = {
    * Uses `gameplayRandom` to determine initial vertical direction.
    */
   createBall(world: World) {
-    const ball = world.createEntity();
-    world.addComponent(ball, { type: "Transform", x: PONG_CONFIG.WIDTH / 2, y: PONG_CONFIG.HEIGHT / 2, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-    world.addComponent(ball, { type: "Velocity", dx: PONG_CONFIG.BALL_SPEED_START, dy: PONG_CONFIG.BALL_SPEED_START * (RandomService.getGameplayRandom().next() > 0.5 ? 1 : -1) } as VelocityComponent);
-    world.addComponent(ball, { type: "Render", shape: "circle", size: PONG_CONFIG.BALL_SIZE, color: "white", rotation: 0 } as RenderComponent);
-    world.addComponent(ball, {
+    const { entity: ball, add } = createBaseEntity(world);
+    add({ type: "Transform", x: PONG_CONFIG.WIDTH / 2, y: PONG_CONFIG.HEIGHT / 2, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+    add({ type: "Velocity", dx: PONG_CONFIG.BALL_SPEED_START, dy: PONG_CONFIG.BALL_SPEED_START * (RandomService.getGameplayRandom().next() > 0.5 ? 1 : -1) } as VelocityComponent);
+    add({ type: "Render", shape: "circle", size: PONG_CONFIG.BALL_SIZE, color: "white", rotation: 0 } as RenderComponent);
+    add({
       type: "Collider2D",
       shape: { type: "circle", radius: PONG_CONFIG.BALL_SIZE },
       layer: CollisionLayers.PROJECTILE,
@@ -50,9 +74,9 @@ export const PongEntityFactory = {
       isTrigger: false,
       enabled: true
     } as Collider2DComponent);
-    world.addComponent(ball, { type: "Boundary", width: PONG_CONFIG.WIDTH, height: PONG_CONFIG.HEIGHT, behavior: "bounce", bounceX: false, bounceY: true } as BoundaryComponent);
-    world.addComponent(ball, { type: "Tag", tags: ["Ball"] } as TagComponent);
-    world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as BallComponent);
+    add({ type: "Boundary", width: PONG_CONFIG.WIDTH, height: PONG_CONFIG.HEIGHT, behavior: "bounce", bounceX: false, bounceY: true } as BoundaryComponent);
+    add({ type: "Tag", tags: ["Ball"] } as TagComponent);
+    add({ type: "Ball", spinFactor: 0, spinDecay: 0.02 } as BallComponent);
     return ball;
   },
 
@@ -62,18 +86,18 @@ export const PongEntityFactory = {
    * @param side - Which side of the screen the paddle belongs to.
    */
   createPaddle(world: World, side: "left" | "right") {
-    const paddle = world.createEntity();
+    const { entity: paddle, add } = createBaseEntity(world);
     const x = side === "left" ? 40 : PONG_CONFIG.WIDTH - 40;
     const y = PONG_CONFIG.HEIGHT / 2;
-    world.addComponent(paddle, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-    world.addComponent(paddle, { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent);
-    world.addComponent(paddle, { type: "Render", shape: "polygon", size: PONG_CONFIG.PADDLE_WIDTH, color: "white", rotation: 0, vertices: [
+    add({ type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+    add({ type: "Velocity", dx: 0, dy: 0 } as VelocityComponent);
+    add({ type: "Render", shape: "polygon", size: PONG_CONFIG.PADDLE_WIDTH, color: "white", rotation: 0, vertices: [
       { x: -PONG_CONFIG.PADDLE_WIDTH / 2, y: -PONG_CONFIG.PADDLE_HEIGHT / 2 },
       { x: PONG_CONFIG.PADDLE_WIDTH / 2, y: -PONG_CONFIG.PADDLE_HEIGHT / 2 },
       { x: PONG_CONFIG.PADDLE_WIDTH / 2, y: PONG_CONFIG.PADDLE_HEIGHT / 2 },
       { x: -PONG_CONFIG.PADDLE_WIDTH / 2, y: PONG_CONFIG.PADDLE_HEIGHT / 2 },
     ] } as RenderComponent);
-    world.addComponent(paddle, {
+    add({
       type: "Collider2D",
       shape: { type: "aabb", halfWidth: PONG_CONFIG.PADDLE_WIDTH / 2, halfHeight: PONG_CONFIG.PADDLE_HEIGHT / 2 },
       layer: CollisionLayers.PLAYER,
@@ -83,14 +107,14 @@ export const PongEntityFactory = {
       isTrigger: false,
       enabled: true
     } as Collider2DComponent);
-    world.addComponent(paddle, { type: "Tag", tags: ["Paddle", side] } as TagComponent);
-    world.addComponent(paddle, { type: "Paddle", side, previousY: y, lastVelocityY: 0 } as PaddleComponent);
+    add({ type: "Tag", tags: ["Paddle", side] } as TagComponent);
+    add({ type: "Paddle", side, previousY: y, lastVelocityY: 0 } as PaddleComponent);
     return paddle;
   },
 
   createGameState(world: World) {
-    const state = world.createEntity();
-    world.addComponent(state, { type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1 } as PongStateComponent);
+    const { entity: state, add } = createBaseEntity(world);
+    add({ type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1 } as PongStateComponent);
     return state;
   }
 };
