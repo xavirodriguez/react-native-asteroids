@@ -276,13 +276,16 @@ export class DeterministicSimulation {
     }
 
     private static splitAsteroid(world: World, asteroidEntity: Entity) {
-        const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid")!;
-        const position = world.getComponent<TransformComponent>(asteroidEntity, "Transform")!;
-        const config = ASTEROID_SPLIT_CONFIG[asteroid.size];
+        const asteroid = world.getComponent<AsteroidComponent>(asteroidEntity, "Asteroid");
+        const position = world.getComponent<TransformComponent>(asteroidEntity, "Transform");
 
-        if (config) {
-            createAsteroid({ world, x: position.x + config.offset, y: position.y + config.offset, size: config.nextSize, deferred: true });
-            createAsteroid({ world, x: position.x - config.offset, y: position.y - config.offset, size: config.nextSize, deferred: true });
+        if (asteroid && position) {
+          const config = ASTEROID_SPLIT_CONFIG[asteroid.size];
+
+          if (config) {
+              createAsteroid({ world, x: position.x + config.offset, y: position.y + config.offset, size: config.nextSize, deferred: true });
+              createAsteroid({ world, x: position.x - config.offset, y: position.y - config.offset, size: config.nextSize, deferred: true });
+          }
         }
         world.getCommandBuffer().removeEntity(asteroidEntity);
     }

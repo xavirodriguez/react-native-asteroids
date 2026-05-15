@@ -48,13 +48,11 @@ export class PowerUpSystem extends System {
       } as import("../core/CoreComponents").ModifierStackComponent);
     }
 
-    // Apply modifier via mutation if stack exists, or queue it
-    // For now, we always use mutateComponent which works if the component exists.
-    // If it was just added via command buffer, it won't be available until next frame.
-    // So we use the CommandBuffer.mutateComponent which is designed for this.
+    // Apply modifier via mutation.
+    // CommandBuffer.mutateComponent handles cases where the component was just added.
     commands.mutateComponent(shipEntity, "ModifierStack", (stack: import("../core/CoreComponents").ModifierStackComponent) => {
       stack.modifiers.push({
-        id: `pw_${powerUp.powerUpType}_${Date.now()}`,
+        id: `pw_${powerUp.powerUpType}_${world.tick}_${shipEntity}`,
         type: powerUp.powerUpType,
         value: powerUp.value,
         duration: powerUp.duration,

@@ -50,8 +50,8 @@ export class RenderUpdateSystem extends System {
       const render = world.getComponent<RenderComponent>(entity, "Render");
 
       if (render && render.angularVelocity) {
-        const offset = world.getComponent<import("../core/CoreComponents").VisualOffsetComponent>(entity, "VisualOffset");
-        if (!offset) {
+        const hasOffset = world.hasComponent(entity, "VisualOffset");
+        if (!hasOffset) {
           world.getCommandBuffer().addComponent(entity, {
             type: "VisualOffset", x: 0, y: 0, rotation: 0, scaleX: 0, scaleY: 0
           } as import("../core/CoreComponents").VisualOffsetComponent);
