@@ -10,7 +10,7 @@ import type { GameStateComponent, InputState } from "../games/space-invaders/typ
 /**
  * Custom hook to manage the lifecycle of the Space Invaders game engine.
  */
-export function useSpaceInvadersGame(isMultiplayer: boolean = false) {
+export function useSpaceInvadersGame(isMultiplayer: boolean = false, seed?: number) {
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export function useSpaceInvadersGame(isMultiplayer: boolean = false) {
     useGame<SpaceInvadersGame, GameStateComponent, InputState>(
       SpaceInvadersGame,
       isMultiplayer,
-      { gameOptions, initialState: INITIAL_GAME_STATE }
+      { gameOptions, initialState: INITIAL_GAME_STATE, seed }
     );
 
   const { highScore, updateHighScore } = useHighScore("space-invaders-high-score");
