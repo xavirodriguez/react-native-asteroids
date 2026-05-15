@@ -35,32 +35,41 @@ export class AnimationSystem extends System {
     const animators = world.query("Animator");
     for (let i = 0; i < animators.length; i++) {
       const entity = animators[i];
-      const anim = world.getComponent<AnimatorComponent>(entity, "Animator");
-      if (!anim || !anim.animations[anim.current]) continue;
 
-      const config = anim.animations[anim.current];
-      anim.elapsed += deltaTime;
+      world.mutateComponent<AnimatorComponent>(entity, "Animator", (anim) => {
+        const config = anim.animations[anim.current];
+        if (!config) return;
 
-      const frameDuration = 1000 / config.fps;
-      const totalFrames = config.frames.length;
+        anim.elapsed += deltaTime;
 
-      if (anim.elapsed >= frameDuration) {
-        const framesToAdvance = Math.floor(anim.elapsed / frameDuration);
-        anim.elapsed %= frameDuration;
+        const frameDuration = 1000 / config.fps;
+        const totalFrames = config.frames.length;
 
-        const nextFrameIdx = anim.frame + framesToAdvance;
+        if (anim.elapsed >= frameDuration) {
+          const framesToAdvance = Math.floor(anim.elapsed / frameDuration);
+          anim.elapsed %= frameDuration;
 
-        if (nextFrameIdx >= totalFrames) {
-          if (config.loop) {
-            anim.frame = nextFrameIdx % totalFrames;
+          const nextFrameIdx = anim.frame + framesToAdvance;
+
+          if (nextFrameIdx >= totalFrames) {
+            if (config.loop) {
+              anim.frame = nextFrameIdx % totalFrames;
+            } else {
+              anim.frame = totalFrames - 1;
+              if (config.onComplete) {
+                // We use a deferred event or command buffer if onComplete needs to be safe.
+                // For now, we assume onComplete might perform structural changes,
+                // but the system itself doesn't know.
+                // To be safe, we wrap it in a way that respects the rules if possible,
+                // or just call it if it's already using the CommandBuffer.
+                config.onComplete(entity);
+              }
+            }
           } else {
-            anim.frame = totalFrames - 1;
-            config.onComplete?.(entity);
+            anim.frame = nextFrameIdx;
           }
-        } else {
-          anim.frame = nextFrameIdx;
         }
-      }
+      });
     }
   }
 }

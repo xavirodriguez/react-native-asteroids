@@ -23,13 +23,14 @@ export class InputBufferSystem extends System {
     const entities = world.query("InputBuffer");
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
-      const buffer = world.getComponent<InputBufferComponent>(entity, "InputBuffer");
-      if (buffer && buffer.bufferTimer > 0) {
-        buffer.bufferTimer -= deltaTime;
-        if (buffer.bufferTimer <= 0) {
-          buffer.bufferedAction = null;
+      world.mutateComponent<InputBufferComponent>(entity, "InputBuffer", (buffer) => {
+        if (buffer.bufferTimer > 0) {
+          buffer.bufferTimer -= deltaTime;
+          if (buffer.bufferTimer <= 0) {
+            buffer.bufferedAction = null;
+          }
         }
-      }
+      });
     }
   }
 
@@ -41,11 +42,10 @@ export class InputBufferSystem extends System {
    * @param duration - Optional override for how long the action remains valid (ms).
    */
   public static buffer(world: World, entity: Entity, action: string, duration?: number): void {
-    const buffer = world.getComponent<InputBufferComponent>(entity, "InputBuffer");
-    if (buffer) {
+    world.mutateComponent<InputBufferComponent>(entity, "InputBuffer", (buffer) => {
       buffer.bufferedAction = action;
       buffer.bufferTimer = duration || buffer.bufferDuration;
-    }
+    });
   }
 
   /**
@@ -53,12 +53,14 @@ export class InputBufferSystem extends System {
    * @returns True if the action was successfully consumed.
    */
   public static consume(world: World, entity: Entity, action: string): boolean {
-    const buffer = world.getComponent<InputBufferComponent>(entity, "InputBuffer");
-    if (buffer && buffer.bufferedAction === action) {
-      buffer.bufferedAction = null;
-      buffer.bufferTimer = 0;
-      return true;
-    }
-    return false;
+    let consumed = false;
+    world.mutateComponent<InputBufferComponent>(entity, "InputBuffer", (buffer) => {
+      if (buffer.bufferedAction === action) {
+        buffer.bufferedAction = null;
+        buffer.bufferTimer = 0;
+        consumed = true;
+      }
+    });
+    return consumed;
   }
 }

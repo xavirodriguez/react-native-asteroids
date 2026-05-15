@@ -148,7 +148,7 @@ export class AsteroidsGame
       this.applyInputToEntity(localPlayer, input);
     }
 
-    DeterministicSimulation.update(this.world, deltaTime, { isResimulating: false });
+    this.runSimulationStep(deltaTime, false);
 
     // Store for reconciliation
     const lp = this.world.query("LocalPlayer")[0];
@@ -171,6 +171,14 @@ export class AsteroidsGame
     if (this.inputHistory.length > this.MAX_HISTORY) {
       this.inputHistory.shift();
     }
+  }
+
+  /**
+   * Runs a single deterministic simulation step.
+   * Internal API used by prediction, reconciliation and replay.
+   */
+  public runSimulationStep(deltaTime: number, isResimulating: boolean) {
+    DeterministicSimulation.update(this.world, deltaTime, { isResimulating });
   }
 
   /**
@@ -429,7 +437,7 @@ export class AsteroidsGame
           if (lp !== undefined) {
             this.applyInputToEntity(lp, input);
           }
-          DeterministicSimulation.update(this.world, 16.66, { isResimulating: true });
+          this.runSimulationStep(16.66, true);
 
           // Re-save prediction after re-simulation
           const lp_resim = this.world.query("LocalPlayer")[0];

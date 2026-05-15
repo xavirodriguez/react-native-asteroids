@@ -53,7 +53,7 @@ export class ReplayManager {
       }
     });
 
-    import("../simulation/DeterministicSimulation").DeterministicSimulation.update(game.getWorld(), deltaTime, { isResimulating: false });
+    game.runSimulationStep(deltaTime, false);
 
     this.currentFrameIndex++;
   }
