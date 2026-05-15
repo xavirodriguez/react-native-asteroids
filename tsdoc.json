@@ -79,6 +79,8 @@
     "@alpha": true,
     "@beta": true,
     "@link": true,
-    "@defaultValue": true
+    "@defaultValue": true,
+    "@packageDocumentation": true,
+    "@example": true
   }
 }

@@ -1,32 +1,37 @@
 /**
- * Bus de eventos tipado para la comunicación desacoplada entre sistemas y escenas.
- * Implementa el patrón Pub/Sub con soporte para espacios de nombres y comodines (wildcards).
+ * Typed Event Bus for decoupled communication between systems and scenes.
+ * Implements the Pub/Sub pattern with support for namespaces and wildcards.
  *
  * @remarks
- * Los eventos pueden ser específicos (ej: `player:hit`) o genéricos mediante asterisco (ej: `player:*` o `*`).
+ * Events can be specific (e.g., `player:hit`) or generic using asterisks (e.g., `player:*` or `*`).
  */
 export type EventHandler<T = unknown> = (payload: T, event: string) => void;
 
 /**
- * Sistema de mensajería diseñado para la comunicación síncrona y diferida basada en el patrón Pub/Sub.
+ * Messaging system designed for synchronous and deferred communication based on the Pub/Sub pattern.
+ *
+ * API status: Public
+ *
+ * Responsibility: Dispatch notifications to registered subscribers.
+ *
+ * Responsibility: Isolate errors of individual listeners via try-catch blocks.
+ *
+ * Responsibility: Protect against infinite recursion via a depth counter.
  *
  * @remarks
- * El EventBus facilita el desacoplamiento entre sistemas. Soporta nombres de eventos
- * jerárquicos y comodines. Permite emitir eventos síncronos y diferidos. Los eventos diferidos son útiles
- * para evitar efectos secundarios inmediatos (como SFX) que podrían romper el determinismo
- * si se ejecutan durante la fase de resimulación/rollback.
+ * The EventBus facilitates decoupling between systems. It supports hierarchical
+ * event names and wildcards. Allows emitting synchronous and deferred events. Deferred events are useful
+ * to avoid immediate side effects (like SFX) that could break determinism
+ * if executed during the resimulation/rollback phase.
  *
- * @responsibility Despachar notificaciones a los subscriptores registrados.
- * @responsibility Aislar errores de listeners individuales mediante bloques try-catch.
- * @responsibility Proteger contra recursión infinita mediante un contador de profundidad.
+ * Conceptual Risk: [ORDER][MEDIUM] The execution order of handlers for the same event
+ * is not guaranteed and should not be relied upon.
  *
- * @conceptualRisk [ORDER][MEDIUM] El orden de ejecución de los handlers para un mismo evento
- * no está garantizado y no se debe depender del orden de registro.
+ * ### Features
  *
- * ### Características:
- * 1. **Emit Synchronous**: `emit()` ejecuta los suscriptores inmediatamente.
- * 2. **Emit Deferred**: `emitDeferred()` encola el evento para ser procesado al final del frame.
- * 3. **Recursion Guard**: Protege contra bucles infinitos de eventos limitando la profundidad a 10 niveles.
+ * 1. **Emit Synchronous**: `emit()` executes subscribers immediately.
+ * 2. **Emit Deferred**: `emitDeferred()` enqueues the event to be processed at the end of the frame.
+ * 3. **Recursion Guard**: Protects against infinite event loops by limiting depth to 10 levels.
  */
 export class EventBus {
   private handlers = new Map<string, Set<EventHandler<unknown>>>();
@@ -35,12 +40,12 @@ export class EventBus {
   private readonly MAX_RECURSION = 10;
 
   /**
-   * Suscribe un controlador a un evento específico o patrón.
+   * Subscribes a handler to a specific event or pattern.
    *
-   * @param event - Nombre del evento o patrón (ej: "game:score_changed", "entity:*").
-   * @param handler - Función callback que recibirá los datos del evento.
+   * @param event - Event name or pattern (e.g., "game:score_changed", "entity:*").
+   * @param handler - Callback function that will receive the event data.
    *
-   * @postcondition El handler se añadirá al conjunto de subscriptores del evento.
+   * Postcondition: The handler will be added to the set of event subscribers.
    */
   public on<T = unknown>(event: string, handler: EventHandler<T>): void {
     if (!this.handlers.has(event)) {
@@ -50,12 +55,12 @@ export class EventBus {
   }
 
   /**
-   * Suscribe un controlador que se ejecutará una sola vez.
+   * Subscribes a handler that will be executed only once.
    *
-   * @param event - Nombre del evento.
-   * @param handler - Función callback.
+   * @param event - Event name.
+   * @param handler - Callback function.
    *
-   * @postcondition Se intenta eliminar el handler automáticamente tras la primera ejecución exitosa.
+   * Postcondition: The handler is automatically removed after the first successful execution.
    */
   public once<T = unknown>(event: string, handler: EventHandler<T>): void {
     const onceHandler: EventHandler<T> = (payload, eventName) => {
@@ -76,14 +81,14 @@ export class EventBus {
   }
 
   /**
-   * Emite un evento y notifica a los subscriptores que coincidan con el nombre o patrón.
+   * Emits an event and notifies subscribers that match the name or pattern.
    *
    * @remarks
-   * La notificación se realiza de forma síncrona. Primero se notifican los subscriptores exactos,
-   * luego los de espacio de nombres (ej: "game:*") y finalmente el comodín global ("*").
+   * The notification is performed synchronously. Exact subscribers are notified first,
+   * then namespace subscribers (e.g., "game:*") and finally the global wildcard ("*").
    *
-   * @param event - Nombre del evento.
-   * @param payload - Datos asociados al evento.
+   * @param event - Event name.
+   * @param payload - Data associated with the event.
    */
   public emit<T = unknown>(event: string, payload?: T): void {
     if (this.emitDepth >= this.MAX_RECURSION) {

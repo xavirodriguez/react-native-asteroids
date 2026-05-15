@@ -3,14 +3,11 @@ import { World } from "./World";
 /**
  * Standard phases for system execution order.
  *
+ * API status: Public
+ *
  * @remarks
- * Systems are executed sequentially in this order:
- * 1. `Input` - Processing user or network input.
- * 2. `Simulation` - Physics integration, movement, and basic state logic.
- * 3. `Collision` - Detection and resolution of collisions.
- * 4. `GameRules` - High-level logic (scoring, health, win/loss conditions).
- * 5. `Transform` - Hierarchy propagation and world matrix calculation.
- * 6. `Presentation` - Audio, visual effects, and preparing data for the renderer.
+ * Systems are executed sequentially based on these phases.
+ * See {@link BaseGame} for the canonical execution pipeline details.
  *
  * Mutation Rules per Phase:
  * - `Input`: Must NOT mutate component data.
@@ -49,9 +46,13 @@ export interface SystemConfig {
 /**
  * Abstract base class for all ECS Systems.
  *
- * @responsibility Encapsulate game logic in a decoupled manner.
- * @responsibility Transform world state based on time increments (ticks).
- * @responsibility Maintain pure simulation by operating only on components and resources.
+ * API status: Public
+ *
+ * Responsibility: Encapsulate game logic in a decoupled manner.
+ *
+ * Responsibility: Transform world state based on time increments (ticks).
+ *
+ * Responsibility: Maintain pure simulation by operating only on components and resources.
  *
  * @remarks
  * Systems encapsulate logic and behavior. They typically operate on sets of
@@ -61,7 +62,7 @@ export interface SystemConfig {
  *
  * Execution order is managed via {@link SystemPhase} and priorities.
  *
- * @example
+ * Example:
  * ```ts
  * class PhysicsSystem extends System {
  *   update(world: World, deltaTime: number) {
@@ -93,11 +94,11 @@ export abstract class System {
    * during query iteration can invalidate iterators. Use {@link World.getCommandBuffer}
    * to buffer these operations for the end of the tick.
    *
-   * @precondition World state should be consistent at the start of the update cycle.
-   * @postcondition Mutations should respect component contracts.
-   * @sideEffect May create/remove entities, add/remove components, or emit events.
+   * Precondition: World state should be consistent at the start of the update cycle.
+   * Postcondition: Mutations should respect component contracts.
+   * Side Effect: May create/remove entities, add/remove components, or emit events.
    *
-   * @conceptualRisk [UNIT_CONSISTENCY][LOW] `deltaTime` is in milliseconds.
+   * Conceptual Risk: [UNIT_CONSISTENCY][LOW] `deltaTime` is in milliseconds.
    * Physics integrations (e.g., velocity) typically expect seconds, requiring
    * division by 1000.
    */

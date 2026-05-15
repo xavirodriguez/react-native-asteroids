@@ -51,16 +51,33 @@ export enum GameStatus {
 /**
  * Main orchestrator of the game lifecycle and engine state.
  *
- * @responsibility Coordinate the initialization of systems and entities.
- * @responsibility Manage pause, resume, and restart transitions atomically via `_transitionLock`.
- * @responsibility Provide unified access to the ECS World and global resources.
+ * API status: Public
+ *
+ * Responsibility: Coordinate the initialization of systems and entities.
+ *
+ * Responsibility: Manage pause, resume, and restart transitions atomically via `_transitionLock`.
+ *
+ * Responsibility: Provide unified access to the ECS World and global resources.
  *
  * @remarks
  * This abstract class implements the engine's core loop, managing transitions between states
  * and ensuring a predictable execution pipeline. It utilizes a transition lock to
  * prevent race conditions during asynchronous initialization and scene swaps.
  *
- * ### Deterministic Simulation vs. Visual Presentation:
+ * ### Standard Units
+ *
+ * - **Position/Distance**: Pixels `[px]`
+ * - **Linear Velocity**: Pixels per second `[px/s]`
+ * - **Linear Acceleration**: Pixels per second squared `[px/s^2]`
+ * - **Rotation**: Radians `[rad]`
+ * - **Angular Velocity**: Radians per second `[rad/s]`
+ * - **System deltaTime**: Milliseconds `[ms]`
+ * - **Physics Integration**: Seconds `[s]` (Low-level solvers)
+ * - **Durations/Timers**: Milliseconds `[ms]`
+ * - **Rates**: Per second `[1/s]` (e.g., Particle emission)
+ *
+ * ### Deterministic Simulation vs. Visual Presentation
+ *
  * The engine enforces a strict boundary between the authoritative **Deterministic Simulation**
  * and the **Visual Presentation** layer:
  *
@@ -72,9 +89,27 @@ export enum GameStatus {
  *   to provide smooth motion regardless of the simulation tick rate. Visual-only effects
  *   (Juice, Particles, UI) should reside here and NOT affect the simulation state.
  *
- * ### Canonical Execution Pipeline (Fixed Update):
+ * ### State Classification
  *
- * | Order | Phase | typical Systems | Mutation Rules |
+ * To ensure determinism, state is classified into the following categories:
+ *
+ * 1. **Gameplay Deterministic State**: Authoritative state required for simulation (e.g., `Transform`, `Velocity`, `Health`). Must be serializable.
+ * 2. **Presentation-only State**: Visual-only data (e.g., `Render`, `VisualOffset`, `ParticleEmitter`). Does NOT affect gameplay.
+ * 3. **Derived/Cache State**: Data computed from authoritative state (e.g., `SpatialGrid` nodes, `worldX`). Can be rebuilt.
+ * 4. **Debug-only State**: Data used for development tools (e.g., `SystemProfiler` metrics).
+ * 5. **Non-serializable Runtime State**: References to services or heavy objects (e.g., `EventBus`, `AudioSystem`).
+ *
+ * ### Determinism Rules
+ *
+ * - Presentation logic MUST NOT modify authoritative gameplay state.
+ * - Visual effects MUST NOT modify `TransformComponent` if it affects physics or networking.
+ * - Randomness in gameplay MUST use `RandomService.getGameplayRandom()`.
+ * - Randomness in presentation MUST use `RandomService.getRenderRandom()`.
+ * - Snapshots for Replay/Rollback include ONLY authoritative state.
+ *
+ * ### Canonical Execution Pipeline (Fixed Update)
+ *
+ * | Order | Phase | Typical Systems | Mutation Rules |
  * | :--- | :--- | :--- | :--- |
  * | 1 | **PRE-UPDATE** | `InterpolationPrepSystem` | May read current Transform, Must mutate `PreviousTransform`. |
  * | 2 | **INPUT** | `UnifiedInputSystem` | Must NOT mutate simulation state. Mutates `InputState` resource. |
@@ -88,11 +123,11 @@ export enum GameStatus {
  * | 10 | **DEFERRED** | `EventBus.processDeferred` | Side effects (SFX, logs) isolated from core simulation. |
  *
  * ### Initialization Machine:
- * UNINITIALIZED --(init)--> INITIALIZING --(register systems)--> READY --(start)--> RUNNING
+ * UNINITIALIZED -\> INITIALIZING -\> READY -\> RUNNING
  *
- * @conceptualRisk [DETERMINISM][CRITICAL] `currentTick` overflow happens after ~285,000 years,
+ * Conceptual Risk: [DETERMINISM][CRITICAL] `currentTick` overflow happens after ~285,000 years,
  * but buffer precision limits may be hit significantly earlier.
- * @conceptualRisk [ASYNC_RACE][HIGH] Calling `start()` before the `init()` promise resolves
+ * Conceptual Risk: [ASYNC_RACE][HIGH] Calling `start()` before the `init()` promise resolves
  * will lead to inconsistent simulation. Handled via state checks and locks.
  *
  * @public
@@ -317,8 +352,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * Starts the simulation loop.
    *
    * @throws Error - If called before `init` or on a destroyed game.
-   * @postcondition {@link GameLoop} begins dispatching updates.
-   * @postcondition Status transitions to `RUNNING`.
+   * Postcondition: {@link GameLoop} begins dispatching updates.
+   * Postcondition: Status transitions to `RUNNING`.
    */
   public start(): void {
     if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.INITIALIZING) {
@@ -337,8 +372,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   /**
    * Stops the simulation loop.
    *
-   * @postcondition {@link GameLoop} stops.
-   * @postcondition Status transitions to `STOPPED`.
+   * Postcondition: {@link GameLoop} stops.
+   * Postcondition: Status transitions to `STOPPED`.
    */
   public stop(): void {
     if (
@@ -359,8 +394,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * @remarks
    * Idempotent. Only effective if status is `RUNNING`.
    *
-   * @postcondition `_isPaused` set to `true`.
-   * @sideEffect Notifies current scene and external subscribers.
+   * Postcondition: `_isPaused` set to `true`.
+   * Side Effect: Notifies current scene and external subscribers.
    */
   public pause(): void {
     if (this._status !== GameStatus.RUNNING || this._isPaused) return;
@@ -375,7 +410,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * @remarks
    * Idempotent. Only effective if currently paused.
    *
-   * @postcondition `_isPaused` set to `false`.
+   * Postcondition: `_isPaused` set to `false`.
    */
   public resume(): void {
     if (this._status !== GameStatus.RUNNING || !this._isPaused) return;
@@ -405,8 +440,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * - Otherwise, clears the global World, re-registers systems, and re-spawns entities.
    *
    * @param seed - Optional new seed for deterministic PRNG.
-   * @postcondition Tick counter reset to 0.
-   * @sideEffect Clears `EventBus`, `spatialGrid`, and {@link World}.
+   * Postcondition: Tick counter reset to 0.
+   * Side Effect: Clears `EventBus`, `spatialGrid`, and {@link World}.
    */
   public async restart(seed?: number): Promise<void> {
     if (this._status === GameStatus.DESTROYED) {
@@ -479,7 +514,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * Stops the loop, cleans up input listeners, and clears subscriptions.
    * Once destroyed, the instance cannot be reused.
    *
-   * @postcondition Status set to `DESTROYED`.
+   * Postcondition: Status set to `DESTROYED`.
    */
   public destroy(): void {
     if (this._status === GameStatus.DESTROYED) {
@@ -528,7 +563,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * 4. Transition status to `READY`.
    *
    * @throws Error - If already initialized or currently in progress.
-   * @postcondition World is configured and ready for simulation.
+   * Postcondition: World is configured and ready for simulation.
    */
   public async init(): Promise<void> {
     if (this._status === GameStatus.DESTROYED) return;

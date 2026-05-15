@@ -1,17 +1,31 @@
 /**
  * @packageDocumentation
- * Entrypoint principal de TinyAsterEngine.
+ * Main entrypoint for the TinyAsterEngine.
  *
- * Este archivo consolida y expone la API pública del motor, organizada por dominios.
- * Se priorizan las versiones modernas y canónicas de cada sistema.
- *
- * Warning: Algunas exportaciones pueden incluir componentes internos necesarios para la extensibilidad,
- * pero cuyo uso directo no está recomendado para lógica de alto nivel.
+ * API status: Public
  *
  * @remarks
- * El motor está diseñado con la intención de mitigar las alocaciones en hot-paths, aunque no pretende garantizar
- * un comportamiento "zero-allocation" absoluto. Se busca facilitar la reproducibilidad de la simulación
- * bajo condiciones operativas controladas.
+ * This file consolidates and exposes the public API of the engine, organized by domains.
+ * Modern and canonical versions of each system are prioritized.
+ *
+ * Warning: Some exports may include internal components necessary for extensibility
+ * but are not recommended for high-level logic.
+ *
+ * The engine is designed with the intention of minimizing allocations in hot paths, although it does not
+ * guarantee absolute zero-allocation. It aims to facilitate simulation reproducibility
+ * under controlled operating conditions.
+ *
+ * ### Standard Units
+ *
+ * - **Position/Distance**: Pixels `[px]`
+ * - **Linear Velocity**: Pixels per second `[px/s]`
+ * - **Linear Acceleration**: Pixels per second squared `[px/s^2]`
+ * - **Rotation**: Radians `[rad]`
+ * - **Angular Velocity**: Radians per second `[rad/s]`
+ * - **System deltaTime**: Milliseconds `[ms]`
+ * - **Physics Integration**: Seconds `[s]` (Low-level solvers)
+ * - **Durations/Timers**: Milliseconds `[ms]`
+ * - **Rates**: Per second `[1/s]` (e.g., Particle emission)
  */
 
 // --- CORE ECS ---

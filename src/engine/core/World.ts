@@ -15,10 +15,12 @@ interface RegisteredSystem {
 /**
  * ECS World - Central registry managing the lifecycle of entities, components, and systems.
  *
- * @responsibility Manage entity creation and destruction (ID recycling).
- * @responsibility Provide high-performance access to component storage.
- * @responsibility Orchestrate system execution across specific phases.
- * @responsibility Maintain global shared resources.
+ * API status: Public
+ *
+ * Responsibility: Manage entity creation and destruction (ID recycling).
+ * Responsibility: Provide high-performance access to component storage.
+ * Responsibility: Orchestrate system execution across specific phases.
+ * Responsibility: Maintain global shared resources.
  *
  * @remarks
  * The `World` is the core of the ECS architecture. It is designed to minimize GC pressure
@@ -61,9 +63,9 @@ interface RegisteredSystem {
  * 2. **Snapshotting Cost**: Methods like `snapshot()` and `deltaSnapshot()` are O(N) relative
  *    to component counts. Use sparingly in high-frequency paths.
  *
- * @conceptualRisk [VERSION_OVERFLOW][LOW] Versions are 32-bit integers; sessions lasting
+ * Conceptual Risk: [VERSION_OVERFLOW][LOW] Versions are 32-bit integers; sessions lasting
  * years might trigger overflow, though engine resets usually happen much earlier.
- * @conceptualRisk [GC_PRESSURE][MEDIUM] Frequent snapshots in worlds with \>1000 entities
+ * Conceptual Risk: [GC_PRESSURE][MEDIUM] Frequent snapshots in worlds with \>1000 entities
  * will increase garbage collection frequency.
  *
  * Example:
@@ -238,11 +240,11 @@ export class World {
    * Warning: Serialization is limited to POJO-compatible properties. Functions, Symbols,
    * and non-serializable objects (Maps, Sets) are omitted or may lose fidelity.
    *
-   * @precondition Recommended to call outside of an active system update to ensure logical consistency.
-   * @postcondition Returns a deep copy (via `structuredClone`) of serializable component data.
+   * Precondition: Recommended to call outside of an active system update to ensure logical consistency.
+   * Postcondition: Returns a deep copy (via `structuredClone`) of serializable component data.
    *
-   * @conceptualRisk [JSON_DETERMINISM][MEDIUM] Property order is not guaranteed across all environments.
-   * @conceptualRisk [GC_PRESSURE][MEDIUM] Frequent snapshots in large worlds increase GC overhead.
+   * Conceptual Risk: [JSON_DETERMINISM][MEDIUM] Property order is not guaranteed across all environments.
+   * Conceptual Risk: [GC_PRESSURE][MEDIUM] Frequent snapshots in large worlds increase GC overhead.
    */
   public snapshot(): WorldSnapshot {
     const gameplayRandom = RandomService.getInstance("gameplay");
@@ -306,12 +308,12 @@ export class World {
    * Rebuilds component maps, indices, and syncs existing queries to maintain consistency
    * without breaking references to {@link Query} objects.
    *
-   * @param state - The state object obtained from {@link World.snapshot}.
+   * @param state - The state object obtained from `snapshot`.
    *
-   * @precondition The state must be compatible with the engine version.
-   * @postcondition Versions (state and structure) are synchronized with the restored values.
-   * @sideEffect Clears current world state, resources remain untouched unless they depend on entities.
-   * @sideEffect Re-seeds `RandomService("gameplay")`.
+   * Precondition: The state must be compatible with the engine version.
+   * Postcondition: Versions (state and structure) are synchronized with the restored values.
+   * Side Effect: Clears current world state, resources remain untouched unless they depend on entities.
+   * Side Effect: Re-seeds `RandomService("gameplay")`.
    */
   public restore(state: WorldSnapshot): void {
     this.activeEntities = new Set(state.entities);
@@ -388,8 +390,8 @@ export class World {
    * @param id - Optional manual Entity ID. Primary use is state restoration or internal orchestration.
    * @returns A unique {@link Entity} identifier.
    *
-   * @postcondition Entity is registered as active or queued for activation.
-   * @sideEffect Increments {@link World.structureVersion}.
+   * Postcondition: Entity is registered as active or queued for activation.
+   * Side Effect: Increments {@link World.structureVersion}.
    */
   public createEntity(id?: Entity): Entity {
     const entityId = id ?? (this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++);
@@ -413,8 +415,8 @@ export class World {
   /**
    * Unregisters all systems from all execution phases.
    *
-   * @postcondition The system execution list is empty.
-   * @sideEffect Increments {@link World.structureVersion}.
+   * Postcondition: The system execution list is empty.
+   * Side Effect: Increments {@link World.structureVersion}.
    */
   clearSystems(): void {
     this.systems = [];
@@ -437,11 +439,11 @@ export class World {
    * @param component - Component instance (must have a `type` discriminator).
    * @returns The added component.
    *
-   * @precondition Entity must exist in the world.
-   * @postcondition Component is accessible via {@link World.getComponent} or {@link World.query}.
-   * @throws {Error} If assigning an entity as its own parent in a Transform.
-   * @sideEffect Increments {@link World.stateVersion}.
-   * @sideEffect Increments {@link World.structureVersion} if the component type is new for this entity.
+   * Precondition: Entity must exist in the world.
+   * Postcondition: Component is accessible via `getComponent` or {@link World.query}.
+   * Throws: Error - If assigning an entity as its own parent in a Transform.
+   * Side Effect: Increments {@link World.stateVersion}.
+   * Side Effect: Increments {@link World.structureVersion} if the component type is new for this entity.
    */
   addComponent<T extends Component>(entity: Entity, component: T): Readonly<T> {
     if (this.isUpdating) {
@@ -487,23 +489,27 @@ export class World {
   /**
    * Returns the live mutable component reference stored in the World.
    *
+   * API status: Public
+   *
    * @remarks
    * Direct mutations of the returned object bypass engine state tracking unless
    * manually notified via notifyStateChange.
-   * Prefer {@link World.mutateComponent} for controlled mutations that update versioning automatically.
+   * Prefer `mutateComponent` for controlled mutations that update versioning automatically.
    *
    * @param entity - The entity to query.
    * @param type - The discriminator name of the component.
    * @returns The component instance or `undefined` if it doesn't exist.
    */
   public getComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): ComponentOf<TType> | undefined;
-  public getComponent<T extends Component>(entity: Entity, type: string): T | undefined;
+   /** @internal */ public getComponent<T extends Component>(entity: Entity, type: string): T | undefined;
   public getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
     return this.componentMaps.get(type)?.get(entity) as T | undefined;
   }
 
   /**
    * Performs an immediate mutation on a component.
+   *
+   * API status: Public
    *
    * @remarks
    * Recommended pattern for component state changes.
@@ -577,9 +583,9 @@ export class World {
    * @param entity - Target entity.
    * @param type - Component type to remove.
    *
-   * @precondition Entity should exist in the world.
-   * @postcondition Queries depending on this component will no longer include this entity.
-   * @sideEffect Increments {@link World.structureVersion}.
+   * Precondition: Entity should exist in the world.
+   * Postcondition: Queries depending on this component will no longer include this entity.
+   * Side Effect: Increments {@link World.structureVersion}.
    */
   removeComponent(entity: Entity, type: string): void {
     if (this.isUpdating) {
@@ -657,8 +663,8 @@ export class World {
    * If called during {@link World.update}, destruction is deferred.
    *
    * @param entity - Entity ID to destroy.
-   * @postcondition Entity is inaccessible and its components are deleted.
-   * @sideEffect Increments {@link World.structureVersion}.
+   * Postcondition: Entity is inaccessible and its components are deleted.
+   * Side Effect: Increments {@link World.structureVersion}.
    */
   public removeEntity(entity: Entity): void {
     if (this.isUpdating) {
@@ -696,7 +702,7 @@ export class World {
    * Automatically called at the end of {@link World.update}. Should be called
    * manually if using the command buffer outside the standard loop.
    *
-   * @sideEffect Executes deferred creations, additions, and removals.
+   * Side Effect: Executes deferred creations, additions, and removals.
    */
   public flush(): void {
     this.commandBuffer.flush(this);
@@ -713,7 +719,7 @@ export class World {
    * @param filterEntities - Optional set for Interest Management (spatial culling).
    * @returns Partial {@link WorldSnapshot} with changed data.
    *
-   * @conceptualRisk [PERFORMANCE][HIGH] Cost is proportional to the total number of components.
+   * Conceptual Risk: [PERFORMANCE][HIGH] Cost is proportional to the total number of components.
    */
   public deltaSnapshot(sinceVersion: number, filterEntities?: Set<Entity>): Partial<WorldSnapshot> {
     const componentData: ComponentDataSnapshot = {};
@@ -763,8 +769,8 @@ export class World {
    * Clears entities, components, resources, and command buffers.
    * Systems registration remains intact.
    *
-   * @postcondition World is empty.
-   * @sideEffect Increments {@link World.structureVersion}.
+   * Postcondition: World is empty.
+   * Side Effect: Increments {@link World.structureVersion}.
    */
   public clear(): void {
     this.activeEntities.clear();
@@ -795,8 +801,8 @@ export class World {
    * @param name - Resource identifier.
    * @param resource - Instance or data object.
    *
-   * @postcondition Resource is accessible via {@link World.getResource}.
-   * @sideEffect Overwrites any existing resource with the same name.
+   * Postcondition: Resource is accessible via {@link World.getResource}.
+   * Side Effect: Overwrites any existing resource with the same name.
    */
   setResource<T>(name: string, resource: T): void {
     this.resources.set(name, resource);
@@ -821,7 +827,7 @@ export class World {
    * @param name - Resource to mutate.
    * @param mutator - Callback receiving the mutable resource.
    *
-   * @postcondition {@link World.stateVersion} is incremented.
+   * Postcondition: {@link World.stateVersion} is incremented.
    */
   mutateResource<T>(name: string, mutator: (resource: T) => void): void {
     const resource = this.resources.get(name) as T;
@@ -854,8 +860,8 @@ export class World {
    * @param system - System instance.
    * @param config - Execution configuration (phase, priority).
    *
-   * @precondition System must not be already registered.
-   * @sideEffect Triggers re-sorting of systems in the next update cycle.
+   * Precondition: System must not be already registered.
+   * Side Effect: Triggers re-sorting of systems in the next update cycle.
    */
   addSystem(system: System, config: SystemConfig = {}): void {
     // Prevent duplicate system instances
@@ -876,12 +882,12 @@ export class World {
    * @remarks
    * Execution Flow:
    * 1. Re-sort systems if needed.
-   * 2. Sequential execution by phase (Input -> Simulation -> Collision -> GameRules -> Presentation).
+   * 2. Sequential execution by phase (Input -\> Simulation -\> Collision -\> GameRules -\> Presentation).
    * 3. Consolidate structural changes via {@link World.flush}.
    *
    * @param deltaTime - Elapsed time since last tick in milliseconds.
    *
-   * @postcondition Simulation state advances and deferred mutations are applied.
+   * Postcondition: Simulation state advances and deferred mutations are applied.
    */
   update(deltaTime: number): void {
     this._tick++;
@@ -981,7 +987,7 @@ export class World {
    *
    * @remarks
    * Increments {@link World.stateVersion} and marks isRenderDirty.
-   * Use this when mutating component data directly without using {@link World.mutateComponent}.
+   * Use this when mutating component data directly without using `mutateComponent`.
    */
   public notifyStateChange(): void {
     this._stateVersion++;
@@ -1010,7 +1016,7 @@ export class World {
    *
    * **Note on references**: Returns a live mutable reference to the component.
    * Direct mutations of the returned object will **not** trigger versioning or
-   * rendering dirty flags. Use {@link World.mutateSingleton} for controlled updates.
+   * rendering dirty flags. Use `mutateSingleton` for controlled updates.
    *
    * @param type - Component discriminator.
    * @returns Found instance or `undefined`.
@@ -1025,6 +1031,8 @@ export class World {
 
   /**
    * Performs an immediate mutation on a Singleton component.
+   *
+   * API status: Public
    *
    * @remarks
    * Preferred way to update unique state components. Automatically notifies
