@@ -99,9 +99,6 @@ export default function SpaceInvadersScreen() {
         title="SPACE INVADERS"
         highScore={highScore}
         onStart={() => {
-          if (initialSeed !== undefined) {
-            restartWithSeed(initialSeed);
-          }
           setIsMulti(false);
           setStarted(true);
         }}
@@ -111,7 +108,7 @@ export default function SpaceInvadersScreen() {
         instructions={Platform.OS === "web" ? "←→ Mover  Espacio Disparar" : "Controles táctiles"}
         onSeedChange={setInitialSeed}
         onStartDaily={(dailySeed) => {
-          restartWithSeed(dailySeed);
+          setInitialSeed(dailySeed);
           setIsDaily(true);
           setIsMulti(false);
           setStarted(true);

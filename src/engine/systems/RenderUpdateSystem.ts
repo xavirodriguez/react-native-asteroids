@@ -55,11 +55,13 @@ export class RenderUpdateSystem extends System {
           world.getCommandBuffer().addComponent(entity, {
             type: "VisualOffset", x: 0, y: 0, rotation: 0, scaleX: 0, scaleY: 0
           } as import("../core/CoreComponents").VisualOffsetComponent);
-        } else {
-          world.mutateComponent(entity, "VisualOffset", (v: import("../core/CoreComponents").VisualOffsetComponent) => {
-            v.rotation += render.angularVelocity! * (deltaTime / 16.67);
-          });
         }
+
+        // We use mutateComponent here. If it was just added to CommandBuffer, it won't be found yet,
+        // which is fine, it will be updated in the next frame.
+        world.mutateComponent(entity, "VisualOffset", (v: import("../core/CoreComponents").VisualOffsetComponent) => {
+          v.rotation += render.angularVelocity! * (deltaTime / 16.67);
+        });
       }
     }
   }

@@ -36,6 +36,7 @@ export class AnimationSystem extends System {
     for (let i = 0; i < animators.length; i++) {
       const entity = animators[i];
 
+      let completed = false;
       world.mutateComponent<AnimatorComponent>(entity, "Animator", (anim) => {
         const config = anim.animations[anim.current];
         if (!config) return;
@@ -67,6 +68,15 @@ export class AnimationSystem extends System {
           }
         }
       });
+
+      if (completed) {
+        const anim = world.getComponent<AnimatorComponent>(entity, "Animator");
+        const config = anim?.animations[anim.current];
+        if (config?.onComplete) {
+          // config.onComplete should use CommandBuffer or emitDeferred if it does structural changes
+          config.onComplete(entity);
+        }
+      }
     }
   }
 }

@@ -43,7 +43,7 @@ export class SpatialPartitioningSystem extends System {
         }
     }
 
-    // Default viewport if no camera (e.g. 800x600 centered at 0,0)
+    // Default viewport if no camera (e.g. 800x600 starting at 0,0)
     const viewX = mainCam?.x ?? 0;
     const viewY = mainCam?.y ?? 0;
     const viewW = 800 / (mainCam?.zoom ?? 1);

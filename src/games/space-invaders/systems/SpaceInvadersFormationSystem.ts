@@ -49,6 +49,11 @@ export class SpaceInvadersFormationSystem extends System {
         f.stepDownPending = false;
         f.direction = (f.direction * -1) as 1 | -1;
       });
+      console.debug("[SpaceInvaders] formation step down", {
+        directionBefore,
+        directionAfter: formation.direction,
+        invaderCount: invaders.length,
+      });
     } else {
       const moveX = formation.direction * formation.speed * (deltaTime / 1000);
 
@@ -67,6 +72,17 @@ export class SpaceInvadersFormationSystem extends System {
       const willHitRight = formation.direction > 0 && maxX + moveX >= rightLimit;
       const willHitLeft = formation.direction < 0 && minX + moveX <= leftLimit;
 
+      console.debug("[SpaceInvaders] formation edge check", {
+        direction: formation.direction,
+        moveX,
+        minX,
+        maxX,
+        leftLimit,
+        rightLimit,
+        willHitLeft,
+        willHitRight,
+        stepDownPending: formation.stepDownPending,
+      });
 
       if (willHitRight || willHitLeft) {
         world.mutateComponent<FormationComponent>(formationEntity, "Formation", f => {

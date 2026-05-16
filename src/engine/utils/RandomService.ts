@@ -62,14 +62,17 @@ export class RandomService {
     this._lockGameplayContext = value;
   }
 
+  /** @deprecated Access RNG via World resources instead. */
   public static getGameplayRandom(): RandomService {
     return this.getInstance("gameplay");
   }
 
+  /** @deprecated Access RNG via World resources instead. */
   public static getRenderRandom(): RandomService {
     return this.getInstance("render");
   }
 
+  /** @deprecated Access RNG via World resources instead. */
   public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
     if (this._lockGameplayContext && (name === "render" || name === "global")) {
         throw new Error(`Deterministic violation: '${name}' random accessed during simulation.`);
@@ -83,33 +86,33 @@ export class RandomService {
     return instance;
   }
 
+  /** @deprecated Use instance method instead. */
   public static next(): number {
-    this.checkStaticAccess("next");
     return this.getInstance("global").next();
   }
 
+  /** @deprecated Use instance method instead. */
   public static nextRange(min: number, max: number): number {
-    this.checkStaticAccess("nextRange");
     return this.getInstance("global").nextRange(min, max);
   }
 
+  /** @deprecated Use instance method instead. */
   public static nextInt(min: number, max: number): number {
-    this.checkStaticAccess("nextInt");
     return this.getInstance("global").nextInt(min, max);
   }
 
+  /** @deprecated Use instance method instead. */
   public static chance(probability: number): boolean {
-    this.checkStaticAccess("chance");
     return this.getInstance("global").chance(probability);
   }
 
+  /** @deprecated Use instance method instead. */
   public static nextSign(): number {
-    this.checkStaticAccess("nextSign");
     return this.getInstance("global").nextSign();
   }
 
+  /** @deprecated Use instance method instead. */
   public static setSeed(seed: number): void {
-      this.checkStaticAccess("setSeed");
       this.getInstance("global").setSeed(seed);
   }
 

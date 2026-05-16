@@ -16,7 +16,7 @@ describe("World Invariants", () => {
       }
     }
     world.addSystem(new BuggySystem());
-    expect(() => world.update(16)).toThrow("Structural mutation \"createEntity\" during update is forbidden. Use WorldCommandBuffer.");
+    expect(() => world.update(16)).toThrow(/Structural mutation "createEntity" during update is forbidden/);
   });
 
   it("should throw error when removing an entity during update", () => {

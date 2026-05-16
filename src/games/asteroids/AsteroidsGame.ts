@@ -243,7 +243,7 @@ export class AsteroidsGame
     // Acknowledge the received state version to the server
     const eventBus = this.world.getResource<import("../../engine/core/EventBus").EventBus>("EventBus");
     if (eventBus && delta.stateVersion !== undefined) {
-      eventBus.emit("net:ack_version", { version: delta.stateVersion, tick: serverTick });
+      eventBus.emitDeferred("net:ack_version", { version: delta.stateVersion, tick: serverTick });
     }
   }
 
@@ -523,7 +523,6 @@ export class AsteroidsGame
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new UfoSystem());
-    this.world.addSystem(new StatusEffectSystem());
     this.world.addSystem(new ScreenShakeSystem());
     this.world.addSystem(new JuiceSystem());
     this.world.addSystem(new SpatialPartitioningSystem());
@@ -550,8 +549,7 @@ export class AsteroidsGame
 
             const data = buffer.getAt(targetTime);
             if (data) {
-              const transform = world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(entityId, "Transform");
-              if (transform) {
+              world.mutateComponent(entityId, "Transform", (transform: import("../../engine/types/EngineTypes").TransformComponent) => {
                 // Lerp position
                 transform.x = data.prev.x + (data.next.x - data.prev.x) * data.alpha;
                 transform.y = data.prev.y + (data.next.y - data.prev.y) * data.alpha;
@@ -559,7 +557,7 @@ export class AsteroidsGame
                 if (data.prev.angle !== undefined && data.next.angle !== undefined) {
                   transform.rotation = data.prev.angle + (data.next.angle - data.prev.angle) * data.alpha;
                 }
-              }
+              });
             }
           });
         }

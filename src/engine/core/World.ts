@@ -208,6 +208,7 @@ export class World {
    * Restores the world state from a previously captured snapshot.
    */
   public restore(state: WorldSnapshot): void {
+    this.assertCanMutateStructure("restore");
     this.activeEntities = new Set(state.entities);
     this.nextEntityId = state.nextEntityId;
     this.freeEntities = [...state.freeEntities];
@@ -302,7 +303,7 @@ export class World {
   }
 
   /**
-   * Unregisters all systems from all execution phases.
+   * Unregisters all systems from all execution phases and disposes them.
    */
   clearSystems(): void {
     this.assertCanMutateStructure("clearSystems");
@@ -315,6 +316,13 @@ export class World {
 
   /**
    * Adds or replaces a component on a specific entity.
+   *
+   * @remarks
+   * **MANDATORY**: This method MUST NOT be called during the world's update cycle
+   * (`isUpdating === true`). Doing so will throw an error to protect iterator safety.
+   * Use {@link World.getCommandBuffer} to queue component additions during updates.
+   *
+   * API status: Public
    */
   addComponent<T extends Component>(entity: Entity, component: T): Readonly<T> {
     this.assertCanMutateStructure("addComponent");
@@ -368,6 +376,11 @@ export class World {
   /**
    * Performs an immediate mutation on a component.
    *
+   * @remarks
+   * This is the **AUTHORITATIVE** way to modify component data. Direct property
+   * assignments on component references retrieved via `getComponent` are forbidden
+   * as they bypass the engine's state versioning and change detection.
+   *
    * API status: Public
    */
   public mutateComponent<TType extends AnyCoreComponent["type"]>(
@@ -411,6 +424,12 @@ export class World {
 
   /**
    * Removes a component from an entity.
+   *
+   * @remarks
+   * **MANDATORY**: This method MUST NOT be called during the world's update cycle.
+   * Use {@link World.getCommandBuffer} to queue removals.
+   *
+   * API status: Public
    */
   removeComponent(entity: Entity, type: string): void {
     this.assertCanMutateStructure("removeComponent");

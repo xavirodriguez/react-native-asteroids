@@ -21,7 +21,7 @@ export interface PongState {
   isGameOver: boolean;
   winner?: number;
   comboMultiplier: number;
-  gameOverLogged?: boolean;
+  gameOverLogged: boolean;
 }
 
 export interface PongInput extends Record<string, boolean> {
