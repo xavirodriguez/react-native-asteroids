@@ -34,6 +34,15 @@ export class EventBus {
     }
   }
 
+  /**
+   * Dispatches an event synchronously to all registered handlers.
+   *
+   * @remarks
+   * **CAUTION**: Do NOT use this method within the simulation tick or physical
+   * calculation phases if the event triggers side effects (like sound, UI updates,
+   * or spawning). Use {@link EventBus.emitDeferred} instead to ensure side effects
+   * are processed after the authoritative simulation state is finalized.
+   */
   public emit<T = unknown>(event: string, payload?: T): void {
     if (this.emitDepth >= this.MAX_RECURSION) {
       console.warn(`EventBus: Maximum recursion depth (${this.MAX_RECURSION}) reached for event "${event}". Blocking further emission.`);
@@ -53,11 +62,26 @@ export class EventBus {
     }
   }
 
+  /**
+   * Queues an event to be processed after the current execution context (usually end-of-frame).
+   *
+   * @remarks
+   * This is the **RECOMMENDED** method for simulation logic to signal semantic events
+   * without causing reentrancy or side-effect contamination during deterministic ticks.
+   */
   public emitDeferred<T = unknown>(event: string, payload?: T): void {
     this.deferredQueue.push({ event, payload });
   }
 
-  public processDeferred(): void {
+  /**
+   * Processes all currently queued deferred events.
+   *
+   * @remarks
+   * This should be called once per frame, typically at the very end of the engine
+   * update cycle. It supports up to 5 iterations to handle events emitted during
+   * the flush itself (cascading events).
+   */
+  public flushDeferred(): void {
     let iterations = 0;
     const MAX_ITERATIONS = 5;
 
@@ -76,6 +100,11 @@ export class EventBus {
       console.warn("EventBus: Maximum deferred flush iterations reached. Some events were dropped to prevent infinite loops.");
       this.deferredQueue = [];
     }
+  }
+
+  /** @deprecated Use {@link EventBus.flushDeferred} instead. */
+  public processDeferred(): void {
+    this.flushDeferred();
   }
 
   public clear(pattern?: string): void {

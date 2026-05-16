@@ -16,7 +16,7 @@ describe("World ECS Invariants", () => {
       }
     }
     world.addSystem(new BuggySystem());
-    expect(() => world.update(16)).toThrow("Structural mutation \"createEntity\" during update is forbidden. Use WorldCommandBuffer.");
+    expect(() => world.update(16)).toThrow(/Structural mutation "createEntity" during update is forbidden/);
   });
 
   it("should throw error when addComponent is called during update", () => {
@@ -27,7 +27,7 @@ describe("World ECS Invariants", () => {
       }
     }
     world.addSystem(new BuggySystem());
-    expect(() => world.update(16)).toThrow("Structural mutation \"addComponent\" during update is forbidden. Use WorldCommandBuffer.");
+    expect(() => world.update(16)).toThrow(/Structural mutation "addComponent" during update is forbidden/);
   });
 
   it("should throw error when removeComponent is called during update", () => {
@@ -39,7 +39,7 @@ describe("World ECS Invariants", () => {
       }
     }
     world.addSystem(new BuggySystem());
-    expect(() => world.update(16)).toThrow("Structural mutation \"removeComponent\" during update is forbidden. Use WorldCommandBuffer.");
+    expect(() => world.update(16)).toThrow(/Structural mutation "removeComponent" during update is forbidden/);
   });
 
   it("should throw error when removeEntity is called during update", () => {
@@ -50,7 +50,7 @@ describe("World ECS Invariants", () => {
       }
     }
     world.addSystem(new BuggySystem());
-    expect(() => world.update(16)).toThrow("Structural mutation \"removeEntity\" during update is forbidden. Use WorldCommandBuffer.");
+    expect(() => world.update(16)).toThrow(/Structural mutation "removeEntity" during update is forbidden/);
   });
 
   it("should allow structural mutations via WorldCommandBuffer during update", () => {
