@@ -186,14 +186,18 @@ export class DeterministicSimulation {
         const asteroids = world.query("Asteroid", "Transform", "Collider2D");
 
         bullets.forEach(bullet => {
-            const bPos = world.getComponent<TransformComponent>(bullet, "Transform")!;
-            const bCol = world.getComponent<Collider2DComponent>(bullet, "Collider2D")!;
+            const bPos = world.getComponent<TransformComponent>(bullet, "Transform");
+            const bCol = world.getComponent<Collider2DComponent>(bullet, "Collider2D");
+            if (!bPos || !bCol) return;
+
             const bRadius = bCol.shape.type === "circle" ? bCol.shape.radius : 0;
 
             asteroids.forEach(asteroid => {
                 if (!world.hasComponent(asteroid, "Asteroid")) return;
-                const aPos = world.getComponent<TransformComponent>(asteroid, "Transform")!;
-                const aCol = world.getComponent<Collider2DComponent>(asteroid, "Collider2D")!;
+                const aPos = world.getComponent<TransformComponent>(asteroid, "Transform");
+                const aCol = world.getComponent<Collider2DComponent>(asteroid, "Collider2D");
+                if (!aPos || !aCol) return;
+
                 const aRadius = aCol.shape.type === "circle" ? aCol.shape.radius : 0;
 
                 const dx = bPos.x - aPos.x;
@@ -208,17 +212,19 @@ export class DeterministicSimulation {
         });
 
         ships.forEach(ship => {
-            const sPos = world.getComponent<TransformComponent>(ship, "Transform")!;
+            const sPos = world.getComponent<TransformComponent>(ship, "Transform");
             const sCol = world.getComponent<Collider2DComponent>(ship, "Collider2D");
-            const sHealth = world.getComponent<HealthComponent>(ship, "Health")!;
-            if (!sCol || sHealth.invulnerableRemaining > 0) return;
+            const sHealth = world.getComponent<HealthComponent>(ship, "Health");
+            if (!sPos || !sCol || !sHealth || sHealth.invulnerableRemaining > 0) return;
 
             const sRadius = sCol.shape.type === "circle" ? sCol.shape.radius : 0;
 
             asteroids.forEach(asteroid => {
                 if (!world.hasComponent(asteroid, "Asteroid")) return;
-                const aPos = world.getComponent<TransformComponent>(asteroid, "Transform")!;
-                const aCol = world.getComponent<Collider2DComponent>(asteroid, "Collider2D")!;
+                const aPos = world.getComponent<TransformComponent>(asteroid, "Transform");
+                const aCol = world.getComponent<Collider2DComponent>(asteroid, "Collider2D");
+                if (!aPos || !aCol) return;
+
                 const aRadius = aCol.shape.type === "circle" ? aCol.shape.radius : 0;
 
                 const dx = sPos.x - aPos.x;

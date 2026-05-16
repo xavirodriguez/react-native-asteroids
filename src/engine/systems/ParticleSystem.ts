@@ -109,21 +109,26 @@ export class ParticleSystem extends System {
  */
 export function createEmitter(world: World, config: ParticleEmitterConfig): Entity {
   const commands = world.getCommandBuffer();
-  const entity = world.isUpdating ? world.reserveEntityId() : world.createEntity();
-
-  const component = {
-    type: "ParticleEmitter",
-    config,
-    active: true,
-    elapsed: 0,
-  } as ParticleEmitterComponent;
 
   if (world.isUpdating) {
+      const entity = world.reserveEntityId();
       commands.createEntity(entity);
-      commands.addComponent(entity, component);
+      commands.addComponent(entity, {
+        type: "ParticleEmitter",
+        config,
+        active: true,
+        elapsed: 0,
+      } as ParticleEmitterComponent);
+      return entity;
   } else {
-      world.addComponent(entity, component);
+      const entity = world.createEntity();
+      // Safe outside update
+      world.addComponent(entity, {
+        type: "ParticleEmitter",
+        config,
+        active: true,
+        elapsed: 0,
+      } as ParticleEmitterComponent);
+      return entity;
   }
-
-  return entity;
 }

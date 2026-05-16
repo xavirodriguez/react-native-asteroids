@@ -36,6 +36,7 @@ export class AnimationSystem extends System {
     for (let i = 0; i < animators.length; i++) {
       const entity = animators[i];
 
+      let completed = false;
       world.mutateComponent<AnimatorComponent>(entity, "Animator", (anim) => {
         const config = anim.animations[anim.current];
         if (!config) return;
@@ -56,20 +57,22 @@ export class AnimationSystem extends System {
               anim.frame = nextFrameIdx % totalFrames;
             } else {
               anim.frame = totalFrames - 1;
-              if (config.onComplete) {
-                // We use a deferred event or command buffer if onComplete needs to be safe.
-                // For now, we assume onComplete might perform structural changes,
-                // but the system itself doesn't know.
-                // To be safe, we wrap it in a way that respects the rules if possible,
-                // or just call it if it's already using the CommandBuffer.
-                config.onComplete(entity);
-              }
+              completed = true;
             }
           } else {
             anim.frame = nextFrameIdx;
           }
         }
       });
+
+      if (completed) {
+        const anim = world.getComponent<AnimatorComponent>(entity, "Animator");
+        const config = anim?.animations[anim.current];
+        if (config?.onComplete) {
+          // config.onComplete should use CommandBuffer or emitDeferred if it does structural changes
+          config.onComplete(entity);
+        }
+      }
     }
   }
 }
