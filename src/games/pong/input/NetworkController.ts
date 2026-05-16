@@ -1,10 +1,5 @@
 import { InputController } from "./InputController";
-import { PongInput } from "../types";
-
-export interface InputFrame {
-  tick: number;
-  input: PongInput;
-}
+import { PongInput, PongInputFrame } from "../types";
 
 /**
  * Controller that injects inputs received from the network.
@@ -22,7 +17,7 @@ export class NetworkController extends InputController<PongInput> {
   /**
    * Called when a new input frame arrives from the server.
    */
-  public onInputReceived(frame: InputFrame): void {
+  public onInputReceived(frame: PongInputFrame): void {
     this.inputBuffer.set(frame.tick, frame.input);
   }
 

@@ -2,7 +2,6 @@ import { World } from "../../../../engine/core/World";
 import { PongGameStateSystem } from "../PongGameStateSystem";
 import { PongState, PONG_CONFIG, BallComponent } from "../../types";
 import { TransformComponent, VelocityComponent } from "../../../../engine/types/EngineTypes";
-import { PongStateComponent } from "../../EntityFactory";
 
 describe("PongGameStateSystem", () => {
   let world: World;
@@ -20,7 +19,7 @@ describe("PongGameStateSystem", () => {
       isGameOver: false,
       comboMultiplier: 1,
       gameOverLogged: false
-    } as PongStateComponent);
+    } as PongState);
   });
 
   it("should detect scoring for Player 1", () => {
@@ -50,7 +49,7 @@ describe("PongGameStateSystem", () => {
   });
 
   it("should detect win condition", () => {
-    const state = world.getComponent<PongStateComponent>(stateEntity, "PongState")!;
+    const state = world.getComponent<PongState>(stateEntity, "PongState")!;
     state.scoreP1 = PONG_CONFIG.WIN_SCORE - 1;
 
     const ball = world.createEntity();

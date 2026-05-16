@@ -4,9 +4,6 @@ import { Component, TransformComponent, VelocityComponent, RenderComponent, Coll
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import { RandomService } from "../../engine/utils/RandomService";
 
-export interface PongStateComponent extends Component, PongState {
-  type: "PongState";
-}
 
 /**
  * Helper to handle deferred or immediate entity creation and component attachment.
@@ -101,7 +98,7 @@ export const PongEntityFactory = {
 
   createGameState(world: World) {
     const { entity: state, add } = createBaseEntity(world);
-    add({ type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1, gameOverLogged: false } as PongStateComponent);
+    add({ type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1, gameOverLogged: false } as PongState);
     return state;
   }
 };
