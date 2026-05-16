@@ -48,6 +48,7 @@ export class ReplayManager {
 
       if (entity !== undefined) {
         frames.forEach((inputFrame: InputFrame) => {
+          // Replay should use side-effect free input application
           game.applyInputToEntity(entity, inputFrame);
         });
       }

@@ -107,7 +107,7 @@ export const ShipPhysics = {
       });
 
       const eventBus = world.getResource<EventBus>("EventBus");
-      if (eventBus) eventBus.emit("ship:hyperspace");
+      if (eventBus) eventBus.emitDeferred("ship:hyperspace");
   },
 
   applyFriction(world: World, entity: number, _velocity: VelocityComponent, dtMs: number, config: typeof GAME_CONFIG = GAME_CONFIG): void {
@@ -176,7 +176,7 @@ export const ShipPhysics = {
       });
 
       const eventBus = world.getResource<EventBus>("EventBus");
-      if (eventBus) eventBus.emit("ship:shoot");
+      if (eventBus) eventBus.emitDeferred("ship:shoot");
     }
   }
 };

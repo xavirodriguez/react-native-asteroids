@@ -208,6 +208,7 @@ export class World {
    * Restores the world state from a previously captured snapshot.
    */
   public restore(state: WorldSnapshot): void {
+    this.assertCanMutateStructure("restore");
     this.activeEntities = new Set(state.entities);
     this.nextEntityId = state.nextEntityId;
     this.freeEntities = [...state.freeEntities];
@@ -304,14 +305,8 @@ export class World {
   /**
    * Unregisters all systems from all execution phases and disposes them.
    */
-  public clearSystems(): void {
-    this.sortedSystems.forEach(system => {
-      try {
-        system.dispose();
-      } catch (e) {
-        console.error(`Error disposing system ${system.constructor.name}:`, e);
-      }
-    });
+  clearSystems(): void {
+    this.assertCanMutateStructure("clearSystems");
     this.systems = [];
     this.sortedSystems = [];
     this.systemsNeedSorting = false;
@@ -560,6 +555,7 @@ export class World {
    * Resets the entire world state.
    */
   public clear(): void {
+    this.assertCanMutateStructure("clear");
     this.activeEntities.clear();
     this.componentMaps.clear();
     this.componentIndex.clear();
