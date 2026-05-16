@@ -91,8 +91,17 @@ export class PhysicsUtils {
       return;
     }
 
-    (pos as Record<string, number>)[xKey] = currentX + vx * deltaTimeInSeconds;
-    (pos as Record<string, number>)[yKey] = currentY + vy * deltaTimeInSeconds;
+    const nextX = currentX + vx * deltaTimeInSeconds;
+    const nextY = currentY + vy * deltaTimeInSeconds;
+
+    if (pos.dirty !== undefined) {
+      if (nextX !== currentX || nextY !== currentY) {
+        pos.dirty = true;
+      }
+    }
+
+    (pos as Record<string, number>)[xKey] = nextX;
+    (pos as Record<string, number>)[yKey] = nextY;
   }
 
   /**

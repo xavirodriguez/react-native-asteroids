@@ -44,7 +44,8 @@ export class MovementSystem extends System {
       // Simulation Culling: Skip if SpatialNode exists and is inactive
       // BUT: Do not skip if it has a BoundaryComponent (it needs to wrap/bounce even if off-screen)
       const node = world.getComponent<SpatialNodeComponent>(entity, "SpatialNode");
-      if (node && !node.active && !world.hasComponent(entity, "Boundary")) {
+      const hasBoundary = world.hasComponent(entity, "Boundary");
+      if (node && !node.active && !hasBoundary) {
         if (world.debugMode) {
           console.debug(`[MovementSystem] Skipping entity ${entity} due to inactive SpatialNode.`);
         }
@@ -61,6 +62,11 @@ export class MovementSystem extends System {
           }
           continue;
         }
+
+        if (world.debugMode) {
+          console.debug(`[MovementSystem] Integrating entity ${entity}: pos(${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}), vel(${vel.dx.toFixed(2)}, ${vel.dy.toFixed(2)}), active: ${node?.active ?? 'N/A'}, hasBoundary: ${hasBoundary}`);
+        }
+
         PhysicsUtils.integrateMovement(pos, vel, dtSeconds);
       }
     }
