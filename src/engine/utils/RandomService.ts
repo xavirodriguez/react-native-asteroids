@@ -47,10 +47,20 @@ export class RandomService {
   }
 
   // ==========================================================================
-  // LEGACY STATIC (Deprecated - Avoid using in multi-instance environments)
+  // LEGACY STATIC SUPPORT (Refactored to avoid global mutation issues)
   // ==========================================================================
 
   private static namedInstances: Map<string, RandomService> = new Map();
+  /** @internal */
+  private static _lockGameplayContext: boolean = false;
+
+  public static get lockGameplayContext(): boolean {
+    return this._lockGameplayContext;
+  }
+
+  public static set lockGameplayContext(value: boolean) {
+    this._lockGameplayContext = value;
+  }
 
   /** @deprecated Access RNG via World resources instead. */
   public static getGameplayRandom(): RandomService {
@@ -64,6 +74,10 @@ export class RandomService {
 
   /** @deprecated Access RNG via World resources instead. */
   public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
+    if (this._lockGameplayContext && (name === "render" || name === "global")) {
+        throw new Error(`Deterministic violation: '${name}' random accessed during simulation.`);
+    }
+
     let instance = this.namedInstances.get(name);
     if (!instance) {
       instance = new RandomService(initialSeed);
@@ -100,5 +114,19 @@ export class RandomService {
   /** @deprecated Use instance method instead. */
   public static setSeed(seed: number): void {
       this.getInstance("global").setSeed(seed);
+  }
+
+  private static checkStaticAccess(method: string): void {
+    if (this._lockGameplayContext) {
+      throw new Error(`Deterministic violation: Static ${method} accessed during simulation.`);
+    }
+  }
+
+  /**
+   * Resets all static instances. Useful for tests or full engine restarts.
+   */
+  public static resetInstances(): void {
+    this.namedInstances.clear();
+    this._lockGameplayContext = false;
   }
 }

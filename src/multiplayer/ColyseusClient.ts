@@ -1,10 +1,5 @@
 /**
  * Network transport layer using Colyseus.
- *
- * This module manages the connection lifecycle, room joins, and message dispatching
- * to the authoritative game server.
- *
- * @packageDocumentation
  */
 
 import { Client, Room } from "@colyseus/sdk";
@@ -12,49 +7,80 @@ import { Client, Room } from "@colyseus/sdk";
 const COLYSEUS_ENDPOINT =
   process.env.EXPO_PUBLIC_COLYSEUS_URL ?? "ws://127.0.0.1:2567";
 
-let client: Client | null = null;
-let room: Room | null = null;
-
 /**
- * Lazily initializes and returns the singleton Colyseus client.
+ * Encapsulates a Colyseus connection to avoid global module state.
+ *
+ * API status: Public
  */
-export function getColyseusClient() {
-  if (!client) {
-    client = new Client(COLYSEUS_ENDPOINT);
+export class ColyseusConnection {
+  private client: Client;
+  private room: Room | null = null;
+
+  constructor(endpoint: string = COLYSEUS_ENDPOINT) {
+    this.client = new Client(endpoint);
   }
-  return client;
+
+  /**
+   * Attempts to connect to a specific game room.
+   */
+  public async connect(roomName: string, options: Record<string, unknown> = {}) {
+    this.room = await this.client.joinOrCreate(roomName, options);
+    return this.room;
+  }
+
+  /**
+   * Sends a network message to the active room.
+   */
+  public send(type: string, payload: unknown) {
+    this.room?.send(type, payload);
+  }
+
+  /**
+   * Returns the currently active Colyseus room, if any.
+   */
+  public getRoom() {
+    return this.room;
+  }
+
+  /**
+   * Leaves the current room.
+   */
+  public disconnect() {
+    this.room?.leave();
+    this.room = null;
+  }
 }
 
-/**
- * Attempts to connect to a specific game room.
- * @param roomName - The logic identifier of the room (e.g., 'asteroids').
- * @param playerName - The display name for the local player.
- */
+// LEGACY COMPATIBILITY (Deprecated)
+let defaultConnection: ColyseusConnection | null = null;
+
+function getDefaultConnection() {
+  if (!defaultConnection) defaultConnection = new ColyseusConnection();
+  return defaultConnection;
+}
+
+/** @deprecated Use ColyseusConnection class */
+export function getColyseusClient() {
+  return new Client(COLYSEUS_ENDPOINT);
+}
+
+/** @deprecated Use ColyseusConnection class */
 export async function connectToRoom(roomName: string, playerName: string) {
-  const client = getColyseusClient();
-  room = await client.joinOrCreate(roomName, { name: playerName });
-  return room;
+  return getDefaultConnection().connect(roomName, { name: playerName });
 }
 
-/**
- * Sends a network message to the active room.
- */
+/** @deprecated Use ColyseusConnection class */
 export function sendInput(type: string, input: unknown) {
-  room?.send(type, input);
+  getDefaultConnection().send(type, input);
 }
 
-/**
- * Returns the currently active Colyseus room, if any.
- */
-export function getRoom() { return room; }
+/** @deprecated Use ColyseusConnection class */
+export function getRoom() {
+  return getDefaultConnection().getRoom();
+}
 
-/**
- * Leaves the current room and optionally resets the client singleton.
- */
+/** @deprecated Use ColyseusConnection class */
 export function disconnect(options?: { resetClient?: boolean }) {
-    room?.leave();
-    room = null;
-    if (options?.resetClient) {
-        client = null;
-    }
+  getDefaultConnection().disconnect();
+  if (options?.resetClient) defaultConnection = null;
 }

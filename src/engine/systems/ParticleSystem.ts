@@ -1,6 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { ParticleEmitterComponent, ParticleEmitterConfig, Entity, Component, SpatialNodeComponent } from "../types/EngineTypes";
+import { ParticleEmitterComponent, ParticleEmitterConfig, Entity, SpatialNodeComponent } from "../types/EngineTypes";
 import { PrefabPool } from "../utils/PrefabPool";
 import { RandomService } from "../utils/RandomService";
 
@@ -20,12 +20,12 @@ export interface ParticleParams {
 }
 
 /**
- * Sistema encargado de gestionar emisores de partículas declarativos.
+ * System responsible for managing declarative particle emitters.
  */
 export class ParticleSystem extends System {
-  private particlePool: PrefabPool<Record<string, Component>, ParticleParams>;
+  private particlePool: PrefabPool<any, ParticleParams>;
 
-  constructor(particlePool: PrefabPool<Record<string, Component>, ParticleParams>) {
+  constructor(particlePool: PrefabPool<any, ParticleParams>) {
     super();
     this.particlePool = particlePool;
   }
@@ -47,7 +47,7 @@ export class ParticleSystem extends System {
 
       // Handle burst emission
       if (emitter.elapsed === 0 && config.burst && config.burst > 0) {
-        for (let i = 0; i < config.burst; i++) {
+        for (let j = 0; j < config.burst; j++) {
           this.spawnParticle(world, config);
         }
         if (!config.loop && config.rate === 0) {
@@ -109,26 +109,17 @@ export class ParticleSystem extends System {
  */
 export function createEmitter(world: World, config: ParticleEmitterConfig): Entity {
   const commands = world.getCommandBuffer();
+  const entity = world.reserveEntityId();
 
-  if (world.isUpdating) {
-      const entity = world.reserveEntityId();
-      commands.createEntity(entity);
-      commands.addComponent(entity, {
-        type: "ParticleEmitter",
-        config,
-        active: true,
-        elapsed: 0,
-      } as ParticleEmitterComponent);
-      return entity;
-  } else {
-      const entity = world.createEntity();
-      // Safe outside update
-      world.addComponent(entity, {
-        type: "ParticleEmitter",
-        config,
-        active: true,
-        elapsed: 0,
-      } as ParticleEmitterComponent);
-      return entity;
-  }
+  const component = {
+    type: "ParticleEmitter",
+    config,
+    active: true,
+    elapsed: 0,
+  } as ParticleEmitterComponent;
+
+  commands.createEntity(entity);
+  commands.addComponent(entity, component);
+
+  return entity;
 }

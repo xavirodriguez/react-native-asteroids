@@ -57,7 +57,11 @@ export class AnimationSystem extends System {
               anim.frame = nextFrameIdx % totalFrames;
             } else {
               anim.frame = totalFrames - 1;
-              completed = true;
+              if (config.onComplete) {
+                // Execute onComplete callback. If it performs structural changes,
+                // it should already be using WorldCommandBuffer internally.
+                config.onComplete(entity);
+              }
             }
           } else {
             anim.frame = nextFrameIdx;

@@ -100,13 +100,20 @@ export class JuiceSystem extends System {
           const currentValue = anim.startValue + (anim.target - anim.startValue) * easedProgress;
 
           if (anim.property === "opacity") {
+            const render = world.getComponent<RenderComponent>(entity, "Render");
+            if (render) {
               world.mutateComponent<RenderComponent>(entity, "Render", r => {
-                  r.data = { ...r.data, opacity: currentValue };
+                if (!r.data) r.data = {};
+                r.data.opacity = currentValue;
               });
+            }
           } else {
+            const offsetComp = world.getComponent<VisualOffsetComponent>(entity, "VisualOffset");
+            if (offsetComp) {
               world.mutateComponent<VisualOffsetComponent>(entity, "VisualOffset", off => {
-                  this.setPropertyValue(anim.property, currentValue, off);
+                this.setPropertyValue(anim.property, currentValue, off);
               });
+            }
           }
 
           if (progress >= 1) {

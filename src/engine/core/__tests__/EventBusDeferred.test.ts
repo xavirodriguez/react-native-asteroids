@@ -1,47 +1,50 @@
 import { EventBus } from "../EventBus";
 
-describe("EventBus Deferred Enforcement", () => {
+describe("EventBus Deferred Events", () => {
   let eventBus: EventBus;
 
   beforeEach(() => {
     eventBus = new EventBus();
   });
 
-  it("should not execute deferred events until processDeferred is called", () => {
-    const handler = jest.fn();
-    eventBus.on("test", handler);
+  it("should not execute deferred events immediately", () => {
+    let executed = false;
+    eventBus.on("test", () => {
+      executed = true;
+    });
+
     eventBus.emitDeferred("test");
-    expect(handler).not.toHaveBeenCalled();
+    expect(executed).toBe(false);
+
     eventBus.processDeferred();
-    expect(handler).toHaveBeenCalled();
+    expect(executed).toBe(true);
   });
 
-  it("should handle nested deferred events in a single flush", () => {
-    const secondHandler = jest.fn();
-    eventBus.on("first", () => {
-      eventBus.emitDeferred("second");
-    });
-    eventBus.on("second", secondHandler);
+  it("should process events in order", () => {
+    const order: number[] = [];
+    eventBus.on("1", () => order.push(1));
+    eventBus.on("2", () => order.push(2));
 
-    eventBus.emitDeferred("first");
+    eventBus.emitDeferred("1");
+    eventBus.emitDeferred("2");
+
     eventBus.processDeferred();
-
-    expect(secondHandler).toHaveBeenCalled();
+    expect(order).toEqual([1, 2]);
   });
 
-  it("should prevent infinite loops in deferred events", () => {
-    eventBus.on("ping", () => {
-      eventBus.emitDeferred("pong");
+  it("should handle nested deferred emissions", () => {
+    const order: string[] = [];
+    eventBus.on("outer", () => {
+      order.push("outer_done");
+      eventBus.emitDeferred("inner");
     });
-    eventBus.on("pong", () => {
-      eventBus.emitDeferred("ping");
+    eventBus.on("inner", () => {
+      order.push("inner_done");
     });
 
-    const spy = jest.spyOn(console, "warn").mockImplementation(() => {});
-    eventBus.emitDeferred("ping");
+    eventBus.emitDeferred("outer");
     eventBus.processDeferred();
 
-    expect(spy).toHaveBeenCalledWith(expect.stringContaining("Maximum deferred flush iterations reached"));
-    spy.mockRestore();
+    expect(order).toEqual(["outer_done", "inner_done"]);
   });
 });

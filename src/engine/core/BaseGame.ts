@@ -525,11 +525,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this._unregisterKeyboardListeners();
     this._listeners.clear();
 
-    // Comprehensive cleanup to prevent memory leaks
     this.eventBus.clear();
     this.spatialGrid.clear();
     this.world.clear();
     this.world.clearSystems();
+
+    this.sceneManager.destroy();
+    this.audio.stopMusic();
 
     this._status = GameStatus.DESTROYED;
   }
