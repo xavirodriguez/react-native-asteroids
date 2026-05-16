@@ -45,23 +45,22 @@ import { Component, Entity } from "../../engine/types/EngineTypes";
  * Helper to handle deferred or immediate entity creation and component attachment.
  */
 const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, add: (comp: Component) => void } => {
-    const isDeferred = deferred || world.isUpdating;
+    const isDeferred = !!(deferred || world.isUpdating);
     const commands = world.getCommandBuffer();
-    const entity = isDeferred ? world.reserveEntityId() : world.createEntity();
 
     if (isDeferred) {
+        const entity = world.reserveEntityId();
         commands.createEntity(entity);
+        return {
+            entity,
+            add: (comp: Component) => commands.addComponent(entity, comp)
+        };
     }
 
+    const entity = world.createEntity();
     return {
         entity,
-        add: (comp: Component) => {
-            if (isDeferred) {
-                commands.addComponent(entity, comp);
-            } else {
-                world.addComponent(entity, comp);
-            }
-        }
+        add: (comp: Component) => world.addComponent(entity, comp)
     };
 };
 
