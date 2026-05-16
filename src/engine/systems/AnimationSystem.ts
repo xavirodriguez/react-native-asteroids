@@ -57,11 +57,8 @@ export class AnimationSystem extends System {
             } else {
               anim.frame = totalFrames - 1;
               if (config.onComplete) {
-                // We use a deferred event or command buffer if onComplete needs to be safe.
-                // For now, we assume onComplete might perform structural changes,
-                // but the system itself doesn't know.
-                // To be safe, we wrap it in a way that respects the rules if possible,
-                // or just call it if it's already using the CommandBuffer.
+                // Execute onComplete callback. If it performs structural changes,
+                // it should already be using WorldCommandBuffer internally.
                 config.onComplete(entity);
               }
             }

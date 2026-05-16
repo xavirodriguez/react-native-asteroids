@@ -120,6 +120,7 @@ export class DeterministicSimulation {
             const input = world.getComponent<InputComponent>(entity, "Input");
 
             if (pos && vel && render && input) {
+                // ShipPhysics must use world.mutateComponent internally for any state change
                 ShipPhysics.simulateShipTick(
                     world,
                     entity,

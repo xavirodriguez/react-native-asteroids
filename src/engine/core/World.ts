@@ -305,6 +305,7 @@ export class World {
    * Unregisters all systems from all execution phases.
    */
   clearSystems(): void {
+    this.assertCanMutateStructure("clearSystems");
     this.systems = [];
     this.sortedSystems = [];
     this.systemsNeedSorting = false;
@@ -535,6 +536,7 @@ export class World {
    * Resets the entire world state.
    */
   public clear(): void {
+    this.assertCanMutateStructure("clear");
     this.activeEntities.clear();
     this.componentMaps.clear();
     this.componentIndex.clear();

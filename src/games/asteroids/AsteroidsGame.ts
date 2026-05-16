@@ -595,6 +595,13 @@ export class AsteroidsGame
 
   protected _onBeforeRestart(): void {
     this.gameStateSystem.resetGameOverState(this.world);
+    this.predictionBuffer.clearBefore(Infinity); // Clear all
+    this.inputHistory = [];
+    this.stateHistory.clear();
+    this.entityInterpolationBuffers.clear();
+    this.serverEntities.clear();
+    this.lastAuthoritativeTick = 0;
+    this.lastProcessedFullStateVersion = -1;
   }
 
   public getGameState(): GameStateComponent {

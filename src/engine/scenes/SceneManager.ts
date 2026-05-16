@@ -284,4 +284,14 @@ export class SceneManager {
         await this.transitionTo(this.currentScene);
     }
   }
+
+  /**
+   * Shuts down the manager and releases references.
+   */
+  public destroy(): void {
+    this.sceneStack = [];
+    this.currentScene = null;
+    this.transitionQueue = [];
+    this.state = SceneState.IDLE;
+  }
 }

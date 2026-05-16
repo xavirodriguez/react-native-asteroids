@@ -92,23 +92,33 @@ export class PlayerProfileService {
    * @param amount - Cantidad de XP a añadir.
    * @returns Un objeto indicando si subió de nivel y el nivel resultante.
    */
+  private static opQueue: Promise<unknown> = Promise.resolve();
+
+  private static async enqueue<T>(op: () => Promise<T>): Promise<T> {
+    const nextOp = this.opQueue.then(op);
+    this.opQueue = nextOp.catch(() => {});
+    return nextOp;
+  }
+
   public static async addXP(amount: number): Promise<{ leveledUp: boolean, newLevel: number }> {
-    const profile = await this.getProfile();
-    profile.xp += amount;
+    return this.enqueue(async () => {
+      const profile = await this.getProfile();
+      profile.xp += amount;
 
-    let leveledUp = false;
-    let nextLevel = profile.level + 1;
-    while (nextLevel <= LEVEL_THRESHOLDS.length && profile.xp >= LEVEL_THRESHOLDS[nextLevel - 1]) {
-      profile.level = nextLevel;
-      leveledUp = true;
-      nextLevel++;
+      let leveledUp = false;
+      let nextLevel = profile.level + 1;
+      while (nextLevel <= LEVEL_THRESHOLDS.length && profile.xp >= LEVEL_THRESHOLDS[nextLevel - 1]) {
+        profile.level = nextLevel;
+        leveledUp = true;
+        nextLevel++;
 
-      // Check for unlocks at this level
-      this.checkUnlocks(profile.level);
-    }
+        // Check for unlocks at this level
+        this.checkUnlocks(profile.level);
+      }
 
-    await this.saveProfile();
-    return { leveledUp, newLevel: profile.level };
+      await this.saveProfile();
+      return { leveledUp, newLevel: profile.level };
+    });
   }
 
   private static checkUnlocks(level: number) {
@@ -129,14 +139,16 @@ export class PlayerProfileService {
   }
 
   public static async updateStats(_gameId: string, stats: Partial<PlayerProfile["stats"]>): Promise<void> {
-    const profile = await this.getProfile();
-    Object.entries(stats).forEach(([key, value]) => {
-      if (value !== undefined) {
-        const k = key as keyof PlayerProfile["stats"];
-        profile.stats[k] += value;
-      }
+    return this.enqueue(async () => {
+      const profile = await this.getProfile();
+      Object.entries(stats).forEach(([key, value]) => {
+        if (value !== undefined) {
+          const k = key as keyof PlayerProfile["stats"];
+          profile.stats[k] += value;
+        }
+      });
+      await this.saveProfile();
     });
-    await this.saveProfile();
   }
 
   public static async setActivePalette(paletteId: string): Promise<void> {

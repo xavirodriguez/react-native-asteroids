@@ -46,9 +46,21 @@ export class RandomService {
     return this.next() < 0.5 ? -1 : 1;
   }
 
-  // LEGACY STATIC (Deprecated and potentially unsafe for multiple instances)
+  // ==========================================================================
+  // LEGACY STATIC SUPPORT (Refactored to avoid global mutation issues)
+  // ==========================================================================
+
   private static namedInstances: Map<string, RandomService> = new Map();
-  public static lockGameplayContext: boolean = false;
+  /** @internal */
+  private static _lockGameplayContext: boolean = false;
+
+  public static get lockGameplayContext(): boolean {
+    return this._lockGameplayContext;
+  }
+
+  public static set lockGameplayContext(value: boolean) {
+    this._lockGameplayContext = value;
+  }
 
   public static getGameplayRandom(): RandomService {
     return this.getInstance("gameplay");
@@ -59,7 +71,7 @@ export class RandomService {
   }
 
   public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
-    if (this.lockGameplayContext && (name === "render" || name === "global")) {
+    if (this._lockGameplayContext && (name === "render" || name === "global")) {
         throw new Error(`Deterministic violation: '${name}' random accessed during simulation.`);
     }
 
@@ -102,8 +114,16 @@ export class RandomService {
   }
 
   private static checkStaticAccess(method: string): void {
-    if (this.lockGameplayContext) {
+    if (this._lockGameplayContext) {
       throw new Error(`Deterministic violation: Static ${method} accessed during simulation.`);
     }
+  }
+
+  /**
+   * Resets all static instances. Useful for tests or full engine restarts.
+   */
+  public static resetInstances(): void {
+    this.namedInstances.clear();
+    this._lockGameplayContext = false;
   }
 }
