@@ -20,10 +20,13 @@ const MUTATORS_ENABLED_KEY = "settings:mutators_enabled";
 export class MutatorService {
   /**
    * Returns the mutators active for the current week.
+   *
+   * @param timestampMs - Optional timestamp to use for the calculation. If not provided,
+   * the local system time is used.
    */
-  public static getWeeklyMutators(): Mutator[] {
-    const now = new Date();
-    const weekNumber = this.getISOWeekNumber(now);
+  public static getWeeklyMutators(timestampMs?: number): Mutator[] {
+    const date = timestampMs !== undefined ? new Date(timestampMs) : new Date();
+    const weekNumber = this.getISOWeekNumber(date);
 
     // Select 2 mutators based on the week number
     const m1 = MUTATORS[weekNumber % MUTATORS.length];
@@ -38,8 +41,8 @@ export class MutatorService {
   /**
    * Filters weekly mutators for a specific game.
    */
-  public static getActiveMutatorsForGame(gameId: string): Mutator[] {
-    const weekly = this.getWeeklyMutators();
+  public static getActiveMutatorsForGame(gameId: string, timestampMs?: number): Mutator[] {
+    const weekly = this.getWeeklyMutators(timestampMs);
     return weekly.filter(m => m.games.includes(gameId as never) || m.games.includes('all'));
   }
 

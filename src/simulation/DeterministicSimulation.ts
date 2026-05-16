@@ -37,51 +37,50 @@ const ASTEROID_SPLIT_CONFIG: Record<
 
 /**
  * Core simulation orchestrator designed for perfect reproducibility (Determinism).
+ *
+ * @remarks
+ * **HARDENING RULES**:
+ * 1. **No direct mutations**: Always use `world.mutateComponent`.
+ * 2. **No structural changes**: All entity/component creation or removal must use `WorldCommandBuffer`.
+ * 3. **No synchronous side-effects**: Always use `eventBus.emitDeferred` for gameplay events.
+ * 4. **Deterministic Randomness**: Use the world-provided PRNG streams (via resources if available).
  */
 export class DeterministicSimulation {
     /**
-     * Punto de entrada para un tick de simulación individual.
+     * Entry point for an individual simulation tick.
      */
     public static update(world: World, deltaTime: number, ctx: SimulationContext) {
-        // Only lock gameplay context during resimulation.
-        if (ctx.isResimulating) {
-            RandomService.lockGameplayContext = true;
-        }
-        try {
-            this.internalUpdate(world, deltaTime, ctx);
-        } finally {
-            RandomService.lockGameplayContext = false;
-        }
+        this.internalUpdate(world, deltaTime, ctx);
     }
 
     /**
-     * Secuencia interna de fases de simulación.
+     * Internal sequence of simulation phases.
      */
     private static internalUpdate(world: World, deltaTime: number, ctx: SimulationContext) {
         const dtSeconds = deltaTime / 1000;
 
-        // 0. Sincronización del tick del servidor.
+        // 0. Server tick synchronization.
         world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
             if (gs.serverTick === undefined) gs.serverTick = 0;
             gs.serverTick++;
         });
 
-        // 1. Procesar Inputs y Física de Naves.
+        // 1. Process Inputs and Ship Physics.
         this.updateShips(world, deltaTime, ctx);
 
-        // 2. Integración de Movimiento.
+        // 2. Movement Integration.
         this.integrateMovement(world, dtSeconds);
 
         // 3. TTL (Time To Live).
         this.updateTTL(world, deltaTime);
 
-        // 4. Detección y Resolución de Colisiones.
+        // 4. Collision Detection and Resolution.
         this.updateCollisions(world, ctx, deltaTime);
 
-        // 5. Lógica de comportamiento de UFOs.
+        // 5. UFO behavior logic.
         this.updateUfos(world, dtSeconds);
 
-        // 6. Lógica de Spawning.
+        // 6. Spawning Logic.
         this.updateSpawning(world, ctx);
     }
 
@@ -185,6 +184,23 @@ export class DeterministicSimulation {
         const bullets = world.query("Bullet", "Transform", "Collider2D");
         const asteroids = world.query("Asteroid", "Transform", "Collider2D");
 
+        // Spatial partitioning optimization
+        const spatialGrid = world.getResource<import("../engine/physics/utils/SpatialGrid").SpatialGrid>("SpatialGrid");
+        if (spatialGrid) {
+            spatialGrid.clear();
+            asteroids.forEach(asteroid => {
+                const aPos = world.getComponent<TransformComponent>(asteroid, "Transform")!;
+                const aCol = world.getComponent<Collider2DComponent>(asteroid, "Collider2D")!;
+                const aRadius = aCol.shape.type === "circle" ? aCol.shape.radius : 0;
+                spatialGrid.insert(asteroid, {
+                    minX: aPos.x - aRadius,
+                    maxX: aPos.x + aRadius,
+                    minY: aPos.y - aRadius,
+                    maxY: aPos.y + aRadius
+                });
+            });
+        }
+
         bullets.forEach(bullet => {
             const bPos = world.getComponent<TransformComponent>(bullet, "Transform");
             const bCol = world.getComponent<Collider2DComponent>(bullet, "Collider2D");
@@ -208,7 +224,7 @@ export class DeterministicSimulation {
                 if (distSq < minDist * minDist) {
                     this.handleBulletAsteroidCollision(world, bullet, asteroid, ctx);
                 }
-            });
+            }
         });
 
         ships.forEach(ship => {

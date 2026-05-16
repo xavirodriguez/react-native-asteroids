@@ -77,7 +77,7 @@ export class JuiceSystem extends System {
       // Ensure VisualOffset exists if we have animations that need it
       if (!offset && juice.animations.some(a => a.property !== "opacity")) {
         world.getCommandBuffer().addComponent(entity, {
-          type: "VisualOffset", x: 0, y: 0, rotation: 0, scaleX: 0, scaleY: 0
+          type: "VisualOffset", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1
         } as VisualOffsetComponent);
         // We skip this frame for this entity because mutateComponent below would fail
         // since the component is not yet in the world.
@@ -101,8 +101,7 @@ export class JuiceSystem extends System {
 
           if (anim.property === "opacity") {
               world.mutateComponent<RenderComponent>(entity, "Render", r => {
-                  if (!r.data) r.data = {};
-                  r.data.opacity = currentValue;
+                  r.data = { ...r.data, opacity: currentValue };
               });
           } else {
               world.mutateComponent<VisualOffsetComponent>(entity, "VisualOffset", off => {
