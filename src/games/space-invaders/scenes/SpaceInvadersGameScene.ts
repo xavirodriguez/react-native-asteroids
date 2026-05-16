@@ -13,6 +13,8 @@ import { CollisionSystem2D } from "../../../engine/physics/collision/CollisionSy
 import { SpaceInvadersRenderSystem } from "../systems/SpaceInvadersRenderSystem";
 import { KamikazeSystem } from "../systems/KamikazeSystem";
 import { BossSystem } from "../systems/BossSystem";
+import { LootSystem } from "../../../engine/systems/LootSystem";
+import { PowerUpSystem } from "../../../engine/systems/PowerUpSystem";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "../EntityPool";
 import {
   createPlayer,
@@ -74,6 +76,8 @@ export class SpaceInvadersGameScene extends Scene {
     this.world.addSystem(new SpaceInvadersCollisionSystem(this.particlePool));
     this.world.addSystem(new KamikazeSystem());
     this.world.addSystem(new BossSystem());
+    this.world.addSystem(new LootSystem());
+    this.world.addSystem(new PowerUpSystem());
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(new SpaceInvadersGameStateSystem(this.game));
 
