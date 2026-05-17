@@ -133,8 +133,8 @@ export class SpaceInvadersCollisionSystem extends System {
           render.hitFlashFrames = 4;
       });
 
-      const kamiComp = world.getComponent(invader, 'Kamikaze');
-      if (kamiComp) {
+      const hasKami = world.hasComponent(invader, 'Kamikaze');
+      if (hasKami) {
         world.mutateSingleton<GameStateComponent>("GameState", gs => {
             gs.kamikazesActive--;
         });

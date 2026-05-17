@@ -28,15 +28,17 @@ export class TTLSystem extends System {
       });
 
       if (expired) {
+        // Need to fetch again because we need the most recent state
         const ttl = world.getComponent<TTLComponent>(entity, "TTL");
         
-        // Trigger onComplete callback if present
+        // Notify pool before removal if reclaimable
+        const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
+
+        // Hooks and lifecycle notifications MUST execute outside world.mutateComponent
         if (ttl?.onComplete) {
           ttl.onComplete();
         }
 
-        // Notify pool before removal if reclaimable
-        const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
         if (reclaimable) {
           reclaimable.onReclaim(world, entity);
         }
