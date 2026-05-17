@@ -55,15 +55,8 @@ const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, a
         return {
             entity,
             add: (comp: Component) => {
-                if (isUpdating) {
-                    commands.addComponent(entity, comp);
-                } else if (deferred) {
-                    // If explicitly requested deferred but world is NOT updating,
-                    // we still use the command buffer to respect the caller's intent.
-                    commands.addComponent(entity, comp);
-                } else {
-                    world.addComponent(entity, comp);
-                }
+                // Since isDeferred is true, we always use the command buffer.
+                commands.addComponent(entity, comp);
             }
         };
     }
