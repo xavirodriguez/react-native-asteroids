@@ -53,4 +53,28 @@ describe("Asteroids Structural Mutation Safety", () => {
         const particle = entities.find(e => (world.getComponent(e, "Render") as any).shape === "particle");
         expect(particle).toBeDefined();
     });
+
+    it("should allow createParticle with deferred: false during world update by forcing deferral", () => {
+        const mockSystem = new class extends System {
+            update(w: World) {
+                createParticle({
+                    world: w,
+                    x: 100,
+                    y: 100,
+                    dx: 10,
+                    dy: 10,
+                    color: "white",
+                    deferred: false // Explicitly false, but should be ignored if world.isUpdating
+                });
+            }
+        };
+
+        world.addSystem(mockSystem);
+
+        expect(() => world.update(16.66)).not.toThrow();
+
+        const entities = world.query("Render");
+        const particle = entities.find(e => (world.getComponent(e, "Render") as any).shape === "particle");
+        expect(particle).toBeDefined();
+    });
 });
