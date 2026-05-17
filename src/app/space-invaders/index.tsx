@@ -24,25 +24,17 @@ import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 
 export default function SpaceInvadersScreen() {
   const params = useLocalSearchParams<{ seed?: string; isDaily?: string }>();
-  const [playerName, setPlayerName] = useState("Jugador");
-  const [initialSeed, setInitialSeed] = useState<number | undefined>();
-  const [started, setStarted] = useState(false);
-  const [isMulti, setIsMulti] = useState(false);
-  const [isDaily, setIsDaily] = useState(false);
-  const { game, gameState, handleInput, isPaused, isReady, togglePause, highScore, seed, restartWithSeed } = useSpaceInvadersGame(isMulti && started, initialSeed);
 
-  // Handle incoming daily challenge parameters
-  useEffect(() => {
-    if (params.seed && params.isDaily === "true" && !started) {
-      const dailySeed = parseInt(params.seed, 10);
-      if (!isNaN(dailySeed)) {
-        setIsDaily(true);
-        setIsMulti(false);
-        setInitialSeed(dailySeed);
-        setStarted(true);
-      }
-    }
-  }, [params.seed, params.isDaily, started]);
+  // Parse daily challenge parameters from URL immediately
+  const paramSeed = params.seed ? parseInt(params.seed, 10) : undefined;
+  const isDailyFromParams = params.isDaily === "true" && paramSeed !== undefined && !isNaN(paramSeed);
+
+  const [playerName, setPlayerName] = useState("Jugador");
+  const [initialSeed, setInitialSeed] = useState<number | undefined>(isDailyFromParams ? paramSeed : undefined);
+  const [started, setStarted] = useState(isDailyFromParams);
+  const [isMulti, setIsMulti] = useState(false);
+  const [isDaily, setIsDaily] = useState(isDailyFromParams);
+  const { game, gameState, handleInput, isPaused, isReady, togglePause, highScore, seed, restartWithSeed } = useSpaceInvadersGame(isMulti && started, initialSeed);
   const [showDailyResults, setShowDailyResults] = useState(false);
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 

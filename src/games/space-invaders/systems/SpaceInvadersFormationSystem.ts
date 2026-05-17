@@ -40,6 +40,8 @@ export class SpaceInvadersFormationSystem extends System {
 
     if (formation.stepDownPending) {
       const directionBefore = formation.direction;
+      const nextDirection = (directionBefore * -1) as 1 | -1;
+
       for (const entity of invaders) {
         world.mutateComponent<TransformComponent>(entity, "Transform", pos => {
           pos.y += formation.descentStep;
@@ -47,11 +49,11 @@ export class SpaceInvadersFormationSystem extends System {
       }
       world.mutateComponent<FormationComponent>(formationEntity, "Formation", f => {
         f.stepDownPending = false;
-        f.direction = (f.direction * -1) as 1 | -1;
+        f.direction = nextDirection;
       });
       console.debug("[SpaceInvaders] formation step down", {
         directionBefore,
-        directionAfter: formation.direction,
+        directionAfter: nextDirection,
         invaderCount: invaders.length,
       });
     } else {
@@ -69,8 +71,10 @@ export class SpaceInvadersFormationSystem extends System {
 
       const leftLimit = margin;
       const rightLimit = GAME_CONFIG.SCREEN_WIDTH - margin;
+
+      // Use predictive edge checking considering movement direction
       const willHitRight = formation.direction > 0 && maxX + moveX >= rightLimit;
-      const willHitLeft = formation.direction < 0 && minX + moveX <= leftLimit;
+      const willHitLeft  = formation.direction < 0 && minX + moveX <= leftLimit;
 
       console.debug("[SpaceInvaders] formation edge check", {
         direction: formation.direction,
