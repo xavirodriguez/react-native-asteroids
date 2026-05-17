@@ -65,6 +65,7 @@ export class JuiceSystem extends System {
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Juice");
+    const completedCallbacks: Array<{ callback: (entity: Entity) => void, entity: Entity }> = [];
 
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
@@ -77,7 +78,7 @@ export class JuiceSystem extends System {
       // Ensure VisualOffset exists if we have animations that need it
       if (!offset && juice.animations.some(a => a.property !== "opacity")) {
         world.getCommandBuffer().addComponent(entity, {
-          type: "VisualOffset", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1
+          type: "VisualOffset", x: 0, y: 0, rotation: 0, scaleX: 0, scaleY: 0
         } as VisualOffsetComponent);
         // We skip this frame for this entity because mutateComponent below would fail
         // since the component is not yet in the world.
@@ -100,8 +101,8 @@ export class JuiceSystem extends System {
           const currentValue = anim.startValue + (anim.target - anim.startValue) * easedProgress;
 
           if (anim.property === "opacity") {
-            const render = world.getComponent<RenderComponent>(entity, "Render");
-            if (render) {
+            const renderComp = world.getComponent<RenderComponent>(entity, "Render");
+            if (renderComp) {
               world.mutateComponent<RenderComponent>(entity, "Render", r => {
                 if (!r.data) r.data = {};
                 r.data.opacity = currentValue;
@@ -118,10 +119,17 @@ export class JuiceSystem extends System {
 
           if (progress >= 1) {
             jComp.animations.splice(j, 1);
-            if (anim.onComplete) anim.onComplete(entity);
+            if (anim.onComplete) {
+                completedCallbacks.push({ callback: anim.onComplete, entity });
+            }
           }
         }
       });
+    }
+
+    // Execute callbacks outside world.mutateComponent
+    for (const item of completedCallbacks) {
+        item.callback(item.entity);
     }
   }
 

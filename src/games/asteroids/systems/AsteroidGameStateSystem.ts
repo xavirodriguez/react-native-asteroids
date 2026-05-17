@@ -75,18 +75,18 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
     const health = world.getComponent(shipEntity, "Health") as HealthComponent;
     if (!health) return;
 
-    this.updateInvulnerability(health, deltaTime, world, shipEntity);
+    this.updateInvulnerability(deltaTime, world, shipEntity);
     world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
         gs.lives = health.current;
     });
   }
 
-  private updateInvulnerability(health: HealthComponent, deltaTime: number, world: World, shipEntity: number): void {
-    if (health.invulnerableRemaining > 0) {
-      world.mutateComponent(shipEntity, "Health", (h: HealthComponent) => {
-          h.invulnerableRemaining -= deltaTime;
-      });
-    }
+  private updateInvulnerability(deltaTime: number, world: World, shipEntity: number): void {
+    world.mutateComponent(shipEntity, "Health", (h: HealthComponent) => {
+        if (h.invulnerableRemaining > 0) {
+            h.invulnerableRemaining -= deltaTime;
+        }
+    });
   }
 
   protected evaluateGameOverCondition(gameState: GameStateComponent): boolean {

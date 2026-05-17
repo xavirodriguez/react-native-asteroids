@@ -61,6 +61,10 @@ export class LootSystem extends System {
 
     for (const drop of loot.drops) {
       if (random.chance(drop.chance)) {
+        // Use a deferred event for side-effects like spawning loot from an event handler
+        // or just ensure spawnPowerUp uses CommandBuffer (which it already does).
+        // Since handleEntityDestruction is called from an event handler, and we want
+        // to be absolutely sure, we'll keep spawnPowerUp using the CommandBuffer.
         this.spawnPowerUp(world, transform.x, transform.y, drop);
       }
     }

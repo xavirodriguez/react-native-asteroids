@@ -225,7 +225,7 @@ export class DeterministicSimulation {
                 if (distSq < minDist * minDist) {
                     this.handleBulletAsteroidCollision(world, bullet, asteroid, ctx);
                 }
-            }
+            });
         });
 
         ships.forEach(ship => {

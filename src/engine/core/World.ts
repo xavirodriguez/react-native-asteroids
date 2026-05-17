@@ -611,6 +611,8 @@ export class World {
    * Registers a system to participate in the simulation loop.
    */
   addSystem(system: System, config: SystemConfig = {}): void {
+    this.assertCanMutateStructure("addSystem");
+
     // Prevent duplicate system instances
     for (const reg of this.systems) {
       if (reg.system === system) return;

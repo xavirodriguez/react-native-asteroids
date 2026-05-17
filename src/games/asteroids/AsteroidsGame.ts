@@ -148,8 +148,10 @@ export class AsteroidsGame
       this.applyInputToEntity(localPlayer, input);
     }
 
+    // Actual simulation step
     this.runSimulationStep(deltaTime, false);
 
+    // SIDE EFFECTS FOR LOCAL PREDICTION ONLY:
     // Store for reconciliation
     const lp = this.world.query("LocalPlayer")[0];
     if (lp !== undefined) {
