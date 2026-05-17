@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { DailyChallengeService } from '../services/DailyChallengeService';
 import { MutatorService } from '../services/MutatorService';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface DailyChallengeCardProps {
   onPlay: (gameId: string, seed: number) => void;
 }
 
 export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ onPlay }) => {
+  const { t } = useTranslation();
   const [gameId, setGameId] = useState<string>("asteroids");
   const [played, setPlayed] = useState(false);
   const [score, setScore] = useState<number | null>(null);
@@ -35,24 +37,24 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ onPlay }
   return (
     <TouchableOpacity style={styles.card} onPress={handlePlay}>
       <View style={styles.header}>
-        <Text style={styles.title}>RETO DIARIO</Text>
-        {played && <View style={styles.playedBadge}><Text style={styles.playedText}>JUGADO</Text></View>}
+        <Text style={styles.title}>{t.daily.title}</Text>
+        {played && <View style={styles.playedBadge}><Text style={styles.playedText}>{t.daily.played}</Text></View>}
       </View>
 
-      <Text style={styles.gameName}>{gameId.toUpperCase()}</Text>
+      <Text style={styles.gameName}>{gameId.replace('-', '_').toUpperCase()}</Text>
 
       {mutators.length > 0 && (
-          <Text style={styles.mutatorText}>Mutador: {mutators[0].name}</Text>
+          <Text style={styles.mutatorText}>{t.daily.mutator}: {t.mutators[mutators[0].id as keyof typeof t.mutators]?.name || mutators[0].name}</Text>
       )}
 
       {score !== null && (
-        <Text style={styles.scoreText}>Tu Score: {score}</Text>
+        <Text style={styles.scoreText}>{t.daily.your_score}: {score}</Text>
       )}
 
       {!played ? (
-        <Text style={styles.cta}>¡Jugar ahora!</Text>
+        <Text style={styles.cta}>{t.daily.play_now}</Text>
       ) : (
-        <Text style={styles.cta}>Mejorar puntuación</Text>
+        <Text style={styles.cta}>{t.daily.improve_score}</Text>
       )}
     </TouchableOpacity>
   );

@@ -5,24 +5,27 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import type { Href } from "expo-router";
 import { PlayerProfileService, PlayerProfile } from "../services/PlayerProfileService";
 import { AudioSettingsService } from "../services/AudioSettingsService";
+import { I18nService } from "../services/I18nService";
+import { useTranslation } from "../hooks/useTranslation";
 import { PassportOverlay } from "../components/PassportOverlay";
 import { DailyChallengeCard } from "../components/DailyChallengeCard";
 import { LeaderboardOverlay } from "../components/LeaderboardOverlay";
 
 interface GameEntry {
   id: string;
-  label: string;
+  key: "asteroids" | "space_invaders" | "flappybird" | "pong";
   href: Href<string>;
 }
 
 const GAMES: GameEntry[] = [
-  { id: "asteroids", label: "ASTEROIDES", href: "/asteroids" },
-  { id: "space-invaders", label: "SPACE INVADERS", href: "/space-invaders" },
-  { id: "flappybird", label: "FLAPPY BIRD", href: "/flappybird" },
-  { id: "pong", label: "PONG", href: "/pong" },
+  { id: "asteroids", key: "asteroids", href: "/asteroids" },
+  { id: "space-invaders", key: "space_invaders", href: "/space-invaders" },
+  { id: "flappybird", key: "flappybird", href: "/flappybird" },
+  { id: "pong", key: "pong", href: "/pong" },
 ];
 
 export default function HomeScreen() {
+  const { t, locale, toggleLanguage } = useTranslation();
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [showPassport, setShowPassport] = useState(false);
@@ -34,6 +37,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     refreshProfile();
+    I18nService.init();
     AudioSettingsService.init().then(() => {
       setIsMuted(AudioSettingsService.isMuted());
     });
@@ -70,17 +74,21 @@ export default function HomeScreen() {
     <SafeAreaProvider>
       <View style={styles.menuContainer}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.title}>RETRO ARCADE</Text>
+          <Text style={styles.title}>{t.menu.title}</Text>
 
           <View style={styles.headerRow}>
             {profile && (
               <TouchableOpacity style={styles.profileSummary} onPress={() => setShowPassport(true)}>
-                <Text style={styles.profileText}>{profile.displayName} - NIVEL {profile.level}</Text>
+                <Text style={styles.profileText}>{profile.displayName} - {t.menu.level} {profile.level}</Text>
               </TouchableOpacity>
             )}
 
             <TouchableOpacity style={styles.muteButton} onPress={toggleMute}>
               <Text style={styles.muteButtonText}>{isMuted ? "🔇" : "🔊"}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.langButton} onPress={toggleLanguage}>
+              <Text style={styles.langButtonText}>{locale.toUpperCase()}</Text>
             </TouchableOpacity>
           </View>
 
@@ -90,7 +98,7 @@ export default function HomeScreen() {
                 style={styles.menuButton}
                 onPress={() => router.push(game.href)}
               >
-                <Text style={styles.menuButtonText}>{game.label}</Text>
+                <Text style={styles.menuButtonText}>{t.menu[game.key]}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.rankButton}
@@ -179,6 +187,24 @@ const styles = StyleSheet.create({
   },
   muteButtonText: {
     fontSize: 20,
+  },
+  langButton: {
+    backgroundColor: '#222',
+    padding: 10,
+    borderRadius: 20,
+    marginLeft: 10,
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  langButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
   },
   menuRow: {
     flexDirection: 'row',
