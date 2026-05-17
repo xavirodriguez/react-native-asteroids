@@ -427,7 +427,11 @@ export class AsteroidsGame
           return ship && ship.sessionId === localSessionId;
         });
         if (localPlayerEntity !== undefined) {
-          this.world.addComponent(localPlayerEntity, { type: "LocalPlayer" } as import("../../engine/core/Component").Component);
+          if (this.world.isUpdating) {
+            this.world.getCommandBuffer().addComponent(localPlayerEntity, { type: "LocalPlayer" } as import("../../engine/core/Component").Component);
+          } else {
+            this.world.addComponent(localPlayerEntity, { type: "LocalPlayer" } as import("../../engine/core/Component").Component);
+          }
         }
       }
 
@@ -466,14 +470,20 @@ export class AsteroidsGame
           const errY = prevPos.dy - newTrans.y;
 
           // Apply the error to VisualOffset and LERP it back in JuiceSystem
-          this.world.addComponent(id, {
+          const visualOffset = {
             type: "VisualOffset",
             x: errX,
             y: errY,
             rotation: 0,
             scaleX: 0,
             scaleY: 0
-          } as import("../../engine/core/CoreComponents").VisualOffsetComponent);
+          } as import("../../engine/core/CoreComponents").VisualOffsetComponent;
+
+          if (this.world.isUpdating) {
+            this.world.getCommandBuffer().addComponent(id, visualOffset);
+          } else {
+            this.world.addComponent(id, visualOffset);
+          }
 
           JuiceSystem.add(this.world, id, {
             property: "x",
