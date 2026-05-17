@@ -38,7 +38,6 @@ export class PongInputSystem extends System {
     }
 
     paddles.forEach(entity => {
-      const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!;
       const tags = world.getComponent<TagComponent>(entity, "Tag")!;
 
       let moveDir = 0;
@@ -64,7 +63,9 @@ export class PongInputSystem extends System {
         }
       }
 
-      vel.dy = moveDir * PONG_CONFIG.PADDLE_SPEED;
+      world.mutateComponent<VelocityComponent>(entity, "Velocity", vel => {
+        vel.dy = moveDir * PONG_CONFIG.PADDLE_SPEED;
+      });
     });
   }
 }
