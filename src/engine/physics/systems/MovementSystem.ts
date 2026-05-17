@@ -41,13 +41,17 @@ export class MovementSystem extends System {
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
 
-      // Simulation Culling: Skip if SpatialNode exists and is inactive
-      // BUT: Do not skip if it has a BoundaryComponent (it needs to wrap/bounce even if off-screen)
       const node = world.getComponent<SpatialNodeComponent>(entity, "SpatialNode");
       const hasBoundary = world.hasComponent(entity, "Boundary");
-      if (node && !node.active && !hasBoundary) {
+
+      // Simulation Culling: Skip if SpatialNode exists and is inactive
+      // BUT: Do not skip if it has a BoundaryComponent (it needs to wrap/bounce even if off-screen)
+      // or if it's an Asteroid/UFO (dynamic gameplay elements).
+      const isDynamicAsteroidElement = world.hasComponent(entity, "Asteroid") || world.hasComponent(entity, "Ufo");
+
+      if (node && !node.active && !hasBoundary && !isDynamicAsteroidElement) {
         if (world.debugMode) {
-          console.debug(`[MovementSystem] Skipping entity ${entity} due to inactive SpatialNode.`);
+          console.debug(`[MovementSystem] Skipping entity ${entity} due to inactive SpatialNode (culling).`);
         }
         continue;
       }
@@ -64,10 +68,12 @@ export class MovementSystem extends System {
         }
 
         if (world.debugMode) {
-          console.debug(`[MovementSystem] Integrating entity ${entity}: pos(${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}), vel(${vel.dx.toFixed(2)}, ${vel.dy.toFixed(2)}), active: ${node?.active ?? 'N/A'}, hasBoundary: ${hasBoundary}`);
+          console.debug(`[MovementSystem] Integrating entity ${entity}: pos(${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}), vel(${vel.dx.toFixed(2)}, ${vel.dy.toFixed(2)}), dt: ${dtSeconds.toFixed(4)}s, active: ${node?.active ?? 'N/A'}, hasBoundary: ${hasBoundary}`);
         }
 
-        PhysicsUtils.integrateMovement(pos, vel, dtSeconds);
+        world.mutateComponent<TransformComponent>(entity, "Transform", (p) => {
+          PhysicsUtils.integrateMovement(p, vel, dtSeconds);
+        });
       }
     }
   }

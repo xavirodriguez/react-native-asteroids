@@ -43,11 +43,20 @@ export class SpatialPartitioningSystem extends System {
         }
     }
 
-    // Default viewport if no camera (e.g. 800x600 starting at 0,0)
+    // 2. Identify active area (Camera + padding)
+    // We assume Camera2D x,y is the top-left corner.
+    // If the camera is intended to be focal-centered, the Camera2D system
+    // should have already adjusted x,y to be top-left.
     const viewX = mainCam?.x ?? 0;
     const viewY = mainCam?.y ?? 0;
-    const viewW = 800 / (mainCam?.zoom ?? 1);
-    const viewH = 600 / (mainCam?.zoom ?? 1);
+
+    // Attempt to get viewport dimensions from a resource, or fallback to standard 800x600
+    const screenResource = world.getResource<{ width: number, height: number }>("ScreenConfig");
+    const baseW = (mainCam as any)?.width ?? screenResource?.width ?? 800;
+    const baseH = (mainCam as any)?.height ?? screenResource?.height ?? 600;
+
+    const viewW = baseW / (mainCam?.zoom ?? 1);
+    const viewH = baseH / (mainCam?.zoom ?? 1);
     const padding = grid.cellSize * 2;
 
     const activeAABB = {
@@ -83,6 +92,10 @@ export class SpatialPartitioningSystem extends System {
       // Update activation status (Culling)
       const isCurrentlyActive = !(aabb.maxX < activeAABB.minX || aabb.minX > activeAABB.maxX ||
                                   aabb.maxY < activeAABB.minY || aabb.minY > activeAABB.maxY);
+
+      if (world.debugMode && node.active !== isCurrentlyActive) {
+          console.debug(`[SpatialPartitioningSystem] Entity ${entity} activation: ${node.active} -> ${isCurrentlyActive}. AABB:`, aabb, "Viewport:", activeAABB);
+      }
 
       if (node.active !== isCurrentlyActive) {
           world.mutateComponent(entity, "SpatialNode", n => {
