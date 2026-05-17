@@ -9,6 +9,8 @@ import type { GameStateComponent, InputState } from "../games/space-invaders/typ
 
 /**
  * Custom hook to manage the lifecycle of the Space Invaders game engine.
+ * @param isMultiplayer - Whether to start in multiplayer mode.
+ * @param seed - Optional seed for deterministic gameplay.
  */
 export function useSpaceInvadersGame(isMultiplayer: boolean = false, seed?: number) {
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
