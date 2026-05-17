@@ -83,8 +83,9 @@ export class PhysicsUtils {
     const vx = (vel[dxKey] as number);
     const vy = (vel[dyKey] as number);
 
-    if (isNaN(currentX) || isNaN(currentY) || isNaN(vx) || isNaN(vy) ||
-        currentX === undefined || currentY === undefined || vx === undefined || vy === undefined) {
+    const isInvalid = (val: any) => val === undefined || val === null || isNaN(val) || typeof val !== 'number';
+
+    if (isInvalid(currentX) || isInvalid(currentY) || isInvalid(vx) || isInvalid(vy)) {
       if (__DEV__) {
         console.warn(`[PhysicsUtils] Invalid movement data detected: pos(${currentX}, ${currentY}), vel(${vx}, ${vy})`);
       }
