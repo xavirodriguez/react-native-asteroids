@@ -9,6 +9,7 @@ import { GameControls } from "@/components/GameControls";
 import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { useAsteroidsGame } from "@/hooks/useAsteroidsGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
+import { useTranslation } from "@/hooks/useTranslation";
 import { SeedWidget } from "@/components/SeedWidget";
 import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
 import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
@@ -24,12 +25,13 @@ import { InputState } from "@/games/asteroids/types/AsteroidTypes";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 
 export default function AsteroidsScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ seed?: string; isDaily?: string }>();
   const [started, setStarted] = useState(false);
   const [isMulti, setIsMulti] = useState(false);
   const [isDaily, setIsDaily] = useState(false);
   const { game, gameState, handleInput, isPaused, isReady, togglePause, highScore, seed, restartWithSeed } = useAsteroidsGame(isMulti && started);
-  const [playerName, setPlayerName] = useState("Jugador");
+  const [playerName, setPlayerName] = useState("Player");
   const [initialSeed, setInitialSeed] = useState<number | undefined>();
 
   // Handle incoming daily challenge parameters
@@ -115,7 +117,7 @@ export default function AsteroidsScreen() {
   if (!started) {
     return (
       <StartScreen
-        title="ASTEROIDES"
+        title={t.menu.asteroids}
         highScore={highScore}
         onStart={() => {
           if (initialSeed !== undefined) {
@@ -127,7 +129,7 @@ export default function AsteroidsScreen() {
         onStartMulti={() => { setIsMulti(true); setStarted(true); }}
         playerName={playerName}
         onPlayerNameChange={setPlayerName}
-        instructions={Platform.OS === "web" ? "↑ Empujar  ←→ Rotar  Espacio Disparar  Shift Hiperspacio" : "Controles táctiles"}
+        instructions={Platform.OS === "web" ? t.asteroids.instructions : t.common.touch_controls}
         onSeedChange={setInitialSeed}
         onStartDaily={(dailySeed) => {
           restartWithSeed(dailySeed);
@@ -159,12 +161,12 @@ export default function AsteroidsScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Text style={styles.backButtonText}>← MENÚ</Text>
+          <Text style={styles.backButtonText}>← {t.common.menu}</Text>
         </TouchableOpacity>
 
         {isMulti && !connected && (
             <View style={styles.overlay}>
-                <Text style={styles.overlayText}>Conectando...</Text>
+                <Text style={styles.overlayText}>{t.common.connecting}</Text>
             </View>
         )}
 
@@ -232,6 +234,7 @@ const StartScreen: React.FC<{
   onStartDaily,
   activeMutators = [],
 }) => {
+  const { t } = useTranslation();
   return (
     <SafeAreaProvider>
       <View style={styles.startScreen}>
@@ -239,7 +242,7 @@ const StartScreen: React.FC<{
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Text style={styles.backButtonText}>← MENÚ</Text>
+          <Text style={styles.backButtonText}>← {t.common.menu}</Text>
         </TouchableOpacity>
         <Text style={styles.title}>{title}</Text>
 
@@ -247,12 +250,12 @@ const StartScreen: React.FC<{
             style={styles.input}
             value={playerName}
             onChangeText={onPlayerNameChange}
-            placeholder="Tu nombre"
+            placeholder={t.common.your_name}
             placeholderTextColor="#666"
         />
 
         <Text style={styles.instructions}>{instructions}</Text>
-        <Text style={styles.highScoreText}>Récord: {highScore}</Text>
+        <Text style={styles.highScoreText}>{t.common.record}: {highScore}</Text>
 
         {onStartDaily && <DailyChallengeBanner gameId="asteroids" onPlay={onStartDaily} />}
 
@@ -268,7 +271,7 @@ const StartScreen: React.FC<{
 
         <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.startButton} onPress={onStart}>
-                <Text style={styles.startButtonText}>SOLO</Text>
+                <Text style={styles.startButtonText}>{t.common.solo}</Text>
             </TouchableOpacity>
 
             {MULTIPLAYER_CONFIG.STATE !== 'hidden' && (
@@ -276,7 +279,7 @@ const StartScreen: React.FC<{
                     <View style={{ width: 20 }} />
                     <TouchableOpacity style={[styles.startButton, { backgroundColor: '#444' }]} onPress={onStartMulti}>
                         <Text style={[styles.startButtonText, { color: 'white' }]}>
-                            MULTI
+                            {t.common.multi}
                         </Text>
                     </TouchableOpacity>
                 </>
