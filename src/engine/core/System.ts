@@ -80,6 +80,22 @@ export interface SystemConfig {
  */
 export abstract class System {
   /**
+   * Called when the system is registered in the World.
+   * API status: Public
+   *
+   * @param world - The World instance where the system is being registered.
+   */
+  public onRegister(_world: World): void {}
+
+  /**
+   * Called when the system is removed from the World or the game is destroyed.
+   * API status: Public
+   *
+   * @param world - The World instance where the system was registered.
+   */
+  public onUnregister(_world: World): void {}
+
+  /**
    * Executes the system logic for the current simulation tick.
    *
    * @param world - The {@link World} instance the system operates on.

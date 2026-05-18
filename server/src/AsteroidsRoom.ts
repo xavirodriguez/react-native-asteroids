@@ -1,16 +1,14 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
-import { INITIAL_GAME_STATE, GameStateComponent } from "../../src/games/asteroids/types/AsteroidTypes";
+import { GameStateComponent } from "../../src/games/asteroids/types/AsteroidTypes";
 import { RandomService } from "../../src/engine/utils/RandomService";
 import { World } from "../../src/engine/core/World";
-import { DeterministicSimulation } from "../../src/simulation/DeterministicSimulation";
+import { AsteroidsGame } from "../../src/games/asteroids/AsteroidsGame";
 import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "../../src/engine/core/CoreComponents";
 import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
 import { InputComponent, ShipComponent, BulletComponent } from "../../src/games/asteroids/types/AsteroidTypes";
 import { InterestManagerSystem } from "../../src/engine/network/InterestManagerSystem";
-import { SpatialPartitioningSystem } from "../../src/engine/systems/SpatialPartitioningSystem";
-import { SpatialGrid } from "../../src/engine/physics/utils/SpatialGrid";
 import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
 import { ReplicationStateTracker } from "../../src/engine/network/ReplicationStateTracker";
 import { ClientAckTracker } from "../../src/engine/network/ClientAckTracker";
@@ -52,7 +50,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private stateHistory = new Map<number, import("../../src/engine/types/EngineTypes").WorldSnapshot>();
   private clientAcks = new Map<string, number>(); // sessionId -> lastAckedStateVersion
   private replayFrames: ReplayFrame[] = [];
-  private world: World;
+  private gameSimulation!: AsteroidsGame;
+  private world!: World;
   private playerEntities = new Map<string, number>();
   private newClients = new Set<string>();
   private nextPlayerNumber = 1;
@@ -72,15 +71,21 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     }
   }
 
-  onCreate(options: { seed?: number, replicationMode?: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' }) {
+  async onCreate(options: { seed?: number, replicationMode?: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' }) {
     if (options.replicationMode) {
         this.REPLICATION_MODE = options.replicationMode;
     }
     this.newClients.clear();
     this.state = new AsteroidsState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
-    // Sync the global gameplay random service for the server
-    RandomService.getInstance("gameplay").setSeed(this.state.seed);
+
+    this.gameSimulation = new AsteroidsGame({
+        headless: true,
+        isMultiplayer: true,
+        seed: this.state.seed
+    });
+    await this.gameSimulation.init();
+    this.world = this.gameSimulation.getWorld();
 
     this.state.gameWidth = 800;
     this.state.gameHeight = 600;
@@ -124,16 +129,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       });
     });
 
-    // Initialized ECS world
-    this.world = new World();
-    this.world.setResource("SpatialGrid", new SpatialGrid());
-    this.world.addComponent(this.world.createEntity(), {
-        ...INITIAL_GAME_STATE,
-        serverTick: 0,
-        level: 1,
-        lives: 3
-    } as GameStateComponent);
-    this.world.addSystem(new SpatialPartitioningSystem());
+    // Migration: systems are already registered by AsteroidsGame.init()
+    // We just need to add server-only systems to the simulation world
     this.world.addSystem(new InterestManagerSystem());
   }
 
@@ -220,16 +217,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
       }
     });
 
-    // 2. Run Shared Deterministic Simulation
-    // In a full implementation, we'd loop through inputs and backtrack for shots.
-    // For this roadmap iteration, we simulate one tick.
-    DeterministicSimulation.update(this.world, this.fixedTimeStep, { isResimulating: false });
-
-    // 2.1 Run server-only systems (Spatial Partitioning, Interest Management)
-    // Manually advance world.tick to fix Hallazgo 6
-    this.world.advanceTick();
-    this.world.systemsList.forEach(system => system.update(this.world, 0));
-    this.world.flush();
+    // 2. Run Headless ECS Simulation
+    this.gameSimulation.runSimulationStep(this.fixedTimeStep, false);
 
     // 3. Sync ECS World back to Colyseus Schema
     this.syncWorldToSchema();
@@ -395,22 +384,6 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
    * @param targetTick The tick to backtrack to.
    * @returns A function to restore the entities to their current state.
    */
-  private backtrackEntities(targetTick: number): () => void {
-    const historicalSnapshot = this.stateHistory.get(targetTick);
-    if (!historicalSnapshot) return () => {};
-
-    // Save current state of potential targets (Asteroids)
-    const currentSnapshot = this.world.snapshot();
-
-    // We only want to backtrack targets, not the shooter.
-    // For simplicity, we restore the whole world but we'll need to be careful with shooters.
-    // In a more complex implementation, we'd only mutate Transform components of targets.
-    this.world.restore(historicalSnapshot);
-
-    return () => {
-      this.world.restore(currentSnapshot);
-    };
-  }
 
   private syncWorldToSchema() {
     // Sync Players
@@ -439,6 +412,12 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
         if (health) {
             player.lives = health.current;
             player.alive = health.current > 0;
+        }
+
+        // Authoritative score from ECS ShipComponent
+        const ship = this.world.getComponent<ShipComponent>(entity, "Ship");
+        if (ship) {
+            player.score = ship.score;
         }
     });
 

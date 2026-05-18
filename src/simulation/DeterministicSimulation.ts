@@ -38,6 +38,9 @@ const ASTEROID_SPLIT_CONFIG: Record<
 /**
  * Core simulation orchestrator designed for perfect reproducibility (Determinism).
  *
+ * @deprecated Use headless ECS mode via `new AsteroidsGame({ headless: true })` instead.
+ * This class is maintained for legacy compatibility during migration.
+ *
  * @remarks
  * **HARDENING RULES**:
  * 1. **No direct mutations**: Always use `world.mutateComponent`.
@@ -49,14 +52,14 @@ export class DeterministicSimulation {
     /**
      * Entry point for an individual simulation tick.
      */
-    public static update(world: World, deltaTime: number, ctx: SimulationContext) {
-        this.internalUpdate(world, deltaTime, ctx);
+    public static update(world: World, deltaTime: number, ctx: SimulationContext, config: typeof GAME_CONFIG = GAME_CONFIG) {
+        this.internalUpdate(world, deltaTime, ctx, config);
     }
 
     /**
      * Internal sequence of simulation phases.
      */
-    private static internalUpdate(world: World, deltaTime: number, ctx: SimulationContext) {
+    private static internalUpdate(world: World, deltaTime: number, ctx: SimulationContext, config: typeof GAME_CONFIG) {
         const dtSeconds = deltaTime / 1000;
 
         // 0. Server tick synchronization.
@@ -66,25 +69,25 @@ export class DeterministicSimulation {
         });
 
         // 1. Process Inputs and Ship Physics.
-        this.updateShips(world, deltaTime, ctx);
+        this.updateShips(world, deltaTime, ctx, config);
 
         // 2. Movement Integration.
-        this.integrateMovement(world, dtSeconds);
+        this.integrateMovement(world, dtSeconds, config);
 
         // 3. TTL (Time To Live).
         this.updateTTL(world, deltaTime);
 
         // 4. Collision Detection and Resolution.
-        this.updateCollisions(world, ctx, deltaTime);
+        this.updateCollisions(world, ctx, deltaTime, config);
 
         // 5. UFO behavior logic.
-        this.updateUfos(world, dtSeconds);
+        this.updateUfos(world, dtSeconds, config);
 
         // 6. Spawning Logic.
-        this.updateSpawning(world, ctx);
+        this.updateSpawning(world, ctx, config);
     }
 
-    private static updateUfos(world: World, dtSeconds: number) {
+    private static updateUfos(world: World, dtSeconds: number, config: typeof GAME_CONFIG) {
         const ufos = world.query("Ufo", "Transform", "Velocity");
         ufos.forEach((entity) => {
           const ufo = world.getComponent<UfoComponent>(entity, "Ufo");
@@ -94,8 +97,8 @@ export class DeterministicSimulation {
                 u.time += dtSeconds;
             });
 
-            const UFO_OSCILLATION_AMPLITUDE = 30;
-            const UFO_OSCILLATION_FREQUENCY = 2;
+            const UFO_OSCILLATION_AMPLITUDE = config.UFO_OSCILLATION_AMPLITUDE;
+            const UFO_OSCILLATION_FREQUENCY = config.UFO_OSCILLATION_FREQUENCY;
 
             world.mutateComponent(entity, "Transform", (t: TransformComponent) => {
                 t.y = ufo.baseY + Math.sin(ufo.time * UFO_OSCILLATION_FREQUENCY) * UFO_OSCILLATION_AMPLITUDE;
@@ -103,14 +106,14 @@ export class DeterministicSimulation {
 
             // UFOs that go off-screen horizontally are removed
             const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
-            if (pos.x < -50 || pos.x > GAME_CONFIG.SCREEN_WIDTH + 50) {
+            if (pos.x < -50 || pos.x > config.SCREEN_WIDTH + 50) {
               world.getCommandBuffer().removeEntity(entity);
             }
           }
         });
     }
 
-    private static updateShips(world: World, deltaTime: number, ctx: SimulationContext) {
+    private static updateShips(world: World, deltaTime: number, ctx: SimulationContext, config: typeof GAME_CONFIG) {
         const ships = world.query("Ship", "Transform", "Velocity", "Render", "Input");
         ships.forEach(entity => {
             const pos = world.getComponent<TransformComponent>(entity, "Transform");
@@ -129,13 +132,13 @@ export class DeterministicSimulation {
                     input,
                     deltaTime,
                     ctx,
-                    GAME_CONFIG
+                    config
                 );
             }
         });
     }
 
-    private static integrateMovement(world: World, dtSeconds: number) {
+    private static integrateMovement(world: World, dtSeconds: number, config: typeof GAME_CONFIG) {
         const moveables = world.query("Transform", "Velocity");
         moveables.forEach(entity => {
             if (world.hasComponent(entity, "ManualMovement")) return;
@@ -150,7 +153,7 @@ export class DeterministicSimulation {
                     if (boundary) {
                         PhysicsUtils.wrapBoundary(t, boundary.width, boundary.height);
                     } else {
-                         PhysicsUtils.wrapBoundary(t, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
+                         PhysicsUtils.wrapBoundary(t, config.SCREEN_WIDTH, config.SCREEN_HEIGHT);
                     }
                 });
             }
@@ -171,7 +174,7 @@ export class DeterministicSimulation {
         });
     }
 
-    private static updateCollisions(world: World, ctx: SimulationContext, deltaTime: number) {
+    private static updateCollisions(world: World, ctx: SimulationContext, deltaTime: number, config: typeof GAME_CONFIG) {
         const ships = world.query("Ship", "Health");
         ships.forEach(ship => {
             world.mutateComponent(ship, "Health", (h: HealthComponent) => {
@@ -223,7 +226,7 @@ export class DeterministicSimulation {
                 const minDist = bRadius + aRadius;
 
                 if (distSq < minDist * minDist) {
-                    this.handleBulletAsteroidCollision(world, bullet, asteroid, ctx);
+                    this.handleBulletAsteroidCollision(world, bullet, asteroid, ctx, config);
                 }
             });
         });
@@ -250,19 +253,19 @@ export class DeterministicSimulation {
                 const minDist = sRadius + aRadius;
 
                 if (distSq < minDist * minDist) {
-                    this.handleShipAsteroidCollision(world, ship, asteroid, ctx);
+                    this.handleShipAsteroidCollision(world, ship, asteroid, ctx, config);
                 }
             });
         });
     }
 
-    private static handleBulletAsteroidCollision(world: World, bullet: Entity, asteroid: Entity, ctx: SimulationContext) {
+    private static handleBulletAsteroidCollision(world: World, bullet: Entity, asteroid: Entity, ctx: SimulationContext, config: typeof GAME_CONFIG) {
         const aPos = world.getComponent<TransformComponent>(asteroid, "Transform")!;
         const asteroidComp = world.getComponent<AsteroidComponent>(asteroid, "Asteroid")!;
         const size = asteroidComp.size;
 
         if (!ctx.isResimulating) {
-            this.spawnExplosion(world, aPos);
+            this.spawnExplosion(world, aPos, config);
             const eventBus = world.getResource<EventBus>("EventBus");
             if (eventBus) eventBus.emitDeferred("asteroid:destroyed", { size });
         }
@@ -271,22 +274,24 @@ export class DeterministicSimulation {
         world.getCommandBuffer().removeEntity(bullet);
 
         world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
-            gs.score += GAME_CONFIG.ASTEROID_SCORE;
+            gs.score += config.ASTEROID_SCORE;
         });
     }
 
-    private static handleShipAsteroidCollision(world: World, ship: Entity, _asteroid: Entity, ctx: SimulationContext) {
+    private static handleShipAsteroidCollision(world: World, ship: Entity, _asteroid: Entity, ctx: SimulationContext, config: typeof GAME_CONFIG) {
         let isDead = false;
         world.mutateComponent(ship, "Health", (h: HealthComponent) => {
             h.current--;
-            h.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+            h.invulnerableRemaining = config.INVULNERABILITY_DURATION;
             if (h.current <= 0) isDead = true;
         });
 
         if (!ctx.isResimulating) {
+             const sPos = world.getComponent<TransformComponent>(ship, "Transform")!;
+             this.spawnExplosion(world, sPos, config);
              world.mutateSingleton<ScreenShakeComponent>("ScreenShake", (shake) => {
-                 shake.intensity = GAME_CONFIG.SHAKE_INTENSITY_IMPACT;
-                 shake.remaining = GAME_CONFIG.SHAKE_DURATION_IMPACT;
+                 shake.intensity = config.SHAKE_INTENSITY_IMPACT;
+                 shake.remaining = config.SHAKE_DURATION_IMPACT;
              });
              const eventBus = world.getResource<EventBus>("EventBus");
              if (eventBus) eventBus.emitDeferred("ship:hit");
@@ -313,11 +318,11 @@ export class DeterministicSimulation {
         world.getCommandBuffer().removeEntity(asteroidEntity);
     }
 
-    private static spawnExplosion(world: World, position: TransformComponent) {
+    private static spawnExplosion(world: World, position: TransformComponent, config: typeof GAME_CONFIG) {
         const renderRandom = RandomService.getRenderRandom();
         const EXPLOSION_VELOCITY_SCALE = 160;
 
-        for (let i = 0; i < GAME_CONFIG.PARTICLE_COUNT; i++) {
+        for (let i = 0; i < config.PARTICLE_COUNT; i++) {
           createParticle({
             world,
             x: position.x,
@@ -330,7 +335,7 @@ export class DeterministicSimulation {
         }
     }
 
-    private static updateSpawning(world: World, ctx: SimulationContext) {
+    private static updateSpawning(world: World, ctx: SimulationContext, config: typeof GAME_CONFIG) {
         const asteroids = world.query("Asteroid");
         const gameplayRandom = RandomService.getInstance("gameplay");
 
@@ -340,12 +345,12 @@ export class DeterministicSimulation {
                 if (eventBus) eventBus.emitDeferred("wave:complete");
             }
 
-            const ASTEROIDS_PER_WAVE = 6;
+            const ASTEROIDS_PER_WAVE = config.ASTEROIDS_PER_WAVE;
             for (let i = 0; i < ASTEROIDS_PER_WAVE; i++) {
                 createAsteroid({
                     world,
-                    x: gameplayRandom.nextRange(0, GAME_CONFIG.SCREEN_WIDTH),
-                    y: gameplayRandom.nextRange(0, GAME_CONFIG.SCREEN_HEIGHT),
+                    x: gameplayRandom.nextRange(0, config.SCREEN_WIDTH),
+                    y: gameplayRandom.nextRange(0, config.SCREEN_HEIGHT),
                     size: "large",
                     deferred: true
                 });
@@ -353,7 +358,7 @@ export class DeterministicSimulation {
         }
 
         // Random UFO spawn
-        if (world.query("Ufo").length === 0 && gameplayRandom.chance(GAME_CONFIG.UFO_SPAWN_CHANCE)) {
+        if (world.query("Ufo").length === 0 && gameplayRandom.chance(config.UFO_SPAWN_CHANCE)) {
           createUfo({ world, deferred: true });
         }
     }

@@ -51,18 +51,18 @@ export class AsteroidCollisionSystem extends System {
    * Processes collision events from the CollisionEventsComponent.
    */
   public update(world: World, _deltaTime: number): void {
-    const entitiesWithEvents = world.query("CollisionEvents");
+    const query = world.getQuery("CollisionEvents");
 
-    for (const entity of entitiesWithEvents) {
+    query.forEach((entity) => {
       const eventsComp = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
-      if (!eventsComp) continue;
+      if (!eventsComp) return;
 
       for (const event of eventsComp.collisions) {
         // Ensure each collision pair is processed only once
         if (entity > event.otherEntity) continue;
         this.resolveCollision(world, entity, event.otherEntity);
       }
-    }
+    });
   }
 
   private resolveCollision(world: World, entityA: Entity, entityB: Entity): void {
@@ -121,9 +121,26 @@ export class AsteroidCollisionSystem extends System {
     const asteroidComp = world.getComponent<AsteroidComponent>(asteroid, "Asteroid");
     const size = asteroidComp?.size || "small";
 
+    const bulletComp = world.getComponent<BulletComponent>(bullet, "Bullet");
+    const ownerId = bulletComp?.ownerId;
+
     world.mutateSingleton<GameStateComponent>("GameState", (gameState) => {
       gameState.lastBulletHit = true;
-      this.addScore(world, GAME_CONFIG.ASTEROID_SCORE * (gameState.comboMultiplier || 1));
+      const points = GAME_CONFIG.ASTEROID_SCORE * (gameState.comboMultiplier || 1);
+      this.addScore(world, points);
+
+      if (ownerId) {
+          const ships = world.query("Ship");
+          for (const shipEntity of ships) {
+              const ship = world.getComponent<ShipComponent>(shipEntity, "Ship");
+              if (ship?.sessionId === ownerId) {
+                  world.mutateComponent<ShipComponent>(shipEntity, "Ship", s => {
+                      s.score += points;
+                  });
+                  break;
+              }
+          }
+      }
     });
 
     this.splitAsteroid(world, asteroid);

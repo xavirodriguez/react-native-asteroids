@@ -22,23 +22,26 @@ export class AsteroidsGameScene extends Scene {
   private bulletPool: BulletPool;
   private particlePool: ParticlePool;
   private gameStateSystem: IGameStateSystem;
+  private config: typeof GAME_CONFIG;
 
   constructor(
     world: World,
     game: IAsteroidsGame,
     bulletPool: BulletPool,
     particlePool: ParticlePool,
-    gameStateSystem: IGameStateSystem
+    gameStateSystem: IGameStateSystem,
+    config: typeof GAME_CONFIG = GAME_CONFIG
   ) {
     super(world);
     this.game = game;
     this.bulletPool = bulletPool;
     this.particlePool = particlePool;
     this.gameStateSystem = gameStateSystem;
+    this.config = config;
   }
 
   public onEnter(): void {
-    const inputSys = new AsteroidInputSystem(this.bulletPool, this.particlePool);
+    const inputSys = new AsteroidInputSystem(this.bulletPool, this.particlePool, this.config);
 
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());
@@ -56,9 +59,9 @@ export class AsteroidsGameScene extends Scene {
   }
 
   private initializeEntities(): void {
-    createShip({ world: this.world, x: GAME_CONFIG.SCREEN_CENTER_X, y: GAME_CONFIG.SCREEN_CENTER_Y });
+    createShip({ world: this.world, x: this.config.SCREEN_CENTER_X, y: this.config.SCREEN_CENTER_Y });
     createGameState({ world: this.world });
-    spawnAsteroidWave({ world: this.world, count: GAME_CONFIG.INITIAL_ASTEROID_COUNT });
+    spawnAsteroidWave({ world: this.world, count: this.config.INITIAL_ASTEROID_COUNT });
   }
 
   public override onRestartCleanup(): void {

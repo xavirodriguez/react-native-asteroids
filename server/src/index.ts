@@ -73,6 +73,9 @@ app.post("/daily-score", (req, res) => {
     return res.status(400).send("Invalid displayName");
   }
 
+  // Note: For fully authoritative leaderboards, score should be pulled
+  // from the room state at game over, rather than submitted via HTTP.
+  // For now, we'll keep the endpoint but add a note about this.
   leaderboardStore.addScore(gameId, dateKey, playerId, score, displayName);
   res.json({ success: true });
 });
