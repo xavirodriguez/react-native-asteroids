@@ -1,7 +1,6 @@
 import { World } from "../../../engine/core/World";
 import { System } from "../../../engine/core/System";
 import {
-  type AsteroidComponent,
   type HealthComponent,
   type Entity,
   TransformComponent,
@@ -10,7 +9,7 @@ import {
 } from "../../../engine/types/EngineTypes";
 
 import { createAsteroid, createParticle } from "../EntityFactory";
-import { type GameStateComponent, GAME_CONFIG } from "../types/AsteroidTypes";
+import { type AsteroidComponent, type GameStateComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 import { ScreenShakeComponent } from "../../../engine/types/EngineTypes";
 import { hapticDamage, hapticDeath } from "../../../utils/haptics";
 import { ParticlePool } from "../EntityPool";

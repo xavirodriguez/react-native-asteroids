@@ -15,7 +15,7 @@ import {
 /**
  * Interface for pooled component data.
  */
-interface BulletComponents {
+interface BulletComponents extends Record<string, Component> {
   position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
@@ -42,7 +42,7 @@ export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
   constructor(initialSize: number = 20) {
     super({
       factory: () => ({
-        position: { type: "Transform", x: 0, y: 0 },
+        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "bullet_shape", size: 0, color: "", rotation: 0 },
         collider: {
@@ -82,7 +82,7 @@ export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
 /**
  * Interface for pooled particle data.
  */
-interface ParticleComponents {
+interface ParticleComponents extends Record<string, Component> {
   position: TransformComponent;
   velocity: VelocityComponent;
   render: RenderComponent;
@@ -101,7 +101,7 @@ export class ParticlePool extends PrefabPool<ParticleComponents, ParticleParams>
   constructor(initialSize: number = 100) {
     super({
       factory: () => ({
-        position: { type: "Transform", x: 0, y: 0 },
+        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0 },
         ttl: { type: "TTL", remaining: 0, total: 0 },
