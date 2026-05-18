@@ -181,6 +181,9 @@ export class AsteroidsGame
    */
   public runSimulationStep(deltaTime: number, isResimulating: boolean) {
     DeterministicSimulation.update(this.world, deltaTime, { isResimulating });
+    // Flush structural changes immediately after simulation to ensure world integrity
+    // for subsequent ticks during reconciliation or prediction.
+    this.world.flush();
   }
 
   /**
@@ -420,18 +423,15 @@ export class AsteroidsGame
       }
 
       // Re-apply LocalPlayer tag
+      let localPlayerEntity: number | undefined;
       if (localSessionId) {
         const ships = this.world.query("Ship");
-        const localPlayerEntity = ships.find(e => {
+        localPlayerEntity = ships.find(e => {
           const ship = this.world.getComponent<import("./types/AsteroidTypes").ShipComponent>(e, "Ship");
           return ship && ship.sessionId === localSessionId;
         });
         if (localPlayerEntity !== undefined) {
-          if (this.world.isUpdating) {
-            this.world.getCommandBuffer().addComponent(localPlayerEntity, { type: "LocalPlayer" } as import("../../engine/core/Component").Component);
-          } else {
-            this.world.addComponent(localPlayerEntity, { type: "LocalPlayer" } as import("../../engine/core/Component").Component);
-          }
+          this.world.getCommandBuffer().addComponent(localPlayerEntity, { type: "LocalPlayer" } as import("../../engine/core/Component").Component);
         }
       }
 
@@ -439,9 +439,8 @@ export class AsteroidsGame
       this.inputHistory
         .filter(input => input.tick > serverTick)
         .forEach(input => {
-          const lp = this.world.query("LocalPlayer")[0];
-          if (lp !== undefined) {
-            this.applyInputToEntity(lp, input);
+          if (localPlayerEntity !== undefined) {
+            this.applyInputToEntity(localPlayerEntity, input);
           }
           this.runSimulationStep(16.66, true);
 
@@ -479,11 +478,7 @@ export class AsteroidsGame
             scaleY: 0
           } as import("../../engine/core/CoreComponents").VisualOffsetComponent;
 
-          if (this.world.isUpdating) {
-            this.world.getCommandBuffer().addComponent(id, visualOffset);
-          } else {
-            this.world.addComponent(id, visualOffset);
-          }
+          this.world.getCommandBuffer().addComponent(id, visualOffset);
 
           JuiceSystem.add(this.world, id, {
             property: "x",

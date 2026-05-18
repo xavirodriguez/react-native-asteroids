@@ -7,14 +7,16 @@ EXIT_CODE=0
 
 echo "Checking for direct component property assignments in systems..."
 # Look for patterns like world.getComponent(e, "Comp")!.prop = val
-# This is a simplified regex, might need refinement.
-# We exclude tests and common false positives.
-VIOLATIONS=$(grep -r "world.getComponent(" src/engine/systems src/simulation src/games/*/systems | grep "=" | grep -v "mutateComponent" | grep -v "__tests__")
+# This refined regex excludes variable declarations and initializations:
+# - Matches world.getComponent(...) followed by optional non-newline chars and a dot
+# - Followed by an identifier and an equals sign
+# - Filters out 'const', 'let', 'var' and '==='
+VIOLATIONS=$(grep -rE "world\.getComponent\(.+\)\s*\.\s*[a-zA-Z0-9_]+\s*=[^=]" src/engine/systems src/simulation src/games/*/systems | grep -vE "(const|let|var)\s+" | grep -v "__tests__")
 
 if [ ! -z "$VIOLATIONS" ]; then
     echo "Potential direct component mutations found (ensure they are inside mutateComponent):"
     echo "$VIOLATIONS"
-    # Note: We keep this as a warning for now as regex for assignments is tricky with getComponent
+    # We still keep this as warning because TS types can make regex tricky
     # EXIT_CODE=1
 else
     echo "No direct mutations found in checked directories."
