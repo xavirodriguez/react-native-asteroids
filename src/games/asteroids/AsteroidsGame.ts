@@ -58,13 +58,14 @@ export class AsteroidsGame
   public readonly gameId = "asteroids";
   private config: typeof GAME_CONFIG;
 
-  constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown> } = {}) {
+  constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown>, headless?: boolean } = {}) {
     const seed = config.gameOptions?.seed as number || config.seed;
     super({
       pauseKey: GAME_CONFIG.KEYS.PAUSE,
       restartKey: GAME_CONFIG.KEYS.RESTART,
       isMultiplayer: config.isMultiplayer,
-      gameOptions: { ...config.gameOptions, seed }
+      gameOptions: { ...config.gameOptions, seed },
+      headless: config.headless
     });
   }
 
@@ -76,7 +77,9 @@ export class AsteroidsGame
       : { ...GAME_CONFIG };
     this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
-    await this.onPreloadAssets();
+    if (!this.isHeadless) {
+        await this.onPreloadAssets();
+    }
     await super.init();
   }
 
@@ -530,8 +533,12 @@ export class AsteroidsGame
     this.world.addSystem(new TTLSystem());
     this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new UfoSystem());
-    this.world.addSystem(new ScreenShakeSystem());
-    this.world.addSystem(new JuiceSystem());
+
+    if (!this.isHeadless) {
+      this.world.addSystem(new ScreenShakeSystem());
+      this.world.addSystem(new JuiceSystem());
+    }
+
     this.world.addSystem(new SpatialPartitioningSystem());
     this.world.addSystem(new LootSystem());
     this.world.addSystem(new PowerUpSystem());
@@ -540,8 +547,10 @@ export class AsteroidsGame
     const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     this.world.addSystem(new MutatorSystem(activeMutators));
 
-    this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
-    this.world.addSystem(new AsteroidRenderSystem()); // Handle trails
+    if (!this.isHeadless) {
+      this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
+      this.world.addSystem(new AsteroidRenderSystem()); // Handle trails
+    }
 
     // Register a system to apply interpolation for remote entities
     if (this.isMultiplayer) {
@@ -595,6 +604,7 @@ export class AsteroidsGame
    * Registers game-specific rendering logic to the provided renderer.
    */
   public initializeRenderer(renderer: Renderer<unknown>): void {
+    if (this.isHeadless) return;
     initializeAsteroidsRenderer(renderer);
   }
 

@@ -307,6 +307,10 @@ export class World {
    */
   clearSystems(): void {
     this.assertCanMutateStructure("clearSystems");
+    this.systems.forEach((reg) => {
+      reg.system.onUnregister(this);
+      reg.system.dispose();
+    });
     this.systems = [];
     this.sortedSystems = [];
     this.systemsNeedSorting = false;
@@ -450,8 +454,14 @@ export class World {
   /**
    * Provides a set of entities matching the specified component signature.
    */
-  public query(...componentTypes: string[]): ReadonlyArray<Entity> {
-    if (componentTypes.length === 0) return [];
+  /**
+   * Retrieves a query for a specific component signature.
+   *
+   * @param componentTypes - Component type discriminators.
+   * @returns The {@link Query} instance.
+   */
+  public getQuery(...componentTypes: string[]): Query {
+    if (componentTypes.length === 0) throw new Error("World.getQuery requires at least one component type.");
     const key = componentTypes.length === 1 ? componentTypes[0] : [...componentTypes].sort().join(",");
     let query = this.queries.get(key);
 
@@ -474,7 +484,12 @@ export class World {
       });
     }
 
-    return query.getEntities();
+    return query;
+  }
+
+  public query(...componentTypes: string[]): ReadonlyArray<Entity> {
+    if (componentTypes.length === 0) return [];
+    return this.getQuery(...componentTypes).getEntities();
   }
 
   /**
@@ -614,8 +629,8 @@ export class World {
     this.assertCanMutateStructure("addSystem");
 
     // Prevent duplicate system instances
-    for (const reg of this.systems) {
-      if (reg.system === system) return;
+    for (let i = 0; i < this.systems.length; i++) {
+      if (this.systems[i].system === system) return;
     }
 
     const phase = config.phase ?? SystemPhase.Simulation;
@@ -623,6 +638,8 @@ export class World {
     this.systems.push({ system, phase, priority });
     this.systemsNeedSorting = true;
     this._systemsVersion++;
+
+    system.onRegister(this);
   }
 
   /**

@@ -28,11 +28,11 @@ export class DamageNumberSystem extends System {
             element.offsetY = y;
         });
 
-        const gameplayRandom = RandomService.getInstance("gameplay");
+        const renderRandom = RandomService.getRenderRandom();
         commands.addComponent(entity, {
             type: "DamageNumber",
             value,
-            velocity: { x: (gameplayRandom.next() - 0.5) * 40, y: -60 - gameplayRandom.next() * 40 }
+            velocity: { x: (renderRandom.next() - 0.5) * 40, y: -60 - renderRandom.next() * 40 }
         } as DamageNumberComponent);
 
         commands.addComponent(entity, {

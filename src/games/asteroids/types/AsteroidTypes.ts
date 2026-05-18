@@ -34,6 +34,7 @@ export interface BulletComponent extends Component {
 export interface ShipComponent extends Component {
   type: "Ship";
   sessionId?: string;
+  score: number;
   hyperspaceTimer: number;
   hyperspaceCooldownRemaining: number;
 }
@@ -149,6 +150,10 @@ export const GAME_CONFIG = {
 
   PARTICLE_COUNT: 10,
   PARTICLE_TTL_BASE: 600,
+
+  UFO_OSCILLATION_AMPLITUDE: 30,
+  UFO_OSCILLATION_FREQUENCY: 2,
+  ASTEROIDS_PER_WAVE: 6,
   PARTICLE_SPEED_BASE: 50,
 
   STAR_COUNT: 150,

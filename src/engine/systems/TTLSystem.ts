@@ -16,10 +16,9 @@ export class TTLSystem extends System {
    * @param deltaTime - Elapsed time in milliseconds [ms].
    */
   public update(world: World, deltaTime: number): void {
-    const ttlEntities = world.query("TTL");
+    const query = world.getQuery("TTL");
 
-    for (let i = 0; i < ttlEntities.length; i++) {
-      const entity = ttlEntities[i];
+    query.forEach((entity) => {
       let expired = false;
 
       world.mutateComponent<TTLComponent>(entity, "TTL", (ttl) => {
@@ -45,6 +44,6 @@ export class TTLSystem extends System {
 
         world.getCommandBuffer().removeEntity(entity);
       }
-    }
+    });
   }
 }

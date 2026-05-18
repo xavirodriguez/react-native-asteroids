@@ -28,6 +28,8 @@ export interface BaseGameConfig {
   isMultiplayer?: boolean;
   /** Global game options, including the initial simulation seed. */
   gameOptions?: Record<string, unknown>;
+  /** Runs the game without visual systems or asset loading. Suitable for server-side execution. */
+  headless?: boolean;
 }
 
 /**
@@ -161,6 +163,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected currentSeed: number = 0;
   /** Indicates if the game is running in a multiplayer session. */
   public isMultiplayer: boolean;
+  /** Indicates if the game is running in headless mode. */
+  public readonly isHeadless: boolean;
 
   private _status: GameStatus = GameStatus.UNINITIALIZED;
   private _transitionLock: Promise<void> | null = null;
@@ -179,8 +183,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   public abstract initializeRenderer(renderer: import("../rendering/Renderer").Renderer<unknown>): void;
 
   constructor(config: BaseGameConfig = {}) {
-    const { isMultiplayer = false } = config;
+    const { isMultiplayer = false, headless = false } = config;
     this.isMultiplayer = isMultiplayer;
+    this.isHeadless = headless;
     this.world = new World();
     this.gameLoop = new GameLoop();
     this.unifiedInput = new UnifiedInputSystem();

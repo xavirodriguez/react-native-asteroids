@@ -15,40 +15,48 @@ import { RandomService } from "../utils/RandomService";
  * @public
  */
 export class LootSystem extends System {
-  private registeredWorld: World | null = null;
-  private _listenersRegistered = false;
+  private handlers: Map<string, any> = new Map();
 
   constructor() {
     super();
   }
 
-  /**
-   * Periodically checks if the system needs to register listeners for a new world.
-   */
-  public update(world: World, _deltaTime: number): void {
-    if (this.registeredWorld !== world) {
-      this.registerListeners(world);
-      this.registeredWorld = world;
-    }
-  }
-
-  private registerListeners(world: World): void {
-    if (this._listenersRegistered) return;
-
+  public override onRegister(world: World): void {
     const eventBus = world.getResource<EventBus>("EventBus");
     if (eventBus) {
-      eventBus.on("entity:destroyed", (payload: { entity: Entity, type: string }) => {
+      const entityDestroyedHandler = (payload: { entity: Entity, type: string }) => {
         this.handleEntityDestruction(world, payload.entity);
-      });
+      };
 
-      eventBus.on("asteroid:destroyed", (payload: { entity?: Entity }) => {
+      const asteroidDestroyedHandler = (payload: { entity?: Entity }) => {
         if (payload.entity !== undefined) {
            this.handleEntityDestruction(world, payload.entity);
         }
-      });
+      };
 
-      this._listenersRegistered = true;
+      eventBus.on("entity:destroyed", entityDestroyedHandler);
+      eventBus.on("asteroid:destroyed", asteroidDestroyedHandler);
+
+      this.handlers.set("entity:destroyed", entityDestroyedHandler);
+      this.handlers.set("asteroid:destroyed", asteroidDestroyedHandler);
     }
+  }
+
+  public override onUnregister(world: World): void {
+    const eventBus = world.getResource<EventBus>("EventBus");
+    if (eventBus) {
+      this.handlers.forEach((handler, event) => {
+        eventBus.off(event, handler);
+      });
+    }
+    this.handlers.clear();
+  }
+
+  /**
+   * Periodically checks if the system needs to register listeners for a new world.
+   */
+  public update(_world: World, _deltaTime: number): void {
+    // Listeners are now registered via onRegister lifecycle hook
   }
 
   private handleEntityDestruction(world: World, entity: Entity): void {

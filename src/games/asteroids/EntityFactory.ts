@@ -108,7 +108,7 @@ export const createShip = ({ world, x, y, deferred }: { world: World; x: number;
     isTrigger: false,
     enabled: true
   } as Collider2DComponent);
-  add({ type: "Ship", hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0 } as ShipComponent);
+  add({ type: "Ship", score: 0, hyperspaceTimer: 0, hyperspaceCooldownRemaining: 0 } as ShipComponent);
   add({
     type: "Trail",
     points: new Array(GAME_CONFIG.TRAIL_MAX_LENGTH),
