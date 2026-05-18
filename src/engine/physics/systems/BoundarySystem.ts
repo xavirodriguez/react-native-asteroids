@@ -20,17 +20,16 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
 export class BoundarySystem extends System {
   public update(world: World, deltaTime: number): void {
     void deltaTime;
-    const entities = world.query("Transform", "Boundary");
+    const query = world.getQuery("Transform", "Boundary");
 
-    for (let i = 0; i < entities.length; i++) {
-      const entity = entities[i];
+    query.forEach((entity) => {
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
       const boundary = world.getComponent<BoundaryComponent>(entity, "Boundary")!;
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
 
-      if (world.hasComponent(entity, "ManualMovement")) continue;
+      if (world.hasComponent(entity, "ManualMovement")) return;
       this.applyBoundary(world, entity, pos, boundary, vel);
-    }
+    });
   }
 
   private applyBoundary(

@@ -35,11 +35,10 @@ export class MovementSystem extends System {
    * El sistema marca el flag `dirty` del `Transform` para notificar cambios a otros sistemas dependientes.
    */
   public update(world: World, deltaTime: number): void {
-    const entities = world.query("Transform", "Velocity");
+    const query = world.getQuery("Transform", "Velocity");
     const dtSeconds = deltaTime / 1000;
 
-    for (let i = 0; i < entities.length; i++) {
-      const entity = entities[i];
+    query.forEach((entity) => {
 
       const node = world.getComponent<SpatialNodeComponent>(entity, "SpatialNode");
       const hasBoundary = world.hasComponent(entity, "Boundary");
@@ -53,7 +52,7 @@ export class MovementSystem extends System {
         if (world.debugMode) {
           console.debug(`[MovementSystem] Skipping entity ${entity} due to inactive SpatialNode (culling).`);
         }
-        continue;
+        return;
       }
 
       const pos = world.getComponent<TransformComponent>(entity, "Transform");
@@ -64,7 +63,7 @@ export class MovementSystem extends System {
           if (world.debugMode) {
             console.debug(`[MovementSystem] Skipping entity ${entity} due to ManualMovementComponent.`);
           }
-          continue;
+          return;
         }
 
         if (world.debugMode) {
@@ -75,6 +74,6 @@ export class MovementSystem extends System {
           PhysicsUtils.integrateMovement(p, vel, dtSeconds);
         });
       }
-    }
+    });
   }
 }

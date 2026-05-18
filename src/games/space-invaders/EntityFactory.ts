@@ -46,7 +46,7 @@ const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, a
  * Creates the player ship entity.
  * Includes input handling, health, and boundary constraints.
  */
-export function createPlayer(world: World, x: number, y: number, deferred: boolean = true): Entity {
+export function createPlayer(world: World, x: number, y: number, deferred?: boolean): Entity {
   const { entity: player, add } = createBaseEntity(world, deferred);
   add({ type: "Transform", x, y });
   add({ type: "Velocity", dx: 0, dy: 0 });
@@ -111,7 +111,7 @@ export function createPlayer(world: World, x: number, y: number, deferred: boole
  * Creates a single invader entity.
  * Points are assigned based on the row (classic Space Invaders scoring).
  */
-export function createInvader(world: World, x: number, y: number, row: number, col: number, deferred: boolean = true): Entity {
+export function createInvader(world: World, x: number, y: number, row: number, col: number, deferred?: boolean): Entity {
   const { entity: invader, add } = createBaseEntity(world, deferred);
   add({ type: "Transform", x, y });
   add({ type: "Velocity", dx: 0, dy: 0 });
@@ -185,7 +185,7 @@ export function createEnemyBullet(world: World, x: number, y: number, pool: Enem
 /**
  * Creates a single destructible block of a shield/bunker.
  */
-export function createShieldSegment(world: World, x: number, y: number, row: number, col: number, deferred: boolean = true): Entity {
+export function createShieldSegment(world: World, x: number, y: number, row: number, col: number, deferred?: boolean): Entity {
   const { entity: segment, add } = createBaseEntity(world, deferred);
   add({ type: "Transform", x, y });
   add({
@@ -217,7 +217,7 @@ export function createShieldSegment(world: World, x: number, y: number, row: num
 /**
  * Creates the global game state entity.
  */
-export function createGameState(world: World, deferred: boolean = true): Entity {
+export function createGameState(world: World, deferred?: boolean): Entity {
   const { entity: gameState, add } = createBaseEntity(world, deferred);
   add({
     type: "GameState",
@@ -238,7 +238,7 @@ export function createGameState(world: World, deferred: boolean = true): Entity 
 /**
  * Creates the singleton entity that coordinates the invader grid movement.
  */
-export function createFormationController(world: World, deferred: boolean = true): Entity {
+export function createFormationController(world: World, deferred?: boolean): Entity {
   const { entity: controller, add } = createBaseEntity(world, deferred);
   add({
     type: "Formation",
@@ -256,7 +256,7 @@ export function createFormationController(world: World, deferred: boolean = true
 /**
  * Procedurally spawns a grid of invaders based on GAME_CONFIG spacing.
  */
-export function spawnInvaderWave(world: World, _level: number, deferred: boolean = true): void {
+export function spawnInvaderWave(world: World, _level: number, deferred?: boolean): void {
   const startX = GAME_CONFIG.INVADER_START_X;
   const startY = GAME_CONFIG.INVADER_START_Y;
   const spacingX = GAME_CONFIG.INVADER_SPACING_X;
@@ -281,7 +281,7 @@ export function spawnInvaderWave(world: World, _level: number, deferred: boolean
 /**
  * Spawns multiple composite bunkers made of individual shield segments.
  */
-export function spawnShields(world: World, deferred: boolean = true): void {
+export function spawnShields(world: World, deferred?: boolean): void {
   const count = GAME_CONFIG.SHIELD_COUNT;
   const segmentsX = GAME_CONFIG.SHIELD_SEGMENTS_X;
   const segmentsY = GAME_CONFIG.SHIELD_SEGMENTS_Y;

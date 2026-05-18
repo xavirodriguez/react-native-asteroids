@@ -59,9 +59,9 @@ export class AsteroidsGameScene extends Scene {
   }
 
   private initializeEntities(): void {
-    createShip({ world: this.world, x: GAME_CONFIG.SCREEN_CENTER_X, y: GAME_CONFIG.SCREEN_CENTER_Y });
+    createShip({ world: this.world, x: this.config.SCREEN_CENTER_X, y: this.config.SCREEN_CENTER_Y });
     createGameState({ world: this.world });
-    spawnAsteroidWave({ world: this.world, count: GAME_CONFIG.INITIAL_ASTEROID_COUNT });
+    spawnAsteroidWave({ world: this.world, count: this.config.INITIAL_ASTEROID_COUNT });
   }
 
   public override onRestartCleanup(): void {

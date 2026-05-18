@@ -22,11 +22,11 @@ export class LootSystem extends System {
   public onRegister(world: World): void {
     const eventBus = world.getResource<EventBus>("EventBus");
     if (eventBus) {
-      eventBus.on("entity:destroyed", (payload: { entity: Entity, type: string }) => {
+      const entityDestroyedHandler = (payload: { entity: Entity, type: string }) => {
         this.handleEntityDestruction(world, payload.entity);
-      });
+      };
 
-      eventBus.on("asteroid:destroyed", (payload: { entity?: Entity }) => {
+      const asteroidDestroyedHandler = (payload: { entity?: Entity }) => {
         if (payload.entity !== undefined) {
            this.handleEntityDestruction(world, payload.entity);
         }

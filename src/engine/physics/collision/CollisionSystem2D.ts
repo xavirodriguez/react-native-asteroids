@@ -51,26 +51,24 @@ export class CollisionSystem2D extends System {
    * @param _deltaTime - Time elapsed in milliseconds.
    */
   update(world: World, _deltaTime: number): void {
-    const entities = world.query("Transform", "Collider2D");
+    const query = world.getQuery("Transform", "Collider2D");
     const currentFramePairs = new Set<string>();
-    const eventEntities = world.query("CollisionEvents");
+    const eventQuery = world.getQuery("CollisionEvents");
 
-    for (let i = 0; i < eventEntities.length; i++) {
-      const entity = eventEntities[i];
+    eventQuery.forEach((entity) => {
       world.mutateComponent<CollisionEventsComponent>(entity, "CollisionEvents", events => {
           events.collisions.length = 0;
           events.triggersEntered.length = 0;
           events.triggersExited.length = 0;
       });
-    }
+    });
 
     let candidates: Array<[Entity, Entity]>;
     const grid = world.getResource<SpatialGrid>("SpatialGrid");
 
     if (this._useSpatialGrid && grid) {
       const entityBoundsMap = new Map<Entity, import("../../types/EngineTypes").AABB>();
-      for (let i = 0; i < entities.length; i++) {
-        const entity = entities[i];
+      query.forEach((entity) => {
         const bounds = BroadPhase.getShapeBounds(world.getComponent<TransformComponent>(entity, "Transform")!, world.getComponent<Collider2DComponent>(entity, "Collider2D")!);
         entityBoundsMap.set(entity, bounds);
 
@@ -78,12 +76,11 @@ export class CollisionSystem2D extends System {
         if (!world.hasComponent(entity, "SpatialNode")) {
             grid.insert(entity, bounds);
         }
-      }
+      });
       candidates = [];
-      for (let i = 0; i < entities.length; i++) {
-        const entityA = entities[i];
+      query.forEach((entityA) => {
         const boundsA = entityBoundsMap.get(entityA);
-        if (!boundsA) continue;
+        if (!boundsA) return;
 
         this._potentialBSet.clear();
         grid.query(boundsA, this._potentialBSet);
@@ -92,9 +89,9 @@ export class CollisionSystem2D extends System {
             candidates.push([entityA, entityB]);
           }
         });
-      }
+      });
     } else {
-      candidates = BroadPhase.sweepAndPrune([...entities], world);
+      candidates = BroadPhase.sweepAndPrune([...query.getEntitiesView()], world);
     }
 
     for (const [entityA, entityB] of candidates) {

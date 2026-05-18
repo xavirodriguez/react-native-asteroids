@@ -102,8 +102,7 @@ export class Query {
    * @returns A read-only array of matching {@link Entity} IDs.
    *
    * @conceptualRisk [GC_PRESSURE][MEDIUM] Every call allocates a new array instance.
-   * High-frequency systems should consider local result caching if `world.structureVersion`
-   * remains unchanged.
+   * High-frequency systems should use `forEach` to avoid allocations.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.needsUpdateArray) {
@@ -111,6 +110,47 @@ export class Query {
       this.needsUpdateArray = false;
     }
     return [...this.entityArray];
+  }
+
+  /**
+   * Executes a callback for each entity matching the query.
+   *
+   * @remarks
+   * This is the high-performance alternative to `getEntities()`, as it
+   * avoids defensive array allocations. It uses the internal cached array.
+   *
+   * @param callback - Function to execute for each entity.
+   */
+  public forEach(callback: (entity: Entity) => void): void {
+    if (this.needsUpdateArray) {
+      this.entityArray = Array.from(this.entities).sort((a, b) => a - b);
+      this.needsUpdateArray = false;
+    }
+    const len = this.entityArray.length;
+    for (let i = 0; i < len; i++) {
+      callback(this.entityArray[i]);
+    }
+  }
+
+  /**
+   * Provides a read-only view of the internal entities array.
+   *
+   * @remarks
+   * **CAUTION**: Returning the internal array directly is dangerous if the caller
+   * attempts to mutate it. In DEV mode, the array is frozen to prevent this.
+   * Use this ONLY in high-performance hot paths.
+   *
+   * @returns The internal sorted array of matching {@link Entity} IDs.
+   */
+  public getEntitiesView(): ReadonlyArray<Entity> {
+    if (this.needsUpdateArray) {
+      this.entityArray = Array.from(this.entities).sort((a, b) => a - b);
+      if (__DEV__) {
+        Object.freeze(this.entityArray);
+      }
+      this.needsUpdateArray = false;
+    }
+    return this.entityArray;
   }
 
   /**
@@ -148,3 +188,5 @@ export class Query {
     this.needsUpdateArray = true;
   }
 }
+
+const __DEV__ = process.env.NODE_ENV !== "production";

@@ -73,15 +73,21 @@ export class AsteroidsRoom extends Room<any> {
     }
   }
 
-  onCreate(options: { seed?: number, replicationMode?: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' }) {
+  async onCreate(options: { seed?: number, replicationMode?: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' }) {
     if (options.replicationMode) {
         this.REPLICATION_MODE = options.replicationMode;
     }
     this.newClients.clear();
     this.state = new AsteroidsState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
-    // Sync the global gameplay random service for the server
-    RandomService.getInstance("gameplay").setSeed(this.state.seed);
+
+    this.gameSimulation = new AsteroidsGame({
+        headless: true,
+        isMultiplayer: true,
+        seed: this.state.seed
+    });
+    await this.gameSimulation.init();
+    this.world = this.gameSimulation.getWorld();
 
     this.state.gameWidth = 800;
     this.state.gameHeight = 600;

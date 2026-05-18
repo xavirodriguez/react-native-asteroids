@@ -50,18 +50,18 @@ export class AsteroidCollisionSystem extends System {
    * Processes collision events from the CollisionEventsComponent.
    */
   public update(world: World, _deltaTime: number): void {
-    const entitiesWithEvents = world.query("CollisionEvents");
+    const query = world.getQuery("CollisionEvents");
 
-    for (const entity of entitiesWithEvents) {
+    query.forEach((entity) => {
       const eventsComp = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
-      if (!eventsComp) continue;
+      if (!eventsComp) return;
 
       for (const event of eventsComp.collisions) {
         // Ensure each collision pair is processed only once
         if (entity > event.otherEntity) continue;
         this.resolveCollision(world, entity, event.otherEntity);
       }
-    }
+    });
   }
 
   private resolveCollision(world: World, entityA: Entity, entityB: Entity): void {
