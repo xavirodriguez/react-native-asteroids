@@ -8,24 +8,26 @@ import { RandomService } from "../../engine/utils/RandomService";
 /**
  * Helper to handle deferred or immediate entity creation and component attachment.
  */
-const createBaseEntity = (world: World): { entity: Entity, add: (comp: Component) => void } => {
-    const isDeferred = world.isUpdating;
+const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, add: (comp: Component) => void } => {
+    const isUpdating = world.isUpdating;
+    const isDeferred = !!(deferred || isUpdating);
     const commands = world.getCommandBuffer();
-    const entity = isDeferred ? world.reserveEntityId() : world.createEntity();
 
     if (isDeferred) {
+        const entity = world.reserveEntityId();
         commands.createEntity(entity);
+        return {
+            entity,
+            add: (comp: Component) => {
+                commands.addComponent(entity, comp);
+            }
+        };
     }
 
+    const entity = world.createEntity();
     return {
         entity,
-        add: (comp: Component) => {
-            if (isDeferred) {
-                commands.addComponent(entity, comp);
-            } else {
-                world.addComponent(entity, comp);
-            }
-        }
+        add: (comp: Component) => world.addComponent(entity, comp)
     };
 };
 
@@ -43,8 +45,8 @@ export const PongEntityFactory = {
    * Creates the ball entity at the center of the screen.
    * Uses `gameplayRandom` to determine initial vertical direction.
    */
-  createBall(world: World) {
-    const { entity: ball, add } = createBaseEntity(world);
+  createBall(world: World, deferred?: boolean) {
+    const { entity: ball, add } = createBaseEntity(world, deferred);
     add({ type: "Transform", x: PONG_CONFIG.WIDTH / 2, y: PONG_CONFIG.HEIGHT / 2, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
     add({ type: "Velocity", dx: PONG_CONFIG.BALL_SPEED_START, dy: PONG_CONFIG.BALL_SPEED_START * (RandomService.getGameplayRandom().next() > 0.5 ? 1 : -1) } as VelocityComponent);
     add({ type: "Render", shape: "circle", size: PONG_CONFIG.BALL_SIZE, color: "white", rotation: 0 } as RenderComponent);
@@ -69,8 +71,8 @@ export const PongEntityFactory = {
    * @param world - ECS World.
    * @param side - Which side of the screen the paddle belongs to.
    */
-  createPaddle(world: World, side: "left" | "right") {
-    const { entity: paddle, add } = createBaseEntity(world);
+  createPaddle(world: World, side: "left" | "right", deferred?: boolean) {
+    const { entity: paddle, add } = createBaseEntity(world, deferred);
     const x = side === "left" ? 40 : PONG_CONFIG.WIDTH - 40;
     const y = PONG_CONFIG.HEIGHT / 2;
     add({ type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
@@ -96,8 +98,8 @@ export const PongEntityFactory = {
     return paddle;
   },
 
-  createGameState(world: World) {
-    const { entity: state, add } = createBaseEntity(world);
+  createGameState(world: World, deferred?: boolean) {
+    const { entity: state, add } = createBaseEntity(world, deferred);
     add({ type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1, gameOverLogged: false } as PongState);
     return state;
   }

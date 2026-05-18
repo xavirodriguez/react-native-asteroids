@@ -19,24 +19,26 @@ import { createInputBufferComponent } from "../../engine/types/InputBufferCompon
 /**
  * Helper to handle deferred or immediate entity creation and component attachment.
  */
-const createBaseEntity = (world: World): { entity: Entity, add: (comp: Component) => void } => {
-    const isDeferred = world.isUpdating;
+const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, add: (comp: Component) => void } => {
+    const isUpdating = world.isUpdating;
+    const isDeferred = !!(deferred || isUpdating);
     const commands = world.getCommandBuffer();
-    const entity = isDeferred ? world.reserveEntityId() : world.createEntity();
 
     if (isDeferred) {
+        const entity = world.reserveEntityId();
         commands.createEntity(entity);
+        return {
+            entity,
+            add: (comp: Component) => {
+                commands.addComponent(entity, comp);
+            }
+        };
     }
 
+    const entity = world.createEntity();
     return {
         entity,
-        add: (comp: Component) => {
-            if (isDeferred) {
-                commands.addComponent(entity, comp);
-            } else {
-                world.addComponent(entity, comp);
-            }
-        }
+        add: (comp: Component) => world.addComponent(entity, comp)
     };
 };
 
@@ -47,6 +49,7 @@ export interface CreateBirdParams {
   world: World;
   x: number;
   y: number;
+  deferred?: boolean;
 }
 
 /**
@@ -56,6 +59,7 @@ export interface CreatePipeParams {
   world: World;
   x: number;
   gapY: number;
+  deferred?: boolean;
 }
 
 /**
@@ -66,8 +70,8 @@ export interface CreatePipeParams {
  * para facilitar el timing del salto (jump timing).
  */
 export function createBird(options: CreateBirdParams): Entity {
-  const { world, x, y } = options;
-  const { entity: bird, add } = createBaseEntity(world);
+  const { world, x, y, deferred } = options;
+  const { entity: bird, add } = createBaseEntity(world, deferred);
 
   add({ type: "Transform", x, y });
   add({ type: "Velocity", dx: 0, dy: 0 });
@@ -130,13 +134,13 @@ export function createBird(options: CreateBirdParams): Entity {
  * @param options.gapY - The vertical center of the gap between pipes.
  */
 export function createPipe(options: CreatePipeParams): void {
-  const { world, x, gapY } = options;
+  const { world, x, gapY, deferred } = options;
   const halfGap = FLAPPY_CONFIG.GAP_SIZE / 2;
   const pipeWidth = FLAPPY_CONFIG.PIPE_WIDTH;
   const pipeSpeed = FLAPPY_CONFIG.PIPE_SPEED;
 
   // Top Pipe
-  const { entity: topPipe, add: addTop } = createBaseEntity(world);
+  const { entity: topPipe, add: addTop } = createBaseEntity(world, deferred);
   const topY = gapY - halfGap;
   addTop({ type: "Transform", x, y: topY / 2 });
   addTop({ type: "Velocity", dx: -pipeSpeed, dy: 0 });
@@ -160,7 +164,7 @@ export function createPipe(options: CreatePipeParams): void {
   addTop({ type: "Pipe", gapY, gapSize: FLAPPY_CONFIG.GAP_SIZE, scored: false });
 
   // Bottom Pipe
-  const { entity: bottomPipe, add: addBottom } = createBaseEntity(world);
+  const { entity: bottomPipe, add: addBottom } = createBaseEntity(world, deferred);
   const bottomY = gapY + halfGap;
   const bottomHeight = FLAPPY_CONFIG.SCREEN_HEIGHT - bottomY;
   addBottom({ type: "Transform", x, y: bottomY + bottomHeight / 2 });
@@ -188,8 +192,8 @@ export function createPipe(options: CreatePipeParams): void {
 /**
  * Creates the ground entity.
  */
-export function createGround(world: World): Entity {
-  const { entity: ground, add } = createBaseEntity(world);
+export function createGround(world: World, deferred?: boolean): Entity {
+  const { entity: ground, add } = createBaseEntity(world, deferred);
   add({ type: "Transform", x: FLAPPY_CONFIG.SCREEN_WIDTH / 2, y: FLAPPY_CONFIG.GROUND_Y });
   add({
     type: "Collider2D",
@@ -215,8 +219,8 @@ export function createGround(world: World): Entity {
 /**
  * Creates the global game state entity.
  */
-export function createGameState(world: World): Entity {
-  const { entity: gameState, add } = createBaseEntity(world);
+export function createGameState(world: World, deferred?: boolean): Entity {
+  const { entity: gameState, add } = createBaseEntity(world, deferred);
   add({
     type: "FlappyState",
     score: 0,

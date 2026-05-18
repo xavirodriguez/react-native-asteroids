@@ -38,7 +38,6 @@ export class KamikazeSystem extends System {
     kamikazes.forEach(entity => {
       const kami = world.getComponent<KamikazeComponent>(entity, "Kamikaze")!;
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
-      const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!;
 
       if (kami.phase === "diving") {
         if (playerPos) {
@@ -56,7 +55,10 @@ export class KamikazeSystem extends System {
         }
 
         world.mutateComponent<RenderComponent>(entity, "Render", render => {
-            render.rotation = Math.atan2(vel.dy, vel.dx) + Math.PI / 2;
+            const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
+            if (vel) {
+                render.rotation = Math.atan2(vel.dy, vel.dx) + Math.PI / 2;
+            }
         });
 
         if (pos.y > GAME_CONFIG.SCREEN_HEIGHT - 50) {
