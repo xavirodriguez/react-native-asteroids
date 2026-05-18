@@ -10,38 +10,37 @@ describe("DamageNumberSystem", () => {
         RandomService.resetInstances();
     });
 
-    test("createDamageNumber should not advance gameplay RNG stream", () => {
-        const gameplayRandom = RandomService.getInstance("gameplay");
+    it("should use render RNG and not advance gameplay RNG", () => {
+        const gameplayRandom = RandomService.getGameplayRandom();
         gameplayRandom.setSeed(12345);
 
-        // Capture initial sequence
+        // Initial value from gameplay RNG
         const initialValue = gameplayRandom.next();
 
-        // Reset seed to get the same sequence
+        // Reset gameplay RNG to same state
         gameplayRandom.setSeed(12345);
 
-        // Create damage number (should use render RNG)
-        DamageNumberSystem.createDamageNumber(world, 100, 100, 50);
+        // Create a damage number
+        DamageNumberSystem.createDamageNumber(world, 100, 100, 10);
 
-        // Check if gameplay stream is still at the beginning
-        const valueAfterDamageNumber = gameplayRandom.next();
-
-        expect(valueAfterDamageNumber).toBe(initialValue);
+        // Gameplay RNG should NOT have advanced
+        const valueAfter = gameplayRandom.next();
+        expect(valueAfter).toBe(initialValue);
     });
 
-    test("createDamageNumber should advance render RNG stream", () => {
-        const renderRandom = RandomService.getInstance("render");
-        renderRandom.setSeed(54321);
+    it("should advance render RNG", () => {
+        const renderRandom = RandomService.getRenderRandom();
+        renderRandom.setSeed(12345);
 
         const initialValue = renderRandom.next();
 
-        renderRandom.setSeed(54321);
+        renderRandom.setSeed(12345);
 
-        DamageNumberSystem.createDamageNumber(world, 100, 100, 50);
+        DamageNumberSystem.createDamageNumber(world, 100, 100, 10);
 
-        const valueAfterDamageNumber = renderRandom.next();
-
-        // It should have advanced (actually twice, once for x and once for y velocity)
-        expect(valueAfterDamageNumber).not.toBe(initialValue);
+        const valueAfter = renderRandom.next();
+        // Since createDamageNumber calls next() twice for velocity x and y
+        // we expect it to have advanced.
+        expect(valueAfter).not.toBe(initialValue);
     });
 });

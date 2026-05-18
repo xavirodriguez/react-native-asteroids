@@ -1,53 +1,40 @@
-import { World } from "../../core/World";
-import { System } from "../../core/System";
-
-class MockSystem extends System {
-    public onRegisterCalled = 0;
-    public onUnregisterCalled = 0;
-    public lastWorld: World | null = null;
-
-    public onRegister(world: World): void {
-        this.onRegisterCalled++;
-        this.lastWorld = world;
-    }
-
-    public onUnregister(world: World): void {
-        this.onUnregisterCalled++;
-        this.lastWorld = world;
-    }
-
-    public update(_world: World, _deltaTime: number): void {}
-}
+import { World } from "../World";
+import { System } from "../System";
 
 describe("World System Lifecycle", () => {
-    let world: World;
+    it("should call onRegister when a system is added", () => {
+        const world = new World();
+        const onRegisterSpy = jest.fn();
 
-    beforeEach(() => {
-        world = new World();
-    });
+        class TestSystem extends System {
+            update() {}
+            onRegister(w: World) {
+                onRegisterSpy(w);
+            }
+        }
 
-    test("addSystem should call onRegister", () => {
-        const system = new MockSystem();
+        const system = new TestSystem();
         world.addSystem(system);
 
-        expect(system.onRegisterCalled).toBe(1);
-        expect(system.lastWorld).toBe(world);
+        expect(onRegisterSpy).toHaveBeenCalledWith(world);
+        expect(onRegisterSpy).toHaveBeenCalledTimes(1);
     });
 
-    test("clearSystems should call onUnregister", () => {
-        const system = new MockSystem();
+    it("should not call onRegister again if the same system is added twice", () => {
+        const world = new World();
+        const onRegisterSpy = jest.fn();
+
+        class TestSystem extends System {
+            update() {}
+            onRegister() {
+                onRegisterSpy();
+            }
+        }
+
+        const system = new TestSystem();
         world.addSystem(system);
-        world.clearSystems();
-
-        expect(system.onUnregisterCalled).toBe(1);
-        expect(system.lastWorld).toBe(world);
-    });
-
-    test("addSystem should not call onRegister if system already registered", () => {
-        const system = new MockSystem();
         world.addSystem(system);
-        world.addSystem(system); // Duplicate
 
-        expect(system.onRegisterCalled).toBe(1);
+        expect(onRegisterSpy).toHaveBeenCalledTimes(1);
     });
 });

@@ -1,11 +1,9 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import {
-  type InputComponent,
   type InputStateComponent,
-  GAME_CONFIG,
-} from "../../../engine/types/EngineTypes";
-import { type InputState } from "../types/AsteroidTypes";
+} from "../../../engine/core/CoreComponents";
+import { type InputState, type InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { InputUtils } from "../../../engine/utils/ComponentUtils";
 

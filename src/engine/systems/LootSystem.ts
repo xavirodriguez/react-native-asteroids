@@ -15,13 +15,11 @@ import { RandomService } from "../utils/RandomService";
  * @public
  */
 export class LootSystem extends System {
-  private handlers: Map<string, any> = new Map();
-
   constructor() {
     super();
   }
 
-  public override onRegister(world: World): void {
+  public onRegister(world: World): void {
     const eventBus = world.getResource<EventBus>("EventBus");
     if (eventBus) {
       const entityDestroyedHandler = (payload: { entity: Entity, type: string }) => {
@@ -32,31 +30,12 @@ export class LootSystem extends System {
         if (payload.entity !== undefined) {
            this.handleEntityDestruction(world, payload.entity);
         }
-      };
-
-      eventBus.on("entity:destroyed", entityDestroyedHandler);
-      eventBus.on("asteroid:destroyed", asteroidDestroyedHandler);
-
-      this.handlers.set("entity:destroyed", entityDestroyedHandler);
-      this.handlers.set("asteroid:destroyed", asteroidDestroyedHandler);
-    }
-  }
-
-  public override onUnregister(world: World): void {
-    const eventBus = world.getResource<EventBus>("EventBus");
-    if (eventBus) {
-      this.handlers.forEach((handler, event) => {
-        eventBus.off(event, handler);
       });
     }
-    this.handlers.clear();
   }
 
-  /**
-   * Periodically checks if the system needs to register listeners for a new world.
-   */
   public update(_world: World, _deltaTime: number): void {
-    // Listeners are now registered via onRegister lifecycle hook
+    // No-op: logic is event-driven
   }
 
   private handleEntityDestruction(world: World, entity: Entity): void {

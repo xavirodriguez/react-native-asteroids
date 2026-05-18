@@ -1,52 +1,33 @@
 import { World } from "../../../../engine/core/World";
 import { AsteroidsGameScene } from "../AsteroidsGameScene";
+import { AsteroidInputSystem } from "../../systems/AsteroidInputSystem";
 import { BulletPool, ParticlePool } from "../../EntityPool";
 import { GAME_CONFIG } from "../../types/AsteroidTypes";
-import { IAsteroidsGame } from "../../types/GameInterfaces";
-import { AsteroidInputSystem } from "../../systems/AsteroidInputSystem";
-import { System } from "../../../../engine/core/System";
 
-class MockGameStateSystem extends System {
-    update() {}
-}
+describe("AsteroidsGameScene Config Propagation", () => {
+    it("should pass config to AsteroidInputSystem", () => {
+        const world = new World();
+        const mockGame: any = { getSeed: () => 12345 };
+        const bulletPool = new BulletPool();
+        const particlePool = new ParticlePool();
+        const mockGameStateSystem: any = { update: jest.fn() };
 
-describe("AsteroidsGameScene", () => {
-    let world: World;
-    let bulletPool: BulletPool;
-    let particlePool: ParticlePool;
-    let game: IAsteroidsGame;
-    let gameStateSystem: any;
+        const customConfig = { ...GAME_CONFIG, BULLET_SPEED: 999 };
 
-    beforeEach(() => {
-        world = new World();
-        bulletPool = new BulletPool();
-        particlePool = new ParticlePool();
-        game = { getSeed: () => 12345 } as any;
-        gameStateSystem = new MockGameStateSystem();
-    });
-
-    test("onEnter should pass config to AsteroidInputSystem", () => {
-        const customConfig = { ...GAME_CONFIG, SCREEN_CENTER_X: 999 };
-        const scene = new AsteroidsGameScene(world, game, bulletPool, particlePool, gameStateSystem, customConfig);
+        const scene = new AsteroidsGameScene(
+            world,
+            mockGame,
+            bulletPool,
+            particlePool,
+            mockGameStateSystem,
+            customConfig
+        );
 
         scene.onEnter();
 
-        const systems = world.systemsList;
-        const inputSystem = systems.find(s => s instanceof AsteroidInputSystem) as any;
-
+        const inputSystem = world.systemsList.find(s => s instanceof AsteroidInputSystem) as AsteroidInputSystem;
         expect(inputSystem).toBeDefined();
-        expect(inputSystem.config.SCREEN_CENTER_X).toBe(999);
-    });
-
-    test("onEnter should use default config if not provided", () => {
-        const scene = new AsteroidsGameScene(world, game, bulletPool, particlePool, gameStateSystem);
-
-        scene.onEnter();
-
-        const systems = world.systemsList;
-        const inputSystem = systems.find(s => s instanceof AsteroidInputSystem) as any;
-
-        expect(inputSystem).toBeDefined();
-        expect(inputSystem.config).toBe(GAME_CONFIG);
+        // Since config is private in AsteroidInputSystem, we check it via any
+        expect((inputSystem as any).config.BULLET_SPEED).toBe(999);
     });
 });

@@ -32,21 +32,29 @@ export class DailyLeaderboardStore {
         playerId TEXT,
         displayName TEXT,
         score INTEGER,
+        verified INTEGER DEFAULT 0,
         PRIMARY KEY (gameId, dateKey, playerId)
       )
     `);
     this.db.exec(`CREATE INDEX IF NOT EXISTS idx_scores_lookup ON scores (gameId, dateKey, score DESC)`);
   }
 
-  public addScore(gameId: string, dateKey: string, playerId: string, score: number, displayName: string = "Jugador") {
+  public addScore(gameId: string, dateKey: string, playerId: string, score: number, displayName: string = "Jugador", verified: boolean = false) {
+    const verifiedInt = verified ? 1 : 0;
     const stmt = this.db.prepare(`
-      INSERT INTO scores (gameId, dateKey, playerId, displayName, score)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO scores (gameId, dateKey, playerId, displayName, score, verified)
+      VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(gameId, dateKey, playerId) DO UPDATE SET
-        score = MAX(excluded.score, scores.score),
+        score = CASE
+          WHEN excluded.verified = 1 AND scores.verified = 1 THEN MAX(excluded.score, scores.score)
+          WHEN excluded.verified = 1 THEN excluded.score
+          WHEN scores.verified = 1 THEN scores.score
+          ELSE MAX(excluded.score, scores.score)
+        END,
+        verified = MAX(excluded.verified, scores.verified),
         displayName = excluded.displayName
     `);
-    stmt.run(gameId, dateKey, playerId, displayName, score);
+    stmt.run(gameId, dateKey, playerId, displayName, score, verifiedInt);
   }
 
   public getEntries(gameId: string, dateKey: string): LeaderboardEntry[] {
@@ -60,3 +68,5 @@ export class DailyLeaderboardStore {
     return stmt.all(gameId, dateKey) as LeaderboardEntry[];
   }
 }
+
+export const leaderboardStore = new DailyLeaderboardStore();

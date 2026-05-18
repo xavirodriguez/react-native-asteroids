@@ -21,6 +21,11 @@ export type SimulationContext = {
      * Side effects like spawning particles or emitting events should be suppressed.
      */
     isResimulating: boolean;
+    /**
+     * If true, the simulation is running in a server/headless environment.
+     * Platform-specific side effects (haptics) should be bypassed.
+     */
+    isHeadless?: boolean;
 };
 
 /**
@@ -97,11 +102,8 @@ export class DeterministicSimulation {
                 u.time += dtSeconds;
             });
 
-            const UFO_OSCILLATION_AMPLITUDE = config.UFO_OSCILLATION_AMPLITUDE;
-            const UFO_OSCILLATION_FREQUENCY = config.UFO_OSCILLATION_FREQUENCY;
-
             world.mutateComponent(entity, "Transform", (t: TransformComponent) => {
-                t.y = ufo.baseY + Math.sin(ufo.time * UFO_OSCILLATION_FREQUENCY) * UFO_OSCILLATION_AMPLITUDE;
+                t.y = ufo.baseY + Math.sin(ufo.time * GAME_CONFIG.UFO_OSCILLATION_FREQUENCY) * GAME_CONFIG.UFO_OSCILLATION_AMPLITUDE;
             });
 
             // UFOs that go off-screen horizontally are removed
@@ -345,8 +347,7 @@ export class DeterministicSimulation {
                 if (eventBus) eventBus.emitDeferred("wave:complete");
             }
 
-            const ASTEROIDS_PER_WAVE = config.ASTEROIDS_PER_WAVE;
-            for (let i = 0; i < ASTEROIDS_PER_WAVE; i++) {
+            for (let i = 0; i < GAME_CONFIG.ASTEROIDS_PER_WAVE; i++) {
                 createAsteroid({
                     world,
                     x: gameplayRandom.nextRange(0, config.SCREEN_WIDTH),

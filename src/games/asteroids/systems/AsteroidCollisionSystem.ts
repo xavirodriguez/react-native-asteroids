@@ -1,7 +1,6 @@
 import { World } from "../../../engine/core/World";
 import { System } from "../../../engine/core/System";
 import {
-  type AsteroidComponent,
   type HealthComponent,
   type Entity,
   TransformComponent,
@@ -10,7 +9,7 @@ import {
 } from "../../../engine/types/EngineTypes";
 
 import { createAsteroid, createParticle } from "../EntityFactory";
-import { type GameStateComponent, GAME_CONFIG } from "../types/AsteroidTypes";
+import { type AsteroidComponent, type GameStateComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 import { ScreenShakeComponent } from "../../../engine/types/EngineTypes";
 import { hapticDamage, hapticDeath } from "../../../utils/haptics";
 import { ParticlePool } from "../EntityPool";
@@ -121,7 +120,7 @@ export class AsteroidCollisionSystem extends System {
     const asteroidComp = world.getComponent<AsteroidComponent>(asteroid, "Asteroid");
     const size = asteroidComp?.size || "small";
 
-    const bulletComp = world.getComponent<BulletComponent>(bullet, "Bullet");
+    const bulletComp = world.getComponent<import("../types/AsteroidTypes").BulletComponent>(bullet, "Bullet");
     const ownerId = bulletComp?.ownerId;
 
     world.mutateSingleton<GameStateComponent>("GameState", (gameState) => {
@@ -130,16 +129,13 @@ export class AsteroidCollisionSystem extends System {
       this.addScore(world, points);
 
       if (ownerId) {
-          const ships = world.query("Ship");
-          for (const shipEntity of ships) {
-              const ship = world.getComponent<ShipComponent>(shipEntity, "Ship");
-              if (ship?.sessionId === ownerId) {
-                  world.mutateComponent<ShipComponent>(shipEntity, "Ship", s => {
-                      s.score += points;
-                  });
-                  break;
-              }
-          }
+        const players = world.query("Ship");
+        const ownerEntity = players.find(p => world.getComponent<import("../types/AsteroidTypes").ShipComponent>(p, "Ship")?.sessionId === ownerId);
+        if (ownerEntity !== undefined) {
+          world.mutateComponent<import("../types/AsteroidTypes").ShipComponent>(ownerEntity, "Ship", s => {
+            s.score += points;
+          });
+        }
       }
     });
 

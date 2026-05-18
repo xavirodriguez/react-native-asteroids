@@ -639,7 +639,9 @@ export class World {
     this.systemsNeedSorting = true;
     this._systemsVersion++;
 
-    system.onRegister(this);
+    if (system.onRegister) {
+      system.onRegister(this);
+    }
   }
 
   /**

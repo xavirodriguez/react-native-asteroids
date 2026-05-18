@@ -22,20 +22,17 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
     this.updateAsteroidsCount(world, gameState);
     this.manageWaveProgression(world, gameState);
     this.updatePlayerStatus({ world, gameState, deltaTime });
-    this.manageUfoSpawning(world, deltaTime);
+    this.manageUfoSpawning(world);
   }
 
   protected getGameState(world: World): GameStateComponent | undefined {
     return world.getSingleton<GameStateComponent>("GameState");
   }
 
-  private manageUfoSpawning(world: World, deltaTime: number): void {
-    // 0.1% chance per second
-    if (RandomService.getInstance("gameplay").next() < 0.001 * (deltaTime / 1000)) {
-      const ufos = world.query("Ufo");
-      if (ufos.length === 0) {
-        createUfo({ world });
-      }
+  private manageUfoSpawning(world: World): void {
+    const gameplayRandom = RandomService.getInstance("gameplay");
+    if (world.query("Ufo").length === 0 && gameplayRandom.chance(GAME_CONFIG.UFO_SPAWN_CHANCE)) {
+      createUfo({ world, deferred: true });
     }
   }
 

@@ -350,12 +350,12 @@ export const createFlash = ({ world, x, y, size, deferred }: { world: World; x: 
 /**
  * Initializes the global game state singleton for Asteroids.
  */
-export const createGameState = ({ world, deferred }: { world: World, deferred?: boolean }) => {
+export const createGameState = ({ world, deferred, headless = false }: { world: World, deferred?: boolean, headless?: boolean }) => {
   const { entity: gameState, add } = createBaseEntity(world, deferred);
   add({
     ...INITIAL_GAME_STATE,
     lives: GAME_CONFIG.SHIP_INITIAL_LIVES,
-    stars: generateStarField(GAME_CONFIG.STAR_COUNT, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT),
+    stars: headless ? [] : generateStarField(GAME_CONFIG.STAR_COUNT, GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT),
     screenShake: null,
     debugCRT: false,
     type: "GameState"

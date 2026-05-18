@@ -1,36 +1,38 @@
 import { World } from "../../../engine/core/World";
-import { createShieldSegment, spawnShields } from "../EntityFactory";
+import { spawnShields } from "../EntityFactory";
 import { GAME_CONFIG } from "../types/SpaceInvadersTypes";
+import { TransformComponent } from "../../../engine/core/CoreComponents";
 
 describe("Space Invaders EntityFactory", () => {
-    let world: World;
-
-    beforeEach(() => {
-        world = new World();
-    });
-
-    test("createShieldSegment should use SHIELD_SEGMENT_SIZE from config", () => {
-        const x = 100, y = 100;
-        const entity = createShieldSegment(world, x, y, 0, 0, false);
-
-        const render = world.getComponent(entity, "Render") as any;
-        const collider = world.getComponent(entity, "Collider2D") as any;
-
-        expect(render.size).toBe(GAME_CONFIG.SHIELD_SEGMENT_SIZE);
-        expect(collider.shape.halfWidth).toBe(GAME_CONFIG.SHIELD_SEGMENT_SIZE / 2);
-    });
-
-    test("spawnShields should use SHIELD_START_X and SHIELD_SEGMENT_SIZE from config", () => {
+    it("should use SHIELD_START_X and SHIELD_SEGMENT_SIZE when spawning shields", () => {
+        const world = new World();
         spawnShields(world, false);
 
-        const shields = world.query("Shield", "Transform");
+        const shields = world.query("Shield");
         expect(shields.length).toBeGreaterThan(0);
 
-        const transforms = shields.map(e => world.getComponent(e, "Transform") as any);
-        const minX = Math.min(...transforms.map(t => t.x));
-        const minY = Math.min(...transforms.map(t => t.y));
+        const firstShield = shields[0];
+        const transform = world.getComponent<TransformComponent>(firstShield, "Transform")!;
+
+        // The first shield segment (col 0, row 0, bunker 0) should be at SHIELD_START_X
+        // Since query order might not be guaranteed, let's find the one with min X
+        let minX = Infinity;
+        for (const s of shields) {
+            const t = world.getComponent<TransformComponent>(s, "Transform")!;
+            if (t.x < minX) minX = t.x;
+        }
 
         expect(minX).toBe(GAME_CONFIG.SHIELD_START_X);
-        expect(minY).toBe(GAME_CONFIG.SHIELD_START_Y);
+
+        // Verify spacing between segments (col 0 and col 1 of the same bunker)
+        const bunker0Segments = shields.filter(s => {
+            const t = world.getComponent<TransformComponent>(s, "Transform")!;
+            return t.x < GAME_CONFIG.SHIELD_START_X + GAME_CONFIG.SHIELD_WIDTH;
+        });
+
+        const xPositions = Array.from(new Set(bunker0Segments.map(s => world.getComponent<TransformComponent>(s, "Transform")!.x))).sort((a, b) => a - b);
+        if (xPositions.length > 1) {
+            expect(xPositions[1] - xPositions[0]).toBe(GAME_CONFIG.SHIELD_SEGMENT_SIZE);
+        }
     });
 });

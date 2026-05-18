@@ -287,17 +287,16 @@ export function spawnShields(world: World, deferred?: boolean): void {
   const segmentsY = GAME_CONFIG.SHIELD_SEGMENTS_Y;
   const startY = GAME_CONFIG.SHIELD_START_Y;
   const spacing = GAME_CONFIG.SHIELD_SPACING;
-  const segmentSize = 15;
 
   for (let i = 0; i < count; i++) {
-    const bunkerX = 100 + i * spacing;
+    const bunkerX = GAME_CONFIG.SHIELD_START_X + i * spacing;
     for (let row = 0; row < segmentsY; row++) {
       for (let col = 0; col < segmentsX; col++) {
         // Simple rectangular bunker shape
         createShieldSegment(
           world,
-          bunkerX + col * segmentSize,
-          startY + row * segmentSize,
+          bunkerX + col * GAME_CONFIG.SHIELD_SEGMENT_SIZE,
+          startY + row * GAME_CONFIG.SHIELD_SEGMENT_SIZE,
           row,
           col,
           deferred
