@@ -623,6 +623,10 @@ export class World {
     this.systems.push({ system, phase, priority });
     this.systemsNeedSorting = true;
     this._systemsVersion++;
+
+    if (system.onRegister) {
+      system.onRegister(this);
+    }
   }
 
   /**

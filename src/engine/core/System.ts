@@ -105,6 +105,18 @@ export abstract class System {
   abstract update(world: World, deltaTime: number): void;
 
   /**
+   * Lifecycle hook called when the system is registered in a World.
+   * API status: Public
+   */
+  public onRegister?(world: World): void;
+
+  /**
+   * Lifecycle hook called when the system is removed from a World.
+   * API status: Public
+   */
+  public onUnregister?(world: World): void;
+
+  /**
    * Cleanup system resources when it's removed or the game is destroyed.
    * API status: Public
    */

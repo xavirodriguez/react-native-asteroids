@@ -6,10 +6,8 @@ import { AsteroidsRoom } from "./AsteroidsRoom";
 import { SpaceInvadersRoom } from "./SpaceInvadersRoom";
 import { FlappyBirdRoom } from "./FlappyBirdRoom";
 import { PongRoom } from "./PongRoom";
-import { DailyLeaderboardStore } from "./DailyLeaderboardStore";
+import { leaderboardStore } from "./DailyLeaderboardStore";
 import { generateScoreSignature } from "./utils/SecurityUtils";
-
-const leaderboardStore = new DailyLeaderboardStore();
 
 // Simple in-memory rate limiter for score submissions
 const submissionTimestamps = new Map<string, number>();
@@ -56,8 +54,11 @@ app.post("/daily-score", (req, res) => {
   submissionTimestamps.set(playerId, now);
 
   // Signature Verification
+  // IMPORTANT: For multiplayer games, scores are now authoritative and recorded by the room onLeave.
+  // This endpoint is only preserved for solo daily challenges.
   const expectedSignature = generateScoreSignature(gameId, dateKey, playerId, score);
   if (signature !== expectedSignature) {
+    console.warn(`[Security] Invalid score signature from ${playerId} for ${gameId}. Expected ${expectedSignature}, got ${signature}`);
     return res.status(403).send("Invalid score signature. Nice try!");
   }
 

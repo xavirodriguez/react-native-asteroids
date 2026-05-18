@@ -34,6 +34,7 @@ export interface BulletComponent extends Component {
 export interface ShipComponent extends Component {
   type: "Ship";
   sessionId?: string;
+  score: number;
   hyperspaceTimer: number;
   hyperspaceCooldownRemaining: number;
 }
@@ -71,6 +72,7 @@ export interface GameStateComponent extends Component {
   comboMultiplier: number;
   lastBulletHit: boolean;
   serverTick: number;
+  gameOverLogged?: boolean;
   stars?: Star[];
   screenShake?: ScreenShakeComponent | null;
   debugCRT?: boolean;
@@ -131,8 +133,11 @@ export const GAME_CONFIG = {
   UFO_SPEED: 100,
   UFO_SPAWN_CHANCE: 0.005,
   UFO_SIZE: 15,
+  UFO_OSCILLATION_AMPLITUDE: 30,
+  UFO_OSCILLATION_FREQUENCY: 2,
 
   INITIAL_ASTEROID_COUNT: 4,
+  ASTEROIDS_PER_WAVE: 6,
   MAX_WAVE_ASTEROIDS: 12,
   WAVE_SPAWN_DISTANCE: 200,
   INITIAL_ASTEROID_SPAWN_RADIUS: 150,

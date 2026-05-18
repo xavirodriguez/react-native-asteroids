@@ -39,6 +39,7 @@ export class AsteroidsState extends Schema {
   @type("uint32") seed: number = 12345;
   @type("uint32") protocolVersion: number = 1;
   @type("string") fullWorldState: string = "";
+  @type("uint32") score: number = 0;
 }
 
 export class Invader extends Schema {

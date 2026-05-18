@@ -22,23 +22,26 @@ export class AsteroidsGameScene extends Scene {
   private bulletPool: BulletPool;
   private particlePool: ParticlePool;
   private gameStateSystem: IGameStateSystem;
+  private config: typeof GAME_CONFIG;
 
   constructor(
     world: World,
     game: IAsteroidsGame,
     bulletPool: BulletPool,
     particlePool: ParticlePool,
-    gameStateSystem: IGameStateSystem
+    gameStateSystem: IGameStateSystem,
+    config: typeof GAME_CONFIG = GAME_CONFIG
   ) {
     super(world);
     this.game = game;
     this.bulletPool = bulletPool;
     this.particlePool = particlePool;
     this.gameStateSystem = gameStateSystem;
+    this.config = config;
   }
 
   public onEnter(): void {
-    const inputSys = new AsteroidInputSystem(this.bulletPool, this.particlePool);
+    const inputSys = new AsteroidInputSystem(this.bulletPool, this.particlePool, this.config);
 
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());

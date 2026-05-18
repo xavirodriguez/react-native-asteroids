@@ -15,26 +15,11 @@ import { RandomService } from "../utils/RandomService";
  * @public
  */
 export class LootSystem extends System {
-  private registeredWorld: World | null = null;
-  private _listenersRegistered = false;
-
   constructor() {
     super();
   }
 
-  /**
-   * Periodically checks if the system needs to register listeners for a new world.
-   */
-  public update(world: World, _deltaTime: number): void {
-    if (this.registeredWorld !== world) {
-      this.registerListeners(world);
-      this.registeredWorld = world;
-    }
-  }
-
-  private registerListeners(world: World): void {
-    if (this._listenersRegistered) return;
-
+  public onRegister(world: World): void {
     const eventBus = world.getResource<EventBus>("EventBus");
     if (eventBus) {
       eventBus.on("entity:destroyed", (payload: { entity: Entity, type: string }) => {
@@ -46,9 +31,11 @@ export class LootSystem extends System {
            this.handleEntityDestruction(world, payload.entity);
         }
       });
-
-      this._listenersRegistered = true;
     }
+  }
+
+  public update(_world: World, _deltaTime: number): void {
+    // No-op: logic is event-driven
   }
 
   private handleEntityDestruction(world: World, entity: Entity): void {
