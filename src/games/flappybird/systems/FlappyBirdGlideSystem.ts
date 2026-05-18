@@ -17,16 +17,22 @@ export class FlappyBirdGlideSystem extends System {
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!;
 
       if (bird.nearMissTimer > 0) {
-        bird.nearMissTimer -= deltaTime;
+        world.mutateComponent<BirdComponent>(entity, "Bird", b => {
+            b.nearMissTimer -= deltaTime;
+        });
       }
 
       if (input.glide && vel.dy > 0 && bird.isAlive) {
         // Reducir la gravedad aplicada (ya aplicada por MovementSystem, así que aplicamos una fuerza ascendente contraria)
         // O mejor, el MovementSystem aplica vel += grav * dt.
         // Aquí podemos restar parte de esa gravedad.
-        vel.dy -= FLAPPY_CONFIG.GRAVITY * 0.7 * dtSeconds;
-        bird.velocityY = vel.dy;
-        bird.isGliding = true;
+        world.mutateComponent<VelocityComponent>(entity, "Velocity", v => {
+            v.dy -= FLAPPY_CONFIG.GRAVITY * 0.7 * dtSeconds;
+        });
+        world.mutateComponent<BirdComponent>(entity, "Bird", b => {
+            b.velocityY = world.getComponent<VelocityComponent>(entity, "Velocity")!.dy;
+            b.isGliding = true;
+        });
 
         if (RandomService.getInstance("render").next() < 0.2) {
             createEmitter(world, {
@@ -42,7 +48,9 @@ export class FlappyBirdGlideSystem extends System {
             });
         }
       } else {
-        bird.isGliding = false;
+        world.mutateComponent<BirdComponent>(entity, "Bird", b => {
+            b.isGliding = false;
+        });
       }
     });
   }
