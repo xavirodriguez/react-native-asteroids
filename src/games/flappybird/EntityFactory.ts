@@ -140,7 +140,7 @@ export function createPipe(options: CreatePipeParams): void {
   const pipeSpeed = FLAPPY_CONFIG.PIPE_SPEED;
 
   // Top Pipe
-  const { entity: topPipe, add: addTop } = createBaseEntity(world, deferred);
+  const { add: addTop } = createBaseEntity(world, deferred);
   const topY = gapY - halfGap;
   addTop({ type: "Transform", x, y: topY / 2 });
   addTop({ type: "Velocity", dx: -pipeSpeed, dy: 0 });
@@ -164,7 +164,7 @@ export function createPipe(options: CreatePipeParams): void {
   addTop({ type: "Pipe", gapY, gapSize: FLAPPY_CONFIG.GAP_SIZE, scored: false });
 
   // Bottom Pipe
-  const { entity: bottomPipe, add: addBottom } = createBaseEntity(world, deferred);
+  const { add: addBottom } = createBaseEntity(world, deferred);
   const bottomY = gapY + halfGap;
   const bottomHeight = FLAPPY_CONFIG.SCREEN_HEIGHT - bottomY;
   addBottom({ type: "Transform", x, y: bottomY + bottomHeight / 2 });

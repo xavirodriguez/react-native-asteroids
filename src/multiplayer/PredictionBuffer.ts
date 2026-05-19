@@ -64,7 +64,7 @@ export class PredictionBuffer {
    * Removes all states older than or equal to the specified tick.
    */
   public clearBefore(tick: number): void {
-    const initialSize = this.buffer.length;
+    // const initialSize = this.buffer.length;
     this.buffer = this.buffer.filter((s) => {
       const keep = s.tick > tick;
       if (!keep) {

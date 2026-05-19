@@ -38,7 +38,7 @@ export class SpaceInvadersCollisionSystem extends System {
       for (const event of eventsComp.collisions) {
         // Ensure each collision pair is processed only once
         if (entity > event.otherEntity) continue;
-        this.handleCollision(world, entity, event.otherEntity, gameState);
+        this.handleCollision(world, entity, event.otherEntity);
         if (gameState.isGameOver) return;
       }
     }
@@ -47,7 +47,7 @@ export class SpaceInvadersCollisionSystem extends System {
     this.checkInvadersBottom(world, gameState);
   }
 
-  private handleCollision(world: World, e1: Entity, e2: Entity, gameState: GameStateComponent): void {
+  private handleCollision(world: World, e1: Entity, e2: Entity): void {
     const bossBullet = this.matchPair(world, e1, e2, "PlayerBullet", "Boss");
     if (bossBullet) {
       const { PlayerBullet: bullet, Boss: boss } = bossBullet;
@@ -230,7 +230,7 @@ export class SpaceInvadersCollisionSystem extends System {
     }
   }
 
-  private checkInvadersBottom(world: World, gameState: GameStateComponent): void {
+  private checkInvadersBottom(world: World, _gameState: GameStateComponent): void {
     const invaders = world.query("Invader", "Transform");
     const limit = GAME_CONFIG.SCREEN_HEIGHT - 100;
 

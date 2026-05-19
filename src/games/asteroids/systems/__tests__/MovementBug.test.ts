@@ -26,7 +26,7 @@ describe("MovementBug Reproduction", () => {
 
         it("should not update position if velocity is null (currently might fail and convert to 0)", () => {
             const pos = { x: 10, y: 10 };
-            // @ts-ignore
+            // @ts-expect-error - Testing null velocity robustness
             const vel = { dx: null, dy: 10 };
             PhysicsUtils.integrateMovement(pos, vel, 1);
             // If it converts null to 0, pos.x will stay 10.

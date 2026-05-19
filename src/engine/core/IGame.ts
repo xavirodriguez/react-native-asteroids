@@ -21,12 +21,12 @@ export type UpdateListener<TState> = (state: TState) => void;
  * Esta interfaz permite que componentes de React o sistemas externos interactúen con cualquier juego
  * de forma unificada, facilitando el intercambio de escenas y la integración multijugador.
  *
- * @typeParam TGame - El tipo concreto de la clase de juego que implementa la interfaz.
+ * @typeParam _TGame - El tipo concreto de la clase de juego que implementa la interfaz.
  *
  * @conceptualRisk [ASYNC_LIFECYCLE] `restart` puede ser asíncrono. Invocaciones rápidas y sucesivas
  * podrían causar estados inconsistentes si el juego no maneja bloqueos de transición.
  */
-export interface IGame<TGame = unknown> {
+export interface IGame<_TGame = unknown> {
   /**
    * Inicia la ejecución del bucle de juego.
    * @remarks Se espera que invoque a `GameLoop.start()`.

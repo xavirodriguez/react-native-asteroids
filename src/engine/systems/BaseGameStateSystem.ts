@@ -56,11 +56,11 @@ export abstract class BaseGameStateSystem<TState extends IGameState> extends Sys
 
   private handleGameOverStatus(state: TState): void {
     const isGameOver = this.evaluateGameOverCondition(state);
-    this._world!.mutateSingleton(state.type, (s: any) => { s.isGameOver = isGameOver; });
+    this._world!.mutateSingleton(state.type, (s: IGameState) => { s.isGameOver = isGameOver; });
 
     if (isGameOver) {
       if (!state.gameOverLogged) {
-        this._world!.mutateSingleton(state.type, (s: any) => { s.gameOverLogged = true; });
+        this._world!.mutateSingleton(state.type, (s: IGameState) => { s.gameOverLogged = true; });
         this.gameInstance?.pause();
 
         // Emit global game:over event for systems like XPSystem
@@ -70,7 +70,7 @@ export abstract class BaseGameStateSystem<TState extends IGameState> extends Sys
         }
       }
     } else {
-      this._world!.mutateSingleton(state.type, (s: any) => { s.gameOverLogged = false; });
+      this._world!.mutateSingleton(state.type, (s: IGameState) => { s.gameOverLogged = false; });
     }
   }
 
@@ -88,8 +88,8 @@ export abstract class BaseGameStateSystem<TState extends IGameState> extends Sys
     if (w) {
         const state = this.getGameState(w);
         if (state) {
-            this._world!.mutateSingleton(state.type, (s: any) => { s.gameOverLogged = false; });
-            this._world!.mutateSingleton(state.type, (s: any) => { s.isGameOver = false; });
+            this._world!.mutateSingleton(state.type, (s: IGameState) => { s.gameOverLogged = false; });
+            this._world!.mutateSingleton(state.type, (s: IGameState) => { s.isGameOver = false; });
         }
     }
   }

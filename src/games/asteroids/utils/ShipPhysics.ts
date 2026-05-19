@@ -159,8 +159,8 @@ export const ShipPhysics = {
     if (input.shoot && input.shootCooldownRemaining <= 0) {
       const modifiers = world.getComponent<ModifierStackComponent>(entity, "ModifierStack")?.modifiers || [];
       const isTripleShot = modifiers.some(m => m.type === "triple_shot");
-      const shipComp = world.getComponent<import("../types/AsteroidTypes").ShipComponent>(entity, "Ship");
-      const ownerId = shipComp?.sessionId;
+      // const shipComp = world.getComponent<import("../types/AsteroidTypes").ShipComponent>(entity, "Ship");
+      // const ownerId = shipComp?.sessionId;
 
       // Access the bullet pool from the world resources or a singleton if available
       // For AsteroidsGame, we need a way to access the pools

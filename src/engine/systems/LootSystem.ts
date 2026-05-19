@@ -15,6 +15,8 @@ import { RandomService } from "../utils/RandomService";
  * @public
  */
 export class LootSystem extends System {
+  private _unsubs: (() => void)[] = [];
+
   constructor() {
     super();
   }
@@ -25,13 +27,20 @@ export class LootSystem extends System {
       const entityDestroyedHandler = (payload: { entity: Entity, type: string }) => {
         this.handleEntityDestruction(world, payload.entity);
       };
+      this._unsubs.push(eventBus.on("entity:destroyed", entityDestroyedHandler));
 
       const asteroidDestroyedHandler = (payload: { entity?: Entity }) => {
         if (payload.entity !== undefined) {
            this.handleEntityDestruction(world, payload.entity);
         }
       };
+      this._unsubs.push(eventBus.on("asteroid:destroyed", asteroidDestroyedHandler));
     }
+  }
+
+  public onUnregister(_world: World): void {
+    this._unsubs.forEach(unsub => unsub());
+    this._unsubs = [];
   }
 
   public update(_world: World, _deltaTime: number): void {

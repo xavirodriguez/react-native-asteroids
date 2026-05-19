@@ -23,9 +23,9 @@ export interface ParticleParams {
  * System responsible for managing declarative particle emitters.
  */
 export class ParticleSystem extends System {
-  private particlePool: PrefabPool<any, ParticleParams>;
+  private particlePool: PrefabPool<Record<string, import("../core/Component").Component>, ParticleParams>;
 
-  constructor(particlePool: PrefabPool<any, ParticleParams>) {
+  constructor(particlePool: PrefabPool<Record<string, import("../core/Component").Component>, ParticleParams>) {
     super();
     this.particlePool = particlePool;
   }

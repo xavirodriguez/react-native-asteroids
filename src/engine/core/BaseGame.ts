@@ -641,6 +641,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       world.addSystem(new PaletteSystem(profile.activePalette));
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { SystemPhase } = require("./System");
     world.addSystem(new FeedbackSystem(), { phase: SystemPhase.Presentation });
   }

@@ -4,7 +4,7 @@ import { Renderer } from "../../rendering/Renderer";
 
 // Implementación mínima para tests
 class TestGame extends BaseGame<any, any> {
-  public initializeRenderer(renderer: Renderer<unknown>): void {}
+  public initializeRenderer(_renderer: Renderer<unknown>): void {}
   protected registerSystems(): void {
     this.world.addSystem({ update: () => {}, dispose: () => {} });
   }
@@ -33,7 +33,7 @@ describe("BaseGame Lifecycle - Destroy", () => {
     expect(game.getStatus()).toBe(GameStatus.DESTROYED);
     expect(game.getWorld().entities.length).toBe(0);
     expect((game as any).world.systemsList.length).toBe(0);
-    // @ts-ignore
+    // @ts-expect-error - Accessing internal EventBus handlers for verification
     expect(game.eventBus.handlers.size).toBe(0);
   });
 
