@@ -3,10 +3,11 @@ import type { GameLoop } from "./GameLoop";
 
 /**
  * Tipo genérico para los suscriptores de actualización del juego.
+ * Recibe el estado actual del juego para mantener el principio de mínimo privilegio.
  *
- * @typeParam TGame - El tipo concreto del juego para permitir tipado fuerte en los listeners.
+ * @typeParam TState - El tipo del estado serializable del juego.
  */
-export type UpdateListener<TGame> = (game: TGame) => void;
+export type UpdateListener<TState> = (state: TState) => void;
 
 /**
  * Interfaz genérica fundamental para implementaciones de juegos.
@@ -88,10 +89,10 @@ export interface IGame<TGame = unknown> {
 
   /**
    * Suscribe un listener que se notificará tras cada actualización lógica.
-   * @param listener - Callback que recibe la instancia del juego.
+   * @param listener - Callback que recibe el estado del juego.
    * @returns Función para cancelar la suscripción.
    */
-  subscribe(listener: UpdateListener<TGame>): () => void;
+  subscribe(listener: UpdateListener<unknown>): () => void;
 
   /**
    * Obtiene la instancia del {@link GameLoop} asociada.

@@ -283,6 +283,6 @@ export class NullSpaceInvadersGame implements ISpaceInvadersGame {
   public getGameState() { return INITIAL_GAME_STATE; }
   public getSeed() { return 0; }
   public setInput() {}
-  public subscribe() { return () => {}; }
+  public subscribe(_listener: import("../../engine/core/IGame").UpdateListener<unknown>) { return () => {}; }
   public initializeRenderer() {}
 }

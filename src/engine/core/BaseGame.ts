@@ -170,7 +170,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   private _status: GameStatus = GameStatus.UNINITIALIZED;
   private _transitionLock: Promise<void> | null = null;
   private _isPaused = false;
-  private _listeners = new Set<UpdateListener<BaseGame<TState, TInput>>>();
+  private _listeners = new Set<UpdateListener<TState>>();
   private _globalKeyHandler = (e: KeyboardEvent) => this._handleGlobalKey(e);
   protected _config: BaseGameConfig;
   protected hierarchySystem: HierarchySystem;
@@ -483,12 +483,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
         RandomService.getRenderRandom().setSeed(this.currentSeed ^ 0xDEADBEEF);
       }
 
+      this.eventBus.clear();
+      this._setupAudioListeners();
+      this.spatialGrid.clear();
+
       if (this.sceneManager.getCurrentScene()) {
         await this.sceneManager.restartCurrentScene();
       } else {
-        this.eventBus.clear();
-        this.spatialGrid.clear();
-        this._setupAudioListeners();
         this.world.clear();
         this.world.clearSystems();
         await this.registerEssentialSystems(this.world);
@@ -640,7 +641,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       world.addSystem(new PaletteSystem(profile.activePalette));
     }
 
-    world.addSystem(new FeedbackSystem(), { phase: import("./System").SystemPhase.Presentation });
+    const { SystemPhase } = require("./System");
+    world.addSystem(new FeedbackSystem(), { phase: SystemPhase.Presentation });
   }
 
   /** [Inference] Potential hook for network lag compensation or loading. */
@@ -671,8 +673,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    *
    * @returns Unsubscribe function.
    */
-  public subscribe(listener: UpdateListener<BaseGame<TState, TInput>>): () => void {
-    if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.DESTROYED) {
+  public subscribe(listener: UpdateListener<TState>): () => void {
+    if (this._status === GameStatus.DESTROYED) {
+      console.warn("BaseGame: Attempted to subscribe to a DESTROYED game.");
       return () => {};
     }
     this._listeners.add(listener);
@@ -690,7 +693,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   private _notifyListeners(): void {
-    this._listeners.forEach(l => l(this));
+    const state = this.getGameState();
+    this._listeners.forEach(l => l(state));
   }
 
   private _registerKeyboardListeners(): void {
