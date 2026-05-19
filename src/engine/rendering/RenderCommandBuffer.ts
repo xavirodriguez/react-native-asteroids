@@ -92,6 +92,7 @@ export class RenderCommandBuffer {
   private readonly pool: DrawCommand[];
   private activeCount: number = 0;
   private readonly MAX_COMMANDS: number;
+  private overflowWarned: boolean = false;
 
   /**
    * Initializes the buffer with a fixed pool size.
@@ -139,6 +140,10 @@ export class RenderCommandBuffer {
    */
   public addCommand(options: DrawCommandOptions): void {
     if (this.activeCount >= this.MAX_COMMANDS) {
+      if (__DEV__ && !this.overflowWarned) {
+        console.warn(`[RenderCommandBuffer] Overflow! Maximum commands (${this.MAX_COMMANDS}) reached. Some entities will not be rendered.`);
+        this.overflowWarned = true;
+      }
       return;
     }
 
@@ -162,9 +167,22 @@ export class RenderCommandBuffer {
   }
 
   /**
+   * Iterates over all active commands for the current frame.
+   * This is the preferred way to consume commands without exposing the internal pool.
+   *
+   * @param callback - Function to execute for each active command.
+   */
+  public forEachCommand(callback: (cmd: DrawCommand, index: number) => void): void {
+    for (let i = 0; i < this.activeCount; i++) {
+      callback(this.pool[i], i);
+    }
+  }
+
+  /**
    * Returns the command pool.
    * @remarks
    * Only the first getCount elements contain valid data for the current frame.
+   * @deprecated Use forEachCommand() for better safety and encapsulation.
    */
   public getCommands(): readonly DrawCommand[] {
     return this.pool;

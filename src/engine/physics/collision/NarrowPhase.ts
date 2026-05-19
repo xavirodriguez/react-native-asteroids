@@ -46,6 +46,10 @@ const sharedManifold: CollisionManifold = {
   contactPoints: [],
 };
 
+/**
+ * Pool de vértices para puntos de contacto y cálculos intermedios.
+ * Reutilizado para evitar allocations en el hot path de física.
+ */
 const vertexPool: Array<{x: number, y: number}> = [];
 function _getVertex(x: number, y: number) {
     let v = vertexPool.pop();
@@ -54,11 +58,18 @@ function _getVertex(x: number, y: number) {
     return v;
 }
 
+/**
+ * Reinicia el manifold compartido y devuelve los puntos de contacto al pool.
+ */
 function resetManifold(): CollisionManifold {
   sharedManifold.colliding = false;
   sharedManifold.normalX = 0;
   sharedManifold.normalY = 0;
   sharedManifold.depth = 0;
+  // Devolver puntos de contacto al pool
+  for (let i = 0; i < sharedManifold.contactPoints.length; i++) {
+    vertexPool.push(sharedManifold.contactPoints[i]);
+  }
   sharedManifold.contactPoints.length = 0;
   return sharedManifold;
 }
@@ -71,6 +82,21 @@ const staticAABBPoly: PolygonShape = {
     type: "polygon",
     vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}],
     normals: [{x:0,y:-1}, {x:1,y:0}, {x:0,y:1}, {x:-1,y:0}]
+};
+
+/**
+ * Objetos estáticos mutables para evitar allocations en cálculos de proyección y cápsulas.
+ */
+const staticCircle: CircleShape = { type: "circle", radius: 0 };
+const staticProjectionA = { min: 0, max: 0 };
+const staticProjectionB = { min: 0, max: 0 };
+const staticCapsuleLine = { p1x: 0, p1y: 0, p2x: 0, p2y: 0 };
+const staticCapsulePoly: PolygonShape = {
+    type: "polygon",
+    vertices: [
+        {x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}
+    ],
+    normals: []
 };
 
 /**
@@ -186,7 +212,7 @@ export class NarrowPhase {
       }
 
       // Contact point is along the normal at radius distance from A
-      manifold.contactPoints.push({ x: ax + manifold.normalX * a.radius, y: ay + manifold.normalY * a.radius });
+      manifold.contactPoints.push(_getVertex(ax + manifold.normalX * a.radius, ay + manifold.normalY * a.radius));
     }
     return manifold;
   }
@@ -273,7 +299,7 @@ export class NarrowPhase {
             manifold.depth = circle.radius + yDist;
         }
       }
-      manifold.contactPoints.push({ x: closestX, y: closestY });
+      manifold.contactPoints.push(_getVertex(closestX, closestY));
     }
     return manifold;
   }
@@ -303,7 +329,8 @@ export class NarrowPhase {
     this.populateGlobalVertices(poly, px, py, pr, worldVerticesA);
 
     let minDistanceSq = Infinity;
-    let closestPoint = { x: 0, y: 0 };
+    let closestX = 0;
+    let closestY = 0;
     let inside = true;
 
     for (let i = 0; i < worldVerticesA.length; i++) {
@@ -325,7 +352,8 @@ export class NarrowPhase {
         const distSq = (cx - projectX) ** 2 + (cy - projectY) ** 2;
         if (distSq < minDistanceSq) {
           minDistanceSq = distSq;
-          closestPoint = { x: projectX, y: projectY };
+          closestX = projectX;
+          closestY = projectY;
         }
     }
 
@@ -335,8 +363,8 @@ export class NarrowPhase {
         // If inside, depth includes radius + distance to nearest edge
         manifold.depth = inside ? circle.radius + distance : circle.radius - distance;
 
-        const dx = cx - closestPoint.x;
-        const dy = cy - closestPoint.y;
+        const dx = cx - closestX;
+        const dy = cy - closestY;
 
         if (distance > 0.0001) {
           manifold.normalX = (inside ? -dx : dx) / distance;
@@ -345,7 +373,7 @@ export class NarrowPhase {
           manifold.normalX = 1;
           manifold.normalY = 0;
         }
-        manifold.contactPoints.push({x: closestPoint.x, y: closestPoint.y});
+        manifold.contactPoints.push(_getVertex(closestX, closestY));
     }
     return manifold;
   }
@@ -421,12 +449,12 @@ export class NarrowPhase {
     for (let i = 0; i < axesCache.length; i++) {
       const axis = axesCache[i];
 
-      // Proyectar ambos polígonos sobre el eje actual
-      const projectionA = this.projectPolygon(worldVerticesA, axis);
-      const projectionB = this.projectPolygon(worldVerticesB, axis);
+      // Proyectar ambos polígonos sobre el eje actual (usa objetos estáticos para evitar allocations)
+      this.projectPolygon(worldVerticesA, axis, staticProjectionA);
+      this.projectPolygon(worldVerticesB, axis, staticProjectionB);
 
       // Calcular el solapamiento en este eje
-      const overlap = Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min);
+      const overlap = Math.min(staticProjectionA.max, staticProjectionB.max) - Math.max(staticProjectionA.min, staticProjectionB.min);
 
       // Si en ALGÚN eje no hay solapamiento, el SAT garantiza que NO hay colisión (Teorema del Eje Separador)
       if (overlap <= 0) return resetManifold();
@@ -481,14 +509,15 @@ export class NarrowPhase {
           manifold.colliding = true; manifold.depth = radiusSum - distance;
           if (distance > 0.0001) { manifold.normalX = (cx - closestX) / distance; manifold.normalY = (cy - closestY) / distance; }
           else { manifold.normalX = 1; manifold.normalY = 0; }
-          manifold.contactPoints.push({x: closestX, y: closestY});
+          manifold.contactPoints.push(_getVertex(closestX, closestY));
       }
       return manifold;
   }
 
   static aabbVsCapsule(aabb: AABBShape, ax: number, ay: number, capsule: CapsuleShape, cx: number, cy: number, cr: number): CollisionManifold {
       // Treat capsule as a thick line, approximate by checking endpoints and center
-      const manifold = this.circleVsCapsule({type: "circle", radius: 0.1}, ax, ay, capsule, cx, cy, cr);
+      staticCircle.radius = 0.1;
+      const manifold = this.circleVsCapsule(staticCircle, ax, ay, capsule, cx, cy, cr);
       if (manifold.colliding) {
           // Improve by treating as polygon approximation
           return this.aabbVsPolygon(aabb, ax, ay, this.capsuleToPolygon(capsule), cx, cy, cr);
@@ -505,21 +534,28 @@ export class NarrowPhase {
       const _lineA = this.getCapsuleLine(a, ax, ay, ar);
       const _lineB = this.getCapsuleLine(b, bx, by, br);
       // Simplified: check endpoints distance
-      return this.circleVsCapsule({type: "circle", radius: a.radius}, ax, ay, b, bx, by, br);
+      staticCircle.radius = a.radius;
+      return this.circleVsCapsule(staticCircle, ax, ay, b, bx, by, br);
   }
 
   /**
    * Internal helper to calculate world-space line segment for a capsule.
+   * Uses a static object to avoid allocations.
    */
   private static getCapsuleLine(c: CapsuleShape, x: number, y: number, r: number) {
       const angle = r + c.orientation;
       const dx = Math.cos(angle) * c.halfHeight;
       const dy = Math.sin(angle) * c.halfHeight;
-      return { p1x: x - dx, p1y: y - dy, p2x: x + dx, p2y: y + dy };
+      staticCapsuleLine.p1x = x - dx;
+      staticCapsuleLine.p1y = y - dy;
+      staticCapsuleLine.p2x = x + dx;
+      staticCapsuleLine.p2y = y + dy;
+      return staticCapsuleLine;
   }
 
   /**
    * Approximates a capsule as a polygon for SAT testing.
+   * Uses a static mutable PolygonShape to avoid allocations.
    */
   private static capsuleToPolygon(c: CapsuleShape): PolygonShape {
       // Hexagonal approximation of a capsule for SAT
@@ -528,15 +564,15 @@ export class NarrowPhase {
       const dy = Math.sin(angle) * c.halfHeight;
       const nx = -Math.sin(angle) * c.radius;
       const ny = Math.cos(angle) * c.radius;
-      return {
-          type: "polygon",
-          vertices: [
-              {x: -dx + nx, y: -dy + ny}, {x: dx + nx, y: dy + ny},
-              {x: dx + nx*0.5, y: dy + ny*0.5}, {x: dx - nx*0.5, y: dy - ny*0.5},
-              {x: dx - nx, y: dy - ny}, {x: -dx - nx, y: -dy - ny}
-          ],
-          normals: [] // SAT will handle normals if needed
-      };
+
+      staticCapsulePoly.vertices[0].x = -dx + nx; staticCapsulePoly.vertices[0].y = -dy + ny;
+      staticCapsulePoly.vertices[1].x = dx + nx;  staticCapsulePoly.vertices[1].y = dy + ny;
+      staticCapsulePoly.vertices[2].x = dx + nx*0.5; staticCapsulePoly.vertices[2].y = dy + ny*0.5;
+      staticCapsulePoly.vertices[3].x = dx - nx*0.5; staticCapsulePoly.vertices[3].y = dy - ny*0.5;
+      staticCapsulePoly.vertices[4].x = dx - nx;  staticCapsulePoly.vertices[4].y = dy - ny;
+      staticCapsulePoly.vertices[5].x = -dx - nx; staticCapsulePoly.vertices[5].y = -dy - ny;
+
+      return staticCapsulePoly;
   }
 
   /**
@@ -570,15 +606,16 @@ export class NarrowPhase {
 
   /**
    * Projects polygon vertices onto a specific axis to find min/max extent.
-   * Used as part of SAT.
+   * Used as part of SAT. Updates the 'out' object to avoid allocations.
    */
-  private static projectPolygon(vertices: Array<{x: number, y: number}>, axis: {x: number, y: number}) {
+  private static projectPolygon(vertices: Array<{x: number, y: number}>, axis: {x: number, y: number}, out: {min: number, max: number}) {
     let min = Infinity; let max = -Infinity;
     for (let i = 0; i < vertices.length; i++) {
       const v = vertices[i];
       const projection = v.x * axis.x + v.y * axis.y;
       if (projection < min) min = projection; if (projection > max) max = projection;
     }
-    return { min, max };
+    out.min = min;
+    out.max = max;
   }
 }
