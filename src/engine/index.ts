@@ -129,6 +129,7 @@ export { RandomService } from './utils/RandomService';
 export { PrefabPool } from './utils/PrefabPool';
 /** @public */
 export { runLifecycleSync, runLifecycleAsync } from './utils/LifecycleUtils';
+export { createProjectile, releaseProjectile } from './utils/ProjectileUtils';
 
 // --- SYSTEMS ---
 /** @public */
@@ -155,3 +156,5 @@ export { AnimationSystem } from './systems/AnimationSystem';
 export { StateMachineSystem } from './systems/StateMachineSystem';
 /** @public */
 export { TilemapRenderSystem } from './systems/TilemapRenderSystem';
+/** @public */
+export { FeedbackSystem } from './systems/FeedbackSystem';

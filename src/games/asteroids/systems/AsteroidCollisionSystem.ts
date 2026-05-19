@@ -10,8 +10,8 @@ import {
 
 import { createAsteroid, createParticle } from "../EntityFactory";
 import { type AsteroidComponent, type GameStateComponent, GAME_CONFIG } from "../types/AsteroidTypes";
-import { ScreenShakeComponent } from "../../../engine/types/EngineTypes";
-import { hapticDamage, hapticDeath } from "../../../utils/haptics";
+import { ScreenShakeComponent, HapticRequestComponent } from "../../../engine/types/EngineTypes";
+import { releaseProjectile } from "../../../engine/utils/ProjectileUtils";
 import { ParticlePool } from "../EntityPool";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { EventBus } from "../../../engine/core/EventBus";
@@ -140,7 +140,13 @@ export class AsteroidCollisionSystem extends System {
     });
 
     this.splitAsteroid(world, asteroid);
-    commands.removeEntity(bullet);
+
+    const bulletPool = world.getResource<any>("BulletPool");
+    if (bulletPool) {
+      releaseProjectile(world, bulletPool, bullet);
+    } else {
+      commands.removeEntity(bullet);
+    }
 
     const eventBus = world.getResource<EventBus>("EventBus");
     if (eventBus) eventBus.emitDeferred("asteroid:destroyed", { entity: asteroid, size, x: transform?.x, y: transform?.y });
@@ -213,9 +219,9 @@ export class AsteroidCollisionSystem extends System {
     });
 
     if (health.current <= 0) {
-      hapticDeath();
+      commands.addComponent(shipEntity, { type: "HapticRequest", pattern: "death" } as HapticRequestComponent);
     } else {
-      hapticDamage();
+      commands.addComponent(shipEntity, { type: "HapticRequest", pattern: "damage" } as HapticRequestComponent);
     }
   }
 

@@ -509,6 +509,8 @@ export class AsteroidsGame
     if (!this.particlePool) this.particlePool = new ParticlePool();
     if (!this.assetLoader) this.assetLoader = new AssetLoader();
 
+    this.world.setResource("BulletPool", this.bulletPool);
+
     // Configure UnifiedInputSystem bindings
     this.unifiedInput.bind("thrust", [GAME_CONFIG.KEYS.THRUST]);
     this.unifiedInput.bind("rotateLeft", [GAME_CONFIG.KEYS.ROTATE_LEFT]);
