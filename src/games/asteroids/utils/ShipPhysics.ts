@@ -3,7 +3,8 @@ import { TransformComponent, VelocityComponent, RenderComponent } from "../../..
 import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 import { PhysicsUtils } from "../../../engine/physics/utils/PhysicsUtils";
 import { RandomService } from "../../../engine/utils/RandomService";
-import { createParticle, createBullet } from "../EntityFactory";
+import { createParticle } from "../EntityFactory";
+import { createProjectile } from "../../../engine/utils/ProjectileUtils";
 import { SimulationContext } from "../../../simulation/DeterministicSimulation";
 import { EventBus } from "../../../engine/core/EventBus";
 import { ModifierStackComponent } from "../../../engine/core/CoreComponents";
@@ -161,14 +162,20 @@ export const ShipPhysics = {
       const shipComp = world.getComponent<import("../types/AsteroidTypes").ShipComponent>(entity, "Ship");
       const ownerId = shipComp?.sessionId;
 
-      if (isTripleShot) {
-        const b1 = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation, ownerId, deferred: true });
-        const b2 = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation - 0.2, ownerId, deferred: true });
-        const b3 = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation + 0.2, ownerId, deferred: true });
-        if (onShoot) { onShoot(b1); onShoot(b2); onShoot(b3); }
-      } else {
-        const bullet = createBullet({ world, x: pos.x, y: pos.y, angle: pos.rotation, ownerId, deferred: true });
-        if (onShoot) onShoot(bullet);
+      // Access the bullet pool from the world resources or a singleton if available
+      // For AsteroidsGame, we need a way to access the pools
+      const bulletPool = world.getResource<any>("BulletPool");
+
+      if (bulletPool) {
+        if (isTripleShot) {
+          const b1 = createProjectile(world, bulletPool, { x: pos.x, y: pos.y, dx: Math.cos(pos.rotation) * config.BULLET_SPEED, dy: Math.sin(pos.rotation) * config.BULLET_SPEED, size: config.BULLET_SIZE, color: config.BULLET_COLOR, ttl: config.BULLET_TTL });
+          const b2 = createProjectile(world, bulletPool, { x: pos.x, y: pos.y, dx: Math.cos(pos.rotation - 0.2) * config.BULLET_SPEED, dy: Math.sin(pos.rotation - 0.2) * config.BULLET_SPEED, size: config.BULLET_SIZE, color: config.BULLET_COLOR, ttl: config.BULLET_TTL });
+          const b3 = createProjectile(world, bulletPool, { x: pos.x, y: pos.y, dx: Math.cos(pos.rotation + 0.2) * config.BULLET_SPEED, dy: Math.sin(pos.rotation + 0.2) * config.BULLET_SPEED, size: config.BULLET_SIZE, color: config.BULLET_COLOR, ttl: config.BULLET_TTL });
+          if (onShoot) { onShoot(b1); onShoot(b2); onShoot(b3); }
+        } else {
+          const bullet = createProjectile(world, bulletPool, { x: pos.x, y: pos.y, dx: Math.cos(pos.rotation) * config.BULLET_SPEED, dy: Math.sin(pos.rotation) * config.BULLET_SPEED, size: config.BULLET_SIZE, color: config.BULLET_COLOR, ttl: config.BULLET_TTL });
+          if (onShoot) onShoot(bullet);
+        }
       }
 
       world.mutateComponent(entity, "Input", (i: InputComponent) => {

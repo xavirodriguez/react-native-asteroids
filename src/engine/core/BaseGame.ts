@@ -15,6 +15,7 @@ import { PaletteSystem } from "../systems/PaletteSystem";
 import { PlayerProfileService } from "../../services/PlayerProfileService";
 import { HierarchySystem } from "../systems/HierarchySystem";
 import { InterpolationPrepSystem } from "../systems/InterpolationPrepSystem";
+import { FeedbackSystem } from "../systems/FeedbackSystem";
 
 /**
  * Configuration for the BaseGame instance.
@@ -638,6 +639,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       const profile = await PlayerProfileService.getProfile();
       world.addSystem(new PaletteSystem(profile.activePalette));
     }
+
+    world.addSystem(new FeedbackSystem(), { phase: import("./System").SystemPhase.Presentation });
   }
 
   /** [Inference] Potential hook for network lag compensation or loading. */

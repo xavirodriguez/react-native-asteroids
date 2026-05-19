@@ -557,6 +557,15 @@ export interface SpatialNodeComponent extends Component {
 }
 
 /**
+ * Component for requesting haptic feedback in a decoupled way.
+ */
+export interface HapticRequestComponent extends Component {
+  type: "HapticRequest";
+  pattern: "shoot" | "damage" | "death";
+  intensity?: number;
+}
+
+/**
  * Unión de todos los componentes base del motor para endurecimiento de tipos.
  */
 export type AnyCoreComponent =
@@ -589,7 +598,8 @@ export type AnyCoreComponent =
   | ModifierStackComponent
   | LootTableComponent
   | PowerUpComponent
-  | SpatialNodeComponent;
+  | SpatialNodeComponent
+  | HapticRequestComponent;
 
 /**
  * Auxiliar para inferir el tipo concreto de un componente a partir de su discriminador.
