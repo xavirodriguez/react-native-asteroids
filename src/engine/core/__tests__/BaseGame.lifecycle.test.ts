@@ -208,12 +208,12 @@ describe("BaseGame Lifecycle", () => {
     setOverrideSpy.mockRestore();
   });
 
-  test("subscribe() should be guarded when UNINITIALIZED", () => {
+  test("subscribe() should work even when UNINITIALIZED", () => {
     expect(game.getStatus()).toBe(GameStatus.UNINITIALIZED);
 
     let _called = false;
     const unsubscribe = game.subscribe(() => { _called = true; });
-    expect((game as unknown as { _listeners: Set<unknown> })._listeners.size).toBe(0);
+    expect((game as unknown as { _listeners: Set<unknown> })._listeners.size).toBe(1);
     expect(typeof unsubscribe).toBe("function");
   });
 

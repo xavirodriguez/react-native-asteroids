@@ -12,19 +12,21 @@ export class EventBus {
   private emitDepth = 0;
   private readonly MAX_RECURSION = 10;
 
-  public on<T = unknown>(event: string, handler: EventHandler<T>): void {
+  public on<T = unknown>(event: string, handler: EventHandler<T>): () => void {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, new Set());
     }
     this.handlers.get(event)!.add(handler as EventHandler<unknown>);
+
+    return () => this.off(event, handler);
   }
 
-  public once<T = unknown>(event: string, handler: EventHandler<T>): void {
+  public once<T = unknown>(event: string, handler: EventHandler<T>): () => void {
     const onceHandler: EventHandler<T> = (payload, eventName) => {
       this.off(event, onceHandler);
       handler(payload, eventName);
     };
-    this.on(event, onceHandler);
+    return this.on(event, onceHandler);
   }
 
   public off<T = unknown>(event: string, handler: EventHandler<T>): void {

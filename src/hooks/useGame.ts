@@ -66,9 +66,6 @@ export function useGame<
   const [gameState, setGameState] = useState<TState | null>(initialState);
   const [isPaused, setIsPaused] = useState(false);
   const isPausedRef = useRef(false);
-  const [, forceUpdate] = useState(0);
-
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Principle 4: Use encapsulated hook for symmetric resource management
   useKeepAwake(!isPaused && isReady);
@@ -102,27 +99,23 @@ export function useGame<
     let lastUpdateTime = 0;
     const UI_UPDATE_INTERVAL = 1000 / 15; // Throttled to 15 FPS for UI components
 
-    const unsubscribe = gameInstance.subscribe((updatedGame) => {
-      const state = updatedGame.getGameState() as TState;
-      gameStateRef.current = state;
+    const unsubscribe = gameInstance.subscribe((state) => {
+      gameStateRef.current = state as TState;
 
       const now = performance.now();
-      const isPausedNow = updatedGame.isPausedState();
+      const isPausedNow = gameInstance.isPausedState();
       if (isPausedNow !== isPausedRef.current || now - lastUpdateTime >= UI_UPDATE_INTERVAL) {
         isPausedRef.current = isPausedNow;
         // Always spread to guarantee a new object reference for React reconciliation
-        setGameState({ ...state });
+        setGameState({ ...(state as TState) });
         setIsPaused(isPausedNow);
-        forceUpdate((v) => v + 1);
         lastUpdateTime = now;
       }
     });
 
-    const currentTimeout = timeoutRef.current;
     return () => {
       isMounted = false;
       unsubscribe();
-      if (currentTimeout) clearTimeout(currentTimeout);
       gameInstance.destroy();
     };
   // Re-initialize if game class or config change
