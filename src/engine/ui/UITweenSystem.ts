@@ -77,7 +77,7 @@ export class UITweenSystem extends System {
                     tween.currentTime = 0;
                 } else {
                     if (tween.onComplete) tween.onComplete(world, entity);
-                    world.removeComponent(entity, "UITween");
+                    world.getCommandBuffer().removeComponent(entity, "UITween");
                 }
             }
         }

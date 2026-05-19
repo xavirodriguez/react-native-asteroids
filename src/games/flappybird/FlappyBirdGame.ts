@@ -131,6 +131,7 @@ export class FlappyBirdGame
   public updateFromServer(state: Record<string, unknown>) {
     if (!this.isMultiplayer || !state) return;
     const world = this.getWorld();
+    const commands = world.getCommandBuffer();
 
     const currentServerEntities = new Set<string>();
 
@@ -142,11 +143,12 @@ export class FlappyBirdGame
 
         let entity = this.serverEntities.get(serverId);
         if (entity === undefined || !world.hasEntity(entity)) {
-          entity = world.createEntity();
+          entity = world.reserveEntityId();
           this.serverEntities.set(serverId, entity);
-          world.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          world.addComponent(entity, { type: "Render", shape: "bird", size: 15, color: "yellow", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
-          world.addComponent(entity, {
+          commands.createEntity(entity);
+          commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "bird", size: 15, color: "yellow", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+          commands.addComponent(entity, {
             type: "Bird",
             velocityY: playerState.velocityY,
             isAlive: playerState.alive,
@@ -178,11 +180,12 @@ export class FlappyBirdGame
 
         let entity = this.serverEntities.get(serverId);
         if (entity === undefined || !world.hasEntity(entity)) {
-          entity = world.createEntity();
+          entity = world.reserveEntityId();
           this.serverEntities.set(serverId, entity);
-          world.addComponent(entity, { type: "Transform", x: pipeState.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          world.addComponent(entity, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
-          world.addComponent(entity, { type: "Pipe", gapY: pipeState.gapY, gapSize: 140, scored: false } as import("./EntityFactory").PipeComponent);
+          commands.createEntity(entity);
+          commands.addComponent(entity, { type: "Transform", x: pipeState.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+          commands.addComponent(entity, { type: "Pipe", gapY: pipeState.gapY, gapSize: 140, scored: false } as import("./EntityFactory").PipeComponent);
         }
 
         this.updateInterpolationBuffer(entity, pipeState.x, 0);
@@ -192,9 +195,7 @@ export class FlappyBirdGame
     // Cleanup removed entities
     this.serverEntities.forEach((entity, serverId) => {
       if (!currentServerEntities.has(serverId)) {
-        if (world.hasEntity(entity)) {
-          world.removeEntity(entity);
-        }
+        commands.removeEntity(entity);
         this.serverEntities.delete(serverId);
         this.entityInterpolationBuffers.delete(entity);
       }
