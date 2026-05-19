@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AudioSettingsService } from "../../services/AudioSettingsService";
+import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from "expo-audio";
 
 export type SoundId =
   | 'shoot'
@@ -14,17 +15,6 @@ export type SoundId =
 const MUTE_KEY = "settings:audio_muted";
 const VOLUME_KEY = "settings:audio_volume";
 
-// Conditionally import expo-av for native
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let AudioNative: any = null;
-if (Platform.OS !== "web") {
-    try {
-        AudioNative = require("expo-av").Audio;
-    } catch {
-        console.warn("[AudioSystem] expo-av not found in this environment.");
-    }
-}
-
 /**
  * Multi-platform Audio System.
  *
@@ -36,16 +26,22 @@ export class AudioSystem {
   private ctx: AudioContext | null = null;
   private sfxMap = new Map<string, AudioBuffer | string | number>();
   private musicMap = new Map<string, AudioBuffer | string | number>();
-  private currentMusicSource: AudioBufferSourceNode | unknown = null;
+  private currentMusicSource: AudioBufferSourceNode | AudioPlayer | null = null;
   private currentMusicGain: GainNode | null = null;
-  private nativeSounds = new Map<string, unknown>();
+  private nativeSounds = new Map<string, AudioPlayer>();
 
   private masterVolume: number = 1.0;
   private muted: boolean = false;
 
   constructor() {
+    if (Platform.OS !== "web") {
+      setAudioModeAsync({
+        playsInSilentMode: true,
+      }).catch(err => console.warn("[AudioSystem] Failed to set audio mode", err));
+    }
+
     if (Platform.OS === "web") {
-      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
       if (AudioContextClass) {
         this.ctx = new AudioContextClass();
       }
@@ -67,16 +63,24 @@ export class AudioSystem {
   public async setMuted(muted: boolean) {
     this.muted = muted;
     await AsyncStorage.setItem(MUTE_KEY, String(muted));
-    if (this.currentMusicGain && Platform.OS === "web") {
-        this.currentMusicGain.gain.value = this.muted ? 0 : this.masterVolume;
+
+    if (Platform.OS === "web" && this.currentMusicGain) {
+      this.currentMusicGain.gain.value = this.muted ? 0 : this.masterVolume;
+    } else if (Platform.OS !== "web" && this.currentMusicSource) {
+      const player = this.currentMusicSource as AudioPlayer;
+      player.volume = this.muted ? 0 : this.masterVolume;
     }
   }
 
   public async setVolume(volume: number) {
     this.masterVolume = Math.max(0, Math.min(1, volume));
     await AsyncStorage.setItem(VOLUME_KEY, String(this.masterVolume));
-    if (this.currentMusicGain && Platform.OS === "web") {
-        this.currentMusicGain.gain.value = this.muted ? 0 : this.masterVolume;
+
+    if (Platform.OS === "web" && this.currentMusicGain) {
+      this.currentMusicGain.gain.value = this.muted ? 0 : this.masterVolume;
+    } else if (Platform.OS !== "web" && this.currentMusicSource) {
+      const player = this.currentMusicSource as AudioPlayer;
+      player.volume = this.muted ? 0 : this.masterVolume;
     }
   }
 
@@ -85,30 +89,37 @@ export class AudioSystem {
 
   public resume(): void {
     if (Platform.OS === "web") {
-        this.ctx?.resume();
+      this.ctx?.resume();
     }
   }
 
   public async loadSFX(name: string, url: string): Promise<void> {
     if (Platform.OS === "web") {
-        const buffer = await this.loadBuffer(url);
-        if (buffer) this.sfxMap.set(name, buffer);
-    } else if (AudioNative) {
-        try {
-            // Pre-load logic for expo-av would go here if needed
-            this.sfxMap.set(name, url);
-        } catch (e) {
-            console.warn(`[AudioSystem] Failed to load native SFX: ${name}`, e);
-        }
+      const buffer = await this.loadBuffer(url);
+      if (buffer) this.sfxMap.set(name, buffer);
+    } else {
+      this.sfxMap.set(name, url);
+      try {
+        const player = createAudioPlayer({ uri: url });
+        this.nativeSounds.set(`sfx:${name}`, player);
+      } catch (e) {
+        console.warn(`[AudioSystem] Failed to load native SFX: ${name}`, e);
+      }
     }
   }
 
   public async loadMusic(name: string, url: string): Promise<void> {
     if (Platform.OS === "web") {
-        const buffer = await this.loadBuffer(url);
-        if (buffer) this.musicMap.set(name, buffer);
+      const buffer = await this.loadBuffer(url);
+      if (buffer) this.musicMap.set(name, buffer);
     } else {
-        this.musicMap.set(name, url);
+      this.musicMap.set(name, url);
+      try {
+        const player = createAudioPlayer({ uri: url });
+        this.nativeSounds.set(`music:${name}`, player);
+      } catch (e) {
+        console.warn(`[AudioSystem] Failed to load native music: ${name}`, e);
+      }
     }
   }
 
@@ -116,33 +127,36 @@ export class AudioSystem {
     if (this.muted || AudioSettingsService.isMuted()) return;
 
     if (Platform.OS === "web") {
-        const buffer = this.sfxMap.get(name);
-        if (buffer && this.ctx && buffer instanceof AudioBuffer) {
-            const source = this.ctx.createBufferSource();
-            const gain = this.ctx.createGain();
-            source.buffer = buffer;
-            gain.gain.value = this.masterVolume;
-            source.connect(gain);
-            gain.connect(this.ctx.destination);
-            source.start();
-        }
-    } else if (AudioNative) {
-        const source = this.sfxMap.get(name);
-        if (!source) return;
+      const buffer = this.sfxMap.get(name);
+      if (buffer && this.ctx && buffer instanceof AudioBuffer) {
+        const source = this.ctx.createBufferSource();
+        const gain = this.ctx.createGain();
+        source.buffer = buffer;
+        gain.gain.value = this.masterVolume;
+        source.connect(gain);
+        gain.connect(this.ctx.destination);
+        source.start();
+      }
+    } else {
+      let player = this.nativeSounds.get(`sfx:${name}`);
 
-        try {
-            const { sound } = await AudioNative.Sound.createAsync(
-                typeof source === "string" ? { uri: source } : source,
-                { volume: this.masterVolume }
-            );
-            await sound.playAsync();
-            // Automatically unload after playing to prevent leaks
-            sound.setOnPlaybackStatusUpdate((status: { didJustFinish: boolean }) => {
-                if (status.didJustFinish) sound.unloadAsync();
-            });
-        } catch (e) {
-            console.warn(`[AudioSystem] Native SFX Play error: ${name}`, e);
+      if (!player) {
+        const source = this.sfxMap.get(name);
+        if (typeof source === "string") {
+          player = createAudioPlayer({ uri: source });
+          this.nativeSounds.set(`sfx:${name}`, player);
         }
+      }
+
+      if (player) {
+        try {
+          player.volume = this.masterVolume;
+          player.loop = false;
+          player.play();
+        } catch (e) {
+          console.warn(`[AudioSystem] Native SFX Play error: ${name}`, e);
+        }
+      }
     }
   }
 
@@ -150,50 +164,66 @@ export class AudioSystem {
     if (this.muted || AudioSettingsService.isMuted()) return;
 
     if (Platform.OS === "web") {
-        const buffer = this.musicMap.get(name);
-        if (buffer && this.ctx && buffer instanceof AudioBuffer) {
-            this.stopMusic();
-            const source = this.ctx.createBufferSource();
-            this.currentMusicSource = source;
-            this.currentMusicGain = this.ctx.createGain();
-            source.buffer = buffer;
-            source.loop = options.loop || false;
-            this.currentMusicGain.gain.value = this.masterVolume * (options.volume || 1.0);
-            source.connect(this.currentMusicGain);
-            this.currentMusicGain.connect(this.ctx.destination);
-            source.start();
-        }
-    } else if (AudioNative) {
-        const source = this.musicMap.get(name);
-        if (!source) return;
-
+      const buffer = this.musicMap.get(name);
+      if (buffer && this.ctx && buffer instanceof AudioBuffer) {
         this.stopMusic();
-        try {
-            const { sound } = await AudioNative.Sound.createAsync(
-                typeof source === "string" ? { uri: source } : source,
-                {
-                    shouldPlay: true,
-                    isLooping: options.loop,
-                    volume: this.masterVolume * (options.volume || 1.0)
-                }
-            );
-            this.currentMusicSource = sound;
-        } catch (e) {
-            console.warn(`[AudioSystem] Native Music Play error: ${name}`, e);
+        const source = this.ctx.createBufferSource();
+        this.currentMusicSource = source;
+        this.currentMusicGain = this.ctx.createGain();
+        source.buffer = buffer;
+        source.loop = options.loop || false;
+        this.currentMusicGain.gain.value = this.masterVolume * (options.volume || 1.0);
+        source.connect(this.currentMusicGain);
+        this.currentMusicGain.connect(this.ctx.destination);
+        source.start();
+      }
+    } else {
+      await this.stopMusic();
+      let player = this.nativeSounds.get(`music:${name}`);
+
+      if (!player) {
+        const url = this.musicMap.get(name);
+        if (typeof url === "string") {
+          player = createAudioPlayer({ uri: url });
+          this.nativeSounds.set(`music:${name}`, player);
         }
+      }
+
+      if (player) {
+        try {
+          player.loop = options.loop !== undefined ? options.loop : true;
+          player.volume = this.muted ? 0 : this.masterVolume * (options.volume || 1.0);
+          player.play();
+          this.currentMusicSource = player;
+        } catch (e) {
+          console.warn(`[AudioSystem] Native Music Play error: ${name}`, e);
+        }
+      }
     }
   }
 
   public async stopMusic(): Promise<void> {
-    if (Platform.OS === "web" && this.currentMusicSource && this.currentMusicSource instanceof AudioBufferSourceNode) {
-      this.currentMusicSource.stop();
+    if (Platform.OS === "web") {
+      if (this.currentMusicSource && (this.currentMusicSource as any).stop) {
+        (this.currentMusicSource as AudioBufferSourceNode).stop();
+      }
       this.currentMusicSource = null;
       this.currentMusicGain = null;
-    } else if (AudioNative && this.currentMusicSource) {
-        const sound = this.currentMusicSource as { stopAsync: () => Promise<void>, unloadAsync: () => Promise<void> };
-        await sound.stopAsync();
-        await sound.unloadAsync();
-        this.currentMusicSource = null;
+    } else if (this.currentMusicSource) {
+      const player = this.currentMusicSource as AudioPlayer;
+      player.pause();
+      player.seekTo(0);
+      player.remove();
+
+      // Remove from map to allow clean re-creation
+      for (const [key, value] of this.nativeSounds.entries()) {
+        if (value === player) {
+          this.nativeSounds.delete(key);
+          break;
+        }
+      }
+
+      this.currentMusicSource = null;
     }
   }
 
