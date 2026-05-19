@@ -30,7 +30,7 @@ export class LootSystem extends System {
         if (payload.entity !== undefined) {
            this.handleEntityDestruction(world, payload.entity);
         }
-      });
+      };
     }
   }
 
