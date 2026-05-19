@@ -74,7 +74,7 @@ export default tseslint.config(
           "./EntityFactory",
           "./AsteroidsSkiaVisuals",
           "./AsteroidSkiaDrawers",
-          "expo-av",
+          "expo-audio",
           "react-native",
           "../../../../assets/ship.png",
           "../engine/debug/DebugManager"
