@@ -1,3 +1,4 @@
+import { Asset } from "expo-asset";
 import { AssetDescriptor, AssetHandle } from "./AssetTypes";
 
 /**
@@ -169,10 +170,36 @@ export class AssetLoader {
    * @internal
    */
   private async performLoad(desc: AssetDescriptor): Promise<unknown> {
-    if (desc.type === 'json') {
-      return Promise.resolve({ success: true });
+    try {
+      let resolvedUri: string | undefined;
+
+      if (desc.module !== undefined) {
+        const asset = Asset.fromModule(desc.module);
+        await asset.downloadAsync();
+        resolvedUri = asset.localUri ?? asset.uri;
+      } else if (desc.uri) {
+        const asset = Asset.fromURI(desc.uri);
+        await asset.downloadAsync();
+        resolvedUri = asset.localUri ?? asset.uri ?? desc.uri;
+      }
+
+      if (desc.type === 'json') {
+        if (resolvedUri && (resolvedUri.startsWith('http') || resolvedUri.startsWith('file') || resolvedUri.includes('/'))) {
+          try {
+            const response = await fetch(resolvedUri);
+            return await response.json();
+          } catch (e) {
+            console.error(`AssetLoader: Failed to fetch/parse JSON from ${resolvedUri}:`, e);
+            return { success: false, error: String(e) };
+          }
+        }
+        return { success: true };
+      }
+
+      return resolvedUri ?? desc.uri;
+    } catch (error) {
+      throw new Error(`Failed to perform load for asset ${desc.id}: ${error instanceof Error ? error.message : String(error)}`);
     }
-    return Promise.resolve(desc.uri);
   }
 
   /**

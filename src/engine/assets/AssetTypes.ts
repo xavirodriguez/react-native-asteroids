@@ -15,7 +15,9 @@ export interface AssetDescriptor {
   id: string;
   type: AssetType;
   /** Physical path or URI. */
-  uri: string;
+  uri?: string;
+  /** Bundled module (result of require()). */
+  module?: number;
   /** If true, the loader prioritizes this asset. */
   preload?: boolean;
 }

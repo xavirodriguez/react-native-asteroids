@@ -39,28 +39,22 @@ export const createSkiaShipSpriteDrawer = () => {
 
             p.setAlphaf(blinkOpacity);
 
-            // Load sprite if not loaded
+            // Load sprite if not loaded (using AssetLoader resource)
             if (!shipImage && !isLoading) {
-                isLoading = true;
-                try {
-                    const { Image } = require("react-native");
-                    // Path relative to this file: src/games/asteroids/rendering/AsteroidsSkiaVisuals.ts
-                    // assets/ship.png is in root/assets/ship.png
-                    // Going up: rendering -> asteroids -> games -> src -> root
-                    const asset = require("../../../../assets/ship.png");
-                    const source = Image.resolveAssetSource(asset);
-                    if (source && source.uri) {
-                        Skia.Data.fromURI(source.uri).then((data: import("@shopify/react-native-skia").SkData | null) => {
-                            if (data) {
-                                const img = Skia.Image.MakeImageFromEncoded(data);
-                                if (img) shipImage = img;
-                            }
-                        }).catch(() => {
-                            isLoading = false;
-                        });
-                    }
-                } catch (e) {
-                    console.error("Failed to load ship sprite for Skia:", e);
+                const loader = world.getResource<import("../../../engine/assets/AssetLoader").AssetLoader>("AssetLoader");
+                const handle = loader?.get<string>("ship_sprite");
+                if (handle?.status === "ready" && handle.data) {
+                    isLoading = true;
+                    Skia.Data.fromURI(handle.data).then((data: import("@shopify/react-native-skia").SkData | null) => {
+                        if (data) {
+                            const img = Skia.Image.MakeImageFromEncoded(data);
+                            if (img) shipImage = img;
+                        }
+                        isLoading = false;
+                    }).catch((e: Error) => {
+                        console.error("Failed to create Skia image from AssetLoader data:", e);
+                        isLoading = false;
+                    });
                 }
             }
 

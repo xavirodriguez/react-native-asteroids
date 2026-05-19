@@ -85,19 +85,29 @@ export class AsteroidsGame
   }
 
   /**
-   * Preloads game assets (SFX) into the AudioSystem to prevent cold-start latency.
+   * Preloads game assets (SFX and Textures) to prevent cold-start latency.
    */
   private async onPreloadAssets(): Promise<void> {
     const audio = this.audio;
+    const loader = this.assetLoader;
     try {
-      await Promise.all([
-        audio.loadSFX("explosion", "/audio/explosion.mp3"),
-        audio.loadSFX("hit", "/audio/hit.mp3"),
-        audio.loadSFX("shoot", "/audio/shoot.mp3"),
-        audio.loadSFX("game_over", "/audio/game_over.mp3"),
+      // 1. Load Audio via AudioSystem (now supports modules)
+      const audioPromise = Promise.all([
+        audio.loadSFX("explosion", { module: require("../../../assets/audio/explosion.mp3") }),
+        audio.loadSFX("hit", { module: require("../../../assets/audio/hit.mp3") }),
+        audio.loadSFX("shoot", { module: require("../../../assets/audio/shoot.mp3") }),
+        audio.loadSFX("game_over", { module: require("../../../assets/audio/game_over.mp3") }),
       ]);
+
+      // 2. Load Textures via AssetLoader
+      loader.queueAssets([
+        { id: "ship_sprite", type: "texture", module: require("../../../assets/ship.png") }
+      ]);
+      const loaderPromise = loader.loadAll();
+
+      await Promise.all([audioPromise, loaderPromise]);
     } catch (e) {
-      console.warn("[Asteroids] Asset preloading failed. Audio may lag on first play.", e);
+      console.warn("[Asteroids] Asset preloading failed. Visuals or Audio may lag.", e);
     }
   }
 
@@ -540,6 +550,7 @@ export class AsteroidsGame
     if (!this.assetLoader) this.assetLoader = new AssetLoader();
 
     this.world.setResource("BulletPool", this.bulletPool);
+    this.world.setResource("AssetLoader", this.assetLoader);
 
     // Configure UnifiedInputSystem bindings
     this.unifiedInput.bind("thrust", [GAME_CONFIG.KEYS.THRUST]);

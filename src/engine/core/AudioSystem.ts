@@ -2,6 +2,8 @@ import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AudioSettingsService } from "../../services/AudioSettingsService";
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from "expo-audio";
+import { Asset } from "expo-asset";
+import { AssetDescriptor } from "../assets/AssetTypes";
 
 export type SoundId =
   | 'shoot'
@@ -28,6 +30,7 @@ export class AudioSystem {
   private musicMap = new Map<string, AudioBuffer | string | number>();
   private currentMusicSource: AudioBufferSourceNode | AudioPlayer | null = null;
   private currentMusicGain: GainNode | null = null;
+  private currentMusicVolume: number = 1.0;
   private nativeSounds = new Map<string, AudioPlayer>();
 
   private masterVolume: number = 1.0;
@@ -77,13 +80,8 @@ export class AudioSystem {
     await AsyncStorage.setItem(VOLUME_KEY, String(this.masterVolume));
 
     if (Platform.OS === "web" && this.currentMusicGain) {
-      this.currentMusicGain.gain.value = this.muted ? 0 : this.masterVolume;
+      this.currentMusicGain.gain.value = this.muted ? 0 : this.masterVolume * this.currentMusicVolume;
     } else if (Platform.OS !== "web" && this.currentMusicSource) {
-      const player = this.currentMusicSource as AudioPlayer;
-      player.volume = this.muted ? 0 : this.masterVolume;
-    }
-
-    if (this.currentMusicSource && Platform.OS !== "web") {
       const player = this.currentMusicSource as import("expo-audio").AudioPlayer;
       player.volume = this.muted ? 0 : this.masterVolume * this.currentMusicVolume;
     }
@@ -98,33 +96,75 @@ export class AudioSystem {
     }
   }
 
-  public async loadSFX(name: string, url: string): Promise<void> {
-    if (Platform.OS === "web") {
-      const buffer = await this.loadBuffer(url);
-      if (buffer) this.sfxMap.set(name, buffer);
-    } else {
-      this.sfxMap.set(name, url);
-      try {
-        const player = createAudioPlayer({ uri: url });
-        this.nativeSounds.set(`sfx:${name}`, player);
-      } catch (e) {
-        console.warn(`[AudioSystem] Failed to load native SFX: ${name}`, e);
+  /**
+   * Resolves an asset source to a usable URI.
+   */
+  private async resolveSource(source: string | { uri: string } | { module: number } | AssetDescriptor): Promise<string> {
+    if (typeof source === "string") {
+      // If it looks like a web path and we are on native, it might be an error or need special handling.
+      // However, for backward compatibility, we'll try to resolve it with Asset.fromURI if it's not a full URL.
+      if (Platform.OS !== "web" && source.startsWith("/") && !source.startsWith("//")) {
+         // This is likely a web-specific relative path that won't work on native.
+         // We should ideally use require() for these.
+         console.warn(`[AudioSystem] Using web-relative path "${source}" on native. This may fail.`);
       }
+      return source;
+    }
+
+    if ("module" in source && source.module !== undefined) {
+      const asset = Asset.fromModule(source.module);
+      await asset.downloadAsync();
+      return asset.localUri ?? asset.uri;
+    }
+
+    if ("uri" in source && source.uri !== undefined) {
+      const asset = Asset.fromURI(source.uri);
+      await asset.downloadAsync();
+      return asset.localUri ?? asset.uri ?? source.uri;
+    }
+
+    throw new Error(`Invalid audio source: ${JSON.stringify(source)}`);
+  }
+
+  public async loadSFX(name: string, source: string | { uri: string } | { module: number } | AssetDescriptor): Promise<void> {
+    try {
+      const resolvedUri = await this.resolveSource(source);
+
+      if (Platform.OS === "web") {
+        const buffer = await this.loadBuffer(resolvedUri);
+        if (buffer) this.sfxMap.set(name, buffer);
+      } else {
+        this.sfxMap.set(name, resolvedUri);
+        try {
+          const player = createAudioPlayer({ uri: resolvedUri });
+          this.nativeSounds.set(`sfx:${name}`, player);
+        } catch (e) {
+          console.warn(`[AudioSystem] Failed to load native SFX: ${name}`, e);
+        }
+      }
+    } catch (e) {
+      console.error(`[AudioSystem] Error loading SFX ${name}:`, e);
     }
   }
 
-  public async loadMusic(name: string, url: string): Promise<void> {
-    if (Platform.OS === "web") {
-      const buffer = await this.loadBuffer(url);
-      if (buffer) this.musicMap.set(name, buffer);
-    } else {
-      this.musicMap.set(name, url);
-      try {
-        const player = createAudioPlayer({ uri: url });
-        this.nativeSounds.set(`music:${name}`, player);
-      } catch (e) {
-        console.warn(`[AudioSystem] Failed to load native music: ${name}`, e);
+  public async loadMusic(name: string, source: string | { uri: string } | { module: number } | AssetDescriptor): Promise<void> {
+    try {
+      const resolvedUri = await this.resolveSource(source);
+
+      if (Platform.OS === "web") {
+        const buffer = await this.loadBuffer(resolvedUri);
+        if (buffer) this.musicMap.set(name, buffer);
+      } else {
+        this.musicMap.set(name, resolvedUri);
+        try {
+          const player = createAudioPlayer({ uri: resolvedUri });
+          this.nativeSounds.set(`music:${name}`, player);
+        } catch (e) {
+          console.warn(`[AudioSystem] Failed to load native music: ${name}`, e);
+        }
       }
+    } catch (e) {
+      console.error(`[AudioSystem] Error loading music ${name}:`, e);
     }
   }
 
@@ -175,9 +215,10 @@ export class AudioSystem {
         const source = this.ctx.createBufferSource();
         this.currentMusicSource = source;
         this.currentMusicGain = this.ctx.createGain();
+        this.currentMusicVolume = options.volume || 1.0;
         source.buffer = buffer;
         source.loop = options.loop || false;
-        this.currentMusicGain.gain.value = this.masterVolume * (options.volume || 1.0);
+        this.currentMusicGain.gain.value = this.masterVolume * this.currentMusicVolume;
         source.connect(this.currentMusicGain);
         this.currentMusicGain.connect(this.ctx.destination);
         source.start();
@@ -196,8 +237,9 @@ export class AudioSystem {
 
       if (player) {
         try {
+          this.currentMusicVolume = options.volume || 1.0;
           player.loop = options.loop !== undefined ? options.loop : true;
-          player.volume = this.muted ? 0 : this.masterVolume * (options.volume || 1.0);
+          player.volume = this.muted ? 0 : this.masterVolume * this.currentMusicVolume;
           player.play();
           this.currentMusicSource = player;
         } catch (e) {

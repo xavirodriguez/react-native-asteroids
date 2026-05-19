@@ -14,8 +14,12 @@ export const drawAsteroidsShipSprite: ShapeDrawer<CanvasRenderingContext2D> = (c
   const health = world.getComponent<HealthComponent>(entity, "Health");
 
   if (typeof window !== "undefined" && !shipImage) {
-    shipImage = new Image();
-    shipImage.src = "/assets/ship.png";
+    const loader = world.getResource<import("../../../engine/assets/AssetLoader").AssetLoader>("AssetLoader");
+    const handle = loader?.get<string>("ship_sprite");
+    if (handle?.status === "ready" && handle.data) {
+      shipImage = new Image();
+      shipImage.src = handle.data;
+    }
   }
 
   let alpha = 1.0;
