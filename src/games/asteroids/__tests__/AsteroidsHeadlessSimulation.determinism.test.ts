@@ -1,4 +1,3 @@
-import { World } from "../../../engine/core/World";
 import { AsteroidsHeadlessSimulation } from "../headless/AsteroidsHeadlessSimulation";
 import { createShip, createGameState } from "../EntityFactory";
 import { RandomService } from "../../../engine/utils/RandomService";

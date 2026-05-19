@@ -70,7 +70,7 @@ export class JuiceSystem extends System {
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
       const juice = world.getComponent<JuiceComponent>(entity, "Juice");
-      let offset = world.getComponent<VisualOffsetComponent>(entity, "VisualOffset");
+      const offset = world.getComponent<VisualOffsetComponent>(entity, "VisualOffset");
       const render = world.getComponent<RenderComponent>(entity, "Render");
 
       if (!juice) continue;

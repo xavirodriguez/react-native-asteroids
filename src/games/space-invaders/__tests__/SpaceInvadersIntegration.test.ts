@@ -1,5 +1,4 @@
 import { SpaceInvadersGame } from "../SpaceInvadersGame";
-import { World } from "../../../engine/core/World";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
 
 // Mock AudioSystem to avoid loading errors in Node

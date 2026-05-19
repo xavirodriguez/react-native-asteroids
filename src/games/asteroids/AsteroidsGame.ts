@@ -7,7 +7,6 @@ import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
 import { AsteroidComboSystem } from "./systems/AsteroidComboSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { UfoSystem } from "./systems/UfoSystem";
-import { StatusEffectSystem } from "../../engine/systems/StatusEffectSystem";
 import { LootSystem } from "../../engine/systems/LootSystem";
 import { ModifierSystem } from "../../engine/systems/ModifierSystem";
 import { PowerUpSystem } from "../../engine/systems/PowerUpSystem";

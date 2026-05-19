@@ -198,7 +198,7 @@ export class CollisionSystem2D extends System {
   private notifyCollisionEvent(world: World, a: Entity, b: Entity, manifold: CollisionManifold): void { this.addCollisionToComponent(world, a, b, manifold, false); this.addCollisionToComponent(world, b, a, manifold, true); }
   private addCollisionToComponent(world: World, entity: Entity, other: Entity, manifold: CollisionManifold, flipNormal: boolean): void {
     const commands = world.getCommandBuffer();
-    let events = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
+    const events = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
     if (!events) {
         commands.addComponent(entity, { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] } as CollisionEventsComponent);
         // We skip recording this collision for this frame as the component won't be available yet
@@ -211,7 +211,7 @@ export class CollisionSystem2D extends System {
   private notifyTriggerEvent(world: World, a: Entity, b: Entity, phase: "enter" | "stay" | "exit"): void { this.addTriggerToComponent(world, a, b, phase); this.addTriggerToComponent(world, b, a, phase); }
   private addTriggerToComponent(world: World, entity: Entity, other: Entity, phase: "enter" | "stay" | "exit"): void {
     const commands = world.getCommandBuffer();
-    let events = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
+    const events = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents");
     if (!events) {
         commands.addComponent(entity, { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] } as CollisionEventsComponent);
         return;

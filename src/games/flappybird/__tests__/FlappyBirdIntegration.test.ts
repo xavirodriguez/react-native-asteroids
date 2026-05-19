@@ -1,6 +1,5 @@
 import { FlappyBirdGame } from "../FlappyBirdGame";
-import { World } from "../../../engine/core/World";
-import { FLAPPY_CONFIG, FlappyBirdState } from "../types/FlappyBirdTypes";
+import { FlappyBirdState } from "../types/FlappyBirdTypes";
 
 // Mock AudioSystem to avoid loading errors in Node
 jest.mock("../../../engine/core/AudioSystem");

@@ -1,5 +1,4 @@
 import { PongGame } from "../PongGame";
-import { World } from "../../../engine/core/World";
 import { PONG_CONFIG, PongState } from "../types";
 
 // Mock AudioSystem to avoid loading errors in Node

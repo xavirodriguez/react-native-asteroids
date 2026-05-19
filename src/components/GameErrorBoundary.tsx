@@ -1,5 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Alert, Platform, Linking } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Alert, Platform } from 'react-native';
 
 interface Props {
   children: ReactNode;
