@@ -34,6 +34,8 @@ import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "../../engine/rendering/Renderer";
 import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManager";
 
+const __DEV__ = process.env.NODE_ENV !== "production";
+
 /**
  * Main game controller for Asteroids.
  * Manages the ECS world, systems, and lifecycle.
@@ -278,9 +280,18 @@ export class AsteroidsGame
   }
 
   private handleFullServerUpdate(serverState: Record<string, unknown>, localSessionId?: string, timestamp: number = Date.now()) {
-    const authoritativeSnapshot = typeof serverState.fullWorldState === "string"
-      ? JSON.parse(serverState.fullWorldState)
-      : serverState.fullWorldState;
+    let authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot;
+
+    if (typeof serverState.fullWorldState === "string") {
+      authoritativeSnapshot = JSON.parse(serverState.fullWorldState);
+    } else {
+      authoritativeSnapshot = structuredClone(serverState.fullWorldState);
+      if (__DEV__) {
+        if (authoritativeSnapshot === serverState.fullWorldState) {
+          console.warn("[AsteroidsGame] handleFullServerUpdate: Aliasing detected in snapshot cloning.");
+        }
+      }
+    }
 
     // Skip if this full snapshot hasn't changed since last processing
     if (authoritativeSnapshot.stateVersion === this.lastProcessedFullStateVersion) return;
@@ -311,7 +322,14 @@ export class AsteroidsGame
           }
           for (const type in payload.components) {
             if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
-            snapshot.componentData[type][entityId] = payload.components[type];
+            const sourceComp = payload.components[type];
+            // CRITICAL: Clone component from delta to prevent aliasing with the network packet
+            snapshot.componentData[type][entityId] = structuredClone(sourceComp);
+            if (__DEV__) {
+              if (snapshot.componentData[type][entityId] === sourceComp) {
+                console.warn(`[AsteroidsGame] applyDeltaToSnapshot (created): Aliasing detected for type ${type}`);
+              }
+            }
           }
         });
       }
@@ -320,7 +338,14 @@ export class AsteroidsGame
           const entityId = parseInt(payload.entityId);
           for (const type in payload.components) {
             if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
-            snapshot.componentData[type][entityId] = payload.components[type];
+            const sourceComp = payload.components[type];
+            // CRITICAL: Clone component from delta to prevent aliasing
+            snapshot.componentData[type][entityId] = structuredClone(sourceComp);
+            if (__DEV__) {
+              if (snapshot.componentData[type][entityId] === sourceComp) {
+                console.warn(`[AsteroidsGame] applyDeltaToSnapshot (updated): Aliasing detected for type ${type}`);
+              }
+            }
           }
         });
       }
@@ -352,7 +377,13 @@ export class AsteroidsGame
             entitiesAdded = true;
           }
 
-          snapshot.componentData[type][entityId] = component;
+          // CRITICAL: Clone component from delta to prevent aliasing
+          snapshot.componentData[type][entityId] = structuredClone(component);
+          if (__DEV__) {
+            if (snapshot.componentData[type][entityId] === component) {
+              console.warn(`[AsteroidsGame] applyDeltaToSnapshot (partial): Aliasing detected for type ${type}`);
+            }
+          }
         }
       }
       if (entitiesAdded) snapshot.entities.sort((a, b) => a - b);

@@ -17,6 +17,8 @@ interface RegisteredSystem {
  *
  * API status: Public
  */
+const __DEV__ = process.env.NODE_ENV !== "production";
+
 export class World {
   /** @internal */
   private activeEntities = new Set<Entity>();
@@ -41,6 +43,10 @@ export class World {
   /** @internal */
   private _systemsVersion = 0;
   /** @internal */
+  private _sortedComponentTypes: string[] = [];
+  /** @internal */
+  private _componentTypesDirty = true;
+  /** @internal */
   private profilers: Map<System, SystemProfiler> = new Map();
   /**
    * Whether system profiling is enabled.
@@ -50,6 +56,8 @@ export class World {
   private nextEntityId = 1;
   /** @internal */
   private freeEntities: Entity[] = [];
+  /** @internal */
+  private _freeEntitiesSorted = true;
   private resources = new Map<string, unknown>();
   /**
    * Incremented on structural changes (entity creation/destruction, component addition/removal).
@@ -148,23 +156,45 @@ export class World {
 
   /**
    * Generates a serializable snapshot of the entire world state for rollback or persistence.
+   *
+   * @remarks
+   * The snapshot is a deep-cloned, deterministic representation of the world state.
+   * It guarantees that:
+   * 1. Entity lists are sorted by ID.
+   * 2. Component types are sorted alphabetically.
+   * 3. Component data per type is stored in entity-order.
+   * 4. All functional or non-serializable data (like event handlers) is stripped.
    */
   public snapshot(): WorldSnapshot {
     const gameplayRandom = RandomService.getInstance("gameplay");
     const componentData: ComponentDataSnapshot = {};
 
-    // Deterministic sort of component types
-    const sortedTypes = Array.from(this.componentMaps.keys()).sort();
+    // Deterministic sort of component types (cached)
+    if (this._componentTypesDirty) {
+      this._sortedComponentTypes = Array.from(this.componentMaps.keys()).sort();
+      this._componentTypesDirty = false;
+    }
 
-    for (const type of sortedTypes) {
-      const map = this.componentMaps.get(type)!;
+    // Pre-initialize componentData with sorted types to ensure deterministic key order
+    for (const type of this._sortedComponentTypes) {
       componentData[type] = {};
+    }
 
-      // Deterministic sort of entities
-      const sortedEntities = Array.from(map.keys()).sort((a, b) => a - b);
+    // Use the cached sorted entities list
+    const allEntities = this.entities;
 
-      for (const entity of sortedEntities) {
-        const component = map.get(entity)!;
+    // Optimized capture: Iterate over sorted entities and their components.
+    // This avoids sorting per component type and ensures O(Total Components) complexity.
+    for (const entity of allEntities) {
+      const componentSet = this.entityComponentSets.get(entity);
+      if (!componentSet) continue;
+
+      for (const type of componentSet) {
+        const map = this.componentMaps.get(type);
+        if (!map) continue;
+        const component = map.get(entity);
+        if (!component) continue;
+
         const serializedComp: SerializedComponent = {};
         const compAsRecord = component as unknown as Record<string, unknown>;
 
@@ -175,7 +205,7 @@ export class World {
         }
 
         if (type === "Reclaimable") {
-            delete (serializedComp as SerializedComponent).onReclaim;
+          delete (serializedComp as SerializedComponent).onReclaim;
         }
 
         if (type === "Juice") {
@@ -188,16 +218,22 @@ export class World {
           }
         }
 
-        // structuredClone is much faster and safer than JSON.parse(JSON.stringify)
+        // structuredClone is used for a deep copy of serializable data
         componentData[type][entity] = structuredClone(serializedComp) as SerializedComponent;
       }
     }
 
+    if (!this._freeEntitiesSorted) {
+      // Sort descending so pop() returns the smallest ID deterministically and in O(1)
+      this.freeEntities.sort((a, b) => b - a);
+      this._freeEntitiesSorted = true;
+    }
+
     return {
-      entities: Array.from(this.activeEntities).sort((a, b) => a - b),
+      entities: [...allEntities],
       componentData,
       nextEntityId: this.nextEntityId,
-      freeEntities: [...this.freeEntities].sort((a, b) => a - b),
+      freeEntities: [...this.freeEntities],
       structureVersion: this._structureVersion,
       stateVersion: this._stateVersion,
       seed: gameplayRandom.getSeed()
@@ -206,12 +242,18 @@ export class World {
 
   /**
    * Restores the world state from a previously captured snapshot.
+   *
+   * @remarks
+   * This method performs a deep restoration, ensuring the world is completely
+   * independent of the snapshot object. It rebuilds internal indexes and
+   * re-synchronizes queries to maintain structural integrity.
    */
   public restore(state: WorldSnapshot): void {
     this.assertCanMutateStructure("restore");
     this.activeEntities = new Set(state.entities);
     this.nextEntityId = state.nextEntityId;
     this.freeEntities = [...state.freeEntities];
+    this._freeEntitiesSorted = false; // Snapshot might be sorted, but mark dirty to be safe
     this._structureVersion = state.structureVersion;
     this._stateVersion = state.stateVersion;
 
@@ -236,7 +278,17 @@ export class World {
 
       for (const entityIdStr in state.componentData[type]) {
         const entityId = parseInt(entityIdStr);
-        const component = state.componentData[type][entityId] as unknown as Component;
+        const sourceComp = state.componentData[type][entityId];
+        // CRITICAL: Deep clone component from snapshot to prevent aliasing.
+        // This ensures subsequent mutations in the world don't corrupt the snapshot/history.
+        const component = structuredClone(sourceComp) as unknown as Component;
+
+        if (__DEV__) {
+          if (component === sourceComp && typeof sourceComp === "object" && sourceComp !== null) {
+            console.warn(`[World.restore] Aliasing detected for component type "${type}" on entity ${entityId}. structuredClone failed to decouple reference.`);
+          }
+        }
+
         storage.set(entityId, component);
         index.add(entityId);
         versions.set(entityId, this._stateVersion);
@@ -276,6 +328,10 @@ export class World {
    * API status: Public
    */
   public reserveEntityId(): Entity {
+    if (!this._freeEntitiesSorted) {
+      this.freeEntities.sort((a, b) => b - a);
+      this._freeEntitiesSorted = true;
+    }
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
     this._structureVersion++;
     return id;
@@ -504,6 +560,7 @@ export class World {
 
     if (this.activeEntities.delete(entity)) {
       this.freeEntities.push(entity);
+      this._freeEntitiesSorted = false;
       this._structureVersion++;
     }
   }
@@ -581,6 +638,8 @@ export class World {
     this.resources.clear();
     this.commandBuffer.clear();
     this._structureVersion++;
+    this._componentTypesDirty = true;
+    this._freeEntitiesSorted = true;
   }
 
   /**
@@ -798,6 +857,7 @@ export class World {
     if (!this.componentMaps.has(type)) {
       this.componentMaps.set(type, new Map());
       this.componentIndex.set(type, new Set());
+      this._componentTypesDirty = true;
     }
   }
 
@@ -826,4 +886,3 @@ export class World {
   }
 }
 
-const __DEV__ = process.env.NODE_ENV !== "production";
