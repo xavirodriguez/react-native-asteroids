@@ -82,6 +82,11 @@ export class AudioSystem {
       const player = this.currentMusicSource as AudioPlayer;
       player.volume = this.muted ? 0 : this.masterVolume;
     }
+
+    if (this.currentMusicSource && Platform.OS !== "web") {
+      const player = this.currentMusicSource as import("expo-audio").AudioPlayer;
+      player.volume = this.muted ? 0 : this.masterVolume * this.currentMusicVolume;
+    }
   }
 
   public isMuted() { return this.muted; }
