@@ -83,7 +83,7 @@ export class PhysicsUtils {
     const vx = (vel[dxKey] as number);
     const vy = (vel[dyKey] as number);
 
-    const isInvalid = (val: any) => val === undefined || val === null || isNaN(val) || typeof val !== 'number';
+    const isInvalid = (val: unknown) => val === undefined || val === null || (typeof val === 'number' && isNaN(val)) || typeof val !== 'number';
 
     if (isInvalid(currentX) || isInvalid(currentY) || isInvalid(vx) || isInvalid(vy)) {
       if (__DEV__) {

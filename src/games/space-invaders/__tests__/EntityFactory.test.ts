@@ -11,8 +11,8 @@ describe("Space Invaders EntityFactory", () => {
         const shields = world.query("Shield");
         expect(shields.length).toBeGreaterThan(0);
 
-        const firstShield = shields[0];
-        const transform = world.getComponent<TransformComponent>(firstShield, "Transform")!;
+        // const firstShield = shields[0];
+        // const transform = world.getComponent<TransformComponent>(firstShield, "Transform")!;
 
         // The first shield segment (col 0, row 0, bunker 0) should be at SHIELD_START_X
         // Since query order might not be guaranteed, let's find the one with min X

@@ -52,8 +52,9 @@ export class SpatialPartitioningSystem extends System {
 
     // Attempt to get viewport dimensions from a resource, or fallback to standard 800x600
     const screenResource = world.getResource<{ width: number, height: number }>("ScreenConfig");
-    const baseW = (mainCam as any)?.width ?? screenResource?.width ?? 800;
-    const baseH = (mainCam as any)?.height ?? screenResource?.height ?? 600;
+    const camWithDims = mainCam as (Camera2DComponent & { width?: number; height?: number }) | null;
+    const baseW = camWithDims?.width ?? screenResource?.width ?? 800;
+    const baseH = camWithDims?.height ?? screenResource?.height ?? 600;
 
     const viewW = baseW / (mainCam?.zoom ?? 1);
     const viewH = baseH / (mainCam?.zoom ?? 1);
@@ -97,12 +98,11 @@ export class SpatialPartitioningSystem extends System {
           console.debug(`[SpatialPartitioningSystem] Entity ${entity} activation: ${node.active} -> ${isCurrentlyActive}. AABB:`, aabb, "Viewport:", activeAABB);
       }
 
-      if (node.active !== isCurrentlyActive || true) { // Always update to ensure lastCellKeys are sync
-          world.mutateComponent(entity, "SpatialNode", n => {
-              n.active = isCurrentlyActive;
-              n.lastCellKeys = grid.getIntersectingCells(aabb);
-          });
-      }
+      // Always update to ensure lastCellKeys are sync
+      world.mutateComponent(entity, "SpatialNode", n => {
+          n.active = isCurrentlyActive;
+          n.lastCellKeys = grid.getIntersectingCells(aabb);
+      });
     }
   }
 }

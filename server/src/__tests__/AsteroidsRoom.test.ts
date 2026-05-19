@@ -6,9 +6,9 @@ describe("AsteroidsRoom Authoritative Score", () => {
 
     beforeEach(async () => {
         room = new AsteroidsRoom();
-        // @ts-ignore
+        // @ts-expect-error - Manual state injection for testing
         room.state = new AsteroidsState();
-        // @ts-ignore
+        // @ts-expect-error - Accessing protected method for testing
         await room.onCreate({ seed: 12345 });
     });
 

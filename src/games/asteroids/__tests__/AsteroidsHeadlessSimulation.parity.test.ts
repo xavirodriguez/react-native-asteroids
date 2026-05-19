@@ -3,7 +3,6 @@ import { AsteroidsHeadlessSimulation } from "../headless/AsteroidsHeadlessSimula
 import { DeterministicSimulation } from "../../../simulation/DeterministicSimulation";
 import { createShip, createAsteroid, createGameState } from "../EntityFactory";
 import { RandomService } from "../../../engine/utils/RandomService";
-import { getLogicalSnapshot } from "./utils/TestHelpers";
 
 describe("AsteroidsHeadlessSimulation Parity", () => {
     const FIXED_DT = 16.66;
@@ -23,7 +22,7 @@ describe("AsteroidsHeadlessSimulation Parity", () => {
             DeterministicSimulation.update(worldDet, FIXED_DT, { isResimulating: false });
             worldDet.flush();
         }
-        const snapshotDet = getLogicalSnapshot(worldDet);
+        // const snapshotDet = getLogicalSnapshot(worldDet);
 
         // Run Headless
         RandomService.resetInstances();
@@ -37,7 +36,7 @@ describe("AsteroidsHeadlessSimulation Parity", () => {
         for (let i = 0; i < 60; i++) {
             simHeadless.step(FIXED_DT);
         }
-        const snapshotHeadless = getLogicalSnapshot(worldHeadless);
+        // const snapshotHeadless = getLogicalSnapshot(worldHeadless);
 
         // Movement should be close
         const shipDetPos = worldDet.getComponent<any>(2, "Transform");

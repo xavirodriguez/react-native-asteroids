@@ -1,5 +1,5 @@
 import { World } from "../core/World";
-import { Entity, RenderComponent } from "../types/EngineTypes";
+import { Entity, RenderComponent, ScreenShakeComponent } from "../types/EngineTypes";
 import { JuiceSystem } from "../systems/JuiceSystem";
 
 /**
@@ -40,12 +40,12 @@ export class Juice {
       }
     }
 
-    const component = {
+    const component: ScreenShakeComponent = {
       type: "ScreenShake",
       intensity,
       duration,
       remaining: duration
-    } as any;
+    };
 
     if (world.isUpdating) {
         commands.addComponent(shakeEntity, component);
