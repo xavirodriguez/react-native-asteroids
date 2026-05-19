@@ -86,9 +86,10 @@ export class ComponentSetPool<T extends Record<string, Component>> {
    *
    * @param world - The ECS world.
    * @param entity - The entity to reclaim.
+   * @param container - Optional container object to reuse for components gathering.
    */
-  public release(world: World, entity: Entity): void {
-    const components = {} as T;
+  public release(world: World, entity: Entity, container?: T): void {
+    const components = container || ({} as T);
     let allFound = true;
 
     for (const key in this.keyToType) {
