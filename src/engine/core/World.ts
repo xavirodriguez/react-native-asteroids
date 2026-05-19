@@ -284,7 +284,7 @@ export class World {
         const component = structuredClone(sourceComp) as unknown as Component;
 
         if (__DEV__) {
-          if (component === sourceComp && typeof sourceComp === "object" && sourceComp !== null) {
+          if ((component as unknown) === sourceComp && typeof sourceComp === "object" && sourceComp !== null) {
             console.warn(`[World.restore] Aliasing detected for component type "${type}" on entity ${entityId}. structuredClone failed to decouple reference.`);
           }
         }
