@@ -1,41 +1,25 @@
-import { ComponentSetPool } from "../../engine/utils/ComponentSetPool";
 import { World } from "../../engine/core/World";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import {
   Entity,
-  TransformComponent,
-  VelocityComponent,
-  RenderComponent,
-  Collider2DComponent,
-  BoundaryComponent,
-  TTLComponent,
-  ReclaimableComponent,
-  Component
+  Component,
+  BoundaryComponent
 } from "../../engine/types/EngineTypes";
-import { CircleShape } from "../../engine/physics/shapes/ShapeTypes";
 import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
+import { ProjectilePool, ProjectileComponents, ProjectileParams } from "../../engine/core/ProjectilePool";
 
-interface BulletComponents {
-  position: TransformComponent;
-  velocity: VelocityComponent;
-  render: RenderComponent;
-  collider: Collider2DComponent;
+interface InvaderBulletComponents extends ProjectileComponents {
   boundary: BoundaryComponent;
-  ttl: TTLComponent;
-  reclaimable: ReclaimableComponent;
   bullet: Component;
-  [key: string]: Component;
 }
 
 /**
- * Pool for player bullets.
+ * Standardized Player Bullet Pool for Space Invaders.
  */
-export class PlayerBulletPool {
-  private pool: ComponentSetPool<BulletComponents>;
-
+export class PlayerBulletPool extends ProjectilePool<InvaderBulletComponents, ProjectileParams> {
   constructor() {
-    this.pool = new ComponentSetPool<BulletComponents>(
-      () => ({
+    super({
+      factory: () => ({
         position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "player_bullet", size: 0, color: "", rotation: 0 },
@@ -56,41 +40,38 @@ export class PlayerBulletPool {
         reclaimable: { type: "Reclaimable", onReclaim: () => {} },
         bullet: { type: "PlayerBullet" }
       }),
-      (data) => {
+      reset: (data) => {
         data.position.x = 0;
         data.position.y = 0;
+      },
+      initializer: (data, p) => {
+        data.position.x = p.x;
+        data.position.y = p.y;
+        data.velocity.dx = p.dx;
+        data.velocity.dy = p.dy;
+        data.render.size = p.size;
+        data.render.color = p.color;
+        if (data.collider.shape.type === "circle") {
+            data.collider.shape.radius = p.size;
+        }
+        data.ttl.remaining = p.ttl;
+        data.ttl.total = p.ttl;
       }
-    );
+    });
   }
 
-  acquire(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
-    const { entity, components: data } = this.pool.acquire(world);
-    data.position.x = x;
-    data.position.y = y;
-    data.velocity.dx = dx;
-    data.velocity.dy = dy;
-    data.render.size = size;
-    data.render.color = color;
-    (data.collider.shape as CircleShape).radius = size;
-    data.ttl.remaining = ttl;
-    data.ttl.total = ttl;
-    return entity;
-  }
-
-  release(world: World, entity: Entity): void {
-    this.pool.release(world, entity);
+  public acquireInvaderBullet(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
+    return this.acquire(world, { x, y, dx, dy, size, color, ttl });
   }
 }
 
 /**
- * Pool for enemy bullets.
+ * Standardized Enemy Bullet Pool for Space Invaders.
  */
-export class EnemyBulletPool {
-  private pool: ComponentSetPool<BulletComponents>;
-
+export class EnemyBulletPool extends ProjectilePool<InvaderBulletComponents, ProjectileParams> {
   constructor() {
-    this.pool = new ComponentSetPool<BulletComponents>(
-      () => ({
+    super({
+      factory: () => ({
         position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "enemy_bullet", size: 0, color: "", rotation: 0 },
@@ -111,77 +92,63 @@ export class EnemyBulletPool {
         reclaimable: { type: "Reclaimable", onReclaim: () => {} },
         bullet: { type: "EnemyBullet" }
       }),
-      (data) => {
+      reset: (data) => {
         data.position.x = 0;
         data.position.y = 0;
+      },
+      initializer: (data, p) => {
+        data.position.x = p.x;
+        data.position.y = p.y;
+        data.velocity.dx = p.dx;
+        data.velocity.dy = p.dy;
+        data.render.size = p.size;
+        data.render.color = p.color;
+        if (data.collider.shape.type === "circle") {
+            data.collider.shape.radius = p.size;
+        }
+        data.ttl.remaining = p.ttl;
+        data.ttl.total = p.ttl;
       }
-    );
+    });
   }
 
-  acquire(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
-    const { entity, components: data } = this.pool.acquire(world);
-    data.position.x = x;
-    data.position.y = y;
-    data.velocity.dx = dx;
-    data.velocity.dy = dy;
-    data.render.size = size;
-    data.render.color = color;
-    (data.collider.shape as CircleShape).radius = size;
-    data.ttl.remaining = ttl;
-    data.ttl.total = ttl;
-    return entity;
+  public acquireInvaderBullet(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
+    return this.acquire(world, { x, y, dx, dy, size, color, ttl });
   }
-
-  release(world: World, entity: Entity): void {
-    this.pool.release(world, entity);
-  }
-}
-
-interface ParticleComponents {
-  position: TransformComponent;
-  velocity: VelocityComponent;
-  render: RenderComponent;
-  ttl: TTLComponent;
-  reclaimable: ReclaimableComponent;
-  [key: string]: Component;
 }
 
 /**
- * Pool for particles.
+ * Standardized Particle Pool for Space Invaders.
  */
-export class ParticlePool {
-  private pool: ComponentSetPool<ParticleComponents>;
-
+export class ParticlePool extends ProjectilePool<ProjectileComponents, ProjectileParams> {
   constructor() {
-    this.pool = new ComponentSetPool<ParticleComponents>(
-      () => ({
+    super({
+      factory: () => ({
         position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0 },
+        collider: {
+            type: "Collider2D",
+            shape: { type: "circle", radius: 0 },
+            layer: 0, mask: 0, offsetX: 0, offsetY: 0, isTrigger: true, enabled: false
+        },
         ttl: { type: "TTL", remaining: 0, total: 0 },
         reclaimable: { type: "Reclaimable", onReclaim: () => {} }
       }),
-      (data) => {
+      reset: (data) => {
         data.position.x = 0;
         data.position.y = 0;
+      },
+      initializer: (data, p) => {
+        data.position.x = p.x;
+        data.position.y = p.y;
+        data.velocity.dx = p.dx;
+        data.velocity.dy = p.dy;
+        data.render.size = p.size;
+        data.render.color = p.color;
+        data.ttl.remaining = p.ttl;
+        data.ttl.total = p.ttl;
       }
-    );
-  }
-
-  acquire(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
-    const { entity, components: data } = this.pool.acquire(world);
-    data.position.x = x;
-    data.position.y = y;
-    data.velocity.dx = dx;
-    data.velocity.dy = dy;
-    data.render.size = size;
-    data.render.color = color;
-    data.ttl.remaining = ttl;
-    data.ttl.total = ttl;
-    return entity;
-  }
-
-  release(world: World, entity: Entity): void {
-    this.pool.release(world, entity);
+    });
   }
 }

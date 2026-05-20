@@ -156,13 +156,15 @@ export function createInvader(world: World, x: number, y: number, row: number, c
 export function createPlayerBullet(world: World, x: number, y: number, pool: PlayerBulletPool): Entity {
   return pool.acquire(
     world,
-    x,
-    y,
-    0,
-    -GAME_CONFIG.PLAYER_BULLET_SPEED,
-    GAME_CONFIG.PLAYER_BULLET_SIZE,
-    "#00FF00",
-    GAME_CONFIG.PLAYER_BULLET_TTL
+    {
+        x,
+        y,
+        dx: 0,
+        dy: -GAME_CONFIG.PLAYER_BULLET_SPEED,
+        size: GAME_CONFIG.PLAYER_BULLET_SIZE,
+        color: "#00FF00",
+        ttl: GAME_CONFIG.PLAYER_BULLET_TTL
+    }
   );
 }
 
@@ -172,13 +174,15 @@ export function createPlayerBullet(world: World, x: number, y: number, pool: Pla
 export function createEnemyBullet(world: World, x: number, y: number, pool: EnemyBulletPool): Entity {
   return pool.acquire(
     world,
-    x,
-    y,
-    0,
-    GAME_CONFIG.ENEMY_BULLET_SPEED,
-    GAME_CONFIG.ENEMY_BULLET_SIZE,
-    "#FF0000",
-    GAME_CONFIG.ENEMY_BULLET_TTL
+    {
+        x,
+        y,
+        dx: 0,
+        dy: GAME_CONFIG.ENEMY_BULLET_SPEED,
+        size: GAME_CONFIG.ENEMY_BULLET_SIZE,
+        color: "#FF0000",
+        ttl: GAME_CONFIG.ENEMY_BULLET_TTL
+    }
   );
 }
 
@@ -310,5 +314,5 @@ export function spawnShields(world: World, deferred?: boolean): void {
  * Creates a particle entity.
  */
 export function createParticle(world: World, x: number, y: number, dx: number, dy: number, color: string, pool: ParticlePool): Entity {
-  return pool.acquire(world, x, y, dx, dy, 2, color, GAME_CONFIG.PARTICLE_TTL_BASE);
+  return pool.acquire(world, { x, y, dx, dy, size: 2, color, ttl: GAME_CONFIG.PARTICLE_TTL_BASE });
 }

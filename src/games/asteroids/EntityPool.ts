@@ -1,44 +1,25 @@
-import { PrefabPool } from "../../engine/utils/PrefabPool";
 import { World } from "../../engine/core/World";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import {
-  type Entity,
   type Component,
   type TransformComponent,
   type VelocityComponent,
   type RenderComponent,
   type Collider2DComponent,
   type TTLComponent,
-  type ReclaimableComponent
+  type ReclaimableComponent,
+  Entity
 } from "../../engine/types/EngineTypes";
+import { ProjectilePool, ProjectileComponents, ProjectileParams } from "../../engine/core/ProjectilePool";
 
-/**
- * Interface for pooled component data.
- */
-interface BulletComponents extends Record<string, Component> {
-  position: TransformComponent;
-  velocity: VelocityComponent;
-  render: RenderComponent;
-  collider: Collider2DComponent;
-  ttl: TTLComponent;
-  reclaimable: ReclaimableComponent;
+interface AsteroidBulletComponents extends ProjectileComponents {
   bullet: Component & { type: "Bullet" };
 }
 
-interface BulletParams {
-  x: number; y: number; dx: number; dy: number; size: number; color: string; ttl: number;
-}
-
 /**
- * Pool de proyectiles (Bullets) para Asteroids.
- *
- * @responsibility Gestionar el reciclaje de proyectiles para evitar picos de GC.
- *
- * @remarks
- * Utiliza el `PrefabPool` del motor para pre-instanciar un conjunto de componentes
- * (Transform, Velocity, Render, Collider2D, TTL) que se reutilizan durante el combate.
+ * Asteroids Bullet Pool refactored to use the engine's ProjectilePool base.
  */
-export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
+export class BulletPool extends ProjectilePool<AsteroidBulletComponents, ProjectileParams> {
   constructor(initialSize: number = 20) {
     super({
       factory: () => ({
@@ -67,43 +48,36 @@ export class BulletPool extends PrefabPool<BulletComponents, BulletParams> {
         data.position.x = p.x; data.position.y = p.y;
         data.velocity.dx = p.dx; data.velocity.dy = p.dy;
         data.render.size = p.size; data.render.color = p.color;
-        (data.collider.shape as { radius: number }).radius = p.size;
+        if (data.collider.shape.type === "circle") {
+            data.collider.shape.radius = p.size;
+        }
         data.ttl.remaining = p.ttl; data.ttl.total = p.ttl;
       },
       initialSize
     });
   }
 
-  acquire(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
-    return super.acquire(world, { x, y, dx, dy, size, color, ttl });
+  // Simplified acquire for Asteroids backward compatibility
+  public acquireAsteroidBullet(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
+    return this.acquire(world, { x, y, dx, dy, size, color, ttl });
   }
 }
 
 /**
- * Interface for pooled particle data.
+ * Asteroids Particle Pool refactored to use the engine's ProjectilePool base.
  */
-interface ParticleComponents extends Record<string, Component> {
-  position: TransformComponent;
-  velocity: VelocityComponent;
-  render: RenderComponent;
-  ttl: TTLComponent;
-  reclaimable: ReclaimableComponent;
-}
-
-interface ParticleParams {
-  x: number; y: number; dx: number; dy: number; size: number; color: string; ttl: number;
-}
-
-/**
- * ParticlePool utilizing the engine's PrefabPool.
- */
-export class ParticlePool extends PrefabPool<ParticleComponents, ParticleParams> {
+export class ParticlePool extends ProjectilePool<ProjectileComponents, ProjectileParams> {
   constructor(initialSize: number = 100) {
     super({
       factory: () => ({
         position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
         velocity: { type: "Velocity", dx: 0, dy: 0 },
         render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0 },
+        collider: { // Particles in asteroids have minimal collider for consistency but often disabled
+            type: "Collider2D",
+            shape: { type: "circle", radius: 0 },
+            layer: 0, mask: 0, offsetX: 0, offsetY: 0, isTrigger: true, enabled: false
+        },
         ttl: { type: "TTL", remaining: 0, total: 0 },
         reclaimable: { type: "Reclaimable", onReclaim: () => {} }
       }),
@@ -112,7 +86,6 @@ export class ParticlePool extends PrefabPool<ParticleComponents, ParticleParams>
         data.velocity.dx = 0; data.velocity.dy = 0;
         data.ttl.remaining = 0;
         data.ttl.total = 0;
-        data.render.rotation = 0;
       },
       initializer: (data, p) => {
         data.position.x = p.x; data.position.y = p.y;
@@ -124,7 +97,7 @@ export class ParticlePool extends PrefabPool<ParticleComponents, ParticleParams>
     });
   }
 
-  acquire(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
-    return super.acquire(world, { x, y, dx, dy, size, color, ttl });
+  public acquireAsteroidParticle(world: World, x: number, y: number, dx: number, dy: number, size: number, color: string, ttl: number): Entity {
+    return this.acquire(world, { x, y, dx, dy, size, color, ttl });
   }
 }
