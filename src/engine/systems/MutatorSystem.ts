@@ -36,12 +36,13 @@ export class MutatorSystem extends System {
     if (hasGhostBall) {
       const balls = world.query("Ball");
       balls.forEach(entity => {
-        const ball = world.getComponent<GenericComponent>(entity, "Ball") as { visibilityTimer?: number };
-        if (ball && ball.visibilityTimer !== undefined && ball.visibilityTimer > 0) {
-          // Decrease by deltaTime-based ticks (approx 60fps)
-          const ticksToSub = Math.max(1, Math.round(_deltaTime / 16.66));
-          ball.visibilityTimer = Math.max(0, ball.visibilityTimer - ticksToSub);
-        }
+        world.mutateComponent(entity, "Ball", (ball: { visibilityTimer?: number }) => {
+          if (ball && ball.visibilityTimer !== undefined && ball.visibilityTimer > 0) {
+            // Decrease by deltaTime-based ticks (approx 60fps)
+            const ticksToSub = Math.max(1, Math.round(_deltaTime / 16.66));
+            ball.visibilityTimer = Math.max(0, ball.visibilityTimer - ticksToSub);
+          }
+        });
       });
     }
   }
