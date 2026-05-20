@@ -9,21 +9,13 @@ import {
 } from "../../../engine/types/EngineTypes";
 
 import { createAsteroid, createParticle } from "../EntityFactory";
-import { type AsteroidComponent, type GameStateComponent, GAME_CONFIG } from "../types/AsteroidTypes";
+import { type AsteroidComponent, type GameStateComponent } from "../types/AsteroidTypes";
+import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { ScreenShakeComponent, HapticRequestComponent } from "../../../engine/types/EngineTypes";
 import { releaseProjectile } from "../../../engine/utils/ProjectileUtils";
 import { ParticlePool } from "../EntityPool";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { EventBus } from "../../../engine/core/EventBus";
-
-const ASTEROID_SPLIT_CONFIG: Record<
-  AsteroidComponent["size"],
-  { nextSize: "medium" | "small"; offset: number } | undefined
-> = {
-  large: { nextSize: "medium", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_LARGE },
-  medium: { nextSize: "small", offset: GAME_CONFIG.ASTEROID_SPLIT_OFFSET_MEDIUM },
-  small: undefined,
-};
 
 /**
  * Sistema responsable de reaccionar a los eventos de colisión detectados por el motor físico.
@@ -42,6 +34,12 @@ const ASTEROID_SPLIT_CONFIG: Record<
  *    - **Eventos**: Notifica al `EventBus` para disparar efectos de sonido y actualizaciones de UI.
  */
 export class AsteroidCollisionSystem extends System {
+  private config?: AsteroidConfig;
+  private splitConfig?: Record<
+    AsteroidComponent["size"],
+    { nextSize: "medium" | "small"; offset: number } | undefined
+  >;
+
   constructor(private _particlePool: ParticlePool) {
     super();
   }
@@ -50,6 +48,14 @@ export class AsteroidCollisionSystem extends System {
    * Processes collision events from the CollisionEventsComponent.
    */
   public update(world: World, _deltaTime: number): void {
+    if (!this.config) {
+        this.config = world.getResource<AsteroidConfig>("GameConfig")!;
+        this.splitConfig = {
+            large: { nextSize: "medium", offset: this.config.ASTEROID_SPLIT_OFFSET_LARGE },
+            medium: { nextSize: "small", offset: this.config.ASTEROID_SPLIT_OFFSET_MEDIUM },
+            small: undefined,
+        };
+    }
     const query = world.getQuery("CollisionEvents");
 
     query.forEach((entity) => {
@@ -101,8 +107,8 @@ export class AsteroidCollisionSystem extends System {
     const position = world.getComponent<TransformComponent>(asteroid, "Transform");
     const render = world.getComponent<RenderComponent>(asteroid, "Render");
 
-    if (position) {
-      this.spawnExplosion(world, position, GAME_CONFIG.PARTICLE_COUNT);
+    if (position && this.config) {
+      this.spawnExplosion(world, position, this.config.PARTICLE_COUNT);
     }
 
     if (render) {
@@ -125,7 +131,7 @@ export class AsteroidCollisionSystem extends System {
 
     world.mutateSingleton<GameStateComponent>("GameState", (gameState) => {
       gameState.lastBulletHit = true;
-      const points = GAME_CONFIG.ASTEROID_SCORE * (gameState.comboMultiplier || 1);
+      const points = this.config!.ASTEROID_SCORE * (gameState.comboMultiplier || 1);
       this.addScore(world, points);
 
       if (ownerId) {
@@ -186,7 +192,7 @@ export class AsteroidCollisionSystem extends System {
     const commands = world.getCommandBuffer();
     world.mutateComponent(shipEntity, "Health", (health: HealthComponent) => {
       health.current--;
-      health.invulnerableRemaining = GAME_CONFIG.INVULNERABILITY_DURATION;
+      health.invulnerableRemaining = this.config!.INVULNERABILITY_DURATION;
     });
 
     const ships = world.query("Ship", "Render");
@@ -205,16 +211,16 @@ export class AsteroidCollisionSystem extends System {
     commands.createEntity((shakeEntity) => {
       commands.addComponent(shakeEntity, {
         type: "ScreenShake",
-        intensity: GAME_CONFIG.SHAKE_INTENSITY_IMPACT,
-        duration: GAME_CONFIG.SHAKE_DURATION_IMPACT,
-        remaining: GAME_CONFIG.SHAKE_DURATION_IMPACT,
+        intensity: this.config!.SHAKE_INTENSITY_IMPACT,
+        duration: this.config!.SHAKE_DURATION_IMPACT,
+        remaining: this.config!.SHAKE_DURATION_IMPACT,
       } as ScreenShakeComponent);
 
       // Add TTL to handle entity cleanup automatically
       commands.addComponent(shakeEntity, {
         type: "TTL",
-        remaining: GAME_CONFIG.SHAKE_DURATION_IMPACT * 16.66, // Roughly duration in ms if duration is frames
-        total: GAME_CONFIG.SHAKE_DURATION_IMPACT * 16.66
+        remaining: this.config!.SHAKE_DURATION_IMPACT * 16.66, // Roughly duration in ms if duration is frames
+        total: this.config!.SHAKE_DURATION_IMPACT * 16.66
       } as import("../../../engine/types/EngineTypes").TTLComponent);
     });
 
@@ -249,7 +255,7 @@ export class AsteroidCollisionSystem extends System {
     position: TransformComponent,
     size: AsteroidComponent["size"],
   ): void {
-    const config = ASTEROID_SPLIT_CONFIG[size];
+    const config = this.splitConfig?.[size];
 
     if (config) {
       this.spawnSplit(world, position, config.nextSize, config.offset);

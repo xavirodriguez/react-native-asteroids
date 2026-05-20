@@ -1,6 +1,7 @@
 import { World } from "../../../engine/core/World";
 import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
-import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
+import { InputComponent } from "../types/AsteroidTypes";
+import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { PhysicsUtils } from "../../../engine/physics/utils/PhysicsUtils";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { createParticle } from "../EntityFactory";
@@ -29,7 +30,7 @@ import { ModifierStackComponent } from "../../../engine/core/CoreComponents";
  * - **Boundary Wrapping**: Automatically warps coordinates when exceeding the viewport.
  */
 export const ShipPhysics = {
-  applyRotation(world: World, entity: number, pos: TransformComponent, input: InputComponent, dtSeconds: number, config: typeof GAME_CONFIG = GAME_CONFIG): void {
+  applyRotation(world: World, entity: number, pos: TransformComponent, input: InputComponent, dtSeconds: number, config: AsteroidConfig): void {
     const modifiers = world.getComponent<ModifierStackComponent>(entity, "ModifierStack")?.modifiers || [];
     const speedMod = modifiers.find(m => m.type === "speed");
     const rotationMultiplier = speedMod ? 1.5 : 1.0;
@@ -48,7 +49,7 @@ export const ShipPhysics = {
     }
   },
 
-  applyThrust(world: World, entity: number, position: TransformComponent, velocity: VelocityComponent, input: InputComponent, dtSeconds: number, ctx?: SimulationContext, config: typeof GAME_CONFIG = GAME_CONFIG): void {
+  applyThrust(world: World, entity: number, position: TransformComponent, velocity: VelocityComponent, input: InputComponent, dtSeconds: number, ctx?: SimulationContext, config: AsteroidConfig): void {
     if (input.thrust) {
       const modifiers = world.getComponent<ModifierStackComponent>(entity, "ModifierStack")?.modifiers || [];
       const speedMod = modifiers.find(m => m.type === "speed");
@@ -93,7 +94,7 @@ export const ShipPhysics = {
   /**
    * Applies hyperspace mechanics.
    */
-  triggerHyperspace(world: World, shipEntity: number, _pos: TransformComponent, _input: InputComponent, config: typeof GAME_CONFIG): void {
+  triggerHyperspace(world: World, shipEntity: number, _pos: TransformComponent, _input: InputComponent, config: AsteroidConfig): void {
       const gameplayRandom = RandomService.getInstance("gameplay");
       const newX = gameplayRandom.nextRange(0, config.SCREEN_WIDTH);
       const newY = gameplayRandom.nextRange(0, config.SCREEN_HEIGHT);
@@ -111,7 +112,7 @@ export const ShipPhysics = {
       if (eventBus) eventBus.emitDeferred("ship:hyperspace");
   },
 
-  applyFriction(world: World, entity: number, _velocity: VelocityComponent, dtMs: number, config: typeof GAME_CONFIG = GAME_CONFIG): void {
+  applyFriction(world: World, entity: number, _velocity: VelocityComponent, dtMs: number, config: AsteroidConfig): void {
     world.mutateComponent(entity, "Velocity", (v: VelocityComponent) => {
         PhysicsUtils.applyFriction(v, config.SHIP_FRICTION, dtMs);
     });
@@ -132,8 +133,8 @@ export const ShipPhysics = {
     _render: RenderComponent,
     input: InputComponent,
     deltaTime: number,
-    ctx?: SimulationContext,
-    config: typeof GAME_CONFIG = GAME_CONFIG,
+    ctx: SimulationContext,
+    config: AsteroidConfig,
     onShoot?: (bullet: import("../../../engine/core/Entity").Entity) => void
   ): void {
     const dtSeconds = deltaTime / 1000;
@@ -159,21 +160,18 @@ export const ShipPhysics = {
     if (input.shoot && input.shootCooldownRemaining <= 0) {
       const modifiers = world.getComponent<ModifierStackComponent>(entity, "ModifierStack")?.modifiers || [];
       const isTripleShot = modifiers.some(m => m.type === "triple_shot");
-      // const shipComp = world.getComponent<import("../types/AsteroidTypes").ShipComponent>(entity, "Ship");
-      // const ownerId = shipComp?.sessionId;
+      const bulletColor = (config as any).BULLET_COLOR || "#FFFFFF";
 
-      // Access the bullet pool from the world resources or a singleton if available
-      // For AsteroidsGame, we need a way to access the pools
       const bulletPool = world.getResource<any>("BulletPool");
 
       if (bulletPool) {
         if (isTripleShot) {
-          const b1 = createProjectile(world, bulletPool, { x: pos.x, y: pos.y, dx: Math.cos(pos.rotation) * config.BULLET_SPEED, dy: Math.sin(pos.rotation) * config.BULLET_SPEED, size: config.BULLET_SIZE, color: config.BULLET_COLOR, ttl: config.BULLET_TTL });
-          const b2 = createProjectile(world, bulletPool, { x: pos.x, y: pos.y, dx: Math.cos(pos.rotation - 0.2) * config.BULLET_SPEED, dy: Math.sin(pos.rotation - 0.2) * config.BULLET_SPEED, size: config.BULLET_SIZE, color: config.BULLET_COLOR, ttl: config.BULLET_TTL });
-          const b3 = createProjectile(world, bulletPool, { x: pos.x, y: pos.y, dx: Math.cos(pos.rotation + 0.2) * config.BULLET_SPEED, dy: Math.sin(pos.rotation + 0.2) * config.BULLET_SPEED, size: config.BULLET_SIZE, color: config.BULLET_COLOR, ttl: config.BULLET_TTL });
+          const b1 = createProjectile(world, bulletPool, { x: pos.x, y: pos.y, dx: Math.cos(pos.rotation) * config.BULLET_SPEED, dy: Math.sin(pos.rotation) * config.BULLET_SPEED, size: config.BULLET_SIZE, color: bulletColor, ttl: config.BULLET_TTL });
+          const b2 = createProjectile(world, bulletPool, { x: pos.x, y: pos.y, dx: Math.cos(pos.rotation - 0.2) * config.BULLET_SPEED, dy: Math.sin(pos.rotation - 0.2) * config.BULLET_SPEED, size: config.BULLET_SIZE, color: bulletColor, ttl: config.BULLET_TTL });
+          const b3 = createProjectile(world, bulletPool, { x: pos.x, y: pos.y, dx: Math.cos(pos.rotation + 0.2) * config.BULLET_SPEED, dy: Math.sin(pos.rotation + 0.2) * config.BULLET_SPEED, size: config.BULLET_SIZE, color: bulletColor, ttl: config.BULLET_TTL });
           if (onShoot) { onShoot(b1); onShoot(b2); onShoot(b3); }
         } else {
-          const bullet = createProjectile(world, bulletPool, { x: pos.x, y: pos.y, dx: Math.cos(pos.rotation) * config.BULLET_SPEED, dy: Math.sin(pos.rotation) * config.BULLET_SPEED, size: config.BULLET_SIZE, color: config.BULLET_COLOR, ttl: config.BULLET_TTL });
+          const bullet = createProjectile(world, bulletPool, { x: pos.x, y: pos.y, dx: Math.cos(pos.rotation) * config.BULLET_SPEED, dy: Math.sin(pos.rotation) * config.BULLET_SPEED, size: config.BULLET_SIZE, color: bulletColor, ttl: config.BULLET_TTL });
           if (onShoot) onShoot(bullet);
         }
       }

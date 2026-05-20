@@ -2,7 +2,8 @@ import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { TransformComponent, VelocityComponent, RenderComponent, Component } from "../../../engine/types/EngineTypes";
 import { RandomService } from "../../../engine/utils/RandomService";
-import { GameStateComponent, GAME_CONFIG } from "../types/SpaceInvadersTypes";
+import { GameStateComponent } from "../types/SpaceInvadersTypes";
+import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 
 export interface KamikazeComponent extends Component {
   type: "Kamikaze";
@@ -15,15 +16,19 @@ export interface KamikazeComponent extends Component {
 export class KamikazeSystem extends System {
   private spawnCooldown = 5000;
   private timer = 0;
+  private config?: SpaceInvadersConfig;
 
   public update(world: World, deltaTime: number): void {
+    if (!this.config) {
+        this.config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
+    }
     const gameState = world.getSingleton<GameStateComponent>("GameState");
     if (!gameState || gameState.isGameOver) return;
 
     this.timer += deltaTime;
 
     const invaders = world.query("Invader");
-    const totalInvaders = GAME_CONFIG.INVADER_ROWS * GAME_CONFIG.INVADER_COLS;
+    const totalInvaders = this.config.INVADER_ROWS * this.config.INVADER_COLS;
 
     // Trigger kamikazes if enough invaders are dead and cooldown passed
     if (invaders.length < totalInvaders * 0.6 && this.timer > this.spawnCooldown && gameState.kamikazesActive < 2) {
@@ -61,7 +66,7 @@ export class KamikazeSystem extends System {
             }
         });
 
-        if (pos.y > GAME_CONFIG.SCREEN_HEIGHT - 50) {
+        if (pos.y > this.config.SCREEN_HEIGHT - 50) {
           world.mutateComponent<KamikazeComponent>(entity, "Kamikaze", k => {
               k.phase = "returning";
           });

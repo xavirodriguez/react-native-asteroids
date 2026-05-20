@@ -1,7 +1,8 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { TransformComponent } from "../../../engine/types/EngineTypes";
-import { FormationComponent, InvaderComponent, GAME_CONFIG } from "../types/SpaceInvadersTypes";
+import { FormationComponent, InvaderComponent } from "../types/SpaceInvadersTypes";
+import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { EnemyBulletPool } from "../EntityPool";
 import { createEnemyBullet } from "../EntityFactory";
 import { RandomService } from "../../../engine/utils/RandomService";
@@ -11,6 +12,7 @@ import { RandomService } from "../../../engine/utils/RandomService";
  */
 export class SpaceInvadersFormationSystem extends System {
   private enemyBulletPool: EnemyBulletPool;
+  private config?: SpaceInvadersConfig;
 
   constructor(enemyBulletPool: EnemyBulletPool) {
     super();
@@ -18,6 +20,9 @@ export class SpaceInvadersFormationSystem extends System {
   }
 
   public update(world: World, deltaTime: number): void {
+    if (!this.config) {
+        this.config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
+    }
     const formationEntities = world.query("Formation");
     if (formationEntities.length === 0) return;
 
@@ -29,10 +34,10 @@ export class SpaceInvadersFormationSystem extends System {
     if (invaders.length === 0) return;
 
     // 1. Calculate current speed based on remaining invaders
-    const totalInvaders = GAME_CONFIG.INVADER_ROWS * GAME_CONFIG.INVADER_COLS;
+    const totalInvaders = this.config.INVADER_ROWS * this.config.INVADER_COLS;
     const ratio = 1 - (invaders.length / totalInvaders);
     world.mutateComponent<FormationComponent>(formationEntity, "Formation", f => {
-      f.speed = GAME_CONFIG.INVADER_SPEED_BASE + ratio * (GAME_CONFIG.INVADER_SPEED_MAX - GAME_CONFIG.INVADER_SPEED_BASE);
+      f.speed = this.config!.INVADER_SPEED_BASE + ratio * (this.config!.INVADER_SPEED_MAX - this.config!.INVADER_SPEED_BASE);
     });
 
     // 2. Move formation or handle step down
@@ -70,7 +75,7 @@ export class SpaceInvadersFormationSystem extends System {
       }
 
       const leftLimit = margin;
-      const rightLimit = GAME_CONFIG.SCREEN_WIDTH - margin;
+      const rightLimit = this.config.SCREEN_WIDTH - margin;
 
       // Use predictive edge checking considering movement direction
       const willHitRight = formation.direction > 0 && maxX + moveX >= rightLimit;
@@ -107,8 +112,8 @@ export class SpaceInvadersFormationSystem extends System {
       if (f.fireCooldownRemaining <= 0) {
         this.fireFromFormation(world, invaders);
         f.fireCooldownRemaining = RandomService.getGameplayRandom().nextRange(
-          GAME_CONFIG.ENEMY_FIRE_INTERVAL_MIN,
-          GAME_CONFIG.ENEMY_FIRE_INTERVAL_MAX
+          this.config!.ENEMY_FIRE_INTERVAL_MIN,
+          this.config!.ENEMY_FIRE_INTERVAL_MAX
         ) / (1 + ratio); // Faster firing as fewer invaders remain
       }
     });

@@ -1,7 +1,8 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { TransformComponent, VelocityComponent, InputStateComponent } from "../../../engine/types/EngineTypes";
-import { InputComponent, GAME_CONFIG } from "../types/SpaceInvadersTypes";
+import { InputComponent } from "../types/SpaceInvadersTypes";
+import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { PlayerBulletPool } from "../EntityPool";
 import { createPlayerBullet } from "../EntityFactory";
 import { InputUtils } from "../../../engine/utils/ComponentUtils";
@@ -11,6 +12,7 @@ import { InputUtils } from "../../../engine/utils/ComponentUtils";
  */
 export class SpaceInvadersInputSystem extends System {
   private bulletPool: PlayerBulletPool;
+  private config?: SpaceInvadersConfig;
 
   constructor(bulletPool: PlayerBulletPool) {
     super();
@@ -24,6 +26,9 @@ export class SpaceInvadersInputSystem extends System {
   }
 
   public update(world: World, deltaTime: number): void {
+    if (!this.config) {
+        this.config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
+    }
     if (this.isMultiplayer) return;
     const inputState = world.getSingleton<InputStateComponent>("InputState");
     const entities = world.query("Player", "Input", "Transform", "Velocity");
@@ -45,7 +50,7 @@ export class SpaceInvadersInputSystem extends System {
         let moveX = 0;
         if (input.moveLeft) moveX -= 1;
         if (input.moveRight) moveX += 1;
-        vel.dx = moveX * GAME_CONFIG.PLAYER_SPEED;
+        vel.dx = moveX * this.config.PLAYER_SPEED;
 
         // Handle shooting
         if (input.shootCooldownRemaining > 0) {
@@ -57,7 +62,7 @@ export class SpaceInvadersInputSystem extends System {
           const activeBullets = world.query("PlayerBullet");
           if (activeBullets.length === 0) {
             createPlayerBullet(world, pos.x, pos.y - 10, this.bulletPool);
-            input.shootCooldownRemaining = GAME_CONFIG.PLAYER_SHOOT_COOLDOWN;
+            input.shootCooldownRemaining = this.config.PLAYER_SHOOT_COOLDOWN;
           }
         }
       }

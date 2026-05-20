@@ -11,8 +11,8 @@ import {
   GameStateComponent,
   InvaderComponent,
   ShieldComponent,
-  GAME_CONFIG
 } from "../types/SpaceInvadersTypes";
+import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { BossComponent } from "./BossSystem";
 import { ParticlePool } from "../EntityPool";
 import { createParticle } from "../EntityFactory";
@@ -23,11 +23,16 @@ import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
  * System that handles all game collisions by reacting to events from CollisionSystem2D.
  */
 export class SpaceInvadersCollisionSystem extends System {
+  private config?: SpaceInvadersConfig;
+
   constructor(private _particlePool: ParticlePool) {
     super();
   }
 
   public override update(world: World, _deltaTime: number): void {
+    if (!this.config) {
+        this.config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
+    }
     const gameState = world.getSingleton<GameStateComponent>("GameState");
     if (!gameState || gameState.isGameOver) return;
 
@@ -91,8 +96,8 @@ export class SpaceInvadersCollisionSystem extends System {
       // Lógica de Combo
       world.mutateSingleton<GameStateComponent>("GameState", gs => {
           gs.combo += 1;
-          gs.multiplier = Math.min(GAME_CONFIG.MAX_MULTIPLIER, 1 + Math.floor(gs.combo / 5));
-          gs.comboTimerRemaining = GAME_CONFIG.COMBO_TIMEOUT;
+          gs.multiplier = Math.min(this.config!.MAX_MULTIPLIER, 1 + Math.floor(gs.combo / 5));
+          gs.comboTimerRemaining = this.config!.COMBO_TIMEOUT;
           if (invaderComp) {
             gs.score += invaderComp.points * gs.multiplier;
           }
@@ -214,7 +219,7 @@ export class SpaceInvadersCollisionSystem extends System {
 
   private createExplosion(world: World, x: number, y: number, color: string): void {
     const renderRandom = RandomService.getRenderRandom();
-    for (let i = 0; i < GAME_CONFIG.PARTICLE_COUNT; i++) {
+    for (let i = 0; i < this.config!.PARTICLE_COUNT; i++) {
       const angle = renderRandom.next() * Math.PI * 2;
       const speed = renderRandom.next() * 100 + 50;
       createParticle(
@@ -232,7 +237,7 @@ export class SpaceInvadersCollisionSystem extends System {
 
   private checkInvadersBottom(world: World, _gameState: GameStateComponent): void {
     const invaders = world.query("Invader", "Transform");
-    const limit = GAME_CONFIG.SCREEN_HEIGHT - 100;
+    const limit = this.config!.SCREEN_HEIGHT - 100;
 
     for (const invader of invaders) {
       const pos = world.getComponent<TransformComponent>(invader, "Transform");

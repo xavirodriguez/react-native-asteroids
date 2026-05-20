@@ -13,7 +13,9 @@ import { PongSpinSystem } from "./systems/PongSpinSystem";
 import { PongEntityFactory } from "./EntityFactory";
 import { AIPongController } from "./input/AIPongController";
 import { NetworkController } from "./input/NetworkController";
-import { PONG_CONFIG, type PongState, type PongInput } from "./types";
+import { type PongState, type PongInput } from "./types";
+import { PongConfigSchema, PongConfig } from "./types/PongConfigSchema";
+import { ConfigService } from "../../engine/services/ConfigService";
 import { Renderer } from "../../engine/rendering/Renderer";
 import { drawPongBall } from "./rendering/PongCanvasVisuals";
 import { MutatorService } from "../../services/MutatorService";
@@ -34,7 +36,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
   private aiController?: AIPongController;
   private networkController?: NetworkController;
   public readonly gameId = "pong";
-  private config: typeof PONG_CONFIG = PONG_CONFIG;
+  private config: PongConfig;
 
   constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown>, mode?: PongMode } | PongMode = "local") {
     const isConfig = typeof config === "object" && config !== null;
@@ -53,11 +55,16 @@ export class PongGame extends BaseGame<PongState, PongInput> {
   }
 
   public override async init(): Promise<void> {
+    const rawConfig = require("./config/pong.json");
+    const baseConfig = ConfigService.load(this.gameId, PongConfigSchema, rawConfig);
+
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
-      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...PONG_CONFIG }) as typeof PONG_CONFIG
-      : { ...PONG_CONFIG };
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...baseConfig }) as PongConfig
+      : { ...baseConfig };
+
+    this.world.setResource("GameConfig", this.config);
     this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     await this.onPreloadAssets();

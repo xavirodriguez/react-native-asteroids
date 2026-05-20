@@ -1,5 +1,6 @@
 import { World } from "../../../engine/core/World";
-import { type GameStateComponent, GAME_CONFIG } from "../types/AsteroidTypes";
+import { type GameStateComponent } from "../types/AsteroidTypes";
+import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { HealthComponent } from "../../../engine/core/CoreComponents";
 import { spawnAsteroidWave, createUfo } from "../EntityFactory";
 import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
@@ -10,6 +11,7 @@ import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem
  * System responsible for managing global game state, wave spawning, and game over conditions.
  */
 export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateComponent> implements IGameStateSystem {
+  private config?: AsteroidConfig;
 
   constructor(gameInstance?: IAsteroidsGame) {
     super(gameInstance as unknown as import("../../../engine/core/BaseGame").BaseGame<Record<string, unknown>, Record<string, unknown>>);
@@ -19,6 +21,9 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
    * Updates the game state by processing various sub-tasks.
    */
   protected updateGameState(world: World, gameState: GameStateComponent, deltaTime: number): void {
+    if (!this.config) {
+        this.config = world.getResource<AsteroidConfig>("GameConfig")!;
+    }
     this.updateAsteroidsCount(world, gameState);
     this.manageWaveProgression(world, gameState);
     this.updatePlayerStatus({ world, gameState, deltaTime });
@@ -30,8 +35,9 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
   }
 
   private manageUfoSpawning(world: World): void {
+    if (!this.config) return;
     const gameplayRandom = RandomService.getInstance("gameplay");
-    if (world.query("Ufo").length === 0 && gameplayRandom.chance(GAME_CONFIG.UFO_SPAWN_CHANCE)) {
+    if (world.query("Ufo").length === 0 && gameplayRandom.chance(this.config.UFO_SPAWN_CHANCE)) {
       createUfo({ world, deferred: true });
     }
   }
@@ -91,8 +97,9 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
   }
 
   private calculateWaveCount(level: number): number {
-    const initialCount = GAME_CONFIG.INITIAL_ASTEROID_COUNT;
-    const maxCount = GAME_CONFIG.MAX_WAVE_ASTEROIDS;
+    if (!this.config) return 0;
+    const initialCount = this.config.INITIAL_ASTEROID_COUNT;
+    const maxCount = this.config.MAX_WAVE_ASTEROIDS;
     return Math.min(initialCount + level, maxCount);
   }
 

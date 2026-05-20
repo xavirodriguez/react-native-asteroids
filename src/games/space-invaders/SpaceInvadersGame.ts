@@ -1,7 +1,9 @@
 import { World } from "../../engine/core/World";
 import { GameLoop } from "../../engine/core/GameLoop";
 import { BaseGame } from "../../engine/core/BaseGame";
-import { GameStateComponent, InputState, GAME_CONFIG, INITIAL_GAME_STATE } from "./types/SpaceInvadersTypes";
+import { GameStateComponent, InputState, INITIAL_GAME_STATE } from "./types/SpaceInvadersTypes";
+import { SpaceInvadersConfigSchema, SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
+import { ConfigService } from "../../engine/services/ConfigService";
 import { ISpaceInvadersGame } from "./types/GameInterfaces";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
 import { SpaceInvadersGameScene } from "./scenes/SpaceInvadersGameScene";
@@ -37,24 +39,30 @@ export class SpaceInvadersGame
   private entityInterpolationBuffers = new Map<number, InterpolationBuffer>();
   private interpolationDelay = 100;
   public readonly gameId = "spaceinvaders";
-  private config!: typeof GAME_CONFIG;
+  private config!: SpaceInvadersConfig;
 
   constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown> } = {}) {
     const seed = config.gameOptions?.seed as number || config.seed;
+    const rawConfig = require("./config/space-invaders.json");
     super({
-      pauseKey: GAME_CONFIG.KEYS.PAUSE,
-      restartKey: GAME_CONFIG.KEYS.RESTART,
+      pauseKey: rawConfig.KEYS.PAUSE,
+      restartKey: rawConfig.KEYS.RESTART,
       isMultiplayer: config.isMultiplayer,
       gameOptions: { ...config.gameOptions, seed }
     });
   }
 
   public override async init(): Promise<void> {
+    const rawConfig = require("./config/space-invaders.json");
+    const baseConfig = ConfigService.load(this.gameId, SpaceInvadersConfigSchema, rawConfig);
+
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
-      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...GAME_CONFIG }) as typeof GAME_CONFIG
-      : { ...GAME_CONFIG };
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...baseConfig }) as SpaceInvadersConfig
+      : { ...baseConfig };
+
+    this.world.setResource("GameConfig", this.config);
     this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     await this.onPreloadAssets();
@@ -231,9 +239,9 @@ export class SpaceInvadersGame
     if (!this.particlePool) this.particlePool = new ParticlePool();
 
     // Bind inputs for UnifiedInputSystem
-    this.unifiedInput.bind("moveLeft", [GAME_CONFIG.KEYS.LEFT]);
-    this.unifiedInput.bind("moveRight", [GAME_CONFIG.KEYS.RIGHT]);
-    this.unifiedInput.bind("shoot", [GAME_CONFIG.KEYS.SHOOT]);
+    this.unifiedInput.bind("moveLeft", [this.config.KEYS.LEFT]);
+    this.unifiedInput.bind("moveRight", [this.config.KEYS.RIGHT]);
+    this.unifiedInput.bind("shoot", [this.config.KEYS.SHOOT]);
 
     const gameScene = new SpaceInvadersGameScene(
       this,
