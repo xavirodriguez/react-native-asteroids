@@ -195,7 +195,7 @@ describe("World", () => {
       newWorld.restore(snapshot);
 
       expect(newWorld.getAllEntities()).toEqual([e1, e2].sort((a, b) => a - b));
-      expect(newWorld.getComponent(e1, "Transform")).toEqual({ type: "Transform", x: 10, y: 20 });
+      expect(newWorld.getComponent(e1, "Transform")).toEqual({ type: "Transform", x: 10, y: 20, parentEntity: null });
       expect(newWorld.getComponent(e2, "Velocity")).toEqual({ type: "Velocity", dx: 5, dy: 5 });
       expect(newWorld.query("Transform")).toContain(e1);
       expect(newWorld.query("Velocity")).toContain(e2);

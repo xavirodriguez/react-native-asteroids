@@ -8,6 +8,16 @@ import { AABB } from "../types/CommonTypes";
 export { Entity, Component, GenericComponent };
 
 /**
+ * Common interface for components that participate in a parent-child hierarchy.
+ */
+export interface IHierarchicalComponent extends Component {
+  /** Reference to the parent entity, or null if it's a root element. */
+  parentEntity: Entity | null;
+  /** Optimization flag to indicate that the hierarchy or local transform needs re-evaluation. */
+  dirty?: boolean;
+}
+
+/**
  * Standard base components provided by the engine.
  *
  * This module defines the core data structures used by built-in systems for
@@ -20,7 +30,7 @@ export { Entity, Component, GenericComponent };
 /**
  * Stores the position, rotation, and scale of an entity in 2D space.
  */
-export interface TransformComponent extends Component {
+export interface TransformComponent extends IHierarchicalComponent {
   type: "Transform";
   [key: string]: unknown; // Para compatibilidad con utilidades que no usan index signatures
   /** [px] Coordenada X local. */
@@ -33,9 +43,6 @@ export interface TransformComponent extends Component {
   scaleX: number;
   /** [unitless] Multiplicador de escala vertical. */
   scaleY: number;
-
-  parent?: Entity;
-  dirty?: boolean;
 
   /** [px] Coordenada X absoluta en el mundo. */
   worldX?: number;

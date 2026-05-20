@@ -390,11 +390,11 @@ export class World {
     const type = component.type;
 
     if (type === "Transform") {
-      const transform = component as unknown as { parent?: Entity };
-      if (transform.parent !== undefined) {
-        if (!this.activeEntities.has(transform.parent)) {
-          transform.parent = undefined;
-        } else if (transform.parent === entity) {
+      const transform = component as unknown as { parentEntity: Entity | null };
+      if (transform.parentEntity !== null) {
+        if (!this.activeEntities.has(transform.parentEntity)) {
+          transform.parentEntity = null;
+        } else if (transform.parentEntity === entity) {
           throw new Error(`Hierarchy Invariant Violation: Entity ${entity} cannot be its own parent.`);
         }
       }
