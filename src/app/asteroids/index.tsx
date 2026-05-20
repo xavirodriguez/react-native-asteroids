@@ -10,6 +10,9 @@ import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { useAsteroidsGame } from "@/hooks/useAsteroidsGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useMemo } from "react";
+import { MobileControlsOverlay } from "../../components/controls/MobileControlsOverlay";
+import { MobileInputAdapter } from "../../engine/input/MobileInputAdapter";
 import { SeedWidget } from "@/components/SeedWidget";
 import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
 import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
@@ -31,6 +34,12 @@ export default function AsteroidsScreen() {
   const [isMulti, setIsMulti] = useState(false);
   const [isDaily, setIsDaily] = useState(false);
   const { game, gameState, handleInput, isPaused, isReady, togglePause, highScore, seed, restartWithSeed } = useAsteroidsGame(isMulti && started);
+
+  const mobileAdapter = useMemo(
+    () => (game ? new MobileInputAdapter(game.getInputSystem()) : null),
+    [game]
+  );
+
   const [playerName, setPlayerName] = useState("Player");
   const [initialSeed, setInitialSeed] = useState<number | undefined>();
 
@@ -185,6 +194,9 @@ export default function AsteroidsScreen() {
           gameLoop={game.getGameLoop()}
           onInitialize={(renderer) => game.initializeRenderer(renderer)}
         />
+        {mobileAdapter && (
+          <MobileControlsOverlay adapter={mobileAdapter} discreteMapping={true} />
+        )}
         <GameControls
           onThrust={(pressed) => handleMultiplayerInput({ thrust: pressed })}
           onRotateLeft={(pressed) => handleMultiplayerInput({ rotateLeft: pressed })}
