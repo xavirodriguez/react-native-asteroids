@@ -30,17 +30,21 @@ export class PaletteSystem extends System {
     const entities = world.query("Render", "Tag");
 
     entities.forEach(entity => {
-      const render = world.getComponent<RenderComponent>(entity, "Render");
       const tag = world.getComponent<TagComponent>(entity, "Tag");
+      if (!tag) return;
 
-      if (render && tag) {
-        if (tag.tags.includes("LocalPlayer")) {
-          render.color = palette.primary;
-        } else if (tag.tags.includes("Enemy")) {
-          render.color = palette.secondary;
-        } else if (tag.tags.includes("Bullet") || tag.tags.includes("Projectile")) {
-          render.color = palette.accent;
-        }
+      const newColor = tag.tags.includes("LocalPlayer")
+        ? palette.primary
+        : tag.tags.includes("Enemy")
+          ? palette.secondary
+          : (tag.tags.includes("Bullet") || tag.tags.includes("Projectile"))
+            ? palette.accent
+            : null;
+
+      if (newColor !== null) {
+        world.mutateComponent<RenderComponent>(entity, "Render", (r) => {
+          r.color = newColor;
+        });
       }
     });
   }

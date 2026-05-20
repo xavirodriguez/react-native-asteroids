@@ -1,6 +1,6 @@
 import { System } from "../../core/System";
 import { World } from "../../core/World";
-import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, CollisionEvent } from "../../types/EngineTypes";
+import { Entity, TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, CollisionEvent } from "../../types/EngineTypes";
 
 /**
  * Built-in 2D Physics System for rigid body dynamics.
@@ -81,27 +81,27 @@ export class PhysicsSystem2D extends System {
       const body = world.getComponent<PhysicsBody2DComponent>(entity, "PhysicsBody2D")!;
       if (body.bodyType === "static") continue;
 
-      const transform = world.getComponent<TransformComponent>(entity, "Transform")!;
+      // Apply forces (including gravity) and reset
+      world.mutateComponent<PhysicsBody2DComponent>(entity, "PhysicsBody2D", (b) => {
+        if (b.bodyType === "dynamic") {
+          b.velocityX += (b.forceX * b.inverseMass + this.gravityX * b.gravityScale) * dt;
+          b.velocityY += (b.forceY * b.inverseMass + this.gravityY * b.gravityScale) * dt;
 
-      // Apply forces (including gravity)
-      if (body.bodyType === "dynamic") {
-        body.velocityX += (body.forceX * body.inverseMass + this.gravityX * body.gravityScale) * dt;
-        body.velocityY += (body.forceY * body.inverseMass + this.gravityY * body.gravityScale) * dt;
-
-        if (!body.fixedRotation) {
-            body.angularVelocity += (body.torque * body.inverseInertia) * dt;
+          if (!b.fixedRotation) {
+            b.angularVelocity += (b.torque * b.inverseInertia) * dt;
+          }
         }
-      }
+        b.forceX = 0;
+        b.forceY = 0;
+        b.torque = 0;
+      });
 
       // Update positions
-      transform.x += body.velocityX * dt;
-      transform.y += body.velocityY * dt;
-      transform.rotation += body.angularVelocity * dt;
-
-      // Reset forces
-      body.forceX = 0;
-      body.forceY = 0;
-      body.torque = 0;
+      world.mutateComponent<TransformComponent>(entity, "Transform", (t) => {
+        t.x += body.velocityX * dt;
+        t.y += body.velocityY * dt;
+        t.rotation += body.angularVelocity * dt;
+      });
     }
 
     // 2. Collision Response phase
@@ -110,23 +110,19 @@ export class PhysicsSystem2D extends System {
 
     for (let i = 0; i < eventEntities.length; i++) {
       const entityA = eventEntities[i];
-      const bodyA = world.getComponent<PhysicsBody2DComponent>(entityA, "PhysicsBody2D")!;
       const events = world.getComponent<CollisionEventsComponent>(entityA, "CollisionEvents")!;
-      const transformA = world.getComponent<TransformComponent>(entityA, "Transform")!;
 
       for (let j = 0; j < events.collisions.length; j++) {
         const collision = events.collisions[j];
         const entityB = collision.otherEntity;
-        const bodyB = world.getComponent<PhysicsBody2DComponent>(entityB, "PhysicsBody2D");
-        if (!bodyB) continue;
+        if (!world.hasComponent(entityB, "PhysicsBody2D")) continue;
 
         // Ensure each pair is only processed once
         const pairId = entityA < entityB ? `${entityA},${entityB}` : `${entityB},${entityA}`;
         if (processedPairs.has(pairId)) continue;
         processedPairs.add(pairId);
 
-        const transformB = world.getComponent<TransformComponent>(entityB, "Transform")!;
-        this.resolveCollision(transformA, bodyA, transformB, bodyB, collision);
+        this.resolveCollision(world, entityA, entityB, collision);
       }
     }
   }
@@ -156,13 +152,17 @@ export class PhysicsSystem2D extends System {
    * @param collision - Collision manifold data (normal, depth, contact points).
    */
   private resolveCollision(
-    transformA: TransformComponent,
-    bodyA: PhysicsBody2DComponent,
-    transformB: TransformComponent,
-    bodyB: PhysicsBody2DComponent,
+    world: World,
+    entityA: Entity,
+    entityB: Entity,
     collision: CollisionEvent
   ): void {
     if (collision.normalX === undefined || collision.normalY === undefined || collision.depth === undefined) return;
+
+    const transformA = world.getComponent<TransformComponent>(entityA, "Transform")!;
+    const bodyA = world.getComponent<PhysicsBody2DComponent>(entityA, "PhysicsBody2D")!;
+    const transformB = world.getComponent<TransformComponent>(entityB, "Transform")!;
+    const bodyB = world.getComponent<PhysicsBody2DComponent>(entityB, "PhysicsBody2D")!;
 
     // Normal points from A to B
     const nx = collision.normalX;
@@ -210,22 +210,6 @@ export class PhysicsSystem2D extends System {
     const impulseX = j * nx;
     const impulseY = j * ny;
 
-    if (bodyA.bodyType === "dynamic") {
-      bodyA.velocityX -= bodyA.inverseMass * impulseX;
-      bodyA.velocityY -= bodyA.inverseMass * impulseY;
-      if (!bodyA.fixedRotation) {
-          bodyA.angularVelocity -= raCrossN * bodyA.inverseInertia * j;
-      }
-    }
-
-    if (bodyB.bodyType === "dynamic") {
-      bodyB.velocityX += bodyB.inverseMass * impulseX;
-      bodyB.velocityY += bodyB.inverseMass * impulseY;
-      if (!bodyB.fixedRotation) {
-          bodyB.angularVelocity += rbCrossN * bodyB.inverseInertia * j;
-      }
-    }
-
     // Friction impulse
     const tx = -ny; // Tangent (approximate for 2D)
     const ty = nx;
@@ -245,7 +229,7 @@ export class PhysicsSystem2D extends System {
     const mu = (bodyA.staticFriction + bodyB.staticFriction) / 2;
     const dynamicMu = (bodyA.dynamicFriction + bodyB.dynamicFriction) / 2;
 
-    let frictionImpulseX, frictionImpulseY;
+    let frictionImpulseX: number, frictionImpulseY: number;
     if (Math.abs(jt) < j * mu) {
         frictionImpulseX = jt * tx;
         frictionImpulseY = jt * ty;
@@ -255,14 +239,27 @@ export class PhysicsSystem2D extends System {
     }
 
     if (bodyA.bodyType === "dynamic") {
-        bodyA.velocityX -= bodyA.inverseMass * frictionImpulseX;
-        bodyA.velocityY -= bodyA.inverseMass * frictionImpulseY;
-        if (!bodyA.fixedRotation) bodyA.angularVelocity -= raCrossT * bodyA.inverseInertia * jt;
+      world.mutateComponent<PhysicsBody2DComponent>(entityA, "PhysicsBody2D", (b) => {
+        b.velocityX -= b.inverseMass * impulseX;
+        b.velocityY -= b.inverseMass * impulseY;
+        if (!b.fixedRotation) b.angularVelocity -= raCrossN * b.inverseInertia * j;
+
+        b.velocityX -= b.inverseMass * frictionImpulseX;
+        b.velocityY -= b.inverseMass * frictionImpulseY;
+        if (!b.fixedRotation) b.angularVelocity -= raCrossT * b.inverseInertia * jt;
+      });
     }
+
     if (bodyB.bodyType === "dynamic") {
-        bodyB.velocityX += bodyB.inverseMass * frictionImpulseX;
-        bodyB.velocityY += bodyB.inverseMass * frictionImpulseY;
-        if (!bodyB.fixedRotation) bodyB.angularVelocity += rbCrossT * bodyB.inverseInertia * jt;
+      world.mutateComponent<PhysicsBody2DComponent>(entityB, "PhysicsBody2D", (b) => {
+        b.velocityX += b.inverseMass * impulseX;
+        b.velocityY += b.inverseMass * impulseY;
+        if (!b.fixedRotation) b.angularVelocity += rbCrossN * b.inverseInertia * j;
+
+        b.velocityX += b.inverseMass * frictionImpulseX;
+        b.velocityY += b.inverseMass * frictionImpulseY;
+        if (!b.fixedRotation) b.angularVelocity += rbCrossT * b.inverseInertia * jt;
+      });
     }
 
     // Positional correction (to avoid sinking)
@@ -273,12 +270,16 @@ export class PhysicsSystem2D extends System {
     const corrY = correctionMagnitude * ny;
 
     if (bodyA.bodyType === "dynamic") {
-      transformA.x -= bodyA.inverseMass * corrX;
-      transformA.y -= bodyA.inverseMass * corrY;
+      world.mutateComponent<TransformComponent>(entityA, "Transform", (t) => {
+        t.x -= bodyA.inverseMass * corrX;
+        t.y -= bodyA.inverseMass * corrY;
+      });
     }
     if (bodyB.bodyType === "dynamic") {
-      transformB.x += bodyB.inverseMass * corrX;
-      transformB.y += bodyB.inverseMass * corrY;
+      world.mutateComponent<TransformComponent>(entityB, "Transform", (t) => {
+        t.x += bodyB.inverseMass * corrX;
+        t.y += bodyB.inverseMass * corrY;
+      });
     }
   }
 }

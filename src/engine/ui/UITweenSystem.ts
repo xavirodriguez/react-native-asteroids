@@ -52,33 +52,37 @@ export class UITweenSystem extends System {
 
         for (const entity of entities) {
             const tween = world.getComponent<UITweenComponent>(entity, "UITween")!;
-            const element = world.getComponent<UIElementComponent>(entity, "UIElement")!;
 
-            tween.currentTime += deltaTime;
-            const progress = Math.min(1, tween.currentTime / tween.duration);
+            const newTime = tween.currentTime + deltaTime;
+            const progress = Math.min(1, newTime / tween.duration);
             const easedProgress = this.ease(progress, tween.easing);
 
             const value = tween.startValue + (tween.endValue - tween.startValue) * easedProgress;
 
-            switch (tween.property) {
-                case "opacity":
-                    element.opacity = value;
-                    break;
-                case "offsetX":
-                    element.offsetX = value;
-                    break;
-                case "offsetY":
-                    element.offsetY = value;
-                    break;
-            }
-
-            if (progress >= 1) {
-                if (tween.loop) {
-                    tween.currentTime = 0;
-                } else {
-                    if (tween.onComplete) tween.onComplete(world, entity);
-                    world.getCommandBuffer().removeComponent(entity, "UITween");
+            world.mutateComponent<UIElementComponent>(entity, "UIElement", (el) => {
+                switch (tween.property) {
+                    case "opacity":
+                        el.opacity = value;
+                        break;
+                    case "offsetX":
+                        el.offsetX = value;
+                        break;
+                    case "offsetY":
+                        el.offsetY = value;
+                        break;
                 }
+            });
+
+            world.mutateComponent<UITweenComponent>(entity, "UITween", (t) => {
+                t.currentTime = newTime;
+                if (progress >= 1 && t.loop) {
+                    t.currentTime = 0;
+                }
+            });
+
+            if (progress >= 1 && !tween.loop) {
+                if (tween.onComplete) tween.onComplete(world, entity);
+                world.getCommandBuffer().removeComponent(entity, "UITween");
             }
         }
     }
