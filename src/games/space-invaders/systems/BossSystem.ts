@@ -1,7 +1,8 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { TransformComponent, RenderComponent, Component, Collider2DComponent } from "../../../engine/types/EngineTypes";
-import { GameStateComponent, GAME_CONFIG } from "../types/SpaceInvadersTypes";
+import { GameStateComponent } from "../types/SpaceInvadersTypes";
+import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
 import { CollisionLayers } from "../../../engine/physics/collision/CollisionLayers";
 import { Juice } from "../../../engine/utils/Juice";
@@ -15,7 +16,12 @@ export interface BossComponent extends Component {
 }
 
 export class BossSystem extends System {
+  private config?: SpaceInvadersConfig;
+
   public update(world: World, deltaTime: number): void {
+    if (!this.config) {
+        this.config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
+    }
     const gameState = world.getSingleton<GameStateComponent>("GameState");
     if (!gameState || gameState.isGameOver) return;
 
@@ -30,7 +36,7 @@ export class BossSystem extends System {
 
       // Simple side to side movement
       world.mutateComponent<TransformComponent>(entity, "Transform", p => {
-          p.x = GAME_CONFIG.SCREEN_WIDTH / 2 + Math.sin(boss.timer / 1000) * 200;
+          p.x = this.config!.SCREEN_WIDTH / 2 + Math.sin(boss.timer / 1000) * 200;
       });
 
       // Phase changes
@@ -72,7 +78,7 @@ export class BossSystem extends System {
     const hp = 50 + (level / 5) * 50;
 
     commands.createEntity(boss => {
-        commands.addComponent(boss, { type: "Transform", x: GAME_CONFIG.SCREEN_WIDTH / 2, y: 100, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+        commands.addComponent(boss, { type: "Transform", x: this.config!.SCREEN_WIDTH / 2, y: 100, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
         commands.addComponent(boss, { type: "Render", shape: "invader", size: 80, color: "#FF00FF", rotation: 0 } as RenderComponent);
         commands.addComponent(boss, {
           type: "Collider2D",

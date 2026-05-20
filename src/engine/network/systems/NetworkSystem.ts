@@ -89,6 +89,13 @@ export class NetworkSystem extends System {
   /**
    * Sets a state snapshot for a specific tick in history.
    */
+  /**
+   * Retrieves a state snapshot from history.
+   */
+  public getStateHistory(tick: number): WorldSnapshot | undefined {
+    return this.stateHistory.get(tick);
+  }
+
   public setStateHistory(tick: number, snapshot: WorldSnapshot) {
     this.stateHistory.set(tick, snapshot);
 

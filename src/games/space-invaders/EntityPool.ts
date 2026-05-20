@@ -5,7 +5,7 @@ import {
   Component,
   BoundaryComponent
 } from "../../engine/types/EngineTypes";
-import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
+import { SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
 import { ProjectilePool, ProjectileComponents, ProjectileParams } from "../../engine/core/ProjectilePool";
 
 interface InvaderBulletComponents extends ProjectileComponents {
@@ -32,8 +32,8 @@ export class PlayerBulletPool extends ProjectilePool<InvaderBulletComponents, Pr
         },
         boundary: {
           type: "Boundary",
-          width: GAME_CONFIG.SCREEN_WIDTH,
-          height: GAME_CONFIG.SCREEN_HEIGHT,
+          width: 800,
+          height: 600,
           behavior: "destroy"
         },
         ttl: { type: "TTL", remaining: 0, total: 0 },
@@ -45,6 +45,7 @@ export class PlayerBulletPool extends ProjectilePool<InvaderBulletComponents, Pr
         data.position.y = 0;
       },
       initializer: (data, p) => {
+        const config = world.getResource<SpaceInvadersConfig>("GameConfig");
         data.position.x = p.x;
         data.position.y = p.y;
         data.velocity.dx = p.dx;
@@ -53,6 +54,10 @@ export class PlayerBulletPool extends ProjectilePool<InvaderBulletComponents, Pr
         data.render.color = p.color;
         if (data.collider.shape.type === "circle") {
             data.collider.shape.radius = p.size;
+        }
+        if (config) {
+            data.boundary.width = config.SCREEN_WIDTH;
+            data.boundary.height = config.SCREEN_HEIGHT;
         }
         data.ttl.remaining = p.ttl;
         data.ttl.total = p.ttl;
@@ -84,8 +89,8 @@ export class EnemyBulletPool extends ProjectilePool<InvaderBulletComponents, Pro
         },
         boundary: {
           type: "Boundary",
-          width: GAME_CONFIG.SCREEN_WIDTH,
-          height: GAME_CONFIG.SCREEN_HEIGHT,
+          width: 800,
+          height: 600,
           behavior: "destroy"
         },
         ttl: { type: "TTL", remaining: 0, total: 0 },
@@ -97,6 +102,7 @@ export class EnemyBulletPool extends ProjectilePool<InvaderBulletComponents, Pro
         data.position.y = 0;
       },
       initializer: (data, p) => {
+        const config = world.getResource<SpaceInvadersConfig>("GameConfig");
         data.position.x = p.x;
         data.position.y = p.y;
         data.velocity.dx = p.dx;
@@ -105,6 +111,10 @@ export class EnemyBulletPool extends ProjectilePool<InvaderBulletComponents, Pro
         data.render.color = p.color;
         if (data.collider.shape.type === "circle") {
             data.collider.shape.radius = p.size;
+        }
+        if (config) {
+            data.boundary.width = config.SCREEN_WIDTH;
+            data.boundary.height = config.SCREEN_HEIGHT;
         }
         data.ttl.remaining = p.ttl;
         data.ttl.total = p.ttl;

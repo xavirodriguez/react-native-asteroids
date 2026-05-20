@@ -1,18 +1,24 @@
 import { World } from "../../../engine/core/World";
 import { System } from "../../../engine/core/System";
 import { Entity, TransformComponent, VelocityComponent, CollisionEventsComponent } from "../../../engine/types/EngineTypes";
-import { PONG_CONFIG } from "../types";
+import { PongConfig } from "../types/PongConfigSchema";
 import { Juice } from "../../../engine/utils/Juice";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
 import { EventBus } from "../../../engine/core/EventBus";
 import { BallComponent, PaddleComponent } from "../types";
 
 export class PongCollisionSystem extends System {
-  constructor(private config: typeof PONG_CONFIG = PONG_CONFIG) {
+  private config?: PongConfig;
+
+  constructor(config?: PongConfig) {
     super();
+    this.config = config;
   }
 
   public update(world: World, _deltaTime: number): void {
+    if (!this.config) {
+        this.config = world.getResource<PongConfig>("GameConfig")!;
+    }
     const entitiesWithEvents = world.query("CollisionEvents");
 
     for (const entity of entitiesWithEvents) {
@@ -39,12 +45,12 @@ export class PongCollisionSystem extends System {
             ballVel.dx *= -1;
 
             // Add some vertical influence based on where the ball hit the paddle
-            const relativeHitY = (ballPos.y - paddlePos.y) / (this.config.PADDLE_HEIGHT / 2);
-            ballVel.dy = relativeHitY * this.config.BALL_SPEED_START;
+            const relativeHitY = (ballPos.y - paddlePos.y) / (this.config!.PADDLE_HEIGHT / 2);
+            ballVel.dy = relativeHitY * this.config!.BALL_SPEED_START;
 
             // Increase speed slightly
-            ballVel.dx *= this.config.BALL_SPEED_INC;
-            ballVel.dy *= this.config.BALL_SPEED_INC;
+            ballVel.dx *= this.config!.BALL_SPEED_INC;
+            ballVel.dy *= this.config!.BALL_SPEED_INC;
 
             // Spin Logic & Charged Smash
             world.mutateComponent<BallComponent>(ballEntity, "Ball", ballComp => {
@@ -75,8 +81,8 @@ export class PongCollisionSystem extends System {
                 }
 
                 // Ghost Ball Mutator
-                if (this.config.BALL_INVISIBLE_AFTER_HIT_TICKS) {
-                  ballComp.visibilityTimer = this.config.BALL_INVISIBLE_AFTER_HIT_TICKS;
+                if (this.config!.BALL_INVISIBLE_AFTER_HIT_TICKS) {
+                  ballComp.visibilityTimer = this.config!.BALL_INVISIBLE_AFTER_HIT_TICKS;
                 }
             });
         });
@@ -84,9 +90,9 @@ export class PongCollisionSystem extends System {
         // Reposition ball to prevent multiple collisions
         world.mutateComponent<TransformComponent>(ballEntity, "Transform", bPos => {
             if (paddleComp.side === "left") {
-              bPos.x = paddlePos.x + this.config.PADDLE_WIDTH / 2 + this.config.BALL_SIZE + 1;
+              bPos.x = paddlePos.x + this.config!.PADDLE_WIDTH / 2 + this.config!.BALL_SIZE + 1;
             } else {
-              bPos.x = paddlePos.x - this.config.PADDLE_WIDTH / 2 - this.config.BALL_SIZE - 1;
+              bPos.x = paddlePos.x - this.config!.PADDLE_WIDTH / 2 - this.config!.BALL_SIZE - 1;
             }
         });
 

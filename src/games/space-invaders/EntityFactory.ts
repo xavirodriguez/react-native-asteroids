@@ -1,6 +1,6 @@
 import { World } from "../../engine/core/World";
 import { Entity, Component } from "../../engine/types/EngineTypes";
-import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
+import { SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
@@ -47,19 +47,20 @@ const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, a
  * Includes input handling, health, and boundary constraints.
  */
 export function createPlayer(world: World, x: number, y: number, deferred?: boolean): Entity {
+  const config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
   const { entity: player, add } = createBaseEntity(world, deferred);
   add({ type: "Transform", x, y });
   add({ type: "Velocity", dx: 0, dy: 0 });
   add({
     type: "Render",
     shape: "player_ship",
-    size: GAME_CONFIG.PLAYER_RENDER_WIDTH, // Using width as size for simplicity
+    size: config.PLAYER_RENDER_WIDTH, // Using width as size for simplicity
     color: "#00FF00",
     rotation: 0,
   });
   add({
     type: "Collider2D",
-    shape: { type: "circle", radius: GAME_CONFIG.PLAYER_COLLIDER_RADIUS },
+    shape: { type: "circle", radius: config.PLAYER_COLLIDER_RADIUS },
     layer: CollisionLayers.PLAYER,
     mask: CollisionLayers.ENEMY | CollisionLayers.DEBRIS, // Enemy bullets or Invaders
     offsetX: 0,
@@ -69,8 +70,8 @@ export function createPlayer(world: World, x: number, y: number, deferred?: bool
   } as Collider2DComponent);
   add({
     type: "Health",
-    current: GAME_CONFIG.PLAYER_INITIAL_LIVES,
-    max: GAME_CONFIG.PLAYER_INITIAL_LIVES,
+    current: config.PLAYER_INITIAL_LIVES,
+    max: config.PLAYER_INITIAL_LIVES,
     invulnerableRemaining: 0,
   });
   add({
@@ -83,9 +84,9 @@ export function createPlayer(world: World, x: number, y: number, deferred?: bool
   add({ type: "Player" });
   add({
     type: "Boundary",
-    width: GAME_CONFIG.SCREEN_WIDTH - GAME_CONFIG.PLAYER_RENDER_WIDTH,
-    height: GAME_CONFIG.SCREEN_HEIGHT,
-    x: GAME_CONFIG.PLAYER_RENDER_WIDTH / 2,
+    width: config.SCREEN_WIDTH - config.PLAYER_RENDER_WIDTH,
+    height: config.SCREEN_HEIGHT,
+    x: config.PLAYER_RENDER_WIDTH / 2,
     y: 0,
     behavior: "bounce",
     bounceX: true,
@@ -154,16 +155,17 @@ export function createInvader(world: World, x: number, y: number, row: number, c
  * Creates a player bullet using the pool.
  */
 export function createPlayerBullet(world: World, x: number, y: number, pool: PlayerBulletPool): Entity {
+  const config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
   return pool.acquire(
     world,
     {
         x,
         y,
         dx: 0,
-        dy: -GAME_CONFIG.PLAYER_BULLET_SPEED,
-        size: GAME_CONFIG.PLAYER_BULLET_SIZE,
+        dy: -config.PLAYER_BULLET_SPEED,
+        size: config.PLAYER_BULLET_SIZE,
         color: "#00FF00",
-        ttl: GAME_CONFIG.PLAYER_BULLET_TTL
+        ttl: config.PLAYER_BULLET_TTL
     }
   );
 }
@@ -172,16 +174,17 @@ export function createPlayerBullet(world: World, x: number, y: number, pool: Pla
  * Creates an enemy bullet using the pool.
  */
 export function createEnemyBullet(world: World, x: number, y: number, pool: EnemyBulletPool): Entity {
+  const config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
   return pool.acquire(
     world,
     {
         x,
         y,
         dx: 0,
-        dy: GAME_CONFIG.ENEMY_BULLET_SPEED,
-        size: GAME_CONFIG.ENEMY_BULLET_SIZE,
+        dy: config.ENEMY_BULLET_SPEED,
+        size: config.ENEMY_BULLET_SIZE,
         color: "#FF0000",
-        ttl: GAME_CONFIG.ENEMY_BULLET_TTL
+        ttl: config.ENEMY_BULLET_TTL
     }
   );
 }
@@ -190,6 +193,7 @@ export function createEnemyBullet(world: World, x: number, y: number, pool: Enem
  * Creates a single destructible block of a shield/bunker.
  */
 export function createShieldSegment(world: World, x: number, y: number, row: number, col: number, deferred?: boolean): Entity {
+  const config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
   const { entity: segment, add } = createBaseEntity(world, deferred);
   add({ type: "Transform", x, y });
   add({
@@ -211,8 +215,8 @@ export function createShieldSegment(world: World, x: number, y: number, row: num
   } as Collider2DComponent);
   add({
     type: "Shield",
-    hp: GAME_CONFIG.SHIELD_SEGMENT_HP,
-    maxHp: GAME_CONFIG.SHIELD_SEGMENT_HP,
+    hp: config.SHIELD_SEGMENT_HP,
+    maxHp: config.SHIELD_SEGMENT_HP,
     segment: { row, col }
   });
   return segment;
@@ -222,10 +226,11 @@ export function createShieldSegment(world: World, x: number, y: number, row: num
  * Creates the global game state entity.
  */
 export function createGameState(world: World, deferred?: boolean): Entity {
+  const config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
   const { entity: gameState, add } = createBaseEntity(world, deferred);
   add({
     type: "GameState",
-    lives: GAME_CONFIG.PLAYER_INITIAL_LIVES,
+    lives: config.PLAYER_INITIAL_LIVES,
     score: 0,
     level: 1,
     invadersRemaining: 0,
@@ -243,16 +248,17 @@ export function createGameState(world: World, deferred?: boolean): Entity {
  * Creates the singleton entity that coordinates the invader grid movement.
  */
 export function createFormationController(world: World, deferred?: boolean): Entity {
+  const config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
   const { entity: controller, add } = createBaseEntity(world, deferred);
   add({
     type: "Formation",
     direction: 1,
     stepDownPending: false,
-    speed: GAME_CONFIG.INVADER_SPEED_BASE,
-    descentStep: GAME_CONFIG.INVADER_DESCENT_STEP,
+    speed: config.INVADER_SPEED_BASE,
+    descentStep: config.INVADER_DESCENT_STEP,
     leftBound: 0,
     rightBound: 0,
-    fireCooldownRemaining: GAME_CONFIG.ENEMY_FIRE_INTERVAL_MIN,
+    fireCooldownRemaining: config.ENEMY_FIRE_INTERVAL_MIN,
   });
   return controller;
 }
@@ -261,12 +267,13 @@ export function createFormationController(world: World, deferred?: boolean): Ent
  * Procedurally spawns a grid of invaders based on GAME_CONFIG spacing.
  */
 export function spawnInvaderWave(world: World, _level: number, deferred?: boolean): void {
-  const startX = GAME_CONFIG.INVADER_START_X;
-  const startY = GAME_CONFIG.INVADER_START_Y;
-  const spacingX = GAME_CONFIG.INVADER_SPACING_X;
-  const spacingY = GAME_CONFIG.INVADER_SPACING_Y;
-  const rows = GAME_CONFIG.INVADER_ROWS;
-  const cols = GAME_CONFIG.INVADER_COLS;
+  const config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
+  const startX = config.INVADER_START_X;
+  const startY = config.INVADER_START_Y;
+  const spacingX = config.INVADER_SPACING_X;
+  const spacingY = config.INVADER_SPACING_Y;
+  const rows = config.INVADER_ROWS;
+  const cols = config.INVADER_COLS;
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
@@ -286,21 +293,22 @@ export function spawnInvaderWave(world: World, _level: number, deferred?: boolea
  * Spawns multiple composite bunkers made of individual shield segments.
  */
 export function spawnShields(world: World, deferred?: boolean): void {
-  const count = GAME_CONFIG.SHIELD_COUNT;
-  const segmentsX = GAME_CONFIG.SHIELD_SEGMENTS_X;
-  const segmentsY = GAME_CONFIG.SHIELD_SEGMENTS_Y;
-  const startY = GAME_CONFIG.SHIELD_START_Y;
-  const spacing = GAME_CONFIG.SHIELD_SPACING;
+  const config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
+  const count = config.SHIELD_COUNT;
+  const segmentsX = config.SHIELD_SEGMENTS_X;
+  const segmentsY = config.SHIELD_SEGMENTS_Y;
+  const startY = config.SHIELD_START_Y;
+  const spacing = config.SHIELD_SPACING;
 
   for (let i = 0; i < count; i++) {
-    const bunkerX = GAME_CONFIG.SHIELD_START_X + i * spacing;
+    const bunkerX = config.SHIELD_START_X + i * spacing;
     for (let row = 0; row < segmentsY; row++) {
       for (let col = 0; col < segmentsX; col++) {
         // Simple rectangular bunker shape
         createShieldSegment(
           world,
-          bunkerX + col * GAME_CONFIG.SHIELD_SEGMENT_SIZE,
-          startY + row * GAME_CONFIG.SHIELD_SEGMENT_SIZE,
+          bunkerX + col * config.SHIELD_SEGMENT_SIZE,
+          startY + row * config.SHIELD_SEGMENT_SIZE,
           row,
           col,
           deferred
@@ -314,5 +322,6 @@ export function spawnShields(world: World, deferred?: boolean): void {
  * Creates a particle entity.
  */
 export function createParticle(world: World, x: number, y: number, dx: number, dy: number, color: string, pool: ParticlePool): Entity {
-  return pool.acquire(world, { x, y, dx, dy, size: 2, color, ttl: GAME_CONFIG.PARTICLE_TTL_BASE });
+  const config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
+  return pool.acquire(world, { x, y, dx, dy, size: 2, color, ttl: config.PARTICLE_TTL_BASE });
 }

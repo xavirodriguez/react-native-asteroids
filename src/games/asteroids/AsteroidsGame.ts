@@ -35,6 +35,7 @@ import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManage
 import { NetworkSystem } from "../../engine/network/systems/NetworkSystem";
 import { INetworkGame } from "../../engine/network/types/NetworkTypes";
 import { ConfigService } from "../../engine/services/ConfigService";
+import { NetworkReplicationUtils } from "../../engine/network/NetworkReplicationUtils";
 import { AsteroidConfigSchema, AsteroidConfig } from "./types/AsteroidConfigSchema";
 
 const __DEV__ = process.env.NODE_ENV !== "production";
@@ -218,10 +219,13 @@ export class AsteroidsGame
     let authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot;
 
     if (delta.created || delta.updated || delta.removed) {
-      // DeltaPacket format: Apply to the best available baseline snapshot
-      // Note: In a real implementation we should get the baseline from networkSystem
-      // For now we assume the delta might be a filtered snapshot in 'interest' mode
-      authoritativeSnapshot = delta;
+      const baseSnapshot = this.networkSystem.getStateHistory(serverState.baselineTick as number);
+      if (baseSnapshot) {
+        authoritativeSnapshot = structuredClone(baseSnapshot);
+        NetworkReplicationUtils.applyDelta(authoritativeSnapshot, delta);
+      } else {
+        return; // Cannot apply delta without base
+      }
     } else {
       authoritativeSnapshot = delta;
     }

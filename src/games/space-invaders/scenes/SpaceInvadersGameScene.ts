@@ -23,7 +23,7 @@ import {
   spawnInvaderWave,
   spawnShields
 } from "../EntityFactory";
-import { GAME_CONFIG } from "../types/SpaceInvadersTypes";
+import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";
 import { MutatorSystem } from "../../../engine/systems/MutatorSystem";
 import { MutatorService } from "../../../services/MutatorService";
@@ -36,23 +36,24 @@ export class SpaceInvadersGameScene extends Scene {
   private playerBulletPool: PlayerBulletPool;
   private enemyBulletPool: EnemyBulletPool;
   private particlePool: ParticlePool;
-  private config: typeof GAME_CONFIG;
+  private config: SpaceInvadersConfig;
 
   constructor(
     game: ISpaceInvadersGame,
     playerBulletPool: PlayerBulletPool,
     enemyBulletPool: EnemyBulletPool,
     particlePool: ParticlePool,
-    config: typeof GAME_CONFIG = GAME_CONFIG
+    config?: SpaceInvadersConfig
   ) {
     // Note: in this engine, Scene creates its own World if not provided
     // but the constructor requires a World.
-    super(new World());
+    const world = new World();
+    super(world);
     this.game = game;
     this.playerBulletPool = playerBulletPool;
     this.enemyBulletPool = enemyBulletPool;
     this.particlePool = particlePool;
-    this.config = config;
+    this.config = config || world.getResource<SpaceInvadersConfig>("GameConfig")!;
   }
 
   public onEnter(): void {

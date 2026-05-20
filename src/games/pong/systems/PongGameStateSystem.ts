@@ -1,17 +1,23 @@
 import { World } from "../../../engine/core/World";
-import { PongState, PONG_CONFIG } from "../types";
+import { PongState } from "../types";
+import { PongConfig } from "../types/PongConfigSchema";
 import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
 import { EventBus } from "../../../engine/core/EventBus";
 
 export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
+  private config?: PongConfig;
 
-  constructor(private config: typeof PONG_CONFIG = PONG_CONFIG) {
+  constructor(config?: PongConfig) {
     super();
+    this.config = config;
   }
 
   protected updateGameState(world: World, state: PongState, deltaTime: number): void {
+    if (!this.config) {
+        this.config = world.getResource<PongConfig>("GameConfig")!;
+    }
     void deltaTime;
 
     if (state.isGameOver) {
@@ -29,7 +35,7 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
                 gs.scoreP2++;
             });
             this.resetBall(world, ballEntity, pos, vel, "right");
-        } else if (pos.x > this.config.WIDTH) {
+        } else if (pos.x > this.config!.WIDTH) {
             world.mutateSingleton<PongState>("PongState", (gs) => {
                 gs.scoreP1++;
             });
@@ -37,7 +43,7 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
         }
 
         const currentState = this.getGameState(world);
-        if (currentState && currentState.scoreP1 >= this.config.WIN_SCORE) {
+        if (currentState && currentState.scoreP1 >= this.config!.WIN_SCORE) {
             world.mutateSingleton<PongState>("PongState", (gs) => {
                 gs.isGameOver = true;
                 gs.winner = 1;
@@ -46,7 +52,7 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
             if (eventBus) {
                 eventBus.emitDeferred("pong:set_won");
             }
-        } else if (currentState && currentState.scoreP2 >= this.config.WIN_SCORE) {
+        } else if (currentState && currentState.scoreP2 >= this.config!.WIN_SCORE) {
             world.mutateSingleton<PongState>("PongState", (gs) => {
                 gs.isGameOver = true;
                 gs.winner = 2;
@@ -59,13 +65,13 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
     const gameplayRandom = RandomService.getInstance("gameplay");
 
     world.mutateComponent<TransformComponent>(entity, "Transform", pos => {
-        pos.x = this.config.WIDTH / 2;
-        pos.y = this.config.HEIGHT / 2;
+        pos.x = this.config!.WIDTH / 2;
+        pos.y = this.config!.HEIGHT / 2;
     });
 
     world.mutateComponent<VelocityComponent>(entity, "Velocity", vel => {
-        vel.dx = direction === "right" ? -this.config.BALL_SPEED_START : this.config.BALL_SPEED_START;
-        vel.dy = (gameplayRandom.next() - 0.5) * this.config.BALL_SPEED_START;
+        vel.dx = direction === "right" ? -this.config!.BALL_SPEED_START : this.config!.BALL_SPEED_START;
+        vel.dy = (gameplayRandom.next() - 0.5) * this.config!.BALL_SPEED_START;
     });
   }
 
