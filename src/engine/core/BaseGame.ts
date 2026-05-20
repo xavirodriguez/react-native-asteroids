@@ -644,6 +644,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { SystemPhase } = require("./System");
     world.addSystem(new FeedbackSystem(), { phase: SystemPhase.Presentation });
+
+    // Physics Systems
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { PhysicsIntegrateSystem, PhysicsSolveSystem } = require("../physics/dynamics/PhysicsSystem2D");
+    world.addSystem(new PhysicsIntegrateSystem(), { phase: SystemPhase.Simulation });
+    world.addSystem(new PhysicsSolveSystem(), { phase: SystemPhase.GameRules });
   }
 
   /** [Inference] Potential hook for network lag compensation or loading. */

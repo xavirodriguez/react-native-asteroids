@@ -1,4 +1,4 @@
-export { PhysicsSystem2D } from './dynamics/PhysicsSystem2D';
+export { PhysicsSystem2D, PhysicsIntegrateSystem, PhysicsSolveSystem } from './dynamics/PhysicsSystem2D';
 export { CollisionSystem2D, type CollisionCallback, type TriggerCallback } from './collision/CollisionSystem2D';
 export { CollisionLayers } from './collision/CollisionLayers';
 export { SpatialHash } from './collision/SpatialHash';
