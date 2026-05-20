@@ -1,5 +1,6 @@
 import { Component } from "../core/Component";
 import { Entity } from "../core/Entity";
+import { IHierarchicalComponent } from "../core/CoreComponents";
 
 /** Ancla de posicionamiento relativo al viewport */
 export type UIAnchor =
@@ -29,7 +30,7 @@ export interface UIEdgeInsets {
   left: number;
 }
 
-export interface UIElementComponent extends Component {
+export interface UIElementComponent extends IHierarchicalComponent {
   type: "UIElement";
   elementType: "panel" | "label" | "button" | "progressBar" | "image" | "container";
   anchor: UIAnchor;
@@ -42,7 +43,6 @@ export interface UIElementComponent extends Component {
   opacity: number;
   zIndex: number;
   interactive: boolean;
-  parentEntity: Entity | null;
   computedX: number;
   computedY: number;
   computedWidth: number;

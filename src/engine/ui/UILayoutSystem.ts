@@ -8,233 +8,213 @@ import {
   UIWorldAttachComponent
 } from "./UITypes";
 import { Entity } from "../core/Entity";
-import { GenericComponent } from "../core/CoreComponents";
+import { GenericComponent, TransformComponent } from "../core/CoreComponents";
 
 /**
  * UI Layout Engine.
  *
- * Resolves positions and dimensions for user interface elements using a hierarchical
- * constraint system. Supports anchors, relative units (%), flex-like containers,
- * and world-space attachments.
- * Sistema que resuelve el posicionamiento y dimensionamiento de elementos de interfaz (UI).
- *
- * @responsibility Calcular las coordenadas finales (`computedX`, `computedY`) y dimensiones (`computedWidth`, `computedHeight`) de la UI.
- *
- * @remarks
- * Implementa un motor de layout jerárquico que soporta:
- * 1. **Anclajes (Anchors)**: Posicionamiento relativo a la pantalla (Top-Left, Center, etc.).
- * 2. **Unidades Relativas (%)**: Dimensiones basadas en el tamaño del padre o del viewport.
- * 3. **Contenedores (Flow)**: Distribución automática horizontal/vertical con espaciado (gap) y alineación.
- * 4. **Mundo (World Attach)**: Proyección de coordenadas de simulación a coordenadas de pantalla (ej: barras de vida sobre naves).
- * @queries `UIElement`, `UIContainer`, `UIWorldAttach`, `Transform`, `Position`, `GameState` (Singleton).
- * @mutates `UIElementComponent`.
- * @dependsOn `UIElementComponent`, `UIContainerComponent`, `UIWorldAttachComponent`.
- * @executionOrder Presentation Phase (antes del renderizado de UI).
- * @conceptualRisk [LAYOUT_CASCADE] Utiliza recursión para resolver el layout. Árboles de UI muy profundos podrían causar stack overflow o problemas de rendimiento.
- * @conceptualRisk [WORLD_SYNC] Los elementos `UIWorldAttach` dependen de la cámara y de componentes `Transform`/`Position`. Si estos se actualizan después del layout, la UI "vibrará" o irá con retraso (lag) respecto a la entidad.
+ * Resolves positions and dimensions for user interface elements using an iterative
+ * topological sort to handle hierarchical constraints. Supports anchors, relative units (%),
+ * flex-like containers, and world-space attachments.
  */
 export class UILayoutSystem extends System {
   private viewportWidth: number = 800;
   private viewportHeight: number = 600;
 
-  /**
-   * Inicializa el sistema de layout con dimensiones de pantalla iniciales.
-   *
-   * @param viewportWidth - Ancho de la zona de renderizado (default 800).
-   * @param viewportHeight - Alto de la zona de renderizado (default 600).
-   */
   constructor(viewportWidth?: number, viewportHeight?: number) {
     super();
     if (viewportWidth) this.viewportWidth = viewportWidth;
     if (viewportHeight) this.viewportHeight = viewportHeight;
   }
 
-  /**
-   * Actualiza las dimensiones de referencia para los cálculos de layout.
-   *
-   * @param width - Nuevo ancho.
-   * @param height - Nuevo alto.
-   */
   public setViewportSize(width: number, height: number): void {
     this.viewportWidth = width;
     this.viewportHeight = height;
   }
 
-  /**
-   * Ejecuta la resolución de layout para todas las entidades con `UIElement`.
-   *
-   * @remarks
-   * El proceso se realiza en dos pasadas:
-   * 1. **Mapeo**: Agrupa elementos por su relación padre-hijo.
-   * 2. **Resolución Recursiva**: Calcula las posiciones desde la raíz hacia las hojas para
-   * propagar dimensiones y offsets correctamente.
-   *
-   * @param world - El mundo ECS.
-   * @param _deltaTime - Tiempo del frame (ignorado).
-   *
-   * @sideEffect Actualiza las propiedades `computed*` de los componentes `UIElement`.
-   */
   public update(world: World, _deltaTime: number): void {
     const uiEntities = world.query("UIElement");
     if (uiEntities.length === 0) return;
 
-    const childrenByParent = new Map<Entity | null, Entity[]>();
-    for (const entity of uiEntities) {
-        const element = world.getComponent<UIElementComponent>(entity, "UIElement")!;
-        const parent = element.parentEntity;
-        if (!childrenByParent.has(parent)) {
-            childrenByParent.set(parent, []);
-        }
-        childrenByParent.get(parent)!.push(entity);
-    }
+    // 1. Build processing order (Topological Sort - fully iterative)
+    const order: Entity[] = [];
+    const visited = new Set<Entity>();
+    const processing = new Set<Entity>();
+    const stack: { entity: Entity; stage: "enter" | "exit" }[] = [];
 
-    const rootElements = childrenByParent.get(null) || [];
+    for (let i = 0; i < uiEntities.length; i++) {
+      const startEntity = uiEntities[i];
+      if (visited.has(startEntity)) continue;
 
-    for (const entity of rootElements) {
-      this.layoutElement(world, entity, childrenByParent);
-    }
-  }
+      stack.push({ entity: startEntity, stage: "enter" });
 
-  /**
-   * Recursively resolves the position and size of a UI element and its children.
-   *
-   * @remarks
-   * ### Layout Resolution Order:
-   * 1. **Root Elements**: Positioned relative to the viewport using `anchor` and `offset`.
-   * 2. **World-Attached Elements**: Projected from simulation coordinates to screen space.
-   * 3. **Child Elements**: Inherit their parent's computed position and resolve relative units
-   *    (%) based on the parent's `computedWidth` and `computedHeight`.
-   * 4. **Containers (Flex-like)**: Children are organized in horizontal or vertical flows
-   *    with automatic spacing (`gap`) and alignment.
-   *
-   * ### Recursion Strategy:
-   * Uses a depth-first traversal to ensure that parent dimensions are fully computed before
-   * being propagated to dependent children.
-   *
-   * @param world - The ECS world.
-   * @param entity - The UI entity to process.
-   * @param childrenByParent - Pre-calculated hierarchical mapping.
-   *
-   * @conceptualRisk [ZALGO_MAPPING] Si `childrenByParent` no incluye a todos los miembros de `uiEntities` de `update()`, algunos elementos quedarán huérfanos.
-   */
-  private layoutElement(world: World, entity: Entity, childrenByParent: Map<Entity | null, Entity[]>): void {
-    const element = world.getComponent<UIElementComponent>(entity, "UIElement")!;
+      while (stack.length > 0) {
+        const current = stack.pop()!;
+        const { entity, stage } = current;
 
-    // Damage numbers and other transient UI might use manual offsets
-    // Resolve Root Position based on Anchor
-    if (element.parentEntity === null) {
-        const worldAttach = world.getComponent<UIWorldAttachComponent>(entity, "UIWorldAttach");
-        if (worldAttach) {
-            this.resolveWorldPosition(world, element, worldAttach);
+        if (stage === "enter") {
+          if (visited.has(entity)) continue;
+          if (processing.has(entity)) {
+            console.warn(`[UILayoutSystem] Circular dependency detected at entity ${entity}.`);
+            continue;
+          }
+
+          processing.add(entity);
+          stack.push({ entity, stage: "exit" });
+
+          const element = world.getComponent<UIElementComponent>(entity, "UIElement");
+          if (element && element.parentEntity !== null) {
+            stack.push({ entity: element.parentEntity, stage: "enter" });
+          }
         } else {
+          processing.delete(entity);
+          visited.add(entity);
+          order.push(entity);
+        }
+      }
+    }
+
+    // 2. Pre-group children by parent for container layout
+    const childrenByParent = new Map<Entity, Entity[]>();
+    for (const entity of uiEntities) {
+      const element = world.getComponent<UIElementComponent>(entity, "UIElement")!;
+      if (element.parentEntity !== null) {
+        if (!childrenByParent.has(element.parentEntity)) {
+          childrenByParent.set(element.parentEntity, []);
+        }
+        childrenByParent.get(element.parentEntity)!.push(entity);
+      }
+    }
+
+    // 3. Iteratively process layout in topological order
+    for (let i = 0; i < order.length; i++) {
+      const entity = order[i];
+      const element = world.getComponent<UIElementComponent>(entity, "UIElement");
+      if (!element) continue;
+
+      // Check if this element is already laid out by its parent (if it's a container)
+      // Actually, we can just process everything. If it's a root, we use viewport.
+      // If it has a parent, we use parent's computed values.
+      // EXCEPT if parent is a container, the parent should have already computed the child's position.
+
+      const parentEntity = element.parentEntity;
+      let isHandledByContainer = false;
+
+      if (parentEntity !== null) {
+        const parentContainer = world.getComponent<UIContainerComponent>(parentEntity, "UIContainer");
+        if (parentContainer) {
+          // Containers handle their children's positions.
+          // Since we are in topological order, the parent container's layout was already triggered.
+          isHandledByContainer = true;
+        }
+      }
+
+      if (!isHandledByContainer) {
+        if (parentEntity === null) {
+          // Root or World Attached
+          const worldAttach = world.getComponent<UIWorldAttachComponent>(entity, "UIWorldAttach");
+          if (worldAttach) {
+            this.resolveWorldPosition(world, element, worldAttach);
+          } else {
             const resolvedWidth = this.resolveValue(element.width, this.viewportWidth);
             const resolvedHeight = this.resolveValue(element.height, this.viewportHeight);
 
             const anchorPos = this.resolveAnchorPosition(
-                element.anchor,
-                this.viewportWidth,
-                this.viewportHeight,
-                resolvedWidth,
-                resolvedHeight
+              element.anchor,
+              this.viewportWidth,
+              this.viewportHeight,
+              resolvedWidth,
+              resolvedHeight
             );
 
             element.computedWidth = resolvedWidth;
             element.computedHeight = resolvedHeight;
             element.computedX = anchorPos.x + element.offsetX;
             element.computedY = anchorPos.y + element.offsetY;
+          }
+        } else {
+          // Normal child of a non-container UI element
+          const parentElement = world.getComponent<UIElementComponent>(parentEntity, "UIElement");
+          if (parentElement) {
+            element.computedWidth = this.resolveValue(element.width, parentElement.computedWidth);
+            element.computedHeight = this.resolveValue(element.height, parentElement.computedHeight);
+            element.computedX = parentElement.computedX + element.offsetX;
+            element.computedY = parentElement.computedY + element.offsetY;
+          }
         }
-    }
+      }
 
-    const container = world.getComponent<UIContainerComponent>(entity, "UIContainer");
-    if (container) {
+      // If this element is a container, it must layout its direct children NOW.
+      // Even though those children are later in the 'order' array, we set their computedX/Y here.
+      const container = world.getComponent<UIContainerComponent>(entity, "UIContainer");
+      if (container) {
         this.layoutContainerChildren(world, entity, element, container, childrenByParent);
-    } else {
-        const children = childrenByParent.get(entity);
-        if (children) {
-            for (const child of children) {
-                const childElement = world.getComponent<UIElementComponent>(child, "UIElement")!;
-                // Inherit parent position if not set otherwise
-                childElement.computedX = element.computedX + childElement.offsetX;
-                childElement.computedY = element.computedY + childElement.offsetY;
-                childElement.computedWidth = this.resolveValue(childElement.width, element.computedWidth);
-                childElement.computedHeight = this.resolveValue(childElement.height, element.computedHeight);
-                this.layoutElement(world, child, childrenByParent);
-            }
-        }
+      }
     }
   }
 
-  /**
-   * Calcula el layout de los hijos dentro de un contenedor (Flow Layout).
-   *
-   * @remarks
-   * Los hijos se ordenan por su propiedad `zIndex` antes de calcular su posición en el flujo,
-   * asegurando un comportamiento de apilado predecible tanto visual como lógicamente.
-   */
   private layoutContainerChildren(
     world: World,
     parentEntity: Entity,
     parentElement: UIElementComponent,
     container: UIContainerComponent,
-    childrenByParent: Map<Entity | null, Entity[]>
+    childrenByParent: Map<Entity, Entity[]>
   ): void {
     const children = childrenByParent.get(parentEntity);
     if (!children) return;
 
     const sortedChildren = [...children].sort((a, b) => {
-        const elA = world.getComponent<UIElementComponent>(a, "UIElement")!;
-        const elB = world.getComponent<UIElementComponent>(b, "UIElement")!;
-        return elA.zIndex - elB.zIndex;
+      const elA = world.getComponent<UIElementComponent>(a, "UIElement")!;
+      const elB = world.getComponent<UIElementComponent>(b, "UIElement")!;
+      return elA.zIndex - elB.zIndex;
     });
 
     let currentX = parentElement.computedX + parentElement.padding.left;
     let currentY = parentElement.computedY + parentElement.padding.top;
 
-    const availableWidth = parentElement.computedWidth - parentElement.padding.left - parentElement.padding.right;
-    const availableHeight = parentElement.computedHeight - parentElement.padding.top - parentElement.padding.bottom;
+    const availableWidth = Math.max(0, parentElement.computedWidth - parentElement.padding.left - parentElement.padding.right);
+    const availableHeight = Math.max(0, parentElement.computedHeight - parentElement.padding.top - parentElement.padding.bottom);
 
     for (const childEntity of sortedChildren) {
-        const childElement = world.getComponent<UIElementComponent>(childEntity, "UIElement")!;
+      const childElement = world.getComponent<UIElementComponent>(childEntity, "UIElement")!;
 
-        const resolvedWidth = this.resolveValue(childElement.width, availableWidth);
-        const resolvedHeight = this.resolveValue(childElement.height, availableHeight);
+      const resolvedWidth = this.resolveValue(childElement.width, availableWidth);
+      const resolvedHeight = this.resolveValue(childElement.height, availableHeight);
 
-        childElement.computedWidth = resolvedWidth;
-        childElement.computedHeight = resolvedHeight;
+      childElement.computedWidth = resolvedWidth;
+      childElement.computedHeight = resolvedHeight;
 
-        if (container.direction === "horizontal") {
-            childElement.computedX = currentX + childElement.offsetX;
-            childElement.computedY = this.alignInAxis(
-                container.align,
-                currentY,
-                availableHeight,
-                resolvedHeight
-            ) + childElement.offsetY;
+      if (container.direction === "horizontal") {
+        childElement.computedX = currentX + childElement.offsetX;
+        childElement.computedY = this.alignInAxis(
+          container.align,
+          currentY,
+          availableHeight,
+          resolvedHeight
+        ) + childElement.offsetY;
 
-            currentX += resolvedWidth + container.gap;
-        } else {
-            childElement.computedY = currentY + childElement.offsetY;
-            childElement.computedX = this.alignInAxis(
-                container.align,
-                currentX,
-                availableWidth,
-                resolvedWidth
-            ) + childElement.offsetX;
+        currentX += resolvedWidth + container.gap;
+      } else {
+        childElement.computedY = currentY + childElement.offsetY;
+        childElement.computedX = this.alignInAxis(
+          container.align,
+          currentX,
+          availableWidth,
+          resolvedWidth
+        ) + childElement.offsetX;
 
-            currentY += resolvedHeight + container.gap;
-        }
-
-        this.layoutElement(world, childEntity, childrenByParent);
+        currentY += resolvedHeight + container.gap;
+      }
     }
   }
 
   private alignInAxis(align: string, start: number, total: number, size: number): number {
     switch (align) {
-        case "center": return start + (total / 2) - (size / 2);
-        case "end": return start + total - size;
-        case "stretch": return start;
-        case "start":
-        default: return start;
+      case "center": return start + (total / 2) - (size / 2);
+      case "end": return start + total - size;
+      case "stretch": return start;
+      case "start":
+      default: return start;
     }
   }
 
@@ -243,54 +223,41 @@ export class UILayoutSystem extends System {
     return (uiValue.value / 100) * parentSize;
   }
 
-  private resolveAnchorPosition(anchor: UIAnchor, vpW: number, vpH: number, elW: number, elH: number): {x: number, y: number} {
+  private resolveAnchorPosition(anchor: UIAnchor, vpW: number, vpH: number, elW: number, elH: number): { x: number, y: number } {
     switch (anchor) {
-        case "top-left": return { x: 0, y: 0 };
-        case "top-center": return { x: vpW / 2 - elW / 2, y: 0 };
-        case "top-right": return { x: vpW - elW, y: 0 };
-        case "center-left": return { x: 0, y: vpH / 2 - elH / 2 };
-        case "center": return { x: vpW / 2 - elW / 2, y: vpH / 2 - elH / 2 };
-        case "center-right": return { x: vpW - elW, y: vpH / 2 - elH / 2 };
-        case "bottom-left": return { x: 0, y: vpH - elH };
-        case "bottom-center": return { x: vpW / 2 - elW / 2, y: vpH - elH };
-        case "bottom-right": return { x: vpW - elW, y: vpH - elH };
-        default: return { x: 0, y: 0 };
+      case "top-left": return { x: 0, y: 0 };
+      case "top-center": return { x: vpW / 2 - elW / 2, y: 0 };
+      case "top-right": return { x: vpW - elW, y: 0 };
+      case "center-left": return { x: 0, y: vpH / 2 - elH / 2 };
+      case "center": return { x: vpW / 2 - elW / 2, y: vpH / 2 - elH / 2 };
+      case "center-right": return { x: vpW - elW, y: vpH / 2 - elH / 2 };
+      case "bottom-left": return { x: 0, y: vpH - elH };
+      case "bottom-center": return { x: vpW / 2 - elW / 2, y: vpH - elH };
+      case "bottom-right": return { x: vpW - elW, y: vpH - elH };
+      default: return { x: 0, y: 0 };
     }
   }
 
-  /**
-   * Proyecta un elemento de UI en coordenadas de pantalla basándose en una entidad del mundo.
-   *
-   * @param world - El mundo ECS.
-   * @param element - El componente UI a posicionar.
-   * @param attach - Definición del anclaje al mundo.
-   *
-   * @remarks
-   * Intenta leer `worldX/worldY` de `Transform` primero, cayendo a `x/y` si no existen.
-   *
-   * @conceptualRisk [TYPE_UNSAFETY] Usa `any` para acceder a `Transform`, `Position` y `GameState`.
-   * Esto oculta posibles errores si la estructura de estos componentes cambia.
-   */
   private resolveWorldPosition(world: World, element: UIElementComponent, attach: UIWorldAttachComponent): void {
-      const targetTransform = world.getComponent<import("../core/CoreComponents").TransformComponent>(attach.targetEntity, "Transform");
+    const targetTransform = world.getComponent<TransformComponent>(attach.targetEntity, "Transform");
 
-      if (!targetTransform) return;
+    if (!targetTransform) return;
 
-      let screenX = targetTransform.worldX !== undefined ? targetTransform.worldX : targetTransform.x;
-      let screenY = targetTransform.worldY !== undefined ? targetTransform.worldY : targetTransform.y;
+    let screenX = targetTransform.worldX !== undefined ? targetTransform.worldX : targetTransform.x;
+    let screenY = targetTransform.worldY !== undefined ? targetTransform.worldY : targetTransform.y;
 
-      if (attach.useCamera) {
-          const gameState = world.getSingleton<GenericComponent>("GameState");
-          const camera = gameState?.camera as Record<string, number> | undefined;
-          if (camera) {
-              screenX -= camera.x || 0;
-              screenY -= camera.y || 0;
-          }
+    if (attach.useCamera) {
+      const gameState = world.getSingleton<GenericComponent>("GameState");
+      const camera = gameState?.camera as Record<string, number> | undefined;
+      if (camera) {
+        screenX -= camera.x || 0;
+        screenY -= camera.y || 0;
       }
+    }
 
-      element.computedWidth = this.resolveValue(element.width, this.viewportWidth);
-      element.computedHeight = this.resolveValue(element.height, this.viewportHeight);
-      element.computedX = screenX + attach.worldOffsetX - element.computedWidth / 2;
-      element.computedY = screenY + attach.worldOffsetY - element.computedHeight / 2;
+    element.computedWidth = this.resolveValue(element.width, this.viewportWidth);
+    element.computedHeight = this.resolveValue(element.height, this.viewportHeight);
+    element.computedX = screenX + attach.worldOffsetX - element.computedWidth / 2;
+    element.computedY = screenY + attach.worldOffsetY - element.computedHeight / 2;
   }
 }

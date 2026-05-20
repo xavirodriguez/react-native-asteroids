@@ -14,12 +14,12 @@ describe("HierarchySystem Iterative", () => {
   it("should update child transform based on parent", () => {
     const parent = world.createEntity();
     const parentTrans = world.addComponent(parent, {
-      type: "Transform", x: 10, y: 20, rotation: 0, scaleX: 1, scaleY: 1, dirty: true
+      type: "Transform", x: 10, y: 20, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: null, dirty: true
     } as TransformComponent);
 
     const child = world.createEntity();
     const childTrans = world.addComponent(child, {
-      type: "Transform", x: 5, y: 5, rotation: 0, scaleX: 1, scaleY: 1, parent: parent, dirty: true
+      type: "Transform", x: 5, y: 5, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: parent, dirty: true
     } as TransformComponent);
 
     system.update(world, 16.67);
@@ -39,7 +39,7 @@ describe("HierarchySystem Iterative", () => {
     for (let i = 0; i < 10; i++) {
       const next = world.createEntity();
       world.addComponent(next, {
-        type: "Transform", x: 1, y: 1, rotation: 0, scaleX: 1, scaleY: 1, parent: lastEntity, dirty: true
+        type: "Transform", x: 1, y: 1, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: lastEntity, dirty: true
       } as TransformComponent);
       lastEntity = next;
     }
@@ -55,8 +55,8 @@ describe("HierarchySystem Iterative", () => {
     const e1 = world.createEntity();
     const e2 = world.createEntity();
 
-    world.addComponent(e1, { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, parent: e2, dirty: true } as TransformComponent);
-    world.addComponent(e2, { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, parent: e1, dirty: true } as TransformComponent);
+    world.addComponent(e1, { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: e2, dirty: true } as TransformComponent);
+    world.addComponent(e2, { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: e1, dirty: true } as TransformComponent);
 
     const spy = jest.spyOn(console, 'warn').mockImplementation();
 

@@ -84,8 +84,8 @@ export class HierarchySystem extends System {
           stack.push({ entity, stage: 'exit' });
 
           const transform = world.getComponent<TransformComponent>(entity, "Transform");
-          if (transform && transform.parent !== undefined) {
-            stack.push({ entity: transform.parent, stage: 'enter' });
+          if (transform && transform.parentEntity !== null) {
+            stack.push({ entity: transform.parentEntity, stage: 'enter' });
           }
         } else {
           processing.delete(entity);
@@ -102,15 +102,15 @@ export class HierarchySystem extends System {
       if (!transform) continue;
 
       let parentDirty = false;
-      if (transform.parent !== undefined) {
-        parentDirty = this.wasDirty.has(transform.parent);
+      if (transform.parentEntity !== null) {
+        parentDirty = this.wasDirty.has(transform.parentEntity);
       }
 
       const isDirty = transform.dirty || parentDirty;
 
       if (isDirty) {
-        if (transform.parent !== undefined) {
-          const parentTransform = world.getComponent<TransformComponent>(transform.parent, "Transform")!;
+        if (transform.parentEntity !== null) {
+          const parentTransform = world.getComponent<TransformComponent>(transform.parentEntity, "Transform")!;
           const parentMat = this.getMatrixFromTransform(parentTransform, true);
           const localMat = this.getMatrixFromTransform(transform, false);
           const worldMat = this.multiplyMat3(parentMat, localMat);
