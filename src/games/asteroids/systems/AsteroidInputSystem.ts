@@ -3,9 +3,10 @@ import { World } from "../../../engine/core/World";
 import {
   type InputStateComponent,
 } from "../../../engine/core/CoreComponents";
-import { type InputState, type InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
+import { type InputState, type InputComponent } from "../types/AsteroidTypes";
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { InputUtils } from "../../../engine/utils/ComponentUtils";
+import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 
 /**
  * System responsible for processing user input and applying it to the ship's state.
@@ -24,7 +25,7 @@ export class AsteroidInputSystem extends System {
   constructor(
     private bulletPool: BulletPool,
     private particlePool: ParticlePool,
-    private config: typeof GAME_CONFIG = GAME_CONFIG
+    private config?: AsteroidConfig
   ) {
     super();
   }
@@ -52,6 +53,9 @@ export class AsteroidInputSystem extends System {
   }
 
   public update(world: World, _deltaTime: number): void {
+    if (!this.config) {
+        this.config = world.getResource<AsteroidConfig>("GameConfig")!;
+    }
     if (this.isMultiplayer) return; // Inputs handled by React hook in multiplayer
     const ships = world.query("Ship", "Input");
     ships.forEach((entity) => {

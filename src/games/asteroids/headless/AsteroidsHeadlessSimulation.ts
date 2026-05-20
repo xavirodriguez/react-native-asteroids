@@ -19,7 +19,7 @@ import { EventBus } from "../../../engine/core/EventBus";
 import { SpatialGrid } from "../../../engine/physics/utils/SpatialGrid";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { BulletPool, ParticlePool } from "../EntityPool";
-import { GAME_CONFIG } from "../types/AsteroidTypes";
+import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 
 /**
  * Headless simulation for Asteroids, suitable for server-side execution.
@@ -30,8 +30,8 @@ export class AsteroidsHeadlessSimulation {
     private bulletPool: BulletPool;
     private particlePool: ParticlePool;
 
-    constructor(options: { seed: number, config?: typeof GAME_CONFIG }) {
-        const config = options.config || GAME_CONFIG;
+    constructor(options: { seed: number, config?: AsteroidConfig }) {
+        const config = options.config || require("../config/asteroids.json");
         this.world = new World();
         this.eventBus = new EventBus();
         this.bulletPool = new BulletPool();

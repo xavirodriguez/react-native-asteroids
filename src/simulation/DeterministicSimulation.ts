@@ -6,8 +6,9 @@ import { World } from "../engine/core/World";
 import { Entity, TransformComponent, VelocityComponent, RenderComponent, HealthComponent, Collider2DComponent, TTLComponent, BoundaryComponent } from "../engine/types/EngineTypes";
 import { PhysicsUtils } from "../engine/physics/utils/PhysicsUtils";
 import { ShipPhysics } from "../games/asteroids/utils/ShipPhysics";
-import { GAME_CONFIG, type AsteroidComponent, type GameStateComponent, type UfoComponent, type InputComponent } from "../games/asteroids/types/AsteroidTypes";
+import { type AsteroidComponent, type GameStateComponent, type UfoComponent, type InputComponent } from "../games/asteroids/types/AsteroidTypes";
 import { createAsteroid, createParticle, createUfo } from "../games/asteroids/EntityFactory";
+import { AsteroidConfig } from "../games/asteroids/types/AsteroidConfigSchema";
 import { RandomService } from "../engine/utils/RandomService";
 import { EventBus } from "../engine/core/EventBus";
 import { ScreenShakeComponent } from "../engine/types/EngineTypes";
@@ -57,14 +58,14 @@ export class DeterministicSimulation {
     /**
      * Entry point for an individual simulation tick.
      */
-    public static update(world: World, deltaTime: number, ctx: SimulationContext, config: typeof GAME_CONFIG = GAME_CONFIG) {
+    public static update(world: World, deltaTime: number, ctx: SimulationContext, config: AsteroidConfig) {
         this.internalUpdate(world, deltaTime, ctx, config);
     }
 
     /**
      * Internal sequence of simulation phases.
      */
-    private static internalUpdate(world: World, deltaTime: number, ctx: SimulationContext, config: typeof GAME_CONFIG) {
+    private static internalUpdate(world: World, deltaTime: number, ctx: SimulationContext, config: AsteroidConfig) {
         const dtSeconds = deltaTime / 1000;
 
         // 0. Server tick synchronization.
@@ -92,7 +93,7 @@ export class DeterministicSimulation {
         this.updateSpawning(world, ctx, config);
     }
 
-    private static updateUfos(world: World, dtSeconds: number, config: typeof GAME_CONFIG) {
+    private static updateUfos(world: World, dtSeconds: number, config: AsteroidConfig) {
         const ufos = world.query("Ufo", "Transform", "Velocity");
         ufos.forEach((entity) => {
           const ufo = world.getComponent<UfoComponent>(entity, "Ufo");
@@ -103,7 +104,7 @@ export class DeterministicSimulation {
             });
 
             world.mutateComponent(entity, "Transform", (t: TransformComponent) => {
-                t.y = ufo.baseY + Math.sin(ufo.time * GAME_CONFIG.UFO_OSCILLATION_FREQUENCY) * GAME_CONFIG.UFO_OSCILLATION_AMPLITUDE;
+                t.y = ufo.baseY + Math.sin(ufo.time * config.UFO_OSCILLATION_FREQUENCY) * config.UFO_OSCILLATION_AMPLITUDE;
             });
 
             // UFOs that go off-screen horizontally are removed
@@ -115,7 +116,7 @@ export class DeterministicSimulation {
         });
     }
 
-    private static updateShips(world: World, deltaTime: number, ctx: SimulationContext, config: typeof GAME_CONFIG) {
+    private static updateShips(world: World, deltaTime: number, ctx: SimulationContext, config: AsteroidConfig) {
         const ships = world.query("Ship", "Transform", "Velocity", "Render", "Input");
         ships.forEach(entity => {
             const pos = world.getComponent<TransformComponent>(entity, "Transform");
@@ -140,7 +141,7 @@ export class DeterministicSimulation {
         });
     }
 
-    private static integrateMovement(world: World, dtSeconds: number, config: typeof GAME_CONFIG) {
+    private static integrateMovement(world: World, dtSeconds: number, config: AsteroidConfig) {
         const moveables = world.query("Transform", "Velocity");
         moveables.forEach(entity => {
             if (world.hasComponent(entity, "ManualMovement")) return;
@@ -176,7 +177,7 @@ export class DeterministicSimulation {
         });
     }
 
-    private static updateCollisions(world: World, ctx: SimulationContext, deltaTime: number, config: typeof GAME_CONFIG) {
+    private static updateCollisions(world: World, ctx: SimulationContext, deltaTime: number, config: AsteroidConfig) {
         const ships = world.query("Ship", "Health");
         ships.forEach(ship => {
             world.mutateComponent(ship, "Health", (h: HealthComponent) => {
@@ -261,7 +262,7 @@ export class DeterministicSimulation {
         });
     }
 
-    private static handleBulletAsteroidCollision(world: World, bullet: Entity, asteroid: Entity, ctx: SimulationContext, config: typeof GAME_CONFIG) {
+    private static handleBulletAsteroidCollision(world: World, bullet: Entity, asteroid: Entity, ctx: SimulationContext, config: AsteroidConfig) {
         const aPos = world.getComponent<TransformComponent>(asteroid, "Transform")!;
         const asteroidComp = world.getComponent<AsteroidComponent>(asteroid, "Asteroid")!;
         const size = asteroidComp.size;
@@ -280,7 +281,7 @@ export class DeterministicSimulation {
         });
     }
 
-    private static handleShipAsteroidCollision(world: World, ship: Entity, _asteroid: Entity, ctx: SimulationContext, config: typeof GAME_CONFIG) {
+    private static handleShipAsteroidCollision(world: World, ship: Entity, _asteroid: Entity, ctx: SimulationContext, config: AsteroidConfig) {
         let isDead = false;
         world.mutateComponent(ship, "Health", (h: HealthComponent) => {
             h.current--;
@@ -320,7 +321,7 @@ export class DeterministicSimulation {
         world.getCommandBuffer().removeEntity(asteroidEntity);
     }
 
-    private static spawnExplosion(world: World, position: TransformComponent, config: typeof GAME_CONFIG) {
+    private static spawnExplosion(world: World, position: TransformComponent, config: AsteroidConfig) {
         const renderRandom = RandomService.getRenderRandom();
         const EXPLOSION_VELOCITY_SCALE = 160;
 
@@ -337,7 +338,7 @@ export class DeterministicSimulation {
         }
     }
 
-    private static updateSpawning(world: World, ctx: SimulationContext, config: typeof GAME_CONFIG) {
+    private static updateSpawning(world: World, ctx: SimulationContext, config: AsteroidConfig) {
         const asteroids = world.query("Asteroid");
         const gameplayRandom = RandomService.getInstance("gameplay");
 
@@ -347,7 +348,7 @@ export class DeterministicSimulation {
                 if (eventBus) eventBus.emitDeferred("wave:complete");
             }
 
-            for (let i = 0; i < GAME_CONFIG.ASTEROIDS_PER_WAVE; i++) {
+            for (let i = 0; i < config.ASTEROIDS_PER_WAVE; i++) {
                 createAsteroid({
                     world,
                     x: gameplayRandom.nextRange(0, config.SCREEN_WIDTH),

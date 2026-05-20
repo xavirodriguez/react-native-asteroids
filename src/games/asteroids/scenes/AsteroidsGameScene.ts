@@ -12,7 +12,7 @@ import { UfoSystem } from "../systems/UfoSystem";
 import { AsteroidRenderSystem } from "../systems/AsteroidRenderSystem";
 import { IGameStateSystem } from "../types/GameInterfaces";
 import { createShip, spawnAsteroidWave, createGameState } from "../EntityFactory";
-import { GAME_CONFIG } from "../types/AsteroidTypes";
+import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { IAsteroidsGame } from "../types/GameInterfaces";
 import { RandomService } from "../../../engine/utils/RandomService";
@@ -22,7 +22,7 @@ export class AsteroidsGameScene extends Scene {
   private bulletPool: BulletPool;
   private particlePool: ParticlePool;
   private gameStateSystem: IGameStateSystem;
-  private config: typeof GAME_CONFIG;
+  private config: AsteroidConfig;
 
   constructor(
     world: World,
@@ -30,14 +30,14 @@ export class AsteroidsGameScene extends Scene {
     bulletPool: BulletPool,
     particlePool: ParticlePool,
     gameStateSystem: IGameStateSystem,
-    config: typeof GAME_CONFIG = GAME_CONFIG
+    config?: AsteroidConfig
   ) {
     super(world);
     this.game = game;
     this.bulletPool = bulletPool;
     this.particlePool = particlePool;
     this.gameStateSystem = gameStateSystem;
-    this.config = config;
+    this.config = config || world.getResource<AsteroidConfig>("GameConfig")!;
   }
 
   public onEnter(): void {
@@ -53,7 +53,7 @@ export class AsteroidsGameScene extends Scene {
     this.world.addSystem(this.gameStateSystem);
     this.world.addSystem(new UfoSystem());
     this.world.addSystem(new ScreenShakeSystem());
-    this.world.addSystem(new AsteroidRenderSystem());
+    this.world.addSystem(new AsteroidRenderSystem(this.config.TRAIL_MAX_LENGTH));
 
     this.initializeEntities();
   }

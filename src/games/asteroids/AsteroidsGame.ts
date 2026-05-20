@@ -23,7 +23,7 @@ import { ShipControlSystem } from "./systems/ShipControlSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
 import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
 import { DeterministicSimulation } from "../../simulation/DeterministicSimulation";
-import { GAME_CONFIG, type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
+import { type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { MutatorService } from "../../services/MutatorService";
 import { InputFrame } from "../../multiplayer/NetTypes";
 import { InterpolationBuffer } from "../../multiplayer/InterpolationSystem";
@@ -34,6 +34,8 @@ import { Renderer } from "../../engine/rendering/Renderer";
 import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManager";
 import { NetworkSystem } from "../../engine/network/systems/NetworkSystem";
 import { INetworkGame } from "../../engine/network/types/NetworkTypes";
+import { ConfigService } from "../../engine/services/ConfigService";
+import { AsteroidConfigSchema, AsteroidConfig } from "./types/AsteroidConfigSchema";
 
 const __DEV__ = process.env.NODE_ENV !== "production";
 
@@ -53,13 +55,14 @@ export class AsteroidsGame
   private serverEntities = new Map<string, number>();
   private lastProcessedFullStateVersion = -1;
   public readonly gameId = "asteroids";
-  private config: typeof GAME_CONFIG;
+  private config: AsteroidConfig;
 
   constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown>, headless?: boolean } = {}) {
     const seed = config.gameOptions?.seed as number || config.seed;
+    const rawConfig = require("./config/asteroids.json");
     super({
-      pauseKey: GAME_CONFIG.KEYS.PAUSE,
-      restartKey: GAME_CONFIG.KEYS.RESTART,
+      pauseKey: rawConfig.KEYS.PAUSE,
+      restartKey: rawConfig.KEYS.RESTART,
       isMultiplayer: config.isMultiplayer,
       gameOptions: { ...config.gameOptions, seed },
       headless: config.headless
@@ -67,11 +70,16 @@ export class AsteroidsGame
   }
 
   public override async init(): Promise<void> {
+    const rawConfig = require("./config/asteroids.json");
+    const baseConfig = ConfigService.load(this.gameId, AsteroidConfigSchema, rawConfig);
+
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
-      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...GAME_CONFIG })
-      : { ...GAME_CONFIG };
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...baseConfig })
+      : { ...baseConfig };
+
+    this.world.setResource("GameConfig", this.config);
     this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     if (!this.isHeadless) {
@@ -169,7 +177,7 @@ export class AsteroidsGame
    * Internal API used by prediction, reconciliation and replay.
    */
   public runSimulationStep(deltaTime: number, isResimulating: boolean) {
-    DeterministicSimulation.update(this.world, deltaTime, { isResimulating });
+    DeterministicSimulation.update(this.world, deltaTime, { isResimulating }, this.config);
     // Flush structural changes immediately after simulation to ensure world integrity
     // for subsequent ticks during reconciliation or prediction.
     this.world.flush();
@@ -482,11 +490,11 @@ export class AsteroidsGame
     this.world.setResource("AssetLoader", this.assetLoader);
 
     // Configure UnifiedInputSystem bindings
-    this.unifiedInput.bind("thrust", [GAME_CONFIG.KEYS.THRUST]);
-    this.unifiedInput.bind("rotateLeft", [GAME_CONFIG.KEYS.ROTATE_LEFT]);
-    this.unifiedInput.bind("rotateRight", [GAME_CONFIG.KEYS.ROTATE_RIGHT]);
-    this.unifiedInput.bind("shoot", [GAME_CONFIG.KEYS.SHOOT]);
-    this.unifiedInput.bind("hyperspace", [GAME_CONFIG.KEYS.HYPERSPACE]);
+    this.unifiedInput.bind("thrust", [this.config.KEYS.THRUST]);
+    this.unifiedInput.bind("rotateLeft", [this.config.KEYS.ROTATE_LEFT]);
+    this.unifiedInput.bind("rotateRight", [this.config.KEYS.ROTATE_RIGHT]);
+    this.unifiedInput.bind("shoot", [this.config.KEYS.SHOOT]);
+    this.unifiedInput.bind("hyperspace", [this.config.KEYS.HYPERSPACE]);
 
     const inputSys = new AsteroidInputSystem(this.bulletPool, this.particlePool, this.config);
     if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
@@ -521,7 +529,7 @@ export class AsteroidsGame
 
     if (!this.isHeadless) {
       this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
-      this.world.addSystem(new AsteroidRenderSystem()); // Handle trails
+      this.world.addSystem(new AsteroidRenderSystem(this.config.TRAIL_MAX_LENGTH)); // Handle trails
     }
 
     if (this.isMultiplayer) {

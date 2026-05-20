@@ -1,8 +1,9 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
-import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
+import { InputComponent } from "../types/AsteroidTypes";
 import { ShipPhysics } from "../utils/ShipPhysics";
+import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { hapticShoot } from "../../../utils/haptics";
 import { EventBus } from "../../../engine/core/EventBus";
 
@@ -10,11 +11,14 @@ import { EventBus } from "../../../engine/core/EventBus";
  * System that applies physical forces and actions based on the ship's input intent.
  */
 export class ShipControlSystem extends System {
-  constructor(private config: typeof GAME_CONFIG = GAME_CONFIG) {
+  constructor(private config?: AsteroidConfig) {
     super();
   }
 
   public update(world: World, deltaTime: number): void {
+    if (!this.config) {
+        this.config = world.getResource<AsteroidConfig>("GameConfig")!;
+    }
     const ships = world.query("Ship", "Input", "Transform", "Velocity", "Render");
 
     for (let i = 0; i < ships.length; i++) {
