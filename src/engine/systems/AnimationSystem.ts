@@ -68,9 +68,9 @@ export class AnimationSystem extends System {
       if (completed) {
         const anim = world.getComponent<AnimatorComponent>(entity, "Animator");
         const config = anim?.animations[anim.current];
-        if (config?.onComplete) {
-          // config.onComplete should use CommandBuffer or emitDeferred if it does structural changes
-          config.onComplete(entity);
+        if (config?.onCompleteEvent) {
+          const bus = world.getResource<import("../core/EventBus").EventBus>("EventBus");
+          if (bus) bus.emitDeferred(config.onCompleteEvent, { entity });
         }
       }
     }

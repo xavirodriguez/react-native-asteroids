@@ -243,6 +243,10 @@ export const createAsteroid = ({ world, x, y, size, deferred }: { world: World; 
   add({ type: "Asteroid", size } as AsteroidComponent);
   add({ type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
 
+  if (size === "large") {
+      add({ type: "Reclaimable", poolId: "AsteroidPool" } as ReclaimableComponent);
+  }
+
   // Add LootTable based on asteroid size
   const lootTable: import("../../engine/core/CoreComponents").LootTableComponent = {
     type: "LootTable",

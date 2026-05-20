@@ -319,10 +319,6 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
         this.world.update(deltaTime);
       }
 
-      // 4. POST-UPDATE: Transform Propagation (Hierarchy)
-      // Must happen AFTER simulation but BEFORE rendering.
-      this.hierarchySystem.update(activeWorld, deltaTime);
-
       // 5. REPLAY RECORDING
       const currentInput = this.unifiedInput.getInputState();
       if (__DEV__) {
@@ -656,6 +652,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { PhysicsIntegrateSystem, PhysicsSolveSystem } = require("../physics/dynamics/PhysicsSystem2D");
     world.addSystem(new PhysicsIntegrateSystem(), { phase: SystemPhase.Simulation });
+    world.addSystem(this.hierarchySystem, { phase: SystemPhase.Transform });
     world.addSystem(new PhysicsSolveSystem(), { phase: SystemPhase.GameRules });
   }
 

@@ -176,12 +176,12 @@ export class AsteroidsGame
   /**
    * Runs a single deterministic simulation step.
    * Internal API used by prediction, reconciliation and replay.
+   *
+   * @remarks
+   * Migrated to pure ECS pipeline. DeterministicSimulation is deprecated.
    */
-  public runSimulationStep(deltaTime: number, isResimulating: boolean) {
-    DeterministicSimulation.update(this.world, deltaTime, { isResimulating }, this.config);
-    // Flush structural changes immediately after simulation to ensure world integrity
-    // for subsequent ticks during reconciliation or prediction.
-    this.world.flush();
+  public runSimulationStep(deltaTime: number, _isResimulating: boolean) {
+    this.world.update(deltaTime);
   }
 
   /**
