@@ -1,7 +1,6 @@
 import { Component, GenericComponent } from "./Component";
 import { Entity } from "./Entity";
 import { EventBus } from "./EventBus";
-import { StateMachine } from "./StateMachine";
 import type { World } from "./World";
 import type { CollisionManifold } from "../physics/collision/CollisionTypes";
 import { AABB } from "../types/CommonTypes";
@@ -138,7 +137,11 @@ export interface TTLComponent extends Component {
   remaining: number;
   /** [ms] Tiempo total de vida inicial. */
   total: number;
-  onComplete?: () => void;
+  /**
+   * Identificador de evento a disparar al finalizar.
+   * @remarks Reemplaza callbacks para compatibilidad con snapshots.
+   */
+  onCompleteEvent?: string;
 }
 
 import { Shape } from "../physics/shapes/ShapeTypes";
@@ -282,8 +285,11 @@ export interface HealthComponent extends Component {
  */
 export interface ReclaimableComponent extends Component {
   type: "Reclaimable";
-  /** Callback triggered when the entity is removed from the world. */
-  onReclaim: (world: World, entity: Entity) => void;
+  /**
+   * Identificador del pool para reclamación.
+   * @remarks Reemplaza callbacks para compatibilidad con snapshots.
+   */
+  poolId: string;
 }
 
 export type InputAction = string;
@@ -314,7 +320,11 @@ export interface AnimationConfig {
   fps: number;
   frames: number[] | string[];
   loop: boolean;
-  onComplete?: (entity: Entity) => void;
+  /**
+   * Identificador de evento a disparar al finalizar.
+   * @remarks Reemplaza callbacks para compatibilidad con snapshots.
+   */
+  onCompleteEvent?: string;
 }
 
 /**
@@ -334,11 +344,23 @@ export interface AnimatorComponent extends Component {
 
 /**
  * Attaches a Finite State Machine (FSM) to an entity.
+ *
+ * @remarks
+ * Rediseñado como POJO puro para compatibilidad con snapshots y networking.
+ * La lógica vive en el StateMachineRegistry.
  */
 export interface StateMachineComponent extends Component {
   type: "StateMachine";
-  /** The FSM instance managing the entity's logic state. */
-  fsm: StateMachine<string, unknown>;
+  /** Identificador de la definición en el StateMachineRegistry. */
+  machineId: string;
+  /** Estado actual de la máquina. */
+  currentState: string;
+  /** Estado anterior (para transiciones). */
+  previousState: string | null;
+  /** Tiempo transcurrido en el estado actual (ms). */
+  elapsedMs: number;
+  /** Datos persistentes específicos de la instancia. */
+  data: Record<string, unknown>;
 }
 
 /**

@@ -4,7 +4,7 @@ import { InputFrame, ReplayFrame } from "./NetTypes";
 import { GameStateComponent } from "../../src/games/asteroids/types/AsteroidTypes";
 import { RandomService } from "../../src/engine/utils/RandomService";
 import { World } from "../../src/engine/core/World";
-import { AsteroidsHeadlessSimulation } from "../../src/games/asteroids/headless/AsteroidsHeadlessSimulation";
+import { AsteroidsGame } from "../../src/games/asteroids/AsteroidsGame";
 import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "../../src/engine/core/CoreComponents";
 import { createShip, createAsteroid, createGameState } from "../../src/games/asteroids/EntityFactory";
 import { InputComponent, ShipComponent, BulletComponent } from "../../src/games/asteroids/types/AsteroidTypes";
@@ -52,7 +52,7 @@ export class AsteroidsRoom extends Room<any> {
   private stateHistory = new Map<number, import("../../src/engine/types/EngineTypes").WorldSnapshot>();
   private clientAcks = new Map<string, number>(); // sessionId -> lastAckedStateVersion
   private replayFrames: ReplayFrame[] = [];
-  private simulation!: AsteroidsHeadlessSimulation;
+  private gameSimulation!: AsteroidsGame;
   private world!: World;
   private playerEntities = new Map<string, number>();
   private newClients = new Set<string>();
@@ -124,7 +124,7 @@ export class AsteroidsRoom extends Room<any> {
       this.spawnAsteroids(6);
 
       // Listen for game:over to finalize authoritative score if needed
-      this.simulation.getEventBus().on("game:over", () => {
+      this.world.getResource<import("../../src/engine/core/EventBus").EventBus>("EventBus")!.on("game:over", () => {
           this.state.gameOver = true;
           console.log(`[AsteroidsRoom] Game Over. Final Authoritative Score: ${this.state.score}`);
       });
@@ -138,11 +138,14 @@ export class AsteroidsRoom extends Room<any> {
     });
 
     // Initialized Headless ECS simulation
-    this.simulation = new AsteroidsHeadlessSimulation({ seed: this.state.seed });
-    this.world = this.simulation.getWorld();
+    this.gameSimulation = new AsteroidsGame({
+        headless: true,
+        isMultiplayer: true,
+        gameOptions: { seed: this.state.seed }
+    });
+    await this.gameSimulation.init();
+    this.world = this.gameSimulation.getWorld();
 
-    // Initial entities
-    createGameState({ world: this.world, headless: true });
     this.world.addSystem(new InterestManagerSystem());
   }
 
@@ -221,27 +224,19 @@ export class AsteroidsRoom extends Room<any> {
       const entity = this.playerEntities.get(sessionId);
       if (entity === undefined) return;
 
-      const input = this.world.getComponent<InputComponent>(entity, "Input");
       const buffer = this.inputBuffers.get(sessionId);
 
-      if (buffer && input) {
+      if (buffer) {
         const frame = buffer.find(f => f.tick === this.state.serverTick);
         if (frame) {
-            input.rotateLeft = frame.actions.includes("rotateLeft") || (frame.axes?.rotate_left ?? 0) > 0;
-            input.rotateRight = frame.actions.includes("rotateRight") || (frame.axes?.rotate_right ?? 0) > 0;
-            input.thrust = frame.actions.includes("thrust") || (frame.axes?.thrust ?? 0) > 0;
-            input.shoot = frame.actions.includes("shoot");
-            input.hyperspace = frame.actions.includes("hyperspace");
+            this.gameSimulation.applyInputToEntity(entity, frame);
             currentInputs[sessionId] = [frame];
         }
       }
     });
 
     // 2. Run ECS Simulation Step
-    this.simulation.step(this.fixedTimeStep);
-
-    // 2.1 Post-Simulation flushing (already partially handled by step but ensuring safety)
-    this.world.flush();
+    this.gameSimulation.runSimulationStep(this.fixedTimeStep, false);
 
     // 3. Sync ECS World back to Colyseus Schema
     this.syncWorldToSchema();

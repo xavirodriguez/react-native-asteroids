@@ -20,8 +20,11 @@ export interface JuiceAnimation {
   startValue?: number;
   /** Easing function for interpolation. Defaults to "linear". */
   easing?: "linear" | "easeIn" | "easeOut" | "easeInOut" | "elasticOut";
-  /** Optional callback executed when the animation finishes. */
-  onComplete?: (entity: Entity) => void;
+  /**
+   * Identificador de evento a disparar al finalizar.
+   * @remarks Reemplaza callbacks para compatibilidad con snapshots.
+   */
+  onCompleteEvent?: string;
 }
 
 /**
@@ -65,7 +68,7 @@ export class JuiceSystem extends System {
    */
   public update(world: World, deltaTime: number): void {
     const entities = world.query("Juice");
-    const completedCallbacks: Array<{ callback: (entity: Entity) => void, entity: Entity }> = [];
+    const completedEvents: Array<{ event: string, entity: Entity }> = [];
 
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
@@ -119,17 +122,22 @@ export class JuiceSystem extends System {
 
           if (progress >= 1) {
             jComp.animations.splice(j, 1);
-            if (anim.onComplete) {
-                completedCallbacks.push({ callback: anim.onComplete, entity });
+            if (anim.onCompleteEvent) {
+                completedEvents.push({ event: anim.onCompleteEvent, entity });
             }
           }
         }
       });
     }
 
-    // Execute callbacks outside world.mutateComponent
-    for (const item of completedCallbacks) {
-        item.callback(item.entity);
+    // Dispatch events outside world.mutateComponent
+    if (completedEvents.length > 0) {
+      const bus = world.getResource<import("../core/EventBus").EventBus>("EventBus");
+      if (bus) {
+        for (const item of completedEvents) {
+          bus.emitDeferred(item.event, { entity: item.entity });
+        }
+      }
     }
   }
 

@@ -27,19 +27,19 @@ export class TTLSystem extends System {
       });
 
       if (expired) {
-        // Need to fetch again because we need the most recent state
         const ttl = world.getComponent<TTLComponent>(entity, "TTL");
-        
-        // Notify pool before removal if reclaimable
         const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
 
-        // Hooks and lifecycle notifications MUST execute outside world.mutateComponent
-        if (ttl?.onComplete) {
-          ttl.onComplete();
+        if (ttl?.onCompleteEvent) {
+          const bus = world.getResource<import("../core/EventBus").EventBus>("EventBus");
+          if (bus) bus.emitDeferred(ttl.onCompleteEvent, { entity });
         }
 
         if (reclaimable) {
-          reclaimable.onReclaim(world, entity);
+          const pool = world.getResource<any>(reclaimable.poolId);
+          if (pool && typeof pool.release === "function") {
+            pool.release(world, entity);
+          }
         }
 
         world.getCommandBuffer().removeEntity(entity);

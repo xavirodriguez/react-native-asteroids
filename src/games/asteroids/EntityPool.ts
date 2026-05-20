@@ -34,7 +34,7 @@ export class BulletPool extends ProjectilePool<AsteroidBulletComponents, Project
           offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
         },
         ttl: { type: "TTL", remaining: 0, total: 0 },
-        reclaimable: { type: "Reclaimable", onReclaim: () => {} },
+        reclaimable: { type: "Reclaimable", poolId: "BulletPool" },
         bullet: { type: "Bullet" }
       }),
       reset: (data) => {
@@ -79,7 +79,7 @@ export class ParticlePool extends ProjectilePool<ProjectileComponents, Projectil
             layer: 0, mask: 0, offsetX: 0, offsetY: 0, isTrigger: true, enabled: false
         },
         ttl: { type: "TTL", remaining: 0, total: 0 },
-        reclaimable: { type: "Reclaimable", onReclaim: () => {} }
+        reclaimable: { type: "Reclaimable", poolId: "ParticlePool" }
       }),
       reset: (data) => {
         data.position.x = 0; data.position.y = 0;

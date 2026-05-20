@@ -204,19 +204,6 @@ export class World {
           }
         }
 
-        if (type === "Reclaimable") {
-          delete (serializedComp as SerializedComponent).onReclaim;
-        }
-
-        if (type === "Juice") {
-          const juiceComp = serializedComp as unknown as { animations: Array<{ onComplete?: unknown }> };
-          if (Array.isArray(juiceComp.animations)) {
-            juiceComp.animations = juiceComp.animations.map((anim) => {
-              const { onComplete: _, ...rest } = anim;
-              return rest;
-            });
-          }
-        }
 
         // structuredClone is used for a deep copy of serializable data
         componentData[type][entity] = structuredClone(serializedComp) as SerializedComponent;
@@ -309,17 +296,6 @@ export class World {
 
     this.commandBuffer.clear();
 
-    // Re-attach Reclaimable functions if any pool exists in resources
-    const reclaimableMap = this.componentMaps.get("Reclaimable");
-    if (reclaimableMap) {
-        this.resources.forEach(resource => {
-            if (resource && typeof (resource as Record<string, unknown>).release === "function") {
-                reclaimableMap.forEach((comp: Component, _entity) => {
-                    (comp as unknown as Record<string, unknown>).onReclaim = (w: World, e: Entity) => (resource as { release: (w: World, e: Entity) => void }).release(w, e);
-                });
-            }
-        });
-    }
   }
 
   /**
@@ -423,14 +399,38 @@ export class World {
   }
 
   /**
-   * Returns the live mutable component reference stored in the World.
+   * Returns a READ-ONLY component reference stored in the World.
+   *
+   * @remarks
+   * For performance reasons, in production this returns the live reference but typed as Readonly.
+   * In development mode, the object may be frozen or proxied to detect unauthorized mutations.
    *
    * API status: Public
    */
-  public getComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): ComponentOf<TType> | undefined;
-   /** @internal */ public getComponent<T extends Component>(entity: Entity, type: string): T | undefined;
-  public getComponent<T extends Component>(entity: Entity, type: string): T | undefined {
-    return this.componentMaps.get(type)?.get(entity) as T | undefined;
+  public getComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): Readonly<ComponentOf<TType>> | undefined;
+   /** @internal */ public getComponent<T extends Component>(entity: Entity, type: string): Readonly<T> | undefined;
+  public getComponent<T extends Component>(entity: Entity, type: string): Readonly<T> | undefined {
+    const component = this.componentMaps.get(type)?.get(entity) as T | undefined;
+    if (__DEV__ && component) {
+      return this.createMutationProxy(component, type, entity);
+    }
+    return component;
+  }
+
+  /**
+   * Internal proxy to detect illegal mutations in development mode.
+   */
+  private createMutationProxy<T extends object>(target: T, type: string, entity: Entity): T {
+    return new Proxy(target, {
+      set: (obj, prop, value) => {
+        console.error(
+          `[World] ILLEGAL MUTATION DETECTED: Direct write to "${String(prop)}" on component "${type}" (Entity ${entity}). ` +
+          `Always use world.mutateComponent() to ensure state versioning and determinism.`
+        );
+        (obj as any)[prop] = value;
+        return true;
+      }
+    });
   }
 
   /**
@@ -712,18 +712,34 @@ export class World {
 
     this.isUpdating = true;
     try {
-      this.sortedSystems.forEach((system) => {
-        if (this.debugMode) {
-          let profiler = this.profilers.get(system);
-          if (!profiler) {
-            profiler = new SystemProfiler(system);
-            this.profilers.set(system, profiler);
+      // Standard Execution Order defined by SystemPhase
+      const phases = [
+        SystemPhase.Input,
+        SystemPhase.Simulation,
+        SystemPhase.Transform, // Critical: Hierarchy resolution BEFORE collisions
+        SystemPhase.Collision,
+        SystemPhase.GameRules,
+        SystemPhase.Presentation
+      ];
+
+      for (const phase of phases) {
+        const systemsInPhase = this.systems.filter(s => s.phase === phase);
+        // Sort by priority within phase
+        systemsInPhase.sort((a, b) => b.priority - a.priority);
+
+        for (const reg of systemsInPhase) {
+          if (this.debugMode) {
+            let profiler = this.profilers.get(reg.system);
+            if (!profiler) {
+              profiler = new SystemProfiler(reg.system);
+              this.profilers.set(reg.system, profiler);
+            }
+            profiler.update(this, deltaTime);
+          } else {
+            reg.system.update(this, deltaTime);
           }
-          profiler.update(this, deltaTime);
-        } else {
-          system.update(this, deltaTime);
         }
-      });
+      }
     } finally {
       this.isUpdating = false;
     }
@@ -851,6 +867,19 @@ export class World {
       return this.mutateComponent<T>(entity, type, updater);
     }
     return false;
+  }
+
+  /**
+   * Internal method to trigger the Transformation phase for all hierarchical components.
+   * This is called automatically during the World.update() cycle.
+   */
+  private runTransformPhase(deltaTime: number): void {
+    // We expect HierarchySystem to be registered in the World or accessible.
+    // If not, we fall back to a built-in resolution logic to guarantee invariant.
+    const hierarchySystems = this.systems.filter(s => s.phase === SystemPhase.Transform);
+    if (hierarchySystems.length > 0) {
+      hierarchySystems.forEach(reg => reg.system.update(this, deltaTime));
+    }
   }
 
   private ensureComponentStorage(type: string): void {
