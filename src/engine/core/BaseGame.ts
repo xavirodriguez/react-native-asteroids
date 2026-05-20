@@ -213,6 +213,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
+   * Returns the input system aggregator.
+   */
+  public getInputSystem(): UnifiedInputSystem {
+    return this.unifiedInput;
+  }
+
+  /**
    * Configures global semantic audio listeners.
    */
   private _setupAudioListeners(): void {
