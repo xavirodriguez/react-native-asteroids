@@ -546,6 +546,19 @@ export interface PowerUpComponent extends Component {
 }
 
 /**
+ * Specifically tracks a ball in games like Pong.
+ */
+export interface BallComponent extends Component {
+  type: "Ball";
+  /** [unitless] Current spin applied to the ball. */
+  spinFactor: number;
+  /** [unitless] Rate at which spin decreases per frame. */
+  spinDecay: number;
+  /** [ticks] Time remaining for visibility effects. */
+  visibilityTimer?: number;
+}
+
+/**
  * Tracks entity occupancy in the global SpatialGrid.
  * Used for broadphase collision and simulation culling (USSC).
  */
@@ -598,6 +611,7 @@ export type AnyCoreComponent =
   | ModifierStackComponent
   | LootTableComponent
   | PowerUpComponent
+  | BallComponent
   | SpatialNodeComponent
   | HapticRequestComponent;
 

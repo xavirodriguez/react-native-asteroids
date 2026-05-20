@@ -1,11 +1,6 @@
-import { Component } from "../../engine/types/EngineTypes";
+import { Component, BallComponent } from "../../engine/types/EngineTypes";
 
-export interface BallComponent extends Component {
-  type: "Ball";
-  spinFactor: number;
-  spinDecay: number;
-  visibilityTimer?: number;
-}
+export { BallComponent };
 
 export interface PaddleComponent extends Component {
   type: "Paddle";
