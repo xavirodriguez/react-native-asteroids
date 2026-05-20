@@ -47,7 +47,7 @@ export class PongCollisionSystem extends System {
             ballVel.dy *= this.config.BALL_SPEED_INC;
 
             // Spin Logic & Charged Smash
-            world.mutateComponent<BallComponent>(ballEntity, "Ball", ballComp => {
+            world.mutateComponent(ballEntity, "Ball", ballComp => {
                 const spin = Math.max(-1, Math.min(1, paddleComp.lastVelocityY / 1000));
                 if (Math.abs(spin) > 0.3) {
                   ballComp.spinFactor = spin * 0.8;

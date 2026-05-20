@@ -17,7 +17,7 @@ export class PongSpinSystem extends System {
           vel.dy += ball.spinFactor * 500 * dtSeconds;
         });
 
-        world.mutateComponent<BallComponent>(entity, "Ball", b => {
+        world.mutateComponent(entity, "Ball", b => {
           b.spinFactor *= (1 - b.spinDecay);
           if (Math.abs(b.spinFactor) < 0.01) {
             b.spinFactor = 0;
@@ -30,6 +30,7 @@ export class PongSpinSystem extends System {
     paddles.forEach(entity => {
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
 
+      // Paddle no está en el registro central aún
       world.mutateComponent<PaddleComponent>(entity, "Paddle", paddle => {
         paddle.lastVelocityY = (pos.y - paddle.previousY) / dtSeconds;
         paddle.previousY = pos.y;
