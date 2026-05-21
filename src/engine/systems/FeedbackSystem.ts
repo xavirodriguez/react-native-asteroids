@@ -1,7 +1,7 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { HapticRequestComponent } from "../core/CoreComponents";
-import { hapticShoot, hapticDamage, hapticDeath } from "../../utils/haptics";
+import { hapticShoot, hapticDamage, hapticDeath, hapticHyperspace, hapticThrust } from "../../utils/haptics";
 
 /**
  * System responsible for processing haptic feedback requests.
@@ -40,6 +40,12 @@ export class FeedbackSystem extends System {
         break;
       case "death":
         hapticDeath();
+        break;
+      case "hyperspace":
+        hapticHyperspace();
+        break;
+      case "thrust":
+        hapticThrust(true);
         break;
     }
   }

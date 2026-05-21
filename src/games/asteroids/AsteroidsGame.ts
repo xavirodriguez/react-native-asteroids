@@ -23,6 +23,7 @@ import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { ShipControlSystem } from "./systems/ShipControlSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
 import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
+import { FeedbackSystem } from "../../engine/systems/FeedbackSystem";
 import { type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { MutatorService } from "../../services/MutatorService";
 import { InputFrame } from "../../multiplayer/NetTypes";
@@ -130,6 +131,9 @@ export class AsteroidsGame
       inputComp.thrust = input.actions.includes("thrust") || (input.axes?.thrust ?? 0) > 0;
       inputComp.shoot = input.actions.includes("shoot");
       inputComp.hyperspace = input.actions.includes("hyperspace");
+      inputComp.rotationAmount = input.axes?.horizontal ?? 0;
+      if (inputComp.rotateLeft && Math.abs(inputComp.rotationAmount) < 0.1) inputComp.rotationAmount = -1;
+      if (inputComp.rotateRight && Math.abs(inputComp.rotationAmount) < 0.1) inputComp.rotationAmount = 1;
     });
   }
 
@@ -301,6 +305,7 @@ export class AsteroidsGame
 
     if (!this.isHeadless) {
       this.world.addSystem(new ScreenShakeSystem(), { phase: SystemPhase.Presentation });
+      this.world.addSystem(new FeedbackSystem(), { phase: SystemPhase.Presentation });
       this.world.addSystem(new JuiceSystem(), { phase: SystemPhase.Presentation });
       this.world.addSystem(new RenderUpdateSystem(), { phase: SystemPhase.Presentation }); // Handle rotation/hit flash
       this.world.addSystem(new AsteroidRenderSystem(this.config.TRAIL_MAX_LENGTH), { phase: SystemPhase.Presentation }); // Handle trails

@@ -12,6 +12,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { useCallback } from "react";
 import { VirtualJoystick } from "../../components/controls/VirtualJoystick";
 import { ShootButton } from "../../components/ShootButton";
+import { HyperspaceButton } from "../../components/HyperspaceButton";
 import { SeedWidget } from "@/components/SeedWidget";
 import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
 import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
@@ -136,14 +137,44 @@ export default function AsteroidsScreen() {
     game?.getInputSystem().clearAxisOverride("vertical");
   }, [game]);
 
+  const autoFireIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const handleShootPress = useCallback(() => {
     handleMultiplayerInput({ shoot: true });
     game?.getInputSystem().setOverride("shoot", true);
+
+    // Initial shot
+    if (autoFireIntervalRef.current) clearInterval(autoFireIntervalRef.current);
+
+    // Auto-fire logic after 400ms
+    autoFireIntervalRef.current = setTimeout(() => {
+        autoFireIntervalRef.current = setInterval(() => {
+            // Toggle to trigger another shoot action if it's based on state change
+            // or just keep it true if the system handles continuous shooting
+            game?.getInputSystem().setOverride("shoot", true);
+        }, 200); // Shoot every 200ms during auto-fire
+    }, 400);
+
   }, [game, handleMultiplayerInput]);
 
   const handleShootRelease = useCallback(() => {
+    if (autoFireIntervalRef.current) {
+        clearTimeout(autoFireIntervalRef.current);
+        clearInterval(autoFireIntervalRef.current);
+        autoFireIntervalRef.current = null;
+    }
     handleMultiplayerInput({ shoot: false });
     game?.getInputSystem().clearOverride("shoot");
+  }, [game, handleMultiplayerInput]);
+
+  const handleHyperspacePress = useCallback(() => {
+    handleMultiplayerInput({ hyperspace: true });
+    game?.getInputSystem().setOverride("hyperspace", true);
+  }, [game, handleMultiplayerInput]);
+
+  const handleHyperspaceRelease = useCallback(() => {
+    handleMultiplayerInput({ hyperspace: false });
+    game?.getInputSystem().clearOverride("hyperspace");
   }, [game, handleMultiplayerInput]);
 
   if (!game || !isReady) return null;
@@ -210,14 +241,23 @@ export default function AsteroidsScreen() {
         />
 
         <View style={styles.controls} pointerEvents="box-none">
-          <VirtualJoystick
-            onMove={handleJoystickMove}
-            onRelease={handleJoystickRelease}
-          />
-          <ShootButton
-            onPressIn={handleShootPress}
-            onPressOut={handleShootRelease}
-          />
+          <View style={styles.leftControlArea} pointerEvents="box-none">
+            <VirtualJoystick
+              onMove={handleJoystickMove}
+              onRelease={handleJoystickRelease}
+            />
+          </View>
+          <View style={styles.rightControlArea} pointerEvents="box-none">
+            <HyperspaceButton
+                onPressIn={handleHyperspacePress}
+                onPressOut={handleHyperspaceRelease}
+            />
+            <View style={{ height: 20 }} />
+            <ShootButton
+                onPressIn={handleShootPress}
+                onPressOut={handleShootRelease}
+            />
+          </View>
         </View>
 
         <DebugOverlay game={game} />
@@ -408,9 +448,19 @@ const styles = StyleSheet.create({
   controls: {
     ...StyleSheet.absoluteFillObject,
     flexDirection: "row",
-    alignItems: "flex-end",
     justifyContent: "space-between",
-    paddingHorizontal: 40,
+    zIndex: 10,
+  },
+  leftControlArea: {
+    flex: 1,
+    height: "100%",
+  },
+  rightControlArea: {
+    width: 150,
+    height: "100%",
+    justifyContent: "flex-end",
+    alignItems: "center",
     paddingBottom: 40,
+    paddingRight: 20,
   }
 });

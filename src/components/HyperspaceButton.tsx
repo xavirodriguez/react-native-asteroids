@@ -1,17 +1,16 @@
 import React from "react";
 import { StyleSheet, Pressable, Text } from "react-native";
 
-export interface ShootButtonProps {
+export interface HyperspaceButtonProps {
   onPressIn: () => void;
   onPressOut: () => void;
 }
 
 /**
- * Pure UI component for shooting.
- * Circular button, 72x72px, semi-transparent red tint.
- * Uses Pressable for visual feedback and touch handling.
+ * Pure UI component for Hyperspace action.
+ * Smaller than ShootButton, semi-transparent cyan tint.
  */
-export function ShootButton({ onPressIn, onPressOut }: ShootButtonProps) {
+export function HyperspaceButton({ onPressIn, onPressOut }: HyperspaceButtonProps) {
   return (
     <Pressable
       onPressIn={onPressIn}
@@ -20,30 +19,30 @@ export function ShootButton({ onPressIn, onPressOut }: ShootButtonProps) {
         styles.button,
         {
           backgroundColor: pressed
-            ? "rgba(255, 80, 80, 0.7)"
-            : "rgba(255, 80, 80, 0.4)",
+            ? "rgba(0, 255, 255, 0.7)"
+            : "rgba(0, 255, 255, 0.3)",
         },
       ]}
     >
-      <Text style={styles.label}>FIRE</Text>
+        <Text style={styles.label}>H</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     borderWidth: 2,
-    borderColor: "rgba(255, 80, 80, 0.8)",
+    borderColor: "rgba(0, 255, 255, 0.8)",
     alignItems: "center",
     justifyContent: "center",
   },
   label: {
-    color: "#FF8080",
-    fontSize: 16,
+    color: "cyan",
+    fontSize: 18,
     fontWeight: "bold",
     fontFamily: "monospace",
-  },
+  }
 });

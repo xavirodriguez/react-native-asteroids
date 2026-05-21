@@ -35,6 +35,14 @@ export const ShipPhysics = {
     const speedMod = modifiers.find(m => m.type === "speed");
     const rotationMultiplier = speedMod ? 1.5 : 1.0;
 
+    if (input.rotationAmount !== undefined && Math.abs(input.rotationAmount) > 0.01) {
+      world.mutateComponent(entity, "Transform", (t: TransformComponent) => {
+        t.rotation += input.rotationAmount * config.SHIP_ROTATION_SPEED * rotationMultiplier * dtSeconds;
+        t.dirty = true;
+      });
+      return;
+    }
+
     if (input.rotateLeft) {
       world.mutateComponent(entity, "Transform", (t: TransformComponent) => {
         t.rotation -= config.SHIP_ROTATION_SPEED * rotationMultiplier * dtSeconds;
@@ -51,6 +59,9 @@ export const ShipPhysics = {
 
   applyThrust(world: World, entity: number, position: TransformComponent, velocity: VelocityComponent, input: InputComponent, dtSeconds: number, ctx?: SimulationContext, config: AsteroidConfig): void {
     if (input.thrust) {
+      if (!ctx?.isResimulating) {
+          world.getCommandBuffer().addComponent(entity, { type: "HapticRequest", pattern: "thrust" } as any);
+      }
       const modifiers = world.getComponent<ModifierStackComponent>(entity, "ModifierStack")?.modifiers || [];
       const speedMod = modifiers.find(m => m.type === "speed");
       const thrustMultiplier = speedMod ? 2.0 : 1.0;
@@ -107,6 +118,8 @@ export const ShipPhysics = {
       world.mutateComponent(shipEntity, "Input", (i: InputComponent) => {
           i.hyperspaceCooldownRemaining = config.HYPERSPACE_COOLDOWN;
       });
+
+      world.getCommandBuffer().addComponent(shipEntity, { type: "HapticRequest", pattern: "hyperspace" } as any);
 
       const eventBus = world.getResource<EventBus>("EventBus");
       if (eventBus) eventBus.emitDeferred("ship:hyperspace");
