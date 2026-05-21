@@ -367,12 +367,13 @@ export class World {
 
     const type = component.type;
 
-    if (type === "Transform") {
-      const transform = component as unknown as { parentEntity: Entity | null };
-      if (transform.parentEntity !== null) {
-        if (!this.activeEntities.has(transform.parentEntity)) {
-          transform.parentEntity = null;
-        } else if (transform.parentEntity === entity) {
+    // General hierarchical invariant check for any component implementing IHierarchicalComponent
+    const hComp = component as unknown as Partial<import("./CoreComponents").IHierarchicalComponent>;
+    if (hComp.parentEntity !== undefined) {
+      if (hComp.parentEntity !== null) {
+        if (!this.activeEntities.has(hComp.parentEntity)) {
+          hComp.parentEntity = null;
+        } else if (hComp.parentEntity === entity) {
           throw new Error(`Hierarchy Invariant Violation: Entity ${entity} cannot be its own parent.`);
         }
       }

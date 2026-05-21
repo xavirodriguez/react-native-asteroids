@@ -1,5 +1,6 @@
 import { Component, GenericComponent } from "./Component";
 import { Entity } from "./Entity";
+import { World } from "./World";
 import { EventBus } from "./EventBus";
 import type { CollisionManifold } from "../physics/collision/CollisionTypes";
 import { AABB } from "../types/CommonTypes";
