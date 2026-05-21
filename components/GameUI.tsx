@@ -265,9 +265,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "monospace",
     fontWeight: "bold",
-    textShadowColor: "rgba(0, 255, 255, 0.8)",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+    ...(Platform.OS === 'web'
+      ? { textShadow: '0 0 10px rgba(0, 255, 255, 0.8)' }
+      : {
+          textShadowColor: "rgba(0, 255, 255, 0.8)",
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 10,
+        }
+    ),
   },
   gameOverOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -281,9 +286,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontFamily: "monospace",
     marginBottom: 20,
-    textShadowColor: "rgba(255, 0, 0, 0.8)",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
+    ...(Platform.OS === 'web'
+      ? { textShadow: '0 0 20px rgba(255, 0, 0, 0.8)' }
+      : {
+          textShadowColor: "rgba(255, 0, 0, 0.8)",
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 20,
+        }
+    ),
   },
   finalScoreText: {
     color: "#FFFFFF",
@@ -302,10 +312,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     paddingVertical: 18,
     borderRadius: 30,
-    shadowColor: "#00FFDD",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 15,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0 0 15px rgba(0, 255, 221, 0.8)' }
+      : {
+          shadowColor: "#00FFDD",
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.8,
+          shadowRadius: 15,
+        }
+    ),
   },
   restartButtonText: {
     color: "#000000",
@@ -340,8 +355,13 @@ const styles = StyleSheet.create({
     color: "#00FF88",
     fontFamily: "monospace",
     fontWeight: "bold",
-    textShadowColor: "rgba(0, 255, 136, 0.8)",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
+    ...(Platform.OS === 'web'
+      ? { textShadow: '0 0 20px rgba(0, 255, 136, 0.8)' }
+      : {
+          textShadowColor: "rgba(0, 255, 136, 0.8)",
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 20,
+        }
+    ),
   },
 });

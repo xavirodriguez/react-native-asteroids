@@ -40,7 +40,7 @@ export class PongCollisionSystem extends System {
         const paddlePos = world.getComponent<TransformComponent>(paddleEntity, "Transform")!;
         const paddleComp = world.getComponent<PaddleComponent>(paddleEntity, "Paddle")!;
 
-        world.mutateComponent<VelocityComponent>(ballEntity, "Velocity", ballVel => {
+        world.mutateComponent<VelocityComponent>(ballEntity, "Velocity", (ballVel) => {
             // Reverse ball direction on x-axis
             ballVel.dx *= -1;
 
@@ -53,6 +53,7 @@ export class PongCollisionSystem extends System {
             ballVel.dy *= this.config!.BALL_SPEED_INC;
 
             // Spin Logic & Charged Smash
+            let charge = 0;
             world.mutateComponent(ballEntity, "Ball", ballComp => {
                 const spin = Math.max(-1, Math.min(1, paddleComp.lastVelocityY / 1000));
                 if (Math.abs(spin) > 0.3) {
@@ -72,10 +73,7 @@ export class PongCollisionSystem extends System {
                 }
 
                 if (Math.abs(paddleComp.lastVelocityY) > 600) {
-                  const charge = Math.min(1, Math.abs(paddleComp.lastVelocityY) / 1000);
-                  ballVel.dx *= (1 + 0.2 * charge);
-                  Juice.shake(world, charge * 5, 100);
-
+                  charge = Math.min(1, Math.abs(paddleComp.lastVelocityY) / 1000);
                   const eventBus = world.getResource<EventBus>("EventBus");
                   if (eventBus) eventBus.emitDeferred("pong:charged_smash", { chargeLevel: charge });
                 }
@@ -85,6 +83,11 @@ export class PongCollisionSystem extends System {
                   ballComp.visibilityTimer = this.config!.BALL_INVISIBLE_AFTER_HIT_TICKS;
                 }
             });
+
+            if (charge > 0) {
+              ballVel.dx *= (1 + 0.2 * charge);
+              Juice.shake(world, charge * 5, 100);
+            }
         });
 
         // Reposition ball to prevent multiple collisions
