@@ -1,8 +1,8 @@
-import { World } from "../../../../engine/core/World";
+import { createTestWorld } from "../../../../engine/test-utils/createTestWorld";
 import { CollisionSystem2D } from "../../../../engine/physics/collision/CollisionSystem2D";
 import { FlappyBirdCollisionSystem } from "../FlappyBirdCollisionSystem";
 import { createBird, createPipe, createGameState } from "../../EntityFactory";
-import { FlappyBirdState } from "../../types/FlappyBirdTypes";
+import { FlappyBirdState, FLAPPY_CONFIG } from "../../types/FlappyBirdTypes";
 import { IFlappyBirdGame } from "../../types/GameInterfaces";
 
 describe("FlappyBirdCollisionSystem", () => {
@@ -12,7 +12,7 @@ describe("FlappyBirdCollisionSystem", () => {
   let mockGame: IFlappyBirdGame;
 
   beforeEach(() => {
-    world = new World();
+    world = createTestWorld({ resources: { GameConfig: FLAPPY_CONFIG } });
     physicsSystem = new CollisionSystem2D();
     mockGame = {
       getWorld: () => world,

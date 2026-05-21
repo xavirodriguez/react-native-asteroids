@@ -1,12 +1,14 @@
 import { World } from "../../../../engine/core/World";
 import { createParticle } from "../../EntityFactory";
 import { System } from "../../../../engine/core/System";
+import { GAME_CONFIG } from "../../types/AsteroidTypes";
 
 describe("Repro Issue", () => {
     let world: World;
 
     beforeEach(() => {
         world = new World();
+        world.setResource("GameConfig", GAME_CONFIG);
         world.debugMode = true;
     });
 

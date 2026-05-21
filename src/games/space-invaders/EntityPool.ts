@@ -44,7 +44,7 @@ export class PlayerBulletPool extends ProjectilePool<InvaderBulletComponents, Pr
         data.position.x = 0;
         data.position.y = 0;
       },
-      initializer: (data, p) => {
+      initializer: (data, p, world) => {
         const config = world.getResource<SpaceInvadersConfig>("GameConfig");
         data.position.x = p.x;
         data.position.y = p.y;
@@ -101,7 +101,7 @@ export class EnemyBulletPool extends ProjectilePool<InvaderBulletComponents, Pro
         data.position.x = 0;
         data.position.y = 0;
       },
-      initializer: (data, p) => {
+      initializer: (data, p, world) => {
         const config = world.getResource<SpaceInvadersConfig>("GameConfig");
         data.position.x = p.x;
         data.position.y = p.y;

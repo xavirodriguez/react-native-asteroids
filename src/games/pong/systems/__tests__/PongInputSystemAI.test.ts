@@ -1,4 +1,4 @@
-import { World } from "../../../../engine/core/World";
+import { createTestWorld } from "../../../../engine/test-utils/createTestWorld";
 import { PongInputSystem } from "../PongInputSystem";
 import { PongEntityFactory } from "../../EntityFactory";
 import { PONG_CONFIG } from "../../types";
@@ -9,7 +9,7 @@ describe("PongInputSystem AI", () => {
   let system: PongInputSystem;
 
   beforeEach(() => {
-    world = new World();
+    world = createTestWorld({ resources: { GameConfig: PONG_CONFIG } });
     system = new PongInputSystem("medium");
 
     PongEntityFactory.createBall(world);
