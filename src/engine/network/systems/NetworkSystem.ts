@@ -4,8 +4,9 @@ import { NetworkConfig, INetworkGame } from "../types/NetworkTypes";
 import { InputFrame } from "../../../multiplayer/NetTypes";
 import { PredictionBuffer } from "../../../multiplayer/PredictionBuffer";
 import { InterpolationBuffer } from "../../../multiplayer/InterpolationSystem";
-import { WorldSnapshot, TransformComponent, VelocityComponent, VisualOffsetComponent } from "../../types/EngineTypes";
+import { WorldSnapshot, TransformComponent, VelocityComponent, VisualOffsetComponent, TagComponent } from "../../types/EngineTypes";
 import { JuiceSystem } from "../../systems/JuiceSystem";
+import { ShipComponent } from "../../../games/asteroids/types/AsteroidTypes";
 
 /**
  * Unified Network System for Client-Side Prediction, Reconciliation and Interpolation.
@@ -160,10 +161,10 @@ export class NetworkSystem extends System {
       }
 
       if (localSessionId) {
-        const shipMap = authoritativeSnapshot.componentData["Ship"];
+        const shipMap = authoritativeSnapshot.componentData["Ship"] as unknown as Record<string, ShipComponent> | undefined;
         if (shipMap) {
           for (const id in shipMap) {
-            if ((shipMap[id] as any).sessionId === localSessionId) {
+            if (shipMap[id].sessionId === localSessionId) {
               localPlayerId = parseInt(id);
               break;
             }
@@ -208,7 +209,7 @@ export class NetworkSystem extends System {
 
       // Re-apply LocalPlayer tag if missing after restore
       if (localPlayerId !== undefined && !world.hasComponent(localPlayerId, "LocalPlayer")) {
-          world.getCommandBuffer().addComponent(localPlayerId, { type: "LocalPlayer" } as any);
+          world.getCommandBuffer().addComponent(localPlayerId, { type: "Tag", tags: ["LocalPlayer"] } as TagComponent);
       }
 
       // Re-simulate

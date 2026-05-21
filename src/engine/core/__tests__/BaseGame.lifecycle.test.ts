@@ -1,3 +1,8 @@
+jest.mock("@react-native-async-storage/async-storage", () => require("@react-native-async-storage/async-storage/jest/async-storage-mock"));
+jest.mock("expo-audio", () => ({ createAudioPlayer: jest.fn(), setAudioModeAsync: jest.fn() }));
+jest.mock("expo-asset", () => ({ Asset: { fromModule: jest.fn() } }));
+jest.mock("../AudioSystem");
+jest.mock("../../../services/PlayerProfileService", () => ({ PlayerProfileService: { getProfile: jest.fn().mockResolvedValue({ activePalette: "default", xp: 0, level: 1 }) } }));
 import { BaseGame, GameStatus } from "../BaseGame";
 import { World } from "../World";
 

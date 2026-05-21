@@ -1,5 +1,6 @@
 import { SpaceInvadersGame } from "../SpaceInvadersGame";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
+import { TransformComponent } from "../../../engine/types/EngineTypes";
 
 // Mock AudioSystem to avoid loading errors in Node
 jest.mock("../../../engine/core/AudioSystem");
@@ -24,10 +25,10 @@ describe("Space Invaders Integration", () => {
         game = new SpaceInvadersGame({ seed: 12345 });
         await game.init();
         // For Space Invaders, we need to enter the scene to spawn entities
-        const scene = (game as any).sceneManager.getCurrentScene();
+        const scene = (game as unknown as { sceneManager: { getCurrentScene: () => unknown } }).sceneManager.getCurrentScene();
         if (scene) {
             // Scene creates its own world, but game.getWorld() should return it once active
-            await (game as any).sceneManager.processQueue(); // Ensure transitions are processed
+            await (game as unknown as { sceneManager: { processQueue: () => Promise<void> } }).sceneManager.processQueue(); // Ensure transitions are processed
         }
     });
 
@@ -63,14 +64,14 @@ describe("Space Invaders Integration", () => {
         const firstInvader = world.query("Invader", "Transform")[0];
         expect(firstInvader).toBeDefined();
 
-        const initialPos = { ...world.getComponent<any>(firstInvader, "Transform") };
+        const initialPos = { ...world.getComponent<TransformComponent>(firstInvader, "Transform") };
 
         // Run several frames to ensure movement
         for (let i = 0; i < 120; i++) {
             world.update(16.66);
         }
 
-        const finalPos = world.getComponent<any>(firstInvader, "Transform");
-        expect(finalPos.x).not.toBe(initialPos.x);
+        const finalPos = world.getComponent<TransformComponent>(firstInvader, "Transform");
+        expect(finalPos?.x).not.toBe(initialPos.x);
     });
 });

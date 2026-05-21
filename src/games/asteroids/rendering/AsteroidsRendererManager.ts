@@ -1,6 +1,8 @@
 import { Renderer } from "../../../engine/rendering/Renderer";
 import { drawAsteroidsBullet, drawAsteroidsParticle, drawAsteroidsAsteroid, drawAsteroidsShipSprite } from "./AsteroidsCanvasVisuals";
 import { drawShip, drawUfo, drawFlash, drawAsteroidStarField, drawAsteroidCRTEffect, drawAsteroidShipTrailDrawer } from "./AsteroidShapeDrawers";
+import { AsteroidConfig } from "../types/AsteroidConfigSchema";
+import { GameStateComponent } from "../types/AsteroidTypes";
 
 /**
  * Default renderer initialization for Asteroids (Native/Universal).
@@ -21,18 +23,18 @@ export function initializeAsteroidsRenderer(renderer: Renderer<unknown>): void {
 
     // Register custom hooks for Asteroids
     canvasRenderer.addPreRenderHook((ctx: CanvasRenderingContext2D, snapshot: import("../../../engine/rendering/RenderSnapshot").RenderSnapshot, world: import("../../../engine/core/World").World) => {
-      const config = world.getResource<any>("GameConfig");
+      const config = world.getResource<AsteroidConfig>("GameConfig");
       const gameStateEntity = world.query("GameState")[0];
-      const gameState = gameStateEntity ? (world.getComponent<Record<string, unknown>>(gameStateEntity, "GameState")) : null;
+      const gameState = gameStateEntity ? (world.getComponent<GameStateComponent>(gameStateEntity, "GameState")) : null;
       if (gameState?.stars && config) {
         drawAsteroidStarField(ctx, gameState.stars as unknown as import("../../../engine/types/EngineTypes").Star[], config.SCREEN_WIDTH, config.SCREEN_HEIGHT, world, snapshot.elapsedTime);
       }
     });
 
     canvasRenderer.addPostRenderHook((ctx: CanvasRenderingContext2D, _snapshot: unknown, world: import("../../../engine/core/World").World) => {
-      const config = world.getResource<any>("GameConfig");
+      const config = world.getResource<AsteroidConfig>("GameConfig");
       const gameStateEntity = world.query("GameState")[0];
-      const gameState = gameStateEntity ? (world.getComponent<Record<string, unknown>>(gameStateEntity, "GameState")) : null;
+      const gameState = gameStateEntity ? (world.getComponent<GameStateComponent>(gameStateEntity, "GameState")) : null;
       if (gameState?.debugCRT !== false && config) {
         drawAsteroidCRTEffect(ctx, config.SCREEN_WIDTH, config.SCREEN_HEIGHT);
       }

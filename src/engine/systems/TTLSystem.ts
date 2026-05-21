@@ -1,6 +1,7 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { TTLComponent, ReclaimableComponent } from "../types/EngineTypes";
+import { IEntityPool } from "../types/core";
 
 /**
  * System responsible for managing the lifetime (Time To Live) of entities.
@@ -36,7 +37,7 @@ export class TTLSystem extends System {
         }
 
         if (reclaimable) {
-          const pool = world.getResource<any>(reclaimable.poolId);
+          const pool = world.getResource<IEntityPool>(reclaimable.poolId);
           if (pool && typeof pool.release === "function") {
             pool.release(world, entity);
           }

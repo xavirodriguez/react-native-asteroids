@@ -1,5 +1,6 @@
 import { PongGame } from "../PongGame";
 import { PONG_CONFIG, PongState } from "../types";
+import { TransformComponent } from "../../../engine/types/EngineTypes";
 
 // Mock AudioSystem to avoid loading errors in Node
 jest.mock("../../../engine/core/AudioSystem");
@@ -48,7 +49,7 @@ describe("Pong Integration", () => {
         const ball = world.query("Ball", "Transform")[0];
 
         // Move ball out of bounds (left)
-        world.mutateComponent<any>(ball, "Transform", t => {
+        world.mutateComponent<TransformComponent>(ball, "Transform", t => {
             t.x = -10;
         });
 
@@ -59,8 +60,8 @@ describe("Pong Integration", () => {
         expect(gameState?.scoreP2).toBe(1);
 
         // Ball should be reset to center
-        const ballPos = world.getComponent<any>(ball, "Transform");
-        expect(ballPos.x).toBe(PONG_CONFIG.WIDTH / 2);
+        const ballPos = world.getComponent<TransformComponent>(ball, "Transform");
+        expect(ballPos?.x).toBe(PONG_CONFIG.WIDTH / 2);
     });
 
     test("should reach game over when winning score is reached", () => {
@@ -73,7 +74,7 @@ describe("Pong Integration", () => {
         });
 
         // Move ball out of bounds (right)
-        world.mutateComponent<any>(ball, "Transform", t => {
+        world.mutateComponent<TransformComponent>(ball, "Transform", t => {
             t.x = PONG_CONFIG.WIDTH + 10;
         });
 

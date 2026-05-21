@@ -56,7 +56,7 @@ export class RenderSnapshotProvider {
 
         for (let i = 0; i < shakeEntities.length; i++) {
             const shake = world.getComponent<import("../core/CoreComponents").ScreenShakeComponent>(shakeEntities[i], "ScreenShake")!;
-            if (shake.remaining > 0 || (shake as any).duration > 0) {
+            if (shake.remaining > 0 || (shake.duration as number) > 0) {
                 shakeX += (renderRandom.next() - 0.5) * shake.intensity;
                 shakeY += (renderRandom.next() - 0.5) * shake.intensity;
             }

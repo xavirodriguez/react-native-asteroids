@@ -3,15 +3,15 @@ import { AsteroidsGameScene } from "../AsteroidsGameScene";
 import { AsteroidInputSystem } from "../../systems/AsteroidInputSystem";
 import { BulletPool, ParticlePool } from "../../EntityPool";
 import { GAME_CONFIG } from "../../types/AsteroidTypes";
+import { IAsteroidsGame, IGameStateSystem } from "../../types/GameInterfaces";
 
 describe("AsteroidsGameScene Config Propagation", () => {
     it("should pass config to AsteroidInputSystem", () => {
         const world = new World();
-        world.setResource("GameConfig", GAME_CONFIG);
-        const mockGame: any = { getSeed: () => 12345 };
+        const mockGame = { getSeed: () => 12345 } as unknown as IAsteroidsGame;
         const bulletPool = new BulletPool();
         const particlePool = new ParticlePool();
-        const mockGameStateSystem: any = { update: jest.fn() };
+        const mockGameStateSystem = { update: jest.fn() } as unknown as IGameStateSystem;
 
         const customConfig = { ...GAME_CONFIG, BULLET_SPEED: 999 };
 
@@ -28,7 +28,7 @@ describe("AsteroidsGameScene Config Propagation", () => {
 
         const inputSystem = world.systemsList.find(s => s instanceof AsteroidInputSystem) as AsteroidInputSystem;
         expect(inputSystem).toBeDefined();
-        // Since config is private in AsteroidInputSystem, we check it via any
-        expect((inputSystem as any).config.BULLET_SPEED).toBe(999);
+        // Since config is private in AsteroidInputSystem, we check it via unknown cast
+        expect((inputSystem as unknown as { config: { BULLET_SPEED: number } }).config.BULLET_SPEED).toBe(999);
     });
 });

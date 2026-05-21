@@ -1,4 +1,5 @@
 import { AsteroidsGame } from "../AsteroidsGame";
+import { TransformComponent } from "../../../engine/types/EngineTypes";
 
 // Mock services that use AsyncStorage or native modules
 jest.mock("../../../services/MutatorService", () => ({
@@ -48,8 +49,7 @@ describe("Asteroids Headless Mode", () => {
 
         const world = game.getWorld();
         const ship = world.query("Ship", "Transform")[0];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const initialPos = { ...world.getComponent<any>(ship, "Transform") };
+        const initialPos = { ...world.getComponent<TransformComponent>(ship, "Transform") };
 
         // Apply thrust via input
         game.applyInputToEntity(ship, {
@@ -65,9 +65,8 @@ describe("Asteroids Headless Mode", () => {
             game.runSimulationStep(16.66, false);
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const finalPos = world.getComponent<any>(ship, "Transform");
-        expect(finalPos.x !== initialPos.x || finalPos.y !== initialPos.y).toBe(true);
+        const finalPos = world.getComponent<TransformComponent>(ship, "Transform");
+        expect((finalPos?.x ?? 0) !== initialPos.x || (finalPos?.y ?? 0) !== initialPos.y).toBe(true);
 
         game.destroy();
     });
