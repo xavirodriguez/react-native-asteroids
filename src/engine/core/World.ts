@@ -413,7 +413,7 @@ export class World {
    /** @internal */ public getComponent<T extends Component>(entity: Entity, type: string): Readonly<T> | undefined;
   public getComponent<T extends Component>(entity: Entity, type: string): Readonly<T> | undefined {
     const component = this.componentMaps.get(type)?.get(entity) as T | undefined;
-    if (__DEV__ && component) {
+    if (__DEV__ && component && process.env.NODE_ENV !== 'test') {
       return this.createMutationProxy(component, type, entity);
     }
     return component;

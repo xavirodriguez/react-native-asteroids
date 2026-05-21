@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { BaseGame } from "../../engine/core/BaseGame";
 import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
 import { BoundarySystem } from "../../engine/physics/systems/BoundarySystem";

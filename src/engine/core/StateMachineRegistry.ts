@@ -25,7 +25,7 @@ export interface StateMachineDefinition<TState extends string, TContext> {
  */
 export class StateMachineRegistry {
     private static instance: StateMachineRegistry;
-    private definitions = new Map<string, StateMachineDefinition<string, any>>();
+    private definitions = new Map<string, StateMachineDefinition<string, unknown>>();
 
     public static getInstance(): StateMachineRegistry {
         if (!this.instance) this.instance = new StateMachineRegistry();
@@ -33,10 +33,10 @@ export class StateMachineRegistry {
     }
 
     public register<TState extends string, TContext>(definition: StateMachineDefinition<TState, TContext>): void {
-        this.definitions.set(definition.id, definition as any);
+        this.definitions.set(definition.id, definition as unknown as StateMachineDefinition<string, unknown>);
     }
 
-    public getDefinition(id: string): StateMachineDefinition<string, any> | undefined {
+    public getDefinition(id: string): StateMachineDefinition<string, unknown> | undefined {
         return this.definitions.get(id);
     }
 }

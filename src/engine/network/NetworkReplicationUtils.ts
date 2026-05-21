@@ -22,7 +22,7 @@ export class NetworkReplicationUtils {
                 }
                 for (const type in payload.components) {
                     if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
-                    snapshot.componentData[type][entityId] = structuredClone(payload.components[type]) as any;
+                    snapshot.componentData[type][entityId] = structuredClone(payload.components[type]) as import("../types/EngineTypes").SerializedComponent;
                 }
             });
         }
@@ -32,7 +32,7 @@ export class NetworkReplicationUtils {
                 const entityId = parseInt(payload.entityId);
                 for (const type in payload.components) {
                     if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
-                    snapshot.componentData[type][entityId] = structuredClone(payload.components[type]) as any;
+                    snapshot.componentData[type][entityId] = structuredClone(payload.components[type]) as import("../types/EngineTypes").SerializedComponent;
                 }
             });
         }
@@ -58,7 +58,7 @@ export class NetworkReplicationUtils {
         const entities = world.query(componentType);
         return entities.find(e => {
             const comp = world.getComponent(e, componentType);
-            return comp && (comp as any).sessionId === sessionId;
+            return comp && (comp as unknown as { sessionId?: string }).sessionId === sessionId;
         });
     }
 }

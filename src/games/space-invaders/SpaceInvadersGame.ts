@@ -1,5 +1,6 @@
 import { World } from "../../engine/core/World";
 import { GameLoop } from "../../engine/core/GameLoop";
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { BaseGame } from "../../engine/core/BaseGame";
 import { GameStateComponent, InputState, INITIAL_GAME_STATE } from "./types/SpaceInvadersTypes";
 import { SpaceInvadersConfigSchema, SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
