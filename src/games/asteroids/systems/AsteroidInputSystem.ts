@@ -59,10 +59,9 @@ export class AsteroidInputSystem extends System {
     if (this.isMultiplayer) return; // Inputs handled by React hook in multiplayer
     const ships = world.query("Ship", "Input");
     ships.forEach((entity) => {
-      const input = world.getComponent<InputComponent>(entity, "Input");
-      if (input) {
+      world.mutateComponent<InputComponent>(entity, "Input", (input) => {
         this.updateShipInputState({ world, input });
-      }
+      });
     });
   }
 
@@ -81,9 +80,15 @@ export class AsteroidInputSystem extends System {
       const horizontal = InputUtils.getAxis(inputState, "horizontal");
       const vertical = InputUtils.getAxis(inputState, "vertical");
 
+      input.rotationAmount = horizontal;
+
       if (horizontal < -0.35) input.rotateLeft = true;
       if (horizontal > 0.35) input.rotateRight = true;
       if (vertical < -0.25) input.thrust = true;
+
+      // Ensure rotationAmount is set even if only buttons are used
+      if (input.rotateLeft && Math.abs(input.rotationAmount) < 0.1) input.rotationAmount = -1;
+      if (input.rotateRight && Math.abs(input.rotationAmount) < 0.1) input.rotationAmount = 1;
     }
   }
 

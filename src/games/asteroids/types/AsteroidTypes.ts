@@ -7,6 +7,7 @@ export interface InputState {
   thrust: boolean;
   rotateLeft: boolean;
   rotateRight: boolean;
+  rotationAmount: number; // -1 to 1 for analog rotation
   shoot: boolean;
   hyperspace: boolean;
   [key: string]: unknown;

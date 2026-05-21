@@ -607,7 +607,7 @@ export interface SpatialNodeComponent extends Component {
  */
 export interface HapticRequestComponent extends Component {
   type: "HapticRequest";
-  pattern: "shoot" | "damage" | "death";
+  pattern: "shoot" | "damage" | "death" | "hyperspace" | "thrust";
   intensity?: number;
 }
 
