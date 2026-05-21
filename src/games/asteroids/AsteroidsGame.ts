@@ -22,7 +22,6 @@ import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { ShipControlSystem } from "./systems/ShipControlSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
 import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
-import { DeterministicSimulation } from "../../simulation/DeterministicSimulation";
 import { type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { MutatorService } from "../../services/MutatorService";
 import { InputFrame } from "../../multiplayer/NetTypes";
@@ -37,6 +36,7 @@ import { INetworkGame } from "../../engine/network/types/NetworkTypes";
 import { ConfigService } from "../../engine/services/ConfigService";
 import { NetworkReplicationUtils } from "../../engine/network/NetworkReplicationUtils";
 import { AsteroidConfigSchema, AsteroidConfig } from "./types/AsteroidConfigSchema";
+import { SystemPhase } from "../../engine/core/System";
 
 const __DEV__ = process.env.NODE_ENV !== "production";
 
@@ -254,232 +254,6 @@ export class AsteroidsGame
     this.networkSystem.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
   }
 
-  private applyDeltaToSnapshot(snapshot: import("../../engine/types/EngineTypes").WorldSnapshot, delta: import("../../engine/network/types/ReplicationTypes").DeltaPacket & import("../../engine/types/EngineTypes").WorldSnapshot) {
-    const entitySet = new Set(snapshot.entities);
-
-    if (delta.created || delta.updated || delta.removed) {
-      // DeltaPacket format (Iteration 3+)
-      if (delta.created) {
-        delta.created.forEach((payload) => {
-          const entityId = parseInt(payload.entityId);
-          if (!entitySet.has(entityId)) {
-            entitySet.add(entityId);
-            snapshot.entities.push(entityId);
-          }
-          for (const type in payload.components) {
-            if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
-            const sourceComp = payload.components[type];
-            // CRITICAL: Clone component from delta to prevent aliasing with the network packet
-            snapshot.componentData[type][entityId] = structuredClone(sourceComp);
-            if (__DEV__) {
-              if (snapshot.componentData[type][entityId] === sourceComp) {
-                console.warn(`[AsteroidsGame] applyDeltaToSnapshot (created): Aliasing detected for type ${type}`);
-              }
-            }
-          }
-        });
-      }
-      if (delta.updated) {
-        delta.updated.forEach((payload) => {
-          const entityId = parseInt(payload.entityId);
-          for (const type in payload.components) {
-            if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
-            const sourceComp = payload.components[type];
-            // CRITICAL: Clone component from delta to prevent aliasing
-            snapshot.componentData[type][entityId] = structuredClone(sourceComp);
-            if (__DEV__) {
-              if (snapshot.componentData[type][entityId] === sourceComp) {
-                console.warn(`[AsteroidsGame] applyDeltaToSnapshot (updated): Aliasing detected for type ${type}`);
-              }
-            }
-          }
-        });
-      }
-      if (delta.removed) {
-        delta.removed.forEach((entityIdStr: string) => {
-          const entityId = parseInt(entityIdStr);
-          entitySet.delete(entityId);
-          for (const type in snapshot.componentData) {
-            delete snapshot.componentData[type][entityId];
-          }
-        });
-        // Optimize: Filter entities in a single pass instead of per-entity splice
-        snapshot.entities = snapshot.entities.filter(id => entitySet.has(id));
-      }
-      snapshot.entities.sort((a, b) => a - b);
-    } else if (delta.componentData) {
-      // Handle partial WorldSnapshot format (used in 'interest' mode or older delta)
-      const componentData = delta.componentData;
-      let entitiesAdded = false;
-      for (const type in componentData) {
-        if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
-        for (const entityIdStr in componentData[type]) {
-          const entityId = parseInt(entityIdStr);
-          const component = componentData[type][entityId];
-
-          if (!entitySet.has(entityId)) {
-            entitySet.add(entityId);
-            snapshot.entities.push(entityId);
-            entitiesAdded = true;
-          }
-
-          // CRITICAL: Clone component from delta to prevent aliasing
-          snapshot.componentData[type][entityId] = structuredClone(component);
-          if (__DEV__) {
-            if (snapshot.componentData[type][entityId] === component) {
-              console.warn(`[AsteroidsGame] applyDeltaToSnapshot (partial): Aliasing detected for type ${type}`);
-            }
-          }
-        }
-      }
-      if (entitiesAdded) snapshot.entities.sort((a, b) => a - b);
-    }
-
-    if (delta.stateVersion !== undefined) {
-      snapshot.stateVersion = delta.stateVersion;
-    }
-  }
-
-  private performReconciliation(serverTick: number, authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot, localSessionId?: string) {
-    const predicted = this.predictionBuffer.getAt(serverTick);
-
-    // Record the authoritative state for this tick to prevent redundant rollbacks
-    this.setStateHistory(serverTick, authoritativeSnapshot);
-
-    let needsRollback = false;
-    let localPlayerId: number | undefined;
-
-    if (!predicted) {
-      needsRollback = true;
-    } else {
-      if (predicted.entities.length !== authoritativeSnapshot.entities.length) {
-        needsRollback = true;
-      } else if (localSessionId) {
-        const shipMap = predicted.componentData["Ship"];
-        if (shipMap) {
-          for (const id in shipMap) {
-            if (shipMap[id].sessionId === localSessionId) {
-              localPlayerId = parseInt(id);
-              break;
-            }
-          }
-        }
-
-        if (localPlayerId !== undefined) {
-          const aPos = authoritativeSnapshot.componentData["Transform"]?.[localPlayerId];
-          if (!predicted || !aPos ||
-              Math.abs(predicted.state.x - aPos.x) > 0.1 ||
-              Math.abs(predicted.state.y - aPos.y) > 0.1 ||
-              Math.abs((predicted.state.angle ?? 0) - (aPos.rotation ?? 0)) > 0.01) {
-            needsRollback = true;
-          }
-        }
-      }
-    }
-
-    if (needsRollback) {
-      // Before restoring, capture current predicted visuals for smoothing
-      const visualMismatches = new Map<number, { dx: number, dy: number }>();
-      if (localPlayerId !== undefined) {
-        const currentTrans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(localPlayerId, "Transform");
-        if (currentTrans) {
-          visualMismatches.set(localPlayerId, { dx: currentTrans.x, dy: currentTrans.y });
-        }
-      }
-
-      this.world.restore(authoritativeSnapshot);
-
-      // Save authoritative state for the local player to prediction buffer to prevent redundant rollbacks
-      if (localPlayerId !== undefined && localSessionId) {
-          const aPos = authoritativeSnapshot.componentData["Transform"]?.[localPlayerId];
-          const aVel = authoritativeSnapshot.componentData["Velocity"]?.[localPlayerId];
-          if (aPos && aVel) {
-              this.predictionBuffer.save({
-                  tick: serverTick,
-                  entityId: localPlayerId.toString(),
-                  state: { x: aPos.x, y: aPos.y, vx: aVel.dx, vy: aVel.dy, angle: aPos.rotation }
-              });
-          }
-      }
-
-      // Re-apply LocalPlayer tag
-      let localPlayerEntity: number | undefined;
-      if (localSessionId) {
-        const ships = this.world.query("Ship");
-        localPlayerEntity = ships.find(e => {
-          const ship = this.world.getComponent<import("./types/AsteroidTypes").ShipComponent>(e, "Ship");
-          return ship && ship.sessionId === localSessionId;
-        });
-        if (localPlayerEntity !== undefined) {
-          this.world.getCommandBuffer().addComponent(localPlayerEntity, { type: "LocalPlayer" } as import("../../engine/core/Component").Component);
-        }
-      }
-
-      // Re-simulate
-      this.inputHistory
-        .filter(input => input.tick > serverTick)
-        .forEach(input => {
-          if (localPlayerEntity !== undefined) {
-            this.applyInputToEntity(localPlayerEntity, input);
-          }
-          this.runSimulationStep(16.66, true);
-
-          // Re-save prediction after re-simulation
-          const lp_resim = this.world.query("LocalPlayer")[0];
-          if (lp_resim !== undefined) {
-            const trans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(lp_resim, "Transform");
-            const vel = this.world.getComponent<import("../../engine/types/EngineTypes").VelocityComponent>(lp_resim, "Velocity");
-            if (trans && vel) {
-              this.predictionBuffer.save({
-                tick: input.tick,
-                entityId: lp_resim.toString(),
-                state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation }
-              });
-            }
-          }
-
-          this.setStateHistory(input.tick, this.world.snapshot());
-        });
-
-      // Apply Visual Smoothing (Smooth Error Correction)
-      visualMismatches.forEach((prevPos, id) => {
-        const newTrans = this.world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(id, "Transform");
-        if (newTrans) {
-          const errX = prevPos.dx - newTrans.x;
-          const errY = prevPos.dy - newTrans.y;
-
-          // Apply the error to VisualOffset and LERP it back in JuiceSystem
-          const visualOffset = {
-            type: "VisualOffset",
-            x: errX,
-            y: errY,
-            rotation: 0,
-            scaleX: 0,
-            scaleY: 0
-          } as import("../../engine/core/CoreComponents").VisualOffsetComponent;
-
-          this.world.getCommandBuffer().addComponent(id, visualOffset);
-
-          JuiceSystem.add(this.world, id, {
-            property: "x",
-            target: 0,
-            duration: 150,
-            easing: "easeOut"
-          });
-          JuiceSystem.add(this.world, id, {
-            property: "y",
-            target: 0,
-            duration: 150,
-            easing: "easeOut"
-          });
-        }
-      });
-    }
-
-    this.inputHistory = this.inputHistory.filter(i => i.tick > serverTick);
-    this.predictionBuffer.clearBefore(serverTick);
-  }
-
   protected registerSystems(): void {
     // Initialize pools here because super() calls this before the constructor finishes
     if (!this.bulletPool) this.bulletPool = new BulletPool();
@@ -505,39 +279,36 @@ export class AsteroidsGame
     this.gameStateSystem = new AsteroidGameStateSystem(this);
     const comboSys = new AsteroidComboSystem();
 
-    this.world.addSystem(this.unifiedInput);
-    this.world.addSystem(inputSys);
-    this.world.addSystem(new ShipControlSystem(this.config));
-    this.world.addSystem(new MovementSystem());
-    this.world.addSystem(new BoundarySystem());
-    this.world.addSystem(new FrictionSystem());
-    this.world.addSystem(new CollisionSystem2D());
-    this.world.addSystem(new AsteroidCollisionSystem(this.particlePool));
-    this.world.addSystem(comboSys);
-    this.world.addSystem(new TTLSystem());
-    this.world.addSystem(this.gameStateSystem);
-    this.world.addSystem(new UfoSystem());
+    this.world.addSystem(this.unifiedInput, { phase: SystemPhase.Input });
+    this.world.addSystem(inputSys, { phase: SystemPhase.Simulation });
+    this.world.addSystem(new ShipControlSystem(this.config), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new BoundarySystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new FrictionSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new CollisionSystem2D(), { phase: SystemPhase.Collision });
+    this.world.addSystem(new AsteroidCollisionSystem(this.particlePool), { phase: SystemPhase.GameRules });
+    this.world.addSystem(comboSys, { phase: SystemPhase.Simulation });
+    this.world.addSystem(new TTLSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(this.gameStateSystem, { phase: SystemPhase.GameRules });
+    this.world.addSystem(new UfoSystem(), { phase: SystemPhase.Simulation });
 
-    if (!this.isHeadless) {
-      this.world.addSystem(new ScreenShakeSystem());
-      this.world.addSystem(new JuiceSystem());
-    }
-
-    this.world.addSystem(new SpatialPartitioningSystem());
-    this.world.addSystem(new LootSystem());
-    this.world.addSystem(new PowerUpSystem());
-    this.world.addSystem(new ModifierSystem());
+    this.world.addSystem(new SpatialPartitioningSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new LootSystem(), { phase: SystemPhase.GameRules });
+    this.world.addSystem(new PowerUpSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new ModifierSystem(), { phase: SystemPhase.Simulation });
 
     const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
-    this.world.addSystem(new MutatorSystem(activeMutators));
+    this.world.addSystem(new MutatorSystem(activeMutators), { phase: SystemPhase.Simulation });
 
     if (!this.isHeadless) {
-      this.world.addSystem(new RenderUpdateSystem()); // Handle rotation/hit flash
-      this.world.addSystem(new AsteroidRenderSystem(this.config.TRAIL_MAX_LENGTH)); // Handle trails
+      this.world.addSystem(new ScreenShakeSystem(), { phase: SystemPhase.Presentation });
+      this.world.addSystem(new JuiceSystem(), { phase: SystemPhase.Presentation });
+      this.world.addSystem(new RenderUpdateSystem(), { phase: SystemPhase.Presentation }); // Handle rotation/hit flash
+      this.world.addSystem(new AsteroidRenderSystem(this.config.TRAIL_MAX_LENGTH), { phase: SystemPhase.Presentation }); // Handle trails
     }
 
     if (this.isMultiplayer) {
-      this.world.addSystem(this.networkSystem);
+      this.world.addSystem(this.networkSystem, { phase: SystemPhase.Presentation });
     }
   }
 

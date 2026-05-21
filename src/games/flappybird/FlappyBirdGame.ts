@@ -1,13 +1,13 @@
-import { World } from "../../engine/core/World";
-import { GameLoop } from "../../engine/core/GameLoop";
 import { BaseGame } from "../../engine/core/BaseGame";
-import { FlappyBirdState, FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE } from "./types/FlappyBirdTypes";
-import { IFlappyBirdGame } from "./types/GameInterfaces";
+import { GameStateComponent, FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE, FlappyBirdState } from "./types/FlappyBirdTypes";
+import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
 import { FlappyBirdInputSystem } from "./systems/FlappyBirdInputSystem";
 import { FlappyBirdCollisionSystem } from "./systems/FlappyBirdCollisionSystem";
-import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
-import { FlappyBirdRenderSystem } from "./systems/FlappyBirdRenderSystem";
 import { FlappyBirdGlideSystem } from "./systems/FlappyBirdGlideSystem";
+import { FlappyBirdRenderSystem } from "./systems/FlappyBirdRenderSystem";
+import { IFlappyBirdGame } from "./types/GameInterfaces";
+import { GameLoop } from "../../engine/core/GameLoop";
+import { World } from "../../engine/core/World";
 import { InputBufferSystem } from "../../engine/systems/InputBufferSystem";
 import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
 import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
@@ -27,6 +27,7 @@ import {
 import { MutatorService } from "../../services/MutatorService";
 import { MutatorSystem } from "../../engine/systems/MutatorSystem";
 import { InterpolationBuffer } from "../../multiplayer/InterpolationSystem";
+import { SystemPhase } from "../../engine/core/System";
 
 /**
  * Controlador principal del juego Flappy Bird.
@@ -91,19 +92,21 @@ export class FlappyBirdGame
     const inputSys = new FlappyBirdInputSystem(this.config);
     if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
 
-    this.world.addSystem(this.unifiedInput);
-    this.world.addSystem(new InputBufferSystem());
-    this.world.addSystem(inputSys);
-    this.world.addSystem(new FlappyBirdGlideSystem());
-    this.world.addSystem(new MovementSystem());
-    this.world.addSystem(new JuiceSystem());
-    this.world.addSystem(new CollisionSystem2D());
-    this.world.addSystem(new FlappyBirdCollisionSystem(this));
-    this.world.addSystem(this.gameStateSystem);
+    this.world.addSystem(this.unifiedInput, { phase: SystemPhase.Input });
+    this.world.addSystem(new InputBufferSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(inputSys, { phase: SystemPhase.Simulation });
+    this.world.addSystem(new FlappyBirdGlideSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new CollisionSystem2D(), { phase: SystemPhase.Collision });
+    this.world.addSystem(new FlappyBirdCollisionSystem(this), { phase: SystemPhase.GameRules });
+    this.world.addSystem(this.gameStateSystem, { phase: SystemPhase.GameRules });
 
     const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
-    this.world.addSystem(new MutatorSystem(activeMutators));
-    this.world.addSystem(new FlappyBirdRenderSystem());
+    this.world.addSystem(new MutatorSystem(activeMutators), { phase: SystemPhase.Simulation });
+
+    // Visual / Presentation
+    this.world.addSystem(new JuiceSystem(), { phase: SystemPhase.Presentation });
+    this.world.addSystem(new FlappyBirdRenderSystem(), { phase: SystemPhase.Presentation });
 
     if (this.isMultiplayer) {
       this.world.addSystem({
@@ -112,15 +115,14 @@ export class FlappyBirdGame
           this.entityInterpolationBuffers.forEach((buffer, entityId) => {
             const data = buffer.getAt(targetTime);
             if (data) {
-              const transform = world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(entityId, "Transform");
-              if (transform) {
+              world.mutateComponent<import("../../engine/types/EngineTypes").TransformComponent>(entityId, "Transform", transform => {
                 transform.x = data.prev.x + (data.next.x - data.prev.x) * data.alpha;
                 transform.y = data.prev.y + (data.next.y - data.prev.y) * data.alpha;
-              }
+              });
             }
           });
         }
-      });
+      }, { phase: SystemPhase.Presentation });
     }
   }
 
@@ -159,16 +161,14 @@ export class FlappyBirdGame
 
         this.updateInterpolationBuffer(entity, playerState.x, playerState.y);
 
-        const bird = world.getComponent<import("./EntityFactory").BirdComponent>(entity, "Bird");
-        if (bird) {
+        world.mutateComponent<import("./EntityFactory").BirdComponent>(entity, "Bird", bird => {
           bird.isAlive = playerState.alive;
           bird.velocityY = playerState.velocityY;
-        }
+        });
 
-        const render = world.getComponent<import("../../engine/types/EngineTypes").RenderComponent>(entity, "Render");
-        if (render) {
+        world.mutateComponent<import("../../engine/types/EngineTypes").RenderComponent>(entity, "Render", render => {
           render.color = playerState.alive ? "yellow" : "gray";
-        }
+        });
       });
     }
 
@@ -200,6 +200,10 @@ export class FlappyBirdGame
         this.entityInterpolationBuffers.delete(entity);
       }
     });
+
+    if (!world.isUpdating) {
+        world.flush();
+    }
   }
 
   private updateInterpolationBuffer(entityId: number, x: number, y: number) {

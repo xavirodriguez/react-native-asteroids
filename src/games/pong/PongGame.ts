@@ -20,6 +20,7 @@ import { Renderer } from "../../engine/rendering/Renderer";
 import { drawPongBall } from "./rendering/PongCanvasVisuals";
 import { MutatorService } from "../../services/MutatorService";
 import { MutatorSystem } from "../../engine/systems/MutatorSystem";
+import { SystemPhase } from "../../engine/core/System";
 
 export type PongMode = "local" | "ai" | "online";
 
@@ -96,27 +97,29 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     this.unifiedInput.bind("p2Down", ["ArrowDown"]);
 
     this.stateSystem = new PongGameStateSystem(this.config);
-    this.world.addSystem(this.unifiedInput);
+    this.world.addSystem(this.unifiedInput, { phase: SystemPhase.Input });
 
     if (mode === "online") {
       this.networkController = new NetworkController();
-      this.world.addSystem(new PongInputSystem(undefined, this.networkController));
+      this.world.addSystem(new PongInputSystem(undefined, this.networkController), { phase: SystemPhase.Simulation });
     } else {
-      this.world.addSystem(new PongInputSystem(aiDifficulty));
+      this.world.addSystem(new PongInputSystem(aiDifficulty), { phase: SystemPhase.Simulation });
     }
 
-    this.world.addSystem(new MovementSystem());
-    this.world.addSystem(new JuiceSystem());
-    this.world.addSystem(new ScreenShakeSystem());
-    this.world.addSystem(new CollisionSystem2D());
-    this.world.addSystem(new PongCollisionSystem(this.config));
-    this.world.addSystem(new PongSpinSystem());
-    this.world.addSystem(new BoundarySystem());
-    this.world.addSystem(new RenderUpdateSystem());
-    this.world.addSystem(this.stateSystem);
+    this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new CollisionSystem2D(), { phase: SystemPhase.Collision });
+    this.world.addSystem(new PongCollisionSystem(this.config), { phase: SystemPhase.GameRules });
+    this.world.addSystem(new PongSpinSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new BoundarySystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(this.stateSystem, { phase: SystemPhase.GameRules });
 
     const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
-    this.world.addSystem(new MutatorSystem(activeMutators));
+    this.world.addSystem(new MutatorSystem(activeMutators), { phase: SystemPhase.Simulation });
+
+    // Visual / Presentation
+    this.world.addSystem(new JuiceSystem(), { phase: SystemPhase.Presentation });
+    this.world.addSystem(new ScreenShakeSystem(), { phase: SystemPhase.Presentation });
+    this.world.addSystem(new RenderUpdateSystem(), { phase: SystemPhase.Presentation });
   }
 
   protected initializeEntities(): void {
