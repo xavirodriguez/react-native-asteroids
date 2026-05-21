@@ -27,6 +27,7 @@ import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";
 import { MutatorSystem } from "../../../engine/systems/MutatorSystem";
 import { MutatorService } from "../../../services/MutatorService";
+import { SystemPhase } from "../../../engine/core/System";
 
 /**
  * Main gameplay scene for Space Invaders.
@@ -67,25 +68,27 @@ export class SpaceInvadersGameScene extends Scene {
     const inputSys = new SpaceInvadersInputSystem(this.playerBulletPool);
     if (this.game.isMultiplayer) inputSys.setMultiplayerMode(true);
 
-    this.world.addSystem((this.game as unknown as import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, unknown>>).unifiedInput);
-    this.world.addSystem(inputSys);
-    this.world.addSystem(new MovementSystem());
-    this.world.addSystem(new JuiceSystem());
-    this.world.addSystem(new BoundarySystem());
-    this.world.addSystem(new SpaceInvadersFormationSystem(this.enemyBulletPool));
-    this.world.addSystem(new CollisionSystem2D());
-    this.world.addSystem(new SpaceInvadersCollisionSystem(this.particlePool));
-    this.world.addSystem(new KamikazeSystem());
-    this.world.addSystem(new BossSystem());
-    this.world.addSystem(new LootSystem());
-    this.world.addSystem(new PowerUpSystem());
-    this.world.addSystem(new TTLSystem());
-    this.world.addSystem(new SpaceInvadersGameStateSystem(this.game));
+    this.world.addSystem((this.game as unknown as import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, unknown>>).unifiedInput, { phase: SystemPhase.Input });
+    this.world.addSystem(inputSys, { phase: SystemPhase.Simulation });
+    this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new BoundarySystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new SpaceInvadersFormationSystem(this.enemyBulletPool), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new CollisionSystem2D(), { phase: SystemPhase.Collision });
+    this.world.addSystem(new SpaceInvadersCollisionSystem(this.particlePool), { phase: SystemPhase.GameRules });
+    this.world.addSystem(new KamikazeSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new BossSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new LootSystem(), { phase: SystemPhase.GameRules });
+    this.world.addSystem(new PowerUpSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new TTLSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new SpaceInvadersGameStateSystem(this.game), { phase: SystemPhase.GameRules });
 
     const activeMutators = MutatorService.getActiveMutatorsForGame(this.game.gameId);
-    this.world.addSystem(new MutatorSystem(activeMutators));
-    this.world.addSystem(new RenderUpdateSystem(0)); // No trails
-    this.world.addSystem(new SpaceInvadersRenderSystem());
+    this.world.addSystem(new MutatorSystem(activeMutators), { phase: SystemPhase.Simulation });
+
+    // Visual / Presentation Systems
+    this.world.addSystem(new JuiceSystem(), { phase: SystemPhase.Presentation });
+    this.world.addSystem(new RenderUpdateSystem(0), { phase: SystemPhase.Presentation }); // No trails
+    this.world.addSystem(new SpaceInvadersRenderSystem(), { phase: SystemPhase.Presentation });
 
     // 2. Initial entities
     if (this.game.isMultiplayer) return; // Wait for server state
