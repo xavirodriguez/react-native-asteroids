@@ -44,12 +44,16 @@ export class SpaceInvadersInputSystem extends System {
           input.moveLeft = InputUtils.isPressed(inputState, "moveLeft");
           input.moveRight = InputUtils.isPressed(inputState, "moveRight");
           input.shoot = InputUtils.isPressed(inputState, "shoot");
+
+          const horizontal = InputUtils.getAxis(inputState, "horizontal");
+          if (horizontal < -0.35) input.moveLeft = true;
+          if (horizontal > 0.35) input.moveRight = true;
         }
 
         // Apply movement
         let moveX = 0;
         if (input.moveLeft) moveX -= 1;
-        if (input.moveRight) moveX += 1;
+        else if (input.moveRight) moveX += 1;
         vel.dx = moveX * this.config.PLAYER_SPEED;
 
         // Handle shooting

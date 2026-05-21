@@ -5,14 +5,13 @@ import { router, useLocalSearchParams } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
 import { ComboDisplay } from "@/components/ComboDisplay";
 import { GameUI } from "@/components/GameUI";
-import { GameControls } from "@/components/GameControls";
 import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { useAsteroidsGame } from "@/hooks/useAsteroidsGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useMemo } from "react";
-import { MobileControlsOverlay } from "../../components/controls/MobileControlsOverlay";
-import { MobileInputAdapter } from "../../engine/input/MobileInputAdapter";
+import { useCallback } from "react";
+import { VirtualJoystick } from "../../components/controls/VirtualJoystick";
+import { ShootButton } from "../../components/ShootButton";
 import { SeedWidget } from "@/components/SeedWidget";
 import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
 import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
@@ -34,11 +33,6 @@ export default function AsteroidsScreen() {
   const [isMulti, setIsMulti] = useState(false);
   const [isDaily, setIsDaily] = useState(false);
   const { game, gameState, handleInput, isPaused, isReady, togglePause, highScore, seed, restartWithSeed } = useAsteroidsGame(isMulti && started);
-
-  const mobileAdapter = useMemo(
-    () => (game ? new MobileInputAdapter(game.getInputSystem()) : null),
-    [game]
-  );
 
   const [playerName, setPlayerName] = useState("Player");
   const [initialSeed, setInitialSeed] = useState<number | undefined>();
@@ -121,6 +115,37 @@ export default function AsteroidsScreen() {
     }
   }, [isMulti, serverState, game, room?.sessionId, inputBufferRef]);
 
+  const handleMultiplayerInput = useCallback((input: Partial<InputState>) => {
+    if (isMulti && room) {
+        const frame = sendInput(input as Record<string, boolean>);
+        if (frame) {
+            (game as unknown as AsteroidsGame).predictLocalPlayer(frame, 16.66);
+        }
+    } else {
+        handleInput(input);
+    }
+  }, [isMulti, room, sendInput, game, handleInput]);
+
+  const handleJoystickMove = useCallback((nx: number, ny: number) => {
+    game?.getInputSystem().setAxisOverride("horizontal", nx);
+    game?.getInputSystem().setAxisOverride("vertical", ny);
+  }, [game]);
+
+  const handleJoystickRelease = useCallback(() => {
+    game?.getInputSystem().clearAxisOverride("horizontal");
+    game?.getInputSystem().clearAxisOverride("vertical");
+  }, [game]);
+
+  const handleShootPress = useCallback(() => {
+    handleMultiplayerInput({ shoot: true });
+    game?.getInputSystem().setOverride("shoot", true);
+  }, [game, handleMultiplayerInput]);
+
+  const handleShootRelease = useCallback(() => {
+    handleMultiplayerInput({ shoot: false });
+    game?.getInputSystem().clearOverride("shoot");
+  }, [game, handleMultiplayerInput]);
+
   if (!game || !isReady) return null;
 
   if (!started) {
@@ -150,17 +175,6 @@ export default function AsteroidsScreen() {
       />
     );
   }
-
-  const handleMultiplayerInput = (input: Partial<InputState>) => {
-    if (isMulti && room) {
-        const frame = sendInput(input as Record<string, boolean>);
-        if (frame) {
-            (game as unknown as AsteroidsGame).predictLocalPlayer(frame, 16.66);
-        }
-    } else {
-        handleInput(input);
-    }
-  };
 
   return (
     <GameErrorBoundary gameId="asteroids">
@@ -194,16 +208,17 @@ export default function AsteroidsScreen() {
           gameLoop={game.getGameLoop()}
           onInitialize={(renderer) => game.initializeRenderer(renderer)}
         />
-        {mobileAdapter && (
-          <MobileControlsOverlay adapter={mobileAdapter} discreteMapping={true} />
-        )}
-        <GameControls
-          onThrust={(pressed) => handleMultiplayerInput({ thrust: pressed })}
-          onRotateLeft={(pressed) => handleMultiplayerInput({ rotateLeft: pressed })}
-          onRotateRight={(pressed) => handleMultiplayerInput({ rotateRight: pressed })}
-          onShoot={(pressed) => handleMultiplayerInput({ shoot: pressed })}
-          onHyperspace={(pressed) => handleMultiplayerInput({ hyperspace: pressed })}
-        />
+
+        <View style={styles.controls} pointerEvents="box-none">
+          <VirtualJoystick
+            onMove={handleJoystickMove}
+            onRelease={handleJoystickRelease}
+          />
+          <ShootButton
+            onPressIn={handleShootPress}
+            onPressOut={handleShootRelease}
+          />
+        </View>
 
         <DebugOverlay game={game} />
 
@@ -389,5 +404,13 @@ const styles = StyleSheet.create({
     color: "#AAAAAA",
     fontSize: 16,
     fontFamily: "monospace",
+  },
+  controls: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    paddingHorizontal: 40,
+    paddingBottom: 40,
   }
 });

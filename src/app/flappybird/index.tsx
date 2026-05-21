@@ -5,7 +5,9 @@ import { router, useLocalSearchParams } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
 import { ComboDisplay } from "@/components/ComboDisplay";
 import { FlappyBirdUI } from "@/components/FlappyBirdUI";
-import { FlappyBirdControls } from "@/components/FlappyBirdControls";
+import { useCallback } from "react";
+import { VirtualJoystick } from "../../components/controls/VirtualJoystick";
+import { ShootButton } from "../../components/ShootButton";
 import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { useFlappyBirdGame } from "@/hooks/useFlappyBirdGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
@@ -99,6 +101,34 @@ export default function FlappyBirdScreen() {
     }
   }, [isMulti, serverState, game]);
 
+  const handleMultiplayerInput = useCallback((input: Partial<FlappyBirdInput>) => {
+    if (isMulti && room) {
+        if (input.flap) room.send("flap");
+    } else {
+        handleInput(input);
+    }
+  }, [isMulti, room, handleInput]);
+
+  const handleJoystickMove = useCallback((nx: number, ny: number) => {
+    game?.getInputSystem().setAxisOverride("horizontal", nx);
+    game?.getInputSystem().setAxisOverride("vertical", ny);
+  }, [game]);
+
+  const handleJoystickRelease = useCallback(() => {
+    game?.getInputSystem().clearAxisOverride("horizontal");
+    game?.getInputSystem().clearAxisOverride("vertical");
+  }, [game]);
+
+  const handleShootPress = useCallback(() => {
+    handleMultiplayerInput({ flap: true });
+    game?.getInputSystem().setOverride("flap", true);
+  }, [game, handleMultiplayerInput]);
+
+  const handleShootRelease = useCallback(() => {
+    handleMultiplayerInput({ flap: false });
+    game?.getInputSystem().clearOverride("flap");
+  }, [game, handleMultiplayerInput]);
+
   if (!game || !isReady) return null;
 
   if (!started) {
@@ -128,14 +158,6 @@ export default function FlappyBirdScreen() {
       />
     );
   }
-
-  const handleMultiplayerInput = (input: Partial<FlappyBirdInput>) => {
-    if (isMulti && room) {
-        if (input.flap) room.send("flap");
-    } else {
-        handleInput(input);
-    }
-  };
 
   return (
     <GameErrorBoundary gameId="flappybird">
@@ -169,9 +191,17 @@ export default function FlappyBirdScreen() {
           gameLoop={game.getGameLoop()}
           onInitialize={(renderer) => game.initializeRenderer(renderer)}
         />
-        <FlappyBirdControls
-          onFlap={(pressed) => handleMultiplayerInput({ flap: pressed })}
-        />
+
+        <View style={styles.controls} pointerEvents="box-none">
+          <VirtualJoystick
+            onMove={handleJoystickMove}
+            onRelease={handleJoystickRelease}
+          />
+          <ShootButton
+            onPressIn={handleShootPress}
+            onPressOut={handleShootRelease}
+          />
+        </View>
 
         <DebugOverlay game={game} />
 
@@ -356,5 +386,13 @@ const styles = StyleSheet.create({
     color: "#AAAAAA",
     fontSize: 16,
     fontFamily: "monospace",
+  },
+  controls: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    paddingHorizontal: 40,
+    paddingBottom: 40,
   }
 });
