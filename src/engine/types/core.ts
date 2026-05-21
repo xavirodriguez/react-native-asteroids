@@ -1,6 +1,5 @@
 import { Entity } from "../core/Entity";
 import { World } from "../core/World";
-import { Component } from "../core/Component";
 
 /**
  * Represents a serialized component, intended to contain only flat, serializable data.
