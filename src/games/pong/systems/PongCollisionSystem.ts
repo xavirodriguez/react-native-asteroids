@@ -5,7 +5,7 @@ import { PongConfig } from "../types/PongConfigSchema";
 import { Juice } from "../../../engine/utils/Juice";
 import { createEmitter } from "../../../engine/systems/ParticleSystem";
 import { EventBus } from "../../../engine/core/EventBus";
-import { BallComponent, PaddleComponent } from "../types";
+import { PaddleComponent } from "../types";
 
 export class PongCollisionSystem extends System {
   private config?: PongConfig;

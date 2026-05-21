@@ -1,8 +1,6 @@
 import { World } from "../core/World";
 import { Renderer, ShapeDrawer, EffectDrawer } from "./Renderer";
 import { Entity } from "../core/Entity";
-import { RenderComponent, TransformComponent, PreviousTransformComponent, GenericComponent, Camera2DComponent } from "../core/CoreComponents";
-import { RandomService } from "../utils/RandomService";
 import { RenderSnapshot, UISnapshot } from "./RenderSnapshot";
 import { RenderCommandBuffer, DrawCommand } from "./RenderCommandBuffer";
 import { RenderSnapshotProvider } from "./RenderSnapshotProvider";

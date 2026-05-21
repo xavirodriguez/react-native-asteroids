@@ -2,12 +2,6 @@ import { World } from "../../engine/core/World";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
 import {
   type Component,
-  type TransformComponent,
-  type VelocityComponent,
-  type RenderComponent,
-  type Collider2DComponent,
-  type TTLComponent,
-  type ReclaimableComponent,
   Entity
 } from "../../engine/types/EngineTypes";
 import { ProjectilePool, ProjectileComponents, ProjectileParams } from "../../engine/core/ProjectilePool";

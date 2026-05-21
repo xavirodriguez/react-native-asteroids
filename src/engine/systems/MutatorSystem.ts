@@ -1,7 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { Mutator } from "../../config/MutatorConfig";
-import { GenericComponent } from "../core/Component";
 
 /**
  * Sistema encargado de inyectar variaciones dinámicas en las reglas de juego (mutadores).

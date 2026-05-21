@@ -1,10 +1,10 @@
 import { System } from "../../core/System";
 import { World } from "../../core/World";
 import { NetworkConfig, INetworkGame } from "../types/NetworkTypes";
-import { InputFrame, PredictedState } from "../../../multiplayer/NetTypes";
+import { InputFrame } from "../../../multiplayer/NetTypes";
 import { PredictionBuffer } from "../../../multiplayer/PredictionBuffer";
 import { InterpolationBuffer } from "../../../multiplayer/InterpolationSystem";
-import { WorldSnapshot, TransformComponent, VelocityComponent, VisualOffsetComponent, CollisionEventsComponent } from "../../types/EngineTypes";
+import { WorldSnapshot, TransformComponent, VelocityComponent, VisualOffsetComponent } from "../../types/EngineTypes";
 import { JuiceSystem } from "../../systems/JuiceSystem";
 
 /**

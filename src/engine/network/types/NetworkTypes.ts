@@ -1,6 +1,5 @@
 import { World } from "../../core/World";
 import { InputFrame } from "../../../multiplayer/NetTypes";
-import { WorldSnapshot } from "../../types/EngineTypes";
 
 /**
  * Interface representing the game instance during network reconciliation.

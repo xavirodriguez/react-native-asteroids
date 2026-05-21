@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import { StyleSheet, Text, Pressable, type PressableProps } from "react-native";
 
 export interface ActionButtonProps {

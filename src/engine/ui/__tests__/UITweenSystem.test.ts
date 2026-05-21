@@ -1,7 +1,6 @@
 import { World } from "../../core/World";
 import { UITweenSystem, UITweenComponent } from "../UITweenSystem";
 import { UIElementComponent } from "../UITypes";
-import { Entity } from "../../types/EngineTypes";
 
 describe("UITweenSystem ECS Safety", () => {
     let world: World;

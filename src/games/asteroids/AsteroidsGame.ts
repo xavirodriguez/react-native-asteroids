@@ -25,8 +25,6 @@ import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSyste
 import { type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { MutatorService } from "../../services/MutatorService";
 import { InputFrame } from "../../multiplayer/NetTypes";
-import { InterpolationBuffer } from "../../multiplayer/InterpolationSystem";
-import { PredictionBuffer } from "../../multiplayer/PredictionBuffer";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "../../engine/rendering/Renderer";
