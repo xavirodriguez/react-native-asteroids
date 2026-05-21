@@ -32,7 +32,9 @@ export class FlappyBirdRenderSystem extends RenderUpdateSystem {
         const dtSeconds = deltaTime / 1000;
         const lerpFactor = 1 - Math.exp(-lerpSpeed * dtSeconds);
 
-        render.rotation += (targetRotation - render.rotation) * lerpFactor;
+        world.mutateComponent<RenderComponent>(entity, "Render", r => {
+          r.rotation += (targetRotation - r.rotation) * lerpFactor;
+        });
       }
     }
   }

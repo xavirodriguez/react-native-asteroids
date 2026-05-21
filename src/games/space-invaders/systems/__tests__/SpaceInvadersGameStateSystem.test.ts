@@ -1,7 +1,8 @@
-import { World } from "../../../../engine/core/World";
+import { createTestWorld } from "../../../../engine/test-utils/createTestWorld";
 import { SpaceInvadersGameStateSystem } from "../SpaceInvadersGameStateSystem";
 import { createGameState } from "../../EntityFactory";
 import { GameStateComponent } from "../../types/SpaceInvadersTypes";
+import { SPACE_INVADERS_TEST_CONFIG } from "../../config/SpaceInvadersTestConfig";
 import { ISpaceInvadersGame } from "../../types/GameInterfaces";
 
 describe("SpaceInvadersGameStateSystem", () => {
@@ -10,7 +11,7 @@ describe("SpaceInvadersGameStateSystem", () => {
   let system: SpaceInvadersGameStateSystem;
 
   beforeEach(() => {
-    world = new World();
+    world = createTestWorld({ resources: { GameConfig: SPACE_INVADERS_TEST_CONFIG } });
     game = {
       getWorld: () => world,
       pause: jest.fn(),

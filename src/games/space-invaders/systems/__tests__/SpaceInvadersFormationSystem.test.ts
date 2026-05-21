@@ -1,6 +1,7 @@
-import { World } from "../../../../engine/core/World";
+import { createTestWorld } from "../../../../engine/test-utils/createTestWorld";
 import { SpaceInvadersFormationSystem } from "../SpaceInvadersFormationSystem";
 import { FormationComponent, GAME_CONFIG } from "../../types/SpaceInvadersTypes";
+import { SPACE_INVADERS_TEST_CONFIG } from "../../config/SpaceInvadersTestConfig";
 import { EnemyBulletPool } from "../../EntityPool";
 import { createFormationController, createInvader } from "../../EntityFactory";
 
@@ -11,7 +12,7 @@ describe("SpaceInvadersFormationSystem", () => {
   const enemyBulletPool = new EnemyBulletPool();
 
   beforeEach(() => {
-    world = new World();
+    world = createTestWorld({ resources: { GameConfig: SPACE_INVADERS_TEST_CONFIG } });
     system = new SpaceInvadersFormationSystem(enemyBulletPool);
     formationEntity = createFormationController(world);
   });

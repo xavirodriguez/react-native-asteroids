@@ -18,6 +18,7 @@ interface RegisteredSystem {
  * API status: Public
  */
 const __DEV__ = process.env.NODE_ENV !== "production";
+const RAW_DATA = Symbol("RAW_DATA");
 
 export class World {
   /** @internal */
@@ -381,8 +382,13 @@ export class World {
 
     this.ensureComponentStorage(type);
 
+    let rawComponent = component;
+    if (__DEV__ && component && (component as any)[RAW_DATA]) {
+      rawComponent = (component as any)[RAW_DATA];
+    }
+
     const isNew = !this.componentIndex.get(type)?.has(entity);
-    this.componentMaps.get(type)?.set(entity, component);
+    this.componentMaps.get(type)?.set(entity, rawComponent);
     this.componentIndex.get(type)?.add(entity);
 
     if (isNew) {
@@ -425,6 +431,10 @@ export class World {
    */
   private createMutationProxy<T extends object>(target: T, type: string, entity: Entity): T {
     return new Proxy(target, {
+      get: (obj, prop) => {
+        if (prop === RAW_DATA) return obj;
+        return (obj as any)[prop];
+      },
       set: (obj, prop, value) => {
         console.error(
           `[World] ILLEGAL MUTATION DETECTED: Direct write to "${String(prop)}" on component "${type}" (Entity ${entity}). ` +

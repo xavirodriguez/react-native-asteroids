@@ -7,6 +7,7 @@ import { GAME_CONFIG } from "../../types/AsteroidTypes";
 describe("AsteroidsGameScene Config Propagation", () => {
     it("should pass config to AsteroidInputSystem", () => {
         const world = new World();
+        world.setResource("GameConfig", GAME_CONFIG);
         const mockGame: any = { getSeed: () => 12345 };
         const bulletPool = new BulletPool();
         const particlePool = new ParticlePool();

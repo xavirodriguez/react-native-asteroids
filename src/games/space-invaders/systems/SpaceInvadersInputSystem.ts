@@ -39,34 +39,37 @@ export class SpaceInvadersInputSystem extends System {
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
 
       if (input && pos && vel) {
+        const mutableInput = world.getMutableComponent<InputComponent>(entity, "Input")!;
+        const mutableVel = world.getMutableComponent<VelocityComponent>(entity, "Velocity")!;
+
         // Sync input component with manager
         if (inputState) {
-          input.moveLeft = InputUtils.isPressed(inputState, "moveLeft");
-          input.moveRight = InputUtils.isPressed(inputState, "moveRight");
-          input.shoot = InputUtils.isPressed(inputState, "shoot");
+          mutableInput.moveLeft = InputUtils.isPressed(inputState, "moveLeft");
+          mutableInput.moveRight = InputUtils.isPressed(inputState, "moveRight");
+          mutableInput.shoot = InputUtils.isPressed(inputState, "shoot");
 
           const horizontal = InputUtils.getAxis(inputState, "horizontal");
-          if (horizontal < -0.35) input.moveLeft = true;
-          if (horizontal > 0.35) input.moveRight = true;
+          if (horizontal < -0.35) mutableInput.moveLeft = true;
+          if (horizontal > 0.35) mutableInput.moveRight = true;
         }
 
         // Apply movement
         let moveX = 0;
-        if (input.moveLeft) moveX -= 1;
-        else if (input.moveRight) moveX += 1;
-        vel.dx = moveX * this.config.PLAYER_SPEED;
+        if (mutableInput.moveLeft) moveX -= 1;
+        else if (mutableInput.moveRight) moveX += 1;
+        mutableVel.dx = moveX * this.config!.PLAYER_SPEED;
 
         // Handle shooting
-        if (input.shootCooldownRemaining > 0) {
-          input.shootCooldownRemaining -= deltaTime;
+        if (mutableInput.shootCooldownRemaining > 0) {
+          mutableInput.shootCooldownRemaining -= deltaTime;
         }
 
-        if (input.shoot && input.shootCooldownRemaining <= 0) {
+        if (mutableInput.shoot && mutableInput.shootCooldownRemaining <= 0) {
           // Check if there is already a player bullet
           const activeBullets = world.query("PlayerBullet");
           if (activeBullets.length === 0) {
             createPlayerBullet(world, pos.x, pos.y - 10, this.bulletPool);
-            input.shootCooldownRemaining = this.config.PLAYER_SHOOT_COOLDOWN;
+            mutableInput.shootCooldownRemaining = this.config!.PLAYER_SHOOT_COOLDOWN;
           }
         }
       }

@@ -1,8 +1,8 @@
-import { World } from "../../../../engine/core/World";
+import { createTestWorld } from "../../../../engine/test-utils/createTestWorld";
 import { FlappyBirdGame } from "../../FlappyBirdGame";
 import { FlappyBirdGameStateSystem } from "../FlappyBirdGameStateSystem";
 import { createGameState } from "../../EntityFactory";
-import { FlappyBirdState } from "../../types/FlappyBirdTypes";
+import { FlappyBirdState, FLAPPY_CONFIG } from "../../types/FlappyBirdTypes";
 import { BaseGame } from "../../../../engine/core/BaseGame";
 
 describe("FlappyBirdGameStateSystem", () => {
@@ -13,7 +13,9 @@ describe("FlappyBirdGameStateSystem", () => {
   beforeEach(() => {
     game = new FlappyBirdGame();
     // BaseGame calls registerSystems in constructor, which sets up the scene
-    world = game.getWorld();
+    world = createTestWorld({ resources: { GameConfig: FLAPPY_CONFIG } });
+    // Overwrite the game world with our test world
+    (game as any).world = world;
     system = new FlappyBirdGameStateSystem(game as unknown as BaseGame<FlappyBirdState, Record<string, unknown>>);
   });
 
