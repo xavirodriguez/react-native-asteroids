@@ -2,10 +2,12 @@ import { World } from "../../../engine/core/World";
 import { spawnShields } from "../EntityFactory";
 import { GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { TransformComponent } from "../../../engine/core/CoreComponents";
+import { SPACE_INVADERS_TEST_CONFIG } from "../config/SpaceInvadersTestConfig";
 
 describe("Space Invaders EntityFactory", () => {
     it("should use SHIELD_START_X and SHIELD_SEGMENT_SIZE when spawning shields", () => {
         const world = new World();
+        world.setResource("GameConfig", SPACE_INVADERS_TEST_CONFIG);
         spawnShields(world, false);
 
         const shields = world.query("Shield");

@@ -1,4 +1,4 @@
-import { World } from "../../../../engine/core/World";
+import { createTestWorld } from "../../../../engine/test-utils/createTestWorld";
 import { PongGameStateSystem } from "../PongGameStateSystem";
 import { PongState, PONG_CONFIG, BallComponent } from "../../types";
 import { TransformComponent, VelocityComponent } from "../../../../engine/types/EngineTypes";
@@ -9,7 +9,7 @@ describe("PongGameStateSystem", () => {
   let stateEntity: number;
 
   beforeEach(() => {
-    world = new World();
+    world = createTestWorld({ resources: { GameConfig: PONG_CONFIG } });
     system = new PongGameStateSystem();
     stateEntity = world.createEntity();
     world.addComponent(stateEntity, {

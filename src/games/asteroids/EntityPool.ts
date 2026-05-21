@@ -38,7 +38,7 @@ export class BulletPool extends ProjectilePool<AsteroidBulletComponents, Project
         data.ttl.total = 0;
         data.render.rotation = 0;
       },
-      initializer: (data, p) => {
+      initializer: (data, p, _world, _entity) => {
         data.position.x = p.x; data.position.y = p.y;
         data.velocity.dx = p.dx; data.velocity.dy = p.dy;
         data.render.size = p.size; data.render.color = p.color;
@@ -81,7 +81,7 @@ export class ParticlePool extends ProjectilePool<ProjectileComponents, Projectil
         data.ttl.remaining = 0;
         data.ttl.total = 0;
       },
-      initializer: (data, p) => {
+      initializer: (data, p, _world, _entity) => {
         data.position.x = p.x; data.position.y = p.y;
         data.velocity.dx = p.dx; data.velocity.dy = p.dy;
         data.render.size = p.size; data.render.color = p.color;
