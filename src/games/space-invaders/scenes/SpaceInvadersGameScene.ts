@@ -58,7 +58,8 @@ export class SpaceInvadersGameScene extends Scene {
   }
 
   public onEnter(): void {
-    // Inject EventBus and other engine resources into the scene world
+    // Inject resources into the scene world
+    this.world.setResource("GameConfig", this.config);
     const eventBus = (this.game as unknown as { eventBus: import("../../../engine/core/EventBus").EventBus }).eventBus;
     if (eventBus) {
       this.world.setResource("EventBus", eventBus);
