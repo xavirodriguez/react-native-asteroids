@@ -14,17 +14,21 @@ describe("AsteroidsRoom Authoritative Score", () => {
 
     test("should sync ecs score to player state", () => {
         // Mock a player
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const client = { sessionId: "p1" } as any;
         room.onJoin(client, { name: "Player 1" });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const world = (room as any).world;
 
         // Manually increment score in ECS
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         world.mutateSingleton("GameState", (gs: any) => {
             gs.score = 500;
         });
 
         // Run sync
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (room as any).syncWorldToSchema();
 
         const player = room.state.players.get("p1");

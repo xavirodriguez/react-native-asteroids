@@ -3,6 +3,7 @@ import { RandomService } from "../RandomService";
 describe("RandomService", () => {
   beforeEach(() => {
     // Reset state before each test
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
      (RandomService as any).lockGameplayContext = false;
     // We can't easily reset namedInstances but we can re-seed them
     RandomService.getGameplayRandom().setSeed(12345);
@@ -95,27 +96,37 @@ describe("RandomService", () => {
     });
 
     it("should throw when accessing 'render' during gameplay lock", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
        (RandomService as any).lockGameplayContext = true;
       expect(() => RandomService.getInstance("render")).toThrow(/Deterministic violation/);
       expect(() => RandomService.getRenderRandom()).toThrow(/Deterministic violation/);
     });
 
     it("should throw when accessing 'global' during gameplay lock", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
        (RandomService as any).lockGameplayContext = true;
       expect(() => RandomService.getInstance("global")).toThrow(/Deterministic violation/);
     });
 
     it("should throw when calling static methods during gameplay lock", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
        (RandomService as any).lockGameplayContext = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(() =>  (RandomService as any).next()).toThrow(/Deterministic violation/);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(() =>  (RandomService as any).nextInt(0, 10)).toThrow(/Deterministic violation/);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(() =>  (RandomService as any).nextRange(0, 10)).toThrow(/Deterministic violation/);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(() =>  (RandomService as any).chance(0.5)).toThrow(/Deterministic violation/);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(() =>  (RandomService as any).nextSign()).toThrow(/Deterministic violation/);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(() =>  (RandomService as any).setSeed(123)).toThrow(/Deterministic violation/);
     });
 
     it("should ALLOW accessing 'gameplay' during gameplay lock", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
        (RandomService as any).lockGameplayContext = true;
       expect(() => RandomService.getGameplayRandom()).not.toThrow();
       expect(() => RandomService.getInstance("gameplay")).not.toThrow();

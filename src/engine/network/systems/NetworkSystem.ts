@@ -74,7 +74,8 @@ export class NetworkSystem extends System {
         this.predictionBuffer.save({
           tick: input.tick,
           entityId: lp.toString(),
-          state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation }
+          state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation },
+          entities: world.entities.map(e => e.toString())
         });
       }
     }
@@ -199,7 +200,8 @@ export class NetworkSystem extends System {
               this.predictionBuffer.save({
                   tick: serverTick,
                   entityId: localPlayerId.toString(),
-                  state: { x: aPos.x as number, y: aPos.y as number, vx: aVel.dx as number, vy: aVel.dy as number, angle: aPos.rotation as number }
+                  state: { x: aPos.x as number, y: aPos.y as number, vx: aVel.dx as number, vy: aVel.dy as number, angle: aPos.rotation as number },
+                  entities: authoritativeSnapshot.entities.map(e => e.toString())
               });
           }
       }
@@ -225,7 +227,8 @@ export class NetworkSystem extends System {
               this.predictionBuffer.save({
                 tick: input.tick,
                 entityId: localPlayerId.toString(),
-                state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation }
+                state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation },
+                entities: world.entities.map(e => e.toString())
               });
             }
           }
