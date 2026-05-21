@@ -1,0 +1,41 @@
+import React from "react";
+import { StyleSheet, Pressable } from "react-native";
+
+export interface ShootButtonProps {
+  onPressIn: () => void;
+  onPressOut: () => void;
+}
+
+/**
+ * Pure UI component for shooting.
+ * Circular button, 72x72px, semi-transparent red tint.
+ * Uses Pressable for visual feedback and touch handling.
+ */
+export function ShootButton({ onPressIn, onPressOut }: ShootButtonProps) {
+  return (
+    <Pressable
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      style={({ pressed }) => [
+        styles.button,
+        {
+          backgroundColor: pressed
+            ? "rgba(255, 80, 80, 0.7)"
+            : "rgba(255, 80, 80, 0.4)",
+        },
+      ]}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  button: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2,
+    borderColor: "rgba(255, 80, 80, 0.8)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

@@ -5,7 +5,9 @@ import { router, useLocalSearchParams } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
 import { ComboDisplay } from "@/components/ComboDisplay";
 import { SpaceInvadersUI } from "@/components/SpaceInvadersUI";
-import { SpaceInvadersControls } from "@/components/SpaceInvadersControls";
+import { useCallback } from "react";
+import { VirtualJoystick } from "../../components/controls/VirtualJoystick";
+import { ShootButton } from "../../components/ShootButton";
 import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { useSpaceInvadersGame } from "@/hooks/useSpaceInvadersGame";
 import { useMultiplayer } from "@/multiplayer/useMultiplayer";
@@ -83,6 +85,34 @@ export default function SpaceInvadersScreen() {
     }
   }, [isMulti, serverState, game]);
 
+  const handleMultiplayerInput = useCallback((input: Record<string, boolean>) => {
+    if (isMulti && room) {
+        room.send("input", input);
+    } else {
+        handleInput(input);
+    }
+  }, [isMulti, room, handleInput]);
+
+  const handleJoystickMove = useCallback((nx: number, ny: number) => {
+    game?.getInputSystem().setAxisOverride("horizontal", nx);
+    game?.getInputSystem().setAxisOverride("vertical", ny);
+  }, [game]);
+
+  const handleJoystickRelease = useCallback(() => {
+    game?.getInputSystem().clearAxisOverride("horizontal");
+    game?.getInputSystem().clearAxisOverride("vertical");
+  }, [game]);
+
+  const handleShootPress = useCallback(() => {
+    handleMultiplayerInput({ shoot: true });
+    game?.getInputSystem().setOverride("shoot", true);
+  }, [game, handleMultiplayerInput]);
+
+  const handleShootRelease = useCallback(() => {
+    handleMultiplayerInput({ shoot: false });
+    game?.getInputSystem().clearOverride("shoot");
+  }, [game, handleMultiplayerInput]);
+
   if (!game || !isReady) return null;
 
   if (!started) {
@@ -109,14 +139,6 @@ export default function SpaceInvadersScreen() {
       />
     );
   }
-
-  const handleMultiplayerInput = (input: Record<string, boolean>) => {
-    if (isMulti && room) {
-        room.send("input", input);
-    } else {
-        handleInput(input);
-    }
-  };
 
   return (
     <GameErrorBoundary gameId="space-invaders">
@@ -150,11 +172,17 @@ export default function SpaceInvadersScreen() {
           gameLoop={game.getGameLoop()}
           onInitialize={(renderer) => game.initializeRenderer(renderer)}
         />
-        <SpaceInvadersControls
-          onMoveLeft={(pressed) => handleMultiplayerInput({ moveLeft: pressed })}
-          onMoveRight={(pressed) => handleMultiplayerInput({ moveRight: pressed })}
-          onShoot={(pressed) => handleMultiplayerInput({ shoot: pressed })}
-        />
+
+        <View style={styles.controls} pointerEvents="box-none">
+          <VirtualJoystick
+            onMove={handleJoystickMove}
+            onRelease={handleJoystickRelease}
+          />
+          <ShootButton
+            onPressIn={handleShootPress}
+            onPressOut={handleShootRelease}
+          />
+        </View>
 
         <DebugOverlay game={game} />
 
@@ -339,5 +367,13 @@ const styles = StyleSheet.create({
     color: "#AAAAAA",
     fontSize: 16,
     fontFamily: "monospace",
+  },
+  controls: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    paddingHorizontal: 40,
+    paddingBottom: 40,
   }
 });

@@ -70,11 +70,20 @@ export class AsteroidInputSystem extends System {
     const { world, input } = context;
     const inputState = world.getSingleton<InputStateComponent>("InputState");
     if (inputState) {
+      // Direct action overrides
       input.thrust = InputUtils.isPressed(inputState, "thrust");
       input.rotateLeft = InputUtils.isPressed(inputState, "rotateLeft");
       input.rotateRight = InputUtils.isPressed(inputState, "rotateRight");
       input.shoot = InputUtils.isPressed(inputState, "shoot");
       input.hyperspace = InputUtils.isPressed(inputState, "hyperspace");
+
+      // Axis support
+      const horizontal = InputUtils.getAxis(inputState, "horizontal");
+      const vertical = InputUtils.getAxis(inputState, "vertical");
+
+      if (horizontal < -0.35) input.rotateLeft = true;
+      if (horizontal > 0.35) input.rotateRight = true;
+      if (vertical < -0.25) input.thrust = true;
     }
   }
 
