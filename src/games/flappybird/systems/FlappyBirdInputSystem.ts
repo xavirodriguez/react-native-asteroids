@@ -50,7 +50,9 @@ export class FlappyBirdInputSystem extends System {
         }
 
         if (input.flapCooldownRemaining <= 0 && (input.flap || InputBufferSystem.consume(world, entity, "flap"))) {
-          vel.dy = this.config.FLAP_STRENGTH;
+          world.mutateComponent<VelocityComponent>(entity, "Velocity", (v) => {
+            v.dy = this.config.FLAP_STRENGTH;
+          });
           input.flapCooldownRemaining = this.config.FLAP_COOLDOWN;
           hapticShoot();
 
@@ -60,10 +62,16 @@ export class FlappyBirdInputSystem extends System {
 
         // Apply gravity
         const dt = deltaTime / 1000;
-        vel.dy += (this.config.GRAVITY || FLAPPY_CONFIG.GRAVITY) * dt;
+        let newVy = 0;
+        world.mutateComponent<VelocityComponent>(entity, "Velocity", (v) => {
+          v.dy += (this.config.GRAVITY || FLAPPY_CONFIG.GRAVITY) * dt;
+          newVy = v.dy;
+        });
 
-        // Sync bird component velocityY
-        bird.velocityY = vel.dy;
+        // Sync bird component velocityY correctly
+        world.mutateComponent<BirdComponent>(entity, "Bird", (b) => {
+          b.velocityY = newVy;
+        });
       }
     });
   }

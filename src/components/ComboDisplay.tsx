@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 
 interface ComboDisplayProps {
   multiplier: number;
@@ -60,12 +60,22 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '900',
     fontStyle: 'italic',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 4,
+    ...(Platform.OS === 'web'
+      ? { textShadow: '2px 2px 4px rgba(0, 0, 0, 0.75)' }
+      : {
+          textShadowColor: 'rgba(0, 0, 0, 0.75)',
+          textShadowOffset: { width: 2, height: 2 },
+          textShadowRadius: 4,
+        }
+    ),
   },
   goldShadow: {
-    textShadowColor: 'rgba(255, 215, 0, 0.5)',
-    textShadowRadius: 10,
+    ...(Platform.OS === 'web'
+      ? { textShadow: '0 0 10px rgba(255, 215, 0, 0.5)' }
+      : {
+          textShadowColor: 'rgba(255, 215, 0, 0.5)',
+          textShadowRadius: 10,
+        }
+    ),
   },
 });

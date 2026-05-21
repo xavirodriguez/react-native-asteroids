@@ -54,7 +54,9 @@ export class SpaceInvadersInputSystem extends System {
         let moveX = 0;
         if (input.moveLeft) moveX -= 1;
         else if (input.moveRight) moveX += 1;
-        vel.dx = moveX * this.config.PLAYER_SPEED;
+        world.mutateComponent<VelocityComponent>(entity, "Velocity", (v) => {
+          v.dx = moveX * this.config!.PLAYER_SPEED;
+        });
 
         // Handle shooting
         if (input.shootCooldownRemaining > 0) {
