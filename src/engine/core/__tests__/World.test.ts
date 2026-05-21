@@ -6,6 +6,7 @@ interface TransformComponent extends Component {
   type: "Transform";
   x: number;
   y: number;
+  parentEntity: number | null;
 }
 
 interface VelocityComponent extends Component {
@@ -63,7 +64,7 @@ describe("World", () => {
 
     it("should clean up components when an entity is removed", () => {
       const entity = world.createEntity();
-      world.addComponent(entity, { type: "Transform", x: 10, y: 20 } as TransformComponent);
+      world.addComponent(entity, { type: "Transform", x: 10, y: 20, parentEntity: null } as TransformComponent);
       world.removeEntity(entity);
       expect(world.hasComponent(entity, "Transform")).toBe(false);
       expect(world.query("Transform")).not.toContain(entity);
@@ -95,17 +96,17 @@ describe("World", () => {
     it("should increment structureVersion when adding a NEW component type", () => {
       const entity = world.createEntity();
       const initialVersion = world.structureVersion;
-      world.addComponent(entity, { type: "Transform", x: 10, y: 20 } as TransformComponent);
+      world.addComponent(entity, { type: "Transform", x: 10, y: 20, parentEntity: null } as TransformComponent);
       expect(world.structureVersion).toBeGreaterThan(initialVersion);
     });
 
     it("should increment stateVersion when updating an EXISTING component", () => {
       const entity = world.createEntity();
-      world.addComponent(entity, { type: "Transform", x: 10, y: 20 } as TransformComponent);
+      world.addComponent(entity, { type: "Transform", x: 10, y: 20, parentEntity: null } as TransformComponent);
       const initialStructureVersion = world.structureVersion;
       const initialStateVersion = world.stateVersion;
 
-      world.addComponent(entity, { type: "Transform", x: 20, y: 30 } as TransformComponent);
+      world.addComponent(entity, { type: "Transform", x: 20, y: 30, parentEntity: null } as TransformComponent);
 
       expect(world.structureVersion).toBe(initialStructureVersion);
       expect(world.stateVersion).toBeGreaterThan(initialStateVersion);
@@ -113,7 +114,7 @@ describe("World", () => {
 
     it("should remove a component and increment structureVersion", () => {
       const entity = world.createEntity();
-      world.addComponent(entity, { type: "Transform", x: 10, y: 20 } as TransformComponent);
+      world.addComponent(entity, { type: "Transform", x: 10, y: 20, parentEntity: null } as TransformComponent);
       const versionAfterAdd = world.structureVersion;
 
       world.removeComponent(entity, "Transform");
@@ -126,7 +127,7 @@ describe("World", () => {
     it("should return entities with a single component", () => {
       const e1 = world.createEntity();
       const e2 = world.createEntity();
-      world.addComponent(e1, { type: "Transform", x: 0, y: 0 } as TransformComponent);
+      world.addComponent(e1, { type: "Transform", x: 0, y: 0, parentEntity: null } as TransformComponent);
 
       const results = world.query("Transform");
       expect(results).toContain(e1);
@@ -136,9 +137,9 @@ describe("World", () => {
     it("should return entities with multiple components", () => {
       const e1 = world.createEntity();
       const e2 = world.createEntity();
-      world.addComponent(e1, { type: "Transform", x: 0, y: 0 } as TransformComponent);
+      world.addComponent(e1, { type: "Transform", x: 0, y: 0, parentEntity: null } as TransformComponent);
       world.addComponent(e1, { type: "Velocity", dx: 1, dy: 1 } as VelocityComponent);
-      world.addComponent(e2, { type: "Transform", x: 10, y: 10 } as TransformComponent);
+      world.addComponent(e2, { type: "Transform", x: 10, y: 10, parentEntity: null } as TransformComponent);
 
       const results = world.query("Transform", "Velocity");
       expect(results).toContain(e1);
@@ -170,7 +171,7 @@ describe("World", () => {
   describe("World Operations", () => {
     it("should clear all entities and components but keep systems", () => {
       const entity = world.createEntity();
-      world.addComponent(entity, { type: "Transform", x: 0, y: 0 } as TransformComponent);
+      world.addComponent(entity, { type: "Transform", x: 0, y: 0, parentEntity: null } as TransformComponent);
       const system = new TestSystem();
       world.addSystem(system);
 
@@ -186,7 +187,7 @@ describe("World", () => {
     it("should snapshot and restore correctly", () => {
       const e1 = world.createEntity();
       const e2 = world.createEntity();
-      world.addComponent(e1, { type: "Transform", x: 10, y: 20 } as TransformComponent);
+      world.addComponent(e1, { type: "Transform", x: 10, y: 20, parentEntity: null } as TransformComponent);
       world.addComponent(e2, { type: "Velocity", dx: 5, dy: 5 } as VelocityComponent);
 
       const snapshot = world.snapshot();
@@ -206,9 +207,9 @@ describe("World", () => {
       const e1 = world.createEntity();
       const e2 = world.createEntity();
 
-      world.addComponent(e1, { type: "Transform", x: 1, y: 1 } as TransformComponent);
-      world.addComponent(e2, { type: "Transform", x: 2, y: 2 } as TransformComponent);
-      world.addComponent(e3, { type: "Transform", x: 3, y: 3 } as TransformComponent);
+      world.addComponent(e1, { type: "Transform", x: 1, y: 1, parentEntity: null } as TransformComponent);
+      world.addComponent(e2, { type: "Transform", x: 2, y: 2, parentEntity: null } as TransformComponent);
+      world.addComponent(e3, { type: "Transform", x: 3, y: 3, parentEntity: null } as TransformComponent);
 
       const entities = world.query("Transform");
       expect(entities).toEqual([e1, e2, e3].sort((a, b) => a - b));

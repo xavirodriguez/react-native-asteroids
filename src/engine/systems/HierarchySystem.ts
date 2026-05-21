@@ -1,6 +1,6 @@
-import { System } from "../core/System";
 import { World } from "../core/World";
 import { Entity, TransformComponent } from "../types/EngineTypes";
+import { AbstractHierarchySystem } from "./AbstractHierarchySystem";
 
 /**
  * 3x3 Matrix for 2D transformations.
@@ -34,66 +34,27 @@ type Mat3 = [number, number, number, number, number, number];
  *
  * @public
  */
-export class HierarchySystem extends System {
-  private wasDirty = new Set<Entity>();
-
+export class HierarchySystem extends AbstractHierarchySystem {
   /**
-   * Recursively resolves world transforms for all entities with a Transform component.
+   * Resolves world transforms for all entities with a Transform component.
    *
    * @param world - Target ECS world.
    * @param _deltaTime - Elapsed time (ignored).
    *
    * @remarks
-   * Performs an iterative topological sort to handle arbitrary tree depths without
-   * stack overflow. Detects and ignores circular dependencies.
+   * Utiliza el ordenamiento topológico iterativo heredado de AbstractHierarchySystem.
+   * This system bridges the gap between local simulation (movement) and absolute
+   * rendering/collision world coordinates.
    *
    * @postcondition All `Transform` components marked as dirty (or with dirty parents)
    * have their `worldX`, `worldY`, `worldRotation`, `worldScaleX`, and `worldScaleY` updated.
    * @sideEffect Resets the `dirty` flag for processed components.
    */
   public update(world: World, _deltaTime: number): void {
-    const transforms = world.query("Transform");
-    if (transforms.length === 0) return;
-
     this.wasDirty.clear();
 
-    // 1. Build processing order (Topological Sort - fully iterative)
-    const order: Entity[] = [];
-    const visited = new Set<Entity>();
-    const processing = new Set<Entity>();
-    const stack: { entity: Entity, stage: 'enter' | 'exit' }[] = [];
-
-    for (let i = 0; i < transforms.length; i++) {
-      const startEntity = transforms[i];
-      if (visited.has(startEntity)) continue;
-
-      stack.push({ entity: startEntity, stage: 'enter' });
-
-      while (stack.length > 0) {
-        const current = stack.pop()!;
-        const { entity, stage } = current;
-
-        if (stage === 'enter') {
-          if (visited.has(entity)) continue;
-          if (processing.has(entity)) {
-            console.warn(`[HierarchySystem] Circular dependency detected at entity ${entity}.`);
-            continue;
-          }
-
-          processing.add(entity);
-          stack.push({ entity, stage: 'exit' });
-
-          const transform = world.getComponent<TransformComponent>(entity, "Transform");
-          if (transform && transform.parentEntity !== null) {
-            stack.push({ entity: transform.parentEntity, stage: 'enter' });
-          }
-        } else {
-          processing.delete(entity);
-          visited.add(entity);
-          order.push(entity);
-        }
-      }
-    }
+    const order = this.getProcessingOrder(world, "Transform");
+    if (order.length === 0) return;
 
     // 2. Iteratively process transformations in topological order
     for (let i = 0; i < order.length; i++) {
@@ -111,7 +72,13 @@ export class HierarchySystem extends System {
       if (isDirty) {
         const mutTransform = world.getMutableComponent<TransformComponent>(entity, "Transform")!;
         if (mutTransform.parentEntity !== null) {
-          const parentTransform = world.getComponent<TransformComponent>(mutTransform.parentEntity, "Transform")!;
+          const parentTransform = world.getComponent<TransformComponent>(mutTransform.parentEntity, "Transform");
+          if (!parentTransform) {
+            this.setToLocal(mutTransform);
+            mutTransform.dirty = false;
+            this.wasDirty.add(entity);
+            continue;
+          }
           const parentMat = this.getMatrixFromTransform(parentTransform, true);
           const localMat = this.getMatrixFromTransform(mutTransform, false);
           const worldMat = this.multiplyMat3(parentMat, localMat);

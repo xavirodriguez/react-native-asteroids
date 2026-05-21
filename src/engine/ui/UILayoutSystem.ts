@@ -1,4 +1,3 @@
-import { System } from "../core/System";
 import { World } from "../core/World";
 import {
   UIElementComponent,
@@ -9,6 +8,7 @@ import {
 } from "./UITypes";
 import { Entity } from "../core/Entity";
 import { GenericComponent, TransformComponent } from "../core/CoreComponents";
+import { AbstractHierarchySystem } from "../systems/AbstractHierarchySystem";
 
 /**
  * UI Layout Engine.
@@ -17,7 +17,7 @@ import { GenericComponent, TransformComponent } from "../core/CoreComponents";
  * topological sort to handle hierarchical constraints. Supports anchors, relative units (%),
  * flex-like containers, and world-space attachments.
  */
-export class UILayoutSystem extends System {
+export class UILayoutSystem extends AbstractHierarchySystem {
   private viewportWidth: number = 800;
   private viewportHeight: number = 600;
 
@@ -33,50 +33,14 @@ export class UILayoutSystem extends System {
   }
 
   public update(world: World, _deltaTime: number): void {
-    const uiEntities = world.query("UIElement");
-    if (uiEntities.length === 0) return;
+    this.wasDirty.clear();
 
-    // 1. Build processing order (Topological Sort - fully iterative)
-    const order: Entity[] = [];
-    const visited = new Set<Entity>();
-    const processing = new Set<Entity>();
-    const stack: { entity: Entity; stage: "enter" | "exit" }[] = [];
-
-    for (let i = 0; i < uiEntities.length; i++) {
-      const startEntity = uiEntities[i];
-      if (visited.has(startEntity)) continue;
-
-      stack.push({ entity: startEntity, stage: "enter" });
-
-      while (stack.length > 0) {
-        const current = stack.pop()!;
-        const { entity, stage } = current;
-
-        if (stage === "enter") {
-          if (visited.has(entity)) continue;
-          if (processing.has(entity)) {
-            console.warn(`[UILayoutSystem] Circular dependency detected at entity ${entity}.`);
-            continue;
-          }
-
-          processing.add(entity);
-          stack.push({ entity, stage: "exit" });
-
-          const element = world.getComponent<UIElementComponent>(entity, "UIElement");
-          if (element && element.parentEntity !== null) {
-            stack.push({ entity: element.parentEntity, stage: "enter" });
-          }
-        } else {
-          processing.delete(entity);
-          visited.add(entity);
-          order.push(entity);
-        }
-      }
-    }
+    const order = this.getProcessingOrder(world, "UIElement");
+    if (order.length === 0) return;
 
     // 2. Pre-group children by parent for container layout
     const childrenByParent = new Map<Entity, Entity[]>();
-    for (const entity of uiEntities) {
+    for (const entity of order) {
       const element = world.getComponent<UIElementComponent>(entity, "UIElement")!;
       if (element.parentEntity !== null) {
         if (!childrenByParent.has(element.parentEntity)) {
@@ -91,6 +55,15 @@ export class UILayoutSystem extends System {
       const entity = order[i];
       const element = world.getComponent<UIElementComponent>(entity, "UIElement");
       if (!element) continue;
+
+      let parentDirty = false;
+      if (element.parentEntity !== null) {
+        parentDirty = this.wasDirty.has(element.parentEntity);
+      }
+
+      const isDirty = element.dirty || parentDirty;
+
+      if (!isDirty) continue;
 
       // Check if this element is already laid out by its parent (if it's a container)
       // Actually, we can just process everything. If it's a root, we use viewport.
@@ -132,6 +105,7 @@ export class UILayoutSystem extends System {
               el.computedHeight = resolvedHeight;
               el.computedX = anchorPos.x + el.offsetX;
               el.computedY = anchorPos.y + el.offsetY;
+              el.dirty = false;
             });
           }
         } else {
@@ -145,10 +119,19 @@ export class UILayoutSystem extends System {
               el.computedHeight = resolvedHeight;
               el.computedX = parentElement.computedX + el.offsetX;
               el.computedY = parentElement.computedY + el.offsetY;
+              el.dirty = false;
             });
           }
         }
+      } else {
+        // Even if handled by container, we should clear dirty flag.
+        // The container logic in the parent should have already updated this child.
+        world.mutateComponent<UIElementComponent>(entity, "UIElement", el => {
+          el.dirty = false;
+        });
       }
+
+      this.wasDirty.add(entity);
 
       // If this element is a container, it must layout its direct children NOW.
       // Even though those children are later in the 'order' array, we set their computedX/Y here.
