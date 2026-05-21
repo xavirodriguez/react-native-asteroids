@@ -223,7 +223,8 @@ export class World {
       freeEntities: [...this.freeEntities],
       structureVersion: this._structureVersion,
       stateVersion: this._stateVersion,
-      seed: gameplayRandom.getSeed()
+      seed: gameplayRandom.getSeed(),
+      tick: this._tick
     };
   }
 
@@ -243,6 +244,7 @@ export class World {
     this._freeEntitiesSorted = false; // Snapshot might be sorted, but mark dirty to be safe
     this._structureVersion = state.structureVersion;
     this._stateVersion = state.stateVersion;
+    this._tick = state.tick ?? 0;
 
     if (state.seed !== undefined) {
         RandomService.getInstance("gameplay").setSeed(state.seed);
@@ -619,7 +621,8 @@ export class World {
     return {
       componentData,
       stateVersion: this._stateVersion,
-      structureVersion: this._structureVersion
+      structureVersion: this._structureVersion,
+      tick: this._tick
     };
   }
 
@@ -837,12 +840,35 @@ export class World {
   /**
    * Tries to locate the first component of a given type, treating it as a Singleton.
    */
-  public getSingleton<TType extends AnyCoreComponent["type"]>(type: TType): ComponentOf<TType> | undefined;
-  public getSingleton<T extends Component>(type: string): T | undefined;
-  public getSingleton<T extends Component>(type: string): T | undefined {
+  public getSingleton<TType extends AnyCoreComponent["type"]>(type: TType): Readonly<ComponentOf<TType>> | undefined;
+  public getSingleton<T extends Component>(type: string): Readonly<T> | undefined;
+  public getSingleton<T extends Component>(type: string): Readonly<T> | undefined {
     const [entity] = this.query(type);
     if (entity === undefined) return undefined;
     return this.getComponent(entity, type);
+  }
+
+  /**
+   * Returns a mutable reference to a component.
+   *
+   * @remarks
+   * This method bypasses the `Readonly` protection. It MUST be used only when
+   * performing high-frequency mutations where `mutateComponent`'s callback
+   * overhead is unacceptable. It automatically marks the world as render-dirty
+   * and increments the state version.
+   *
+   * API status: Public
+   */
+  public getMutableComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): ComponentOf<TType> | undefined;
+  public getMutableComponent<T extends Component>(entity: Entity, type: string): T | undefined;
+  public getMutableComponent<T extends Component>(entity: Entity, type: string): T | undefined {
+    const component = this.componentMaps.get(type)?.get(entity) as T | undefined;
+    if (component) {
+      this._stateVersion++;
+      this.updateComponentVersion(entity, type);
+      this._renderDirty = true;
+    }
+    return component;
   }
 
   /**

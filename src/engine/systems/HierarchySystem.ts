@@ -109,16 +109,17 @@ export class HierarchySystem extends System {
       const isDirty = transform.dirty || parentDirty;
 
       if (isDirty) {
-        if (transform.parentEntity !== null) {
-          const parentTransform = world.getComponent<TransformComponent>(transform.parentEntity, "Transform")!;
+        const mutTransform = world.getMutableComponent<TransformComponent>(entity, "Transform")!;
+        if (mutTransform.parentEntity !== null) {
+          const parentTransform = world.getComponent<TransformComponent>(mutTransform.parentEntity, "Transform")!;
           const parentMat = this.getMatrixFromTransform(parentTransform, true);
-          const localMat = this.getMatrixFromTransform(transform, false);
+          const localMat = this.getMatrixFromTransform(mutTransform, false);
           const worldMat = this.multiplyMat3(parentMat, localMat);
-          this.applyMatrixToWorldTransform(transform, worldMat);
+          this.applyMatrixToWorldTransform(mutTransform, worldMat);
         } else {
-          this.setToLocal(transform);
+          this.setToLocal(mutTransform);
         }
-        transform.dirty = false;
+        mutTransform.dirty = false;
         this.wasDirty.add(entity);
       }
     }

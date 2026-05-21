@@ -25,6 +25,11 @@ export interface JuiceAnimation {
    * @remarks Reemplaza callbacks para compatibilidad con snapshots.
    */
   onCompleteEvent?: string;
+  /**
+   * Callback local disparado al finalizar.
+   * @remarks NO se persiste en snapshots. Úsese solo para efectos visuales efímeros.
+   */
+  onComplete?: (entity: Entity) => void;
 }
 
 /**
@@ -122,6 +127,9 @@ export class JuiceSystem extends System {
 
           if (progress >= 1) {
             jComp.animations.splice(j, 1);
+            if (anim.onComplete) {
+                anim.onComplete(entity);
+            }
             if (anim.onCompleteEvent) {
                 completedEvents.push({ event: anim.onCompleteEvent, entity });
             }

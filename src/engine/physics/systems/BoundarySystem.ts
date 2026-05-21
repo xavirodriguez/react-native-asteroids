@@ -69,7 +69,7 @@ export class BoundarySystem extends System {
 
   private destroy(world: World, entity: Entity): void {
     const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
-    if (reclaimable) {
+    if (reclaimable && reclaimable.onReclaim) {
       reclaimable.onReclaim(world, entity);
     }
     world.getCommandBuffer().removeEntity(entity);

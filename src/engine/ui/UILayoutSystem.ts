@@ -114,7 +114,7 @@ export class UILayoutSystem extends System {
           // Root or World Attached
           const worldAttach = world.getComponent<UIWorldAttachComponent>(entity, "UIWorldAttach");
           if (worldAttach) {
-            this.resolveWorldPosition(world, element, worldAttach);
+            this.resolveWorldPosition(world, entity, element, worldAttach);
           } else {
             const resolvedWidth = this.resolveValue(element.width, this.viewportWidth);
             const resolvedHeight = this.resolveValue(element.height, this.viewportHeight);
@@ -127,19 +127,25 @@ export class UILayoutSystem extends System {
               resolvedHeight
             );
 
-            element.computedWidth = resolvedWidth;
-            element.computedHeight = resolvedHeight;
-            element.computedX = anchorPos.x + element.offsetX;
-            element.computedY = anchorPos.y + element.offsetY;
+            world.mutateComponent<UIElementComponent>(entity, "UIElement", el => {
+              el.computedWidth = resolvedWidth;
+              el.computedHeight = resolvedHeight;
+              el.computedX = anchorPos.x + el.offsetX;
+              el.computedY = anchorPos.y + el.offsetY;
+            });
           }
         } else {
           // Normal child of a non-container UI element
           const parentElement = world.getComponent<UIElementComponent>(parentEntity, "UIElement");
           if (parentElement) {
-            element.computedWidth = this.resolveValue(element.width, parentElement.computedWidth);
-            element.computedHeight = this.resolveValue(element.height, parentElement.computedHeight);
-            element.computedX = parentElement.computedX + element.offsetX;
-            element.computedY = parentElement.computedY + element.offsetY;
+            const resolvedWidth = this.resolveValue(element.width, parentElement.computedWidth);
+            const resolvedHeight = this.resolveValue(element.height, parentElement.computedHeight);
+            world.mutateComponent<UIElementComponent>(entity, "UIElement", el => {
+              el.computedWidth = resolvedWidth;
+              el.computedHeight = resolvedHeight;
+              el.computedX = parentElement.computedX + el.offsetX;
+              el.computedY = parentElement.computedY + el.offsetY;
+            });
           }
         }
       }
@@ -181,28 +187,35 @@ export class UILayoutSystem extends System {
       const resolvedWidth = this.resolveValue(childElement.width, availableWidth);
       const resolvedHeight = this.resolveValue(childElement.height, availableHeight);
 
-      childElement.computedWidth = resolvedWidth;
-      childElement.computedHeight = resolvedHeight;
+      const localCurrentX = currentX;
+      const localCurrentY = currentY;
+
+      world.mutateComponent<UIElementComponent>(childEntity, "UIElement", el => {
+        el.computedWidth = resolvedWidth;
+        el.computedHeight = resolvedHeight;
+
+        if (container.direction === "horizontal") {
+          el.computedX = localCurrentX + el.offsetX;
+          el.computedY = this.alignInAxis(
+            container.align,
+            localCurrentY,
+            availableHeight,
+            resolvedHeight
+          ) + el.offsetY;
+        } else {
+          el.computedY = localCurrentY + el.offsetY;
+          el.computedX = this.alignInAxis(
+            container.align,
+            localCurrentX,
+            availableWidth,
+            resolvedWidth
+          ) + el.offsetX;
+        }
+      });
 
       if (container.direction === "horizontal") {
-        childElement.computedX = currentX + childElement.offsetX;
-        childElement.computedY = this.alignInAxis(
-          container.align,
-          currentY,
-          availableHeight,
-          resolvedHeight
-        ) + childElement.offsetY;
-
         currentX += resolvedWidth + container.gap;
       } else {
-        childElement.computedY = currentY + childElement.offsetY;
-        childElement.computedX = this.alignInAxis(
-          container.align,
-          currentX,
-          availableWidth,
-          resolvedWidth
-        ) + childElement.offsetX;
-
         currentY += resolvedHeight + container.gap;
       }
     }
@@ -238,7 +251,7 @@ export class UILayoutSystem extends System {
     }
   }
 
-  private resolveWorldPosition(world: World, element: UIElementComponent, attach: UIWorldAttachComponent): void {
+  private resolveWorldPosition(world: World, entity: Entity, element: UIElementComponent, attach: UIWorldAttachComponent): void {
     const targetTransform = world.getComponent<TransformComponent>(attach.targetEntity, "Transform");
 
     if (!targetTransform) return;
@@ -255,9 +268,16 @@ export class UILayoutSystem extends System {
       }
     }
 
-    element.computedWidth = this.resolveValue(element.width, this.viewportWidth);
-    element.computedHeight = this.resolveValue(element.height, this.viewportHeight);
-    element.computedX = screenX + attach.worldOffsetX - element.computedWidth / 2;
-    element.computedY = screenY + attach.worldOffsetY - element.computedHeight / 2;
+    const resolvedWidth = this.resolveValue(element.width, this.viewportWidth);
+    const resolvedHeight = this.resolveValue(element.height, this.viewportHeight);
+    const finalComputedX = screenX + attach.worldOffsetX - resolvedWidth / 2;
+    const finalComputedY = screenY + attach.worldOffsetY - resolvedHeight / 2;
+
+    world.mutateComponent<UIElementComponent>(entity, "UIElement", el => {
+        el.computedWidth = resolvedWidth;
+        el.computedHeight = resolvedHeight;
+        el.computedX = finalComputedX;
+        el.computedY = finalComputedY;
+    });
   }
 }
