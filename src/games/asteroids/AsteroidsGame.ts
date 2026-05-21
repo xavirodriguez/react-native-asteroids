@@ -124,7 +124,7 @@ export class AsteroidsGame
    * Applies an input frame to a specific player ship entity.
    * Side-effect free (only mutates the component data in the world).
    */
-  public applyInputToEntity(entityId: number, input: any) {
+  public applyInputToEntity(entityId: number, input: InputFrame) {
     this.world.mutateComponent<import("./types/AsteroidTypes").InputComponent>(entityId, "Input", inputComp => {
       inputComp.rotateLeft = input.actions.includes("rotateLeft") || (input.axes?.rotate_left ?? 0) > 0;
       inputComp.rotateRight = input.actions.includes("rotateRight") || (input.axes?.rotate_right ?? 0) > 0;
@@ -217,7 +217,7 @@ export class AsteroidsGame
 
   private handleDeltaServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
     const serverTick = serverState.tick as number;
-    const delta = serverState.delta as any;
+    const delta = serverState.delta as Partial<import("../../engine/types/EngineTypes").WorldSnapshot>;
 
     let authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot;
 

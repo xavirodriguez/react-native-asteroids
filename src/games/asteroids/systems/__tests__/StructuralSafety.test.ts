@@ -1,6 +1,7 @@
 import { World } from "../../../../engine/core/World";
 import { createBullet, createParticle } from "../../EntityFactory";
 import { System } from "../../../../engine/core/System";
+import { RenderComponent } from "../../../../engine/types/EngineTypes";
 
 describe("Asteroids Structural Mutation Safety", () => {
     let world: World;
@@ -50,7 +51,7 @@ describe("Asteroids Structural Mutation Safety", () => {
 
         // After flush, Particle entity (Transform + Velocity + Render + TTL) should exist
         const entities = world.query("Render");
-        const particle = entities.find(e => (world.getComponent(e, "Render") as any).shape === "particle");
+        const particle = entities.find(e => world.getComponent<RenderComponent>(e, "Render")?.shape === "particle");
         expect(particle).toBeDefined();
     });
 
@@ -74,7 +75,7 @@ describe("Asteroids Structural Mutation Safety", () => {
         expect(() => world.update(16.66)).not.toThrow();
 
         const entities = world.query("Render");
-        const particle = entities.find(e => (world.getComponent(e, "Render") as any).shape === "particle");
+        const particle = entities.find(e => world.getComponent<RenderComponent>(e, "Render")?.shape === "particle");
         expect(particle).toBeDefined();
     });
 });

@@ -1,7 +1,8 @@
 import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
+import { TransformComponent, VelocityComponent, RenderComponent, HapticRequestComponent } from "../../../engine/types/EngineTypes";
 import { InputComponent } from "../types/AsteroidTypes";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
+import { BulletPool } from "../EntityPool";
 import { PhysicsUtils } from "../../../engine/physics/utils/PhysicsUtils";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { createParticle } from "../EntityFactory";
@@ -60,7 +61,7 @@ export const ShipPhysics = {
   applyThrust(world: World, entity: number, position: TransformComponent, velocity: VelocityComponent, input: InputComponent, dtSeconds: number, ctx?: SimulationContext, config: AsteroidConfig): void {
     if (input.thrust) {
       if (!ctx?.isResimulating) {
-          world.getCommandBuffer().addComponent(entity, { type: "HapticRequest", pattern: "thrust" } as any);
+          world.getCommandBuffer().addComponent(entity, { type: "HapticRequest", pattern: "thrust" } as HapticRequestComponent);
       }
       const modifiers = world.getComponent<ModifierStackComponent>(entity, "ModifierStack")?.modifiers || [];
       const speedMod = modifiers.find(m => m.type === "speed");
@@ -119,7 +120,7 @@ export const ShipPhysics = {
           i.hyperspaceCooldownRemaining = config.HYPERSPACE_COOLDOWN;
       });
 
-      world.getCommandBuffer().addComponent(shipEntity, { type: "HapticRequest", pattern: "hyperspace" } as any);
+      world.getCommandBuffer().addComponent(shipEntity, { type: "HapticRequest", pattern: "hyperspace" } as HapticRequestComponent);
 
       const eventBus = world.getResource<EventBus>("EventBus");
       if (eventBus) eventBus.emitDeferred("ship:hyperspace");
@@ -173,9 +174,9 @@ export const ShipPhysics = {
     if (input.shoot && input.shootCooldownRemaining <= 0) {
       const modifiers = world.getComponent<ModifierStackComponent>(entity, "ModifierStack")?.modifiers || [];
       const isTripleShot = modifiers.some(m => m.type === "triple_shot");
-      const bulletColor = (config as any).BULLET_COLOR || "#FFFFFF";
+      const bulletColor = (config as unknown as { BULLET_COLOR: string }).BULLET_COLOR || "#FFFFFF";
 
-      const bulletPool = world.getResource<any>("BulletPool");
+      const bulletPool = world.getResource<BulletPool>("BulletPool");
 
       if (bulletPool) {
         if (isTripleShot) {

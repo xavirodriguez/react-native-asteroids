@@ -13,7 +13,7 @@ import { type AsteroidComponent, type GameStateComponent } from "../types/Astero
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { ScreenShakeComponent, HapticRequestComponent } from "../../../engine/types/EngineTypes";
 import { releaseProjectile } from "../../../engine/utils/ProjectileUtils";
-import { ParticlePool } from "../EntityPool";
+import { ParticlePool, BulletPool } from "../EntityPool";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { EventBus } from "../../../engine/core/EventBus";
 
@@ -147,7 +147,7 @@ export class AsteroidCollisionSystem extends System {
 
     this.splitAsteroid(world, asteroid);
 
-    const bulletPool = world.getResource<any>("BulletPool");
+    const bulletPool = world.getResource<BulletPool>("BulletPool");
     if (bulletPool) {
       releaseProjectile(world, bulletPool, bullet);
     } else {

@@ -1,12 +1,13 @@
 import { World } from "../../../engine/core/World";
 import { System } from "../../../engine/core/System";
-import { Entity, CollisionEventsComponent } from "../../../engine/types/EngineTypes";
+import { Entity, CollisionEventsComponent, TTLComponent } from "../../../engine/types/EngineTypes";
 import { EventBus } from "../../../engine/core/EventBus";
 import {
   TransformComponent,
   HealthComponent,
   RenderComponent,
 } from "../../../engine/types/EngineTypes";
+import { UITextComponent } from "../../../engine/ui/UITypes";
 import {
   GameStateComponent,
   InvaderComponent,
@@ -119,8 +120,8 @@ export class SpaceInvadersCollisionSystem extends System {
               zIndex: 100,
               data: { content: `x${gameState.multiplier}` }
             } as RenderComponent);
-            world.getCommandBuffer().addComponent(popup, { type: "UIText", content: `x${gameState.multiplier}` } as any);
-            world.getCommandBuffer().addComponent(popup, { type: "TTL", remaining: 1000, total: 1000 } as any);
+            world.getCommandBuffer().addComponent(popup, { type: "UIText", content: `x${gameState.multiplier}`, wordWrap: false, maxLines: 1 } as UITextComponent);
+            world.getCommandBuffer().addComponent(popup, { type: "TTL", remaining: 1000, total: 1000 } as TTLComponent);
 
             // Side-effects like Juice are deferred naturally or can be applied here
             JuiceSystem.add(world, popup, { property: "y", target: -40, duration: 1000, easing: "easeOut" });

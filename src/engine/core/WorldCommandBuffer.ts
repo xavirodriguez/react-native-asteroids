@@ -18,8 +18,7 @@ type Command =
   | { type: CommandType.REMOVE_ENTITY, entity: Entity }
   | { type: CommandType.ADD_COMPONENT, entity: Entity, component: Component }
   | { type: CommandType.REMOVE_COMPONENT, entity: Entity, componentType: string }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- La mutación es polimórfica sobre diferentes tipos de Component
-  | { type: CommandType.MUTATE_COMPONENT, entity: Entity, componentType: string, mutator: (component: any) => void };
+  | { type: CommandType.MUTATE_COMPONENT, entity: Entity, componentType: string, mutator: (component: Component) => void };
 
 /**
  * ECS Command Buffer - Defers structural world mutations to ensure iterator safety.
@@ -95,7 +94,7 @@ export class WorldCommandBuffer {
   public mutateComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, componentType: TType, mutator: (component: ComponentOf<TType>) => void): void;
   public mutateComponent<T extends Component>(entity: Entity, componentType: string, mutator: (component: T) => void): void;
   public mutateComponent<T extends Component>(entity: Entity, componentType: string, mutator: (component: T) => void): void {
-    this.commands.push({ type: CommandType.MUTATE_COMPONENT, entity, componentType, mutator });
+    this.commands.push({ type: CommandType.MUTATE_COMPONENT, entity, componentType, mutator: mutator as (component: Component) => void });
   }
 
   /**

@@ -1,6 +1,7 @@
 import { World } from "../../../../engine/core/World";
 import { SpaceInvadersFormationSystem } from "../SpaceInvadersFormationSystem";
 import { FormationComponent, GAME_CONFIG } from "../../types/SpaceInvadersTypes";
+import { TransformComponent } from "../../../../engine/types/EngineTypes";
 import { EnemyBulletPool } from "../../EntityPool";
 import { createFormationController, createInvader } from "../../EntityFactory";
 
@@ -26,8 +27,8 @@ describe("SpaceInvadersFormationSystem", () => {
     const formation = world.getComponent<FormationComponent>(formationEntity, "Formation")!;
     const expectedX = 100 + formation.speed; // direction is 1
 
-    const pos = world.getComponent<any>(invader, "Transform");
-    expect(pos.x).toBeCloseTo(expectedX);
+    const pos = world.getComponent<TransformComponent>(invader, "Transform");
+    expect(pos?.x).toBeCloseTo(expectedX);
   });
 
   it("should trigger stepDownPending when hitting right edge", () => {
@@ -42,8 +43,8 @@ describe("SpaceInvadersFormationSystem", () => {
     expect(formation.stepDownPending).toBe(true);
 
     // Should NOT have moved horizontally
-    const pos = world.getComponent<any>(invader, "Transform");
-    expect(pos.x).toBe(rightLimit - 10);
+    const pos = world.getComponent<TransformComponent>(invader, "Transform");
+    expect(pos?.x).toBe(rightLimit - 10);
   });
 
   it("should perform step down and reverse direction", () => {
@@ -59,8 +60,8 @@ describe("SpaceInvadersFormationSystem", () => {
     expect(formation.stepDownPending).toBe(false);
     expect(formation.direction).toBe(-1);
 
-    const pos = world.getComponent<any>(invader, "Transform");
-    expect(pos.y).toBe(100 + formation.descentStep);
+    const pos = world.getComponent<TransformComponent>(invader, "Transform");
+    expect(pos?.y).toBe(100 + formation.descentStep);
   });
 
   it("should avoid infinite descent by using predictive edge checking", () => {
@@ -80,7 +81,7 @@ describe("SpaceInvadersFormationSystem", () => {
     formation = world.getComponent<FormationComponent>(formationEntity, "Formation")!;
     expect(formation.stepDownPending).toBe(false);
     expect(formation.direction).toBe(-1);
-    const posAtStepDown = world.getComponent<any>(invader, "Transform").y;
+    const posAtStepDown = world.getComponent<TransformComponent>(invader, "Transform")?.y;
 
     // Step 3: Next update should move LEFT, NOT trigger another step down
     // Even though it's still > rightLimit, direction is now -1, so willHitRight is false
@@ -90,8 +91,8 @@ describe("SpaceInvadersFormationSystem", () => {
     expect(formation.stepDownPending).toBe(false);
     expect(formation.direction).toBe(-1);
 
-    const pos = world.getComponent<any>(invader, "Transform");
-    expect(pos.y).toBe(posAtStepDown); // y should not have changed (no extra step down)
-    expect(pos.x).toBeLessThan(rightLimit + 5);
+    const pos = world.getComponent<TransformComponent>(invader, "Transform");
+    expect(pos?.y).toBe(posAtStepDown); // y should not have changed (no extra step down)
+    expect(pos?.x).toBeLessThan(rightLimit + 5);
   });
 });

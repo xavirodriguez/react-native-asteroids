@@ -252,8 +252,8 @@ export class AudioSystem {
 
   public async stopMusic(): Promise<void> {
     if (Platform.OS === "web") {
-      if (this.currentMusicSource && (this.currentMusicSource as any).stop) {
-        (this.currentMusicSource as AudioBufferSourceNode).stop();
+      if (this.currentMusicSource instanceof AudioBufferSourceNode) {
+        this.currentMusicSource.stop();
       }
       this.currentMusicSource = null;
       this.currentMusicGain = null;

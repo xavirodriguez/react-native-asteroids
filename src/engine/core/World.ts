@@ -430,7 +430,7 @@ export class World {
           `[World] ILLEGAL MUTATION DETECTED: Direct write to "${String(prop)}" on component "${type}" (Entity ${entity}). ` +
           `Always use world.mutateComponent() to ensure state versioning and determinism.`
         );
-        (obj as any)[prop] = value;
+        (obj as Record<string | symbol, unknown>)[prop] = value;
         return true;
       }
     });
