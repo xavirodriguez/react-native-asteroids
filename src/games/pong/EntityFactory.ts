@@ -1,5 +1,5 @@
 import { World } from "../../engine/core/World";
-import { PongState, BallComponent, PaddleComponent } from "./types";
+import { PongState, BallComponent, PaddleComponent, PONG_CONFIG } from "./types";
 import { PongConfig } from "./types/PongConfigSchema";
 import { Component, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, BoundaryComponent, TagComponent, Entity } from "../../engine/types/EngineTypes";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
@@ -47,7 +47,7 @@ export const PongEntityFactory = {
    * Uses `gameplayRandom` to determine initial vertical direction.
    */
   createBall(world: World, deferred?: boolean) {
-    const config = world.getResource<PongConfig>("GameConfig")!;
+    const config = world.getResource<PongConfig>("GameConfig") || PONG_CONFIG;
     const { entity: ball, add } = createBaseEntity(world, deferred);
     add({ type: "Transform", x: config.WIDTH / 2, y: config.HEIGHT / 2, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
     add({ type: "Velocity", dx: config.BALL_SPEED_START, dy: config.BALL_SPEED_START * (RandomService.getGameplayRandom().next() > 0.5 ? 1 : -1) } as VelocityComponent);
@@ -74,7 +74,7 @@ export const PongEntityFactory = {
    * @param side - Which side of the screen the paddle belongs to.
    */
   createPaddle(world: World, side: "left" | "right", deferred?: boolean) {
-    const config = world.getResource<PongConfig>("GameConfig")!;
+    const config = world.getResource<PongConfig>("GameConfig") || PONG_CONFIG;
     const { entity: paddle, add } = createBaseEntity(world, deferred);
     const x = side === "left" ? 40 : config.WIDTH - 40;
     const y = config.HEIGHT / 2;

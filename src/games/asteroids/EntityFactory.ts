@@ -1,5 +1,5 @@
 import { World } from "../../engine/core/World";
-import { INITIAL_GAME_STATE } from "./types/AsteroidTypes";
+import { INITIAL_GAME_STATE, GAME_CONFIG } from "./types/AsteroidTypes";
 import { AsteroidConfig } from "./types/AsteroidConfigSchema";
 import {
     TransformComponent,
@@ -77,7 +77,7 @@ const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, a
  * @returns ID de la entidad creada.
  */
 export const createShip = ({ world, x, y, deferred }: { world: World; x: number; y: number, deferred?: boolean }) => {
-  const config = world.getResource<AsteroidConfig>("GameConfig")!;
+  const config = world.getResource<AsteroidConfig>("GameConfig") || GAME_CONFIG;
   const { entity: ship, add } = createBaseEntity(world, deferred);
 
   add({ type: "Transform", x, y, rotation: -Math.PI / 2, scaleX: 1, scaleY: 1 } as TransformComponent);
@@ -148,7 +148,7 @@ export const createShip = ({ world, x, y, deferred }: { world: World; x: number;
  * @param ownerId - Optional sessionId of the player who fired the bullet.
  */
 export const createBullet = ({ world, x, y, angle, ownerId, deferred }: { world: World; x: number; y: number; angle: number; ownerId?: string, deferred?: boolean }) => {
-  const config = world.getResource<AsteroidConfig>("GameConfig")!;
+  const config = world.getResource<AsteroidConfig>("GameConfig") || GAME_CONFIG;
   const { entity: bullet, add } = createBaseEntity(world, deferred);
   const dx = Math.cos(angle) * config.BULLET_SPEED;
   const dy = Math.sin(angle) * config.BULLET_SPEED;
@@ -193,7 +193,7 @@ export const createBullet = ({ world, x, y, angle, ownerId, deferred }: { world:
  * @param size - Enum determining radius and loot probabilities.
  */
 export const createAsteroid = ({ world, x, y, size, deferred }: { world: World; x: number; y: number; size: "large" | "medium" | "small", deferred?: boolean }) => {
-  const config = world.getResource<AsteroidConfig>("GameConfig")!;
+  const config = world.getResource<AsteroidConfig>("GameConfig") || GAME_CONFIG;
   const { entity: asteroid, add } = createBaseEntity(world, deferred);
   const radius = config.ASTEROID_RADII[size];
   const gameplayRandom = RandomService.getInstance("gameplay");
@@ -278,7 +278,7 @@ export const createAsteroid = ({ world, x, y, size, deferred }: { world: World; 
  * @param count - Number of large asteroids to spawn.
  */
 export const spawnAsteroidWave = ({ world, count, deferred }: { world: World; count: number, deferred?: boolean }) => {
-  const config = world.getResource<AsteroidConfig>("GameConfig")!;
+  const config = world.getResource<AsteroidConfig>("GameConfig") || GAME_CONFIG;
   const gameplayRandom = RandomService.getInstance("gameplay");
   for (let i = 0; i < count; i++) {
     let x, y, dist;
@@ -296,7 +296,7 @@ export const spawnAsteroidWave = ({ world, count, deferred }: { world: World; co
  * Creates a UFO entity that traverses the screen horizontally.
  */
 export const createUfo = ({ world, deferred }: { world: World, deferred?: boolean }) => {
-  const config = world.getResource<AsteroidConfig>("GameConfig")!;
+  const config = world.getResource<AsteroidConfig>("GameConfig") || GAME_CONFIG;
   const { entity: ufo, add } = createBaseEntity(world, deferred);
   const gameplayRandom = RandomService.getInstance("gameplay");
   const side = gameplayRandom.next() > 0.5 ? 0 : config.SCREEN_WIDTH;
@@ -336,7 +336,7 @@ export interface CreateParticleParams {
  * Creates a temporary visual particle.
  */
 export const createParticle = (params: CreateParticleParams) => {
-  const config = params.world.getResource<AsteroidConfig>("GameConfig")!;
+  const config = params.world.getResource<AsteroidConfig>("GameConfig") || GAME_CONFIG;
   const { world, x, y, dx, dy, color, ttl = config.PARTICLE_TTL_BASE, size = 2, deferred } = params;
   const { entity: particle, add } = createBaseEntity(world, deferred);
 
@@ -362,7 +362,7 @@ export const createFlash = ({ world, x, y, size, deferred }: { world: World; x: 
  * Initializes the global game state singleton for Asteroids.
  */
 export const createGameState = ({ world, deferred, headless = false }: { world: World, deferred?: boolean, headless?: boolean }) => {
-  const config = world.getResource<AsteroidConfig>("GameConfig")!;
+  const config = world.getResource<AsteroidConfig>("GameConfig") || GAME_CONFIG;
   const { entity: gameState, add } = createBaseEntity(world, deferred);
   add({
     ...INITIAL_GAME_STATE,

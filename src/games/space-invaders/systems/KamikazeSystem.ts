@@ -45,6 +45,9 @@ export class KamikazeSystem extends System {
       const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
 
       if (kami.phase === "diving") {
+        let currentVx = 0;
+        let currentVy = 0;
+
         if (playerPos) {
           const dx = playerPos.x - pos.x;
           const dy = playerPos.y - pos.y;
@@ -52,18 +55,18 @@ export class KamikazeSystem extends System {
           world.mutateComponent<VelocityComponent>(entity, "Velocity", v => {
               v.dx = (dx / dist) * kami.diveSpeed;
               v.dy = (dy / dist) * kami.diveSpeed;
+              currentVx = v.dx;
+              currentVy = v.dy;
           });
         } else {
           world.mutateComponent<VelocityComponent>(entity, "Velocity", v => {
               v.dy = kami.diveSpeed;
+              currentVy = v.dy;
           });
         }
 
         world.mutateComponent<RenderComponent>(entity, "Render", render => {
-            const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
-            if (vel) {
-                render.rotation = Math.atan2(vel.dy, vel.dx) + Math.PI / 2;
-            }
+            render.rotation = Math.atan2(currentVy, currentVx) + Math.PI / 2;
         });
 
         if (pos.y > this.config.SCREEN_HEIGHT - 50) {

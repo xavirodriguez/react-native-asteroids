@@ -1,5 +1,5 @@
 import { World } from "../core/World";
-import { Entity, TransformComponent } from "../types/EngineTypes";
+import { TransformComponent } from "../types/EngineTypes";
 import { AbstractHierarchySystem } from "./AbstractHierarchySystem";
 
 /**

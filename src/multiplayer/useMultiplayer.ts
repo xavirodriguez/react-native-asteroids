@@ -52,7 +52,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
         setServerState(joinedRoom.state);
 
         joinedRoom.onStateChange((state) => {
-          setServerState({ ...state });
+          setServerState({ ...state }); // Spread ensures React re-renders even if object reference is reused
           if (state.serverTick) {
             serverTickRef.current = state.serverTick;
           }

@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity, Platform } from "react-native";
 import { FlappyBirdState } from "../src/games/flappybird/types/FlappyBirdTypes";
 
 interface FlappyBirdUIProps {
@@ -72,17 +72,27 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: "monospace",
     fontWeight: "bold",
-    textShadowColor: "black",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    ...(Platform.OS === 'web'
+      ? { textShadow: '1px 1px 2px black' }
+      : {
+          textShadowColor: "black",
+          textShadowOffset: { width: 1, height: 1 },
+          textShadowRadius: 2,
+        }
+    ),
   },
   highScoreText: {
     color: "#FFFF00",
     fontSize: 16,
     fontFamily: "monospace",
-    textShadowColor: "black",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    ...(Platform.OS === 'web'
+      ? { textShadow: '1px 1px 2px black' }
+      : {
+          textShadowColor: "black",
+          textShadowOffset: { width: 1, height: 1 },
+          textShadowRadius: 2,
+        }
+    ),
   },
   pauseButton: {
     backgroundColor: "rgba(0, 0, 0, 0.4)",
