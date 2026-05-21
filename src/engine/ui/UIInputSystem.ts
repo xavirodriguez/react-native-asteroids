@@ -33,11 +33,11 @@ export class UIInputSystem extends System {
         const btnState = world.getComponent<UIButtonStateComponent>(entity, "UIButtonState")!;
 
         if (!element.visible || !element.interactive || btnState.state === "disabled") {
-            btnState.clicked = false;
+            world.mutateComponent<UIButtonStateComponent>(entity, "UIButtonState", b => { b.clicked = false; });
             continue;
         }
 
-        btnState.clicked = false;
+        world.mutateComponent<UIButtonStateComponent>(entity, "UIButtonState", b => { b.clicked = false; });
 
         const isInside = this.isPointInside(
             this.pointerX,
@@ -50,15 +50,15 @@ export class UIInputSystem extends System {
 
         if (isInside) {
             if (this.pointerDown) {
-                btnState.state = "pressed";
+                world.mutateComponent<UIButtonStateComponent>(entity, "UIButtonState", b => { b.state = "pressed"; });
             } else {
                 if (btnState.state === "pressed" && this.pointerJustReleased) {
-                    btnState.clicked = true;
+                    world.mutateComponent<UIButtonStateComponent>(entity, "UIButtonState", b => { b.clicked = true; });
                 }
-                btnState.state = "hovered";
+                world.mutateComponent<UIButtonStateComponent>(entity, "UIButtonState", b => { b.state = "hovered"; });
             }
         } else {
-            btnState.state = "idle";
+            world.mutateComponent<UIButtonStateComponent>(entity, "UIButtonState", b => { b.state = "idle"; });
         }
     }
 

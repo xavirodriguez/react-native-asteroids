@@ -199,13 +199,15 @@ export class UIFactory {
             commands.addComponent(entity, btnState);
             commands.addComponent(entity, text);
         } else {
-            const element = world.getComponent<UIElementComponent>(entity, "UIElement")!;
-            element.elementType = "button";
-            element.interactive = true;
+            world.mutateComponent<UIElementComponent>(entity, "UIElement", element => {
+                element.elementType = "button";
+                element.interactive = true;
+            });
 
-            const style = world.getComponent<UIStyleComponent>(entity, "UIStyle")!;
-            style.textAlign = "center";
-            style.textColor = config.textColor ?? "white";
+            world.mutateComponent<UIStyleComponent>(entity, "UIStyle", style => {
+                style.textAlign = "center";
+                style.textColor = config.textColor ?? "white";
+            });
 
             world.addComponent(entity, btnState);
             world.addComponent(entity, text);

@@ -1,5 +1,6 @@
 import { World } from "../../engine/core/World";
 import { GameLoop } from "../../engine/core/GameLoop";
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { BaseGame } from "../../engine/core/BaseGame";
 import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";

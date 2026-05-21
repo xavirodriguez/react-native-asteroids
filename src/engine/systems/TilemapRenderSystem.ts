@@ -47,7 +47,9 @@ export class TilemapRenderSystem extends System {
       }
 
       // Store visible range in the component for the renderer to use
-      tilemap._visibleRange = { startX, startY, endX, endY };
+      world.mutateComponent<TilemapComponent>(entity, "Tilemap", t => {
+        t._visibleRange = { startX, startY, endX, endY };
+      });
     }
   }
 }

@@ -30,4 +30,6 @@ export interface WorldSnapshot {
   /** Incremented on data changes or visual updates. */
   stateVersion: number;
   seed: number;
+  /** Current simulation tick. */
+  tick: number;
 }

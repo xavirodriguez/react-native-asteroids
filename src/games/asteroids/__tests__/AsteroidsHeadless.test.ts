@@ -48,6 +48,7 @@ describe("Asteroids Headless Mode", () => {
 
         const world = game.getWorld();
         const ship = world.query("Ship", "Transform")[0];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const initialPos = { ...world.getComponent<any>(ship, "Transform") };
 
         // Apply thrust via input
@@ -64,6 +65,7 @@ describe("Asteroids Headless Mode", () => {
             game.runSimulationStep(16.66, false);
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const finalPos = world.getComponent<any>(ship, "Transform");
         expect(finalPos.x !== initialPos.x || finalPos.y !== initialPos.y).toBe(true);
 

@@ -44,7 +44,8 @@ export class AudioSystem {
     }
 
     if (Platform.OS === "web") {
-      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+      // @ts-expect-error - Supporting both standard and legacy webkit AudioContext
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (AudioContextClass) {
         this.ctx = new AudioContextClass();
       }

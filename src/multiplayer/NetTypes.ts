@@ -39,6 +39,8 @@ export interface PredictedState {
     vy: number;
     angle?: number;
   };
+  /** List of entity IDs active at this tick. */
+  entities: string[];
 }
 
 /**

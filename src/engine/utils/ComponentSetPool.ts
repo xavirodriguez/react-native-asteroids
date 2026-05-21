@@ -55,7 +55,7 @@ export class ComponentSetPool<T extends Record<string, Component>> {
         for (const key in components) {
           const comp = components[key];
           if (comp.type === "Reclaimable") {
-            (comp as unknown as ReclaimableComponent).onReclaim = (w, e) => this.release(w, e);
+            (comp as unknown as ReclaimableComponent).onReclaim = (w: World, e: Entity) => this.release(w, e);
           }
           commands.addComponent(entity, comp);
         }
@@ -70,7 +70,7 @@ export class ComponentSetPool<T extends Record<string, Component>> {
 
       // Automatically wire up Reclaimable components to return to this pool
       if (comp.type === "Reclaimable") {
-        (comp as unknown as ReclaimableComponent).onReclaim = (w, e) => this.release(w, e);
+        (comp as unknown as ReclaimableComponent).onReclaim = (w: World, e: Entity) => this.release(w, e);
       }
 
       world.addComponent(entity, comp);

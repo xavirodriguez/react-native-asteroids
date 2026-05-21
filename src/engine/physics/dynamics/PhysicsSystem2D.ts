@@ -123,7 +123,7 @@ export class PhysicsSolveSystem extends System {
   /**
    * Updates the physics solver.
    */
-  update(world: World, deltaTime: number): void {
+  update(world: World, _deltaTime: number): void {
     const eventEntities = world.query("CollisionEvents", "PhysicsBody2D");
     const processedPairs = new Set<string>();
 

@@ -44,7 +44,7 @@ import { BinaryCompression } from "../../src/engine/network/BinaryCompression";
  * @conceptualRisk [TICK_DRIFT] Discrepancies between fixed simulation and variable patch rates
  * can cause visual jitter without client-side interpolation.
  */
-export class AsteroidsRoom extends Room<any> {
+export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
   /** Paso de tiempo fijo para el motor ECS (60Hz). */
   private fixedTimeStep = 16.66;

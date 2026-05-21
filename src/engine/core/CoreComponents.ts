@@ -289,6 +289,11 @@ export interface ReclaimableComponent extends Component {
    * @remarks Reemplaza callbacks para compatibilidad con snapshots.
    */
   poolId: string;
+  /**
+   * Callback local para gestionar la devolución al pool.
+   * @internal No se serializa.
+   */
+  onReclaim?: (world: World, entity: Entity) => void;
 }
 
 export type InputAction = string;
