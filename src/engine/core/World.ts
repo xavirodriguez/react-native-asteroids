@@ -95,6 +95,13 @@ export class World {
   public get tick(): number { return this._tick; }
 
   /**
+   * Provee acceso al generador de números aleatorios determinista para la simulación.
+   */
+  public get gameplayRandom(): RandomService {
+    return RandomService.getInstance("gameplay");
+  }
+
+  /**
    * Manually advances the simulation tick.
    */
   public advanceTick(): void {

@@ -2,7 +2,6 @@ import { World } from "../../core/World";
 import { System } from "../../core/System";
 import { TransformComponent, VelocityComponent } from "../../core/CoreComponents";
 import { CommandQueueComponent, GameCommand } from "../types";
-import { RandomService } from "../../utils/RandomService";
 
 /**
  * CommandInvokerSystem: Responsable de la Capa de Ejecución.
@@ -59,8 +58,8 @@ export class CommandInvokerSystem extends System {
         this.handleHyperspace(world, entity);
         break;
       case 'FIRE':
-        // El disparo suele implicar creación de entidades, se delega a sistemas especializados
-        // o al CommandBuffer para no romper la inmutabilidad estructural durante el update.
+        // El disparo suele implicar creación de entidades. Se recomienda delegar
+        // a un sistema especializado o usar WorldCommandBuffer.
         break;
     }
   }
@@ -99,7 +98,7 @@ export class CommandInvokerSystem extends System {
    */
   private handleHyperspace(world: World, entity: number): void {
     // Usamos el servicio de PRNG del motor para garantizar determinismo en rollback/netcode
-    const rng = RandomService.getGameplayRandom();
+    const rng = world.gameplayRandom;
 
     // Límites asumiendo resolución estándar (Mejorable inyectando GameConfig)
     const newX = rng.nextRange(50, 750);
