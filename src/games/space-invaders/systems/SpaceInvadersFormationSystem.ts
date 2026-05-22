@@ -107,16 +107,25 @@ export class SpaceInvadersFormationSystem extends System {
     }
 
     // 3. Enemy firing logic
+    let shouldFire = false;
+    let nextCooldown = 0;
+
     world.mutateComponent<FormationComponent>(formationEntity, "Formation", f => {
       f.fireCooldownRemaining -= deltaTime;
       if (f.fireCooldownRemaining <= 0) {
-        this.fireFromFormation(world, invaders);
-        f.fireCooldownRemaining = RandomService.getGameplayRandom().nextRange(
+        shouldFire = true;
+        nextCooldown = RandomService.getGameplayRandom().nextRange(
           this.config!.ENEMY_FIRE_INTERVAL_MIN,
           this.config!.ENEMY_FIRE_INTERVAL_MAX
         ) / (1 + ratio); // Faster firing as fewer invaders remain
+        f.fireCooldownRemaining = nextCooldown;
       }
     });
+
+    if (shouldFire) {
+      // Mutación segura: llamar a factorías fuera de mutateComponent para evitar nesting ilegal
+      this.fireFromFormation(world, invaders);
+    }
   }
 
   private fireFromFormation(world: World, invaderEntities: ReadonlyArray<number>): void {

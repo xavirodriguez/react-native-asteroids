@@ -4,6 +4,8 @@ import { FormationComponent, GAME_CONFIG } from "../../types/SpaceInvadersTypes"
 import { TransformComponent } from "../../../../engine/types/EngineTypes";
 import { EnemyBulletPool } from "../../EntityPool";
 import { createFormationController, createInvader } from "../../EntityFactory";
+import { SPACE_INVADERS_TEST_CONFIG } from "../../config/SpaceInvadersTestConfig";
+import { World } from "../../../../engine/core/World";
 
 describe("SpaceInvadersFormationSystem", () => {
   let world: World;
