@@ -24,6 +24,20 @@ export class CCDSystem extends System {
 
     const entities = world.query("Transform", "Collider2D", "ContinuousCollider", "Velocity");
 
+    // Orden determinista para evitar desincronizaciones en multiplayer
+    entities.sort((a, b) => a - b);
+
+    // Limpiar CollisionEvents antes de empezar el CCD para que CollisionSystem2D no los borre después.
+    // CollisionSystem2D DEBE correr después de CCD y detectar que ya hay eventos.
+    const eventQuery = world.query("CollisionEvents");
+    for (let i = 0; i < eventQuery.length; i++) {
+        world.mutateComponent<CollisionEventsComponent>(eventQuery[i], "CollisionEvents", events => {
+            events.collisions.length = 0;
+            events.triggersEntered.length = 0;
+            events.triggersExited.length = 0;
+        });
+    }
+
     // Usamos un conjunto para ignorar al propio proyectil en el raycast
     const ignored = new Set<Entity>();
 
@@ -33,15 +47,21 @@ export class CCDSystem extends System {
       if (!ccd.enabled) continue;
 
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity")!;
+      const col = world.getComponent<Collider2DComponent>(entity, "Collider2D")!;
       const speedSq = vel.dx * vel.dx + vel.dy * vel.dy;
 
       // Threshold check: si es muy lento, dejamos que el CollisionSystem2D normal lo maneje
-      // El umbral se puede configurar o derivar del tamaño del colisionador
-      const threshold = ccd.velocityThreshold ?? 500;
+      let threshold = ccd.velocityThreshold;
+      if (threshold === undefined) {
+        // Heurística: si se mueve más de la mitad de su tamaño en un frame
+        if (col.shape.type === "circle") threshold = col.shape.radius * 30; // ~0.5 radius at 60fps
+        else if (col.shape.type === "aabb") threshold = Math.min(col.shape.halfWidth, col.shape.halfHeight) * 30;
+        else threshold = 500;
+      }
+
       if (speedSq < threshold * threshold) continue;
 
       const trans = world.getComponent<TransformComponent>(entity, "Transform")!;
-      const col = world.getComponent<Collider2DComponent>(entity, "Collider2D")!;
 
       const startX = trans.worldX ?? trans.x;
       const startY = trans.worldY ?? trans.y;

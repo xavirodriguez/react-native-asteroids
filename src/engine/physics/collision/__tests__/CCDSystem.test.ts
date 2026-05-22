@@ -73,6 +73,7 @@ describe("CCDSystem - Raycast Mode", () => {
       layer: 1, mask: 1,
       enabled: true, isTrigger: false
     } as Collider2DComponent);
+    world.addComponent(obstacle, { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] } as CollisionEventsComponent);
 
     const ship = world.createEntity();
     world.addComponent(ship, { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
@@ -101,5 +102,84 @@ describe("CCDSystem - Raycast Mode", () => {
 
     const shipEvents = world.getComponent<CollisionEventsComponent>(ship, "CollisionEvents")!;
     expect(shipEvents.collisions.length).toBe(1);
+  });
+
+  test("CCD should respect layer masks", () => {
+    // Obstáculo en capa 2, bala busca capa 1
+    const obstacle = world.createEntity();
+    world.addComponent(obstacle, { type: "Transform", x: 100, y: 0 } as TransformComponent);
+    world.addComponent(obstacle, {
+      type: "Collider2D",
+      shape: { type: "circle", radius: 20 },
+      layer: 2, mask: 2,
+      enabled: true
+    } as Collider2DComponent);
+    world.addComponent(obstacle, { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] } as CollisionEventsComponent);
+
+    const bullet = world.createEntity();
+    world.addComponent(bullet, { type: "Transform", x: 50, y: 0 } as TransformComponent);
+    world.addComponent(bullet, { type: "Velocity", dx: 6000, dy: 0 } as VelocityComponent);
+    world.addComponent(bullet, {
+      type: "Collider2D",
+      shape: { type: "circle", radius: 2 },
+      layer: 1, mask: 1, // NO colisiona con capa 2
+      enabled: true
+    } as Collider2DComponent);
+    world.addComponent(bullet, {
+      type: "ContinuousCollider",
+      enabled: true,
+      mode: "raycast"
+    } as ContinuousColliderComponent);
+    world.addComponent(bullet, {
+      type: "CollisionEvents",
+      collisions: [],
+      activeTriggers: [],
+      triggersEntered: [],
+      triggersExited: []
+    } as CollisionEventsComponent);
+
+    ccdSystem.update(world, 16.6);
+
+    const bulletEvents = world.getComponent<CollisionEventsComponent>(bullet, "CollisionEvents");
+    expect(bulletEvents?.collisions.length).toBe(0);
+  });
+
+  test("Adaptive threshold should trigger CCD only when fast enough", () => {
+    const obstacle = world.createEntity();
+    world.addComponent(obstacle, { type: "Transform", x: 100, y: 0 } as TransformComponent);
+    world.addComponent(obstacle, {
+      type: "Collider2D",
+      shape: { type: "circle", radius: 20 },
+      layer: 1, mask: 1, enabled: true
+    } as Collider2DComponent);
+    world.addComponent(obstacle, { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] } as CollisionEventsComponent);
+
+    const bullet = world.createEntity();
+    world.addComponent(bullet, { type: "Transform", x: 70, y: 0 } as TransformComponent);
+    // Velocidad lenta: 10 px/s * 0.0166s = 0.166px. El radio es 2. No debería activar CCD (umbral ~60 px/s)
+    world.addComponent(bullet, { type: "Velocity", dx: 10, dy: 0 } as VelocityComponent);
+    world.addComponent(bullet, {
+      type: "Collider2D",
+      shape: { type: "circle", radius: 2 },
+      layer: 1, mask: 1, enabled: true
+    } as Collider2DComponent);
+    world.addComponent(bullet, {
+      type: "ContinuousCollider",
+      enabled: true
+      // velocityThreshold undefined -> adaptive
+    } as ContinuousColliderComponent);
+    world.addComponent(bullet, {
+      type: "CollisionEvents",
+      collisions: [],
+      activeTriggers: [],
+      triggersEntered: [],
+      triggersExited: []
+    } as CollisionEventsComponent);
+
+    ccdSystem.update(world, 16.6);
+
+    // No debería haber colisión porque CCD no se activó y discretamente no llega
+    const bulletEvents = world.getComponent<CollisionEventsComponent>(bullet, "CollisionEvents");
+    expect(bulletEvents?.collisions.length).toBe(0);
   });
 });

@@ -1,10 +1,18 @@
+export interface ServerTimeResponse {
+  serverTime: number;
+  weekSeed: string | number;
+  weekIndex?: number;
+  validFrom?: number;
+  validUntil?: number;
+}
+
 /**
  * Servicio encargado de sincronizar el tiempo del cliente con el servidor.
  */
 export class ServerTimeService {
   private static timeOffset: number = 0;
   private static lastSync: number = 0;
-  private static weekSeed: string | number | null = null;
+  private static metadata: ServerTimeResponse | null = null;
   private static syncInProgress: boolean = false;
 
   // En producción esto debería venir de una variable de entorno o config global
@@ -19,15 +27,17 @@ export class ServerTimeService {
 
     try {
       const response = await fetch(`${this.SERVER_BASE_URL}/api/server-time`);
-      const data = await response.json();
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      const data: ServerTimeResponse = await response.json();
 
       const now = Date.now();
       this.timeOffset = data.serverTime - now;
-      this.weekSeed = data.weekSeed;
+      this.metadata = data;
       this.lastSync = now;
 
       if (Math.abs(this.timeOffset) > 5 * 60 * 1000) {
-        console.warn(`[TimeSync] Large clock drift detected: ${Math.round(this.timeOffset / 1000)}s`);
+        console.warn(`[TimeSync] Large clock drift detected: ${Math.round(this.timeOffset / 1000)}s. Please check your system clock.`);
       }
     } catch (error) {
       console.error("[TimeSync] Failed to sync time with server:", error);
@@ -47,7 +57,14 @@ export class ServerTimeService {
    * Devuelve la semilla semanal recibida del servidor.
    */
   public static getWeekSeed(): string | number | null {
-    return this.weekSeed;
+    return this.metadata?.weekSeed ?? null;
+  }
+
+  /**
+   * Devuelve los metadatos completos del servidor.
+   */
+  public static getMetadata(): ServerTimeResponse | null {
+    return this.metadata;
   }
 
   /**
@@ -62,5 +79,19 @@ export class ServerTimeService {
    */
   public static isSynced(): boolean {
     return this.lastSync > 0;
+  }
+
+  /**
+   * Verifica si se puede iniciar una partida multiplayer (requiere sync).
+   */
+  public static canStartMultiplayer(): boolean {
+    return this.isSynced() && this.metadata !== null;
+  }
+
+  /**
+   * Devuelve true si el desfase es mayor a 5 minutos.
+   */
+  public static hasLargeDrift(): boolean {
+    return Math.abs(this.timeOffset) > 5 * 60 * 1000;
   }
 }

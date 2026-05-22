@@ -3,6 +3,21 @@
  */
 export class TimeUtils {
   /**
+   * Calcula el número de semana ISO y el año correspondiente.
+   */
+  public static getISOWeek(serverTime: number = Date.now()): { weekIndex: number; year: number } {
+    const date = new Date(serverTime);
+    const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+
+    const dayNum = utcDate.getUTCDay() || 7;
+    utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
+    const weekIndex = Math.ceil((((utcDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+
+    return { weekIndex, year: utcDate.getUTCFullYear() };
+  }
+
+  /**
    * Calcula una semilla semanal determinista basada en UTC.
    * Evita dependencias de la zona horaria del servidor.
    *
@@ -10,17 +25,8 @@ export class TimeUtils {
    * @returns Una semilla estable durante toda la semana ISO.
    */
   public static getCurrentWeekSeed(serverTime: number = Date.now()): string {
-    const date = new Date(serverTime);
-    // Usamos UTC para garantizar consistencia global
-    const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-
-    // Algoritmo de número de semana ISO 8601
-    const dayNum = utcDate.getUTCDay() || 7;
-    utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
-    const weekIndex = Math.ceil((((utcDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-
-    return `${utcDate.getUTCFullYear()}-W${weekIndex}`;
+    const { weekIndex, year } = this.getISOWeek(serverTime);
+    return `${year}-W${weekIndex}`;
   }
 
   /**

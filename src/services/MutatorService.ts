@@ -13,6 +13,21 @@ const MUTATORS_ENABLED_KEY = "settings:mutators_enabled";
 export class MutatorService {
   private static cachedMutators: Mutator[] | null = null;
   private static cachedSeed: string | number | null = null;
+  private static lockedSeed: string | number | null = null;
+
+  /**
+   * Locks the current seed for the duration of a game session.
+   */
+  public static lockSessionSeed(forceSeed?: string | number): void {
+    this.lockedSeed = forceSeed ?? ServerTimeService.getWeekSeed() ?? this.getISOWeekNumber(new Date(ServerTimeService.getCorrectedTime()));
+  }
+
+  /**
+   * Unlocks the session seed.
+   */
+  public static unlockSessionSeed(): void {
+    this.lockedSeed = null;
+  }
 
   /**
    * Returns the mutators active for the current week.
@@ -20,8 +35,8 @@ export class MutatorService {
    * @param forceSeed - Optional seed to bypass server/local time logic.
    */
   public static getWeeklyMutators(forceSeed?: string | number): { mutators: Mutator[], source: 'server' | 'local-fallback' } {
-    const seed = forceSeed ?? ServerTimeService.getWeekSeed() ?? this.getISOWeekNumber(new Date(ServerTimeService.getCorrectedTime()));
-    const source = (forceSeed || ServerTimeService.isSynced()) ? 'server' as const : 'local-fallback' as const;
+    const seed = forceSeed ?? this.lockedSeed ?? ServerTimeService.getWeekSeed() ?? this.getISOWeekNumber(new Date(ServerTimeService.getCorrectedTime()));
+    const source = (forceSeed || this.lockedSeed || ServerTimeService.isSynced()) ? 'server' as const : 'local-fallback' as const;
 
     // Cache to avoid recalculating every frame
     if (this.cachedSeed === seed && this.cachedMutators) {
