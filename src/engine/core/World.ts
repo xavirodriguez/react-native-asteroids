@@ -383,8 +383,8 @@ export class World {
     this.ensureComponentStorage(type);
 
     let rawComponent = component;
-    if (__DEV__ && component && (component as unknown as Record<string | symbol, unknown>)[RAW_DATA]) {
-      rawComponent = (component as unknown as Record<string | symbol, unknown>)[RAW_DATA] as T;
+    if (__DEV__ && component && (component as Record<string | symbol, unknown>)[RAW_DATA]) {
+      rawComponent = (component as Record<string | symbol, unknown>)[RAW_DATA] as T;
     }
 
     const isNew = !this.componentIndex.get(type)?.has(entity);
@@ -666,7 +666,7 @@ export class World {
   /**
    * Retrieves a registered global resource.
    */
-  getResource<T>(name: string): Readonly<T> | undefined {
+  getResource<T>(name: string): T | undefined {
     return this.resources.get(name) as T;
   }
 
