@@ -1,4 +1,5 @@
 import { World } from "../core/World";
+import { WorldSnapshot } from "../types/EngineTypes";
 import { ReconciliationStrategy } from "./ReconciliationStrategy";
 import { ReplicationConfig, GameNetworkAdapter } from "./types";
 import { FullReconciliationStrategy } from "./strategies/FullReconciliation";
@@ -59,7 +60,7 @@ export class NetworkManager {
         this.strategy.update(world, deltaTime);
     }
 
-    public processServerUpdate(serverTick: number, authoritativeSnapshot: any, localSessionId?: string): void {
+    public processServerUpdate(serverTick: number, authoritativeSnapshot: WorldSnapshot, localSessionId?: string): void {
         this.strategy.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
     }
 

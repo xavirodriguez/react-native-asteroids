@@ -109,16 +109,6 @@ export default function FlappyBirdScreen() {
     }
   }, [isMulti, room, handleInput]);
 
-  const handleJoystickMove = useCallback((nx: number, ny: number) => {
-    game?.getInputSystem().setAxisOverride("horizontal", nx);
-    game?.getInputSystem().setAxisOverride("vertical", ny);
-  }, [game]);
-
-  const handleJoystickRelease = useCallback(() => {
-    game?.getInputSystem().clearAxisOverride("horizontal");
-    game?.getInputSystem().clearAxisOverride("vertical");
-  }, [game]);
-
   const handleShootPress = useCallback(() => {
     handleMultiplayerInput({ flap: true });
     game?.getInputSystem().setOverride("flap", true);
