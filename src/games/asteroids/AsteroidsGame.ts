@@ -33,7 +33,9 @@ import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "../../engine/rendering/Renderer";
 import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManager";
-import { NetworkSystem } from "../../engine/network/systems/NetworkSystem";
+import { NetworkManager } from "../../engine/network/NetworkManager";
+import { ReplicationSystem } from "../../engine/network/systems/ReplicationSystem";
+import { FullReconciliationStrategy } from "../../engine/network/strategies/FullReconciliation";
 import { INetworkGame } from "../../engine/network/types/NetworkTypes";
 import { ConfigService } from "../../engine/services/ConfigService";
 import { NetworkReplicationUtils } from "../../engine/network/NetworkReplicationUtils";
@@ -54,8 +56,7 @@ export class AsteroidsGame
   private assetLoader: AssetLoader;
   private bulletPool: BulletPool;
   private particlePool: ParticlePool;
-  private networkSystem: NetworkSystem;
-  private serverEntities = new Map<string, number>();
+  private networkManager: NetworkManager;
   private lastProcessedFullStateVersion = -1;
   public readonly gameId = "asteroids";
   private config: AsteroidConfig;
@@ -139,24 +140,6 @@ export class AsteroidsGame
     });
   }
 
-  /**
-   * Sets a state snapshot for a specific tick in history.
-   * Ensures history size limits are respected.
-   */
-  private setStateHistory(tick: number, snapshot: import("../../engine/types/EngineTypes").WorldSnapshot) {
-    this.stateHistory.set(tick, snapshot);
-
-    if (this.stateHistory.size > this.MAX_HISTORY) {
-      // Find oldest tick to delete
-      let oldestTick = Infinity;
-      for (const t of this.stateHistory.keys()) {
-        if (t < oldestTick) oldestTick = t;
-      }
-      if (oldestTick !== Infinity) {
-        this.stateHistory.delete(oldestTick);
-      }
-    }
-  }
 
   /**
    * Performs local player movement prediction using the shared simulation.
@@ -174,7 +157,10 @@ export class AsteroidsGame
     this.runSimulationStep(deltaTime, false);
 
     if (this.isMultiplayer) {
-      this.networkSystem.recordPrediction(input, this.world);
+      const strategy = this.networkManager.getStrategy();
+      if (strategy.recordPrediction) {
+        strategy.recordPrediction(input, this.world);
+      }
     }
   }
 
@@ -224,7 +210,8 @@ export class AsteroidsGame
     let authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot;
 
     if (delta.created || delta.updated || delta.removed) {
-      const baseSnapshot = this.networkSystem.getStateHistory(serverState.baselineTick as number);
+      const strategy = this.networkManager.getStrategy();
+      const baseSnapshot = strategy.getStateHistory ? strategy.getStateHistory(serverState.baselineTick as number) : undefined;
       if (baseSnapshot) {
         authoritativeSnapshot = structuredClone(baseSnapshot);
         NetworkReplicationUtils.applyDelta(authoritativeSnapshot, delta);
@@ -232,10 +219,10 @@ export class AsteroidsGame
         return; // Cannot apply delta without base
       }
     } else {
-      authoritativeSnapshot = delta;
+      authoritativeSnapshot = delta as import("../../engine/types/EngineTypes").WorldSnapshot;
     }
 
-    this.networkSystem.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
+    this.networkManager.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
 
     const eventBus = this.world.getResource<import("../../engine/core/EventBus").EventBus>("EventBus");
     if (eventBus && delta.stateVersion !== undefined) {
@@ -249,14 +236,14 @@ export class AsteroidsGame
     if (typeof serverState.fullWorldState === "string") {
       authoritativeSnapshot = JSON.parse(serverState.fullWorldState);
     } else {
-      authoritativeSnapshot = structuredClone(serverState.fullWorldState);
+      authoritativeSnapshot = structuredClone(serverState.fullWorldState) as import("../../engine/types/EngineTypes").WorldSnapshot;
     }
 
     if (authoritativeSnapshot.stateVersion === this.lastProcessedFullStateVersion) return;
     this.lastProcessedFullStateVersion = authoritativeSnapshot.stateVersion;
 
     const serverTick = serverState.serverTick as number;
-    this.networkSystem.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
+    this.networkManager.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
   }
 
   protected registerSystems(): void {
@@ -265,8 +252,11 @@ export class AsteroidsGame
     if (!this.particlePool) this.particlePool = new ParticlePool();
     if (!this.assetLoader) this.assetLoader = new AssetLoader();
 
-    if (this.isMultiplayer && !this.networkSystem) {
-        this.networkSystem = new NetworkSystem(this);
+    if (this.isMultiplayer && !this.networkManager) {
+      this.networkManager = NetworkManager.registerGame(this.gameId, this, {}, {
+        strategy: 'full',
+        interpolationDelay: 100
+      });
     }
 
     this.world.setResource("BulletPool", this.bulletPool);
@@ -316,7 +306,7 @@ export class AsteroidsGame
     }
 
     if (this.isMultiplayer) {
-      this.world.addSystem(this.networkSystem, { phase: SystemPhase.Presentation });
+      this.world.addSystem(new ReplicationSystem(this.networkManager), { phase: SystemPhase.Presentation });
     }
   }
 
@@ -350,9 +340,8 @@ export class AsteroidsGame
   protected _onBeforeRestart(): void {
     this.gameStateSystem.resetGameOverState(this.world);
     if (this.isMultiplayer) {
-      this.networkSystem.reset();
+      this.networkManager.reset();
     }
-    this.serverEntities.clear();
     this.lastProcessedFullStateVersion = -1;
   }
 

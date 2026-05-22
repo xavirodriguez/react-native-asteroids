@@ -11,7 +11,8 @@ import { SpaceInvadersGameScene } from "./scenes/SpaceInvadersGameScene";
 import { Renderer } from "../../engine/rendering/Renderer";
 import { LootSystem } from "../../engine/systems/LootSystem";
 import { PowerUpSystem } from "../../engine/systems/PowerUpSystem";
-import { InterpolationBuffer } from "../../multiplayer/InterpolationSystem";
+import { NetworkManager } from "../../engine/network/NetworkManager";
+import { ReplicationSystem } from "../../engine/network/systems/ReplicationSystem";
 import {
   drawSpaceInvadersPlayer,
   drawSpaceInvadersInvader,
@@ -36,9 +37,7 @@ export class SpaceInvadersGame
   private playerBulletPool!: PlayerBulletPool;
   private enemyBulletPool!: EnemyBulletPool;
   private particlePool!: ParticlePool;
-  private serverEntities = new Map<string, number>();
-  private entityInterpolationBuffers = new Map<number, InterpolationBuffer>();
-  private interpolationDelay = 100;
+  private networkManager!: NetworkManager;
   public readonly gameId = "spaceinvaders";
   private config!: SpaceInvadersConfig;
 
@@ -127,8 +126,20 @@ export class SpaceInvadersGame
   public updateFromServer(state: Record<string, unknown>) {
     if (!this.isMultiplayer || !state) return;
     const world = this.getWorld();
+    const replicator = this.networkManager.getReplicator();
+    const commands = world.getCommandBuffer();
 
     const currentServerEntities = new Set<string>();
+
+    // Sync with NetworkManager for interpolation
+    const snapshot: import("../../engine/types/EngineTypes").WorldSnapshot = {
+        tick: (state.tick as number) || 0,
+        entities: [],
+        componentData: { Transform: {} },
+        stateVersion: 0,
+        nextEntityId: 0,
+        freeEntities: []
+    };
 
     // Update Players
     if (state.players && typeof state.players === 'object') {
@@ -137,21 +148,19 @@ export class SpaceInvadersGame
         const serverId = `player_${sessionId}`;
         currentServerEntities.add(serverId);
 
-        let entity = this.serverEntities.get(serverId);
-        if (entity === undefined || !world.hasEntity(entity)) {
-          entity = world.createEntity();
-          this.serverEntities.set(serverId, entity);
-          world.addComponent(entity, { type: "Player" } as import("../../engine/types/EngineTypes").Component);
-          world.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          world.addComponent(entity, { type: "Render", shape: "player_ship", size: 20, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+        const entity = replicator.resolveEntity(serverId, world);
+        if (!world.hasComponent(entity, "Transform")) {
+          commands.addComponent(entity, { type: "Player" } as import("../../engine/types/EngineTypes").Component);
+          commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "player_ship", size: 20, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
         }
 
-        this.updateInterpolationBuffer(entity, playerState.x, playerState.y);
+        snapshot.entities.push(entity);
+        snapshot.componentData["Transform"][entity] = { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 };
 
-        const render = world.getComponent<import("../../engine/types/EngineTypes").RenderComponent>(entity, "Render");
-        if (render) {
+        world.mutateComponent<import("../../engine/types/EngineTypes").RenderComponent>(entity, "Render", render => {
           render.color = playerState.alive ? "green" : "red";
-        }
+        });
       });
     }
 
@@ -163,16 +172,15 @@ export class SpaceInvadersGame
         const serverId = `invader_${id}`;
         currentServerEntities.add(serverId);
 
-        let entity = this.serverEntities.get(serverId);
-        if (entity === undefined || !world.hasEntity(entity)) {
-          entity = world.createEntity();
-          this.serverEntities.set(serverId, entity);
-          world.addComponent(entity, { type: "Invader", row: 0, col: 0, points: 10 } as import("./types/SpaceInvadersTypes").InvaderComponent);
-          world.addComponent(entity, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          world.addComponent(entity, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+        const entity = replicator.resolveEntity(serverId, world);
+        if (!world.hasComponent(entity, "Transform")) {
+          commands.addComponent(entity, { type: "Invader", row: 0, col: 0, points: 10 } as import("./types/SpaceInvadersTypes").InvaderComponent);
+          commands.addComponent(entity, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
         }
 
-        this.updateInterpolationBuffer(entity, invaderState.x, invaderState.y);
+        snapshot.entities.push(entity);
+        snapshot.componentData["Transform"][entity] = { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 };
       });
     }
 
@@ -183,43 +191,31 @@ export class SpaceInvadersGame
         const serverId = `bullet_${id}`;
         currentServerEntities.add(serverId);
 
-        let entity = this.serverEntities.get(serverId);
-        if (entity === undefined || !world.hasEntity(entity)) {
-          entity = world.createEntity();
-          this.serverEntities.set(serverId, entity);
-          world.addComponent(entity, { type: "PlayerBullet" } as import("../../engine/types/EngineTypes").Component);
-          world.addComponent(entity, { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          world.addComponent(entity, { type: "Render", shape: "player_bullet", size: 5, color: "yellow", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+        const entity = replicator.resolveEntity(serverId, world);
+        if (!world.hasComponent(entity, "Transform")) {
+          commands.addComponent(entity, { type: "PlayerBullet" } as import("../../engine/types/EngineTypes").Component);
+          commands.addComponent(entity, { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "player_bullet", size: 5, color: "yellow", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
         }
 
-        this.updateInterpolationBuffer(entity, bulletState.x, bulletState.y);
+        snapshot.entities.push(entity);
+        snapshot.componentData["Transform"][entity] = { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1 };
       });
     }
 
+    this.networkManager.processServerUpdate(snapshot.tick, snapshot);
+
     // Cleanup removed entities
-    this.serverEntities.forEach((entity, serverId) => {
+    replicator.getMappings().forEach((entity, serverId) => {
       if (!currentServerEntities.has(serverId)) {
-        if (world.hasEntity(entity)) {
-          world.removeEntity(entity);
-        }
-        this.serverEntities.delete(serverId);
-        this.entityInterpolationBuffers.delete(entity);
+        commands.removeEntity(entity);
+        replicator.removeMapping(serverId);
       }
     });
-  }
 
-  private updateInterpolationBuffer(entityId: number, x: number, y: number) {
-    let buffer = this.entityInterpolationBuffers.get(entityId);
-    if (!buffer) {
-      buffer = new InterpolationBuffer();
-      this.entityInterpolationBuffers.set(entityId, buffer);
+    if (!world.isUpdating) {
+        world.flush();
     }
-    buffer.push({
-      tick: 0, // Not used for this simple interpolation
-      x,
-      y,
-      timestamp: Date.now()
-    });
   }
 
   public isGameOver(): boolean {
@@ -258,21 +254,13 @@ export class SpaceInvadersGame
     sceneWorld.addSystem(new PowerUpSystem());
 
     if (this.isMultiplayer) {
-      sceneWorld.addSystem({
-        update: (world) => {
-          const targetTime = Date.now() - this.interpolationDelay;
-          this.entityInterpolationBuffers.forEach((buffer, entityId) => {
-            const data = buffer.getAt(targetTime);
-            if (data) {
-              const transform = world.getComponent<import("../../engine/types/EngineTypes").TransformComponent>(entityId, "Transform");
-              if (transform) {
-                transform.x = data.prev.x + (data.next.x - data.prev.x) * data.alpha;
-                transform.y = data.prev.y + (data.next.y - data.prev.y) * data.alpha;
-              }
-            }
-          });
-        }
-      });
+      if (!this.networkManager) {
+        this.networkManager = NetworkManager.registerGame(this.gameId, this, {}, {
+            strategy: 'hybrid',
+            interpolationDelay: 100
+        });
+      }
+      sceneWorld.addSystem(new ReplicationSystem(this.networkManager));
     }
 
     await this.sceneManager.transitionTo(gameScene);

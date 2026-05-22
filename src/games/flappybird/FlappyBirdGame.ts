@@ -26,7 +26,8 @@ import {
 } from "./rendering/FlappyBirdCanvasVisuals";
 import { MutatorService } from "../../services/MutatorService";
 import { MutatorSystem } from "../../engine/systems/MutatorSystem";
-import { InterpolationBuffer } from "../../multiplayer/InterpolationSystem";
+import { NetworkManager } from "../../engine/network/NetworkManager";
+import { ReplicationSystem } from "../../engine/network/systems/ReplicationSystem";
 import { SystemPhase } from "../../engine/core/System";
 
 /**
@@ -41,9 +42,7 @@ export class FlappyBirdGame
   implements IFlappyBirdGame {
 
   private gameStateSystem: FlappyBirdGameStateSystem;
-  private serverEntities = new Map<string, number>();
-  private entityInterpolationBuffers = new Map<number, InterpolationBuffer>();
-  private interpolationDelay = 100;
+  private networkManager: NetworkManager;
   public readonly gameId = "flappybird";
   private config: typeof FLAPPY_CONFIG;
 
@@ -109,20 +108,13 @@ export class FlappyBirdGame
     this.world.addSystem(new FlappyBirdRenderSystem(), { phase: SystemPhase.Presentation });
 
     if (this.isMultiplayer) {
-      this.world.addSystem({
-        update: (world) => {
-          const targetTime = Date.now() - this.interpolationDelay;
-          this.entityInterpolationBuffers.forEach((buffer, entityId) => {
-            const data = buffer.getAt(targetTime);
-            if (data) {
-              world.mutateComponent<import("../../engine/types/EngineTypes").TransformComponent>(entityId, "Transform", transform => {
-                transform.x = data.prev.x + (data.next.x - data.prev.x) * data.alpha;
-                transform.y = data.prev.y + (data.next.y - data.prev.y) * data.alpha;
-              });
-            }
-          });
-        }
-      }, { phase: SystemPhase.Presentation });
+      if (!this.networkManager) {
+        this.networkManager = NetworkManager.registerGame(this.gameId, this, {}, {
+          strategy: 'snapshot',
+          interpolationDelay: 100
+        });
+      }
+      this.world.addSystem(new ReplicationSystem(this.networkManager), { phase: SystemPhase.Presentation });
     }
   }
 
@@ -134,6 +126,7 @@ export class FlappyBirdGame
     if (!this.isMultiplayer || !state) return;
     const world = this.getWorld();
     const commands = world.getCommandBuffer();
+    const replicator = this.networkManager.getReplicator();
 
     const currentServerEntities = new Set<string>();
 
@@ -143,11 +136,8 @@ export class FlappyBirdGame
         const serverId = `player_${sessionId}`;
         currentServerEntities.add(serverId);
 
-        let entity = this.serverEntities.get(serverId);
-        if (entity === undefined || !world.hasEntity(entity)) {
-          entity = world.reserveEntityId();
-          this.serverEntities.set(serverId, entity);
-          commands.createEntity(entity);
+        const entity = replicator.resolveEntity(serverId, world);
+        if (!world.hasComponent(entity, "Transform")) {
           commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
           commands.addComponent(entity, { type: "Render", shape: "bird", size: 15, color: "yellow", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
           commands.addComponent(entity, {
@@ -158,8 +148,6 @@ export class FlappyBirdGame
             nearMissTimer: 0
           } as import("./EntityFactory").BirdComponent);
         }
-
-        this.updateInterpolationBuffer(entity, playerState.x, playerState.y);
 
         world.mutateComponent<import("./EntityFactory").BirdComponent>(entity, "Bird", bird => {
           bird.isAlive = playerState.alive;
@@ -178,46 +166,57 @@ export class FlappyBirdGame
         const serverId = `pipe_${id}`;
         currentServerEntities.add(serverId);
 
-        let entity = this.serverEntities.get(serverId);
-        if (entity === undefined || !world.hasEntity(entity)) {
-          entity = world.reserveEntityId();
-          this.serverEntities.set(serverId, entity);
-          commands.createEntity(entity);
+        const entity = replicator.resolveEntity(serverId, world);
+        if (!world.hasComponent(entity, "Transform")) {
           commands.addComponent(entity, { type: "Transform", x: pipeState.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
           commands.addComponent(entity, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
           commands.addComponent(entity, { type: "Pipe", gapY: pipeState.gapY, gapSize: 140, scored: false } as import("./EntityFactory").PipeComponent);
         }
-
-        this.updateInterpolationBuffer(entity, pipeState.x, 0);
       });
     }
 
+    // Sync with NetworkManager for interpolation
+    const snapshot: import("../../engine/types/EngineTypes").WorldSnapshot = {
+        tick: (state.tick as number) || 0,
+        entities: [],
+        componentData: { Transform: {} },
+        stateVersion: 0,
+        nextEntityId: 0,
+        freeEntities: []
+    };
+
+    if (state.players) {
+        Object.entries(state.players).forEach(([sessionId, p]: [string, any]) => {
+            const entityId = replicator.getLocalId(`player_${sessionId}`);
+            if (entityId !== undefined) {
+                snapshot.entities.push(entityId);
+                snapshot.componentData["Transform"][entityId] = { type: "Transform", x: p.x, y: p.y, rotation: 0, scaleX: 1, scaleY: 1 };
+            }
+        });
+    }
+    if (state.pipes) {
+        Object.entries(state.pipes).forEach(([id, p]: [string, any]) => {
+            const entityId = replicator.getLocalId(`pipe_${id}`);
+            if (entityId !== undefined) {
+                snapshot.entities.push(entityId);
+                snapshot.componentData["Transform"][entityId] = { type: "Transform", x: p.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 };
+            }
+        });
+    }
+
+    this.networkManager.processServerUpdate(snapshot.tick, snapshot);
+
     // Cleanup removed entities
-    this.serverEntities.forEach((entity, serverId) => {
+    replicator.getMappings().forEach((entity, serverId) => {
       if (!currentServerEntities.has(serverId)) {
         commands.removeEntity(entity);
-        this.serverEntities.delete(serverId);
-        this.entityInterpolationBuffers.delete(entity);
+        replicator.removeMapping(serverId);
       }
     });
 
     if (!world.isUpdating) {
         world.flush();
     }
-  }
-
-  private updateInterpolationBuffer(entityId: number, x: number, y: number) {
-    let buffer = this.entityInterpolationBuffers.get(entityId);
-    if (!buffer) {
-      buffer = new InterpolationBuffer();
-      this.entityInterpolationBuffers.set(entityId, buffer);
-    }
-    buffer.push({
-      tick: 0,
-      x,
-      y,
-      timestamp: Date.now()
-    });
   }
 
   protected initializeEntities(): void {
@@ -247,6 +246,9 @@ export class FlappyBirdGame
 
   protected _onBeforeRestart(): void {
     this.gameStateSystem.resetGameOverState(this.world);
+    if (this.isMultiplayer) {
+      this.networkManager.reset();
+    }
   }
 }
 
