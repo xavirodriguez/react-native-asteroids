@@ -56,14 +56,14 @@ export class JuiceSystem extends System {
 
         const activeTime = anim.elapsed - (anim.delay || 0);
         const totalDuration = anim.duration;
-        let progress = Math.min(activeTime / totalDuration, 1);
+        const progress = Math.min(activeTime / totalDuration, 1);
 
         // Initialize start value if needed
         if (anim.startValue === undefined) {
           anim.startValue = this.getPropertyValue(anim.property, offset, render);
         }
 
-        let easedProgress = this.applyEasing(progress, anim.easing || "linear");
+        const easedProgress = this.applyEasing(progress, anim.easing || "linear");
         const currentValue = anim.startValue + (anim.target - anim.startValue) * easedProgress;
 
         if (anim.property === "opacity") {
