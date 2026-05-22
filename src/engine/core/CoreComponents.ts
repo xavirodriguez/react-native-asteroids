@@ -146,6 +146,7 @@ export interface TTLComponent extends Component {
 
 import { Shape } from "../physics/shapes/ShapeTypes";
 import { JoystickConfig, JoystickType } from "../input/JoystickTypes";
+import { CommandQueueComponent } from "../commands/types";
 
 /**
  * Modern 2D collision component.
@@ -737,7 +738,8 @@ export type AnyCoreComponent =
   | VirtualJoystickComponent
   | ProcessedJoystickComponent
   | MoveCommand
-  | RotateCommand;
+  | RotateCommand
+  | CommandQueueComponent;
 
 /**
  * Auxiliar para inferir el tipo concreto de un componente a partir de su discriminador.
