@@ -191,7 +191,19 @@ export { CollisionManifold };
 export interface ContinuousColliderComponent extends Component {
   type: "ContinuousCollider";
   enabled: boolean;
+  /** [px/s] Velocidad mínima para activar CCD. Si no se provee, se calcula según el tamaño. */
   velocityThreshold?: number;
+  /**
+   * Modo de detección:
+   * - raycast: ideal para balas (segmento de pos anterior a actual).
+   * - swept: ideal para círculos/AABBs (volumen barrido).
+   * - substep: divide el frame en micro-pasos (más costoso pero preciso).
+   */
+  mode?: "raycast" | "swept" | "substep";
+  /** Límite de micro-pasos para el modo 'substep'. */
+  maxSubSteps?: number;
+  /** Padding adicional para el volumen barrido. */
+  radiusPadding?: number;
 }
 
 /**

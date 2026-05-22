@@ -8,6 +8,7 @@ import { FlappyBirdRoom } from "./FlappyBirdRoom";
 import { PongRoom } from "./PongRoom";
 import { leaderboardStore } from "./DailyLeaderboardStore";
 import { generateScoreSignature } from "./utils/SecurityUtils";
+import { TimeUtils } from "./utils/TimeUtils";
 
 // Simple in-memory rate limiter for score submissions
 const submissionTimestamps = new Map<string, number>();
@@ -30,6 +31,20 @@ gameServer.define("asteroids", AsteroidsRoom);
 gameServer.define("spaceinvaders", SpaceInvadersRoom);
 gameServer.define("flappybird", FlappyBirdRoom);
 gameServer.define("pong", PongRoom);
+
+// HTTP Endpoints for Server Time and Mutators
+app.get("/api/server-time", (req, res) => {
+  const now = Date.now();
+  const weekSeed = TimeUtils.getCurrentWeekSeed(now);
+  const { validFrom, validUntil } = TimeUtils.getWeekRange(now);
+
+  res.json({
+    serverTime: now,
+    weekSeed: weekSeed,
+    validFrom: validFrom,
+    validUntil: validUntil
+  });
+});
 
 // HTTP Endpoints for Leaderboard
 app.get("/daily-leaderboard", (req, res) => {
