@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MUTATORS, Mutator } from "../config/MutatorConfig";
+import { ServerTimeService } from "./ServerTimeService";
 
 const MUTATORS_ENABLED_KEY = "settings:mutators_enabled";
 
@@ -8,42 +9,44 @@ const MUTATORS_ENABLED_KEY = "settings:mutators_enabled";
  *
  * @responsibility Handle the selection and rotation of global gameplay mutators.
  * @responsibility Ensure cross-client seed consistency for periodic events.
- *
- * @remarks
- * This service implements a deterministic rotation logic based on the UTC week number.
- * This guarantees that all players in a session see the same active mutators without
- * requiring constant server-to-client synchronization for the mutator list.
- *
- * @conceptualRisk [TIME_SYNC] Relies on the client system clock. Significant drifts may
- * cause a player to see the wrong active mutators for a short period during week rollover.
  */
 export class MutatorService {
+  private static cachedMutators: Mutator[] | null = null;
+  private static cachedSeed: string | number | null = null;
+
   /**
    * Returns the mutators active for the current week.
    *
-   * @param timestampMs - Optional timestamp to use for the calculation. If not provided,
-   * the local system time is used.
+   * @param forceSeed - Optional seed to bypass server/local time logic.
    */
-  public static getWeeklyMutators(timestampMs?: number): Mutator[] {
-    const date = timestampMs !== undefined ? new Date(timestampMs) : new Date();
-    const weekNumber = this.getISOWeekNumber(date);
+  public static getWeeklyMutators(forceSeed?: string | number): { mutators: Mutator[], source: 'server' | 'local-fallback' } {
+    const seed = forceSeed ?? ServerTimeService.getWeekSeed() ?? this.getISOWeekNumber(new Date(ServerTimeService.getCorrectedTime()));
+    const source = (forceSeed || ServerTimeService.isSynced()) ? 'server' as const : 'local-fallback' as const;
 
-    // Select 2 mutators based on the week number
-    const m1 = MUTATORS[weekNumber % MUTATORS.length];
-    const m2 = MUTATORS[(weekNumber + 1) % MUTATORS.length];
+    // Cache to avoid recalculating every frame
+    if (this.cachedSeed === seed && this.cachedMutators) {
+      return { mutators: this.cachedMutators, source };
+    }
 
-    // Deduplicate if needed (though unlikely with current config)
-    if (m1.id === m2.id) return [m1];
+    // Deterministic selection based on seed
+    const hash = this.stringToHash(String(seed));
+    const m1 = MUTATORS[Math.abs(hash) % MUTATORS.length];
+    const m2 = MUTATORS[Math.abs(hash + 1) % MUTATORS.length];
 
-    return [m1, m2];
+    const mutators = m1.id === m2.id ? [m1] : [m1, m2];
+
+    this.cachedSeed = seed;
+    this.cachedMutators = mutators;
+
+    return { mutators, source };
   }
 
   /**
    * Filters weekly mutators for a specific game.
    */
-  public static getActiveMutatorsForGame(gameId: string, timestampMs?: number): Mutator[] {
-    const weekly = this.getWeeklyMutators(timestampMs);
-    return weekly.filter(m => m.games.includes(gameId as never) || m.games.includes('all'));
+  public static getActiveMutatorsForGame(gameId: string, forceSeed?: string | number): Mutator[] {
+    const { mutators } = this.getWeeklyMutators(forceSeed);
+    return mutators.filter(m => m.games.includes(gameId as never) || m.games.includes('all'));
   }
 
   /**
@@ -62,15 +65,19 @@ export class MutatorService {
   }
 
   /**
-   * Calcula el número de semana ISO para una fecha dada.
-   *
-   * @remarks
-   * Utiliza el estándar ISO 8601 donde la primera semana del año es la que contiene
-   * el primer jueves del año. Este algoritmo garantiza una rotación determinista
-   * de mutadores sincronizada entre todos los clientes del mundo.
-   *
-   * @param date - La fecha a evaluar.
-   * @returns El número de semana [1-53].
+   * Simple hash function for string seeds.
+   */
+  private static stringToHash(s: string): number {
+    let hash = 0;
+    for (let i = 0; i < s.length; i++) {
+      hash = ((hash << 5) - hash) + s.charCodeAt(i);
+      hash |= 0;
+    }
+    return hash;
+  }
+
+  /**
+   * Calcula el número de semana ISO para una fecha dada (fallback).
    */
   private static getISOWeekNumber(date: Date): number {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));

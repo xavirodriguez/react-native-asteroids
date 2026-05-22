@@ -121,6 +121,10 @@ export class ContinuousCollision {
 
       result.normalX = nx / (dist || 1);
       result.normalY = ny / (dist || 1);
+
+      // Contact point is on the surface of the static circle
+      result.contactX = posBX + result.normalX * radiusB;
+      result.contactY = posBY + result.normalY * radiusB;
     }
     return result;
   }
@@ -182,6 +186,10 @@ export class ContinuousCollision {
       else if (Math.abs(hitX + expandedHalfW) < 0.001) result.normalX = 1;
       else if (Math.abs(hitY - expandedHalfH) < 0.001) result.normalY = -1;
       else if (Math.abs(hitY + expandedHalfH) < 0.001) result.normalY = 1;
+
+      // Contact point approx
+      result.contactX = posBX + Math.max(-halfWB, Math.min(halfWB, hitX));
+      result.contactY = posBY + Math.max(-halfHB, Math.min(halfHB, hitY));
     }
     return result;
   }
@@ -241,6 +249,10 @@ export class ContinuousCollision {
           else if (Math.abs(hitX + combinedHalfW) < 0.001) result.normalX = 1;
           else if (Math.abs(hitY - combinedHalfH) < 0.001) result.normalY = -1;
           else if (Math.abs(hitY + combinedHalfH) < 0.001) result.normalY = 1;
+
+          // Contact point approx
+          result.contactX = posBX + Math.max(-hwB, Math.min(hwB, hitX));
+          result.contactY = posBY + Math.max(-hhB, Math.min(hhB, hitY));
       }
       return result;
   }

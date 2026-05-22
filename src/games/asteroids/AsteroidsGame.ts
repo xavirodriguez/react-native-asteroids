@@ -23,6 +23,7 @@ import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { ShipControlSystem } from "./systems/ShipControlSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
 import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
+import { CCDSystem } from "../../engine/physics/collision/CCDSystem";
 import { FeedbackSystem } from "../../engine/systems/FeedbackSystem";
 import { type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { MutatorService } from "../../services/MutatorService";
@@ -288,6 +289,7 @@ export class AsteroidsGame
     this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(new BoundarySystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(new FrictionSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new CCDSystem(), { phase: SystemPhase.Simulation, priority: -10 }); // Ejecutar después de Movement
     this.world.addSystem(new CollisionSystem2D(), { phase: SystemPhase.Collision });
     this.world.addSystem(new AsteroidCollisionSystem(this.particlePool), { phase: SystemPhase.GameRules });
     this.world.addSystem(comboSys, { phase: SystemPhase.Simulation });
