@@ -45,7 +45,10 @@ export class SpaceInvadersCollisionSystem extends System {
         // Ensure each collision pair is processed only once
         if (entity > event.otherEntity) continue;
         this.handleCollision(world, entity, event.otherEntity);
-        if (gameState.isGameOver) return;
+
+        // Re-check game over state after each collision
+        const currentGS = world.getSingleton<GameStateComponent>("GameState");
+        if (currentGS?.isGameOver) return;
       }
     }
 
@@ -54,6 +57,9 @@ export class SpaceInvadersCollisionSystem extends System {
   }
 
   private handleCollision(world: World, e1: Entity, e2: Entity): void {
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
+    if (!gameState) return;
+
     const bossBullet = this.matchPair(world, e1, e2, "PlayerBullet", "Boss");
     if (bossBullet) {
       const { PlayerBullet: bullet, Boss: boss } = bossBullet;
@@ -110,6 +116,8 @@ export class SpaceInvadersCollisionSystem extends System {
 
         // Popup de combo flotante
         world.getCommandBuffer().createEntity(popup => {
+            const currentMultiplier = world.getSingleton<GameStateComponent>("GameState")?.multiplier || 1;
+
             world.getCommandBuffer().addComponent(popup, { type: "Transform", x: pos.x, y: pos.y - 20, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
             world.getCommandBuffer().addComponent(popup, {
               type: "Render",
@@ -118,9 +126,9 @@ export class SpaceInvadersCollisionSystem extends System {
               color: "#FFFF00",
               rotation: 0,
               zIndex: 100,
-              data: { content: `x${gameState.multiplier}` }
+              data: { content: `x${currentMultiplier}` }
             } as RenderComponent);
-            world.getCommandBuffer().addComponent(popup, { type: "UIText", content: `x${gameState.multiplier}`, wordWrap: false, maxLines: 1 } as UITextComponent);
+            world.getCommandBuffer().addComponent(popup, { type: "UIText", content: `x${currentMultiplier}`, wordWrap: false, maxLines: 1 } as UITextComponent);
             world.getCommandBuffer().addComponent(popup, { type: "TTL", remaining: 1000, total: 1000 } as TTLComponent);
 
             // Side-effects like Juice are deferred naturally or can be applied here

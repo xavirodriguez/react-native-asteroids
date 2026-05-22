@@ -17,6 +17,43 @@ export interface IHierarchicalComponent extends Component {
 }
 
 /**
+ * Configuration for an individual animation managed by the JuiceSystem.
+ */
+export interface JuiceAnimation {
+  /** Property of the Transform or Render that will be animated. */
+  property: "scaleX" | "scaleY" | "rotation" | "x" | "y" | "opacity";
+  /** Desired final value after completing the duration. */
+  target: number;
+  /** Total duration of the animation in milliseconds [ms]. */
+  duration: number;
+  /** Time elapsed since the start of the animation in milliseconds [ms]. */
+  elapsed: number;
+  /** Delay before starting the animation [ms]. */
+  delay?: number;
+  /** Number of times to repeat the animation. */
+  repeat?: number;
+  /** If true, the animation reverses after each repetition. */
+  yoyo?: boolean;
+  /** Value captured at the start of the animation for interpolation. */
+  startValue?: number;
+  /** Easing function for interpolation. Defaults to "linear". */
+  easing?: "linear" | "easeIn" | "easeOut" | "easeInOut" | "elasticOut";
+  /**
+   * Identificador de evento a disparar al finalizar.
+   */
+  onCompleteEvent?: string;
+}
+
+/**
+ * Component that stores a queue of procedural animations (tweens).
+ */
+export interface JuiceComponent extends Component {
+  type: "Juice";
+  /** List of active animations on the entity. */
+  animations: JuiceAnimation[];
+}
+
+/**
  * Standard base components provided by the engine.
  *
  * This module defines the core data structures used by built-in systems for
@@ -739,6 +776,7 @@ export type AnyCoreComponent =
   | ProcessedJoystickComponent
   | MoveCommand
   | RotateCommand
+  | JuiceComponent
   | CommandQueueComponent;
 
 /**
