@@ -50,8 +50,8 @@ export class JoystickSystem extends System {
       const dy = joystick.currentY - joystick.originY;
       const radius = joystick.radius || 1;
 
-      let nx = dx / radius;
-      let ny = dy / radius;
+      const nx = dx / radius;
+      const ny = dy / radius;
 
       // 4. Process Input (Deadzone -> Curve -> Normalization)
       const processed = this.processJoystickInput(nx, ny, config);
@@ -141,8 +141,8 @@ export class JoystickSystem extends System {
     // Scaled Radial Deadzone (smooth ramp from the edge of the deadzone)
     const rescaledMag = (mag - config.deadzone) / (1 - config.deadzone);
     const ratio = rescaledMag / mag;
-    let rx = nx * ratio;
-    let ry = ny * ratio;
+    const rx = nx * ratio;
+    const ry = ny * ratio;
 
     // Response Curves
     let finalX = this.applyResponseCurve(rx, config);

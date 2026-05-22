@@ -1,5 +1,4 @@
 import { World } from "../core/World";
-import { Entity } from "../types/EngineTypes";
 
 /**
  * Manages the mapping between server-side entity IDs (strings) and local ECS entity IDs (numbers).

@@ -1,9 +1,8 @@
 import { System } from "../../core/System";
 import { World } from "../../core/World";
-import { Entity, TransformComponent, Collider2DComponent, CollisionEventsComponent, CollisionManifold, ContinuousColliderComponent, VelocityComponent } from "../../types/EngineTypes";
+import { Entity, TransformComponent, Collider2DComponent, CollisionEventsComponent, CollisionManifold } from "../../types/EngineTypes";
 import { BroadPhase } from "./BroadPhase";
 import { NarrowPhase } from "./NarrowPhase";
-import { ContinuousCollision, CCDResult } from "./ContinuousCollision";
 import { SpatialGrid } from "../utils/SpatialGrid";
 
 /**

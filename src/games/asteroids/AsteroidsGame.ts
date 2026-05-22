@@ -35,7 +35,6 @@ import { Renderer } from "../../engine/rendering/Renderer";
 import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManager";
 import { NetworkManager } from "../../engine/network/NetworkManager";
 import { ReplicationSystem } from "../../engine/network/systems/ReplicationSystem";
-import { FullReconciliationStrategy } from "../../engine/network/strategies/FullReconciliation";
 import { INetworkGame } from "../../engine/network/types/NetworkTypes";
 import { ConfigService } from "../../engine/services/ConfigService";
 import { NetworkReplicationUtils } from "../../engine/network/NetworkReplicationUtils";
