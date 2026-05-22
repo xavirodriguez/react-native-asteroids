@@ -54,6 +54,9 @@ export class SpaceInvadersCollisionSystem extends System {
   }
 
   private handleCollision(world: World, e1: Entity, e2: Entity): void {
+    const gameState = world.getSingleton<GameStateComponent>("GameState");
+    if (!gameState) return;
+
     const bossBullet = this.matchPair(world, e1, e2, "PlayerBullet", "Boss");
     if (bossBullet) {
       const { PlayerBullet: bullet, Boss: boss } = bossBullet;
