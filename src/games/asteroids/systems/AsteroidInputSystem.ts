@@ -82,9 +82,11 @@ export class AsteroidInputSystem extends System {
 
       input.rotationAmount = horizontal;
 
-      if (horizontal < -0.35) input.rotateLeft = true;
-      if (horizontal > 0.35) input.rotateRight = true;
-      if (vertical < -0.25) input.thrust = true;
+      // When using the virtual joystick, JoystickSystem already processes deadzones.
+      // We apply a small threshold here to map analog input to discrete flags (like thrust).
+      if (horizontal < -0.15) input.rotateLeft = true;
+      if (horizontal > 0.15) input.rotateRight = true;
+      if (vertical < -0.15) input.thrust = true;
 
       // Ensure rotationAmount is set even if only buttons are used
       if (input.rotateLeft && Math.abs(input.rotationAmount) < 0.1) input.rotationAmount = -1;

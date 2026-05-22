@@ -19,6 +19,7 @@ import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
 import { BoundarySystem } from "../../engine/physics/systems/BoundarySystem";
 import { FrictionSystem } from "../../engine/physics/systems/FrictionSystem";
 import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
+import { JoystickSystem } from "../../engine/systems/JoystickSystem";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { ShipControlSystem } from "./systems/ShipControlSystem";
 import { TTLSystem } from "../../engine/systems/TTLSystem";
@@ -283,6 +284,7 @@ export class AsteroidsGame
     const comboSys = new AsteroidComboSystem();
 
     this.world.addSystem(this.unifiedInput, { phase: SystemPhase.Input });
+    this.world.addSystem(new JoystickSystem(), { phase: SystemPhase.Input });
     this.world.addSystem(inputSys, { phase: SystemPhase.Simulation });
     this.world.addSystem(new ShipControlSystem(this.config), { phase: SystemPhase.Simulation });
     this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
