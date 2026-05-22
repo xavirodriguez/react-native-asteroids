@@ -145,6 +145,7 @@ export interface TTLComponent extends Component {
 }
 
 import { Shape } from "../physics/shapes/ShapeTypes";
+import { JoystickConfig, JoystickType } from "../input/JoystickTypes";
 
 /**
  * Modern 2D collision component.
@@ -641,18 +642,60 @@ export interface VirtualJoystickComponent extends Component {
   currentY: number;
   /** [px] Maximum displacement radius. */
   radius: number;
-  /** [unitless] Normalized deadzone radius [0, 1]. */
-  deadzone: number;
-  /** [unitless] Input sensitivity multiplier. */
-  sensitivity: number;
-  /** Response curve algorithm. */
-  curveType: "linear" | "squared";
+
+  /** Joystick configuration (deadzone, curve, etc). */
+  config?: JoystickConfig;
+  /** Semantic type for automatic command generation. */
+  joystickType?: JoystickType;
+
   /** Name of the horizontal axis to update in InputState. */
   horizontalAxis: string;
   /** Name of the vertical axis to update in InputState. */
   verticalAxis: string;
+
+  /** [unitless] Normalized deadzone radius [0, 1]. @deprecated Use config.deadzone */
+  deadzone?: number;
+  /** [unitless] Input sensitivity multiplier. @deprecated Use config.sensitivity */
+  sensitivity?: number;
+  /** Response curve algorithm. @deprecated Use config.curveType */
+  curveType?: "linear" | "squared";
   /** @internal Track deadzone state for haptics. */
   _wasInDeadzone?: boolean;
+}
+
+/**
+ * Stores the processed, ready-to-use joystick values.
+ */
+export interface ProcessedJoystickComponent extends Component {
+  type: "ProcessedJoystick";
+  /** [unitless] Normalized X value [-1, 1]. */
+  x: number;
+  /** [unitless] Normalized Y value [-1, 1]. */
+  y: number;
+  /** [unitless] Current magnitude [0, 1]. */
+  magnitude: number;
+  /** If the input is currently inside the deadzone. */
+  inDeadzone: boolean;
+}
+
+/**
+ * Command Pattern: Intent to move an entity.
+ */
+export interface MoveCommand extends Component {
+  type: "MoveCommand";
+  /** [unitless] Normalized movement vector X [-1, 1]. */
+  x: number;
+  /** [unitless] Normalized movement vector Y [-1, 1]. */
+  y: number;
+}
+
+/**
+ * Command Pattern: Intent to rotate an entity.
+ */
+export interface RotateCommand extends Component {
+  type: "RotateCommand";
+  /** [unitless] Normalized rotation amount [-1, 1]. */
+  amount: number;
 }
 
 /**
@@ -691,7 +734,10 @@ export type AnyCoreComponent =
   | BallComponent
   | SpatialNodeComponent
   | HapticRequestComponent
-  | VirtualJoystickComponent;
+  | VirtualJoystickComponent
+  | ProcessedJoystickComponent
+  | MoveCommand
+  | RotateCommand;
 
 /**
  * Auxiliar para inferir el tipo concreto de un componente a partir de su discriminador.
