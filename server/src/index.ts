@@ -36,11 +36,13 @@ gameServer.define("pong", PongRoom);
 app.get("/api/server-time", (req, res) => {
   const now = Date.now();
   const weekSeed = TimeUtils.getCurrentWeekSeed(now);
+  const { weekIndex } = TimeUtils.getISOWeek(now);
   const { validFrom, validUntil } = TimeUtils.getWeekRange(now);
 
   res.json({
     serverTime: now,
     weekSeed: weekSeed,
+    weekIndex: weekIndex,
     validFrom: validFrom,
     validUntil: validUntil
   });

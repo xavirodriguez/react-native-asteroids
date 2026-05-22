@@ -56,7 +56,12 @@ export class CollisionSystem2D extends System {
 
     eventQuery.forEach((entity) => {
       world.mutateComponent<CollisionEventsComponent>(entity, "CollisionEvents", events => {
-          events.collisions.length = 0;
+          // Clear standard collisions if NOT already populated by CCDSystem in this same tick.
+          // CCDSystem.update() clears all CollisionEvents for ALL active entities at the start of its update.
+          // This ensures that if we are here and length > 0, it MUST be from CCD in this frame.
+          if (!events.collisions.length) {
+              events.collisions.length = 0;
+          }
           events.triggersEntered.length = 0;
           events.triggersExited.length = 0;
       });
