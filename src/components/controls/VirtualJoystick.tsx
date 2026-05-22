@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
@@ -15,7 +15,7 @@ const MAX_OFFSET = BASE_RADIUS - KNOB_RADIUS;
 export interface VirtualJoystickProps {
   onMove: (x: number, y: number) => void;
   onRelease: () => void;
-  containerStyle?: any;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 /**
