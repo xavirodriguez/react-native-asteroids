@@ -22,7 +22,7 @@ export interface PrefabConfig<T extends Record<string, Component>, I> {
  */
 export class PrefabPool<T extends Record<string, Component>, I> {
   private pool: ComponentSetPool<T>;
-  private initializer: (components: T, params: I, world: World) => void;
+  private initializer: (components: T, params: I, world: World, entity: Entity) => void;
 
   constructor(config: PrefabConfig<T, I>) {
     this.pool = new ComponentSetPool<T>(config.factory, config.reset, config.initialSize || 0);

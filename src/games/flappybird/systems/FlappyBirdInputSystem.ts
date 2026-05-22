@@ -59,7 +59,7 @@ export class FlappyBirdInputSystem extends System {
           hapticShoot();
 
           // Juice: Squash al aletear
-          Juice.squashnn me un(world, entity, 1.2, 0.8, 50);
+          Juice.squash(world, entity, 1.2, 0.8, 50);
         }
 
         // Apply gravity
