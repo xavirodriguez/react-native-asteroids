@@ -625,6 +625,37 @@ export interface HapticRequestComponent extends Component {
 }
 
 /**
+ * Component representing a virtual joystick input device.
+ */
+export interface VirtualJoystickComponent extends Component {
+  type: "VirtualJoystick";
+  /** If the joystick is currently being touched. */
+  active: boolean;
+  /** [px] Origin X coordinate (where the touch started). */
+  originX: number;
+  /** [px] Origin Y coordinate (where the touch started). */
+  originY: number;
+  /** [px] Current X coordinate of the touch. */
+  currentX: number;
+  /** [px] Current Y coordinate of the touch. */
+  currentY: number;
+  /** [px] Maximum displacement radius. */
+  radius: number;
+  /** [unitless] Normalized deadzone radius [0, 1]. */
+  deadzone: number;
+  /** [unitless] Input sensitivity multiplier. */
+  sensitivity: number;
+  /** Response curve algorithm. */
+  curveType: "linear" | "squared";
+  /** Name of the horizontal axis to update in InputState. */
+  horizontalAxis: string;
+  /** Name of the vertical axis to update in InputState. */
+  verticalAxis: string;
+  /** @internal Track deadzone state for haptics. */
+  _wasInDeadzone?: boolean;
+}
+
+/**
  * Unión de todos los componentes base del motor para endurecimiento de tipos.
  */
 export type AnyCoreComponent =
@@ -659,7 +690,8 @@ export type AnyCoreComponent =
   | PowerUpComponent
   | BallComponent
   | SpatialNodeComponent
-  | HapticRequestComponent;
+  | HapticRequestComponent
+  | VirtualJoystickComponent;
 
 /**
  * Auxiliar para inferir el tipo concreto de un componente a partir de su discriminador.
