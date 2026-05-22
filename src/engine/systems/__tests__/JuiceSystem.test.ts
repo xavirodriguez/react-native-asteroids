@@ -63,16 +63,18 @@ describe("JuiceSystem", () => {
     expect(juice?.animations.length).toBe(0);
   });
 
-  it("should trigger onComplete callback", () => {
+  it("should dispatch onCompleteEvent", () => {
     const entity = world.createEntity();
     world.addComponent(entity, { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 });
 
-    const onComplete = jest.fn();
+    const bus = { emitDeferred: jest.fn() };
+    world.setResource("EventBus", bus);
+
     JuiceSystem.add(world, entity, {
       property: "scaleX",
       target: 2,
       duration: 100,
-      onComplete
+      onCompleteEvent: "test_event"
     });
     world.flush();
 
@@ -82,6 +84,6 @@ describe("JuiceSystem", () => {
     system.update(world, 100); // Completes animation
     world.flush();
 
-    expect(onComplete).toHaveBeenCalledWith(entity);
+    expect(bus.emitDeferred).toHaveBeenCalledWith("test_event", { entity });
   });
 });

@@ -58,30 +58,41 @@ export class Juice {
    * Efecto de escalado elástico (pop).
    */
   public static pop(world: World, entity: Entity, scale: number = 1.2, duration: number = 100): void {
+    // Pop up
     JuiceSystem.add(world, entity, {
       property: "scaleX",
       target: scale - 1,
       duration: duration / 2,
-      easing: "easeOut",
-      onComplete: (e) => {
-        JuiceSystem.add(world, e, { property: "scaleX", target: 0, duration: duration, easing: "elasticOut" });
-      }
+      easing: "easeOut"
     });
     JuiceSystem.add(world, entity, {
       property: "scaleY",
       target: scale - 1,
       duration: duration / 2,
-      easing: "easeOut",
-      onComplete: (e) => {
-        JuiceSystem.add(world, e, { property: "scaleY", target: 0, duration: duration, easing: "elasticOut" });
-      }
+      easing: "easeOut"
+    });
+
+    // Pop back (delayed)
+    JuiceSystem.add(world, entity, {
+      property: "scaleX",
+      target: 0,
+      duration: duration,
+      easing: "elasticOut",
+      delay: duration / 2
+    });
+    JuiceSystem.add(world, entity, {
+      property: "scaleY",
+      target: 0,
+      duration: duration,
+      easing: "elasticOut",
+      delay: duration / 2
     });
   }
 
   /**
    * Helper estático para añadir una animación a una entidad.
    */
-  public static add(world: World, entity: Entity, anim: Omit<import("../systems/JuiceSystem").JuiceAnimation, "elapsed">): void {
+  public static add(world: World, entity: Entity, anim: Omit<import("../core/CoreComponents").JuiceAnimation, "elapsed">): void {
     JuiceSystem.add(world, entity, anim);
   }
 
@@ -89,23 +100,34 @@ export class Juice {
    * Efecto de squash & stretch.
    */
   public static squash(world: World, entity: Entity, sx: number = 1.5, sy: number = 0.5, duration: number = 100): void {
+    // Squash
     JuiceSystem.add(world, entity, {
       property: "scaleX",
       target: sx - 1,
       duration: duration,
-      easing: "easeOut",
-      onComplete: (e) => {
-        JuiceSystem.add(world, e, { property: "scaleX", target: 0, duration: duration * 2, easing: "elasticOut" });
-      }
+      easing: "easeOut"
     });
     JuiceSystem.add(world, entity, {
       property: "scaleY",
       target: sy - 1,
       duration: duration,
-      easing: "easeOut",
-      onComplete: (e) => {
-        JuiceSystem.add(world, e, { property: "scaleY", target: 0, duration: duration * 2, easing: "elasticOut" });
-      }
+      easing: "easeOut"
+    });
+
+    // Stretch back (delayed)
+    JuiceSystem.add(world, entity, {
+      property: "scaleX",
+      target: 0,
+      duration: duration * 2,
+      easing: "elasticOut",
+      delay: duration
+    });
+    JuiceSystem.add(world, entity, {
+      property: "scaleY",
+      target: 0,
+      duration: duration * 2,
+      easing: "elasticOut",
+      delay: duration
     });
   }
 }
