@@ -383,8 +383,8 @@ export class World {
     this.ensureComponentStorage(type);
 
     let rawComponent = component;
-    if (__DEV__ && component && (component as any)[RAW_DATA]) {
-      rawComponent = (component as any)[RAW_DATA];
+    if (__DEV__ && component && (component as unknown as Record<string | symbol, unknown>)[RAW_DATA]) {
+      rawComponent = (component as unknown as Record<string | symbol, unknown>)[RAW_DATA] as T;
     }
 
     const isNew = !this.componentIndex.get(type)?.has(entity);
@@ -433,7 +433,7 @@ export class World {
     return new Proxy(target, {
       get: (obj, prop) => {
         if (prop === RAW_DATA) return obj;
-        return (obj as any)[prop];
+        return (obj as Record<string | symbol, unknown>)[prop];
       },
       set: (obj, prop, value) => {
         console.error(
