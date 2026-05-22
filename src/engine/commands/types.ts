@@ -2,34 +2,39 @@ import { Component } from "../core/Component";
 import { Entity } from "../core/Entity";
 
 /**
- * Representa una acción serializable en el juego.
+ * Representa los tipos de acciones serializables soportadas por el sistema de comandos.
  */
 export type CommandType = 'THRUST' | 'ROTATE_LEFT' | 'ROTATE_RIGHT' | 'FIRE' | 'HYPERSPACE';
 
+/**
+ * GameCommand: Un objeto de datos puro (POJO) que representa una intención de acción.
+ * Diseñado para ser 100% serializable y compatible con rollback/netcode.
+ */
 export interface GameCommand {
-  /** Tipo de acción. */
+  /** Discriminador del tipo de comando. */
   type: CommandType;
-  /** Entidad que originó o sobre la que actúa el comando. */
+  /** ID de la entidad que debe ejecutar el comando. */
   entityId: Entity;
-  /** Tick en el que se generó el comando. */
+  /** Tick de la simulación en el que se originó el comando. */
   tick: number;
-  /** Datos variables opcionales. */
+  /** Datos adicionales opcionales para parametrizar el comando (ej. intensidad). */
   payload?: Record<string, unknown>;
 }
 
 /**
- * Componente ECS que almacena la cola de comandos pendientes y el histórico.
+ * Componente ECS que gestiona la cola de comandos pendientes para el tick actual
+ * y mantiene un histórico para facilitar el rollback y la reconciliación.
  */
 export interface CommandQueueComponent extends Component {
   type: "CommandQueue";
-  /** Comandos pendientes de ejecutar en el tick actual. */
+  /** Buffer de comandos a ser procesados en el frame actual. */
   pending: GameCommand[];
-  /** Histórico de comandos indexado por número de tick. */
+  /** Almacenamiento histórico indexado por tick para auditoría y replays. */
   history: Record<number, GameCommand[]>;
 }
 
 /**
- * Factoría pura para inicializar un CommandQueueComponent.
+ * Factory pura para la inicialización determinista del componente CommandQueue.
  */
 export function createCommandQueueComponent(): CommandQueueComponent {
   return {

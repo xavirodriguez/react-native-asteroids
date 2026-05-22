@@ -16,6 +16,8 @@ import { PlayerProfileService } from "../../services/PlayerProfileService";
 import { HierarchySystem } from "../systems/HierarchySystem";
 import { InterpolationPrepSystem } from "../systems/InterpolationPrepSystem";
 import { FeedbackSystem } from "../systems/FeedbackSystem";
+import { CommandMapperSystem } from "../commands/systems/CommandMapperSystem";
+import { CommandInvokerSystem } from "../commands/systems/CommandInvokerSystem";
 
 /**
  * Configuration for the BaseGame instance.
@@ -647,6 +649,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { SystemPhase } = require("./System");
     world.addSystem(new FeedbackSystem(), { phase: SystemPhase.Presentation });
+
+    // Command Systems
+    world.addSystem(new CommandMapperSystem(), { phase: SystemPhase.Input });
+    world.addSystem(new CommandInvokerSystem(), { phase: SystemPhase.Simulation, priority: 10 });
 
     // Physics Systems
     // eslint-disable-next-line @typescript-eslint/no-require-imports

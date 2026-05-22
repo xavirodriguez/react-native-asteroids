@@ -4,12 +4,13 @@ import { InputStateComponent } from "../../core/CoreComponents";
 import { CommandQueueComponent, GameCommand, CommandType } from "../types";
 
 /**
- * Sistema que lee el estado de entrada unificado y lo mapea a comandos serializables.
- * Se encarga de desacoplar los periféricos de entrada de la ejecución lógica.
+ * CommandMapperSystem: Responsable de la Capa de Mapeo de Entradas.
+ * Traduce el estado semántico del InputState (ej. 'FORWARD') a comandos serializables
+ * dentro de la cola de comandos de las entidades interesadas.
  */
 export class CommandMapperSystem extends System {
   /**
-   * Mapeo de acciones de entrada a tipos de comandos.
+   * Mapa de traducción de acciones de entrada a tipos de comando lógicos.
    */
   private static readonly ACTION_MAP: Record<string, CommandType> = {
     'FORWARD': 'THRUST',
@@ -20,34 +21,41 @@ export class CommandMapperSystem extends System {
   };
 
   /**
-   * Actualiza la cola de comandos de las entidades basándose en el estado de entrada actual.
+   * Procesa la entrada unificada y genera comandos planos para el tick actual.
+   *
+   * @param world - Instancia del mundo ECS.
+   * @param _deltaTime - Tiempo transcurrido (no se usa en el mapeo puro).
    */
   public update(world: World, _deltaTime: number): void {
+    // Obtenemos el singleton del estado de entrada
     const inputState = world.getSingleton<InputStateComponent>("InputState");
     if (!inputState) return;
 
-    const entities = world.query("CommandQueue");
     const currentTick = world.tick;
+    const commandQueueEntities = world.query("CommandQueue");
 
-    for (const entity of entities) {
+    for (const entity of commandQueueEntities) {
       world.mutateComponent<CommandQueueComponent>(entity, "CommandQueue", (queue) => {
-        // 1. Limpiar comandos pendientes del tick anterior
+        // REGLA: Limpiar comandos pendientes del frame anterior antes de procesar el nuevo tick
         queue.pending = [];
 
-        // 2. Mapear acciones activas a nuevos comandos
+        // Iterar sobre las acciones activas en el InputState
         for (const [action, isPressed] of inputState.actions.entries()) {
           if (isPressed) {
             const commandType = CommandMapperSystem.ACTION_MAP[action];
+
             if (commandType) {
+              // Crear el comando como un POJO puro
               const command: GameCommand = {
                 type: commandType,
                 entityId: entity,
                 tick: currentTick
               };
 
-              // 3. Insertar en cola de ejecución y en el histórico
+              // Insertar en la cola de ejecución inmediata
               queue.pending.push(command);
 
+              // Registrar en el histórico indexado por tick para rollback/replays
               if (!queue.history[currentTick]) {
                 queue.history[currentTick] = [];
               }
