@@ -1,65 +1,82 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  runOnJS,
+  withTiming,
 } from "react-native-reanimated";
 import { World } from "@/engine/core/World";
 import { Entity } from "@/engine/core/Entity";
-import { VirtualJoystickComponent } from "@/engine/core/CoreComponents";
-
-const BASE_RADIUS = 60;   // px — radio del área base
-const KNOB_RADIUS = 24;   // px — radio del knob
-const MAX_OFFSET = BASE_RADIUS - KNOB_RADIUS;
+import { VirtualJoystickComponent, TagComponent } from "@/engine/core/CoreComponents";
+import { JoystickType } from "@/engine/input/JoystickTypes";
 
 export interface VirtualJoystickProps {
-  /** Optional legacy callback for movement. */
-  onMove?: (x: number, y: number) => void;
-  /** Optional legacy callback for release. */
-  onRelease?: () => void;
+  /** Unique ID for identifying the ECS entity. */
+  joystickId: string;
+  /** Semantic purpose of the joystick. */
+  type: JoystickType;
+  /** Radius of the joystick base (default: 60). */
+  size?: number;
+  /** Radius of the knob (default: 24). */
+  knobSize?: number;
+  /** Base color of the joystick elements. */
+  color?: string;
+  /** Color when active. */
+  activeColor?: string;
+  /** Base opacity of the joystick. */
+  opacity?: number;
+  /** Whether to show the background ring. */
+  showBackgroundRing?: boolean;
   /** The ECS World to integrate with. */
   world?: World;
-  /** Configuration for the joystick in the ECS. */
-  config?: {
-    horizontalAxis?: string;
-    verticalAxis?: string;
-    deadzone?: number;
-    sensitivity?: number;
-    curveType?: "linear" | "squared";
-  };
+  /** Optional style for the touchable container. */
   containerStyle?: StyleProp<ViewStyle>;
 }
 
 /**
- * Enhanced Virtual Joystick.
- * Supports "floating" behavior: appears where the user touches.
+ * Enhanced Virtual Joystick (Phase 3).
  *
- * It creates and manages an ECS entity with a VirtualJoystickComponent,
- * providing a bridge between the touch UI and the engine systems.
+ * Features:
+ * - Floating Dynamic behavior (appears on touch).
+ * - Reanimated 3 for smooth, decoupled knob movement.
+ * - Direct ECS integration via world.getMutableComponent.
  */
 export function VirtualJoystick({
-  onMove,
-  onRelease,
+  joystickId,
+  type,
+  size = 75,
+  knobSize = 30,
+  color = "rgba(255,255,255,0.3)",
+  activeColor = "rgba(255,255,255,0.7)",
+  opacity = 0.6,
+  showBackgroundRing = true,
   world,
-  config,
-  containerStyle
+  containerStyle,
 }: VirtualJoystickProps) {
+  const BASE_RADIUS = size;
+  const KNOB_RADIUS = knobSize;
+  const MAX_OFFSET = BASE_RADIUS - KNOB_RADIUS;
+
   const isVisible = useSharedValue(false);
+  const visualOpacity = useSharedValue(0);
   const basePos = useSharedValue({ x: 0, y: 0 });
   const knobX = useSharedValue(0);
   const knobY = useSharedValue(0);
 
   const entityRef = useRef<Entity | null>(null);
 
-  // Sync with ECS
+  // Sync with ECS Entity Lifecycle
   useEffect(() => {
     if (!world) return;
 
     const entity = world.reserveEntityId();
     world.getCommandBuffer().createEntity(entity);
+    world.getCommandBuffer().addComponent(entity, {
+      type: "Tag",
+      tags: [joystickId]
+    } as TagComponent);
     world.getCommandBuffer().addComponent(entity, {
       type: "VirtualJoystick",
       active: false,
@@ -68,15 +85,13 @@ export function VirtualJoystick({
       currentX: 0,
       currentY: 0,
       radius: MAX_OFFSET,
-      deadzone: config?.deadzone ?? 0.15,
-      sensitivity: config?.sensitivity ?? 1.0,
-      curveType: config?.curveType ?? "squared",
-      horizontalAxis: config?.horizontalAxis ?? "horizontal",
-      verticalAxis: config?.verticalAxis ?? "vertical",
+      joystickType: type,
+      // Default axes based on type if not specified
+      horizontalAxis: type === "rotation" ? "rotate_horizontal" : "horizontal",
+      verticalAxis: type === "rotation" ? "rotate_vertical" : "vertical",
     } as VirtualJoystickComponent);
 
     entityRef.current = entity;
-    // Flush to make entity available immediately
     world.flush();
 
     return () => {
@@ -86,18 +101,14 @@ export function VirtualJoystick({
         entityRef.current = null;
       }
     };
-  }, [world, config]);
-
-  const handleMove = useCallback(
-    (x: number, y: number) => onMove?.(x, y),
-    [onMove]
-  );
-  const handleRelease = useCallback(() => onRelease?.(), [onRelease]);
+  }, [world, type, joystickId, MAX_OFFSET]);
 
   const pan = Gesture.Pan()
+    .runOnJS(true)
     .minDistance(0)
     .onStart((e) => {
       isVisible.value = true;
+      visualOpacity.value = withTiming(opacity, { duration: 150 });
       basePos.value = { x: e.x, y: e.y };
       knobX.value = 0;
       knobY.value = 0;
@@ -118,14 +129,15 @@ export function VirtualJoystick({
       const dx = e.x - basePos.value.x;
       const dy = e.y - basePos.value.y;
 
-      // Clamp to circle
-      const dist = Math.sqrt(dx ** 2 + dy ** 2);
+      // Clamp visual knob to circle
+      const dist = Math.sqrt(dx * dx + dy * dy);
       const clamp = Math.min(dist, MAX_OFFSET);
       const angle = Math.atan2(dy, dx);
 
       knobX.value = clamp * Math.cos(angle);
       knobY.value = clamp * Math.sin(angle);
 
+      // Write raw absolute coordinates to ECS for simulation
       if (world && entityRef.current !== null) {
         const entity = entityRef.current;
         const joystick = world.getMutableComponent<VirtualJoystickComponent>(entity, "VirtualJoystick");
@@ -134,23 +146,13 @@ export function VirtualJoystick({
           joystick.currentY = e.y;
         }
       }
-
-      // Legacy fallback
-      if (onMove) {
-        const deadzone = 0.1;
-        let nx = knobX.value / MAX_OFFSET;
-        let ny = knobY.value / MAX_OFFSET;
-
-        if (Math.abs(nx) < deadzone) nx = 0;
-        if (Math.abs(ny) < deadzone) ny = 0;
-
-        runOnJS(handleMove)(nx, ny);
-      }
     })
     .onEnd(() => {
       knobX.value = withSpring(0, { damping: 20, stiffness: 300 });
       knobY.value = withSpring(0, { damping: 20, stiffness: 300 });
-      isVisible.value = false;
+      visualOpacity.value = withTiming(0, { duration: 250 }, () => {
+        isVisible.value = false;
+      });
 
       if (world && entityRef.current !== null) {
         const entity = entityRef.current;
@@ -159,17 +161,15 @@ export function VirtualJoystick({
           joystick.active = false;
         }
       }
-
-      runOnJS(handleRelease)();
     });
 
   const baseStyle = useAnimatedStyle(() => ({
-    opacity: isVisible.value ? 1 : 0,
+    opacity: visualOpacity.value,
     transform: [
       { translateX: basePos.value.x - BASE_RADIUS },
       { translateY: basePos.value.y - BASE_RADIUS },
     ],
-    position: "absolute",
+    display: isVisible.value ? "flex" : "none",
   }));
 
   const knobStyle = useAnimatedStyle(() => ({
@@ -177,13 +177,36 @@ export function VirtualJoystick({
       { translateX: knobX.value },
       { translateY: knobY.value },
     ],
+    backgroundColor: activeColor,
   }));
 
   return (
     <GestureDetector gesture={pan}>
       <View style={[styles.container, containerStyle]}>
-        <Animated.View style={[styles.base, baseStyle]}>
-          <Animated.View style={[styles.knob, knobStyle]} />
+        <Animated.View
+          style={[
+            styles.base,
+            baseStyle,
+            {
+              width: BASE_RADIUS * 2,
+              height: BASE_RADIUS * 2,
+              borderRadius: BASE_RADIUS,
+              borderColor: color,
+              backgroundColor: showBackgroundRing ? "rgba(255,255,255,0.05)" : "transparent"
+            }
+          ]}
+        >
+          <Animated.View
+            style={[
+              styles.knob,
+              knobStyle,
+              {
+                width: KNOB_RADIUS * 2,
+                height: KNOB_RADIUS * 2,
+                borderRadius: KNOB_RADIUS,
+              }
+            ]}
+          />
         </Animated.View>
       </View>
     </GestureDetector>
@@ -196,20 +219,12 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   base: {
-    width: BASE_RADIUS * 2,
-    height: BASE_RADIUS * 2,
-    borderRadius: BASE_RADIUS,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    position: "absolute",
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.3)",
     alignItems: "center",
     justifyContent: "center",
   },
   knob: {
-    width: KNOB_RADIUS * 2,
-    height: KNOB_RADIUS * 2,
-    borderRadius: KNOB_RADIUS,
-    backgroundColor: "rgba(255,255,255,0.7)",
     position: "absolute",
   },
 });

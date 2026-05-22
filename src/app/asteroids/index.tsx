@@ -243,13 +243,9 @@ export default function AsteroidsScreen() {
         <View style={styles.controls} pointerEvents="box-none">
           <View style={styles.leftControlArea} pointerEvents="box-none">
             <VirtualJoystick
+              joystickId="movement_joystick"
+              type="movement"
               world={game.getWorld()}
-              config={{
-                horizontalAxis: "horizontal",
-                verticalAxis: "vertical",
-                deadzone: 0.15,
-                curveType: "squared"
-              }}
             />
           </View>
           <View style={styles.rightControlArea} pointerEvents="box-none">

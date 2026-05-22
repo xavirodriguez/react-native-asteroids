@@ -174,10 +174,13 @@ export default function SpaceInvadersScreen() {
         />
 
         <View style={styles.controls} pointerEvents="box-none">
-          <VirtualJoystick
-            onMove={handleJoystickMove}
-            onRelease={handleJoystickRelease}
-          />
+          <View style={{ flex: 1, height: '100%' }} pointerEvents="box-none">
+            <VirtualJoystick
+              joystickId="movement_joystick"
+              type="movement"
+              world={game.getWorld()}
+            />
+          </View>
           <ShootButton
             onPressIn={handleShootPress}
             onPressOut={handleShootRelease}
