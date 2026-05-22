@@ -24,6 +24,7 @@ This document tracks known limitations, non-critical bugs, and architectural con
 ### 4. Deterministic Drift in Flappy/Space Invaders
 - **Issue**: While Asteroids uses full state reconciliation, Flappy Bird and Space Invaders use a simplified entity tracking and interpolation system.
 - **Impact**: Under extreme network conditions (high packet loss), these games might show "ghosting" or delayed destruction of entities compared to the server's authoritative state.
+- **Note**: The networking logic was centralized into a generic `NetworkManager` to improve maintainability and extensibility.
 
 ### 5. Rate Limiting Persistence
 - **Issue**: Server-side rate limiting for score submissions is currently in-memory.
