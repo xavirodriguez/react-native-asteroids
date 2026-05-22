@@ -101,8 +101,8 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
                 for (const type in authoritativeSnapshot.componentData) {
                     const map = authoritativeSnapshot.componentData[type];
                     for (const id in map) {
-                        const comp = map[id] as any;
-                        if (comp.sessionId === localSessionId) {
+                        const comp = map[id] as Record<string, unknown>;
+                        if (comp['sessionId'] === localSessionId) {
                             localPlayerId = parseInt(id);
                             break;
                         }
@@ -127,8 +127,8 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
             for (const type in authoritativeSnapshot.componentData) {
                 const map = authoritativeSnapshot.componentData[type];
                 for (const id in map) {
-                    const comp = map[id] as any;
-                    if (comp.sessionId === localSessionId) {
+                    const comp = map[id] as Record<string, unknown>;
+                    if (comp['sessionId'] === localSessionId) {
                         localPlayerId = parseInt(id);
                         break;
                     }
