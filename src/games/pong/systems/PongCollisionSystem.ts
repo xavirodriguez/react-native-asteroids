@@ -107,10 +107,15 @@ export class PongCollisionSystem extends System {
           property: "x",
           target: recoilDir * 10,
           duration: 50,
-          easing: "easeOut",
-          onComplete: (e) => {
-            Juice.add(world, e, { property: "x", target: 0, duration: 150, easing: "elasticOut" });
-          }
+          easing: "easeOut"
+        });
+
+        Juice.add(world, paddleEntity, {
+          property: "x",
+          target: 0,
+          duration: 150,
+          easing: "elasticOut",
+          delay: 50
         });
 
         Juice.flash(world, paddleEntity, 5);

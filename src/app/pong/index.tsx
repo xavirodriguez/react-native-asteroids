@@ -99,8 +99,6 @@ export default function PongScreen() {
     }
   }, [gameState?.isGameOver, isDaily, game, gameState?.scoreP1, gameState?.scoreP2, playerName]);
 
-  if (!game || !isReady) return null;
-
   if (!started) {
     return (
       <StartScreen
@@ -127,6 +125,8 @@ export default function PongScreen() {
       />
     );
   }
+
+  if (!game || !isReady) return null;
 
   const handleGameInput = (input: Record<string, boolean>) => {
       if (isMulti && room) {
