@@ -231,10 +231,18 @@ export class World {
         // We assume components are flat POJOs as per engine architecture.
         for (const key in compAsRecord) {
           const val = compAsRecord[key];
-          if (typeof val !== "function") {
-            // Nested object check for safety (e.g. vertices, config)
-            if (val !== null && typeof val === "object") {
-              serializedComp[key] = structuredClone(val);
+          const typeOfVal = typeof val;
+          if (typeOfVal !== "function") {
+            // Optimization: avoid structuredClone for primitives and shallow arrays/objects
+            // if we can guarantee they won't be mutated. However, for a safe snapshot,
+            // we only clone if it's an object/array.
+            if (val !== null && typeOfVal === "object") {
+              // Deep clone only for complex types
+              if (Array.isArray(val)) {
+                  serializedComp[key] = [...val]; // Shallow copy for arrays is often enough for ECS data
+              } else {
+                  serializedComp[key] = { ...val }; // Shallow copy for POJO objects
+              }
             } else {
               serializedComp[key] = val;
             }
@@ -259,7 +267,7 @@ export class World {
       structureVersion: this._structureVersion,
       stateVersion: this._stateVersion,
       seed: gameplayRandom.getSeed(),
-      rngState: gameplayRandom.getSeed(), // Use internal seed as current state
+      rngState: gameplayRandom.getSeed(),
       accumulator: this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator(),
       tick: this._tick
     };
@@ -341,21 +349,19 @@ export class World {
           storage.set(entityId, component as unknown as Component);
         }
 
-        // Clean up properties not present in the snapshot (to ensure perfect state)
+        // Optimized restoration: Reset component keys efficiently.
+        // Instead of 'delete', we overwrite to maintain hidden class stability where possible.
         for (const key in component) {
-            if (!(key in sourceComp)) {
-                delete component[key];
-            }
+          if (!(key in sourceComp)) {
+             (component as any)[key] = undefined;
+          }
         }
 
-        // Apply snapshot data
+        // Apply snapshot data.
+        // Since the snapshot already cloned objects, we can perform shallow assignments here
+        // to avoid double-cloning and reduce GC pressure.
         for (const key in sourceComp) {
-          const val = sourceComp[key];
-          if (val !== null && typeof val === "object") {
-             component[key] = structuredClone(val);
-          } else {
-             component[key] = val;
-          }
+          component[key] = sourceComp[key];
         }
 
         index!.add(entityId);

@@ -17,6 +17,8 @@ export class JuiceSystem extends System {
    * @param deltaTime - Elapsed time in milliseconds [ms].
    */
   public update(world: World, deltaTime: number): void {
+    if (world.isReSimulating) return;
+
     const entities = world.query("Juice");
     const completedEvents: Array<{ event: string, entity: Entity }> = [];
 
