@@ -1,21 +1,32 @@
 import { World } from "../../core/World";
-import { WorldSnapshot, TransformComponent, VelocityComponent, VisualOffsetComponent, TagComponent } from "../../types/EngineTypes";
+import { WorldSnapshot } from "../../types/EngineTypes";
+import { TransformComponent, VelocityComponent, VisualOffsetComponent, TagComponent } from "../../core/CoreComponents";
 import { ReconciliationStrategy } from "../ReconciliationStrategy";
 import { INetworkGame, NetworkConfig } from "../types/NetworkTypes";
 import { PredictionBuffer } from "../../../multiplayer/PredictionBuffer";
 import { InputFrame } from "../../../multiplayer/NetTypes";
 import { JuiceSystem } from "../../systems/JuiceSystem";
 import { InterpolationBuffer } from "../../../multiplayer/InterpolationSystem";
+import { StateHistoryManager } from "../StateHistoryManager";
+import { DesyncDetector } from "../DesyncDetector";
 
 /**
  * Strategy for full prediction and rollback reconciliation.
  * Used for fast-paced games like Asteroids.
+ *
+ * Implements the Rollback Netcode pattern:
+ * 1. Prediction: Apply local inputs immediately.
+ * 2. Storage: Keep a history of inputs and world snapshots.
+ * 3. Comparison: When server updates arrive, check for desyncs.
+ * 4. Rewind: Restore world to the last known-good state.
+ * 5. Fast-Forward: Re-simulate from rewind point to current tick.
  */
 export class FullReconciliationStrategy implements ReconciliationStrategy {
     private predictionBuffer = new PredictionBuffer();
     private entityInterpolationBuffers = new Map<string, InterpolationBuffer>();
     private inputHistory: InputFrame[] = [];
-    private stateHistory = new Map<number, WorldSnapshot>();
+    private stateHistory = new StateHistoryManager();
+    private desyncDetector = new DesyncDetector();
     private lastAuthoritativeTick = 0;
     private interpolationDelay: number;
     private maxHistory: number;
@@ -23,6 +34,7 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
     constructor(private game: INetworkGame, config: NetworkConfig = {}) {
         this.interpolationDelay = config.interpolationDelay ?? 100;
         this.maxHistory = config.maxHistory ?? 120;
+        this.stateHistory = new StateHistoryManager(this.maxHistory);
     }
 
     public update(world: World, _deltaTime: number): void {
@@ -59,13 +71,13 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
         if (serverTick <= this.lastAuthoritativeTick) return;
         this.lastAuthoritativeTick = serverTick;
 
-        // Update interpolation buffers
+        // Update interpolation buffers for remote entities
         const timestamp = Date.now();
         authoritativeSnapshot.entities.forEach(entityId => {
-            const id = entityId.toString();
             const transform = authoritativeSnapshot.componentData["Transform"]?.[entityId];
             if (!transform) return;
 
+            const id = entityId.toString();
             let buffer = this.entityInterpolationBuffers.get(id);
             if (!buffer) {
                 buffer = new InterpolationBuffer();
@@ -88,91 +100,73 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
         const world = this.game.getWorld();
         const predicted = this.predictionBuffer.getAt(serverTick);
 
-        this.setStateHistory(serverTick, authoritativeSnapshot);
+        // Always save the latest authoritative state in history
+        this.stateHistory.save(serverTick, authoritativeSnapshot);
 
         let needsRollback = false;
         let localPlayerId: number | undefined;
 
-        if (!predicted) {
-            needsRollback = true;
-        } else {
-            if (localSessionId) {
-                // Find local player by sessionId in ANY component
-                for (const type in authoritativeSnapshot.componentData) {
-                    const map = authoritativeSnapshot.componentData[type];
-                    for (const id in map) {
-                        const comp = map[id] as Record<string, unknown>;
-                        if (comp['sessionId'] === localSessionId) {
-                            localPlayerId = parseInt(id);
-                            break;
-                        }
-                    }
-                    if (localPlayerId !== undefined) break;
-                }
-
-                if (localPlayerId !== undefined) {
-                    const aPos = authoritativeSnapshot.componentData["Transform"]?.[localPlayerId];
-                    if (!aPos ||
-                        Math.abs(predicted.state.x - (aPos.x as number)) > 0.1 ||
-                        Math.abs(predicted.state.y - (aPos.y as number)) > 0.1 ||
-                        Math.abs((predicted.state.angle ?? 0) - (aPos.rotation as number ?? 0)) > 0.01) {
-                        needsRollback = true;
-                    }
-                }
-            }
+        if (localSessionId) {
+            localPlayerId = this.desyncDetector.findEntityBySessionId(authoritativeSnapshot, localSessionId);
         }
 
-        if (!predicted && localSessionId) {
-            // Find local player in server snapshot
-            for (const type in authoritativeSnapshot.componentData) {
-                const map = authoritativeSnapshot.componentData[type];
-                for (const id in map) {
-                    const comp = map[id] as Record<string, unknown>;
-                    if (comp['sessionId'] === localSessionId) {
-                        localPlayerId = parseInt(id);
-                        break;
-                    }
-                }
-                if (localPlayerId !== undefined) break;
-            }
+        if (!predicted) {
+            // We have no prediction for this server tick, must rollback to align
+            needsRollback = true;
+        } else if (localPlayerId !== undefined) {
+            // Check for desync between our prediction and the server truth
+            needsRollback = this.desyncDetector.isDesynced(predicted, authoritativeSnapshot, localPlayerId);
         }
 
         if (needsRollback) {
-            const visualMismatches = new Map<number, { x: number, y: number }>();
-            if (localPlayerId !== undefined) {
-                const currentTrans = world.getComponent<TransformComponent>(localPlayerId, "Transform");
-                if (currentTrans) {
-                    visualMismatches.set(localPlayerId, { x: currentTrans.x, y: currentTrans.y });
-                }
+            this.executeRollback(serverTick, authoritativeSnapshot, localPlayerId);
+        }
+
+        // Clean up old history
+        this.inputHistory = this.inputHistory.filter(i => i.tick > serverTick);
+        this.predictionBuffer.clearBefore(serverTick);
+        this.stateHistory.pruneBefore(serverTick);
+    }
+
+    /**
+     * Re-simulation loop (Rewind + Fast-Forward)
+     */
+    private executeRollback(serverTick: number, authoritativeSnapshot: WorldSnapshot, localPlayerId?: number) {
+        const world = this.game.getWorld();
+
+        // 1. Rewind: Restore to authoritative state
+        // Before restoring, capture current position for visual smoothing (Paso 13)
+        const visualMismatches = new Map<number, { x: number, y: number }>();
+        if (localPlayerId !== undefined) {
+            const currentTrans = world.getComponent<TransformComponent>(localPlayerId, "Transform");
+            if (currentTrans) {
+                visualMismatches.set(localPlayerId, { x: currentTrans.x, y: currentTrans.y });
             }
+        }
 
-            world.restore(authoritativeSnapshot);
+        world.restore(authoritativeSnapshot);
 
-            if (localPlayerId !== undefined) {
-                const aPos = authoritativeSnapshot.componentData["Transform"]?.[localPlayerId];
-                const aVel = authoritativeSnapshot.componentData["Velocity"]?.[localPlayerId];
-                if (aPos && aVel) {
-                    this.predictionBuffer.save({
-                        tick: serverTick,
-                        entityId: localPlayerId.toString(),
-                        state: { x: aPos.x as number, y: aPos.y as number, vx: aVel.dx as number, vy: aVel.dy as number, angle: aPos.rotation as number },
-                        entities: authoritativeSnapshot.entities.map(e => e.toString())
-                    });
-                }
-            }
+        // Re-tag local player if lost during restore
+        if (localPlayerId !== undefined && !world.hasComponent(localPlayerId, "Tag")) {
+            world.addComponent(localPlayerId, { type: "Tag", tags: ["LocalPlayer"] } as TagComponent);
+        }
 
-            if (localPlayerId !== undefined && !world.hasComponent(localPlayerId, "LocalPlayer")) {
-                world.getCommandBuffer().addComponent(localPlayerId, { type: "Tag", tags: ["LocalPlayer"] } as TagComponent);
-            }
-
+        // 2. Fast-Forward: Re-simulate from serverTick to current
+        world.isReSimulating = true;
+        try {
             this.inputHistory
                 .filter(input => input.tick > serverTick)
+                .sort((a, b) => a.tick - b.tick)
                 .forEach(input => {
                     if (localPlayerId !== undefined) {
                         this.game.applyInputToEntity(localPlayerId, input);
                     }
+
+                    // Paso 10: Fast-Forward simulation step
+                    // Fixed delta time for determinism
                     this.game.runSimulationStep(16.66, true);
 
+                    // Re-calculate predictions for corrected history
                     if (localPlayerId !== undefined) {
                         const trans = world.getComponent<TransformComponent>(localPlayerId, "Transform");
                         const vel = world.getComponent<VelocityComponent>(localPlayerId, "Velocity");
@@ -185,15 +179,22 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
                             });
                         }
                     }
-                    this.setStateHistory(input.tick, world.snapshot());
+                    // Update history with re-simulated state
+                    this.stateHistory.save(input.tick, world.snapshot());
                 });
+        } finally {
+            world.isReSimulating = false;
+        }
 
-            visualMismatches.forEach((prevPos, id) => {
-                const newTrans = world.getComponent<TransformComponent>(id, "Transform");
-                if (newTrans) {
-                    const errX = prevPos.x - newTrans.x;
-                    const errY = prevPos.y - newTrans.y;
+        // 3. Apply visual correction (Paso 13 logic stub)
+        visualMismatches.forEach((prevPos, id) => {
+            const newTrans = world.getComponent<TransformComponent>(id, "Transform");
+            if (newTrans) {
+                const errX = prevPos.x - newTrans.x;
+                const errY = prevPos.y - newTrans.y;
 
+                // Only apply if error is significant to avoid jitter
+                if (Math.abs(errX) > 0.01 || Math.abs(errY) > 0.01) {
                     world.getCommandBuffer().addComponent(id, {
                         type: "VisualOffset", x: errX, y: errY, rotation: 0, scaleX: 0, scaleY: 0
                     } as VisualOffsetComponent);
@@ -201,11 +202,11 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
                     JuiceSystem.add(world, id, { property: "x", target: 0, duration: 150, easing: "easeOut" });
                     JuiceSystem.add(world, id, { property: "y", target: 0, duration: 150, easing: "easeOut" });
                 }
-            });
-        }
+            }
+        });
 
-        this.inputHistory = this.inputHistory.filter(i => i.tick > serverTick);
-        this.predictionBuffer.clearBefore(serverTick);
+        // Ensure structural changes from re-simulation are applied
+        world.flush();
     }
 
     public recordPrediction(input: InputFrame, world: World): void {
@@ -215,6 +216,7 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
             const tag = world.getComponent(e, "Tag") as TagComponent;
             return tag && tag.tags.includes("LocalPlayer");
         });
+
         if (lp !== undefined) {
             const trans = world.getComponent<TransformComponent>(lp, "Transform");
             const vel = world.getComponent<VelocityComponent>(lp, "Velocity");
@@ -228,7 +230,8 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
             }
         }
 
-        this.setStateHistory(input.tick, world.snapshot());
+        // Paso 7: Save local predicted state to history
+        this.stateHistory.save(input.tick, world.snapshot());
 
         if (this.inputHistory.length > this.maxHistory) {
             this.inputHistory.shift();
@@ -237,19 +240,6 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
 
     public getStateHistory(tick: number): WorldSnapshot | undefined {
         return this.stateHistory.get(tick);
-    }
-
-    private setStateHistory(tick: number, snapshot: WorldSnapshot) {
-        this.stateHistory.set(tick, snapshot);
-        if (this.stateHistory.size > this.maxHistory) {
-            let oldestTick = Infinity;
-            for (const t of this.stateHistory.keys()) {
-                if (t < oldestTick) oldestTick = t;
-            }
-            if (oldestTick !== Infinity) {
-                this.stateHistory.delete(oldestTick);
-            }
-        }
     }
 
     public reset(): void {
