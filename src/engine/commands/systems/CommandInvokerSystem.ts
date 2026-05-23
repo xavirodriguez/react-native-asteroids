@@ -58,8 +58,8 @@ export class CommandInvokerSystem extends System {
         this.handleHyperspace(world, entity);
         break;
       case 'FIRE':
-        // El disparo suele implicar creación de entidades. Se recomienda delegar
-        // a un sistema especializado o usar WorldCommandBuffer.
+        // Emitir evento de disparo para ser procesado por sistemas de armas o efectos
+        world.emitSimulationEvent("ship:shoot", { entityId: entity });
         break;
     }
   }

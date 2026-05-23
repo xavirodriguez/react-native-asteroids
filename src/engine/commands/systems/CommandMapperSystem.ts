@@ -63,6 +63,12 @@ export class CommandMapperSystem extends System {
             }
           }
         }
+
+        // Poda del histórico (Mantener últimos 1000 ticks para Rollback/GGPO)
+        const PRUNE_WINDOW = 1000;
+        if (currentTick > PRUNE_WINDOW) {
+          delete queue.history[currentTick - PRUNE_WINDOW];
+        }
       });
     }
   }
