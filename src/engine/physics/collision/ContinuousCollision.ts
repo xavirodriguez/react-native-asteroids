@@ -179,13 +179,15 @@ export class ContinuousCollision {
       result.timeOfImpact = Math.max(0, tmin);
 
       // Heuristic for normal determination based on hit coordinates relative to expanded AABB
+      // hitX/hitY is the position of A relative to B at impact.
       const hitX = -dx + vx * result.timeOfImpact;
       const hitY = -dy + vy * result.timeOfImpact;
 
-      if (Math.abs(hitX - expandedHalfW) < 0.001) result.normalX = -1;
-      else if (Math.abs(hitX + expandedHalfW) < 0.001) result.normalX = 1;
-      else if (Math.abs(hitY - expandedHalfH) < 0.001) result.normalY = -1;
-      else if (Math.abs(hitY + expandedHalfH) < 0.001) result.normalY = 1;
+      // Normal points from B towards A
+      if (Math.abs(hitX - expandedHalfW) < 0.001) result.normalX = 1;
+      else if (Math.abs(hitX + expandedHalfW) < 0.001) result.normalX = -1;
+      else if (Math.abs(hitY - expandedHalfH) < 0.001) result.normalY = 1;
+      else if (Math.abs(hitY + expandedHalfH) < 0.001) result.normalY = -1;
 
       // Contact point approx
       result.contactX = posBX + Math.max(-halfWB, Math.min(halfWB, hitX));
@@ -245,15 +247,34 @@ export class ContinuousCollision {
           const hitX = -dx + vx * result.timeOfImpact;
           const hitY = -dy + vy * result.timeOfImpact;
 
-          if (Math.abs(hitX - combinedHalfW) < 0.001) result.normalX = -1;
-          else if (Math.abs(hitX + combinedHalfW) < 0.001) result.normalX = 1;
-          else if (Math.abs(hitY - combinedHalfH) < 0.001) result.normalY = -1;
-          else if (Math.abs(hitY + combinedHalfH) < 0.001) result.normalY = 1;
+          // Normal points from B towards A
+          if (Math.abs(hitX - combinedHalfW) < 0.001) result.normalX = 1;
+          else if (Math.abs(hitX + combinedHalfW) < 0.001) result.normalX = -1;
+          else if (Math.abs(hitY - combinedHalfH) < 0.001) result.normalY = 1;
+          else if (Math.abs(hitY + combinedHalfH) < 0.001) result.normalY = -1;
 
           // Contact point approx
           result.contactX = posBX + Math.max(-hwB, Math.min(hwB, hitX));
           result.contactY = posBY + Math.max(-hhB, Math.min(hhB, hitY));
       }
       return result;
+  }
+
+  /**
+   * Predicts collision between a moving AABB and a static Circle.
+   */
+  static sweptAABBVsCircle(
+    posAX: number, posAY: number, velAX: number, velAY: number, hwA: number, hhA: number,
+    posBX: number, posBY: number, radiusB: number,
+    deltaTime: number
+  ): CCDResult {
+    // Inverse of sweptCircleVsAABB: treat it as Circle B moving towards static AABB A
+    const result = this.sweptCircleVsAABB(posBX, posBY, -velAX, -velAY, radiusB, posAX, posAY, hwA, hhA, deltaTime);
+    if (result.hit) {
+      // Flip normal to point from B to A
+      result.normalX = -result.normalX;
+      result.normalY = -result.normalY;
+    }
+    return result;
   }
 }

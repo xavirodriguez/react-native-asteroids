@@ -15,6 +15,8 @@ import { ContinuousCollision } from "./ContinuousCollision";
  * @responsibility Mitigate "tunneling" by using raycasting or swept volumes.
  */
 export class CCDSystem extends System {
+  private static readonly entitiesCache: Entity[] = [];
+
   /**
    * Ejecuta el chequeo de CCD para todas las entidades habilitadas.
    */
@@ -22,16 +24,23 @@ export class CCDSystem extends System {
     const dtSeconds = deltaTime / 1000;
     if (dtSeconds <= 0) return;
 
-    const entities = world.query("Transform", "Collider2D", "ContinuousCollider", "Velocity");
+    const query = world.query("Transform", "Collider2D", "ContinuousCollider", "Velocity");
+    CCDSystem.entitiesCache.length = 0;
+    for (let i = 0; i < query.length; i++) {
+        CCDSystem.entitiesCache.push(query[i]);
+    }
 
     // Orden determinista para evitar desincronizaciones en multiplayer
-    entities.sort((a, b) => a - b);
+    CCDSystem.entitiesCache.sort((a, b) => a - b);
+
+    const entities = CCDSystem.entitiesCache;
 
     // Limpiar CollisionEvents antes de empezar el CCD para que CollisionSystem2D no los borre después.
     // CollisionSystem2D DEBE correr después de CCD y detectar que ya hay eventos.
     const eventQuery = world.query("CollisionEvents");
     for (let i = 0; i < eventQuery.length; i++) {
         world.mutateComponent<CollisionEventsComponent>(eventQuery[i], "CollisionEvents", events => {
+            // Preservamos activeTriggers pero limpiamos el resto
             events.collisions.length = 0;
             events.triggersEntered.length = 0;
             events.triggersExited.length = 0;
@@ -69,9 +78,9 @@ export class CCDSystem extends System {
       const mode = ccd.mode ?? "raycast";
 
       if (mode === "raycast") {
-        this.resolveRaycastCCD(world, entity, startX, startY, vel.dx, vel.dy, col, dtSeconds, ignored);
+        this.resolveRaycastCCD(world, entity, startX, startY, vel.dx, vel.dy, col, ccd, dtSeconds, ignored);
       } else if (mode === "swept") {
-        this.resolveSweptCCD(world, entity, startX, startY, vel.dx, vel.dy, col, dtSeconds);
+        this.resolveSweptCCD(world, entity, startX, startY, vel.dx, vel.dy, col, ccd, dtSeconds);
       } else if (mode === "substep") {
         this.resolveSubstepCCD(world, entity, trans, vel, col, ccd, dtSeconds);
       }
@@ -83,6 +92,7 @@ export class CCDSystem extends System {
     startX: number, startY: number,
     dx: number, dy: number,
     col: Collider2DComponent,
+    ccd: ContinuousColliderComponent,
     dt: number
   ): void {
     const entities = world.query("Transform", "Collider2D");
@@ -104,12 +114,16 @@ export class CCDSystem extends System {
 
       if (col.shape.type === "circle") {
         if (otherCol.shape.type === "circle") {
-          result = ContinuousCollision.sweptCircleVsCircle(ax, ay, dx, dy, col.shape.radius, otherX, otherY, otherCol.shape.radius, dt);
+          result = ContinuousCollision.sweptCircleVsCircle(ax, ay, dx, dy, col.shape.radius + (ccd.radiusPadding ?? 0), otherX, otherY, otherCol.shape.radius, dt);
         } else if (otherCol.shape.type === "aabb") {
-          result = ContinuousCollision.sweptCircleVsAABB(ax, ay, dx, dy, col.shape.radius, otherX, otherY, otherCol.shape.halfWidth, otherCol.shape.halfHeight, dt);
+          result = ContinuousCollision.sweptCircleVsAABB(ax, ay, dx, dy, col.shape.radius + (ccd.radiusPadding ?? 0), otherX, otherY, otherCol.shape.halfWidth, otherCol.shape.halfHeight, dt);
         }
-      } else if (col.shape.type === "aabb" && otherCol.shape.type === "aabb") {
-          result = ContinuousCollision.sweptAABBVsAABB(ax, ay, dx, dy, col.shape.halfWidth, col.shape.halfHeight, otherX, otherY, otherCol.shape.halfWidth, otherCol.shape.halfHeight, dt);
+      } else if (col.shape.type === "aabb") {
+        if (otherCol.shape.type === "aabb") {
+          result = ContinuousCollision.sweptAABBVsAABB(ax, ay, dx, dy, col.shape.halfWidth + (ccd.radiusPadding ?? 0), col.shape.halfHeight + (ccd.radiusPadding ?? 0), otherX, otherY, otherCol.shape.halfWidth, otherCol.shape.halfHeight, dt);
+        } else if (otherCol.shape.type === "circle") {
+          result = ContinuousCollision.sweptAABBVsCircle(ax, ay, dx, dy, col.shape.halfWidth + (ccd.radiusPadding ?? 0), col.shape.halfHeight + (ccd.radiusPadding ?? 0), otherX, otherY, otherCol.shape.radius, dt);
+        }
       }
 
       if (result && result.hit && result.timeOfImpact < closestTOI) {
@@ -190,28 +204,43 @@ export class CCDSystem extends System {
     startX: number, startY: number,
     dx: number, dy: number,
     col: Collider2DComponent,
+    ccd: ContinuousColliderComponent,
     dt: number,
     ignored: Set<Entity>
   ): void {
-    const dist = Math.sqrt(dx * dx + dy * dy) * dt;
+    const speed = Math.sqrt(dx * dx + dy * dy);
+    const dist = speed * dt;
     if (dist <= 0) return;
 
     ignored.clear();
     ignored.add(entity);
 
-    const hit = PhysicsQuery.raycast(world, {
-      originX: startX + col.offsetX,
-      originY: startY + col.offsetY,
-      directionX: dx / (dist / dt),
-      directionY: dy / (dist / dt),
-      maxDistance: dist
-    }, col.mask, ignored);
+    const dirX = dx / speed;
+    const dirY = dy / speed;
+
+    let hit = null;
+
+    // Si es un círculo, usamos shapeCast para un "fat ray" más preciso
+    if (col.shape.type === "circle") {
+      const effectiveRadius = col.shape.radius + (ccd.radiusPadding ?? 0);
+      hit = PhysicsQuery.shapeCast(world, { type: "circle", radius: effectiveRadius },
+        startX + col.offsetX, startY + col.offsetY,
+        dirX, dirY, dist, col.mask, ignored);
+    } else {
+      hit = PhysicsQuery.raycast(world, {
+        originX: startX + col.offsetX,
+        originY: startY + col.offsetY,
+        directionX: dirX,
+        directionY: dirY,
+        maxDistance: dist
+      }, col.mask, ignored);
+    }
 
     if (hit) {
       const margin = 0.1;
       world.mutateComponent<TransformComponent>(entity, "Transform", t => {
-        t.x = hit.pointX - col.offsetX - (dx / (dist / dt)) * margin;
-        t.y = hit.pointY - col.offsetY - (dy / (dist / dt)) * margin;
+        t.x = hit!.pointX - col.offsetX - dirX * margin;
+        t.y = hit!.pointY - col.offsetY - dirY * margin;
       });
 
       this.notifyCollision(world, entity, hit.entity, {

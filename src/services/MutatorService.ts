@@ -14,12 +14,27 @@ export class MutatorService {
   private static cachedMutators: Mutator[] | null = null;
   private static cachedSeed: string | number | null = null;
   private static lockedSeed: string | number | null = null;
+  private static lockedSeedSource: "server" | "local-fallback" | null = null;
 
   /**
    * Locks the current seed for the duration of a game session.
+   * This ensures mutators don't change if the server week transitions during a match.
    */
   public static lockSessionSeed(forceSeed?: string | number): void {
-    this.lockedSeed = forceSeed ?? ServerTimeService.getWeekSeed() ?? this.getISOWeekNumber(new Date(ServerTimeService.getCorrectedTime()));
+    if (forceSeed !== undefined) {
+      this.lockedSeed = forceSeed;
+      this.lockedSeedSource = "server";
+      return;
+    }
+
+    const serverSeed = ServerTimeService.getWeekSeed();
+    if (serverSeed !== null) {
+      this.lockedSeed = serverSeed;
+      this.lockedSeedSource = "server";
+    } else {
+      this.lockedSeed = this.getISOWeekNumber(new Date(ServerTimeService.getCorrectedTime()));
+      this.lockedSeedSource = "local-fallback";
+    }
   }
 
   /**
@@ -27,6 +42,7 @@ export class MutatorService {
    */
   public static unlockSessionSeed(): void {
     this.lockedSeed = null;
+    this.lockedSeedSource = null;
   }
 
   /**
@@ -35,8 +51,25 @@ export class MutatorService {
    * @param forceSeed - Optional seed to bypass server/local time logic.
    */
   public static getWeeklyMutators(forceSeed?: string | number): { mutators: Mutator[], source: 'server' | 'local-fallback' } {
-    const seed = forceSeed ?? this.lockedSeed ?? ServerTimeService.getWeekSeed() ?? this.getISOWeekNumber(new Date(ServerTimeService.getCorrectedTime()));
-    const source = (forceSeed || this.lockedSeed || ServerTimeService.isSynced()) ? 'server' as const : 'local-fallback' as const;
+    let source: "server" | "local-fallback" = "local-fallback";
+    let seed: string | number;
+
+    if (forceSeed !== undefined) {
+      seed = forceSeed;
+      source = "server";
+    } else if (this.lockedSeed !== null) {
+      seed = this.lockedSeed;
+      source = this.lockedSeedSource || "server";
+    } else {
+      const serverSeed = ServerTimeService.getWeekSeed();
+      if (serverSeed !== null) {
+        seed = serverSeed;
+        source = "server";
+      } else {
+        seed = this.getISOWeekNumber(new Date(ServerTimeService.getCorrectedTime()));
+        source = "local-fallback";
+      }
+    }
 
     // Cache to avoid recalculating every frame
     if (this.cachedSeed === seed && this.cachedMutators) {
@@ -93,9 +126,10 @@ export class MutatorService {
 
   /**
    * Calcula el número de semana ISO para una fecha dada (fallback).
+   * Usa métodos UTC para garantizar consistencia con el servidor.
    */
   private static getISOWeekNumber(date: Date): number {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));

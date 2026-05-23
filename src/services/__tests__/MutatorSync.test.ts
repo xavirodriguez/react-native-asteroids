@@ -12,9 +12,12 @@ describe("MutatorService & ServerTimeService Sync", () => {
     // @ts-expect-error - Resetting private static for tests
     MutatorService.cachedSeed = null;
     // @ts-expect-error - Resetting private static for tests
+    MutatorService.cachedMutators = null;
+    MutatorService.unlockSessionSeed();
+    // @ts-expect-error - Resetting private static for tests
     ServerTimeService.timeOffset = 0;
     // @ts-expect-error - Resetting private static for tests
-    ServerTimeService.weekSeed = null;
+    ServerTimeService.metadata = null;
     // @ts-expect-error - Resetting private static for tests
     ServerTimeService.lastSync = 0;
   });
@@ -22,7 +25,7 @@ describe("MutatorService & ServerTimeService Sync", () => {
   test("deterministic seed from server overrides local time", () => {
     const serverSeed = "2024-W10";
     // @ts-expect-error - Setting private for test
-    ServerTimeService.weekSeed = serverSeed;
+    ServerTimeService.metadata = { serverTime: Date.now(), weekSeed: serverSeed };
     // @ts-expect-error - Setting private for test
     ServerTimeService.lastSync = Date.now();
 
@@ -48,6 +51,7 @@ describe("MutatorService & ServerTimeService Sync", () => {
     const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
 
     global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
       json: async () => ({
         serverTime: Date.now() + 10 * 60 * 1000, // 10 min offset
         weekSeed: "2024-W1"
