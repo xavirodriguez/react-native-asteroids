@@ -5,7 +5,8 @@ import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
-import { Collider2DComponent, BoundaryComponent } from "../../engine/core/CoreComponents";
+import { Collider2DComponent, BoundaryComponent, LootTableComponent } from "../../engine/core/CoreComponents";
+import { EnemyFactory } from "../../factories/EnemyFactory";
 
 /**
  * Entity factory for the Space Invaders game domain.
@@ -110,34 +111,29 @@ export function createPlayer(world: World, x: number, y: number, deferred?: bool
 }
 
 /**
- * Creates a single invader entity.
+ * Creates a single invader entity using the Data-Driven EnemyFactory.
  * Points are assigned based on the row (classic Space Invaders scoring).
  */
 export function createInvader(world: World, x: number, y: number, row: number, col: number, deferred?: boolean): Entity {
-  const { entity: invader, add } = createBaseEntity(world, deferred);
-  add({ type: "Transform", x, y });
-  add({ type: "Velocity", dx: 0, dy: 0 });
+  // Use "invader_commander" for top row, "invader_scout" for others
+  const blueprintId = row === 0 ? "invader_commander" : "invader_scout";
+
+  const invader = EnemyFactory.createEnemy(world, blueprintId, x, y, {}, deferred);
+
+  // Handle deferred additions if world is updating or deferred flag is set
+  const isDeferred = !!(deferred || world.isUpdating);
+  const add = (comp: Component) => {
+    if (isDeferred) {
+      world.getCommandBuffer().addComponent(invader, comp);
+    } else {
+      world.addComponent(invader, comp);
+    }
+  };
 
   // Points based on row (classic: top rows more points)
   const points = (5 - row) * 10;
 
-  add({
-    type: "Render",
-    shape: "invader",
-    size: 30,
-    color: "#FFFFFF",
-    rotation: 0,
-  });
-  add({
-    type: "Collider2D",
-    shape: { type: "circle", radius: 15 },
-    layer: CollisionLayers.ENEMY,
-    mask: CollisionLayers.PLAYER | CollisionLayers.PROJECTILE | CollisionLayers.DEBRIS, // Ship, Bullets, Shields
-    offsetX: 0,
-    offsetY: 0,
-    isTrigger: false,
-    enabled: true
-  } as Collider2DComponent);
+  // Add game-specific Invader component that was previously part of the manual factory
   add({ type: "Invader", row, col, points });
 
   // 10% chance to have a loot table (matching standard LootSystem logic)
@@ -147,7 +143,7 @@ export function createInvader(world: World, x: number, y: number, row: number, c
       { type: "speed", chance: 0.05, config: { value: 1.5, duration: 5000 } },
       { type: "triple_shot", chance: 0.05, config: { duration: 8000 } }
     ]
-  } as import("../../engine/core/CoreComponents").LootTableComponent);
+  } as LootTableComponent);
 
   return invader;
 }
