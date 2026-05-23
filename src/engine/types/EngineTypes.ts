@@ -30,6 +30,10 @@ export interface WorldSnapshot {
   /** Incremented on data changes or visual updates. */
   stateVersion: number;
   seed: number;
+  /** Serialized PRNG internal state. */
+  rngState?: number;
+  /** Time accumulator from GameLoop. */
+  accumulator?: number;
   /** Current simulation tick. */
   tick: number;
 }

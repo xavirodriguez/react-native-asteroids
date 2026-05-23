@@ -25,6 +25,11 @@ export class World {
   private activeEntities = new Set<Entity>();
   /** @internal */
   public isUpdating = false;
+  /**
+   * Indicates if the world is currently performing a rollback re-simulation.
+   * When true, systems should suppress visual/audio effects.
+   */
+  public isReSimulating = false;
   /** @internal */
   private componentMaps = new Map<string, Map<Entity, Component>>();
   /** @internal */
@@ -99,6 +104,22 @@ export class World {
    */
   public get gameplayRandom(): RandomService {
     return RandomService.getInstance("gameplay");
+  }
+
+  /**
+   * Emits an event to the global EventBus only if the world is not re-simulating.
+   *
+   * @remarks
+   * Use this for side effects like Audio or VFX that should not be duplicated
+   * during rollback ticks.
+   */
+  public emitSimulationEvent<T>(event: string, payload?: T): void {
+    if (this.isReSimulating) return;
+
+    const bus = this.getSingleton<import("./CoreComponents").EventBusComponent>("EventBus");
+    if (bus) {
+      bus.bus.emitDeferred(event, payload);
+    }
   }
 
   /**
@@ -206,15 +227,21 @@ export class World {
         const serializedComp: SerializedComponent = {};
         const compAsRecord = component as unknown as Record<string, unknown>;
 
+        // Optimized capture: iterate over properties and copy them.
+        // We assume components are flat POJOs as per engine architecture.
         for (const key in compAsRecord) {
-          if (typeof compAsRecord[key] !== "function") {
-            serializedComp[key] = compAsRecord[key];
+          const val = compAsRecord[key];
+          if (typeof val !== "function") {
+            // Nested object check for safety (e.g. vertices, config)
+            if (val !== null && typeof val === "object") {
+              serializedComp[key] = structuredClone(val);
+            } else {
+              serializedComp[key] = val;
+            }
           }
         }
 
-
-        // structuredClone is used for a deep copy of serializable data
-        componentData[type][entity] = structuredClone(serializedComp) as SerializedComponent;
+        componentData[type][entity] = serializedComp;
       }
     }
 
@@ -232,6 +259,8 @@ export class World {
       structureVersion: this._structureVersion,
       stateVersion: this._stateVersion,
       seed: gameplayRandom.getSeed(),
+      rngState: gameplayRandom.getSeed(), // Use internal seed as current state
+      accumulator: this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator(),
       tick: this._tick
     };
   }
@@ -254,41 +283,83 @@ export class World {
     this._stateVersion = state.stateVersion;
     this._tick = state.tick ?? 0;
 
-    if (state.seed !== undefined) {
+    if (state.rngState !== undefined) {
+        RandomService.getInstance("gameplay").setSeed(state.rngState);
+    } else if (state.seed !== undefined) {
         RandomService.getInstance("gameplay").setSeed(state.seed);
     }
 
-    // Clear and rebuild component maps
-    this.componentMaps.clear();
-    this.componentIndex.clear();
+    if (state.accumulator !== undefined) {
+        this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.setAccumulator(state.accumulator);
+    }
+
+    // Sync component data with snapshot instead of clearing everything
     this.entityComponentSets.clear();
 
-    this.componentVersions.clear();
+    // 1. Identify types that are NOT in the snapshot and remove them
+    const snapshotTypes = Object.keys(state.componentData);
+    for (const [type] of this.componentMaps) {
+        if (!snapshotTypes.includes(type)) {
+            this.componentMaps.delete(type);
+            this.componentIndex.delete(type);
+            this.componentVersions.delete(type);
+        }
+    }
 
-    for (const type in state.componentData) {
-      const storage = new Map<Entity, Component>();
-      const index = new Set<Entity>();
-      const versions = new Map<Entity, number>();
-      this.componentMaps.set(type, storage);
-      this.componentIndex.set(type, index);
-      this.componentVersions.set(type, versions);
+    for (const type of snapshotTypes) {
+      let storage = this.componentMaps.get(type);
+      let index = this.componentIndex.get(type);
+      let versions = this.componentVersions.get(type);
 
-      for (const entityIdStr in state.componentData[type]) {
+      if (!storage) {
+        storage = new Map<Entity, Component>();
+        index = new Set<Entity>();
+        versions = new Map<Entity, number>();
+        this.componentMaps.set(type, storage);
+        this.componentIndex.set(type, index);
+        this.componentVersions.set(type, versions);
+      }
+
+      // Remove entities not in this component type's snapshot
+      const snapshotEntities = state.componentData[type];
+      for (const [entityId] of storage) {
+          if (snapshotEntities[entityId] === undefined) {
+              storage.delete(entityId);
+              index!.delete(entityId);
+              versions!.delete(entityId);
+          }
+      }
+
+      for (const entityIdStr in snapshotEntities) {
         const entityId = parseInt(entityIdStr);
-        const sourceComp = state.componentData[type][entityId];
-        // CRITICAL: Deep clone component from snapshot to prevent aliasing.
-        // This ensures subsequent mutations in the world don't corrupt the snapshot/history.
-        const component = structuredClone(sourceComp) as unknown as Component;
+        const sourceComp = snapshotEntities[entityId];
 
-        if (__DEV__) {
-          if ((component as unknown) === sourceComp && typeof sourceComp === "object" && sourceComp !== null) {
-            console.warn(`[World.restore] Aliasing detected for component type "${type}" on entity ${entityId}. structuredClone failed to decouple reference.`);
+        // Optimized restoration: Reuse existing component object to avoid GC pressure.
+        let component = storage.get(entityId) as Record<string, unknown>;
+        if (!component) {
+          component = {} as Record<string, unknown>;
+          storage.set(entityId, component as unknown as Component);
+        }
+
+        // Clean up properties not present in the snapshot (to ensure perfect state)
+        for (const key in component) {
+            if (!(key in sourceComp)) {
+                delete component[key];
+            }
+        }
+
+        // Apply snapshot data
+        for (const key in sourceComp) {
+          const val = sourceComp[key];
+          if (val !== null && typeof val === "object") {
+             component[key] = structuredClone(val);
+          } else {
+             component[key] = val;
           }
         }
 
-        storage.set(entityId, component);
-        index.add(entityId);
-        versions.set(entityId, this._stateVersion);
+        index!.add(entityId);
+        versions!.set(entityId, this._stateVersion);
 
         let componentSet = this.entityComponentSets.get(entityId);
         if (!componentSet) {
@@ -732,6 +803,8 @@ export class World {
     if (this.systemsNeedSorting) this.sortSystems();
 
     this.isUpdating = true;
+    RandomService.lockGameplayContext = true;
+
     try {
       // Standard Execution Order defined by SystemPhase
       const phases = [
@@ -763,6 +836,7 @@ export class World {
       }
     } finally {
       this.isUpdating = false;
+      RandomService.lockGameplayContext = false;
     }
 
     this.flush();

@@ -31,6 +31,15 @@ export class GameLoop {
   private isRunning = false;
   private lastTime = 0;
   private accumulator = 0;
+  /**
+   * Retrieves the current time accumulator.
+   */
+  public getAccumulator(): number { return this.accumulator; }
+  /**
+   * Restores the time accumulator from a snapshot.
+   */
+  public setAccumulator(val: number): void { this.accumulator = val; }
+
   private readonly fixedDeltaTime = 1000 / 60; // 60 FPS simulación
   private readonly maxDeltaMs: number;
   private readonly maxUpdatesPerFrame: number;
