@@ -12,6 +12,12 @@ export class UnifiedInputSystem extends System {
   private axisOverrides = new Map<string, number>();
   private activeKeys = new Set<string>();
   private activeTouches = new Set<string>();
+  private inputQueue: { actions: Set<string>, axes: Map<string, number> }[] = [];
+  private inputDelay = 0;
+
+  public setDelay(ticks: number): void {
+    this.inputDelay = ticks;
+  }
 
   private _onKeyDown = (e: KeyboardEvent) => this.activeKeys.add(e.code);
   private _onKeyUp = (e: KeyboardEvent) => this.activeKeys.delete(e.code);
@@ -69,37 +75,54 @@ export class UnifiedInputSystem extends System {
       return;
     }
 
-    world.mutateSingleton<InputStateComponent>("InputState", state => {
-      this.bindings.forEach((inputs, action) => {
-        const isRawPressed = inputs.some(input =>
-          this.activeKeys.has(input) || this.activeTouches.has(input)
-        );
-        const isOverridden = this.overrides.get(action);
-        const isPressed = isOverridden !== undefined ? (isRawPressed || isOverridden) : isRawPressed;
-        state.actions.set(action, isPressed);
-      });
+    // Capture current input
+    const currentActions = new Set<string>();
+    const currentAxes = new Map<string, number>();
 
-      this.overrides.forEach((isPressed, action) => {
-        if (!this.bindings.has(action)) {
-          state.actions.set(action, isPressed);
-        }
-      });
-
-      this.axisBindings.forEach((config, axis) => {
-        let value = 0;
-        if (config.pos.some(k => this.activeKeys.has(k) || this.activeTouches.has(k))) value += 1;
-        if (config.neg.some(k => this.activeKeys.has(k) || this.activeTouches.has(k))) value -= 1;
-        const override = this.axisOverrides.get(axis);
-        const finalValue = override !== undefined ? override : value;
-        state.axes.set(axis, finalValue);
-      });
-
-      this.axisOverrides.forEach((value, axis) => {
-        if (!this.axisBindings.has(axis)) {
-          state.axes.set(axis, value);
-        }
-      });
+    this.bindings.forEach((inputs, action) => {
+      const isRawPressed = inputs.some(input =>
+        this.activeKeys.has(input) || this.activeTouches.has(input)
+      );
+      const isOverridden = this.overrides.get(action);
+      const isPressed = isOverridden !== undefined ? (isRawPressed || isOverridden) : isRawPressed;
+      if (isPressed) currentActions.add(action);
     });
+
+    this.overrides.forEach((isPressed, action) => {
+      if (!this.bindings.has(action) && isPressed) {
+        currentActions.add(action);
+      }
+    });
+
+    this.axisBindings.forEach((config, axis) => {
+      let value = 0;
+      if (config.pos.some(k => this.activeKeys.has(k) || this.activeTouches.has(k))) value += 1;
+      if (config.neg.some(k => this.activeKeys.has(k) || this.activeTouches.has(k))) value -= 1;
+      const override = this.axisOverrides.get(axis);
+      const finalValue = override !== undefined ? override : value;
+      currentAxes.set(axis, finalValue);
+    });
+
+    this.axisOverrides.forEach((value, axis) => {
+      if (!this.axisBindings.has(axis)) {
+        currentAxes.set(axis, value);
+      }
+    });
+
+    // Enqueue
+    this.inputQueue.push({ actions: currentActions, axes: currentAxes });
+
+    // Apply delayed input
+    if (this.inputQueue.length > this.inputDelay) {
+      const delayed = this.inputQueue.shift()!;
+      world.mutateSingleton<InputStateComponent>("InputState", state => {
+        state.actions.clear();
+        delayed.actions.forEach(action => state.actions.set(action, true));
+
+        state.axes.clear();
+        delayed.axes.forEach((val, axis) => state.axes.set(axis, val));
+      });
+    }
   }
 
   public cleanup(): void {
