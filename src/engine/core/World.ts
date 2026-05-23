@@ -73,6 +73,8 @@ export class World {
   private _entitiesCache: Entity[] = [];
   /** @internal */
   private _entitiesCacheVersion = -1;
+  /** @internal */
+  private _entitiesSorted = true;
   /**
    * Incremented on data changes or manual notification.
    */
@@ -137,7 +139,12 @@ export class World {
    */
   public get entities(): ReadonlyArray<Entity> {
     if (this._entitiesCacheVersion !== this._structureVersion) {
-      this._entitiesCache = Array.from(this.activeEntities).sort((a, b) => a - b);
+      // Optimization: Only copy and sort if structural version changed
+      if (!this._entitiesSorted || this._entitiesCache.length !== this.activeEntities.size) {
+        this._entitiesCache = Array.from(this.activeEntities).sort((a, b) => a - b);
+        this._entitiesSorted = true;
+      }
+
       if (__DEV__) {
         if (!Object.isFrozen(this._entitiesCache)) {
           Object.freeze(this._entitiesCache);
@@ -194,9 +201,9 @@ export class World {
    * 3. Component data per type is stored in entity-order.
    * 4. All functional or non-serializable data (like event handlers) is stripped.
    */
-  public snapshot(): WorldSnapshot {
+  public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const gameplayRandom = RandomService.getInstance("gameplay");
-    const componentData: ComponentDataSnapshot = {};
+    const componentData: ComponentDataSnapshot = target?.componentData ?? {};
 
     // Deterministic sort of component types (cached)
     if (this._componentTypesDirty) {
@@ -206,7 +213,9 @@ export class World {
 
     // Pre-initialize componentData with sorted types to ensure deterministic key order
     for (const type of this._sortedComponentTypes) {
-      componentData[type] = {};
+      if (!componentData[type]) {
+          componentData[type] = {};
+      }
     }
 
     // Use the cached sorted entities list
@@ -224,8 +233,20 @@ export class World {
         const component = map.get(entity);
         if (!component) continue;
 
-        const serializedComp: SerializedComponent = {};
+        let serializedComp = componentData[type][entity] as Record<string, unknown>;
+        if (!serializedComp) {
+            serializedComp = {};
+            componentData[type][entity] = serializedComp as SerializedComponent;
+        }
+
         const compAsRecord = component as unknown as Record<string, unknown>;
+
+        // Clean up properties that no longer exist in the source
+        for (const key in serializedComp) {
+            if (!(key in compAsRecord)) {
+                delete serializedComp[key];
+            }
+        }
 
         // Optimized capture: iterate over properties and copy them.
         // We assume components are flat POJOs as per engine architecture.
@@ -248,8 +269,6 @@ export class World {
             }
           }
         }
-
-        componentData[type][entity] = serializedComp;
       }
     }
 
@@ -257,6 +276,30 @@ export class World {
       // Sort descending so pop() returns the smallest ID deterministically and in O(1)
       this.freeEntities.sort((a, b) => b - a);
       this._freeEntitiesSorted = true;
+    }
+
+    // Final cleanup: remove entities/components from target that are no longer in world
+    for (const type in componentData) {
+        const snapshotEntities = componentData[type];
+        for (const entityId in snapshotEntities) {
+            if (!this.hasComponent(parseInt(entityId), type)) {
+                delete snapshotEntities[entityId];
+            }
+        }
+    }
+
+    if (target) {
+        target.entities = [...allEntities];
+        target.componentData = componentData;
+        target.nextEntityId = this.nextEntityId;
+        target.freeEntities = [...this.freeEntities];
+        target.structureVersion = this._structureVersion;
+        target.stateVersion = this._stateVersion;
+        target.seed = gameplayRandom.getSeed();
+        target.rngState = (gameplayRandom as any).seed; // Access internal state for bit-perfect restoration
+        target.accumulator = this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator();
+        target.tick = this._tick;
+        return target;
     }
 
     return {
@@ -267,7 +310,7 @@ export class World {
       structureVersion: this._structureVersion,
       stateVersion: this._stateVersion,
       seed: gameplayRandom.getSeed(),
-      rngState: gameplayRandom.getSeed(),
+      rngState: (gameplayRandom as any).seed, // Access internal state for bit-perfect restoration
       accumulator: this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator(),
       tick: this._tick
     };
@@ -284,6 +327,18 @@ export class World {
   public restore(state: WorldSnapshot): void {
     this.assertCanMutateStructure("restore");
     this.activeEntities = new Set(state.entities);
+
+    // Reuse entities cache if possible
+    if (this._entitiesCache.length !== state.entities.length) {
+        this._entitiesCache = [...state.entities];
+    } else {
+        for (let i = 0; i < state.entities.length; i++) {
+            this._entitiesCache[i] = state.entities[i];
+        }
+    }
+    this._entitiesSorted = true;
+    this._entitiesCacheVersion = state.structureVersion;
+
     this.nextEntityId = state.nextEntityId;
     this.freeEntities = [...state.freeEntities];
     this._freeEntitiesSorted = false; // Snapshot might be sorted, but mark dirty to be safe
@@ -292,7 +347,8 @@ export class World {
     this._tick = state.tick ?? 0;
 
     if (state.rngState !== undefined) {
-        RandomService.getInstance("gameplay").setSeed(state.rngState);
+        const rng = RandomService.getInstance("gameplay");
+        (rng as any).seed = state.rngState; // Bit-perfect restoration of internal state
     } else if (state.seed !== undefined) {
         RandomService.getInstance("gameplay").setSeed(state.seed);
     }
@@ -381,6 +437,9 @@ export class World {
         query.rebuild(this.activeEntities, this.entityComponentSets);
     });
 
+    this._structureVersion = state.structureVersion;
+    this._stateVersion = state.stateVersion;
+    this._renderDirty = true;
     this.commandBuffer.clear();
 
   }
@@ -409,6 +468,7 @@ export class World {
     const entityId = id ?? this.reserveEntityId();
 
     this.activeEntities.add(entityId);
+    this._entitiesSorted = false;
 
     // If an ID was provided manually, ensure nextEntityId stays ahead
     if (id !== undefined && id >= this.nextEntityId) {
@@ -656,6 +716,7 @@ export class World {
     this.queries.forEach(query => query.remove(entity));
 
     if (this.activeEntities.delete(entity)) {
+      this._entitiesSorted = false;
       this.freeEntities.push(entity);
       this._freeEntitiesSorted = false;
       this._structureVersion++;

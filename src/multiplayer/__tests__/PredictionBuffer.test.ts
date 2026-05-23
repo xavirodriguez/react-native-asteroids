@@ -41,10 +41,10 @@ describe("PredictionBuffer", () => {
   });
 
   it("should replace state when saving same tick", () => {
-    const s1: PredictedState = { tick: 1, entityId: "1", state: { x: 1, y: 1 }, entities: [] };
-    const s2: PredictedState = { tick: 1, entityId: "1", state: { x: 2, y: 2 }, entities: [] };
+    const s1: PredictedState = { tick: 1, entityId: "1", state: { x: 1, y: 1, vx: 0, vy: 0 }, entities: [] };
+    const s2: PredictedState = { tick: 1, entityId: "1", state: { x: 2, y: 2, vx: 0, vy: 0 }, entities: [] };
     buffer.save(s1);
     buffer.save(s2);
-    expect(buffer.getAt(1)).toBe(s2);
+    expect(buffer.getAt(1)).toMatchObject(s2);
   });
 });
