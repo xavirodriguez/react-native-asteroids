@@ -5,8 +5,8 @@ import type { PongState, PongInput } from "../games/pong/types";
 
 export const usePongGame = (mode: "local" | "ai" | "online" | null, seed?: number) => {
   const gameOptions = useMemo(
-    () => ({ mode }),
-    [mode]
+    () => ({ mode, seed }),
+    [mode, seed]
   );
 
   return useGame<PongGame, PongState, PongInput>(
