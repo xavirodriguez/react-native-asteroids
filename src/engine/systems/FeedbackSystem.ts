@@ -23,7 +23,9 @@ export class FeedbackSystem extends System {
       const request = world.getComponent<HapticRequestComponent>(entity, "HapticRequest");
       if (!request) return;
 
-      this.triggerHaptic(request.pattern);
+      if (!world.isReSimulating) {
+        this.triggerHaptic(request.pattern);
+      }
 
       // Consume the request
       commands.removeComponent(entity, "HapticRequest");

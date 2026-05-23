@@ -31,6 +31,8 @@ export class ParticleSystem extends System {
   }
 
   public update(world: World, deltaTime: number): void {
+    if (world.isReSimulating) return;
+
     const dtSeconds = deltaTime / 1000;
     const emitters = world.query("ParticleEmitter");
 
