@@ -21,6 +21,8 @@ export interface NetworkConfig {
     interpolationDelay?: number;
     /** Maximum number of history frames to keep for rollback. */
     maxHistory?: number;
+    /** Fixed delay in ticks for local input application. */
+    inputDelayTicks?: number;
     /** Whether to enable debug logging for reconciliation. */
     debug?: boolean;
 }

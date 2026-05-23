@@ -1,6 +1,6 @@
 import { World } from "../../core/World";
 import { WorldSnapshot } from "../../types/EngineTypes";
-import { TransformComponent, VelocityComponent, VisualOffsetComponent, TagComponent } from "../../core/CoreComponents";
+import { TransformComponent, VelocityComponent, VisualOffsetComponent, TagComponent, PreviousTransformComponent } from "../../core/CoreComponents";
 import { ReconciliationStrategy } from "../ReconciliationStrategy";
 import { INetworkGame, NetworkConfig } from "../types/NetworkTypes";
 import { PredictionBuffer } from "../../../multiplayer/PredictionBuffer";
@@ -99,6 +99,18 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
     private performReconciliation(serverTick: number, authoritativeSnapshot: WorldSnapshot, localSessionId?: string) {
         const world = this.game.getWorld();
         const predicted = this.predictionBuffer.getAt(serverTick);
+
+        // Capture previous transform before state mutation for interpolation
+        world.query("Transform").forEach(entity => {
+            const trans = world.getComponent<TransformComponent>(entity, "Transform");
+            if (trans) {
+                world.mutateComponent<PreviousTransformComponent>(entity, "PreviousTransform", prev => {
+                    prev.x = trans.x;
+                    prev.y = trans.y;
+                    prev.rotation = trans.rotation;
+                });
+            }
+        });
 
         // Always save the latest authoritative state in history
         this.stateHistory.save(serverTick, authoritativeSnapshot);
@@ -211,6 +223,18 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
 
     public recordPrediction(input: InputFrame, world: World): void {
         this.inputHistory.push(input);
+
+        // Paso 11: Capture PreviousTransform for smooth alpha interpolation
+        world.query("Transform").forEach(entity => {
+            const trans = world.getComponent<TransformComponent>(entity, "Transform");
+            if (trans) {
+                world.mutateComponent<PreviousTransformComponent>(entity, "PreviousTransform", prev => {
+                    prev.x = trans.x;
+                    prev.y = trans.y;
+                    prev.rotation = trans.rotation;
+                });
+            }
+        });
 
         const lp = world.query("Tag").find(e => {
             const tag = world.getComponent(e, "Tag") as TagComponent;
