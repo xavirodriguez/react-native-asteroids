@@ -74,8 +74,8 @@ export class RandomService {
 
   /** @deprecated Access RNG via World resources instead. */
   public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
-    if (this._lockGameplayContext && (name === "render" || name === "global")) {
-        throw new Error(`Deterministic violation: '${name}' random accessed during simulation.`);
+    if (this._lockGameplayContext && name !== "gameplay") {
+        throw new Error(`Deterministic violation: '${name}' random accessed during simulation. Only 'gameplay' stream is allowed.`);
     }
 
     let instance = this.namedInstances.get(name);
