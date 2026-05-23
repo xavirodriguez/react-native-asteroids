@@ -11,6 +11,7 @@ import { StateHistoryManager } from "../StateHistoryManager";
 import { DesyncDetector } from "../DesyncDetector";
 import { InputRingBuffer } from "../../../multiplayer/InputRingBuffer";
 import { RemoteInputPredictor } from "../../../multiplayer/RemoteInputPredictor";
+import { InputSerializer, InputBurstPayload } from "../../../multiplayer/InputSerializer";
 
 /**
  * Strategy for full prediction and rollback reconciliation.
@@ -35,6 +36,11 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
     private currentTick = 0;
 
     // Reuse objects to avoid allocations in hot path
+    private burstBuffer: InputBurstPayload = {
+        latestTick: 0,
+        frames: [],
+        sessionId: ""
+    };
     private snapshotPool: WorldSnapshot[] = [];
     private predictedStateBuffer = {
         tick: 0,
@@ -49,8 +55,8 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
         this.stateHistory = new StateHistoryManager(this.maxHistory);
         this.inputRingBuffer = new InputRingBuffer(this.maxHistory * 2);
 
-        // Pre-allocate a small pool of snapshots for the re-simulation loop
-        for (let i = 0; i < 5; i++) {
+        // Pre-allocate a pool of distinct snapshots for re-simulation history
+        for (let i = 0; i < this.maxHistory; i++) {
             this.snapshotPool.push({
                 entities: [],
                 componentData: {},
@@ -216,31 +222,24 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
                     const trans = world.getComponent<TransformComponent>(localPlayerId, "Transform");
                     const vel = world.getComponent<VelocityComponent>(localPlayerId, "Velocity");
                     if (trans && vel) {
-                        // Reuse predictedStateBuffer to avoid allocation
-                        this.predictedStateBuffer.tick = t;
-                        this.predictedStateBuffer.entityId = localPlayerId.toString();
-                        this.predictedStateBuffer.state.x = trans.x;
-                        this.predictedStateBuffer.state.y = trans.y;
-                        this.predictedStateBuffer.state.vx = vel.dx;
-                        this.predictedStateBuffer.state.vy = vel.dy;
-                        this.predictedStateBuffer.state.angle = trans.rotation;
-
-                        // entities.length is small, but avoid .map(). join() is also avoided.
-                        // For now we just clone the IDs as they are primitives.
-                        this.predictedStateBuffer.entities = []; // resetting array
-                        const entities = world.entities;
-                        for(let i=0; i<entities.length; i++) {
-                            this.predictedStateBuffer.entities.push(entities[i].toString());
-                        }
-
-                        this.predictionBuffer.save(structuredClone(this.predictedStateBuffer));
+                        this.predictionBuffer.save({
+                            tick: t,
+                            entityId: localPlayerId.toString(),
+                            state: {
+                                x: trans.x,
+                                y: trans.y,
+                                vx: vel.dx,
+                                vy: vel.dy,
+                                angle: trans.rotation
+                            },
+                            entities: []
+                        });
                     }
                 }
 
-                // Update history with re-simulated state using snapshot pooling
-                const poolIndex = (t - (serverTick + 1)) % this.snapshotPool.length;
-                const pooledSnapshot = this.snapshotPool[poolIndex];
-                this.stateHistory.save(t, world.snapshot(pooledSnapshot));
+                // Update history with re-simulated state using pooling
+                const poolIndex = t % this.snapshotPool.length;
+                this.stateHistory.save(t, world.snapshot(this.snapshotPool[poolIndex]));
             }
         } finally {
             world.isReSimulating = false;
@@ -274,7 +273,9 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
         this.currentTick = input.tick;
 
         // Paso 11: Capture PreviousTransform for smooth alpha interpolation
-        world.query("Transform").forEach(entity => {
+        const transformEntities = world.query("Transform");
+        for (let i = 0; i < transformEntities.length; i++) {
+            const entity = transformEntities[i];
             const trans = world.getComponent<TransformComponent>(entity, "Transform");
             if (trans) {
                 world.mutateComponent<PreviousTransformComponent>(entity, "PreviousTransform", prev => {
@@ -283,7 +284,7 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
                     prev.rotation = trans.rotation;
                 });
             }
-        });
+        }
 
         const lp = world.query("Tag").find(e => {
             const tag = world.getComponent(e, "Tag") as TagComponent;
@@ -297,18 +298,38 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
                 this.predictionBuffer.save({
                     tick: input.tick,
                     entityId: lp.toString(),
-                    state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation },
-                    entities: world.entities.map(e => e.toString())
+                    state: {
+                        x: trans.x,
+                        y: trans.y,
+                        vx: vel.dx,
+                        vy: vel.dy,
+                        angle: trans.rotation
+                    },
+                    entities: []
                 });
             }
         }
 
-        // Paso 7: Save local predicted state to history
-        this.stateHistory.save(input.tick, world.snapshot());
+        // Paso 7: Save local predicted state to history using pooling
+        const poolIndex = input.tick % this.snapshotPool.length;
+        this.stateHistory.save(input.tick, world.snapshot(this.snapshotPool[poolIndex]));
     }
 
     public getStateHistory(tick: number): WorldSnapshot | undefined {
         return this.stateHistory.get(tick);
+    }
+
+    /**
+     * Paso 5: Generates a redundant burst of recent inputs to mitigate packet loss.
+     */
+    public getPendingInputBurst(sessionId: string, redundancy: number = 5): InputBurstPayload {
+        return InputSerializer.pack(
+            this.inputRingBuffer,
+            this.currentTick,
+            redundancy,
+            sessionId,
+            this.burstBuffer
+        );
     }
 
     public reset(): void {

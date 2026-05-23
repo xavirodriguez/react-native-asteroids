@@ -46,7 +46,23 @@ export class PredictionBuffer {
    */
   public save(state: PredictedState): void {
     const index = state.tick & this.mask;
-    this.buffer[index] = state;
+
+    // Optimized: Reuse existing object if possible to avoid allocations
+    let existing = this.buffer[index];
+    if (!existing || existing.tick !== state.tick) {
+        this.buffer[index] = state;
+    } else {
+        // In-place update
+        existing.entityId = state.entityId;
+        existing.state.x = state.state.x;
+        existing.state.y = state.state.y;
+        existing.state.vx = state.state.vx;
+        existing.state.vy = state.state.vy;
+        existing.state.angle = state.state.angle;
+
+        // entities is handled separately or replaced
+        existing.entities = state.entities;
+    }
 
     if (state.tick > this.lastTick) {
         this.lastTick = state.tick;

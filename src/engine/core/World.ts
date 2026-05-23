@@ -296,7 +296,7 @@ export class World {
         target.structureVersion = this._structureVersion;
         target.stateVersion = this._stateVersion;
         target.seed = gameplayRandom.getSeed();
-        target.rngState = gameplayRandom.getSeed();
+        target.rngState = (gameplayRandom as any).seed; // Access internal state for bit-perfect restoration
         target.accumulator = this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator();
         target.tick = this._tick;
         return target;
@@ -310,7 +310,7 @@ export class World {
       structureVersion: this._structureVersion,
       stateVersion: this._stateVersion,
       seed: gameplayRandom.getSeed(),
-      rngState: gameplayRandom.getSeed(),
+      rngState: (gameplayRandom as any).seed, // Access internal state for bit-perfect restoration
       accumulator: this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator(),
       tick: this._tick
     };
@@ -327,7 +327,15 @@ export class World {
   public restore(state: WorldSnapshot): void {
     this.assertCanMutateStructure("restore");
     this.activeEntities = new Set(state.entities);
-    this._entitiesCache = [...state.entities];
+
+    // Reuse entities cache if possible
+    if (this._entitiesCache.length !== state.entities.length) {
+        this._entitiesCache = [...state.entities];
+    } else {
+        for (let i = 0; i < state.entities.length; i++) {
+            this._entitiesCache[i] = state.entities[i];
+        }
+    }
     this._entitiesSorted = true;
     this._entitiesCacheVersion = state.structureVersion;
 
@@ -339,7 +347,8 @@ export class World {
     this._tick = state.tick ?? 0;
 
     if (state.rngState !== undefined) {
-        RandomService.getInstance("gameplay").setSeed(state.rngState);
+        const rng = RandomService.getInstance("gameplay");
+        (rng as any).seed = state.rngState; // Bit-perfect restoration of internal state
     } else if (state.seed !== undefined) {
         RandomService.getInstance("gameplay").setSeed(state.seed);
     }
@@ -428,6 +437,9 @@ export class World {
         query.rebuild(this.activeEntities, this.entityComponentSets);
     });
 
+    this._structureVersion = state.structureVersion;
+    this._stateVersion = state.stateVersion;
+    this._renderDirty = true;
     this.commandBuffer.clear();
 
   }

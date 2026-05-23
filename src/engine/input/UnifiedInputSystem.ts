@@ -19,6 +19,10 @@ export class UnifiedInputSystem extends System {
     this.inputDelay = ticks;
   }
 
+  public getDelay(): number {
+    return this.inputDelay;
+  }
+
   private _onKeyDown = (e: KeyboardEvent) => this.activeKeys.add(e.code);
   private _onKeyUp = (e: KeyboardEvent) => this.activeKeys.delete(e.code);
   private _onPointerDown = () => this.activeTouches.add("TouchTap");
