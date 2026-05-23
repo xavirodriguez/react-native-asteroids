@@ -9,6 +9,8 @@ import { JuiceSystem } from "../../systems/JuiceSystem";
 import { InterpolationBuffer } from "../../../multiplayer/InterpolationSystem";
 import { StateHistoryManager } from "../StateHistoryManager";
 import { DesyncDetector } from "../DesyncDetector";
+import { InputRingBuffer } from "../../../multiplayer/InputRingBuffer";
+import { RemoteInputPredictor } from "../../../multiplayer/RemoteInputPredictor";
 
 /**
  * Strategy for full prediction and rollback reconciliation.
@@ -24,17 +26,44 @@ import { DesyncDetector } from "../DesyncDetector";
 export class FullReconciliationStrategy implements ReconciliationStrategy {
     private predictionBuffer = new PredictionBuffer();
     private entityInterpolationBuffers = new Map<string, InterpolationBuffer>();
-    private inputHistory: InputFrame[] = [];
+    private inputRingBuffer = new InputRingBuffer(256);
     private stateHistory = new StateHistoryManager();
     private desyncDetector = new DesyncDetector();
     private lastAuthoritativeTick = 0;
     private interpolationDelay: number;
     private maxHistory: number;
+    private currentTick = 0;
+
+    // Reuse objects to avoid allocations in hot path
+    private snapshotPool: WorldSnapshot[] = [];
+    private predictedStateBuffer = {
+        tick: 0,
+        entityId: "",
+        state: { x: 0, y: 0, vx: 0, vy: 0, angle: 0 },
+        entities: [] as string[]
+    };
 
     constructor(private game: INetworkGame, config: NetworkConfig = {}) {
         this.interpolationDelay = config.interpolationDelay ?? 100;
         this.maxHistory = config.maxHistory ?? 120;
         this.stateHistory = new StateHistoryManager(this.maxHistory);
+        this.inputRingBuffer = new InputRingBuffer(this.maxHistory * 2);
+
+        // Pre-allocate a small pool of snapshots for the re-simulation loop
+        for (let i = 0; i < 5; i++) {
+            this.snapshotPool.push({
+                entities: [],
+                componentData: {},
+                nextEntityId: 0,
+                freeEntities: [],
+                structureVersion: 0,
+                stateVersion: 0,
+                seed: 0,
+                rngState: 0,
+                accumulator: 0,
+                tick: 0
+            });
+        }
     }
 
     public update(world: World, _deltaTime: number): void {
@@ -135,7 +164,6 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
         }
 
         // Clean up old history
-        this.inputHistory = this.inputHistory.filter(i => i.tick > serverTick);
         this.predictionBuffer.clearBefore(serverTick);
         this.stateHistory.pruneBefore(serverTick);
     }
@@ -166,39 +194,59 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
         // 2. Fast-Forward: Re-simulate from serverTick to current
         world.isReSimulating = true;
         try {
-            this.inputHistory
-                .filter(input => input.tick > serverTick)
-                .sort((a, b) => a.tick - b.tick)
-                .forEach(input => {
-                    if (localPlayerId !== undefined) {
-                        this.game.applyInputToEntity(localPlayerId, input);
-                    }
+            for (let t = serverTick + 1; t <= this.currentTick; t++) {
+                let input = this.inputRingBuffer.get(t);
 
-                    // Paso 10: Fast-Forward simulation step
-                    // Fixed delta time for determinism
-                    this.game.runSimulationStep(16.66, true);
+                // Paso 6: Predict missing inputs
+                if (!input) {
+                    input = RemoteInputPredictor.predictNext(this.inputRingBuffer, t);
+                    this.inputRingBuffer.set(input);
+                }
 
-                    // Re-calculate predictions for corrected history
-                    if (localPlayerId !== undefined) {
-                        const trans = world.getComponent<TransformComponent>(localPlayerId, "Transform");
-                        const vel = world.getComponent<VelocityComponent>(localPlayerId, "Velocity");
-                        if (trans && vel) {
-                            this.predictionBuffer.save({
-                                tick: input.tick,
-                                entityId: localPlayerId.toString(),
-                                state: { x: trans.x, y: trans.y, vx: vel.dx, vy: vel.dy, angle: trans.rotation },
-                                entities: world.entities.map(e => e.toString())
-                            });
+                if (localPlayerId !== undefined) {
+                    this.game.applyInputToEntity(localPlayerId, input);
+                }
+
+                // Paso 10: Fast-Forward simulation step
+                // 60 FPS = 1000/60 = 16.666...
+                this.game.runSimulationStep(16.666, true);
+
+                // Re-calculate predictions for corrected history
+                if (localPlayerId !== undefined) {
+                    const trans = world.getComponent<TransformComponent>(localPlayerId, "Transform");
+                    const vel = world.getComponent<VelocityComponent>(localPlayerId, "Velocity");
+                    if (trans && vel) {
+                        // Reuse predictedStateBuffer to avoid allocation
+                        this.predictedStateBuffer.tick = t;
+                        this.predictedStateBuffer.entityId = localPlayerId.toString();
+                        this.predictedStateBuffer.state.x = trans.x;
+                        this.predictedStateBuffer.state.y = trans.y;
+                        this.predictedStateBuffer.state.vx = vel.dx;
+                        this.predictedStateBuffer.state.vy = vel.dy;
+                        this.predictedStateBuffer.state.angle = trans.rotation;
+
+                        // entities.length is small, but avoid .map(). join() is also avoided.
+                        // For now we just clone the IDs as they are primitives.
+                        this.predictedStateBuffer.entities = []; // resetting array
+                        const entities = world.entities;
+                        for(let i=0; i<entities.length; i++) {
+                            this.predictedStateBuffer.entities.push(entities[i].toString());
                         }
+
+                        this.predictionBuffer.save(structuredClone(this.predictedStateBuffer));
                     }
-                    // Update history with re-simulated state
-                    this.stateHistory.save(input.tick, world.snapshot());
-                });
+                }
+
+                // Update history with re-simulated state using snapshot pooling
+                const poolIndex = (t - (serverTick + 1)) % this.snapshotPool.length;
+                const pooledSnapshot = this.snapshotPool[poolIndex];
+                this.stateHistory.save(t, world.snapshot(pooledSnapshot));
+            }
         } finally {
             world.isReSimulating = false;
         }
 
-        // 3. Apply visual correction (Paso 13 logic stub)
+        // 3. Apply visual correction (Paso 13 logic)
         visualMismatches.forEach((prevPos, id) => {
             const newTrans = world.getComponent<TransformComponent>(id, "Transform");
             if (newTrans) {
@@ -222,7 +270,8 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
     }
 
     public recordPrediction(input: InputFrame, world: World): void {
-        this.inputHistory.push(input);
+        this.inputRingBuffer.set(input);
+        this.currentTick = input.tick;
 
         // Paso 11: Capture PreviousTransform for smooth alpha interpolation
         world.query("Transform").forEach(entity => {
@@ -256,10 +305,6 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
 
         // Paso 7: Save local predicted state to history
         this.stateHistory.save(input.tick, world.snapshot());
-
-        if (this.inputHistory.length > this.maxHistory) {
-            this.inputHistory.shift();
-        }
     }
 
     public getStateHistory(tick: number): WorldSnapshot | undefined {
@@ -268,9 +313,10 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
 
     public reset(): void {
         this.predictionBuffer.clear();
-        this.inputHistory = [];
+        this.inputRingBuffer.clear();
         this.stateHistory.clear();
         this.entityInterpolationBuffers.clear();
         this.lastAuthoritativeTick = 0;
+        this.currentTick = 0;
     }
 }

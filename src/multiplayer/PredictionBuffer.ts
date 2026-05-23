@@ -12,43 +12,44 @@ import { PredictedState } from "./NetTypes";
 
 /**
  * Manages historical predicted states for reconciliation.
- * Optimized with O(1) Map lookups for tick retrieval.
+ * Optimized with a circular buffer for O(1) performance and zero allocations in hot paths.
  */
 export class PredictionBuffer {
-  private buffer: PredictedState[] = [];
-  private lookup = new Map<number, PredictedState>();
-  private maxSize: number;
+  private buffer: (PredictedState | null)[];
+  private readonly capacity: number;
+  private readonly mask: number;
+  private readonly requestedCapacity: number;
+  private lastTick: number = -1;
 
   /**
-   * @param maxSize - Maximum number of ticks to retain. Defaults to 120 (approx 2 seconds at 60fps).
+   * @param capacity - Maximum number of ticks to retain. Recommended to be a power of 2.
+   *                   Defaults to 128 (approx 2 seconds at 60fps).
    */
-  constructor(maxSize: number = 120) {
-    this.maxSize = maxSize;
+  constructor(capacity: number = 128) {
+    this.requestedCapacity = capacity;
+
+    let powerOfTwoCapacity = capacity;
+    // Ensure capacity is a power of 2 for bitwise masking
+    if ((powerOfTwoCapacity & (powerOfTwoCapacity - 1)) !== 0) {
+      let p = 1;
+      while (p < powerOfTwoCapacity) p <<= 1;
+      powerOfTwoCapacity = p;
+    }
+
+    this.capacity = powerOfTwoCapacity;
+    this.mask = powerOfTwoCapacity - 1;
+    this.buffer = new Array(powerOfTwoCapacity).fill(null);
   }
 
   /**
    * Records a new predicted state.
-   * If the buffer is full, the oldest state is discarded.
    */
   public save(state: PredictedState): void {
-    // If we already have a state for this tick, replace it
-    if (this.lookup.has(state.tick)) {
-      const idx = this.buffer.findIndex(s => s.tick === state.tick);
-      if (idx !== -1) {
-        this.buffer[idx] = state;
-        this.lookup.set(state.tick, state);
-        return;
-      }
-    }
+    const index = state.tick & this.mask;
+    this.buffer[index] = state;
 
-    this.buffer.push(state);
-    this.lookup.set(state.tick, state);
-
-    if (this.buffer.length > this.maxSize) {
-      const oldest = this.buffer.shift();
-      if (oldest) {
-        this.lookup.delete(oldest.tick);
-      }
+    if (state.tick > this.lastTick) {
+        this.lastTick = state.tick;
     }
   }
 
@@ -57,35 +58,46 @@ export class PredictionBuffer {
    * @performance O(1)
    */
   public getAt(tick: number): PredictedState | undefined {
-    return this.lookup.get(tick);
+    const index = tick & this.mask;
+    const state = this.buffer[index];
+
+    // circular wrapping validation AND age validation
+    // We only return it if the tick matches AND it's within the requested capacity window
+    if (state && state.tick === tick && (this.lastTick - tick) < this.requestedCapacity) {
+        return state;
+    }
+    return undefined;
   }
 
   /**
    * Removes all states older than or equal to the specified tick.
+   *
+   * @remarks
+   * In a circular buffer, we don't strictly "remove" for efficiency,
+   * but we can nullify to avoid stale data if we wrap around partially.
    */
   public clearBefore(tick: number): void {
-    // const initialSize = this.buffer.length;
-    this.buffer = this.buffer.filter((s) => {
-      const keep = s.tick > tick;
-      if (!keep) {
-        this.lookup.delete(s.tick);
+      for (let i = 0; i < this.capacity; i++) {
+          const state = this.buffer[i];
+          if (state && state.tick <= tick) {
+              this.buffer[i] = null;
+          }
       }
-      return keep;
-    });
   }
 
   /**
-   * Resets the buffer and lookup.
+   * Resets the buffer.
    */
   public clear(): void {
-    this.buffer = [];
-    this.lookup.clear();
+    this.buffer.fill(null);
+    this.lastTick = -1;
   }
 
   /**
    * Returns the most recently saved state.
    */
   public getLast(): PredictedState | undefined {
-    return this.buffer[this.buffer.length - 1];
+    if (this.lastTick === -1) return undefined;
+    return this.getAt(this.lastTick);
   }
 }
