@@ -1,13 +1,17 @@
 import { MutatorService } from "../MutatorService";
 
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
+
 describe("MutatorService Determinism", () => {
   it("should return the same mutators for the same timestamp", () => {
     const timestamp = 1715000000000; // Some fixed point in time
     const m1 = MutatorService.getWeeklyMutators(timestamp);
     const m2 = MutatorService.getWeeklyMutators(timestamp);
 
-    expect(m1).toEqual(m2);
-    expect(m1.length).toBeGreaterThan(0);
+    expect(m1.mutators).toEqual(m2.mutators);
+    expect(m1.mutators.length).toBeGreaterThan(0);
   });
 
   it("should return different mutators for timestamps in different weeks", () => {
@@ -28,6 +32,6 @@ describe("MutatorService Determinism", () => {
   it("should use local time if no timestamp is provided", () => {
     const m1 = MutatorService.getWeeklyMutators();
     expect(m1).toBeDefined();
-    expect(m1.length).toBeGreaterThan(0);
+    expect(m1.mutators.length).toBeGreaterThan(0);
   });
 });
