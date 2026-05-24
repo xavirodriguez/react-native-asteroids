@@ -57,7 +57,7 @@ export function useGame<
   const config = useMemo(() => ({
     isMultiplayer,
     seed,
-    gameOptions
+    gameOptions: { ...gameOptions, seed: seed ?? (gameOptions?.seed as number | undefined) }
   }), [isMultiplayer, seed, gameOptions]);
 
   const [game, setGame] = useState<TGame | null>(null);

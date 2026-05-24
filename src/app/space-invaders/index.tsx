@@ -103,8 +103,6 @@ export default function SpaceInvadersScreen() {
     game?.getInputSystem().clearOverride("shoot");
   }, [game, handleMultiplayerInput]);
 
-  if (!game || !isReady) return null;
-
   if (!started) {
     return (
       <StartScreen
@@ -129,6 +127,8 @@ export default function SpaceInvadersScreen() {
       />
     );
   }
+
+  if (!game || !isReady) return null;
 
   return (
     <GameErrorBoundary gameId="space-invaders">

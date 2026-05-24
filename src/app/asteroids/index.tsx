@@ -167,8 +167,6 @@ export default function AsteroidsScreen() {
     game?.getInputSystem().clearOverride("hyperspace");
   }, [game, handleMultiplayerInput]);
 
-  if (!game || !isReady) return null;
-
   if (!started) {
     return (
       <StartScreen
@@ -196,6 +194,8 @@ export default function AsteroidsScreen() {
       />
     );
   }
+
+  if (!game || !isReady) return null;
 
   return (
     <GameErrorBoundary gameId="asteroids">
