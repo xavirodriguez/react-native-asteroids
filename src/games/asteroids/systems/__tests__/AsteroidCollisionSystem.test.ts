@@ -17,6 +17,7 @@ describe("AsteroidCollisionSystem", () => {
     physicsSystem = new CollisionSystem2D();
     particlePool = new ParticlePool();
     system = new AsteroidCollisionSystem(particlePool);
+    world.setResource("GameConfig", GAME_CONFIG);
     createGameState({ world });
   });
 
@@ -106,5 +107,28 @@ describe("AsteroidCollisionSystem", () => {
 
     const health = world.getComponent<import("../../types/AsteroidTypes").HealthComponent>(ship, "Health")!;
     expect(health.current).toBe(initialHealth);
+  });
+
+  describe("AsteroidCollisionSystem - GameConfig Validation", () => {
+    it("should fail clearly with a descriptive message when GameConfig is missing", () => {
+      const world = new World();
+      const system = new AsteroidCollisionSystem(new ParticlePool());
+
+      expect(() => system.update(world, 16)).toThrow(
+        "[AsteroidCollisionSystem] Missing GameConfig resource."
+      );
+    });
+
+    it("should initialize split config successfully when GameConfig is set", () => {
+      const world = new World();
+      const mockConfig = {
+        ASTEROID_SPLIT_OFFSET_LARGE: 10,
+        ASTEROID_SPLIT_OFFSET_MEDIUM: 5,
+      };
+      world.setResource("GameConfig", mockConfig);
+
+      const system = new AsteroidCollisionSystem(new ParticlePool());
+      expect(() => system.update(world, 16)).not.toThrow();
+    });
   });
 });
