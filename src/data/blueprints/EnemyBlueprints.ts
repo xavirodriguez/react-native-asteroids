@@ -40,6 +40,30 @@ export const EnemyBlueprints: Record<string, EntityBlueprint> = {
   },
 
   // --- Invaders ---
+  invader_commander: {
+    id: 'invader_commander',
+    kind: 'invader',
+    displayName: 'Invader Commander',
+    render: { shape: 'invader', size: 24, color: '#FF00FF', zIndex: 15 },
+    physics: { maxSpeed: 85 },
+    collision: { radius: 12, layer: CollisionLayers.ENEMY, mask: CollisionLayers.PLAYER | CollisionLayers.PROJECTILE | CollisionLayers.DEBRIS, isTrigger: false },
+    stats: { health: 1, points: 30 },
+    tags: ['enemy', 'invader', 'Invader'],
+    invader: { archetype: 'basic', fireRate: 0.8 }
+  },
+
+  invader_scout: {
+    id: 'invader_scout',
+    kind: 'invader',
+    displayName: 'Invader Scout',
+    render: { shape: 'invader', size: 24, color: '#FFFFFF', zIndex: 15 },
+    physics: { maxSpeed: 85 },
+    collision: { radius: 12, layer: CollisionLayers.ENEMY, mask: CollisionLayers.PLAYER | CollisionLayers.PROJECTILE | CollisionLayers.DEBRIS, isTrigger: false },
+    stats: { health: 1, points: 10 },
+    tags: ['enemy', 'invader', 'Invader'],
+    invader: { archetype: 'basic', fireRate: 0.8 }
+  },
+
   basic_invader: {
     id: 'basic_invader',
     kind: 'invader',

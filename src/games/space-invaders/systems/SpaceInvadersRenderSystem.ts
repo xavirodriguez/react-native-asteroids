@@ -11,28 +11,40 @@ export class SpaceInvadersRenderSystem extends System {
 
     renders.forEach(entity => {
       const health = world.getComponent<HealthComponent>(entity, "Health");
+      if (!health) return;
 
       // Handle invulnerability blinking
-      if (health && health.invulnerableRemaining > 0) {
-        const remaining = health.invulnerableRemaining - deltaTime;
+      if (health.invulnerableRemaining > 0) {
+        // 1. Calcular valores fuera del callback
+        const remaining = Math.max(0, health.invulnerableRemaining - deltaTime);
 
-        // Mutación segura mediante mutateComponent
+        // 2. Aplicar mutación a Health
         world.mutateComponent<HealthComponent>(entity, "Health", h => {
           h.invulnerableRemaining = remaining;
         });
 
-        // Simple blink effect
-        world.mutateComponent<RenderComponent>(entity, "Render", render => {
-          render.color = (Math.floor(remaining / 100) % 2 === 0)
+        // 3. Manejar parpadeo de Render
+        const render = world.getComponent<RenderComponent>(entity, "Render");
+        if (render) {
+          const newColor = (Math.floor(remaining / 100) % 2 === 0)
             ? "transparent"
             : "#00FF00";
-        });
-      } else if (health && health.invulnerableRemaining <= 0) {
+
+          // Regla extra: verificar si el color cambió antes de mutar
+          if (render.color !== newColor) {
+            world.mutateComponent<RenderComponent>(entity, "Render", r => {
+              r.color = newColor;
+            });
+          }
+        }
+      } else {
         const render = world.getComponent<RenderComponent>(entity, "Render");
-        if (render && render.shape === "player_ship" && render.color !== "#00FF00") {
+        const defaultColor = "#00FF00";
+
+        if (render && render.shape === "player_ship" && render.color !== defaultColor) {
           // Mutación segura mediante mutateComponent
           world.mutateComponent<RenderComponent>(entity, "Render", r => {
-            r.color = "#00FF00";
+            r.color = defaultColor;
           });
         }
       }
