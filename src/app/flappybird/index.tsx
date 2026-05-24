@@ -119,8 +119,6 @@ export default function FlappyBirdScreen() {
     game?.getInputSystem().clearOverride("flap");
   }, [game, handleMultiplayerInput]);
 
-  if (!game || !isReady) return null;
-
   if (!started) {
     return (
       <StartScreen
@@ -148,6 +146,8 @@ export default function FlappyBirdScreen() {
       />
     );
   }
+
+  if (!game || !isReady) return null;
 
   return (
     <GameErrorBoundary gameId="flappybird">
