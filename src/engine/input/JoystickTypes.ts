@@ -5,7 +5,7 @@ export interface JoystickConfig {
   /** [unitless] Normalized radial deadzone radius [0, 1]. */
   deadzone: number;
   /** Response curve algorithm to apply to the input. */
-  curveType: "linear" | "quadratic";
+  curveType: "linear" | "quadratic" | "squared";
   /** [unitless] Exponent for the quadratic curve (recommended: 1.8). */
   curveExponent: number;
   /** [unitless] Global input sensitivity multiplier. */
