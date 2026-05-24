@@ -6,6 +6,8 @@ import { ComponentCloner } from "./ComponentCloner";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
 import { WorldCommandBuffer } from "./WorldCommandBuffer";
+import { EntityBlueprintAssembler } from "../../factories/EntityBlueprintAssembler";
+import { BlueprintOverrides } from "../../data/blueprints/types/BlueprintTypes";
 
 interface RegisteredSystem {
   system: System;
@@ -55,6 +57,8 @@ export class World {
   private _componentTypesDirty = true;
   /** @internal */
   private profilers: Map<System, SystemProfiler> = new Map();
+  /** @internal */
+  private componentPool = new Map<string, Component[]>();
   /**
    * Whether system profiling is enabled.
    */
@@ -727,6 +731,14 @@ export class World {
   }
 
   /**
+   * Spawns an entity from a data-driven blueprint.
+   * API status: Public
+   */
+  public spawnFromBlueprint(blueprintId: string, x: number, y: number, overrides?: BlueprintOverrides): Entity {
+    return EntityBlueprintAssembler.assemble(this, blueprintId, x, y, overrides);
+  }
+
+  /**
    * Accesses the command buffer for deferred structural mutations.
    */
   public getCommandBuffer(): WorldCommandBuffer {
@@ -783,6 +795,14 @@ export class World {
       structureVersion: this._structureVersion,
       tick: this._tick
     };
+  }
+
+  /**
+   * Acquires a component from the pool or returns undefined if empty.
+   * API status: Internal/Advanced
+   */
+  public acquireComponent<T extends Component>(type: string): T | undefined {
+    return this.componentPool.get(type)?.pop() as T | undefined;
   }
 
   /**
@@ -970,9 +990,19 @@ export class World {
 
   private removeEntityFromComponentMaps(entity: Entity): void {
     this.componentMaps.forEach((componentMap, type) => {
-      if (componentMap.delete(entity)) {
+      const component = componentMap.get(entity);
+      if (component) {
+        componentMap.delete(entity);
         this.componentIndex.get(type)?.delete(entity);
         this.componentVersions.get(type)?.delete(entity);
+
+        // Recycle component
+        let pool = this.componentPool.get(type);
+        if (!pool) {
+          pool = [];
+          this.componentPool.set(type, pool);
+        }
+        pool.push(component);
       }
     });
   }

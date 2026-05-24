@@ -72,13 +72,20 @@ export class BroadPhase {
    * @returns List of candidate entity pairs [A, B] for narrow-phase testing.
    */
   static sweepAndPrune(entities: Entity[], world: import("../../core/World").World): Array<[Entity, Entity]> {
-    const bounds = entities.map(entity => ({
-      entity,
-      aabb: this.getShapeBounds(
-        world.getComponent<TransformComponent>(entity, "Transform")!,
-        world.getComponent<Collider2DComponent>(entity, "Collider2D")!
-      )
-    }));
+    const bounds = entities.map(entity => {
+      const transform = world.getComponent<TransformComponent>(entity, "Transform");
+      const collider = world.getComponent<Collider2DComponent>(entity, "Collider2D");
+
+      if (!transform || !collider) {
+          console.warn(`Entity ${entity} missing components for SAP: Transform=${!!transform}, Collider=${!!collider}`);
+          return { entity, aabb: { minX: 0, minY: 0, maxX: 0, maxY: 0 } };
+      }
+
+      return {
+        entity,
+        aabb: this.getShapeBounds(transform, collider)
+      };
+    });
 
     bounds.sort((a, b) => a.aabb.minX - b.aabb.minX);
 

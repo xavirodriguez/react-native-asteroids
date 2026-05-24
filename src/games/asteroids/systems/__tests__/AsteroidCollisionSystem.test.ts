@@ -13,6 +13,7 @@ describe("AsteroidCollisionSystem", () => {
 
   beforeEach(() => {
     world = new World();
+    world.setResource("GameConfig", GAME_CONFIG);
     physicsSystem = new CollisionSystem2D();
     particlePool = new ParticlePool();
     system = new AsteroidCollisionSystem(particlePool);
@@ -25,11 +26,11 @@ describe("AsteroidCollisionSystem", () => {
 
     const initialScore = world.getSingleton<GameStateComponent>("GameState")!.score;
 
-    // First update ensures CollisionEvents component exists
-    physicsSystem.update(world, 16.66);
-    world.flush();
+    // Manually add CollisionEvents to ensure it exists for the test
+    const asteroid = _asteroid;
+    world.addComponent(bullet, { type: "CollisionEvents", collisions: [{ otherEntity: asteroid }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
+    world.addComponent(asteroid, { type: "CollisionEvents", collisions: [{ otherEntity: bullet }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
 
-    // Second update records the actual collision
     physicsSystem.update(world, 16.66);
     world.flush();
 
@@ -43,10 +44,11 @@ describe("AsteroidCollisionSystem", () => {
 
   it("should split a large asteroid into two medium ones on bullet collision", () => {
     const _asteroid = createAsteroid({ world, x: 100, y: 100, size: "large" });
-    createBullet({ world, x: 100, y: 100, angle: 0 });
+    const bullet = createBullet({ world, x: 100, y: 100, angle: 0 });
 
-    physicsSystem.update(world, 16.66);
-    world.flush();
+    world.addComponent(bullet, { type: "CollisionEvents", collisions: [{ otherEntity: _asteroid }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
+    world.addComponent(_asteroid, { type: "CollisionEvents", collisions: [{ otherEntity: bullet }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
+
     physicsSystem.update(world, 16.66);
     world.flush();
 
@@ -68,10 +70,11 @@ describe("AsteroidCollisionSystem", () => {
         h.invulnerableRemaining = 0;
     });
 
-    createAsteroid({ world, x: 100, y: 100, size: "small" });
+    const _asteroid = createAsteroid({ world, x: 100, y: 100, size: "small" });
 
-    physicsSystem.update(world, 16.66);
-    world.flush();
+    world.addComponent(ship, { type: "CollisionEvents", collisions: [{ otherEntity: _asteroid }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
+    world.addComponent(_asteroid, { type: "CollisionEvents", collisions: [{ otherEntity: ship }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
+
     physicsSystem.update(world, 16.66);
     world.flush();
 
@@ -90,10 +93,11 @@ describe("AsteroidCollisionSystem", () => {
     });
     const initialHealth = world.getComponent<import("../../types/AsteroidTypes").HealthComponent>(ship, "Health")!.current;
 
-    createAsteroid({ world, x: 100, y: 100, size: "small" });
+    const _asteroid = createAsteroid({ world, x: 100, y: 100, size: "small" });
 
-    physicsSystem.update(world, 16.66);
-    world.flush();
+    world.addComponent(ship, { type: "CollisionEvents", collisions: [{ otherEntity: _asteroid }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
+    world.addComponent(_asteroid, { type: "CollisionEvents", collisions: [{ otherEntity: ship }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
+
     physicsSystem.update(world, 16.66);
     world.flush();
 

@@ -30,6 +30,8 @@ import {
 } from "./types/AsteroidTypes";
 import { Component, Entity } from "../../engine/types/EngineTypes";
 import { EnemyFactory } from "../../factories/EnemyFactory";
+import { EnemyBlueprints } from "../../data/blueprints/EnemyBlueprints";
+import { EntityBlueprintAssembler } from "../../factories/EntityBlueprintAssembler";
 
 /**
  * Factoría de entidades para el dominio del juego Asteroids.
@@ -122,33 +124,37 @@ export const createShip = ({ world, x, y, deferred }: { world: World; x: number;
 
 export const createBullet = ({ world, x, y, angle, ownerId, deferred }: { world: World; x: number; y: number; angle: number; ownerId?: string, deferred?: boolean }) => {
   const config = world.getResource<AsteroidConfig>("GameConfig") || GAME_CONFIG;
-  const { entity: bullet, add } = createBaseEntity(world, deferred);
   const dx = Math.cos(angle) * config.BULLET_SPEED;
   const dy = Math.sin(angle) * config.BULLET_SPEED;
 
-  add({ type: "Transform", x, y, rotation: angle, scaleX: 1, scaleY: 1 } as TransformComponent);
-  add({ type: "Velocity", dx, dy } as VelocityComponent);
-  add({ type: "Render", shape: "circle", size: config.BULLET_SIZE, color: "white", rotation: 0 } as RenderComponent);
-  add({
-    type: "Collider2D",
-    shape: { type: "circle", radius: config.BULLET_SIZE },
-    layer: CollisionLayers.PROJECTILE,
-    mask: CollisionLayers.ENEMY,
-    offsetX: 0,
-    offsetY: 0,
-    isTrigger: false,
-    enabled: true
-  } as Collider2DComponent);
-  add({ type: "TTL", remaining: config.BULLET_TTL, total: config.BULLET_TTL } as TTLComponent);
+  const overrides = {
+    physics: {
+        maxSpeed: config.BULLET_SPEED,
+        vx: dx,
+        vy: dy
+    },
+    render: {
+        rotation: angle
+    }
+  } as any;
+
+  let bullet: Entity;
+  if (deferred || world.isUpdating) {
+    bullet = world.reserveEntityId();
+    EntityBlueprintAssembler.assemble(world, "player_bullet", x, y, overrides, world.getCommandBuffer(), bullet);
+  } else {
+    bullet = world.spawnFromBlueprint("player_bullet", x, y, overrides);
+  }
+
+  const add = (comp: Component) => {
+    if (deferred || world.isUpdating) {
+        world.getCommandBuffer().addComponent(bullet, comp);
+    } else {
+        world.addComponent(bullet, comp);
+    }
+  };
+
   add({ type: "Bullet", ownerId } as BulletComponent);
-  add({ type: "SpatialNode", lastCellKeys: [], active: true } as SpatialNodeComponent);
-  add({
-    type: "Boundary",
-    x: 0, y: 0,
-    width: config.SCREEN_WIDTH,
-    height: config.SCREEN_HEIGHT,
-    behavior: "wrap",
-  } as BoundaryComponent);
   return bullet;
 };
 
@@ -185,6 +191,8 @@ export const createAsteroid = ({ world, x, y, size, deferred }: { world: World; 
       renderData: { internalLines }
   }, deferred);
 
+  const blueprint = EnemyBlueprints[blueprintId];
+
   const add = (comp: Component) => {
       if (deferred || world.isUpdating) {
           world.getCommandBuffer().addComponent(asteroid, comp);
@@ -193,7 +201,16 @@ export const createAsteroid = ({ world, x, y, size, deferred }: { world: World; 
       }
   };
 
-  add({ type: "Asteroid", size } as AsteroidComponent);
+  if (blueprint && blueprint.kind === 'asteroid') {
+      add({
+          type: "Asteroid",
+          size,
+          splitsInto: blueprint.asteroid.splitsInto,
+          splitCount: blueprint.asteroid.splitCount
+      } as AsteroidComponent);
+  } else {
+      add({ type: "Asteroid", size } as AsteroidComponent);
+  }
 
   if (size === "large") {
       add({ type: "Reclaimable", poolId: "AsteroidPool" } as ReclaimableComponent);

@@ -104,6 +104,8 @@ export class AsteroidCollisionSystem extends System {
     asteroid: Entity,
     bullet: Entity,
   ): void {
+    if (!world.hasEntity(asteroid) || !world.hasEntity(bullet)) return;
+
     const position = world.getComponent<TransformComponent>(asteroid, "Transform");
     const render = world.getComponent<RenderComponent>(asteroid, "Render");
 
@@ -238,42 +240,45 @@ export class AsteroidCollisionSystem extends System {
 
     if (asteroid && position) {
       // 15% chance to spawn power-up when large asteroid is destroyed
-      if (asteroid.size === "large" && RandomService.getInstance("gameplay").chance(0.15)) {
+      if (asteroid.size === "large" && world.gameplayRandom.chance(0.15)) {
           const eventBus = world.getResource<EventBus>("EventBus");
           if (eventBus) {
               eventBus.emitDeferred("entity:destroyed", { entity: asteroidEntity, type: "Asteroid" });
           }
       }
 
-      this.executeSplitStrategy(world, position, asteroid.size);
+      // DATA-DRIVEN SPLIT: Read splitting rules directly from components (hydrated from blueprints)
+      const splitsInto = (asteroid as any).splitsInto as string[] | undefined;
+      const splitCount = (asteroid as any).splitCount as number | undefined;
+
+      if (splitsInto && splitsInto.length > 0 && splitCount !== undefined) {
+        const offset = (this.splitConfig as any)?.[asteroid.size]?.offset || 10;
+
+        // Momentum: Inherit parent velocity
+        const parentVel = world.getComponent<VelocityComponent>(asteroidEntity, "Velocity");
+        const parentDx = parentVel ? parentVel.dx : 0;
+        const parentDy = parentVel ? parentVel.dy : 0;
+
+        for (let i = 0; i < splitsInto.length; i++) {
+          const childBlueprintId = splitsInto[i];
+          for (let count = 0; count < splitCount; count++) {
+            const randomAngle = world.gameplayRandom.next() * Math.PI * 2;
+            const speed = 40 + world.gameplayRandom.next() * 20;
+
+            const spawnX = position.x + Math.cos(randomAngle) * offset;
+            const spawnY = position.y + Math.sin(randomAngle) * offset;
+
+            commands.spawnFromBlueprint(childBlueprintId, spawnX, spawnY, {
+                physics: {
+                    dx: parentDx + Math.cos(randomAngle) * speed,
+                    dy: parentDy + Math.sin(randomAngle) * speed
+                }
+            } as any);
+          }
+        }
+      }
     }
     commands.removeEntity(asteroidEntity);
-  }
-
-  private executeSplitStrategy(
-    world: World,
-    position: TransformComponent,
-    size: AsteroidComponent["size"],
-  ): void {
-    const config = this.splitConfig?.[size];
-
-    if (config) {
-      this.spawnSplit(world, position, config.nextSize, config.offset);
-    }
-  }
-
-  private spawnSplit(
-    world: World,
-    position: TransformComponent,
-    size: "medium" | "small",
-    offset: number,
-  ): void {
-    createAsteroid({ world, x: position.x + offset, y: position.y + offset, size, deferred: true });
-    createAsteroid({ world, x: position.x - offset, y: position.y - offset, size, deferred: true });
-
-    // Note: hitFlashFrames mutation for splits will need to happen in next frame or via factory
-    // Since createAsteroid is now deferred, we can't mutate immediately.
-    // The factory already handles initial component setup.
   }
 
   private addScore(world: World, points: number): void {
