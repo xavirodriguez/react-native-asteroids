@@ -1,6 +1,7 @@
 import { World } from "../core/World";
 import { DeltaPacket, EntityPayload } from "./types/ReplicationTypes";
 import { WorldSnapshot } from "../types/EngineTypes";
+import { ComponentCloner } from "../core/ComponentCloner";
 
 /**
  * Utility to process network deltas and full state updates generically.
@@ -22,7 +23,8 @@ export class NetworkReplicationUtils {
                 }
                 for (const type in payload.components) {
                     if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
-                    snapshot.componentData[type][entityId] = structuredClone(payload.components[type]) as import("../types/EngineTypes").SerializedComponent;
+                    // Use ComponentCloner for consistent deep cloning in the network layer
+                    snapshot.componentData[type][entityId] = ComponentCloner.cloneComponent(payload.components[type]) as import("../types/EngineTypes").SerializedComponent;
                 }
             });
         }
@@ -32,7 +34,8 @@ export class NetworkReplicationUtils {
                 const entityId = parseInt(payload.entityId);
                 for (const type in payload.components) {
                     if (!snapshot.componentData[type]) snapshot.componentData[type] = {};
-                    snapshot.componentData[type][entityId] = structuredClone(payload.components[type]) as import("../types/EngineTypes").SerializedComponent;
+                    // Use ComponentCloner for consistent deep cloning in the network layer
+                    snapshot.componentData[type][entityId] = ComponentCloner.cloneComponent(payload.components[type]) as import("../types/EngineTypes").SerializedComponent;
                 }
             });
         }

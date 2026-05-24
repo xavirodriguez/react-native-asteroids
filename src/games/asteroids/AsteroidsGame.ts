@@ -40,6 +40,7 @@ import { ConfigService } from "../../engine/services/ConfigService";
 import { NetworkReplicationUtils } from "../../engine/network/NetworkReplicationUtils";
 import { AsteroidConfigSchema, AsteroidConfig } from "./types/AsteroidConfigSchema";
 import { SystemPhase } from "../../engine/core/System";
+import { ComponentCloner } from "../../engine/core/ComponentCloner";
 
 const __DEV__ = process.env.NODE_ENV !== "production";
 
@@ -212,13 +213,14 @@ export class AsteroidsGame
       const strategy = this.networkManager.getStrategy();
       const baseSnapshot = strategy.getStateHistory ? strategy.getStateHistory(serverState.baselineTick as number) : undefined;
       if (baseSnapshot) {
-        authoritativeSnapshot = structuredClone(baseSnapshot);
-        NetworkReplicationUtils.applyDelta(authoritativeSnapshot, delta);
+        // Safe integration of delta into a base snapshot
+        authoritativeSnapshot = this.applyDeltaToSnapshot(baseSnapshot, delta);
       } else {
         return; // Cannot apply delta without base
       }
     } else {
-      authoritativeSnapshot = delta as import("../../engine/types/EngineTypes").WorldSnapshot;
+      // If it's a full snapshot sent as a delta, deep clone it for safety
+      authoritativeSnapshot = ComponentCloner.deepCloneSnapshot(delta as import("../../engine/types/EngineTypes").WorldSnapshot);
     }
 
     this.networkManager.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
@@ -229,13 +231,30 @@ export class AsteroidsGame
     }
   }
 
+  /**
+   * Safely integrates a delta into a base snapshot using deep cloning.
+   */
+  private applyDeltaToSnapshot(
+    base: import("../../engine/types/EngineTypes").WorldSnapshot,
+    delta: import("../../engine/network/types/ReplicationTypes").DeltaPacket
+  ): import("../../engine/types/EngineTypes").WorldSnapshot {
+    // 1. Create a deep clone of the base state to avoid aliasing with history
+    const snapshot = ComponentCloner.deepCloneSnapshot(base);
+
+    // 2. Apply the delta safely
+    NetworkReplicationUtils.applyDelta(snapshot, delta);
+
+    return snapshot;
+  }
+
   private handleFullServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
     let authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot;
 
     if (typeof serverState.fullWorldState === "string") {
       authoritativeSnapshot = JSON.parse(serverState.fullWorldState);
     } else {
-      authoritativeSnapshot = structuredClone(serverState.fullWorldState) as import("../../engine/types/EngineTypes").WorldSnapshot;
+      // Use ComponentCloner for consistent deep cloning
+      authoritativeSnapshot = ComponentCloner.deepCloneSnapshot(serverState.fullWorldState as import("../../engine/types/EngineTypes").WorldSnapshot);
     }
 
     if (authoritativeSnapshot.stateVersion === this.lastProcessedFullStateVersion) return;

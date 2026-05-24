@@ -2,6 +2,7 @@ import { Component, Entity, WorldSnapshot, ComponentDataSnapshot, SerializedComp
 import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
 import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
+import { ComponentCloner } from "./ComponentCloner";
 import { Query } from "./Query";
 import { SystemProfiler } from "../debug/SystemProfiler";
 import { WorldCommandBuffer } from "./WorldCommandBuffer";
@@ -248,25 +249,14 @@ export class World {
             }
         }
 
-        // Optimized capture: iterate over properties and copy them.
+        // Optimized capture: iterate over properties and copy them using deep cloning.
         // We assume components are flat POJOs as per engine architecture.
         for (const key in compAsRecord) {
           const val = compAsRecord[key];
-          const typeOfVal = typeof val;
-          if (typeOfVal !== "function") {
-            // Optimization: avoid structuredClone for primitives and shallow arrays/objects
-            // if we can guarantee they won't be mutated. However, for a safe snapshot,
-            // we only clone if it's an object/array.
-            if (val !== null && typeOfVal === "object") {
-              // Deep clone only for complex types
-              if (Array.isArray(val)) {
-                  serializedComp[key] = [...val]; // Shallow copy for arrays is often enough for ECS data
-              } else {
-                  serializedComp[key] = { ...val }; // Shallow copy for POJO objects
-              }
-            } else {
-              serializedComp[key] = val;
-            }
+          if (typeof val !== "function") {
+            // MANDATORY: Deep clone every property to ensure snapshot independence.
+            // Using ComponentCloner ensures that objects and arrays are independent.
+            serializedComp[key] = ComponentCloner.cloneComponent(val);
           }
         }
       }
@@ -413,11 +403,24 @@ export class World {
           }
         }
 
-        // Apply snapshot data.
-        // Since the snapshot already cloned objects, we can perform shallow assignments here
-        // to avoid double-cloning and reduce GC pressure.
+        // Apply snapshot data with deep cloning.
+        // MANDATORY: We must clone again when restoring to ensure the live world
+        // does not share references with the snapshot (aliasing).
         for (const key in sourceComp) {
-          component[key] = sourceComp[key];
+          const val = sourceComp[key];
+
+          if (__DEV__) {
+            // Detection of severe aliasing bug:
+            // If the property is an object/array and has the same reference, rollback will be corrupted.
+            if (val !== null && typeof val === "object" && val === component[key]) {
+               console.warn(
+                 `[World.restore] ALIASING DETECTED: Component "${type}" on entity ${entityId} ` +
+                 `shares reference for property "${key}" with snapshot. This will corrupt rollback.`
+               );
+            }
+          }
+
+          component[key] = ComponentCloner.cloneComponent(val);
         }
 
         index!.add(entityId);
