@@ -1,6 +1,6 @@
 import { World } from "../engine/core/World";
 import { Entity, Component } from "../engine/types/EngineTypes";
-import { EnemyBlueprints, EnemyBlueprint } from "../data/blueprints/EnemyBlueprints";
+import { EnemyBlueprints } from "../data/blueprints/EnemyBlueprints";
 import { EnemyTagComponent } from "../components/enemy/EnemyTagComponent";
 import {
     TransformComponent,
@@ -10,7 +10,9 @@ import {
     HealthComponent,
     BoundaryComponent,
     SpatialNodeComponent,
-    TagComponent
+    TagComponent,
+    TTLComponent,
+    FrictionComponent
 } from "../engine/core/CoreComponents";
 
 /**
@@ -19,8 +21,13 @@ import {
 export interface EnemyOverrides {
   health?: number;
   speed?: number;
+  velocity?: { dx: number; dy: number };
+  rotation?: number;
   color?: string;
   variant?: string;
+  behavior?: string;
+  renderData?: Record<string, unknown>;
+  vertices?: { x: number; y: number }[];
   data?: Record<string, unknown>;
 }
 
@@ -58,23 +65,24 @@ export class EnemyFactory {
       type: "Transform",
       x,
       y,
-      rotation: 0,
+      rotation: overrides.rotation ?? 0,
       scaleX: 1,
       scaleY: 1
     } as TransformComponent);
 
-    // 2. Velocity (Physics)
+    // 2. Velocity & Physics
     if (blueprint.physics) {
-      const speed = overrides.speed ?? blueprint.physics.baseSpeed;
+      const dx = overrides.velocity?.dx ?? 0;
+      const dy = overrides.velocity?.dy ?? 0;
+
       add({
         type: "Velocity",
-        dx: 0, // Usually set by systems or logic later
-        dy: 0,
+        dx,
+        dy,
         vAngle: 0
       } as VelocityComponent);
 
       if (blueprint.physics.boundaryBehavior) {
-          // Assuming world dimensions are in a global config or resource
           const gameConfig = world.getResource<Record<string, unknown>>("GameConfig");
           add({
             type: "Boundary",
@@ -82,6 +90,21 @@ export class EnemyFactory {
             height: (gameConfig?.SCREEN_HEIGHT as number) ?? 600,
             behavior: blueprint.physics.boundaryBehavior
           } as BoundaryComponent);
+      }
+
+      if (blueprint.physics.friction !== undefined) {
+          add({
+              type: "Friction",
+              value: blueprint.physics.friction
+          } as FrictionComponent);
+      }
+
+      if (blueprint.physics.ttl !== undefined) {
+          add({
+              type: "TTL",
+              remaining: blueprint.physics.ttl,
+              total: blueprint.physics.ttl
+          } as TTLComponent);
       }
     }
 
@@ -91,8 +114,10 @@ export class EnemyFactory {
       shape: blueprint.render.shape,
       size: blueprint.render.size,
       color: overrides.color ?? blueprint.render.color,
-      rotation: 0,
-      zIndex: blueprint.render.zIndex ?? 0
+      rotation: overrides.rotation ?? 0,
+      zIndex: blueprint.render.zIndex ?? 0,
+      vertices: overrides.vertices,
+      data: overrides.renderData ?? {}
     } as RenderComponent);
 
     // 4. Collision
@@ -123,7 +148,8 @@ export class EnemyFactory {
       type: "EnemyTag",
       blueprintId,
       variant: overrides.variant ?? (blueprint.data?.variant as string),
-      level: 1
+      level: 1,
+      behavior: overrides.behavior ?? blueprint.behavior
     } as EnemyTagComponent);
 
     if (blueprint.tags.length > 0) {
