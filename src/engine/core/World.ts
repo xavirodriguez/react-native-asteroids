@@ -389,7 +389,7 @@ export class World {
         const sourceComp = snapshotEntities[entityId];
 
         // Optimized restoration: Reuse existing component object to avoid GC pressure.
-        let component = storage.get(entityId) as Record<string, unknown>;
+        let component = storage.get(entityId) as unknown as Record<string, unknown>;
         if (!component) {
           component = {} as Record<string, unknown>;
           storage.set(entityId, component as unknown as Component);

@@ -176,6 +176,9 @@ export class JoystickSystem extends System {
       // Suggested formula: Math.sign(value) * Math.pow(Math.abs(value), exponent)
       return Math.sign(value) * Math.pow(Math.abs(value), config.curveExponent);
     }
+    if (config.curveType === "squared") {
+      return Math.sign(value) * (value * value);
+    }
     // Default: linear
     return value;
   }

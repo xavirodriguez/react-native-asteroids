@@ -696,7 +696,7 @@ export interface VirtualJoystickComponent extends Component {
   /** [unitless] Input sensitivity multiplier. @deprecated Use config.sensitivity */
   sensitivity?: number;
   /** Response curve algorithm. @deprecated Use config.curveType */
-  curveType?: "linear" | "squared";
+  curveType?: "linear" | "quadratic" | "squared";
   /** @internal Track deadzone state for haptics. */
   _wasInDeadzone?: boolean;
 }
