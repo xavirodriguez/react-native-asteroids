@@ -57,6 +57,7 @@ export class SpaceInvadersCollisionSystem extends System {
   }
 
   private handleCollision(world: World, e1: Entity, e2: Entity): void {
+    // TAREA 4: Recuperación explícita del estado del juego
     const gameState = world.getSingleton<GameStateComponent>("GameState");
     if (!gameState) return;
 
@@ -67,17 +68,21 @@ export class SpaceInvadersCollisionSystem extends System {
       const health = world.getComponent<HealthComponent>(boss, "Health");
 
       if (bossComp) {
+        // Cálculos fuera de la mutación
+        const nextHp = bossComp.hp - 1;
+        const nextScore = gameState.score + 100;
+
         world.mutateComponent<BossComponent>(boss, "Boss", b => {
-            b.hp -= 1;
+            b.hp = nextHp;
         });
 
         world.mutateSingleton<GameStateComponent>("GameState", gs => {
-            gs.score += 100;
+            gs.score = nextScore;
         });
 
         if (health) {
             world.mutateComponent<HealthComponent>(boss, "Health", h => {
-                h.current = bossComp.hp;
+                h.current = nextHp;
             });
         }
 
@@ -100,14 +105,21 @@ export class SpaceInvadersCollisionSystem extends System {
       const { PlayerBullet: bullet, Invader: invader } = invaderBullet;
       const invaderComp = world.getComponent<InvaderComponent>(invader, "Invader");
 
-      // Lógica de Combo
+      // Lógica de Combo - Cálculos fuera
+      const nextCombo = gameState.combo + 1;
+      const nextMultiplier = Math.min(this.config!.MAX_MULTIPLIER, 1 + Math.floor(nextCombo / 5));
+      const nextComboTimer = this.config!.COMBO_TIMEOUT;
+      let scoreGain = 0;
+      if (invaderComp) {
+        scoreGain = invaderComp.points * nextMultiplier;
+      }
+      const nextScore = gameState.score + scoreGain;
+
       world.mutateSingleton<GameStateComponent>("GameState", gs => {
-          gs.combo += 1;
-          gs.multiplier = Math.min(this.config!.MAX_MULTIPLIER, 1 + Math.floor(gs.combo / 5));
-          gs.comboTimerRemaining = this.config!.COMBO_TIMEOUT;
-          if (invaderComp) {
-            gs.score += invaderComp.points * gs.multiplier;
-          }
+          gs.combo = nextCombo;
+          gs.multiplier = nextMultiplier;
+          gs.comboTimerRemaining = nextComboTimer;
+          gs.score = nextScore;
       });
 
       const pos = world.getComponent<TransformComponent>(invader, "Transform");
@@ -116,8 +128,7 @@ export class SpaceInvadersCollisionSystem extends System {
 
         // Popup de combo flotante
         world.getCommandBuffer().createEntity(popup => {
-            const currentMultiplier = world.getSingleton<GameStateComponent>("GameState")?.multiplier || 1;
-
+            // Nota: Usamos nextMultiplier calculado fuera
             world.getCommandBuffer().addComponent(popup, { type: "Transform", x: pos.x, y: pos.y - 20, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
             world.getCommandBuffer().addComponent(popup, {
               type: "Render",
@@ -126,9 +137,9 @@ export class SpaceInvadersCollisionSystem extends System {
               color: "#FFFF00",
               rotation: 0,
               zIndex: 100,
-              data: { content: `x${currentMultiplier}` }
+              data: { content: `x${nextMultiplier}` }
             } as RenderComponent);
-            world.getCommandBuffer().addComponent(popup, { type: "UIText", content: `x${currentMultiplier}`, wordWrap: false, maxLines: 1 } as UITextComponent);
+            world.getCommandBuffer().addComponent(popup, { type: "UIText", content: `x${nextMultiplier}`, wordWrap: false, maxLines: 1 } as UITextComponent);
             world.getCommandBuffer().addComponent(popup, { type: "TTL", remaining: 1000, total: 1000 } as TTLComponent);
 
             // Side-effects like Juice are deferred naturally or can be applied here
@@ -139,7 +150,7 @@ export class SpaceInvadersCollisionSystem extends System {
 
       const eventBus = world.getResource<EventBus>("EventBus");
       if (eventBus) {
-        eventBus.emitDeferred("si:kill", { chain: gameState.combo });
+        eventBus.emitDeferred("si:kill", { chain: nextCombo });
         eventBus.emitDeferred("entity:destroyed", { entity: invader, type: "Invader" });
       }
 
@@ -149,8 +160,9 @@ export class SpaceInvadersCollisionSystem extends System {
 
       const hasKami = world.hasComponent(invader, 'Kamikaze');
       if (hasKami) {
+        const nextKamikazes = gameState.kamikazesActive - 1;
         world.mutateSingleton<GameStateComponent>("GameState", gs => {
-            gs.kamikazesActive--;
+            gs.kamikazesActive = nextKamikazes;
         });
       }
 
@@ -174,8 +186,12 @@ export class SpaceInvadersCollisionSystem extends System {
       const { EnemyBullet: bullet, Player: player } = enemyBulletPlayer;
       const health = world.getComponent<HealthComponent>(player, "Health");
       if (health && health.invulnerableRemaining <= 0) {
+        // Cálculos fuera
+        const nextHealth = health.current - 1;
+        const isGameOver = nextHealth <= 0;
+
         world.mutateComponent<HealthComponent>(player, "Health", h => {
-            h.current -= 1;
+            h.current = nextHealth;
             h.invulnerableRemaining = 1500;
         });
 
@@ -184,9 +200,9 @@ export class SpaceInvadersCollisionSystem extends System {
         });
 
         world.mutateSingleton<GameStateComponent>("GameState", gs => {
-            gs.lives = health.current;
+            gs.lives = nextHealth;
             gs.screenShake = { intensity: 10, duration: 300 };
-            if (health.current <= 0) {
+            if (isGameOver) {
                 gs.isGameOver = true;
             }
         });
@@ -211,10 +227,14 @@ export class SpaceInvadersCollisionSystem extends System {
   }
 
   private damageShield(world: World, shieldEntity: number): void {
-    let expired = false;
-    world.mutateComponent<ShieldComponent>(shieldEntity, "Shield", shield => {
-      shield.hp -= 1;
-      expired = shield.hp <= 0;
+    const shield = world.getComponent<ShieldComponent>(shieldEntity, "Shield");
+    if (!shield) return;
+
+    const nextHp = shield.hp - 1;
+    const expired = nextHp <= 0;
+
+    world.mutateComponent<ShieldComponent>(shieldEntity, "Shield", s => {
+      s.hp = nextHp;
     });
 
     if (expired) {
@@ -241,8 +261,7 @@ export class SpaceInvadersCollisionSystem extends System {
         Math.cos(angle) * speed,
         Math.sin(angle) * speed,
         color,
-        this._particlePool,
-        true // Las partículas forman parte de la simulación
+        this._particlePool
       );
     }
   }

@@ -36,9 +36,13 @@ export class SpaceInvadersFormationSystem extends System {
     // 1. Calculate current speed based on remaining invaders
     const totalInvaders = this.config.INVADER_ROWS * this.config.INVADER_COLS;
     const ratio = 1 - (invaders.length / totalInvaders);
-    world.mutateComponent<FormationComponent>(formationEntity, "Formation", f => {
-      f.speed = this.config!.INVADER_SPEED_BASE + ratio * (this.config!.INVADER_SPEED_MAX - this.config!.INVADER_SPEED_BASE);
-    });
+    const newSpeed = this.config!.INVADER_SPEED_BASE + ratio * (this.config!.INVADER_SPEED_MAX - this.config!.INVADER_SPEED_BASE);
+
+    if (formation.speed !== newSpeed) {
+      world.mutateComponent<FormationComponent>(formationEntity, "Formation", f => {
+        f.speed = newSpeed;
+      });
+    }
 
     // 2. Move formation or handle step down
     const margin = 20;
@@ -46,12 +50,19 @@ export class SpaceInvadersFormationSystem extends System {
     if (formation.stepDownPending) {
       const directionBefore = formation.direction;
       const nextDirection = (directionBefore * -1) as 1 | -1;
+      const descentStep = formation.descentStep;
 
+      // Movimiento vertical (estructuralmente distribuido)
       for (const entity of invaders) {
-        world.mutateComponent<TransformComponent>(entity, "Transform", pos => {
-          pos.y += formation.descentStep;
-        });
+        const pos = world.getComponent<TransformComponent>(entity, "Transform");
+        if (pos) {
+          const nextY = pos.y + descentStep;
+          world.mutateComponent<TransformComponent>(entity, "Transform", t => {
+            t.y = nextY;
+          });
+        }
       }
+
       world.mutateComponent<FormationComponent>(formationEntity, "Formation", f => {
         f.stepDownPending = false;
         f.direction = nextDirection;
@@ -81,49 +92,42 @@ export class SpaceInvadersFormationSystem extends System {
       const willHitRight = formation.direction > 0 && maxX + moveX >= rightLimit;
       const willHitLeft  = formation.direction < 0 && minX + moveX <= leftLimit;
 
-      console.debug("[SpaceInvaders] formation edge check", {
-        direction: formation.direction,
-        moveX,
-        minX,
-        maxX,
-        leftLimit,
-        rightLimit,
-        willHitLeft,
-        willHitRight,
-        stepDownPending: formation.stepDownPending,
-      });
-
       if (willHitRight || willHitLeft) {
         world.mutateComponent<FormationComponent>(formationEntity, "Formation", f => {
           f.stepDownPending = true;
         });
       } else {
         for (const entity of invaders) {
-          world.mutateComponent<TransformComponent>(entity, "Transform", pos => {
-            pos.x += moveX;
-          });
+          const pos = world.getComponent<TransformComponent>(entity, "Transform");
+          if (pos) {
+            const nextX = pos.x + moveX;
+            world.mutateComponent<TransformComponent>(entity, "Transform", t => {
+              t.x = nextX;
+            });
+          }
         }
       }
     }
 
     // 3. Enemy firing logic
     let shouldFire = false;
-    let nextCooldown = 0;
+    let nextCooldownRemaining = formation.fireCooldownRemaining - deltaTime;
+
+    if (nextCooldownRemaining <= 0) {
+      shouldFire = true;
+      const nextCooldown = RandomService.getGameplayRandom().nextRange(
+        this.config!.ENEMY_FIRE_INTERVAL_MIN,
+        this.config!.ENEMY_FIRE_INTERVAL_MAX
+      ) / (1 + ratio); // Faster firing as fewer invaders remain
+      nextCooldownRemaining = nextCooldown;
+    }
 
     world.mutateComponent<FormationComponent>(formationEntity, "Formation", f => {
-      f.fireCooldownRemaining -= deltaTime;
-      if (f.fireCooldownRemaining <= 0) {
-        shouldFire = true;
-        nextCooldown = RandomService.getGameplayRandom().nextRange(
-          this.config!.ENEMY_FIRE_INTERVAL_MIN,
-          this.config!.ENEMY_FIRE_INTERVAL_MAX
-        ) / (1 + ratio); // Faster firing as fewer invaders remain
-        f.fireCooldownRemaining = nextCooldown;
-      }
+      f.fireCooldownRemaining = nextCooldownRemaining;
     });
 
     if (shouldFire) {
-      // Mutación segura: llamar a factorías fuera de mutateComponent para evitar nesting ilegal
+      // Estructural: llamar a factorías FUERA de mutateComponent
       this.fireFromFormation(world, invaders);
     }
   }

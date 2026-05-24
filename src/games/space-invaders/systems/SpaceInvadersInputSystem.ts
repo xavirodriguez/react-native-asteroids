@@ -39,54 +39,54 @@ export class SpaceInvadersInputSystem extends System {
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
 
       if (input && pos && vel) {
-        let moveLeft = input.moveLeft;
-        let moveRight = input.moveRight;
-        let shoot = input.shoot;
-        let shootCooldownRemaining = input.shootCooldownRemaining;
+        // 1. Cálculos fuera de la mutación
+        let nextMoveLeft = input.moveLeft;
+        let nextMoveRight = input.moveRight;
+        let nextShoot = input.shoot;
+        let nextShootCooldownRemaining = input.shootCooldownRemaining;
 
         // Sync input component with manager
         if (inputState) {
-          moveLeft = InputUtils.isPressed(inputState, "moveLeft");
-          moveRight = InputUtils.isPressed(inputState, "moveRight");
-          shoot = InputUtils.isPressed(inputState, "shoot");
+          nextMoveLeft = InputUtils.isPressed(inputState, "moveLeft");
+          nextMoveRight = InputUtils.isPressed(inputState, "moveRight");
+          nextShoot = InputUtils.isPressed(inputState, "shoot");
 
           const horizontal = InputUtils.getAxis(inputState, "horizontal");
-          if (horizontal < -0.35) moveLeft = true;
-          if (horizontal > 0.35) moveRight = true;
+          if (horizontal < -0.35) nextMoveLeft = true;
+          if (horizontal > 0.35) nextMoveRight = true;
         }
 
         // Apply movement
         let moveX = 0;
-        if (moveLeft) moveX -= 1;
-        else if (moveRight) moveX += 1;
+        if (nextMoveLeft) moveX -= 1;
+        else if (nextMoveRight) moveX += 1;
         const targetDx = moveX * this.config!.PLAYER_SPEED;
 
         // Handle shooting timer
-        if (shootCooldownRemaining > 0) {
-          shootCooldownRemaining -= deltaTime;
+        if (nextShootCooldownRemaining > 0) {
+          nextShootCooldownRemaining -= deltaTime;
         }
 
-        let didShoot = false;
-        if (shoot && shootCooldownRemaining <= 0) {
+        if (nextShoot && nextShootCooldownRemaining <= 0) {
           // Check if there is already a player bullet
           const activeBullets = world.query("PlayerBullet");
           if (activeBullets.length === 0) {
+            // Estructural: fuera de mutación
             createPlayerBullet(world, pos.x, pos.y - 10, this.bulletPool);
-            shootCooldownRemaining = this.config!.PLAYER_SHOOT_COOLDOWN;
-            didShoot = true;
+            nextShootCooldownRemaining = this.config!.PLAYER_SHOOT_COOLDOWN;
           }
         }
 
-        // Mutaciones seguras mediante mutateComponent
-        if (input.moveLeft !== moveLeft ||
-            input.moveRight !== moveRight ||
-            input.shoot !== shoot ||
-            input.shootCooldownRemaining !== shootCooldownRemaining) {
+        // 2. Aplicar mutaciones si han cambiado los valores
+        if (input.moveLeft !== nextMoveLeft ||
+            input.moveRight !== nextMoveRight ||
+            input.shoot !== nextShoot ||
+            input.shootCooldownRemaining !== nextShootCooldownRemaining) {
           world.mutateComponent<InputComponent>(entity, "Input", i => {
-            i.moveLeft = moveLeft;
-            i.moveRight = moveRight;
-            i.shoot = shoot;
-            i.shootCooldownRemaining = shootCooldownRemaining;
+            i.moveLeft = nextMoveLeft;
+            i.moveRight = nextMoveRight;
+            i.shoot = nextShoot;
+            i.shootCooldownRemaining = nextShootCooldownRemaining;
           });
         }
 
