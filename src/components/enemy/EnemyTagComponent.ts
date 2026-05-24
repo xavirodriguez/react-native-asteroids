@@ -12,4 +12,6 @@ export interface EnemyTagComponent extends Component {
   variant?: string;
   /** Difficulty level or rank of the enemy. */
   level: number;
+  /** Identifier for AI behavior logic. */
+  behavior?: string;
 }
