@@ -25,7 +25,7 @@ describe("PongGameStateSystem", () => {
   it("should detect scoring for Player 1", () => {
     const ball = world.createEntity();
     world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as BallComponent);
-    world.addComponent(ball, { type: "Transform", x: PONG_CONFIG.WIDTH + 10, y: 100 } as TransformComponent);
+    world.addComponent(ball, { type: "Transform", x: PONG_CONFIG.WIDTH + PONG_CONFIG.BALL_SIZE + 1, y: 100 } as TransformComponent);
     world.addComponent(ball, { type: "Velocity", dx: 100, dy: 0 } as VelocityComponent);
 
     system.update(world, 16);
@@ -38,7 +38,7 @@ describe("PongGameStateSystem", () => {
   it("should detect scoring for Player 2", () => {
     const ball = world.createEntity();
     world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as BallComponent);
-    world.addComponent(ball, { type: "Transform", x: -10, y: 100 } as TransformComponent);
+    world.addComponent(ball, { type: "Transform", x: -PONG_CONFIG.BALL_SIZE - 1, y: 100 } as TransformComponent);
     world.addComponent(ball, { type: "Velocity", dx: -100, dy: 0 } as VelocityComponent);
 
     system.update(world, 16);
@@ -54,7 +54,7 @@ describe("PongGameStateSystem", () => {
 
     const ball = world.createEntity();
     world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as BallComponent);
-    world.addComponent(ball, { type: "Transform", x: PONG_CONFIG.WIDTH + 10, y: 100 } as TransformComponent);
+    world.addComponent(ball, { type: "Transform", x: PONG_CONFIG.WIDTH + PONG_CONFIG.BALL_SIZE + 1, y: 100 } as TransformComponent);
     world.addComponent(ball, { type: "Velocity", dx: 100, dy: 0 } as VelocityComponent);
 
     system.update(world, 16);

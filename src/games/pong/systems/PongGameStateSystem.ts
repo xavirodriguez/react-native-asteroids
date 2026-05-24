@@ -29,13 +29,14 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
     balls.forEach(ballEntity => {
         const pos = world.getComponent<TransformComponent>(ballEntity, "Transform")!;
         const vel = world.getComponent<VelocityComponent>(ballEntity, "Velocity")!;
+        const ballSize = this.config!.BALL_SIZE;
 
-        if (pos.x < 0) {
+        if (pos.x < -ballSize) {
             world.mutateSingleton<PongState>("PongState", (gs) => {
                 gs.scoreP2++;
             });
             this.resetBall(world, ballEntity, pos, vel, "right");
-        } else if (pos.x > this.config!.WIDTH) {
+        } else if (pos.x > this.config!.WIDTH + ballSize) {
             world.mutateSingleton<PongState>("PongState", (gs) => {
                 gs.scoreP1++;
             });
@@ -67,6 +68,7 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
     world.mutateComponent<TransformComponent>(entity, "Transform", pos => {
         pos.x = this.config!.WIDTH / 2;
         pos.y = this.config!.HEIGHT / 2;
+        pos.dirty = true;
     });
 
     world.mutateComponent<VelocityComponent>(entity, "Velocity", vel => {

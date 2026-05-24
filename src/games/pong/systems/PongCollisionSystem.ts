@@ -41,52 +41,75 @@ export class PongCollisionSystem extends System {
         const paddleComp = world.getComponent<PaddleComponent>(paddleEntity, "Paddle")!;
 
         world.mutateComponent<VelocityComponent>(ballEntity, "Velocity", (ballVel) => {
-            // Reverse ball direction on x-axis
-            ballVel.dx *= -1;
+            const isMovingTowardsPaddle = (paddleComp.side === "left" && ballVel.dx < 0) ||
+                                          (paddleComp.side === "right" && ballVel.dx > 0);
 
-            // Add some vertical influence based on where the ball hit the paddle
-            const relativeHitY = (ballPos.y - paddlePos.y) / (this.config!.PADDLE_HEIGHT / 2);
-            ballVel.dy = relativeHitY * this.config!.BALL_SPEED_START;
+            if (isMovingTowardsPaddle) {
+                // Reverse ball direction on x-axis
+                ballVel.dx *= -1;
 
-            // Increase speed slightly
-            ballVel.dx *= this.config!.BALL_SPEED_INC;
-            ballVel.dy *= this.config!.BALL_SPEED_INC;
+                // Add some vertical influence based on where the ball hit the paddle
+                const relativeHitY = (ballPos.y - paddlePos.y) / (this.config!.PADDLE_HEIGHT / 2);
+                ballVel.dy = relativeHitY * this.config!.BALL_SPEED_START;
 
-            // Spin Logic & Charged Smash
-            let charge = 0;
-            world.mutateComponent(ballEntity, "Ball", ballComp => {
-                const spin = Math.max(-1, Math.min(1, paddleComp.lastVelocityY / 1000));
-                if (Math.abs(spin) > 0.3) {
-                  ballComp.spinFactor = spin * 0.8;
-                  ballComp.spinDecay = 0.02;
+                // Increase speed slightly
+                ballVel.dx *= this.config!.BALL_SPEED_INC;
+                ballVel.dy *= this.config!.BALL_SPEED_INC;
 
-                  createEmitter(world, {
-                    position: { x: ballPos.x, y: ballPos.y },
-                    rate: 0, burst: 6,
-                    color: ["#FFFF00", "#88FFFF"],
-                    size: {min:1, max:3},
-                    speed: {min:40, max:100},
-                    angle: {min:0, max:360},
-                    lifetime: {min:0.1, max:0.3},
-                    loop: false
-                  });
+                // Spin Logic & Charged Smash
+                let charge = 0;
+                world.mutateComponent(ballEntity, "Ball", ballComp => {
+                    const spin = Math.max(-1, Math.min(1, paddleComp.lastVelocityY / 1000));
+                    if (Math.abs(spin) > 0.3) {
+                      ballComp.spinFactor = spin * 0.8;
+                      ballComp.spinDecay = 0.02;
+
+                      createEmitter(world, {
+                        position: { x: ballPos.x, y: ballPos.y },
+                        rate: 0, burst: 6,
+                        color: ["#FFFF00", "#88FFFF"],
+                        size: {min:1, max:3},
+                        speed: {min:40, max:100},
+                        angle: {min:0, max:360},
+                        lifetime: {min:0.1, max:0.3},
+                        loop: false
+                      });
+                    }
+
+                    if (Math.abs(paddleComp.lastVelocityY) > 600) {
+                      charge = Math.min(1, Math.abs(paddleComp.lastVelocityY) / 1000);
+                      const eventBus = world.getResource<EventBus>("EventBus");
+                      if (eventBus) eventBus.emitDeferred("pong:charged_smash", { chargeLevel: charge });
+                    }
+
+                    // Ghost Ball Mutator
+                    if (this.config!.BALL_INVISIBLE_AFTER_HIT_TICKS) {
+                      ballComp.visibilityTimer = this.config!.BALL_INVISIBLE_AFTER_HIT_TICKS;
+                    }
+                });
+
+                if (charge > 0) {
+                  ballVel.dx *= (1 + 0.2 * charge);
+                  Juice.shake(world, charge * 5, 100);
                 }
+            }
 
-                if (Math.abs(paddleComp.lastVelocityY) > 600) {
-                  charge = Math.min(1, Math.abs(paddleComp.lastVelocityY) / 1000);
-                  const eventBus = world.getResource<EventBus>("EventBus");
-                  if (eventBus) eventBus.emitDeferred("pong:charged_smash", { chargeLevel: charge });
-                }
+            // Velocity Guardrail
+            const maxSpeed = this.config!.BALL_SPEED_START * 5;
 
-                // Ghost Ball Mutator
-                if (this.config!.BALL_INVISIBLE_AFTER_HIT_TICKS) {
-                  ballComp.visibilityTimer = this.config!.BALL_INVISIBLE_AFTER_HIT_TICKS;
-                }
-            });
+            // Finite check
+            if (!Number.isFinite(ballVel.dx) || !Number.isFinite(ballVel.dy)) {
+              ballVel.dx = paddleComp.side === "left" ? this.config!.BALL_SPEED_START : -this.config!.BALL_SPEED_START;
+              ballVel.dy = 0;
+            }
 
-            if (charge > 0) {
-              ballVel.dx *= (1 + 0.2 * charge);
-              Juice.shake(world, charge * 5, 100);
+            // Magnitude clamp
+            const currentSpeedSq = ballVel.dx * ballVel.dx + ballVel.dy * ballVel.dy;
+            if (currentSpeedSq > maxSpeed * maxSpeed) {
+              const currentSpeed = Math.sqrt(currentSpeedSq);
+              const scale = maxSpeed / currentSpeed;
+              ballVel.dx *= scale;
+              ballVel.dy *= scale;
             }
         });
 
@@ -97,6 +120,7 @@ export class PongCollisionSystem extends System {
             } else {
               bPos.x = paddlePos.x - this.config!.PADDLE_WIDTH / 2 - this.config!.BALL_SIZE - 1;
             }
+            bPos.dirty = true;
         });
 
         // Juice
