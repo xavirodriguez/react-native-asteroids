@@ -41,7 +41,14 @@ export class AsteroidsGameScene extends Scene {
   }
 
   public onEnter(): void {
-    const inputSys = new AsteroidInputSystem(this.bulletPool, this.particlePool, this.config);
+    // Asegurar que el recurso esté disponible para todos los sistemas internos
+    this.world.setResource("GameConfig", this.config);
+
+    const inputSys = new AsteroidInputSystem(
+      this.bulletPool,
+      this.particlePool,
+      this.config
+    );
 
     this.world.addSystem(inputSys);
     this.world.addSystem(new MovementSystem());

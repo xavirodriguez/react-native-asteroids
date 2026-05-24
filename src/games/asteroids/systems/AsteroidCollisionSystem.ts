@@ -49,12 +49,27 @@ export class AsteroidCollisionSystem extends System {
    */
   public update(world: World, _deltaTime: number): void {
     if (!this.config) {
-        this.config = world.getResource<AsteroidConfig>("GameConfig")!;
-        this.splitConfig = {
-            large: { nextSize: "medium", offset: this.config.ASTEROID_SPLIT_OFFSET_LARGE },
-            medium: { nextSize: "small", offset: this.config.ASTEROID_SPLIT_OFFSET_MEDIUM },
-            small: undefined,
-        };
+      const config = world.getResource<AsteroidConfig>("GameConfig");
+
+      if (!config) {
+        throw new Error(
+          "[AsteroidCollisionSystem] Missing GameConfig resource. " +
+            "Ensure world.setResource('GameConfig', config) is called before registering or updating this system."
+        );
+      }
+
+      this.config = config;
+      this.splitConfig = {
+        large: {
+          nextSize: "medium",
+          offset: this.config.ASTEROID_SPLIT_OFFSET_LARGE,
+        },
+        medium: {
+          nextSize: "small",
+          offset: this.config.ASTEROID_SPLIT_OFFSET_MEDIUM,
+        },
+        small: undefined,
+      };
     }
     const query = world.getQuery("CollisionEvents");
 

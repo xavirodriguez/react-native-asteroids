@@ -227,10 +227,13 @@ export class SpaceInvadersCollisionSystem extends System {
   }
 
   private createExplosion(world: World, x: number, y: number, color: string): void {
-    const renderRandom = RandomService.getRenderRandom();
+    // Solución: Usar el stream determinista aprobado para la fase de simulación
+    const rng = RandomService.getInstance("gameplay");
+
     for (let i = 0; i < this.config!.PARTICLE_COUNT; i++) {
-      const angle = renderRandom.next() * Math.PI * 2;
-      const speed = renderRandom.next() * 100 + 50;
+      const angle = rng.next() * Math.PI * 2;
+      const speed = rng.next() * 100 + 50;
+
       createParticle(
         world,
         x,
@@ -239,7 +242,7 @@ export class SpaceInvadersCollisionSystem extends System {
         Math.sin(angle) * speed,
         color,
         this._particlePool,
-        true // deferred
+        true // Las partículas forman parte de la simulación
       );
     }
   }
