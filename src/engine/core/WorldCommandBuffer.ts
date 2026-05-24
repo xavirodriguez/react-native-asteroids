@@ -1,6 +1,8 @@
 import { Entity, Component } from "../types/EngineTypes";
 import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
 import type { World } from "./World";
+import { BlueprintOverrides } from "../../data/blueprints/types/BlueprintTypes";
+import { EntityBlueprintAssembler } from "../../factories/EntityBlueprintAssembler";
 
 /**
  * Tipos de comandos estructurales que pueden ser diferidos.
@@ -10,7 +12,8 @@ export enum CommandType {
   REMOVE_ENTITY = "removeEntity",
   ADD_COMPONENT = "addComponent",
   REMOVE_COMPONENT = "removeComponent",
-  MUTATE_COMPONENT = "mutateComponent"
+  MUTATE_COMPONENT = "mutateComponent",
+  SPAWN_FROM_BLUEPRINT = "spawnFromBlueprint"
 }
 
 type Command =
@@ -18,7 +21,8 @@ type Command =
   | { type: CommandType.REMOVE_ENTITY, entity: Entity }
   | { type: CommandType.ADD_COMPONENT, entity: Entity, component: Component }
   | { type: CommandType.REMOVE_COMPONENT, entity: Entity, componentType: string }
-  | { type: CommandType.MUTATE_COMPONENT, entity: Entity, componentType: string, mutator: (component: Component) => void };
+  | { type: CommandType.MUTATE_COMPONENT, entity: Entity, componentType: string, mutator: (component: Component) => void }
+  | { type: CommandType.SPAWN_FROM_BLUEPRINT, blueprintId: string, x: number, y: number, overrides?: BlueprintOverrides };
 
 /**
  * ECS Command Buffer - Defers structural world mutations to ensure iterator safety.
@@ -98,6 +102,13 @@ export class WorldCommandBuffer {
   }
 
   /**
+   * Encola la creación de una entidad desde un blueprint.
+   */
+  public spawnFromBlueprint(blueprintId: string, x: number, y: number, overrides?: BlueprintOverrides): void {
+    this.commands.push({ type: CommandType.SPAWN_FROM_BLUEPRINT, blueprintId, x, y, overrides });
+  }
+
+  /**
    * Aplica todos los comandos grabados sobre el mundo proporcionado y limpia el buffer.
    * @param world - La instancia del mundo sobre la que aplicar los cambios.
    */
@@ -125,6 +136,9 @@ export class WorldCommandBuffer {
             break;
           case CommandType.MUTATE_COMPONENT:
             world.mutateComponent(command.entity, command.componentType, command.mutator);
+            break;
+          case CommandType.SPAWN_FROM_BLUEPRINT:
+            EntityBlueprintAssembler.assemble(world, command.blueprintId, command.x, command.y, command.overrides, this);
             break;
         }
       }

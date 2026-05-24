@@ -135,7 +135,7 @@ export class EnemyFactory {
     } as Collider2DComponent);
 
     // 5. Health
-    const maxHealth = overrides.health ?? blueprint.health.max;
+    const maxHealth = overrides.health ?? blueprint.stats.health;
     add({
       type: "Health",
       current: maxHealth,
@@ -147,9 +147,9 @@ export class EnemyFactory {
     add({
       type: "EnemyTag",
       blueprintId,
-      variant: overrides.variant ?? (blueprint.data?.variant as string),
+      variant: overrides.variant ?? (blueprint.kind === 'invader' ? blueprint.invader.archetype : undefined),
       level: 1,
-      behavior: overrides.behavior ?? blueprint.behavior
+      behavior: overrides.behavior ?? (blueprint.kind === 'ufo' ? blueprint.ufo.behavior : undefined)
     } as EnemyTagComponent);
 
     if (blueprint.tags.length > 0) {
