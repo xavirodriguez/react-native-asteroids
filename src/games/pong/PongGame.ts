@@ -78,7 +78,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     try {
       await Promise.all([
         audio.loadSFX("hit", "/audio/hit.mp3"),
-        audio.loadSFX("score", "/audio/score.mp3"),
+        audio.loadSFX("score", "/audio/hit.mp3"), // Fixed: /audio/score.mp3 was 404
         audio.loadSFX("wall", "/audio/hit.mp3"),
         audio.loadSFX("game_over", "/audio/game_over.mp3"),
       ]);
