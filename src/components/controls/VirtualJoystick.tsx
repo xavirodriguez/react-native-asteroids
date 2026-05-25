@@ -115,14 +115,13 @@ export function VirtualJoystick({
 
       if (world && entityRef.current !== null) {
         const entity = entityRef.current;
-        const joystick = world.getMutableComponent<VirtualJoystickComponent>(entity, "VirtualJoystick");
-        if (joystick) {
+        world.getCommandBuffer().mutateComponent<VirtualJoystickComponent>(entity, "VirtualJoystick", joystick => {
           joystick.active = true;
           joystick.originX = e.x;
           joystick.originY = e.y;
           joystick.currentX = e.x;
           joystick.currentY = e.y;
-        }
+        });
       }
     })
     .onUpdate((e) => {
@@ -140,11 +139,10 @@ export function VirtualJoystick({
       // Write raw absolute coordinates to ECS for simulation
       if (world && entityRef.current !== null) {
         const entity = entityRef.current;
-        const joystick = world.getMutableComponent<VirtualJoystickComponent>(entity, "VirtualJoystick");
-        if (joystick) {
+        world.getCommandBuffer().mutateComponent<VirtualJoystickComponent>(entity, "VirtualJoystick", joystick => {
           joystick.currentX = e.x;
           joystick.currentY = e.y;
-        }
+        });
       }
     })
     .onEnd(() => {
@@ -156,10 +154,9 @@ export function VirtualJoystick({
 
       if (world && entityRef.current !== null) {
         const entity = entityRef.current;
-        const joystick = world.getMutableComponent<VirtualJoystickComponent>(entity, "VirtualJoystick");
-        if (joystick) {
+        world.getCommandBuffer().mutateComponent<VirtualJoystickComponent>(entity, "VirtualJoystick", joystick => {
           joystick.active = false;
-        }
+        });
       }
     });
 

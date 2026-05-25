@@ -3,6 +3,7 @@ import { World } from "../core/World";
 import { UIFactory } from "./UIFactory";
 import { UIElementComponent } from "./UITypes";
 import { TTLComponent } from "../core/CoreComponents";
+import { RandomService } from "../utils/RandomService";
 
 export interface DamageNumberComponent {
     type: "DamageNumber";
@@ -46,14 +47,22 @@ export class DamageNumberSystem extends System {
         const dt = deltaTime / 1000;
 
         for (const entity of entities) {
+            const ttl = world.getComponent<TTLComponent>(entity, "TTL");
+            if (!ttl) continue;
+
+            let vx = 0;
+            let vy = 0;
+
             world.mutateComponent<DamageNumberComponent>(entity, "DamageNumber", dn => {
-                world.mutateComponent<UIElementComponent>(entity, "UIElement", element => {
-                    const ttl = world.getComponent<TTLComponent>(entity, "TTL")!;
-                    element.offsetX += dn.velocity.x * dt;
-                    element.offsetY += dn.velocity.y * dt;
-                    element.opacity = ttl.remaining / ttl.total;
-                    dn.velocity.y += 100 * dt;
-                });
+                dn.velocity.y += 100 * dt;
+                vx = dn.velocity.x;
+                vy = dn.velocity.y;
+            });
+
+            world.mutateComponent<UIElementComponent>(entity, "UIElement", element => {
+                element.offsetX += vx * dt;
+                element.offsetY += vy * dt;
+                element.opacity = ttl.remaining / ttl.total;
             });
         }
     }

@@ -5,6 +5,7 @@ import { FormationComponent, InvaderComponent } from "../types/SpaceInvadersType
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { EnemyBulletPool } from "../EntityPool";
 import { createEnemyBullet } from "../EntityFactory";
+import { RandomService } from "../../../engine/utils/RandomService";
 
 /**
  * System that manages the movement and firing of the invader formation.
@@ -114,7 +115,8 @@ export class SpaceInvadersFormationSystem extends System {
 
     if (nextCooldownRemaining <= 0) {
       shouldFire = true;
-      const nextCooldown = world.gameplayRandom.nextRange(
+      const rng = world.getResource<RandomService>("gameplay")!;
+      const nextCooldown = rng.nextRange(
         this.config!.ENEMY_FIRE_INTERVAL_MIN,
         this.config!.ENEMY_FIRE_INTERVAL_MAX
       ) / (1 + ratio); // Faster firing as fewer invaders remain
@@ -149,7 +151,8 @@ export class SpaceInvadersFormationSystem extends System {
 
     const activeColumns = Array.from(columns.values());
     if (activeColumns.length > 0) {
-      const shooter = activeColumns[world.gameplayRandom.nextInt(0, activeColumns.length)];
+      const rng = world.getResource<RandomService>("gameplay")!;
+      const shooter = activeColumns[rng.nextInt(0, activeColumns.length)];
       const shooterPos = world.getComponent<TransformComponent>(shooter.entity, "Transform");
       if (shooterPos) {
         createEnemyBullet(world, shooterPos.x, shooterPos.y + 15, this.enemyBulletPool);
