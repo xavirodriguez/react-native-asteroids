@@ -199,12 +199,12 @@ export class World {
    * Generates a serializable snapshot of the entire world state for rollback or persistence.
    *
    * @remarks
-   * The snapshot is a deep-cloned, deterministic representation of the world state.
-   * It guarantees that:
+   * The snapshot is a deep-cloned representation of the world state, designed to be deterministic.
+   * Under typical usage, it aims to ensure that:
    * 1. Entity lists are sorted by ID.
    * 2. Component types are sorted alphabetically.
    * 3. Component data per type is stored in entity-order.
-   * 4. All functional or non-serializable data (like event handlers) is stripped.
+   * 4. Most functional or non-serializable data (like event handlers) is stripped.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const gameplayRandom = RandomService.getInstance("gameplay");
@@ -227,7 +227,7 @@ export class World {
     const allEntities = this.entities;
 
     // Optimized capture: Iterate over sorted entities and their components.
-    // This avoids sorting per component type and ensures O(Total Components) complexity.
+    // This avoids sorting per component type and is designed to achieve O(Total Components) complexity.
     for (const entity of allEntities) {
       const componentSet = this.entityComponentSets.get(entity);
       if (!componentSet) continue;
@@ -314,7 +314,7 @@ export class World {
    * Restores the world state from a previously captured snapshot.
    *
    * @remarks
-   * This method performs a deep restoration, ensuring the world is completely
+   * This method performs a deep restoration, intended to make the world
    * independent of the snapshot object. It rebuilds internal indexes and
    * re-synchronizes queries to maintain structural integrity.
    */
@@ -601,9 +601,9 @@ export class World {
    * Performs an immediate mutation on a component.
    *
    * @remarks
-   * This is the **AUTHORITATIVE** way to modify component data. Direct property
-   * assignments on component references retrieved via `getComponent` are forbidden
-   * as they bypass the engine's state versioning and change detection.
+   * This is the recommended **AUTHORITATIVE** way to modify component data. Direct property
+   * assignments on component references retrieved via `getComponent` are discouraged
+   * in development as they may bypass the engine's state versioning and change detection.
    *
    * API status: Public
    */
@@ -633,7 +633,7 @@ export class World {
   }
 
   /**
-   * Checks for entity existence in O(1) time.
+   * Checks for entity existence. Typically O(1).
    */
   public hasEntity(entity: Entity): boolean {
     return this.activeEntities.has(entity);

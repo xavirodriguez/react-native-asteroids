@@ -8,9 +8,9 @@ import { Entity } from "../types/EngineTypes";
  * @responsibility Provide efficient access to component-filtered entity groups.
  *
  * @remarks
- * Queries significantly reduce the need to iterate over all entities every frame.
+ * Queries are designed to reduce the need to iterate over all entities every frame.
  * The {@link World} notifies relevant queries when structural changes occur,
- * enabling O(1) or O(N_matching) access to relevant entities.
+ * aiming for efficient access to relevant entities.
  *
  * ### Internals: Reactive Indexing
  * The Query system uses a **Reactive Pull-Push** model:
@@ -22,9 +22,9 @@ import { Entity } from "../types/EngineTypes";
  *    but `getEntities()` returns a sorted array. Sorting is deferred until the first
  *    access after a mutation (Lazy Evaluation).
  *
- * ### Performance Invariants:
- * - **Membership Check**: O(1) using internal `Set`.
- * - **Retrieval**: O(N log N) for the first access after change (due to sorting), O(1) subsequently.
+ * ### Performance Characteristics (Typical):
+ * - **Membership Check**: Typically O(1) using internal `Set`.
+ * - **Retrieval**: O(N log N) for the first access after change (due to sorting), O(1) subsequently for the sorted view.
  * - **Memory**: Retains references to active Entity IDs.
  *
  * @conceptualRisk [MUTABLE_CACHE_LEAK][MITIGATED] `getEntities()` returns a defensive
@@ -92,17 +92,17 @@ export class Query {
    * internal entity array. This ensures that callers cannot mutate the query's
    * state by casting the result.
    *
-   * ### Performance Invariants:
-   * 1. **Deterministic Order**: The returned array is always sorted by Entity ID.
-   * 2. **Caching**: If the internal Set hasn't changed, the existing sorted array is reused.
+   * ### Performance Characteristics:
+   * 1. **Deterministic Order**: Under normal conditions, the returned array is sorted by Entity ID.
+   * 2. **Caching**: If the internal Set hasn't changed, the existing sorted array is reused (but a copy is still returned).
    *
    * Warning: **Dynamic Query Cost**: Avoid calling `world.query()` with new arrays inside loops.
    * Reuse specific query instances to benefit from persistent caching.
    *
    * @returns A read-only array of matching {@link Entity} IDs.
    *
-   * @conceptualRisk [GC_PRESSURE][MEDIUM] Every call allocates a new array instance.
-   * High-frequency systems should use `forEach` to avoid allocations.
+   * @conceptualRisk [GC_PRESSURE][HIGH] Every call allocates a new array instance.
+   * High-frequency systems should use `forEach()` or `getEntitiesView()` to minimize allocations.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.needsUpdateArray) {
@@ -116,8 +116,8 @@ export class Query {
    * Executes a callback for each entity matching the query.
    *
    * @remarks
-   * This is the high-performance alternative to `getEntities()`, as it
-   * avoids defensive array allocations. It uses the internal cached array.
+   * This is intended as a high-performance alternative to `getEntities()`, as it
+   * seeks to avoid defensive array allocations by using the internal cached array.
    *
    * @param callback - Function to execute for each entity.
    */

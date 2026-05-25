@@ -16,8 +16,8 @@ export class EntityReplicator {
     }
 
     /**
-     * Ensures a local entity exists for the given server ID.
-     * If it doesn't exist, it creates one and registers the mapping.
+     * Resolves a local entity for the given server ID.
+     * If not found, it attempts to create one and register the mapping.
      */
     public resolveEntity(serverId: string, world: World): number {
         let localId = this.serverToLocal.get(serverId);

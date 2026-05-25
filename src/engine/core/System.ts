@@ -7,14 +7,14 @@ import { World } from "./World";
  *
  * @remarks
  * Systems are executed sequentially based on these phases.
- * See {@link BaseGame} for the canonical execution pipeline details.
+ * See {@link BaseGame} for more details on the execution pipeline.
  *
- * Mutation Rules per Phase:
- * - `Input`: Must NOT mutate component data.
- * - `Simulation`: Free mutation of data. Structural changes MUST be deferred.
- * - `Collision`: READ-ONLY access to Transform/Collider. Must NOT mutate position.
+ * Expected Mutation Rules per Phase (Guidelines):
+ * - `Input`: Ideally should NOT mutate component data directly.
+ * - `Simulation`: Main phase for data mutation. Structural changes SHOULD be deferred via CommandBuffer.
+ * - `Collision`: Typically READ-ONLY access to Transform/Collider. Should NOT mutate position.
  * - `GameRules`: High-level state changes.
- * - `Transform`: Write-only to world-space properties of `Transform`.
+ * - `Transform`: Intended for world-space updates of `Transform`.
  *
  * @public
  */
@@ -52,7 +52,7 @@ export interface SystemConfig {
  *
  * Responsibility: Transform world state based on time increments (ticks).
  *
- * Responsibility: Maintain pure simulation by operating only on components and resources.
+ * Responsibility: Maintain simulation logic by operating primarily on components and resources.
  *
  * @remarks
  * Systems encapsulate logic and behavior. They typically operate on sets of
@@ -103,8 +103,8 @@ export abstract class System {
    *
    * @remarks
    * Systems should query relevant entities via {@link World.query} and apply
-   * transformations. To support reproducibility and rollbacks, minimize the
-   * use of non-serializable internal mutable state.
+   * transformations. To support reproducibility and rollbacks, it is recommended to
+   * minimize the use of non-serializable internal mutable state.
    *
    * Warning: **Structural Mutations**: Creating/removing entities or components
    * during query iteration can invalidate iterators. Use {@link World.getCommandBuffer}
