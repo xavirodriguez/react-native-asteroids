@@ -9,12 +9,13 @@ import { World } from "./World";
  * Systems are executed sequentially based on these phases.
  * See {@link BaseGame} for more details on the execution pipeline.
  *
- * Expected Mutation Rules per Phase (Guidelines):
- * - `Input`: Ideally should NOT mutate component data directly.
- * - `Simulation`: Main phase for data mutation. Structural changes SHOULD be deferred via CommandBuffer.
- * - `Collision`: Typically READ-ONLY access to Transform/Collider. Should NOT mutate position.
- * - `GameRules`: High-level state changes.
- * - `Transform`: Intended for world-space updates of `Transform`.
+ * Mutation Guidelines per Phase:
+ * - `Input`: Intended for capturing external events. Ideally should NOT mutate component data directly.
+ * - `Simulation`: Main phase for gameplay logic and data mutation. Structural changes (creation/deletion)
+ *   SHOULD be deferred via {@link WorldCommandBuffer} to ensure iterator safety.
+ * - `Collision`: Typically expects READ-ONLY access to spatial components.
+ * - `GameRules`: High-level state changes and logic resolution.
+ * - `Transform`: Designed for world-space hierarchy resolution.
  *
  * @public
  */
@@ -102,21 +103,17 @@ export abstract class System {
    * @param deltaTime - Elapsed time since last update in milliseconds.
    *
    * @remarks
-   * Systems should query relevant entities via {@link World.query} and apply
+   * Systems should typically query relevant entities via {@link World.query} and apply
    * transformations. To support reproducibility and rollbacks, it is recommended to
    * minimize the use of non-serializable internal mutable state.
    *
-   * Warning: **Structural Mutations**: Creating/removing entities or components
-   * during query iteration can invalidate iterators. Use {@link World.getCommandBuffer}
-   * to buffer these operations for the end of the tick.
+   * @warning **Structural Mutations**: Modifying world structure (creating/removing entities
+   * or components) while iterating over a query can lead to inconsistent behavior or errors.
+   * Use {@link World.getCommandBuffer} to defer these operations until the end of the tick.
    *
-   * Precondition: World state should be consistent at the start of the update cycle.
-   * Postcondition: Mutations should respect component contracts.
-   * Side Effect: May create/remove entities, add/remove components, or emit events.
-   *
-   * Conceptual Risk: [UNIT_CONSISTENCY][LOW] `deltaTime` is in milliseconds.
-   * Physics integrations (e.g., velocity) typically expect seconds, requiring
-   * division by 1000.
+   * @precondition World state is expected to be consistent at the start of the update cycle.
+   * @conceptualRisk [UNIT_CONSISTENCY][LOW] `deltaTime` is provided in milliseconds.
+   * Note that some physics calculations may expect units in seconds.
    */
   abstract update(world: World, deltaTime: number): void;
 

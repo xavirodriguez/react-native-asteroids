@@ -8,27 +8,27 @@ import { Entity } from "../types/EngineTypes";
  * @responsibility Provide efficient access to component-filtered entity groups.
  *
  * @remarks
- * Queries are designed to reduce the need to iterate over all entities every frame.
+ * Queries are intended to reduce the need to iterate over all entities every frame.
  * The {@link World} notifies relevant queries when structural changes occur,
- * aiming for efficient access to relevant entities.
+ * with the goal of providing efficient access to filtered entity groups.
  *
  * ### Internals: Reactive Indexing
  * The Query system uses a **Reactive Pull-Push** model:
  * 1. **Registration**: When a system calls `world.query('A', 'B')`, the World checks its cache.
  * 2. **Initial Matching**: If new, it performs an O(N_entities) scan to find matches.
- * 3. **Reactive Updates**: Every time a component is added/removed, the World identifies which
+ * 3. **Reactive Updates**: When a component is added/removed, the World identifies which
  *    Queries are "interested" based on component types and notifies them.
- * 4. **Deferred Sorting**: Queries maintain an internal `Set` for O(1) membership changes,
- *    but `getEntities()` returns a sorted array. Sorting is deferred until the first
- *    access after a mutation (Lazy Evaluation).
+ * 4. **Lazy Sorting**: Queries maintain an internal `Set` for O(1) membership changes.
+ *    The result array is rebuilt and sorted only when accessed after a change.
  *
  * ### Performance Characteristics (Typical):
- * - **Membership Check**: Typically O(1) using internal `Set`.
- * - **Retrieval**: O(N log N) for the first access after change (due to sorting), O(1) subsequently for the sorted view.
- * - **Memory**: Retains references to active Entity IDs.
+ * - **Membership Check**: O(1) using internal `Set`.
+ * - **Retrieval**: Rebuilding the sorted array takes O(N log N) upon first access after a mutation.
+ *   Subsequent accesses to the same view are O(1).
+ * - **Memory**: Retains references to active Entity IDs and caches one sorted array.
  *
  * @conceptualRisk [MUTABLE_CACHE_LEAK][MITIGATED] `getEntities()` returns a defensive
- * copy to prevent external state corruption.
+ * copy by default to prevent external state corruption.
  *
  * @public
  */
@@ -88,21 +88,22 @@ export class Query {
    * Provides a defensive copy of the entities matching this query's signature.
    *
    * @remarks
-   * To prevent external cache corruption, this method returns a shallow copy of the
-   * internal entity array. This ensures that callers cannot mutate the query's
-   * state by casting the result.
+   * To help prevent external cache corruption, this method returns a shallow copy of the
+   * internal entity array.
    *
    * ### Performance Characteristics:
-   * 1. **Deterministic Order**: Under normal conditions, the returned array is sorted by Entity ID.
-   * 2. **Caching**: If the internal Set hasn't changed, the existing sorted array is reused (but a copy is still returned).
+   * 1. **Deterministic Order**: The returned array is sorted by Entity ID.
+   * 2. **Caching**: If the internal Set hasn't changed, the existing sorted array is reused
+   *    as the source for the copy.
    *
-   * Warning: **Dynamic Query Cost**: Avoid calling `world.query()` with new arrays inside loops.
-   * Reuse specific query instances to benefit from persistent caching.
+   * @warning **Dynamic Query Cost**: Avoid calling `world.query()` with different component
+   * combinations inside high-frequency loops. Reuse specific query instances when possible.
    *
    * @returns A read-only array of matching {@link Entity} IDs.
    *
    * @conceptualRisk [GC_PRESSURE][HIGH] Every call allocates a new array instance.
-   * High-frequency systems should use `forEach()` or `getEntitiesView()` to minimize allocations.
+   * High-frequency systems should consider `forEach()` or `getEntitiesView()` to minimize
+   * per-frame allocations.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.needsUpdateArray) {
@@ -136,9 +137,9 @@ export class Query {
    * Provides a read-only view of the internal entities array.
    *
    * @remarks
-   * **CAUTION**: Returning the internal array directly is dangerous if the caller
-   * attempts to mutate it. In DEV mode, the array is frozen to prevent this.
-   * Use this ONLY in high-performance hot paths.
+   * **CAUTION**: Returning the internal array directly avoids allocation but is dangerous
+   * if the caller attempts to mutate it. In development mode, the array may be frozen
+   * to help detect unauthorized mutations. Use this primarily in performance-critical hot paths.
    *
    * @returns The internal sorted array of matching {@link Entity} IDs.
    */

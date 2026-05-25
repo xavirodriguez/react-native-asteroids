@@ -10,7 +10,15 @@ import { EntityReplicator } from "./EntityReplicator";
 
 /**
  * Main entry point for the netcode abstraction.
- * Intended to orchestrate replication and reconciliation strategies.
+ *
+ * @responsibility Orchestrate replication and reconciliation strategies.
+ * @responsibility Act as a bridge between the game world and the network adapter.
+ *
+ * @remarks
+ * The `NetworkManager` is designed as a high-level controller that delegates specific
+ * synchronization logic to an underlying {@link ReconciliationStrategy}. It does not
+ * implement synchronization protocols directly but coordinates their execution
+ * within the game loop.
  */
 export class NetworkManager {
     private static instances = new Map<string, NetworkManager>();

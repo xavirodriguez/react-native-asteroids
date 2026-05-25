@@ -12,8 +12,8 @@
  * but are not recommended for high-level logic.
  *
  * The engine is designed with the goal of minimizing allocations in hot paths, although it does not
- * guarantee zero-allocation. It seeks to facilitate simulation reproducibility
- * when used under controlled operating conditions.
+ * guarantee zero-allocation. It aims to support simulation reproducibility when used under
+ * controlled conditions (e.g., deterministic RNG, avoiding side effects in systems).
  *
  * ### Standard Units
  *

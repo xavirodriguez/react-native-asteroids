@@ -1,9 +1,10 @@
 /**
  * Base interface for all components.
- * Every component is expected to have a type discriminator.
+ * Every component is expected to have a unique type discriminator.
  *
  * @remarks
- * Components are POJOs (Plain Old JavaScript Objects) that hold data but no logic.
+ * Components are ideally POJOs (Plain Old JavaScript Objects) that hold data but no logic.
+ * This structure facilitates serialization, snapshots, and state replication.
  * Systems process entities by filtering for these data structures.
  */
 export interface Component {
@@ -16,15 +17,16 @@ export interface Component {
 
 /**
  * Una versión genérica de un componente que permite el acceso a datos arbitrarios.
- * Útil para acceder a componentes cuya estructura no se conoce en tiempo de compilación (ej. GameState).
+ * Útil para componentes cuya estructura exacta se define dinámicamente o fuera del core.
  *
  * @remarks
- * Esta versión genérica mejora la seguridad de tipos al permitir especificar la estructura esperada
- * de los datos. Se integra con el sistema de serialización al mantener la consistencia de tipos.
+ * Esta versión genérica busca mejorar la seguridad de tipos al permitir especificar la estructura
+ * de datos esperada. Se recomienda su uso con interfaces que describan POJOs simples para asegurar
+ * la compatibilidad con el sistema de snapshots.
  *
- * @conceptualRisk [TYPE_SAFETY][LOW] Aunque es genérico, el uso inapropiado de tipos amplios
- * puede debilitar la seguridad. Úsese con tipos de datos específicos (POJOs).
+ * @conceptualRisk [TYPE_SAFETY][LOW] El uso de tipos excesivamente genéricos puede debilitar
+ * las validaciones en tiempo de compilación.
  *
- * Type parameter T: T - La estructura de datos esperada, por defecto un objeto de claves string y valores unknown.
+ * Type parameter T: Estructura de datos que extiende un registro de valores serializables.
  */
 export type GenericComponent<T extends Record<string, unknown> = Record<string, unknown>> = Component & T;
