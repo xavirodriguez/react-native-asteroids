@@ -8,13 +8,12 @@ import {
   CollisionEventsComponent,
 } from "../../../engine/types/EngineTypes";
 
-import { createAsteroid, createParticle } from "../EntityFactory";
+import { createParticle } from "../EntityFactory";
 import { type AsteroidComponent, type GameStateComponent } from "../types/AsteroidTypes";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { ScreenShakeComponent, HapticRequestComponent } from "../../../engine/types/EngineTypes";
 import { releaseProjectile } from "../../../engine/utils/ProjectileUtils";
 import { ParticlePool, BulletPool } from "../EntityPool";
-import { RandomService } from "../../../engine/utils/RandomService";
 import { EventBus } from "../../../engine/core/EventBus";
 
 /**

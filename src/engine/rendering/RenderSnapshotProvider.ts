@@ -1,7 +1,6 @@
 import { World } from "../core/World";
 import { RenderSnapshot } from "./RenderSnapshot";
 import { Camera2DComponent, TransformComponent, PreviousTransformComponent, RenderComponent, GenericComponent } from "../core/CoreComponents";
-import { RandomService } from "../utils/RandomService";
 import { UIElementComponent, UIStyleComponent, UITextComponent, UIProgressBarComponent, UIButtonStateComponent } from "../ui/UITypes";
 
 /**

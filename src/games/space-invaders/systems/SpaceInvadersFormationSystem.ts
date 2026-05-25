@@ -5,7 +5,6 @@ import { FormationComponent, InvaderComponent } from "../types/SpaceInvadersType
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { EnemyBulletPool } from "../EntityPool";
 import { createEnemyBullet } from "../EntityFactory";
-import { RandomService } from "../../../engine/utils/RandomService";
 
 /**
  * System that manages the movement and firing of the invader formation.

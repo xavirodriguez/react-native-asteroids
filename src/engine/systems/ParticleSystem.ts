@@ -2,7 +2,6 @@ import { System } from "../core/System";
 import { World } from "../core/World";
 import { ParticleEmitterComponent, ParticleEmitterConfig, Entity, SpatialNodeComponent } from "../types/EngineTypes";
 import { PrefabPool } from "../utils/PrefabPool";
-import { RandomService } from "../utils/RandomService";
 
 /**
  * Configuration parameters for spawning a single particle.

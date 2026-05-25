@@ -7,7 +7,6 @@ import { World } from "../core/World";
 import { Entity } from "../core/Entity";
 import { EventBus } from "../core/EventBus";
 import { LootTableComponent, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, TTLComponent, PowerUpComponent, BoundaryComponent } from "../core/CoreComponents";
-import { RandomService } from "../utils/RandomService";
 
 /**
  * Coordinates loot generation based on entity destruction events.

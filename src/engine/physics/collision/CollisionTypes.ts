@@ -1,4 +1,3 @@
-import { Entity } from "../../core/Entity";
 
 /**
  * Represents the geometric result of a collision between two shapes.

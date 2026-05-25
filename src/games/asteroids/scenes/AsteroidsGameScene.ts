@@ -15,7 +15,6 @@ import { createShip, spawnAsteroidWave, createGameState } from "../EntityFactory
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { IAsteroidsGame } from "../types/GameInterfaces";
-import { RandomService } from "../../../engine/utils/RandomService";
 
 export class AsteroidsGameScene extends Scene {
   private game: IAsteroidsGame;

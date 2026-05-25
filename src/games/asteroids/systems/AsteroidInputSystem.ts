@@ -3,7 +3,7 @@ import { World } from "../../../engine/core/World";
 import {
   type InputStateComponent,
 } from "../../../engine/core/CoreComponents";
-import { type InputState, type InputComponent } from "../types/AsteroidTypes";
+import { type InputComponent } from "../types/AsteroidTypes";
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { InputUtils } from "../../../engine/utils/ComponentUtils";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";

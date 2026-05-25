@@ -3,7 +3,6 @@ import { World } from "../core/World";
 import { UIFactory } from "./UIFactory";
 import { UIElementComponent } from "./UITypes";
 import { TTLComponent } from "../core/CoreComponents";
-import { RandomService } from "../utils/RandomService";
 
 export interface DamageNumberComponent {
     type: "DamageNumber";

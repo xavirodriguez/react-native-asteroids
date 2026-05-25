@@ -4,15 +4,13 @@ import { BlueprintRegistry } from "../data/blueprints/BlueprintRegistry";
 import { BlueprintOverrides } from "../data/blueprints/types/BlueprintTypes";
 import {
   TransformComponent,
-  RenderComponent,
   Collider2DComponent,
   HealthComponent,
   BoundaryComponent,
   SpatialNodeComponent,
   TagComponent,
   TTLComponent,
-  FrictionComponent,
-  VelocityComponent
+  FrictionComponent
 } from "../engine/core/CoreComponents";
 
 /**
