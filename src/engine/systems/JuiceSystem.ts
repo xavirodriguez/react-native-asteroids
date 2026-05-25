@@ -24,10 +24,12 @@ export class JuiceSystem extends System {
 
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
-      const juice = world.getMutableComponent<JuiceComponent>(entity, "Juice");
+      const juice = world.getComponent<JuiceComponent>(entity, "Juice");
       if (!juice) continue;
 
-      const animations = juice.animations;
+      const animations = [...juice.animations];
+      if (animations.length === 0) continue;
+
       let hasOpacityAnim = false;
       let hasOtherAnim = false;
 
@@ -44,10 +46,12 @@ export class JuiceSystem extends System {
         continue;
       }
 
-      const offset = hasOtherAnim ? world.getMutableComponent<VisualOffsetComponent>(entity, "VisualOffset") : undefined;
-      const render = hasOpacityAnim ? world.getMutableComponent<RenderComponent>(entity, "Render") : undefined;
+      const offset = hasOtherAnim ? world.getComponent<VisualOffsetComponent>(entity, "VisualOffset") : undefined;
+      const render = hasOpacityAnim ? world.getComponent<RenderComponent>(entity, "Render") : undefined;
 
-      for (let j = animations.length - 1; j >= 0; j--) {
+      const animationsToRemove: number[] = [];
+
+      for (let j = 0; j < animations.length; j++) {
         const anim = animations[j];
         anim.elapsed += deltaTime;
 
@@ -69,12 +73,14 @@ export class JuiceSystem extends System {
         const currentValue = anim.startValue + (anim.target - anim.startValue) * easedProgress;
 
         if (anim.property === "opacity") {
-          if (render) {
-            if (!render.data) render.data = {};
-            render.data.opacity = currentValue;
-          }
-        } else if (offset) {
-          this.setPropertyValue(anim.property, currentValue, offset);
+          world.mutateComponent<RenderComponent>(entity, "Render", r => {
+            if (!r.data) r.data = {};
+            r.data.opacity = currentValue;
+          });
+        } else if (hasOtherAnim) {
+          world.mutateComponent<VisualOffsetComponent>(entity, "VisualOffset", vOff => {
+            this.setPropertyValue(anim.property, currentValue, vOff);
+          });
         }
 
         if (progress >= 1) {
@@ -87,12 +93,25 @@ export class JuiceSystem extends System {
                   anim.target = oldStart;
               }
           } else {
-              animations.splice(j, 1);
+              animationsToRemove.push(j);
               if (anim.onCompleteEvent) {
                   completedEvents.push({ event: anim.onCompleteEvent, entity });
               }
           }
         }
+      }
+
+      // Update the Juice component animations list
+      if (animationsToRemove.length > 0 || deltaTime > 0) {
+        world.mutateComponent<JuiceComponent>(entity, "Juice", jComp => {
+          // Remove completed animations (in reverse order to maintain indices)
+          for (let k = animationsToRemove.length - 1; k >= 0; k--) {
+            jComp.animations.splice(animationsToRemove[k], 1);
+          }
+          // Note: jComp.animations already has updated elapsed time because we modified references in the local array
+          // which point to the same objects if not deep cloned. But wait, we did 'const animations = [...juice.animations]'.
+          // This shallow copies the array, but the animation objects are still the same.
+        });
       }
     }
 

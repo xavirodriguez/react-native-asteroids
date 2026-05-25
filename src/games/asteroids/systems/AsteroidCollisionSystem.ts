@@ -146,21 +146,22 @@ export class AsteroidCollisionSystem extends System {
     const bulletComp = world.getComponent<import("../types/AsteroidTypes").BulletComponent>(bullet, "Bullet");
     const ownerId = bulletComp?.ownerId;
 
+    let points = 0;
     world.mutateSingleton<GameStateComponent>("GameState", (gameState) => {
       gameState.lastBulletHit = true;
-      const points = this.config!.ASTEROID_SCORE * (gameState.comboMultiplier || 1);
+      points = this.config!.ASTEROID_SCORE * (gameState.comboMultiplier || 1);
       this.addScore(world, points);
-
-      if (ownerId) {
-        const players = world.query("Ship");
-        const ownerEntity = players.find(p => world.getComponent<import("../types/AsteroidTypes").ShipComponent>(p, "Ship")?.sessionId === ownerId);
-        if (ownerEntity !== undefined) {
-          world.mutateComponent<import("../types/AsteroidTypes").ShipComponent>(ownerEntity, "Ship", s => {
-            s.score += points;
-          });
-        }
-      }
     });
+
+    if (ownerId) {
+      const players = world.query("Ship");
+      const ownerEntity = players.find(p => world.getComponent<import("../types/AsteroidTypes").ShipComponent>(p, "Ship")?.sessionId === ownerId);
+      if (ownerEntity !== undefined) {
+        world.mutateComponent<import("../types/AsteroidTypes").ShipComponent>(ownerEntity, "Ship", s => {
+          s.score += points;
+        });
+      }
+    }
 
     this.splitAsteroid(world, asteroid);
 

@@ -68,6 +68,9 @@ export class LootSystem extends System {
 
   private spawnPowerUp(world: World, x: number, y: number, drop: { type: string, config?: { value?: number, duration?: number } }): void {
     const commands = world.getCommandBuffer();
+    const rng = world.getResource<RandomService>("gameplay")!;
+    const vx = (rng.next() - 0.5) * 50;
+    const vy = (rng.next() - 0.5) * 50;
 
     commands.createEntity((powerUp) => {
         // Physical presence
@@ -76,11 +79,10 @@ export class LootSystem extends System {
           x, y, rotation: 0, scaleX: 1, scaleY: 1
         } as TransformComponent);
 
-        const random = world.gameplayRandom;
         commands.addComponent(powerUp, {
           type: "Velocity",
-          dx: (random.next() - 0.5) * 50,
-          dy: (random.next() - 0.5) * 50
+          dx: vx,
+          dy: vy
         } as VelocityComponent);
 
         // Visuals

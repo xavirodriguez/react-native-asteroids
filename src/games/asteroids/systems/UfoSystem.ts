@@ -23,13 +23,15 @@ export class UfoSystem extends System {
       const ufo = world.getComponent<UfoComponent>(entity, "Ufo");
 
       if (pos && ufo) {
+        let updatedTime = 0;
         world.mutateComponent(entity, "Ufo", (u: UfoComponent) => {
           u.time += dt;
+          updatedTime = u.time;
         });
 
-        // Update vertical position with sine wave oscillation
+        // Update vertical position with sine wave oscillation using updated time
         world.mutateComponent(entity, "Transform", (t: TransformComponent) => {
-          t.y = ufo.baseY + Math.sin(ufo.time * 2) * 30;
+          t.y = ufo.baseY + Math.sin(updatedTime * 2) * 30;
         });
 
         // UFOs that go off-screen horizontally are removed
