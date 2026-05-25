@@ -14,28 +14,23 @@ import { RenderSnapshotProvider } from "./RenderSnapshotProvider";
 
 /**
  * Implementación de Renderer basada en la API de Skia para React Native.
- * Proporciona renderizado acelerado por hardware en dispositivos compatibles.
- *
- * @responsibility Dibujar el estado del mundo ECS utilizando el backend nativo de Skia.
- * @responsibility Gestionar la interpolación visual entre ticks físicos.
- * @queries Transform, Render, GameState
- * @executionOrder Fase: Renderizado (Sincronizado con VSync).
  *
  * @remarks
- * Al igual que el {@link CanvasRenderer}, es extensible mediante el registro de shape drawers.
- * Es el renderizador preferido para iOS y Android por su rendimiento en plataformas móviles.
- * La paridad visual con {@link CanvasRenderer} es un objetivo de diseño importante.
+ * Este renderizador está orientado a proporcionar un alto rendimiento en dispositivos
+ * móviles (iOS/Android) aprovechando la aceleración por hardware de Skia.
  *
- * @remarks
- * Interpolación: Intenta usar el valor `alpha` del loop para interpolar entre `PreviousTransform` y `Transform`.
- * @conceptualRisk [SKIA_CONTEXT_LOST][MEDIUM] En dispositivos móviles, el contexto de Skia puede perderse
- * si la app pasa a segundo plano de forma prolongada.
+ * Al igual que {@link CanvasRenderer}, utiliza un sistema extensible de 'shape drawers'
+ * y busca mantener paridad visual entre backends. La gestión de la interpolación
+ * visual se basa en el factor `alpha` proporcionado por el loop de juego.
  *
- * ### Patrones de Optimización:
- * 1. **Factory Pattern para SkPaint**: Utiliza objetos `SkPaint` reutilizables para evitar
- *    alocaciones costosas en el hot-path de renderizado.
- * 2. **Hardware Acceleration**: Aprovecha la GPU del dispositivo para operaciones complejas
- *    de dibujo y efectos de mezcla.
+ * @conceptualRisk [SKIA_CONTEXT_LOST] En entornos móviles, el contexto de Skia puede requerir
+ * restauración si la aplicación permanece en segundo plano.
+ *
+ * ### Estrategias de Optimización:
+ * 1. **Reutilización de Pinturas**: Busca minimizar alocaciones mediante la reutilización
+ *    de objetos `SkPaint`.
+ * 2. **Aceleración por GPU**: Delega operaciones complejas al backend nativo para
+ *    favorecer la fluidez visual.
  */
 export class SkiaRenderer implements Renderer {
   public readonly type = 'skia';

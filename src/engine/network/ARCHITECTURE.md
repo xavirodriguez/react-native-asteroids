@@ -1,24 +1,26 @@
 # Arquitectura de Red y Sincronización
 
-TinyAsterEngine está diseñado en torno a un modelo **autoritativo de servidor con predicción del lado del cliente y reconciliación (rollback)**.
+TinyAsterEngine está orientado a un modelo **autoritativo de servidor con predicción del lado del cliente y reconciliación (rollback)**.
 
-## 📡 Pipeline de Comunicación (Diseño)
+## 📡 Pipeline de Comunicación
 
-1.  **Captura de Input**: El cliente captura las acciones del jugador e intenta enviarlas al servidor etiquetadas con un `tick` local.
-2.  **Predicción Local**: El cliente aplica ese input a su simulación local buscando reducir la sensación de latencia.
-3.  **Simulación Autoritativa**: El servidor recibe los inputs, busca validarlos y ejecuta la simulación oficial.
-4.  **Replicación Delta**: El servidor intenta enviar a los clientes solo los cambios detectados (deltas) para optimizar el ancho de banda.
-5.  **Reconciliación (Rollback)**: Si el estado del servidor para un `tick` dado difiere de la predicción del cliente, el sistema está diseñado para que el cliente restaure el estado oficial e intente re-simular los ticks hasta el presente.
+El flujo de sincronización busca mitigar la latencia y mantener la consistencia bajo condiciones de red controladas:
 
-## 🗜️ Optimización de Ancho de Banda
+1.  **Captura de Input**: El cliente registra las acciones del jugador e intenta transmitirlas al servidor asociadas a un `tick` local.
+2.  **Predicción Local**: El cliente aplica el input a su simulación local con el objetivo de proporcionar una respuesta visual inmediata.
+3.  **Simulación Autoritativa**: El servidor actúa como la fuente de verdad, validando inputs y ejecutando la lógica oficial del juego.
+4.  **Replicación Delta**: El servidor busca optimizar el ancho de banda enviando principalmente los cambios detectados (deltas) en el estado de los componentes.
+5.  **Reconciliación (Rollback)**: En caso de discrepancia entre el estado predicho y el oficial, el cliente está diseñado para restaurar el estado del servidor y re-simular los ticks locales hasta el tiempo actual.
 
-Para escalar a cientos de entidades, el motor implementa varias capas de optimización:
+## 🗜️ Estrategias de Optimización
 
-### 1. Interest Management (USSC)
-Utiliza el `SpatialGrid` para calcular qué entidades son visibles o relevantes para cada jugador. Los datos de entidades fuera del área de interés se envían con menor frecuencia o se omiten.
+Para gestionar múltiples entidades, el motor incluye mecanismos destinados a reducir la carga de red:
 
-### 2. Delta Compression
-En lugar de enviar un snapshot completo del mundo (`WorldSnapshot`), el sistema busca rastrear la versión de cada componente (`stateVersion`). La intención es transmitir principalmente los componentes que han mutado desde el último ACK confirmado por el cliente.
+### 1. Interest Management
+Utiliza técnicas de particionamiento espacial (como `SpatialGrid`) para determinar la relevancia de las entidades para cada jugador. Esto busca limitar la transmisión de datos a lo que es potencialmente visible o interactuable.
+
+### 2. Compresión Delta
+En lugar de transmitir el estado completo del mundo, el sistema intenta utilizar el versionado de componentes (`stateVersion`) para enviar solo los datos que han mutado desde el último mensaje confirmado por el receptor.
 
 ### 3. Quantization
 Los valores de punto flotante (posiciones, rotaciones) se cuantizan a enteros de precisión fija antes de la transmisión para reducir el tamaño de los datos.

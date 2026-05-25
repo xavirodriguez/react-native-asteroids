@@ -8,26 +8,26 @@ import { UIStyleComponent, UITextComponent, UIProgressBarComponent } from "../ui
 import { TextRenderer } from "../ui/text/TextRenderer";
 
 /**
- * Motor de renderizado basado en el API 2D Canvas de la Web.
- *
- * @responsibility Implementar una arquitectura basada en snapshots para un renderizado desacoplado.
- * @responsibility Generar buffers de comandos optimizados y ordenados por profundidad (zIndex).
- * @responsibility Dibujar elementos de UI procedimentales (paneles, etiquetas, barras de progreso).
+ * Motor de renderizado basado en el API 2D Canvas.
  *
  * @remarks
- * ### Arquitectura de Renderizado Desacoplado:
- * Este motor no dibuja directamente el estado actual del `World`. En su lugar, utiliza un pipeline de dos fases:
+ * Implementa una arquitectura basada en snapshots diseñada para favorecer un
+ * renderizado desacoplado de la simulación.
  *
- * 1. **Fase de Captura (`createSnapshot`)**: Recorre el mundo ECS y extrae los datos necesarios (posición, rotación, color)
- *    hacia un objeto `RenderSnapshot` plano. En este paso se aplica la **interpolación visual** (alpha blending)
- *    y el **Frustum Culling** para ignorar entidades fuera de cámara.
- * 2. **Fase de Dibujado (`renderSnapshot`)**: Toma el snapshot y ejecuta las llamadas a la API de Canvas.
- *    Los comandos se ordenan por `zIndex` para garantizar la correcta superposición visual.
+ * ### Proceso de Renderizado:
+ * El motor procesa el estado del mundo en dos etapas principales:
  *
- * Esta separación permite que el renderizado corra a una frecuencia distinta que la simulación física (60Hz fixed).
+ * 1. **Captura (`createSnapshot`)**: Extrae datos esenciales (posición, rotación, etc.)
+ *    del mundo ECS hacia un `RenderSnapshot`. En esta etapa se busca aplicar
+ *    **interpolación visual** y **Frustum Culling**.
+ * 2. **Dibujado (`renderSnapshot`)**: Traduce el snapshot en llamadas a la API de Canvas,
+ *    utilizando un buffer de comandos ordenado por `zIndex` para gestionar la profundidad.
  *
- * @conceptualRisk [GC_PRESSURE][LOW] Aunque usa pools, el crecimiento de `entities` en el
- * snapshot más allá de `MAX_ENTITIES` (2000) causará pérdida de dibujo.
+ * Esta estructura permite que la frecuencia de dibujado se adapte al entorno
+ * independientemente del tick fijo de simulación.
+ *
+ * @conceptualRisk [GC_PRESSURE] El uso de arrays pre-alocados mitiga alocaciones,
+ * pero exceder el límite de `MAX_ENTITIES` (2000) resultará en entidades no dibujadas.
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';

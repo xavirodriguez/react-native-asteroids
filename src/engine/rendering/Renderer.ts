@@ -51,14 +51,13 @@ export type EffectDrawer<TContext> = (
 /**
  * Abstract interface for game rendering engines.
  *
- * @responsibility Define the contract for drawing entities, particles, and effects.
- * @responsibility Abstract the rendering backend (Canvas, Skia) from simulation logic.
- *
  * @remarks
- * Renderers are designed as read-only consumers of the {@link World}.
- * The drawing process should avoid mutating simulation components.
- * The architecture is intended to rely on snapshots and interpolation (alpha) to help decouple
- * render frequency from simulation frequency.
+ * Renderers act as read-only consumers of the {@link World} state. The architecture
+ * is designed to support backend abstraction (e.g., Canvas, Skia) and decoupling
+ * of simulation and rendering frequencies through snapshots and interpolation.
+ *
+ * It is intended that drawing operations do not mutate simulation components to
+ * maintain state integrity.
  *
  * @public
  */

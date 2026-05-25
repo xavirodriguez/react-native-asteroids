@@ -22,11 +22,11 @@ Contiene la lógica de ejecución. Los sistemas iteran sobre grupos de entidades
 ## 🔄 El Bucle de Juego (GameLoop)
 
 El motor utiliza un esquema de **Fixed Timestep / Variable Rendering**:
-1.  **Update (Lógica)**: Se orienta a una frecuencia fija (60Hz). Diseñado para favorecer que la física y las reglas de juego sean deterministas.
-2.  **Render (Presentación)**: Se ejecuta según el refresco del hardware. Utiliza un factor de interpolación (`alpha`) para suavizar el movimiento visual entre ticks físicos.
+1.  **Update (Lógica)**: Se orienta a una frecuencia fija (60Hz). Diseñado para favorecer la consistencia en la física y las reglas de juego.
+2.  **Render (Presentación)**: Se ejecuta según el refresco del hardware. Utiliza un factor de interpolación (`alpha`) con la intención de suavizar el movimiento visual entre ticks físicos.
 
 ## 🛡️ Prácticas Recomendadas
 
-1.  **Evitar mutación directa**: Se recomienda usar `world.mutateComponent` o `world.mutateSingleton` para ayudar a que el sistema de versionado detecte los cambios.
-2.  **Diferir cambios estructurales**: Durante un `update` de sistema, es aconsejable usar el `WorldCommandBuffer` para crear o destruir entidades. Esto ayuda a evitar la invalidación de los iteradores de las queries en curso.
-3.  **Determinismo**: Se debe evitar el uso de `Math.random()` o `Date.now()` dentro de un Sistema. Utiliza el `RandomService` y el `world.tick` para favorecer la reproducibilidad.
+1.  **Mutación Autorizada**: Se recomienda utilizar `world.mutateComponent()` o `world.mutateSingleton()` como el método principal para modificar datos. Esto permite que el motor rastree cambios de versión y gestione el estado de renderizado.
+2.  **Seguridad de Iteradores**: Durante el `update` de un sistema, los cambios estructurales (crear/destruir entidades o añadir/quitar componentes) deben diferirse a través del `WorldCommandBuffer`. Esto evita inconsistencias al iterar sobre queries activas.
+3.  **Consistencia de Simulación**: Para favorecer la reproducibilidad, se debe evitar el uso de fuentes de tiempo o aleatoriedad externas (como `Math.random()` o `Date.now()`) dentro de los Sistemas. En su lugar, utilice `world.gameplayRandom` y `world.tick`.
