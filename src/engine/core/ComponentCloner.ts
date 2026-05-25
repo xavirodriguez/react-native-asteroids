@@ -68,19 +68,21 @@ export class ComponentCloner {
     }
 
     if (Array.isArray(data)) {
-      const copy = [] as unknown as T;
-      for (let i = 0; i < (data as any).length; i++) {
-        (copy as any)[i] = this.manualDeepClone((data as any)[i]);
+      const copy = new Array(data.length);
+      for (let i = 0; i < data.length; i++) {
+        copy[i] = this.manualDeepClone(data[i]);
       }
-      return copy;
+      return copy as unknown as T;
     }
 
-    const copy = {} as any;
-    for (const key in data) {
-      if (Object.prototype.hasOwnProperty.call(data, key)) {
-        copy[key] = this.manualDeepClone((data as any)[key]);
+    const copy = {} as Record<string, unknown>;
+    const obj = data as Record<string, unknown>;
+
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        copy[key] = this.manualDeepClone(obj[key]);
       }
     }
-    return copy as T;
+    return copy as unknown as T;
   }
 }

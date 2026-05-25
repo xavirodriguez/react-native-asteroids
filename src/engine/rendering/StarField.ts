@@ -8,8 +8,8 @@ import { RandomService } from "../utils/RandomService";
  * @param height Screen height.
  * @returns Array of Star objects.
  */
-export function generateStarField(count: number, width: number, height: number): Star[] {
-  const renderRandom = RandomService.getInstance("render");
+export function generateStarField(count: number, width: number, height: number, world?: import("../core/World").World): Star[] {
+  const renderRandom = world ? world.renderRandom : RandomService.getInstance("render");
   return Array.from({ length: count }, () => ({
     type: "Star",
     x: renderRandom.next() * width,

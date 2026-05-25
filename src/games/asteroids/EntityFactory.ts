@@ -162,7 +162,7 @@ export const createAsteroid = ({ world, x, y, size, deferred }: { world: World; 
   const config = world.getResource<AsteroidConfig>("GameConfig") || GAME_CONFIG;
   const blueprintId = `${size}_asteroid`;
 
-  const gameplayRandom = RandomService.getInstance("gameplay");
+  const gameplayRandom = world.gameplayRandom;
   const radius = config.ASTEROID_RADII[size];
   const angle = gameplayRandom.next() * Math.PI * 2;
   const speed = gameplayRandom.nextRange(60, 160) * (size === "large" ? 1 : size === "medium" ? 1.5 : 2);
@@ -231,7 +231,7 @@ export const createAsteroid = ({ world, x, y, size, deferred }: { world: World; 
 
 export const spawnAsteroidWave = ({ world, count, deferred }: { world: World; count: number, deferred?: boolean }) => {
   const config = world.getResource<AsteroidConfig>("GameConfig") || GAME_CONFIG;
-  const gameplayRandom = RandomService.getInstance("gameplay");
+  const gameplayRandom = world.gameplayRandom;
   for (let i = 0; i < count; i++) {
     let x, y, dist;
     do {
@@ -246,7 +246,7 @@ export const spawnAsteroidWave = ({ world, count, deferred }: { world: World; co
 
 export const createUfo = ({ world, deferred }: { world: World, deferred?: boolean }) => {
   const config = world.getResource<AsteroidConfig>("GameConfig") || GAME_CONFIG;
-  const gameplayRandom = RandomService.getInstance("gameplay");
+  const gameplayRandom = world.gameplayRandom;
   const side = gameplayRandom.next() > 0.5 ? 0 : config.SCREEN_WIDTH;
   const y = gameplayRandom.nextRange(0, config.SCREEN_HEIGHT);
 
@@ -305,7 +305,7 @@ export const createGameState = ({ world, deferred, headless = false }: { world: 
   add({
     ...INITIAL_GAME_STATE,
     lives: config.SHIP_INITIAL_LIVES,
-    stars: headless ? [] : generateStarField(config.STAR_COUNT, config.SCREEN_WIDTH, config.SCREEN_HEIGHT),
+    stars: headless ? [] : generateStarField(config.STAR_COUNT, config.SCREEN_WIDTH, config.SCREEN_HEIGHT, world),
     screenShake: null,
     debugCRT: false,
     type: "GameState"

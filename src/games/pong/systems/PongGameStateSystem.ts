@@ -63,7 +63,7 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
   }
 
   private resetBall(world: World, entity: number, _pos: TransformComponent, _vel: VelocityComponent, direction: "left" | "right"): void {
-    const gameplayRandom = RandomService.getInstance("gameplay");
+    const gameplayRandom = world.gameplayRandom;
 
     world.mutateComponent<TransformComponent>(entity, "Transform", pos => {
         pos.x = this.config!.WIDTH / 2;

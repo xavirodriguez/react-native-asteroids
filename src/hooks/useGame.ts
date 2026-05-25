@@ -122,7 +122,10 @@ export function useGame<
   }, [GameClass, config, initialState]);
 
   const handleInput = useCallback((input: Partial<TInput>) => {
-    game?.setInput(input as Record<string, boolean>);
+    if (!game) return;
+    Object.entries(input).forEach(([action, pressed]) => {
+      game.getInputSystem().setOverride(action, !!pressed);
+    });
   }, [game]);
 
   const togglePause = useCallback(() => {

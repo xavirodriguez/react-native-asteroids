@@ -1,4 +1,5 @@
-import { Component, Entity, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../types/EngineTypes";
+import { Component, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../types/EngineTypes";
+import { Entity } from "./Entity";
 import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
 import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
@@ -22,6 +23,8 @@ interface RegisteredSystem {
  */
 const __DEV__ = process.env.NODE_ENV !== "production";
 const RAW_DATA = Symbol("RAW_DATA");
+
+export { Entity } from "./Entity";
 
 export class World {
   /** @internal */
@@ -106,12 +109,29 @@ export class World {
    */
   public get tick(): number { return this._tick; }
 
+  private _gameplayRandom = new RandomService();
+  private _renderRandom = new RandomService();
+
   /**
    * Provee acceso al generador de números aleatorios diseñado para soportar simulaciones deterministas.
    * El determinismo depende de que el estado del generador sea restaurado correctamente vía snapshots.
    */
   public get gameplayRandom(): RandomService {
-    return RandomService.getInstance("gameplay");
+    return this._gameplayRandom;
+  }
+
+  /**
+   * Provee acceso al generador de números aleatorios para efectos visuales y renderizado.
+   * No garantizado para ser determinista en el rollback.
+   */
+  public get renderRandom(): RandomService {
+    if (RandomService.lockGameplayContext) {
+      throw new Error(
+        `Deterministic violation: 'render' random accessed via world.renderRandom during simulation. ` +
+        `Only 'gameplay' stream is allowed.`
+      );
+    }
+    return this._renderRandom;
   }
 
   /**
@@ -211,7 +231,7 @@ export class World {
    * a performance cost proportional to the number of components and their complexity.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
-    const gameplayRandom = RandomService.getInstance("gameplay");
+    const gameplayRandom = this.gameplayRandom;
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
 
     // Deterministic sort of component types (cached)
@@ -294,7 +314,7 @@ export class World {
         target.structureVersion = this._structureVersion;
         target.stateVersion = this._stateVersion;
         target.seed = gameplayRandom.getSeed();
-        target.rngState = (gameplayRandom as any).seed; // Access internal state for bit-perfect restoration
+        target.rngState = gameplayRandom.getSeed(); // Bit-perfect restoration via getSeed()
         target.accumulator = this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator();
         target.tick = this._tick;
         return target;
@@ -308,7 +328,7 @@ export class World {
       structureVersion: this._structureVersion,
       stateVersion: this._stateVersion,
       seed: gameplayRandom.getSeed(),
-      rngState: (gameplayRandom as any).seed, // Access internal state for bit-perfect restoration
+      rngState: gameplayRandom.getSeed(), // Bit-perfect restoration via getSeed()
       accumulator: this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator(),
       tick: this._tick
     };
@@ -348,10 +368,9 @@ export class World {
     this._tick = state.tick ?? 0;
 
     if (state.rngState !== undefined) {
-        const rng = RandomService.getInstance("gameplay");
-        (rng as any).seed = state.rngState; // Bit-perfect restoration of internal state
+        this.gameplayRandom.setSeed(state.rngState); // Bit-perfect restoration of internal state
     } else if (state.seed !== undefined) {
-        RandomService.getInstance("gameplay").setSeed(state.seed);
+        this.gameplayRandom.setSeed(state.seed);
     }
 
     if (state.accumulator !== undefined) {

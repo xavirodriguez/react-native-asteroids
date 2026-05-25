@@ -40,7 +40,7 @@ export const drawAsteroidsShipSprite: ShapeDrawer<CanvasRenderingContext2D> = (c
 
     // Thrust Propulsion Flame (drawn behind the ship but inside the same rotation block)
     if (input?.thrust) {
-      const renderRandom = RandomService.getInstance("render");
+      const renderRandom = world.renderRandom;
       // In the rotated coordinate system (pointing RIGHT), the rear is at Y = size
       const flameStart = size * 0.8;
       const flameLen = size * (1.5 + renderRandom.next() * 0.5);
@@ -144,7 +144,7 @@ export const drawAsteroidsShip: ShapeDrawer<CanvasRenderingContext2D> = (ctx, en
   // Thrust Propulsion Flame
   if (input?.thrust) {
     ctx.save();
-    const renderRandom = RandomService.getInstance("render");
+    const renderRandom = world.renderRandom;
     const flameLen = size * (1.2 + renderRandom.next() * 0.4);
     const gradient = ctx.createLinearGradient(-size / 2, 0, -flameLen, 0);
     gradient.addColorStop(0, "orange");

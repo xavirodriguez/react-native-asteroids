@@ -50,11 +50,18 @@ export class SpatialPartitioningSystem extends System {
     const viewX = mainCam?.x ?? 0;
     const viewY = mainCam?.y ?? 0;
 
-    // Attempt to get viewport dimensions from a resource, or fallback to standard 800x600
+    // ScreenConfig is a MANDATORY resource for correct spatial culling.
     const screenResource = world.getResource<{ width: number, height: number }>("ScreenConfig");
+    if (!screenResource) {
+        throw new Error(
+            "[SpatialPartitioningSystem] Missing mandatory 'ScreenConfig' resource. " +
+            "Spatial culling and partitioning require explicit viewport dimensions to operate correctly."
+        );
+    }
+
     const camWithDims = mainCam as (Camera2DComponent & { width?: number; height?: number }) | null;
-    const baseW = camWithDims?.width ?? screenResource?.width ?? 800;
-    const baseH = camWithDims?.height ?? screenResource?.height ?? 600;
+    const baseW = camWithDims?.width ?? screenResource.width;
+    const baseH = camWithDims?.height ?? screenResource.height;
 
     const viewW = baseW / (mainCam?.zoom ?? 1);
     const viewH = baseH / (mainCam?.zoom ?? 1);

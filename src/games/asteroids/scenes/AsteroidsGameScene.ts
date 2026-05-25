@@ -72,7 +72,7 @@ export class AsteroidsGameScene extends Scene {
   }
 
   public override onRestartCleanup(): void {
-    const gameplayRandom = RandomService.getInstance("gameplay");
+    const gameplayRandom = this.world.gameplayRandom;
     gameplayRandom.setSeed(this.game.getSeed());
 
     const eventBus = this.world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");

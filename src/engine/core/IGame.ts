@@ -82,12 +82,6 @@ export interface IGame<_TGame = unknown> {
   isGameOver(): boolean;
 
   /**
-   * Intenta actualizar el estado de las acciones de entrada (e.g., "shoot", "moveUp").
-   * @mutates El estado de entrada consumido por la lógica de juego.
-   */
-  setInput(input: Record<string, boolean>): void;
-
-  /**
    * Suscribe un listener que se notificará tras cada actualización lógica.
    * @param listener - Callback que recibe el estado del juego.
    * @returns Función para cancelar la suscripción.

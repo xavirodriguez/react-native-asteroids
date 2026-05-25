@@ -1,45 +1,46 @@
-import { AsteroidsHeadlessSimulation } from "../headless/AsteroidsHeadlessSimulation";
-import { createShip, createGameState } from "../EntityFactory";
+import { AsteroidsGame } from "../AsteroidsGame";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { getLogicalSnapshot } from "./utils/TestHelpers";
 import { InputComponent } from "../types/AsteroidTypes";
 
-describe("AsteroidsHeadlessSimulation Determinism", () => {
+describe("Asteroids ECS Determinism", () => {
     const FIXED_DT = 16.66;
     const SEED = 12345;
 
-    it("should produce identical results from the same seed and inputs", () => {
+    it("should produce identical results from the same seed and inputs", async () => {
         // Run first simulation
         RandomService.resetInstances();
-        const sim1 = new AsteroidsHeadlessSimulation({ seed: SEED });
-        const world1 = sim1.getWorld();
-        createGameState({ world: world1, headless: true });
-        createShip({ world: world1, x: 400, y: 300 });
-        world1.removeComponent(2, "ManualMovement");
+        const game1 = new AsteroidsGame({ headless: true, seed: SEED });
+        await game1.init();
+        const world1 = game1.getWorld();
+
+        const ship1 = world1.query("Ship")[0];
+        if (ship1 !== undefined) world1.removeComponent(ship1, "ManualMovement");
 
         for (let i = 0; i < 60; i++) {
             const thrust = i < 30;
-            world1.mutateComponent<InputComponent>(2, "Input", input => {
+            world1.mutateComponent<InputComponent>(ship1, "Input", input => {
                 input.thrust = thrust;
             });
-            sim1.step(FIXED_DT);
+            game1.runSimulationStep(FIXED_DT, false);
         }
         const snapshot1 = getLogicalSnapshot(world1);
 
         // Run second simulation
         RandomService.resetInstances();
-        const sim2 = new AsteroidsHeadlessSimulation({ seed: SEED });
-        const world2 = sim2.getWorld();
-        createGameState({ world: world2, headless: true });
-        createShip({ world: world2, x: 400, y: 300 });
-        world2.removeComponent(2, "ManualMovement");
+        const game2 = new AsteroidsGame({ headless: true, seed: SEED });
+        await game2.init();
+        const world2 = game2.getWorld();
+
+        const ship2 = world2.query("Ship")[0];
+        if (ship2 !== undefined) world2.removeComponent(ship2, "ManualMovement");
 
         for (let i = 0; i < 60; i++) {
             const thrust = i < 30;
-            world2.mutateComponent<InputComponent>(2, "Input", input => {
+            world2.mutateComponent<InputComponent>(ship2, "Input", input => {
                 input.thrust = thrust;
             });
-            sim2.step(FIXED_DT);
+            game2.runSimulationStep(FIXED_DT, false);
         }
         const snapshot2 = getLogicalSnapshot(world2);
 

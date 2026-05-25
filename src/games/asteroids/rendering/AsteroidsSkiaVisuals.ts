@@ -65,7 +65,7 @@ export const createSkiaShipSpriteDrawer = () => {
 
                 // Thrust Propulsion Flame (inside rotation block)
                 if (input?.thrust) {
-                    const renderRandom = RandomService.getInstance("render");
+                    const renderRandom = world.renderRandom;
                     // Ship points at X+, Rear is at X-
                     const flameStart = -size * 0.8;
                     const flameLen = -size * (1.5 + renderRandom.next() * 0.5);
@@ -271,7 +271,7 @@ export const skiaScreenShakeEffect: EffectDrawer<SkCanvas> = (canvas, _snapshot,
         const gameState = gameStateEntity ? world.getComponent<GameStateComponent>(gameStateEntity, "GameState") : null;
 
         if (gameState?.screenShake && gameState.screenShake.duration > 0) {
-      const renderRandom = RandomService.getInstance("render");
+      const renderRandom = world.renderRandom;
       const shakeX = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
       const shakeY = (renderRandom.next() - 0.5) * gameState.screenShake.intensity;
           canvas.translate(shakeX, shakeY);

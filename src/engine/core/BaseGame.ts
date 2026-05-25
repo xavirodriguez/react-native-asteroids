@@ -205,9 +205,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this._config = config;
     this.currentSeed = (config.gameOptions?.seed as number) ?? this._generateExternalSeed();
 
-    // Initialize streams
-    RandomService.getGameplayRandom().setSeed(this.currentSeed);
-    RandomService.getRenderRandom().setSeed(this.currentSeed ^ 0xDEADBEEF);
+    // Initialize streams on the main world instance
+    this.world.gameplayRandom.setSeed(this.currentSeed);
+    this.world.renderRandom.setSeed(this.currentSeed ^ 0xDEADBEEF);
 
     this.setupLoop();
     this._registerKeyboardListeners();
@@ -335,7 +335,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       }
 
       // 6. DEFERRED EVENTS
-      this.eventBus.processDeferred();
+      this.eventBus.flushDeferred();
 
       this.currentTick++;
       this._notifyListeners();
@@ -484,8 +484,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
       if (seed !== undefined) {
         this.currentSeed = seed;
-        RandomService.getGameplayRandom().setSeed(this.currentSeed);
-        RandomService.getRenderRandom().setSeed(this.currentSeed ^ 0xDEADBEEF);
+        const activeWorld = this.getWorld();
+        activeWorld.gameplayRandom.setSeed(this.currentSeed);
+        activeWorld.renderRandom.setSeed(this.currentSeed ^ 0xDEADBEEF);
       }
 
       this.eventBus.clear();

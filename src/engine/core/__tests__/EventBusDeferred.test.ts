@@ -16,7 +16,7 @@ describe("EventBus Deferred Events", () => {
     eventBus.emitDeferred("test");
     expect(executed).toBe(false);
 
-    eventBus.processDeferred();
+    eventBus.flushDeferred();
     expect(executed).toBe(true);
   });
 
@@ -28,7 +28,7 @@ describe("EventBus Deferred Events", () => {
     eventBus.emitDeferred("1");
     eventBus.emitDeferred("2");
 
-    eventBus.processDeferred();
+    eventBus.flushDeferred();
     expect(order).toEqual([1, 2]);
   });
 
@@ -43,7 +43,7 @@ describe("EventBus Deferred Events", () => {
     });
 
     eventBus.emitDeferred("outer");
-    eventBus.processDeferred();
+    eventBus.flushDeferred();
 
     expect(order).toEqual(["outer_done", "inner_done"]);
   });

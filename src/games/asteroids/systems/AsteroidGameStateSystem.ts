@@ -36,7 +36,7 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
 
   private manageUfoSpawning(world: World): void {
     if (!this.config) return;
-    const gameplayRandom = RandomService.getInstance("gameplay");
+    const gameplayRandom = world.gameplayRandom;
     if (world.query("Ufo").length === 0 && gameplayRandom.chance(this.config.UFO_SPAWN_CHANCE)) {
       createUfo({ world, deferred: true });
     }

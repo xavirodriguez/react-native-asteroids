@@ -18,7 +18,7 @@ export const drawShip = (ctx: CanvasRenderingContext2D, entity: Entity, _pos: { 
     // Improvement 8: Thrust Propulsion Flame
     if (input?.thrust) {
       ctx.save();
-      const renderRandom = RandomService.getInstance("render");
+      const renderRandom = world.renderRandom;
       const flameLen = size * (1.2 + renderRandom.next() * 0.4);
       const gradient = ctx.createLinearGradient(-size / 2, 0, -flameLen, 0);
       gradient.addColorStop(0, "orange");
