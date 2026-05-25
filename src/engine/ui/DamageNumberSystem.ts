@@ -28,7 +28,7 @@ export class DamageNumberSystem extends System {
             element.offsetY = y;
         });
 
-        const renderRandom = RandomService.getRenderRandom();
+        const renderRandom = world.renderRandom;
         commands.addComponent(entity, {
             type: "DamageNumber",
             value,

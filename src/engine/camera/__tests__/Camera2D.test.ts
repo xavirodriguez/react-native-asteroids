@@ -116,15 +116,18 @@ describe("Camera2D System", () => {
     expect(cam.y).toBe(0);
 
     // Move target slightly, still within deadzone
-    const trans = world.getComponent<TransformComponent>(target, "Transform")!;
-    trans.x = 440; // relX = 440 - 400 = 40. < 50.
+    world.mutateComponent<TransformComponent>(target, "Transform", t => {
+      t.x = 440; // relX = 440 - 400 = 40. < 50.
+    });
     cameraSystem.update(world, 16);
     world.flush();
     cam = world.getComponent<Camera2DComponent>(cameraEntity, "Camera2D")!;
     expect(cam.x).toBe(0);
 
     // Move target outside deadzone
-    trans.x = 460; // relX = 460 - 400 = 60. > 50.
+    world.mutateComponent<TransformComponent>(target, "Transform", t => {
+      t.x = 460; // relX = 460 - 400 = 60. > 50.
+    });
     // moveX = 60 - 50 = 10.
     // targetCamX = 0 + 10 = 10.
     cameraSystem.update(world, 1000);

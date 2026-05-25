@@ -124,12 +124,16 @@ export class SpaceInvadersCollisionSystem extends System {
 
       const pos = world.getComponent<TransformComponent>(invader, "Transform");
       if (pos) {
-        this.createExplosion(world, pos.x, pos.y, "#FFFFFF");
+        const explosionX = pos.x;
+        const explosionY = pos.y;
+        const comboText = `x${nextMultiplier}`;
+
+        this.createExplosion(world, explosionX, explosionY, "#FFFFFF");
 
         // Popup de combo flotante
         world.getCommandBuffer().createEntity(popup => {
             // Nota: Usamos nextMultiplier calculado fuera
-            world.getCommandBuffer().addComponent(popup, { type: "Transform", x: pos.x, y: pos.y - 20, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+            world.getCommandBuffer().addComponent(popup, { type: "Transform", x: explosionX, y: explosionY - 20, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
             world.getCommandBuffer().addComponent(popup, {
               type: "Render",
               shape: "text",
@@ -137,9 +141,9 @@ export class SpaceInvadersCollisionSystem extends System {
               color: "#FFFF00",
               rotation: 0,
               zIndex: 100,
-              data: { content: `x${nextMultiplier}` }
+              data: { content: comboText }
             } as RenderComponent);
-            world.getCommandBuffer().addComponent(popup, { type: "UIText", content: `x${nextMultiplier}`, wordWrap: false, maxLines: 1 } as UITextComponent);
+            world.getCommandBuffer().addComponent(popup, { type: "UIText", content: comboText, wordWrap: false, maxLines: 1 } as UITextComponent);
             world.getCommandBuffer().addComponent(popup, { type: "TTL", remaining: 1000, total: 1000 } as TTLComponent);
 
             // Side-effects like Juice are deferred naturally or can be applied here

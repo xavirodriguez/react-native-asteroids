@@ -30,7 +30,9 @@ describe("SpaceInvadersGameStateSystem", () => {
     // Manually set up world for test
     createGameState(world);
     const state = world.getSingleton<GameStateComponent>("GameState")!;
-    state.level = 1;
+    world.mutateSingleton<GameStateComponent>("GameState", gs => {
+      gs.level = 1;
+    });
 
     // First update: count is 0, so it should increment level to 2 and spawn wave
     system.update(world, 16.67);
@@ -46,7 +48,9 @@ describe("SpaceInvadersGameStateSystem", () => {
   it("should detect game over when lives reach 0", () => {
     createGameState(world);
     const state = world.getSingleton<GameStateComponent>("GameState")!;
-    state.lives = 0;
+    world.mutateSingleton<GameStateComponent>("GameState", gs => {
+      gs.lives = 0;
+    });
 
     system.update(world, 16.67);
 

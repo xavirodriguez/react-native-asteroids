@@ -83,13 +83,13 @@ describe("World Versioning (Semantic Split)", () => {
 
     // Pure read
     const retrieved = world.getComponent(entity, "Singleton");
-    expect(retrieved).toBe(comp);
+    expect(retrieved).toMatchObject(comp);
     expect(world.structureVersion).toBe(initialStructure);
     expect(world.stateVersion).toBe(initialState);
 
     // Singleton read (used to have side-effect if frozen)
     const singleton = world.getSingleton("Singleton");
-    expect(singleton).toBe(comp);
+    expect(singleton).toMatchObject(comp);
     expect(world.structureVersion).toBe(initialStructure);
     expect(world.stateVersion).toBe(initialState);
   });

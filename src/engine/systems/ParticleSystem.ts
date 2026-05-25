@@ -85,7 +85,7 @@ export class ParticleSystem extends System {
   }
 
   private spawnParticle(world: World, config: ParticleEmitterConfig): void {
-    const renderRandom = RandomService.getRenderRandom();
+    const renderRandom = world.renderRandom;
     const angle = renderRandom.nextRange(config.angle.min, config.angle.max) * (Math.PI / 180);
     const speed = renderRandom.nextRange(config.speed.min, config.speed.max);
     const lifetime = renderRandom.nextRange(config.lifetime.min, config.lifetime.max) * 1000;

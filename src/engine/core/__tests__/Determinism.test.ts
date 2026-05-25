@@ -43,13 +43,13 @@ describe("Determinism Integration", () => {
     world2.addComponent(e2, { type: "Position", x: 0, y: 0 } as Position);
 
     // Run World 1
-    RandomService.getInstance("gameplay").setSeed(seed);
+    world1.gameplayRandom.setSeed(seed);
     for (let i = 0; i < ticks; i++) {
       world1.update(dt);
     }
 
     // Run World 2
-    RandomService.getInstance("gameplay").setSeed(seed);
+    world2.gameplayRandom.setSeed(seed);
     for (let i = 0; i < ticks; i++) {
       world2.update(dt);
     }
@@ -75,10 +75,10 @@ describe("Determinism Integration", () => {
     const e2 = world2.createEntity();
     world2.addComponent(e2, { type: "Position", x: 0, y: 0 } as Position);
 
-    RandomService.getInstance("gameplay").setSeed(111);
+    world1.gameplayRandom.setSeed(111);
     world1.update(16.66);
 
-    RandomService.getInstance("gameplay").setSeed(222);
+    world2.gameplayRandom.setSeed(222);
     world2.update(16.66);
 
     const state1 = world1.snapshot();
@@ -94,7 +94,7 @@ describe("Determinism Integration", () => {
     const e = world.createEntity();
     world.addComponent(e, { type: "Position", x: 0, y: 0 } as Position);
 
-    RandomService.getInstance("gameplay").setSeed(seed);
+    world.gameplayRandom.setSeed(seed);
 
     // Tick 5 times
     for(let i=0; i<5; i++) world.update(16.66);

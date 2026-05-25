@@ -29,10 +29,11 @@ VIOLATIONS=$(grep -rE "[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+\s*=[^=]" $SEARCH_DIRS | \
     grep -vE "\.(forEach|map|filter|push|pop|shift|unshift|splice)\(" | \
     grep -vE "(\+\+|--)" | \
     grep -v "__tests__" | \
-    grep -vE "(p|c|comp|jComp|stack|render|pos|vel|trans|node|u|h|gs|r|off|offComp|t|ttl|e|n|anim|grid|transform|collider|emitter|gameState|shake|v|trail|point|buffer|input|inputComp|s|target|data)\.")
+    grep -vE "\<(p|c|comp|jComp|stack|render|pos|vel|trans|node|u|h|gs|r|off|offComp|t|ttl|e|n|anim|grid|transform|collider|emitter|gameState|shake|v|trail|point|buffer|input|inputComp|s|target|data)\.")
 
 if [ ! -z "$VIOLATIONS" ]; then
     echo "$VIOLATIONS"
+    EXIT_CODE=1
 fi
 
 echo "--- Structural Mutations during Update ---"
@@ -41,6 +42,7 @@ STRUCTURAL_VIOLATIONS=$(grep -rE "world\.(createEntity|addComponent|removeEntity
 
 if [ ! -z "$STRUCTURAL_VIOLATIONS" ]; then
     echo "$STRUCTURAL_VIOLATIONS"
+    EXIT_CODE=1
     # Note: Some systems might correctly use WorldCommandBuffer, but they should call it on the command buffer, not world.
     # If they call world.addComponent, it's a violation unless it's in an init/register method.
 else
@@ -51,6 +53,7 @@ echo "--- Synchronous Event Emissions ---"
 EMIT_VIOLATIONS=$(grep -r "eventBus.emit(" $SEARCH_DIRS | grep -v "__tests__")
 if [ ! -z "$EMIT_VIOLATIONS" ]; then
     echo "$EMIT_VIOLATIONS"
+    EXIT_CODE=1
 else
     echo "No synchronous event emissions found."
 fi
