@@ -39,7 +39,7 @@ export interface DrawCommand {
   /** [px] Primary dimension. */
   size: number;
   /** Custom vertices for polygons. */
-  vertices: { x: number; y: number }[] | null;
+  vertices: ReadonlyArray<{ readonly x: number; readonly y: number }> | null;
   /** White flash duration in frames. */
   hitFlashFrames: number;
   /** Sorting order. */
@@ -67,7 +67,7 @@ export interface DrawCommandOptions {
   size?: number;
   zIndex?: number;
   entityId: Entity;
-  vertices?: { x: number; y: number }[] | null;
+  vertices?: ReadonlyArray<{ readonly x: number; readonly y: number }> | null;
   hitFlashFrames?: number;
   data?: Record<string, unknown> | null;
 }

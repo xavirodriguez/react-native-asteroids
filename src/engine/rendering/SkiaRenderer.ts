@@ -58,7 +58,7 @@ export class SkiaRenderer implements Renderer {
 
   // Reusable objects for drawing
   private readonly tempPos = { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 };
-  private readonly tempRender: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null } =
+  private readonly tempRender: { shape: string, size: number, color: string, vertices?: ReadonlyArray<{readonly x: number, readonly y: number}> | null, hitFlashFrames: number, data: Record<string, unknown> | null } =
     { shape: "", size: 0, color: "", hitFlashFrames: 0, data: null };
 
   constructor(canvas?: SkCanvas) {
@@ -163,7 +163,7 @@ export class SkiaRenderer implements Renderer {
           lineColor[3] *= this.paint.getAlphaf();
           this.paint.setColor(lineColor);
           this.paint.setStrokeWidth(1);
-          const internalLines = render.data.internalLines as Array<{ x1: number; y1: number; x2: number; y2: number }>;
+          const internalLines = render.data.internalLines as ReadonlyArray<{ readonly x1: number; readonly y1: number; readonly x2: number; readonly y2: number }>;
           internalLines.forEach((line) => {
               canvas.drawLine(line.x1, line.y1, line.x2, line.y2, this.paint);
           });

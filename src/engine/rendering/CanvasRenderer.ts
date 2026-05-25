@@ -52,7 +52,7 @@ export class CanvasRenderer implements Renderer {
 
   // Reusable objects to avoid GC pressure
   private readonly tempPos = { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 };
-  private readonly tempRender: { shape: string, size: number, color: string, vertices?: { x: number, y: number }[] | null, hitFlashFrames: number, data: Record<string, unknown> | null } =
+  private readonly tempRender: { shape: string, size: number, color: string, vertices?: ReadonlyArray<{readonly x: number, readonly y: number}> | null, hitFlashFrames: number, data: Record<string, unknown> | null } =
     { shape: "", size: 0, color: "", hitFlashFrames: 0, data: null };
 
   constructor(ctx?: CanvasRenderingContext2D) {

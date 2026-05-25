@@ -2,9 +2,13 @@ import { Component, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } 
 import { Entity } from "./Entity";
 import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
 
-type DeepReadonly<T> = {
-  readonly [K in keyof T]: T[K] extends object ? DeepReadonly<T[K]> : T[K];
-};
+type DeepReadonly<T> = T extends (...args: any[]) => any
+  ? T
+  : T extends any[]
+  ? ReadonlyArray<DeepReadonly<T[number]>>
+  : T extends object
+  ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+  : T;
 
 import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
@@ -605,9 +609,9 @@ export class World {
   public getComponent<T extends Component>(entity: Entity, type: string): DeepReadonly<T> | undefined {
     const component = this.componentMaps.get(type)?.get(entity) as T | undefined;
     if (__DEV__ && component) {
-      return this.createMutationProxy(component, type, entity);
+      return this.createMutationProxy(component, type, entity) as DeepReadonly<T>;
     }
-    return component;
+    return component as DeepReadonly<T> | undefined;
   }
 
   /**
@@ -1073,7 +1077,7 @@ export class World {
   public getSingleton<T extends Component>(type: string): DeepReadonly<T> | undefined {
     const [entity] = this.query(type);
     if (entity === undefined) return undefined;
-    return this.getComponent(entity, type);
+    return this.getComponent(entity, type) as DeepReadonly<T> | undefined;
   }
 
   /**
