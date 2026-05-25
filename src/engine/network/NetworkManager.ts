@@ -10,7 +10,7 @@ import { EntityReplicator } from "./EntityReplicator";
 
 /**
  * Main entry point for the netcode abstraction.
- * Orchestrates replication and reconciliation strategies.
+ * Intended to orchestrate replication and reconciliation strategies.
  */
 export class NetworkManager {
     private static instances = new Map<string, NetworkManager>();

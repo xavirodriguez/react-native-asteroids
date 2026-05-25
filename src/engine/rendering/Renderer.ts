@@ -56,8 +56,8 @@ export type EffectDrawer<TContext> = (
  *
  * @remarks
  * Renderers are designed as read-only consumers of the {@link World}.
- * The drawing process should never mutate simulation components.
- * The architecture relies on snapshots and interpolation (alpha) to decouple
+ * The drawing process should avoid mutating simulation components.
+ * The architecture is intended to rely on snapshots and interpolation (alpha) to help decouple
  * render frequency from simulation frequency.
  *
  * @public

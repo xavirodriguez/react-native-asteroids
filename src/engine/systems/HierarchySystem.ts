@@ -14,11 +14,11 @@ type Mat3 = [number, number, number, number, number, number];
  * System managing hierarchical spatial transformations.
  *
  * @responsibility Calculate world-space coordinates (X, Y, Rotation, Scale) from local offsets.
- * @responsibility Propagate changes down the entity tree using a topological sort.
- * @responsibility Optimize updates via a dirty-flag propagation system.
+ * @responsibility Propagate changes down the entity tree, typically using a topological sort.
+ * @responsibility Aim to optimize updates via a dirty-flag propagation system.
  *
  * @remarks
- * Implementa una propagación top-down destinada a asegurar que los hijos se calculen
+ * Implementa una propagación top-down orientada a que los hijos se calculen
  * después de sus padres. Utiliza matrices 3x3 para composición de transformaciones.
  * This system bridges the gap between local simulation (movement) and absolute
  * rendering/collision world coordinates.
@@ -46,8 +46,8 @@ export class HierarchySystem extends AbstractHierarchySystem {
    * This system bridges the gap between local simulation (movement) and absolute
    * rendering/collision world coordinates.
    *
-   * @postcondition All `Transform` components marked as dirty (or with dirty parents)
-   * have their `worldX`, `worldY`, `worldRotation`, `worldScaleX`, and `worldScaleY` updated.
+   * @postcondition Intends to update `worldX`, `worldY`, `worldRotation`, `worldScaleX`, and `worldScaleY`
+   * for `Transform` components marked as dirty (or with dirty parents).
    * @sideEffect Resets the `dirty` flag for processed components.
    */
   public update(world: World, _deltaTime: number): void {

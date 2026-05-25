@@ -11,9 +11,9 @@
  * Warning: Some exports may include internal components necessary for extensibility
  * but are not recommended for high-level logic.
  *
- * The engine is designed with the intention of minimizing allocations in hot paths, although it does not
- * guarantee absolute zero-allocation. It aims to facilitate simulation reproducibility
- * under controlled operating conditions.
+ * The engine is designed with the goal of minimizing allocations in hot paths, although it does not
+ * guarantee zero-allocation. It seeks to facilitate simulation reproducibility
+ * when used under controlled operating conditions.
  *
  * ### Standard Units
  *

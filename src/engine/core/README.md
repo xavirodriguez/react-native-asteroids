@@ -22,11 +22,11 @@ Contiene la lógica de ejecución. Los sistemas iteran sobre grupos de entidades
 ## 🔄 El Bucle de Juego (GameLoop)
 
 El motor utiliza un esquema de **Fixed Timestep / Variable Rendering**:
-1.  **Update (Lógica)**: Se ejecuta a una frecuencia fija (60Hz). Garantiza que la física y las reglas de juego sean deterministas.
-2.  **Render (Presentación)**: Se ejecuta tan rápido como permita el hardware. Utiliza un factor de interpolación (`alpha`) para suavizar el movimiento visual entre dos ticks físicos.
+1.  **Update (Lógica)**: Se orienta a una frecuencia fija (60Hz). Diseñado para favorecer que la física y las reglas de juego sean deterministas.
+2.  **Render (Presentación)**: Se ejecuta según el refresco del hardware. Utiliza un factor de interpolación (`alpha`) para suavizar el movimiento visual entre ticks físicos.
 
-## 🛡️ Invariantes y Reglas de Oro
+## 🛡️ Prácticas Recomendadas
 
-1.  **No mutar directamente**: Usa siempre `world.mutateComponent` o `world.mutateSingleton` para asegurar que el sistema de versionado detecte los cambios.
-2.  **Diferir cambios estructurales**: Durante un `update` de sistema, usa el `WorldCommandBuffer` para crear o destruir entidades. Esto evita corromper los iteradores de las queries en curso.
-3.  **Determinismo**: Nunca uses `Math.random()` o `Date.now()` dentro de un Sistema. Usa el `RandomService` y el `world.tick`.
+1.  **Evitar mutación directa**: Se recomienda usar `world.mutateComponent` o `world.mutateSingleton` para ayudar a que el sistema de versionado detecte los cambios.
+2.  **Diferir cambios estructurales**: Durante un `update` de sistema, es aconsejable usar el `WorldCommandBuffer` para crear o destruir entidades. Esto ayuda a evitar la invalidación de los iteradores de las queries en curso.
+3.  **Determinismo**: Se debe evitar el uso de `Math.random()` o `Date.now()` dentro de un Sistema. Utiliza el `RandomService` y el `world.tick` para favorecer la reproducibilidad.

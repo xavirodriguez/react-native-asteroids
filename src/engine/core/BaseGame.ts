@@ -83,46 +83,46 @@ export enum GameStatus {
  *
  * ### Deterministic Simulation vs. Visual Presentation
  *
- * The engine enforces a strict boundary between the authoritative **Deterministic Simulation**
+ * The engine is designed to maintain a boundary between the **Deterministic Simulation**
  * and the **Visual Presentation** layer:
  *
- * - **Deterministic Simulation**: Operates on a fixed time step (`FIXED_DELTA_TIME`). All logic
- *   affecting gameplay (physics, health, scores) MUST happen here. It is designed to be
- *   replayable and synchronized across network clients.
+ * - **Deterministic Simulation**: Operates on a fixed time step (`FIXED_DELTA_TIME`). Logic
+ *   affecting gameplay (physics, health, scores) is intended to happen here. It is designed to
+ *   support replayability and synchronization across network clients under controlled conditions.
  * - **Visual Presentation**: Operates at the display's variable refresh rate. It uses
  *   interpolation between the previous and current simulation states (via `PreviousTransformComponent`)
  *   to provide smooth motion regardless of the simulation tick rate. Visual-only effects
- *   (Juice, Particles, UI) should reside here and NOT affect the simulation state.
+ *   (Juice, Particles, UI) typically reside here and should avoid affecting the simulation state.
  *
  * ### State Classification
  *
- * To ensure determinism, state is classified into the following categories:
+ * To support determinism, state is typically classified into the following categories:
  *
- * 1. **Gameplay Deterministic State**: Authoritative state required for simulation (e.g., `Transform`, `Velocity`, `Health`). Must be serializable.
- * 2. **Presentation-only State**: Visual-only data (e.g., `Render`, `VisualOffset`, `ParticleEmitter`). Does NOT affect gameplay.
- * 3. **Derived/Cache State**: Data computed from authoritative state (e.g., `SpatialGrid` nodes, `worldX`). Can be rebuilt.
+ * 1. **Gameplay Deterministic State**: State intended for simulation (e.g., `Transform`, `Velocity`, `Health`). Should be serializable.
+ * 2. **Presentation-only State**: Visual-only data (e.g., `Render`, `VisualOffset`, `ParticleEmitter`). Typically does NOT affect gameplay simulation.
+ * 3. **Derived/Cache State**: Data computed from authoritative state (e.g., `SpatialGrid` nodes, `worldX`). Designed to be rebuildable.
  * 4. **Debug-only State**: Data used for development tools (e.g., `SystemProfiler` metrics).
  * 5. **Non-serializable Runtime State**: References to services or heavy objects (e.g., `EventBus`, `AudioSystem`).
  *
- * ### Determinism Rules
+ * ### Determinism Guidelines
  *
- * - Presentation logic MUST NOT modify authoritative gameplay state.
- * - Visual effects MUST NOT modify `TransformComponent` if it affects physics or networking.
- * - Randomness in gameplay MUST use `RandomService.getGameplayRandom()`.
- * - Randomness in presentation MUST use `RandomService.getRenderRandom()`.
- * - Snapshots for Replay/Rollback include ONLY authoritative state.
+ * - Presentation logic should avoid modifying authoritative gameplay state.
+ * - Visual effects should avoid modifying `TransformComponent` if it affects physics or networking.
+ * - Randomness in gameplay should use `RandomService.getGameplayRandom()`.
+ * - Randomness in presentation should use `RandomService.getRenderRandom()`.
+ * - Snapshots for Replay/Rollback are intended to include only authoritative state.
  *
- * ### Canonical Execution Pipeline (Fixed Update)
+ * ### Execution Pipeline (Fixed Update)
  *
- * | Order | Phase | Typical Systems | Mutation Rules |
+ * | Order | Phase | Typical Systems | Expected Mutation Rules |
  * | :--- | :--- | :--- | :--- |
- * | 1 | **PRE-UPDATE** | `InterpolationPrepSystem` | May read current Transform, Must mutate `PreviousTransform`. |
- * | 2 | **INPUT** | `UnifiedInputSystem` | Must NOT mutate simulation state. Mutates `InputState` resource. |
- * | 3 | **SIMULATION** (Logic) | `TTLSystem`, `StateMachineSystem`, Game Logic | May mutate any component via `World.mutateComponent`. Structural changes via `WorldCommandBuffer`. |
+ * | 1 | **PRE-UPDATE** | `InterpolationPrepSystem` | Reads Transform, Updates `PreviousTransform`. |
+ * | 2 | **INPUT** | `UnifiedInputSystem` | Typically should NOT mutate simulation state directly. |
+ * | 3 | **SIMULATION** (Logic) | `TTLSystem`, `StateMachineSystem`, Game Logic | May mutate components via `World.mutateComponent`. Structural changes via `WorldCommandBuffer`. |
  * | 4 | **SIMULATION** (Physics) | `MovementSystem`, `FrictionSystem` | Updates `Transform` based on `Velocity`. |
- * | 5 | **COLLISION** | `CollisionSystem2D` | Must NOT mutate Transform/Velocity. Updates `CollisionEvents`. |
+ * | 5 | **COLLISION** | `CollisionSystem2D` | Reads Transform/Velocity. Updates `CollisionEvents`. |
  * | 6 | **GAME RULES** | `PhysicsSystem2D` (Resolution), Health/Damage | Resolves physics, applies damage, triggers game-over. |
- * | 7 | **TRANSFORM** | `HierarchySystem` | Propagates world matrices. Must NOT mutate local Transform. |
+ * | 7 | **TRANSFORM** | `HierarchySystem` | Propagates world matrices. |
  * | 8 | **PRESENTATION** | `JuiceSystem`, `ParticleSystem`, `AudioSystem` | Visual-only mutations. Triggers deferred events (SFX). |
  * | 9 | **REPLAY/FLUSH** | `ReplayRecorder`, `World.flush` | Captures state. Applies deferred structural changes. |
  * | 10 | **DEFERRED** | `EventBus.processDeferred` | Side effects (SFX, logs) isolated from core simulation. |

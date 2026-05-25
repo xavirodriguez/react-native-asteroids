@@ -3,7 +3,7 @@
  */
 
 /**
- * Service providing seeded, deterministic random number generation.
+ * Service providing seeded, pseudo-random number generation intended for deterministic use cases.
  */
 export class RandomService {
   private seed: number;
@@ -21,7 +21,7 @@ export class RandomService {
   }
 
   /**
-   * Genera un número aleatorio de punto flotante en el rango [0, 1).
+   * Genera un número pseudo-aleatorio de punto flotante en el rango [0, 1).
    */
   public next(): number {
     let t = (this.seed = (this.seed + 0x6d2b79f5) | 0);
