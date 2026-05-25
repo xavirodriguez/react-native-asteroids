@@ -91,8 +91,8 @@ export class CCDSystem extends System {
     world: World, entity: Entity,
     startX: number, startY: number,
     dx: number, dy: number,
-    col: Collider2DComponent,
-    ccd: ContinuousColliderComponent,
+    col: Readonly<Collider2DComponent>,
+    ccd: Readonly<ContinuousColliderComponent>,
     dt: number
   ): void {
     const entities = world.query("Transform", "Collider2D");
@@ -159,10 +159,10 @@ export class CCDSystem extends System {
 
   private resolveSubstepCCD(
     world: World, entity: Entity,
-    trans: TransformComponent,
-    vel: VelocityComponent,
-    col: Collider2DComponent,
-    ccd: ContinuousColliderComponent,
+    trans: Readonly<TransformComponent>,
+    vel: Readonly<VelocityComponent>,
+    col: Readonly<Collider2DComponent>,
+    ccd: Readonly<ContinuousColliderComponent>,
     dt: number
   ): void {
     const maxSteps = ccd.maxSubSteps ?? 4;
@@ -203,8 +203,8 @@ export class CCDSystem extends System {
     world: World, entity: Entity,
     startX: number, startY: number,
     dx: number, dy: number,
-    col: Collider2DComponent,
-    ccd: ContinuousColliderComponent,
+    col: Readonly<Collider2DComponent>,
+    ccd: Readonly<ContinuousColliderComponent>,
     dt: number,
     ignored: Set<Entity>
   ): void {

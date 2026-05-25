@@ -53,7 +53,7 @@ export class RaycastTests {
     return null;
   }
 
-  static rayVsPolygon(ray: Ray, vertices: Array<{x: number, y: number}>, px: number, py: number, pr: number): { t: number, nx: number, ny: number } | null {
+  static rayVsPolygon(ray: Ray, vertices: ReadonlyArray<{readonly x: number, readonly y: number}>, px: number, py: number, pr: number): { t: number, nx: number, ny: number } | null {
       // Ray vs Polygon: Ray cast against each edge
       let minT = Infinity;
       let hitNormal = { x: 0, y: 0 };

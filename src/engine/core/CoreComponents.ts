@@ -211,7 +211,7 @@ export interface CollisionEvent {
   normalX?: number;
   normalY?: number;
   depth?: number;
-  contactPoints?: Array<{ x: number; y: number }>;
+  contactPoints?: ReadonlyArray<{ readonly x: number; readonly y: number }>;
 }
 
 export interface CollisionEventsComponent extends Component {
@@ -309,7 +309,7 @@ export interface RenderComponent extends Component {
   /** [rad/s] Velocidad de rotación cosmética. */
   angularVelocity?: number;
   /** Optional custom vertices for polygon shapes. */
-  vertices?: { x: number; y: number }[];
+  vertices?: ReadonlyArray<{ readonly x: number; readonly y: number }>;
   /** Rendering order. Higher values are drawn on top. */
   zIndex?: number;
   /** Number of frames to display a white overlay (hit effect). */
@@ -430,7 +430,7 @@ export interface ParticleEmitterConfig {
   speed: { min: number; max: number };
   lifetime: { min: number; max: number };
   size: { min: number; max: number };
-  color: string[];
+  color: readonly string[];
   position?: { x: number; y: number };
 }
 
@@ -519,7 +519,7 @@ export interface Camera2DComponent extends Component {
   /** Inner region where targets can move without shifting the camera. */
   deadzone: AABB | null;
   /** List of entities for average-position tracking. */
-  targets: Entity[];
+  targets: ReadonlyArray<Entity>;
   /** Primary entity the camera should focus on. */
   targetEntity?: Entity;
   /** If true, this camera is used as the primary viewport for culling and rendering. */

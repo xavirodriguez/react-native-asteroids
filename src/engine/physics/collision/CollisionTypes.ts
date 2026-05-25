@@ -33,5 +33,5 @@ export interface CollisionManifold {
    * @remarks
    * Inferred: typically one or two points in 2D manifold generation.
    */
-  contactPoints: Array<{ x: number; y: number }>;
+  contactPoints: ReadonlyArray<{ readonly x: number; readonly y: number }>;
 }

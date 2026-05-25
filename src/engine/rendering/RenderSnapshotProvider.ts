@@ -21,9 +21,9 @@ export class RenderSnapshotProvider {
     ): RenderSnapshot {
         // 0. Camera selection and data
         const cameras = world.query("Camera2D");
-        let mainCam: Camera2DComponent | null = null;
+        let mainCam: Readonly<Camera2DComponent> | null = null;
         for (const camEntity of cameras) {
-            const cam = world.getComponent<Camera2DComponent>(camEntity, "Camera2D")!;
+            const cam = world.getComponent(camEntity, "Camera2D") as Readonly<Camera2DComponent>;
             if (cam.isMain || !mainCam) {
                 mainCam = cam;
                 if (cam.isMain) break;

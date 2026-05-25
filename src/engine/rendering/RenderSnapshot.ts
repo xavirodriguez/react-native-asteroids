@@ -37,7 +37,7 @@ export interface RenderEntitySnapshot {
   color: string;
   /** [px] Primary size. */
   size: number;
-  vertices: { x: number, y: number }[] | null;
+  vertices: ReadonlyArray<{ readonly x: number, readonly y: number }> | null;
   /** White hit-effect frames remaining. */
   hitFlashFrames: number;
   /** Custom drawer metadata. */
