@@ -41,10 +41,15 @@ export class PongCollisionSystem extends System {
         const paddleComp = world.getComponent<PaddleComponent>(paddleEntity, "Paddle")!;
 
         world.mutateComponent<VelocityComponent>(ballEntity, "Velocity", (ballVel) => {
+            // Guard: Only reflect if moving towards the paddle's face
+            // AND ensure it hasn't already passed the paddle's horizontal center line too far
             const isMovingTowardsPaddle = (paddleComp.side === "left" && ballVel.dx < 0) ||
                                           (paddleComp.side === "right" && ballVel.dx > 0);
 
-            if (isMovingTowardsPaddle) {
+            const isCorrectSide = (paddleComp.side === "left" && ballPos.x >= paddlePos.x) ||
+                                  (paddleComp.side === "right" && ballPos.x <= paddlePos.x);
+
+            if (isMovingTowardsPaddle && isCorrectSide) {
                 // Reverse ball direction on x-axis
                 ballVel.dx *= -1;
 
@@ -55,6 +60,15 @@ export class PongCollisionSystem extends System {
                 // Increase speed slightly
                 ballVel.dx *= this.config!.BALL_SPEED_INC;
                 ballVel.dy *= this.config!.BALL_SPEED_INC;
+
+                // Clamp local speed to avoid sudden spikes
+                const maxLocalSpeed = this.config!.BALL_SPEED_START * 3;
+                const currentSpeedSq = ballVel.dx * ballVel.dx + ballVel.dy * ballVel.dy;
+                if (currentSpeedSq > maxLocalSpeed * maxLocalSpeed) {
+                  const scale = maxLocalSpeed / Math.sqrt(currentSpeedSq);
+                  ballVel.dx *= scale;
+                  ballVel.dy *= scale;
+                }
 
                 // Spin Logic & Charged Smash
                 let charge = 0;
@@ -99,23 +113,6 @@ export class PongCollisionSystem extends System {
                 }
             }
 
-            // Velocity Guardrail
-            const maxSpeed = this.config!.BALL_SPEED_START * 5;
-
-            // Finite check
-            if (!Number.isFinite(ballVel.dx) || !Number.isFinite(ballVel.dy)) {
-              ballVel.dx = paddleComp.side === "left" ? this.config!.BALL_SPEED_START : -this.config!.BALL_SPEED_START;
-              ballVel.dy = 0;
-            }
-
-            // Magnitude clamp
-            const currentSpeedSq = ballVel.dx * ballVel.dx + ballVel.dy * ballVel.dy;
-            if (currentSpeedSq > maxSpeed * maxSpeed) {
-              const currentSpeed = Math.sqrt(currentSpeedSq);
-              const scale = maxSpeed / currentSpeed;
-              ballVel.dx *= scale;
-              ballVel.dy *= scale;
-            }
         });
 
         // Reposition ball to prevent multiple collisions

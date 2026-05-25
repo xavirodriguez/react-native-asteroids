@@ -24,7 +24,7 @@ export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
     }
 
     // Monitor ball position for scoring
-    const balls = world.query("Ball", "Transform");
+    const balls = world.query("Ball", "Transform", "Velocity");
     balls.forEach(ballEntity => {
         const pos = world.getComponent<TransformComponent>(ballEntity, "Transform")!;
         const vel = world.getComponent<VelocityComponent>(ballEntity, "Velocity")!;

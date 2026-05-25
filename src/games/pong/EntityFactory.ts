@@ -61,7 +61,15 @@ export const PongEntityFactory = {
       isTrigger: false,
       enabled: true
     } as Collider2DComponent);
-    add({ type: "Boundary", width: config.WIDTH, height: config.HEIGHT, behavior: "bounce", bounceX: false, bounceY: true } as BoundaryComponent);
+    // Classic Pong: Bounce only on Top/Bottom (Y), Score on Left/Right (X)
+    add({
+      type: "Boundary",
+      width: config.WIDTH,
+      height: config.HEIGHT,
+      behavior: "bounce",
+      bounceX: false,
+      bounceY: true
+    } as BoundaryComponent);
     add({ type: "Tag", tags: ["Ball"] } as TagComponent);
     add({ type: "Ball", spinFactor: 0, spinDecay: 0.02 } as BallComponent);
     return ball;
