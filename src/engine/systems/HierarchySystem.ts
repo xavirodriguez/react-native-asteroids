@@ -70,23 +70,22 @@ export class HierarchySystem extends AbstractHierarchySystem {
       const isDirty = transform.dirty || parentDirty;
 
       if (isDirty) {
-        const mutTransform = world.getMutableComponent<TransformComponent>(entity, "Transform")!;
-        if (mutTransform.parentEntity !== null) {
-          const parentTransform = world.getComponent<TransformComponent>(mutTransform.parentEntity, "Transform");
-          if (!parentTransform) {
+        world.mutateComponent<TransformComponent>(entity, "Transform", mutTransform => {
+          if (mutTransform.parentEntity !== null) {
+            const parentTransform = world.getComponent<TransformComponent>(mutTransform.parentEntity, "Transform");
+            if (!parentTransform) {
+              this.setToLocal(mutTransform);
+            } else {
+              const parentMat = this.getMatrixFromTransform(parentTransform, true);
+              const localMat = this.getMatrixFromTransform(mutTransform, false);
+              const worldMat = this.multiplyMat3(parentMat, localMat);
+              this.applyMatrixToWorldTransform(mutTransform, worldMat);
+            }
+          } else {
             this.setToLocal(mutTransform);
-            mutTransform.dirty = false;
-            this.wasDirty.add(entity);
-            continue;
           }
-          const parentMat = this.getMatrixFromTransform(parentTransform, true);
-          const localMat = this.getMatrixFromTransform(mutTransform, false);
-          const worldMat = this.multiplyMat3(parentMat, localMat);
-          this.applyMatrixToWorldTransform(mutTransform, worldMat);
-        } else {
-          this.setToLocal(mutTransform);
-        }
-        mutTransform.dirty = false;
+          mutTransform.dirty = false;
+        });
         this.wasDirty.add(entity);
       }
     }

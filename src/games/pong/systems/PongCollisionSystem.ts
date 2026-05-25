@@ -58,22 +58,14 @@ export class PongCollisionSystem extends System {
 
                 // Spin Logic & Charged Smash
                 let charge = 0;
+                let shouldCreateEmitter = false;
+                const spin = Math.max(-1, Math.min(1, paddleComp.lastVelocityY / 1000));
+
                 world.mutateComponent(ballEntity, "Ball", ballComp => {
-                    const spin = Math.max(-1, Math.min(1, paddleComp.lastVelocityY / 1000));
                     if (Math.abs(spin) > 0.3) {
                       ballComp.spinFactor = spin * 0.8;
                       ballComp.spinDecay = 0.02;
-
-                      createEmitter(world, {
-                        position: { x: ballPos.x, y: ballPos.y },
-                        rate: 0, burst: 6,
-                        color: ["#FFFF00", "#88FFFF"],
-                        size: {min:1, max:3},
-                        speed: {min:40, max:100},
-                        angle: {min:0, max:360},
-                        lifetime: {min:0.1, max:0.3},
-                        loop: false
-                      });
+                      shouldCreateEmitter = true;
                     }
 
                     if (Math.abs(paddleComp.lastVelocityY) > 600) {
@@ -87,6 +79,19 @@ export class PongCollisionSystem extends System {
                       ballComp.visibilityTimer = this.config!.BALL_INVISIBLE_AFTER_HIT_TICKS;
                     }
                 });
+
+                if (shouldCreateEmitter) {
+                  createEmitter(world, {
+                    position: { x: ballPos.x, y: ballPos.y },
+                    rate: 0, burst: 6,
+                    color: ["#FFFF00", "#88FFFF"],
+                    size: {min:1, max:3},
+                    speed: {min:40, max:100},
+                    angle: {min:0, max:360},
+                    lifetime: {min:0.1, max:0.3},
+                    loop: false
+                  });
+                }
 
                 if (charge > 0) {
                   ballVel.dx *= (1 + 0.2 * charge);

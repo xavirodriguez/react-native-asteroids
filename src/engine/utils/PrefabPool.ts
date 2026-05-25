@@ -45,7 +45,7 @@ export class PrefabPool<T extends Record<string, Component>, I> {
 
     // Force a state sync for all components added
     for (const key in components) {
-        world.getMutableComponent(entity, components[key].type);
+        world.mutateComponent(entity, components[key].type, () => {});
     }
 
     return entity;

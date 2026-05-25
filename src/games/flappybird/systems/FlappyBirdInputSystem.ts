@@ -36,38 +36,49 @@ export class FlappyBirdInputSystem extends System {
       const bird = world.getComponent<BirdComponent>(entity, "Bird");
 
       if (input && vel && bird && bird.isAlive) {
-        const mutableInput = world.getMutableComponent<FlappyBirdInputComponent>(entity, "FlappyInput")!;
-        const mutableVel = world.getMutableComponent<VelocityComponent>(entity, "Velocity")!;
-        const mutableBird = world.getMutableComponent<BirdComponent>(entity, "Bird")!;
+        let shouldFlap = false;
+        
+        // Sync input state & timers
+        world.mutateComponent<FlappyBirdInputComponent>(entity, "FlappyInput", mutableInput => {
+          mutableInput.flap = flapRequested;
+          mutableInput.glide = flapRequested; // Using same button for now as per design
 
-        // Sync input state
-        mutableInput.flap = flapRequested;
-        mutableInput.glide = flapRequested; // Using same button for now as per design
+          if (mutableInput.flapCooldownRemaining > 0) {
+            mutableInput.flapCooldownRemaining -= deltaTime;
+          }
 
-        if (mutableInput.flapCooldownRemaining > 0) {
-          mutableInput.flapCooldownRemaining -= deltaTime;
-        }
+          // Apply flap buffer
+          if (mutableInput.flap) {
+            InputBufferSystem.buffer(world, entity, "flap");
+          }
 
-        // Apply flap
-        if (mutableInput.flap) {
-          InputBufferSystem.buffer(world, entity, "flap");
-        }
+          if (mutableInput.flapCooldownRemaining <= 0 && (mutableInput.flap || InputBufferSystem.consume(world, entity, "flap"))) {
+            shouldFlap = true;
+            mutableInput.flapCooldownRemaining = this.config.FLAP_COOLDOWN;
+          }
+        });
 
-        if (mutableInput.flapCooldownRemaining <= 0 && (mutableInput.flap || InputBufferSystem.consume(world, entity, "flap"))) {
-          mutableVel.dy = this.config.FLAP_STRENGTH;
-          mutableInput.flapCooldownRemaining = this.config.FLAP_COOLDOWN;
+        if (shouldFlap) {
+          world.mutateComponent<VelocityComponent>(entity, "Velocity", mutableVel => {
+            mutableVel.dy = this.config.FLAP_STRENGTH;
+          });
           hapticShoot();
-
           // Juice: Squash al aletear
           Juice.squash(world, entity, 1.2, 0.8, 50);
         }
 
         // Apply gravity
         const dt = deltaTime / 1000;
-        mutableVel.dy += (this.config.GRAVITY || FLAPPY_CONFIG.GRAVITY) * dt;
+        let nextVelY = 0;
+        world.mutateComponent<VelocityComponent>(entity, "Velocity", v => {
+          v.dy += (this.config.GRAVITY || FLAPPY_CONFIG.GRAVITY) * dt;
+          nextVelY = v.dy;
+        });
 
         // Sync bird component velocityY
-        mutableBird.velocityY = mutableVel.dy;
+        world.mutateComponent<BirdComponent>(entity, "Bird", b => {
+          b.velocityY = nextVelY;
+        });
       }
     });
   }
