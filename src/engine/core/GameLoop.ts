@@ -11,7 +11,7 @@ export interface GameLoopConfig {
 
 /**
  * Motor de tiempo central que orquesta el ciclo de vida del juego.
- * Implementa un Fixed Timestep con interpolación orientado a favorecer la reproducibilidad y la fluidez visual.
+ * Implementa un Fixed Timestep con interpolación diseñado para favorecer la reproducibilidad y la fluidez visual.
  *
  * @responsibility Intentar mantener una tasa de actualización constante (60Hz) para la simulación física.
  * @responsibility Calcular el factor de interpolación (alpha) para el renderizado visual.
@@ -22,11 +22,12 @@ export interface GameLoopConfig {
  * variaciones en el rendimiento del renderizado reduzcan su impacto en la integridad de la física.
  * Bajo carga extrema, el sistema puede limitar las actualizaciones para preservar la estabilidad del hilo principal.
  *
- * @remarks La fase de simulación está diseñada para recibir incrementos constantes de 16.67ms (1/60s) bajo condiciones operativas normales,
- * aunque la precisión real depende del entorno de ejecución (JS Event Loop, performance.now()).
+ * @remarks La fase de simulación está diseñada para recibir incrementos constantes de 16.67ms (1/60s) bajo condiciones operativas normales.
+ * En la práctica, la precisión real depende del entorno de ejecución (JS Event Loop, variabilidad de performance.now() y carga del sistema).
  *
  * @conceptualRisk [PERFORMANCE][HIGH] El loop de `GameLoop` puede disparar el "Spiral of Death"
- * si la simulación es consistentemente más lenta que el tiempo real, a pesar del límite `maxDeltaMs`.
+ * si la simulación es consistentemente más lenta que el tiempo real. Se incluye un mecanismo de seguridad
+ * (`maxUpdatesPerFrame`) para mitigar este riesgo a costa de perder precisión temporal.
  */
 export class GameLoop {
   private isRunning = false;
@@ -80,8 +81,10 @@ export class GameLoop {
    * @remarks
    * Esta fase está orientada a la reproducibilidad de la simulación. El sistema está diseñado con la intención de que
    * el callback reciba un incremento de tiempo constante (16.67ms). En la práctica, puede ejecutarse múltiples veces
-   * en un solo frame del navegador para compensar el tiempo transcurrido, hasta un límite máximo
-   * definido en la configuración para ayudar a prevenir bloqueos del hilo principal.
+   * en un solo frame del navegador para compensar el tiempo transcurrido.
+   *
+   * Para prevenir bloqueos del hilo principal (Spiral of Death), el número de actualizaciones por frame está
+   * limitado por `maxUpdatesPerFrame`. Superar este límite resultará en la pérdida de ticks de simulación.
    *
    * @param listener - Función que recibe el fixedDeltaTime (16.67ms).
    * @returns Una función para cancelar la suscripción.
@@ -149,10 +152,13 @@ export class GameLoop {
    *
    * @remarks
    * Implementa el algoritmo de **Acumulador de Tiempo** para un Fixed Timestep:
-   * 1. Calcula `deltaTime` limitado por `maxDeltaMs` (para evitar saltos gigantes tras una pausa).
+   * 1. Calcula `deltaTime` limitado por `maxDeltaMs` (para evitar saltos gigantes tras una pausa o pérdida de foco).
    * 2. Añade `deltaTime` al `accumulator`.
-   * 3. Ejecuta la fase de simulación en pasos fijos de 16.66ms mientras el acumulador lo permita.
+   * 3. Ejecuta la fase de simulación en pasos fijos de 16.67ms mientras el acumulador lo permita.
    * 4. Calcula `alpha` como la fracción de tiempo sobrante para la interpolación visual.
+   *
+   * Bajo condiciones ideales, este sistema busca un comportamiento determinista. Sin embargo, factores externos
+   * del entorno JS pueden inducir variaciones menores en el timing.
    */
   private loop = (currentTime: number): void => {
     if (!this.isRunning) return;

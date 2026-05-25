@@ -15,14 +15,19 @@ import { InputSerializer, InputBurstPayload } from "../../../multiplayer/InputSe
 
 /**
  * Strategy for full prediction and rollback reconciliation.
- * Used for fast-paced games like Asteroids.
+ * Designed for fast-paced games with high interactivity requirements.
  *
- * Implements the Rollback Netcode pattern:
- * 1. Prediction: Apply local inputs immediately.
- * 2. Storage: Keep a history of inputs and world snapshots.
- * 3. Comparison: When server updates arrive, check for desyncs.
- * 4. Rewind: Restore world to the last known-good state.
- * 5. Fast-Forward: Re-simulate from rewind point to current tick.
+ * Implements a Rollback Netcode pattern:
+ * 1. Prediction: Apply local inputs immediately for low perceived latency.
+ * 2. History: Maintains a buffer of recent inputs and world state snapshots.
+ * 3. Validation: Compares predicted state against authoritative server snapshots.
+ * 4. Rewind & Fast-Forward: If a desync is detected, the world is restored to the
+ *    last known-good state and re-simulated up to the current tick.
+ *
+ * @remarks
+ * This strategy demands a high degree of determinism in the underlying simulation
+ * and carries a significant CPU cost during rollback frames, as multiple simulation
+ * ticks may be executed in a single frame.
  */
 export class FullReconciliationStrategy implements ReconciliationStrategy {
     private predictionBuffer = new PredictionBuffer();
@@ -175,7 +180,14 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
     }
 
     /**
-     * Re-simulation loop (Rewind + Fast-Forward)
+     * Re-simulation loop (Rewind + Fast-Forward).
+     *
+     * @remarks
+     * This process is designed to correct prediction errors by restoring the world
+     * to a confirmed server state and re-applying local inputs.
+     *
+     * @warning The cost of this operation is O(N) where N is the number of ticks
+     * between the authoritative update and the current client tick.
      */
     private executeRollback(serverTick: number, authoritativeSnapshot: WorldSnapshot, localPlayerId?: number) {
         const world = this.game.getWorld();

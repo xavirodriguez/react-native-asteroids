@@ -4,6 +4,14 @@ import { InputFrame } from "../../multiplayer/NetTypes";
 
 /**
  * Interface for network reconciliation and interpolation strategies.
+ *
+ * @remarks
+ * Strategies implementing this interface define how the local world state
+ * is synchronized with authoritative server updates. Common implementations
+ * include Rollback (prediction + rewind) and Snapshot Interpolation.
+ *
+ * Each strategy is expected to manage its own internal buffers and history
+ * to maintain consistency based on its specific requirements.
  */
 export interface ReconciliationStrategy {
     /**

@@ -107,7 +107,8 @@ export class World {
   public get tick(): number { return this._tick; }
 
   /**
-   * Provee acceso al generador de números aleatorios determinista para la simulación.
+   * Provee acceso al generador de números aleatorios diseñado para soportar simulaciones deterministas.
+   * El determinismo depende de que el estado del generador sea restaurado correctamente vía snapshots.
    */
   public get gameplayRandom(): RandomService {
     return RandomService.getInstance("gameplay");
@@ -196,15 +197,18 @@ export class World {
   }
 
   /**
-   * Generates a serializable snapshot of the entire world state for rollback or persistence.
+   * Generates a serializable snapshot of the world state, intended for rollback or persistence.
    *
    * @remarks
-   * The snapshot is a deep-cloned representation of the world state, designed to be deterministic.
-   * Under typical usage, it aims to ensure that:
+   * The snapshot is a deep-cloned representation of the world state, designed to facilitate
+   * deterministic state restoration. Under typical usage, it aims to ensure that:
    * 1. Entity lists are sorted by ID.
    * 2. Component types are sorted alphabetically.
    * 3. Component data per type is stored in entity-order.
    * 4. Most functional or non-serializable data (like event handlers) is stripped.
+   *
+   * @warning Deep cloning is used to ensure snapshot independence, but this carries
+   * a performance cost proportional to the number of components and their complexity.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const gameplayRandom = RandomService.getInstance("gameplay");
@@ -314,9 +318,12 @@ export class World {
    * Restores the world state from a previously captured snapshot.
    *
    * @remarks
-   * This method performs a deep restoration, intended to make the world
+   * This method performs a deep restoration, intended to make the world state
    * independent of the snapshot object. It rebuilds internal indexes and
    * re-synchronizes queries to maintain structural integrity.
+   *
+   * @warning Manual restoration of resources or external state not included in the
+   * snapshot must be handled separately to maintain consistency.
    */
   public restore(state: WorldSnapshot): void {
     this.assertCanMutateStructure("restore");
@@ -509,8 +516,10 @@ export class World {
    *
    * @remarks
    * **MANDATORY**: This method MUST NOT be called during the world's update cycle
-   * (`isUpdating === true`). Doing so will throw an error to protect iterator safety.
+   * (`isUpdating === true`) to protect iterator safety. Doing so will throw an error.
    * Use {@link World.getCommandBuffer} to queue component additions during updates.
+   *
+   * To update data in an existing component, prefer {@link World.mutateComponent}.
    *
    * API status: Public
    */
@@ -601,9 +610,10 @@ export class World {
    * Performs an immediate mutation on a component.
    *
    * @remarks
-   * This is the recommended **AUTHORITATIVE** way to modify component data. Direct property
-   * assignments on component references retrieved via `getComponent` are discouraged
-   * in development as they may bypass the engine's state versioning and change detection.
+   * This is the recommended **AUTHORITATIVE** way to modify component data. It ensures
+   * that state versioning, change detection, and render-dirty flags are correctly updated.
+   * Direct property assignments on component references retrieved via `getComponent` are
+   * discouraged and may be blocked in development mode.
    *
    * API status: Public
    */
