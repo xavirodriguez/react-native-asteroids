@@ -74,23 +74,23 @@ describe("World", () => {
   describe("Component Management", () => {
     it("should add and retrieve a component", () => {
       const entity = world.createEntity();
-      const pos: TransformComponent = { type: "Transform", x: 10, y: 20 };
+      const pos: TransformComponent = { type: "Transform", x: 10, y: 20, parentEntity: null };
       world.addComponent(entity, pos);
 
       expect(world.hasComponent(entity, "Transform")).toBe(true);
       const retrieved = world.getComponent<TransformComponent>(entity, "Transform");
-      expect(retrieved).toBe(pos);
+      expect(retrieved).toMatchObject(pos);
     });
 
     it("should overwrite a component of the same type", () => {
       const entity = world.createEntity();
-      const pos1: TransformComponent = { type: "Transform", x: 10, y: 20 };
-      const pos2: TransformComponent = { type: "Transform", x: 30, y: 40 };
+      const pos1: TransformComponent = { type: "Transform", x: 10, y: 20, parentEntity: null };
+      const pos2: TransformComponent = { type: "Transform", x: 30, y: 40, parentEntity: null };
 
       world.addComponent(entity, pos1);
       world.addComponent(entity, pos2);
 
-      expect(world.getComponent<TransformComponent>(entity, "Transform")).toBe(pos2);
+      expect(world.getComponent<TransformComponent>(entity, "Transform")).toMatchObject(pos2);
     });
 
     it("should increment structureVersion when adding a NEW component type", () => {

@@ -1,6 +1,11 @@
 import { Component, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../types/EngineTypes";
 import { Entity } from "./Entity";
 import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
+
+type DeepReadonly<T> = {
+  readonly [K in keyof T]: T[K] extends object ? DeepReadonly<T[K]> : T[K];
+};
+
 import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { ComponentCloner } from "./ComponentCloner";
@@ -595,11 +600,11 @@ export class World {
    *
    * API status: Public
    */
-  public getComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): Readonly<ComponentOf<TType>> | undefined;
-   /** @internal */ public getComponent<T extends Component>(entity: Entity, type: string): Readonly<T> | undefined;
-  public getComponent<T extends Component>(entity: Entity, type: string): Readonly<T> | undefined {
+  public getComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): DeepReadonly<ComponentOf<TType>> | undefined;
+   /** @internal */ public getComponent<T extends Component>(entity: Entity, type: string): DeepReadonly<T> | undefined;
+  public getComponent<T extends Component>(entity: Entity, type: string): DeepReadonly<T> | undefined {
     const component = this.componentMaps.get(type)?.get(entity) as T | undefined;
-    if (__DEV__ && component && process.env.NODE_ENV !== 'test') {
+    if (__DEV__ && component) {
       return this.createMutationProxy(component, type, entity);
     }
     return component;
@@ -864,6 +869,8 @@ export class World {
    * Retrieves a registered global resource.
    */
   getResource<T>(name: string): T | undefined {
+    if (name === "gameplay") return this.gameplayRandom as unknown as T;
+    if (name === "render") return this.renderRandom as unknown as T;
     return this.resources.get(name) as T;
   }
 
@@ -1061,9 +1068,9 @@ export class World {
   /**
    * Tries to locate the first component of a given type, treating it as a Singleton.
    */
-  public getSingleton<TType extends AnyCoreComponent["type"]>(type: TType): Readonly<ComponentOf<TType>> | undefined;
-  public getSingleton<T extends Component>(type: string): Readonly<T> | undefined;
-  public getSingleton<T extends Component>(type: string): Readonly<T> | undefined {
+  public getSingleton<TType extends AnyCoreComponent["type"]>(type: TType): DeepReadonly<ComponentOf<TType>> | undefined;
+  public getSingleton<T extends Component>(type: string): DeepReadonly<T> | undefined;
+  public getSingleton<T extends Component>(type: string): DeepReadonly<T> | undefined {
     const [entity] = this.query(type);
     if (entity === undefined) return undefined;
     return this.getComponent(entity, type);

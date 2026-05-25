@@ -94,7 +94,8 @@ export class ComponentSetPool<T extends Record<string, Component>> {
 
     for (const key in this.keyToType) {
       const type = this.keyToType[key];
-      const comp = world.getComponent(entity, type);
+      // Use getMutableComponent to avoid mutation proxy when releasing/resetting components
+      const comp = world.getMutableComponent(entity, type);
       if (comp) {
         components[key as keyof T] = comp as T[keyof T];
       } else {

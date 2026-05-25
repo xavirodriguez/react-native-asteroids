@@ -53,7 +53,7 @@ export class LootSystem extends System {
 
     if (!loot || !transform) return;
 
-    const random = RandomService.getGameplayRandom();
+    const random = world.gameplayRandom;
 
     for (const drop of loot.drops) {
       if (random.chance(drop.chance)) {
@@ -76,7 +76,7 @@ export class LootSystem extends System {
           x, y, rotation: 0, scaleX: 1, scaleY: 1
         } as TransformComponent);
 
-        const random = RandomService.getGameplayRandom();
+        const random = world.gameplayRandom;
         commands.addComponent(powerUp, {
           type: "Velocity",
           dx: (random.next() - 0.5) * 50,

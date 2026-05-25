@@ -27,7 +27,10 @@ describe("PongInputSystem AI", () => {
     const paddleVelocity = world.getComponent<VelocityComponent>(rightPaddle, "Velocity")!;
 
     // Place ball below paddle
-    ballTransform.y = paddleTransform.y + 100;
+    const targetY = paddleTransform.y + 100;
+    world.mutateComponent<TransformComponent>(ball, "Transform", t => {
+      t.y = targetY;
+    });
 
     // First update might not move due to reaction delay, but medium has 100ms.
     // AIPongController uses currentTime (seconds or ms?)
