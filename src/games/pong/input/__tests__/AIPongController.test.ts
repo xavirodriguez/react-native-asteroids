@@ -24,8 +24,8 @@ describe("AIPongController", () => {
     const ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;
     const paddlePos = world.getComponent<TransformComponent>(paddle, "Transform")!;
 
-    ballPos.y = 100;
-    paddlePos.y = 300;
+    world.mutateComponent<TransformComponent>(ball, "Transform", t => { t.y = 100; });
+    world.mutateComponent<TransformComponent>(paddle, "Transform", t => { t.y = 300; });
 
     const inputs = controller.update(world, 1000);
 
@@ -42,8 +42,8 @@ describe("AIPongController", () => {
     const ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;
     const paddlePos = world.getComponent<TransformComponent>(paddle, "Transform")!;
 
-    ballPos.y = 500;
-    paddlePos.y = 300;
+    world.mutateComponent<TransformComponent>(ball, "Transform", t => { t.y = 500; });
+    world.mutateComponent<TransformComponent>(paddle, "Transform", t => { t.y = 300; });
 
     const inputs = controller.update(world, 1000);
 

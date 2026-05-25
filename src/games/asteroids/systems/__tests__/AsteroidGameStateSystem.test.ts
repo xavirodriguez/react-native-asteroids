@@ -29,7 +29,9 @@ describe("AsteroidGameStateSystem", () => {
 
   it("should advance level and spawn asteroids when all are destroyed", () => {
     const gameState = world.getSingleton<GameStateComponent>("GameState")!;
-    gameState.level = 1;
+    world.mutateSingleton<GameStateComponent>("GameState", gs => {
+      gs.level = 1;
+    });
 
     // Ensure world is empty of asteroids
     expect(world.query("Asteroid").length).toBe(0);
@@ -49,13 +51,16 @@ describe("AsteroidGameStateSystem", () => {
   it("should trigger game over when player loses all lives", () => {
     const gameState = world.getSingleton<GameStateComponent>("GameState")!;
     const ship = createShip({ world, x: 400, y: 300 });
-    const health = world.getComponent<HealthComponent>(ship, "Health")!;
 
-    health.current = 1;
+    world.mutateComponent<HealthComponent>(ship, "Health", h => {
+      h.current = 1;
+    });
     system.update(world, 16.6);
     expect(gameState.isGameOver).toBe(false);
 
-    health.current = 0;
+    world.mutateComponent<HealthComponent>(ship, "Health", h => {
+      h.current = 0;
+    });
     system.update(world, 16.6);
 
     expect(gameState.isGameOver).toBe(true);
@@ -65,9 +70,10 @@ describe("AsteroidGameStateSystem", () => {
   it("should reset game over state when requested", () => {
     const gameState = world.getSingleton<GameStateComponent>("GameState")!;
     const ship = createShip({ world, x: 400, y: 300 });
-    const health = world.getComponent<HealthComponent>(ship, "Health")!;
 
-    health.current = 0;
+    world.mutateComponent<HealthComponent>(ship, "Health", h => {
+      h.current = 0;
+    });
     system.update(world, 16.6);
     expect(gameState.isGameOver).toBe(true);
     expect(system.isGameOver(world)).toBe(true);

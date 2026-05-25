@@ -122,6 +122,7 @@ export class SpaceInvadersFormationSystem extends System {
       nextCooldownRemaining = nextCooldown;
     }
 
+    // Pure mutation
     world.mutateComponent<FormationComponent>(formationEntity, "Formation", f => {
       f.fireCooldownRemaining = nextCooldownRemaining;
     });

@@ -11,6 +11,7 @@ import { SpaceInvadersCollisionSystem } from "../systems/SpaceInvadersCollisionS
 import { SpaceInvadersGameStateSystem } from "../systems/SpaceInvadersGameStateSystem";
 import { CollisionSystem2D } from "../../../engine/physics/collision/CollisionSystem2D";
 import { SpaceInvadersRenderSystem } from "../systems/SpaceInvadersRenderSystem";
+import { InvulnerabilitySystem } from "../systems/InvulnerabilitySystem";
 import { KamikazeSystem } from "../systems/KamikazeSystem";
 import { BossSystem } from "../systems/BossSystem";
 import { LootSystem } from "../../../engine/systems/LootSystem";
@@ -74,6 +75,7 @@ export class SpaceInvadersGameScene extends Scene {
     this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(new BoundarySystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(new SpaceInvadersFormationSystem(this.enemyBulletPool), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new InvulnerabilitySystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(new CollisionSystem2D(), { phase: SystemPhase.Collision });
     this.world.addSystem(new SpaceInvadersCollisionSystem(this.particlePool), { phase: SystemPhase.GameRules });
     this.world.addSystem(new KamikazeSystem(), { phase: SystemPhase.Simulation });

@@ -143,22 +143,29 @@ export class JuiceSystem extends System {
   }
 
   /**
-   * Static helper to add an animation to an entity.
+   * Static helper to add an animation to an entity using deferred commands.
+   * Ensures safety during world updates and respects ECS lifecycle.
    *
    * API status: Public
    */
   public static add(world: World, entity: Entity, anim: Omit<JuiceAnimation, "elapsed">): void {
     const commands = world.getCommandBuffer();
-    let juice = world.getMutableComponent<JuiceComponent>(entity, "Juice");
+
+    // Check if component already exists to decide between addComponent or mutateComponent
+    const juice = world.getComponent<JuiceComponent>(entity, "Juice");
 
     if (!juice) {
-      juice = { type: "Juice", animations: [] };
-      commands.addComponent(entity, juice);
-    }
-
-    commands.mutateComponent(entity, "Juice", (jComp: JuiceComponent) => {
+      // Defer addition if it doesn't exist
+      commands.addComponent(entity, {
+        type: "Juice",
+        animations: [{ ...anim, elapsed: 0 }]
+      } as JuiceComponent);
+    } else {
+      // Defer mutation if it exists
+      commands.mutateComponent<JuiceComponent>(entity, "Juice", (jComp) => {
         jComp.animations.push({ ...anim, elapsed: 0 });
-    });
+      });
+    }
   }
 }
 export type { JuiceAnimation, JuiceComponent };

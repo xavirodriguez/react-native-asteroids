@@ -50,7 +50,9 @@ describe("PongGameStateSystem", () => {
 
   it("should detect win condition", () => {
     const state = world.getComponent<PongState>(stateEntity, "PongState")!;
-    state.scoreP1 = PONG_CONFIG.WIN_SCORE - 1;
+    world.mutateComponent<PongState>(stateEntity, "PongState", s => {
+      s.scoreP1 = PONG_CONFIG.WIN_SCORE - 1;
+    });
 
     const ball = world.createEntity();
     world.addComponent(ball, { type: "Ball", spinFactor: 0, spinDecay: 0.02 } as BallComponent);

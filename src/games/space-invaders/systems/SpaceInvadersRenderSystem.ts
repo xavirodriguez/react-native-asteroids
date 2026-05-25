@@ -15,15 +15,9 @@ export class SpaceInvadersRenderSystem extends System {
 
       // Handle invulnerability blinking
       if (health.invulnerableRemaining > 0) {
-        // 1. Calcular valores fuera del callback
-        const remaining = Math.max(0, health.invulnerableRemaining - deltaTime);
+        const remaining = health.invulnerableRemaining;
 
-        // 2. Aplicar mutación a Health
-        world.mutateComponent<HealthComponent>(entity, "Health", h => {
-          h.invulnerableRemaining = remaining;
-        });
-
-        // 3. Manejar parpadeo de Render
+        // Manejar parpadeo de Render
         const render = world.getComponent<RenderComponent>(entity, "Render");
         if (render) {
           const newColor = (Math.floor(remaining / 100) % 2 === 0)
