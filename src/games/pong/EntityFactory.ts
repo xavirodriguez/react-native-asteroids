@@ -50,7 +50,7 @@ export const PongEntityFactory = {
     const config = world.getResource<PongConfig>("GameConfig") || PONG_CONFIG;
     const { entity: ball, add } = createBaseEntity(world, deferred);
     add({ type: "Transform", x: config.WIDTH / 2, y: config.HEIGHT / 2, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-    add({ type: "Velocity", dx: config.BALL_SPEED_START, dy: config.BALL_SPEED_START * (RandomService.getGameplayRandom().next() > 0.5 ? 1 : -1) } as VelocityComponent);
+    add({ type: "Velocity", dx: config.BALL_SPEED_START, dy: config.BALL_SPEED_START * (world.gameplayRandom.next() > 0.5 ? 1 : -1) } as VelocityComponent);
     add({ type: "Render", shape: "circle", size: config.BALL_SIZE, color: "white", rotation: 0 } as RenderComponent);
     add({
       type: "Collider2D",

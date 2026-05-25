@@ -104,10 +104,6 @@ export class EventBus {
     }
   }
 
-  /** @deprecated Use {@link EventBus.flushDeferred} instead. */
-  public processDeferred(): void {
-    this.flushDeferred();
-  }
 
   public clear(pattern?: string): void {
     if (!pattern) {

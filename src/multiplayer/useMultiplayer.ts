@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { connectToRoom, disconnect } from "./ColyseusClient";
+import { ColyseusConnection } from "./ColyseusClient";
 import { Room } from "@colyseus/sdk";
 import { InputFrame } from "./NetTypes";
 import { BinaryCompression } from "../engine/network/BinaryCompression";
@@ -36,17 +36,16 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
     if (!active || !playerName) return;
 
     cancelledRef.current = false;
-    let _currentRoom: Room | null = null;
+    const connection = new ColyseusConnection();
 
     async function setup() {
       try {
-        const joinedRoom = await connectToRoom(roomName, playerName);
+        const joinedRoom = await connection.connect(roomName, { name: playerName });
         if (cancelledRef.current) {
-          joinedRoom.leave();
+          connection.disconnect();
           return;
         }
 
-        _currentRoom = joinedRoom;
         setRoom(joinedRoom);
         setConnected(true);
         setServerState(joinedRoom.state);
@@ -161,7 +160,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
 
     return () => {
       cancelledRef.current = true;
-      disconnect();
+      connection.disconnect();
       setConnected(false);
       setRoom(null);
     };

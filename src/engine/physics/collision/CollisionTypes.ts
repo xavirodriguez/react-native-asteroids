@@ -34,12 +34,4 @@ export interface CollisionManifold {
    * Inferred: typically one or two points in 2D manifold generation.
    */
   contactPoints: Array<{ x: number; y: number }>;
-  /**
-   * @deprecated Use context-provided entities in systems or event components.
-   */
-  entityA?: Entity;
-  /**
-   * @deprecated Use context-provided entities in systems or event components.
-   */
-  entityB?: Entity;
 }

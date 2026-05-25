@@ -271,15 +271,12 @@ export class NullSpaceInvadersGame implements ISpaceInvadersGame {
   public isMultiplayer = false;
   private _world = new World();
   private _loop = new GameLoop();
-  public start() {} public stop() {} public pause() {} public resume() {}
-  public async restart() {} public destroy() {}
   public getWorld() { return this._world; }
   public getGameLoop() { return this._loop; }
   public isPausedState() { return false; }
   public isGameOver() { return false; }
   public getGameState() { return INITIAL_GAME_STATE; }
   public getSeed() { return 0; }
-  public setInput() {}
   public subscribe(_listener: import("../../engine/core/IGame").UpdateListener<unknown>) { return () => {}; }
   public initializeRenderer() {}
 }

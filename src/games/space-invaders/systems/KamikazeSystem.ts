@@ -103,7 +103,7 @@ export class KamikazeSystem extends System {
 
   private spawnKamikaze(world: World, invaders: ReadonlyArray<number>): void {
     if (invaders.length === 0) return;
-    const randomIndex = RandomService.getInstance("gameplay").nextInt(0, invaders.length);
+    const randomIndex = world.gameplayRandom.nextInt(0, invaders.length);
     const invader = invaders[randomIndex];
     const pos = world.getComponent<TransformComponent>(invader, "Transform");
 

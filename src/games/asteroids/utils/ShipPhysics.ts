@@ -7,7 +7,7 @@ import { PhysicsUtils } from "../../../engine/physics/utils/PhysicsUtils";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { createParticle } from "../EntityFactory";
 import { createProjectile } from "../../../engine/utils/ProjectileUtils";
-import { SimulationContext } from "../../../simulation/DeterministicSimulation";
+import { SimulationContext } from "../../../simulation/SimulationContext";
 import { EventBus } from "../../../engine/core/EventBus";
 import { ModifierStackComponent } from "../../../engine/core/CoreComponents";
 
@@ -75,7 +75,7 @@ export const ShipPhysics = {
       if (ctx?.isResimulating) return;
 
       // Particles are visual only, use render random
-      const renderRandom = RandomService.getInstance("render");
+      const renderRandom = world.renderRandom;
       const currentSpeed = Math.sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy);
       const intensity = Math.min(1.5, 0.5 + currentSpeed / 200);
 
@@ -107,7 +107,7 @@ export const ShipPhysics = {
    * Applies hyperspace mechanics.
    */
   triggerHyperspace(world: World, shipEntity: number, _pos: TransformComponent, _input: InputComponent, config: AsteroidConfig): void {
-      const gameplayRandom = RandomService.getInstance("gameplay");
+      const gameplayRandom = world.gameplayRandom;
       const newX = gameplayRandom.nextRange(0, config.SCREEN_WIDTH);
       const newY = gameplayRandom.nextRange(0, config.SCREEN_HEIGHT);
 

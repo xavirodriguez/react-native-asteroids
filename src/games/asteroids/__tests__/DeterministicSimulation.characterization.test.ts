@@ -1,36 +1,32 @@
-import { World } from "../../../engine/core/World";
-import { DeterministicSimulation } from "../../../simulation/DeterministicSimulation";
-import { createShip, createGameState } from "../EntityFactory";
+import { AsteroidsGame } from "../AsteroidsGame";
 import { RandomService } from "../../../engine/utils/RandomService";
 import { getLogicalSnapshot } from "./utils/TestHelpers";
 
-describe("DeterministicSimulation Characterization", () => {
+describe("Asteroids ECS Characterization", () => {
     const FIXED_DT = 16.66;
     const SEED = 12345;
 
-    function setupWorld(seed: number) {
-        const world = new World();
-        RandomService.getInstance("gameplay", seed).setSeed(seed);
-        createGameState({ world, headless: true });
-        const ship = createShip({ world, x: 400, y: 300 });
-        world.removeComponent(ship, "ManualMovement");
-        return { world, ship };
+    async function setupGame(seed: number) {
+        const game = new AsteroidsGame({ headless: true, seed });
+        await game.init();
+        const world = game.getWorld();
+        const ship = world.query("Ship")[0];
+        if (ship !== undefined) world.removeComponent(ship, "ManualMovement");
+        return { game, world, ship };
     }
 
-    it("should be self-deterministic", () => {
+    it("should be self-deterministic using AsteroidsGame", async () => {
         RandomService.resetInstances();
-        const { world: world1 } = setupWorld(SEED);
+        const { game: game1, world: world1 } = await setupGame(SEED);
         for (let i = 0; i < 10; i++) {
-            DeterministicSimulation.update(world1, FIXED_DT, { isResimulating: false });
-            world1.flush();
+            game1.runSimulationStep(FIXED_DT, false);
         }
         const snapshot1 = getLogicalSnapshot(world1);
 
         RandomService.resetInstances();
-        const { world: world2 } = setupWorld(SEED);
+        const { game: game2, world: world2 } = await setupGame(SEED);
         for (let i = 0; i < 10; i++) {
-            DeterministicSimulation.update(world2, FIXED_DT, { isResimulating: false });
-            world2.flush();
+            game2.runSimulationStep(FIXED_DT, false);
         }
         const snapshot2 = getLogicalSnapshot(world2);
 

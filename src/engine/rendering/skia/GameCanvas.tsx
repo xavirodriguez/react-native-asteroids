@@ -56,6 +56,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // Derive camera transform for the WorldLayer
   const cameraTransform = useDerivedValue(() => {
     const cam = sharedCamera.value;
+    // Note: In Reanimated worklets, accessing global state should be done carefully.
+    // However, RandomService.getRenderRandom is currently the only way here
+    // unless we pass the RNG seed as a SharedValue.
     const renderRandom = RandomService.getRenderRandom();
     const shakeX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
     const shakeY = (renderRandom.next() - 0.5) * cam.shakeIntensity;

@@ -176,7 +176,7 @@ export class AsteroidCollisionSystem extends System {
   }
 
   private spawnExplosion(world: World, position: TransformComponent, count: number): void {
-    const gameplayRandom = RandomService.getInstance("gameplay");
+    const gameplayRandom = world.gameplayRandom;
     for (let i = 0; i < count; i++) {
       createParticle({
         world,

@@ -9,7 +9,6 @@ export interface IAsteroidsGame extends IGame<IAsteroidsGame> {
   isMultiplayer: boolean;
   // Override with specific types
   getGameState(): GameStateComponent;
-  setInput(input: Partial<InputState>): void;
   isPausedState(): boolean;
   isGameOver(): boolean;
 }

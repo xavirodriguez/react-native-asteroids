@@ -51,36 +51,3 @@ export class ColyseusConnection {
   }
 }
 
-// LEGACY COMPATIBILITY (Deprecated)
-let defaultConnection: ColyseusConnection | null = null;
-
-function getDefaultConnection() {
-  if (!defaultConnection) defaultConnection = new ColyseusConnection();
-  return defaultConnection;
-}
-
-/** @deprecated Use ColyseusConnection class */
-export function getColyseusClient() {
-  return new Client(COLYSEUS_ENDPOINT);
-}
-
-/** @deprecated Use ColyseusConnection class */
-export async function connectToRoom(roomName: string, playerName: string) {
-  return getDefaultConnection().connect(roomName, { name: playerName });
-}
-
-/** @deprecated Use ColyseusConnection class */
-export function sendInput(type: string, input: unknown) {
-  getDefaultConnection().send(type, input);
-}
-
-/** @deprecated Use ColyseusConnection class */
-export function getRoom() {
-  return getDefaultConnection().getRoom();
-}
-
-/** @deprecated Use ColyseusConnection class */
-export function disconnect(options?: { resetClient?: boolean }) {
-  getDefaultConnection().disconnect();
-  if (options?.resetClient) defaultConnection = null;
-}

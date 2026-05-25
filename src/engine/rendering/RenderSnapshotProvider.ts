@@ -52,7 +52,7 @@ export class RenderSnapshotProvider {
         let shakeX = 0;
         let shakeY = 0;
         const shakeEntities = world.query("ScreenShake");
-        const renderRandom = RandomService.getInstance("render");
+        const renderRandom = world.renderRandom;
 
         for (let i = 0; i < shakeEntities.length; i++) {
             const shake = world.getComponent<import("../core/CoreComponents").ScreenShakeComponent>(shakeEntities[i], "ScreenShake")!;

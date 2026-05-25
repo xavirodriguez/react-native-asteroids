@@ -1,20 +1,27 @@
 import { World } from "../../../engine/core/World";
 import { ShipPhysics } from "../utils/ShipPhysics";
-import { DeterministicSimulation } from "../../../simulation/DeterministicSimulation";
+import { AsteroidsGame } from "../AsteroidsGame";
 import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
 import { InputComponent, GAME_CONFIG } from "../types/AsteroidTypes";
 
 describe("Prediction vs ECS Determinism", () => {
-  it("should produce identical results for ECS path and Prediction path", () => {
+  it("should produce identical results for ECS path and Prediction path", async () => {
     // Scenario: We have a ship and we apply the same input for several ticks
-    // using both the ECS ShipControlSystem (via DeterministicSimulation.update)
-    // and a manual call to ShipPhysics.simulateShipTick (which simulate what predictLocalPlayer does)
+    // using both the ECS ShipControlSystem (via AsteroidsGame.runSimulationStep)
+    // and a manual call to ShipPhysics.simulateShipTick (which simulates what predictLocalPlayer does)
 
     const dt = 16.666;
     const ticks = 10;
 
     // --- Setup World 1 (ECS Path) ---
-    const world1 = new World();
+    const game1 = new AsteroidsGame({ headless: true });
+    await game1.init();
+    const world1 = game1.getWorld();
+
+    // Clear initial entities to have a clean slate
+    const initialEntities = world1.query("Transform");
+    initialEntities.forEach(e => world1.removeEntity(e));
+
     const ship1 = world1.createEntity();
     const pos1: TransformComponent = { type: "Transform", x: 100, y: 100, rotation: 0, scaleX: 1, scaleY: 1, dirty: true };
     const vel1: VelocityComponent = { type: "Velocity", dx: 0, dy: 0 };
@@ -25,8 +32,8 @@ describe("Prediction vs ECS Determinism", () => {
     world1.addComponent(ship1, vel1);
     world1.addComponent(ship1, render1);
     world1.addComponent(ship1, input1);
-    world1.addComponent(ship1, { type: "Ship" } as unknown as import("../../../engine/core/Component").Component);
-    world1.addComponent(ship1, { type: "ManualMovement" } as unknown as import("../../../engine/core/Component").Component);
+    world1.addComponent(ship1, { type: "Ship" } as any);
+    world1.addComponent(ship1, { type: "ManualMovement" } as any);
 
     // --- Setup World 2 (Manual Path but using ECS correctly) ---
     const world2 = new World();
@@ -43,7 +50,7 @@ describe("Prediction vs ECS Determinism", () => {
 
     for (let i = 0; i < ticks; i++) {
         // Update ECS
-        DeterministicSimulation.update(world1, dt, { isResimulating: false });
+        game1.runSimulationStep(dt, false);
 
         // Update Manual (calling simulateShipTick directly on world2 components)
         ShipPhysics.simulateShipTick(

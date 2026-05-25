@@ -30,15 +30,6 @@ export class AsteroidInputSystem extends System {
     super();
   }
 
-  /**
-   * Manually sets the input state. Useful for mobile touch controls.
-   *
-   * @param input - The new input state.
-   * @deprecated Use world.getSingleton<InputStateComponent>("InputState") instead.
-   */
-  public setInput(_input: Partial<InputState>): void {
-    // Legacy method, inputs handled by UnifiedInputSystem
-  }
 
   /**
    * Updates ship rotation, velocity, and shooting based on current input state.
