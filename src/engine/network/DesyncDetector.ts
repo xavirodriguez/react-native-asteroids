@@ -9,6 +9,12 @@ export interface DesyncThresholds {
 
 /**
  * Encapsulates the logic for detecting divergences between predicted and authoritative states.
+ *
+ * @remarks
+ * Desync detection is based on heuristic thresholds for spatial properties.
+ * Small divergences are expected due to floating-point variability or differences
+ * in execution timing. The detector aims to identify significant drifts that
+ * require state reconciliation.
  */
 export class DesyncDetector {
     private thresholds: DesyncThresholds;
@@ -23,6 +29,11 @@ export class DesyncDetector {
 
     /**
      * Compares a predicted state with an authoritative snapshot for a specific entity.
+     *
+     * @remarks
+     * A desync is flagged if the difference between predicted and authoritative
+     * values exceeds the configured thresholds. Note that frequent or overly sensitive
+     * detection may trigger unnecessary rollbacks, impacting performance.
      *
      * @param predicted - The state that was predicted locally.
      * @param authoritativeSnapshot - The authoritative state received from the server.

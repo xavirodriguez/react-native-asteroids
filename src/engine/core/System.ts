@@ -49,17 +49,11 @@ export interface SystemConfig {
  *
  * API status: Public
  *
- * Responsibility: Encapsulate game logic in a decoupled manner.
- *
- * Responsibility: Transform world state based on time increments (ticks).
- *
- * Responsibility: Maintain simulation logic by operating primarily on components and resources.
- *
  * @remarks
- * Systems encapsulate logic and behavior. They typically operate on sets of
- * entities filtered via queries. While systems should mostly depend on
+ * Systems encapsulate game logic and behavior, typically operating on sets of
+ * entities filtered via queries. While systems should primarily depend on
  * {@link World} state, they may maintain internal caches or coordination
- * state if required.
+ * state if required for performance or complex logic.
  *
  * Execution order is managed via {@link SystemPhase} and priorities.
  *
@@ -103,13 +97,14 @@ export abstract class System {
    * @param deltaTime - Elapsed time since last update in milliseconds.
    *
    * @remarks
-   * Systems should typically query relevant entities via {@link World.query} and apply
-   * transformations. To support reproducibility and rollbacks, it is recommended to
-   * minimize the use of non-serializable internal mutable state.
+   * Systems typically query relevant entities via {@link World.query} and apply
+   * transformations to their components. To support reproducibility and rollbacks,
+   * it is recommended to minimize the use of non-serializable internal mutable state.
    *
    * @warning **Structural Mutations**: Modifying world structure (creating/removing entities
    * or components) while iterating over a query can lead to inconsistent behavior or errors.
-   * Use {@link World.getCommandBuffer} to defer these operations until the end of the tick.
+   * Use {@link World.getCommandBuffer} to defer these operations until the end of the tick
+   * to ensure iterator safety.
    *
    * @precondition World state is expected to be consistent at the start of the update cycle.
    * @conceptualRisk [UNIT_CONSISTENCY][LOW] `deltaTime` is provided in milliseconds.

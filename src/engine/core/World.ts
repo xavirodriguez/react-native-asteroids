@@ -28,6 +28,12 @@ interface RegisteredSystem {
 /**
  * ECS World - Central registry managing the lifecycle of entities, components, and systems.
  *
+ * @remarks
+ * The World acts as the central hub for the ECS architecture. It is designed to manage
+ * entity allocation, component storage, and system orchestration. While it aims for
+ * high performance and supports deterministic simulations, its behavior is subject
+ * to the constraints of the JavaScript environment and the correct usage of its APIs.
+ *
  * API status: Public
  */
 const __DEV__ = process.env.NODE_ENV !== "production";
@@ -122,8 +128,12 @@ export class World {
   private _renderRandom = new RandomService();
 
   /**
-   * Provee acceso al generador de números aleatorios diseñado para soportar simulaciones deterministas.
-   * El determinismo depende de que el estado del generador sea restaurado correctamente vía snapshots.
+   * Provee acceso al generador de números aleatorios orientado a soportar simulaciones deterministas.
+   *
+   * @remarks
+   * El determinismo depende de que tanto el estado del generador como la lógica de juego sean
+   * consistentes y se restauren correctamente mediante snapshots. No se garantiza determinismo
+   * absoluto si se utilizan fuentes externas de entropía.
    */
   public get gameplayRandom(): RandomService {
     return this._gameplayRandom;
@@ -230,14 +240,15 @@ export class World {
    *
    * @remarks
    * The snapshot is a deep-cloned representation of the world state, designed to facilitate
-   * deterministic state restoration. Under typical usage, it aims to ensure that:
+   * state restoration. In typical usage, it seeks to ensure that:
    * 1. Entity lists are sorted by ID.
    * 2. Component types are sorted alphabetically.
    * 3. Component data per type is stored in entity-order.
-   * 4. Most functional or non-serializable data (like event handlers) is stripped.
+   * 4. Functional or non-serializable data (like event handlers) is typically excluded.
    *
-   * @warning Deep cloning is used to ensure snapshot independence, but this carries
-   * a performance cost proportional to the number of components and their complexity.
+   * @warning Deep cloning is used to support snapshot independence and mitigate aliasing issues,
+   * but this carries a performance cost proportional to the number of components and their complexity.
+   * Use frequently only if the simulation scale allows for it.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const gameplayRandom = this.gameplayRandom;
@@ -351,7 +362,9 @@ export class World {
    * independent of the snapshot object. It rebuilds internal indexes and
    * re-synchronizes queries to maintain structural integrity.
    *
-   * @warning Manual restoration of resources or external state not included in the
+   * @warning Deterministic restoration is expected only if the world's structure
+   * (registered systems, component types) matches the state when the snapshot was taken.
+   * Manual restoration of resources or external state not included in the
    * snapshot must be handled separately to maintain consistency.
    */
   public restore(state: WorldSnapshot): void {
@@ -543,11 +556,13 @@ export class World {
    * Adds or replaces a component on a specific entity.
    *
    * @remarks
-   * **MANDATORY**: This method MUST NOT be called during the world's update cycle
-   * (`isUpdating === true`) to protect iterator safety. Doing so will throw an error.
-   * Use {@link World.getCommandBuffer} to queue component additions during updates.
+   * **Caution**: This method is restricted during the world's update cycle
+   * (`isUpdating === true`) to protect iterator safety. Attempting to call it during
+   * an update will result in an error. Use {@link World.getCommandBuffer} to queue
+   * component additions for deferred execution.
    *
-   * To update data in an existing component, prefer {@link World.mutateComponent}.
+   * To update data in an existing component, {@link World.mutateComponent} is the recommended
+   * and authoritative approach.
    *
    * API status: Public
    */
@@ -638,10 +653,11 @@ export class World {
    * Performs an immediate mutation on a component.
    *
    * @remarks
-   * This is the recommended **AUTHORITATIVE** way to modify component data. It ensures
+   * This is the recommended **authoritative** way to modify component data. It ensures
    * that state versioning, change detection, and render-dirty flags are correctly updated.
    * Direct property assignments on component references retrieved via `getComponent` are
-   * discouraged and may be blocked in development mode.
+   * discouraged as they bypass the engine's tracking mechanisms and may be blocked in
+   * development mode to prevent desyncs.
    *
    * API status: Public
    */
@@ -1084,10 +1100,13 @@ export class World {
    * Returns a mutable reference to a component.
    *
    * @remarks
-   * This method bypasses the `Readonly` protection. It MUST be used only when
-   * performing high-frequency mutations where `mutateComponent`'s callback
-   * overhead is unacceptable. It automatically marks the world as render-dirty
-   * and increments the state version.
+   * This method bypasses `Readonly` protection and should be used with caution.
+   * It is intended for performance-critical hot paths where the overhead of
+   * `mutateComponent`'s callback is significant. When used, it manually triggers
+   * the state version increment and render-dirty flags.
+   *
+   * @warning Bypassing the standard mutation flow increases the risk of accidental
+   * side effects if not managed carefully within the system's logic.
    *
    * API status: Public
    */

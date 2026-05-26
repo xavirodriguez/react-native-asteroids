@@ -1,26 +1,22 @@
 import { Packr, unpack } from "msgpackr";
 
 /**
- * Binary Serialization Engine - High-performance object encoding via MessagePack.
- *
- * @responsibility Transform JavaScript objects (snapshots/deltas) into compact binary buffers.
- * @responsibility Mitigate network bandwidth by reducing payload size.
+ * Binary Serialization Engine - Object encoding via MessagePack.
  *
  * @remarks
- * TinyAsterEngine utilizes `msgpackr` for its high efficiency and native support for
- * modern JS types. Binary serialization reduces network packet size by 40% to 60%
+ * TinyAsterEngine utilizes `msgpackr` with the goal of reducing payload size
  * compared to standard JSON strings.
  *
  * ### Serialization Strategy:
- * - **MessagePack**: Balanced performance/compression ratio (schema-less).
- * - **structuredClone: true**: Supports complex nested structures and prevents prototype pollution.
- * - **useRecords: false**: Disables record-style optimization to ensure maximum
- *   compatibility across different versions of the library and transport layers.
+ * - **MessagePack**: Schema-less format with a balanced performance/compression ratio.
+ * - **structuredClone: true**: Supports nested structures and seeks to prevent prototype pollution.
+ * - **useRecords: false**: Disables record-style optimization to favor
+ *   compatibility across different transport layers.
  *
- * @conceptualRisk [BINARY_COMPATIBILITY] State schema changes require synchronized
- * updates between client and server to prevent unpacking failures.
- * @conceptualRisk [CPU_OVERHEAD] Packing/unpacking adds a non-trivial CPU step
- * per network frame on low-end devices.
+ * @conceptualRisk [BINARY_COMPATIBILITY] Schema changes in components typically require
+ * synchronized updates between client and server to prevent unpacking failures.
+ * @conceptualRisk [CPU_OVERHEAD] Packing/unpacking incurs a CPU cost that may be
+ * significant on low-end devices during high-frequency updates.
  */
 export class BinaryCompression {
   private static packr = new Packr({
