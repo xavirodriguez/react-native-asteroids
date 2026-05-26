@@ -2,7 +2,7 @@ import React from "react";
 import { Platform, View } from "react-native";
 import { SharedValue, useDerivedValue } from "react-native-reanimated";
 import { SharedCamera } from "../../core/types/SystemTypes";
-import { RandomService } from "../../utils/RandomService";
+import { visualRandom } from "../../utils/VisualRandom";
 import {
   RenderableComponent,
   TransformComponent,
@@ -56,12 +56,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // Derive camera transform for the WorldLayer
   const cameraTransform = useDerivedValue(() => {
     const cam = sharedCamera.value;
-    // Note: In Reanimated worklets, accessing global state should be done carefully.
-    // However, we should avoid global state in worklets.
-    // For now, if we don't have a world reference, we use a local RNG for visual-only effects.
-    const renderRandom = new RandomService(Date.now());
-    const shakeX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
-    const shakeY = (renderRandom.next() - 0.5) * cam.shakeIntensity;
+    // Use a shared visual-only RNG instance to avoid GC pressure in the worklet hot path.
+    const shakeX = (visualRandom.next() - 0.5) * cam.shakeIntensity;
+    const shakeY = (visualRandom.next() - 0.5) * cam.shakeIntensity;
 
     return [
       { scale: cam.zoom },

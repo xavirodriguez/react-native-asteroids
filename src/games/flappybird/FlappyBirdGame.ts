@@ -186,7 +186,7 @@ export class FlappyBirdGame
     };
 
     if (state.players) {
-        Object.entries(state.players).forEach(([sessionId, p]: [string, any]) => {
+        Object.entries(state.players).forEach(([sessionId, p]: [string, Record<string, any>]) => {
             const entityId = replicator.getLocalId(`player_${sessionId}`);
             if (entityId !== undefined) {
                 snapshot.entities.push(entityId);
@@ -195,7 +195,7 @@ export class FlappyBirdGame
         });
     }
     if (state.pipes) {
-        Object.entries(state.pipes).forEach(([id, p]: [string, any]) => {
+        Object.entries(state.pipes).forEach(([id, p]: [string, Record<string, any>]) => {
             const entityId = replicator.getLocalId(`pipe_${id}`);
             if (entityId !== undefined) {
                 snapshot.entities.push(entityId);

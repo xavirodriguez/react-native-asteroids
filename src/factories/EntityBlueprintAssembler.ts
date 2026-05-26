@@ -104,8 +104,8 @@ export class EntityBlueprintAssembler {
     const enemyTag = this.getOrAddMutableComponent<import("../engine/core/Component").GenericComponent>(world, entityId, "EnemyTag", buffer);
     enemyTag.blueprintId = blueprintId;
     enemyTag.level = 1;
-    enemyTag.variant = blueprint.kind === 'invader' ? blueprint.invader.archetype : undefined;
-    enemyTag.behavior = blueprint.kind === 'ufo' ? blueprint.ufo.behavior : undefined;
+    enemyTag.variant = blueprint.kind === 'invader' ? (blueprint as any).invader.archetype : undefined;
+    enemyTag.behavior = blueprint.kind === 'ufo' ? (blueprint as any).ufo.behavior : undefined;
 
     // Kind-specific logic
     if (blueprint.kind === 'asteroid') {
@@ -118,7 +118,7 @@ export class EntityBlueprintAssembler {
         this.getOrAddMutableComponent<import("../engine/core/Component").GenericComponent>(world, entityId, "Bullet", buffer);
     } else if (blueprint.kind === 'invader') {
         const inv = this.getOrAddMutableComponent<import("../engine/core/Component").GenericComponent>(world, entityId, "Invader", buffer);
-        inv.archetype = blueprint.invader.archetype;
+        inv.archetype = (blueprint as any).invader.archetype;
     }
 
     // 8. Spatial Partitioning

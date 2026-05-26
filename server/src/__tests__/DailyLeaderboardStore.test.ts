@@ -15,6 +15,12 @@ describe("DailyLeaderboardStore", () => {
     store = new DailyLeaderboardStore();
   });
 
+  afterAll(() => {
+    if (fs.existsSync(dbPath)) {
+        fs.unlinkSync(dbPath);
+    }
+  });
+
   test("should check and update rate limit correctly", () => {
     const playerId = "test-player";
     const cooldown = 1000;
@@ -28,11 +34,11 @@ describe("DailyLeaderboardStore", () => {
     // After cooldown it should pass again
     // We mock Date.now for precise control
     const now = Date.now();
-    jest.spyOn(Date, 'now').mockReturnValue(now + cooldown + 1);
-    
+    const spy = jest.spyOn(Date, 'now').mockReturnValue(now + cooldown + 1);
+
     expect(store.checkAndUpdateRateLimit(playerId, cooldown)).toBe(true);
-    
-    jest.restoreAllMocks();
+
+    spy.mockRestore();
   });
 
   test("rate limit should be persistent after store restart", () => {

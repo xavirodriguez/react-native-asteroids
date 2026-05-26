@@ -452,7 +452,7 @@ export class World {
         // Instead of 'delete', we overwrite to maintain hidden class stability where possible.
         for (const key in component) {
           if (!(key in sourceComp)) {
-             (component as Record<string, unknown>)[key] = undefined;
+             (component as unknown as Record<string, unknown>)[key] = undefined;
           }
         }
 
