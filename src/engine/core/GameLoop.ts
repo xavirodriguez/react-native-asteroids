@@ -10,24 +10,25 @@ export interface GameLoopConfig {
 }
 
 /**
- * Motor de tiempo central que orquesta el ciclo de vida del juego.
+ * Central time manager orchestrating the game's lifecycle.
  *
  * @remarks
- * Implementa un esquema de **Fixed Timestep / Variable Rendering** con interpolación,
- * orientado a favorecer la consistencia de la simulación y la fluidez visual.
+ * Implements a **Fixed Timestep / Variable Rendering** scheme with interpolation,
+ * designed to promote simulation consistency and visual smoothness.
  *
- * El loop busca desacoplar la lógica de simulación de la tasa de refresco del dispositivo,
- * con la intención de mitigar el impacto de las fluctuaciones de rendimiento en la integridad física.
- * Bajo condiciones de carga elevada, el sistema puede limitar las actualizaciones para preservar
- * la estabilidad del hilo principal.
+ * The loop seeks to decouple simulation logic from the device's refresh rate,
+ * aiming to mitigate the impact of performance fluctuations on physical integrity.
+ * Under high load conditions, the system may limit updates to preserve
+ * main thread stability.
  *
- * **Precision**: La fase de simulación está diseñada para recibir incrementos constantes de
- * 16.67ms (1/60s). En la práctica, la precisión real está sujeta a las limitaciones del
- * entorno de ejecución (JS Event Loop, variabilidad de `performance.now()` y carga del sistema).
+ * **Precision**: The simulation phase is designed to receive constant increments of
+ * 16.67ms (1/60s). In practice, real-world precision is subject to environment
+ * constraints (JS Event Loop, `performance.now()` variability, and system load).
  *
- * @conceptualRisk [PERFORMANCE] El loop puede incurrir en el "Spiral of Death" si la simulación
- * es consistentemente más lenta que el tiempo real. Se incluye un mecanismo de seguridad
- * (`maxUpdatesPerFrame`) para mitigar este riesgo a costa de omitir ticks de simulación.
+ * @conceptualRisk [PERFORMANCE] The loop may encounter a "Spiral of Death" if the
+ * simulation is consistently slower than real-time. A safety mechanism
+ * (`maxUpdatesPerFrame`) is included to mitigate this risk by dropping simulation
+ * ticks, which may affect temporal accuracy.
  */
 export class GameLoop {
   private isRunning = false;
@@ -61,14 +62,14 @@ export class GameLoop {
   }
 
   /**
-   * Suscribe un callback para la fase de entrada (Input).
+   * Subscribes a callback to the Input phase.
    *
    * @remarks
-   * Se ejecuta una vez por cada frame del navegador (variable step), antes de la simulación física.
-   * Útil para capturar estados de teclado o puntero que deben ser procesados en el siguiente tick.
+   * Executes once per browser frame (variable step), before the physical simulation.
+   * Useful for capturing keyboard or pointer states to be processed in the next tick.
    *
-   * @param listener - Función que recibe el deltaTime del frame actual.
-   * @returns Una función para cancelar la suscripción.
+   * @param listener - Function receiving the current frame's deltaTime.
+   * @returns A function to unsubscribe.
    */
   public subscribeInput(listener: GameLoopListener): () => void {
     this.inputListeners.add(listener);
@@ -76,19 +77,19 @@ export class GameLoop {
   }
 
   /**
-   * Suscribe un callback para la simulación física (Fixed Update).
+   * Subscribes a callback to the physical simulation phase (Fixed Update).
    *
    * @remarks
-   * Esta fase está orientada a la consistencia de la simulación. El sistema busca proporcionar
-   * un incremento de tiempo constante (16.67ms) al callback. Dependiendo del tiempo transcurrido,
-   * puede ejecutarse múltiples veces en un solo frame del entorno.
+   * This phase is oriented towards simulation consistency. The system seeks to provide
+   * a constant time increment (16.67ms) to the callback. Depending on elapsed time,
+   * it may execute multiple times in a single environment frame.
    *
-   * Para prevenir bloqueos del hilo principal, el número de actualizaciones por frame está
-   * limitado por `maxUpdatesPerFrame`. Si se alcanza este límite, se omitirán los ticks
-   * restantes para ese frame, lo que puede afectar la precisión temporal absoluta.
+   * To prevent main thread blocking, the number of updates per frame is limited by
+   * `maxUpdatesPerFrame`. If this limit is reached, remaining ticks for that frame
+   * are dropped, which may sacrifice absolute temporal accuracy and determinism for stability.
    *
-   * @param listener - Función que recibe el fixedDeltaTime (16.67ms).
-   * @returns Una función para cancelar la suscripción.
+   * @param listener - Function receiving the fixedDeltaTime (16.67ms).
+   * @returns A function to unsubscribe.
    */
   public subscribeUpdate(listener: GameLoopListener): () => void {
     this.updateListeners.add(listener);
@@ -100,15 +101,15 @@ export class GameLoop {
   }
 
   /**
-   * Suscribe un callback para la propagación de transformaciones jerárquicas.
+   * Subscribes a callback to the hierarchical transformation propagation phase.
    *
    * @remarks
-   * Se ejecuta una vez por frame del navegador, inmediatamente después de que todos los
-   * ticks de simulación necesarios para ese frame hayan terminado.
-   * Es el lugar ideal para el {@link HierarchySystem}.
+   * Executes once per browser frame, immediately after all required simulation
+   * ticks for that frame have finished. This is the intended location for the
+   * {@link HierarchySystem}.
    *
-   * @param listener - Función de callback.
-   * @returns Función de cancelación.
+   * @param listener - Callback function.
+   * @returns Unsubscribe function.
    */
   public subscribeTransform(listener: GameLoopListener): () => void {
     this.transformListeners.add(listener);
@@ -116,15 +117,15 @@ export class GameLoop {
   }
 
   /**
-   * Suscribe un callback para la fase de presentación (Render).
+   * Subscribes a callback to the Presentation (Render) phase.
    *
    * @remarks
-   * Se ejecuta una vez por cada frame del navegador. Recibe un factor `alpha` que indica
-   * cuánto tiempo del acumulador queda pendiente respecto al tick fijo, permitiendo
-   * realizar interpolación visual para un movimiento suave.
+   * Executes once per browser frame. Receives an `alpha` factor (0.0 to 1.0)
+   * indicating the fraction of the fixed tick remaining in the accumulator,
+   * allowing for visual interpolation to achieve smooth motion.
    *
-   * @param listener - Función que recibe `alpha` (0.0 a 1.0) y `deltaTime`.
-   * @returns Función de cancelación.
+   * @param listener - Function receiving `alpha` and `deltaTime`.
+   * @returns Unsubscribe function.
    */
   public subscribeRender(listener: RenderListener): () => void {
     this.renderListeners.add(listener);
@@ -149,17 +150,17 @@ export class GameLoop {
   }
 
   /**
-   * Bucle de ejecución principal coordinado con `requestAnimationFrame`.
+   * Main execution loop coordinated with `requestAnimationFrame`.
    *
    * @remarks
-   * Implementa un algoritmo de **Acumulador de Tiempo**:
-   * 1. Calcula `deltaTime` limitado por `maxDeltaMs` (para evitar saltos excesivos tras pausas).
-   * 2. Añade `deltaTime` al `accumulator`.
-   * 3. Ejecuta la fase de simulación en pasos fijos (16.67ms) mientras el acumulador lo permita.
-   * 4. Calcula `alpha` como la fracción de tiempo sobrante para la interpolación visual.
+   * Implements a **Time Accumulator** algorithm:
+   * 1. Calculates `deltaTime` capped by `maxDeltaMs` to prevent excessive jumps.
+   * 2. Adds `deltaTime` to the `accumulator`.
+   * 3. Executes the simulation phase in fixed steps (16.67ms) as long as the accumulator allows.
+   * 4. Calculates `alpha` as the remaining time fraction for visual interpolation.
    *
-   * Si bien este sistema está diseñado para favorecer la reproducibilidad, factores externos
-   * del entorno JS y del hardware pueden introducir variaciones menores en el comportamiento.
+   * While this system is designed to support reproducibility, external factors
+   * in the JS environment and hardware may introduce minor variations in behavior.
    */
   private loop = (currentTime: number): void => {
     if (!this.isRunning) return;

@@ -9,11 +9,14 @@ export { PhysicsSolveSystem } from "./PhysicsSolveSystem";
 /**
  * Built-in 2D Physics System for rigid body dynamics.
  *
- * @responsibility Rigid body dynamics integration using Semi-Implicit Euler.
- * @responsibility Impulse-based collision response satisfying contact and friction constraints.
- * @responsibility Positional correction to mitigate numerical "sinking".
+ * @remarks
+ * Implements rigid body dynamics integration using Semi-Implicit Euler and
+ * impulse-based collision response. Designed to provide consistent behavior
+ * for simple collision scenarios, though accuracy is subject to the fixed
+ * time-step and integration method.
  *
- * @deprecated Use PhysicsIntegrateSystem and PhysicsSolveSystem instead for correct execution order.
+ * @deprecated Use {@link PhysicsIntegrateSystem} and {@link PhysicsSolveSystem}
+ * instead for correct execution order.
  * This class remains for backward compatibility but internally delegates to the new systems.
  *
  * @public

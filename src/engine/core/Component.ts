@@ -16,17 +16,16 @@ export interface Component {
 }
 
 /**
- * Una versión genérica de un componente que permite el acceso a datos arbitrarios.
- * Útil para componentes cuya estructura exacta se define dinámicamente o fuera del core.
+ * A generic version of a component that allows access to arbitrary data.
+ * Useful for components whose exact structure is defined dynamically or outside the core.
  *
  * @remarks
- * Esta versión genérica busca mejorar la seguridad de tipos al permitir especificar la estructura
- * de datos esperada. Se recomienda su uso con interfaces que describan POJOs simples para ayudar
- * con la compatibilidad con el sistema de snapshots.
+ * This generic version seeks to improve type safety by allowing the specification of the
+ * expected data structure. It is recommended for use with interfaces describing simple
+ * POJOs to aid compatibility with the snapshot system.
  *
- * @conceptualRisk [TYPE_SAFETY] El uso de tipos excesivamente genéricos puede debilitar
- * las validaciones en tiempo de compilación.
+ * @conceptualRisk [TYPE_SAFETY] Using overly generic types may weaken compile-time validations.
  *
- * Type parameter T: Estructura de datos que extiende un registro de valores serializables.
+ * @typeParam T - Data structure extending a record of serializable values.
  */
 export type GenericComponent<T extends Record<string, unknown> = Record<string, unknown>> = Component & T;

@@ -5,11 +5,13 @@ import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, C
 /**
  * System for collision resolution and impulse application.
  *
- * @responsibility Reads fresh CollisionEventsComponent data freshly written by CollisionSystem2D.
- * @responsibility Resolves impulses and positional correction.
- * @responsibility Clears accumulated forces after solving.
+ * @remarks
+ * Designed to resolve impulses and positional corrections based on
+ * data from {@link CollisionEventsComponent}. It also handles force
+ * accumulation resets at the end of the step.
  *
- * Runs in SystemPhase.GameRules.
+ * Runs in `SystemPhase.GameRules`.
+ *
  * @public
  */
 export class PhysicsSolveSystem extends System {
