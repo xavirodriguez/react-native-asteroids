@@ -57,7 +57,7 @@ export interface JuiceComponent extends Component {
  * Standard base components provided by the engine.
  *
  * This module defines the core data structures used by built-in systems for
- * physics, rendering, lifecycle, and AI. Components should remain pure POJOs
+ * physics, rendering, lifecycle, and AI. Components are intended to be POJOs
  * (Plain Old JavaScript Objects) to facilitate serialization and snapshots.
  *
  * @packageDocumentation
@@ -294,11 +294,12 @@ export interface ContinuousColliderComponent extends Component {
 }
 
 /**
- * Rigid body properties for full physics simulation.
- * Use this when an entity requires mass, forces, and advanced friction.
+ * Rigid body properties for physical simulation.
+ * Use this when an entity requires mass, forces, and friction.
  *
  * @remarks
- * For simple movement without complex dynamics, prefer {@link VelocityComponent}.
+ * For simpler movement without complex dynamics, {@link VelocityComponent}
+ * is typically preferred.
  */
 export interface PhysicsBody2DComponent extends Component {
   type: "PhysicsBody2D";
