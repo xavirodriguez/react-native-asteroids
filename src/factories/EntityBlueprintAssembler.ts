@@ -109,8 +109,8 @@ export class EntityBlueprintAssembler {
     const enemyTag = this.getOrAddMutableComponent<EnemyTagComponent>(world, entityId, "EnemyTag", buffer);
     enemyTag.blueprintId = blueprintId;
     enemyTag.level = 1;
-    enemyTag.variant = blueprint.kind === 'invader' ? blueprint.invader.archetype : undefined;
-    enemyTag.behavior = blueprint.kind === 'ufo' ? blueprint.ufo.behavior : undefined;
+    enemyTag.variant = blueprint.kind === 'invader' ? (blueprint as any).invader.archetype : undefined;
+    enemyTag.behavior = blueprint.kind === 'ufo' ? (blueprint as any).ufo.behavior : undefined;
 
     // Kind-specific logic
     if (blueprint.kind === 'asteroid') {

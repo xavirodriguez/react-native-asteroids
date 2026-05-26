@@ -1,7 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { Camera2DComponent, TransformComponent, Entity } from "../core/CoreComponents";
-import { RandomService } from "../utils/RandomService";
 
 /**
  * Static configuration for a camera instance.
@@ -149,7 +148,7 @@ export class Camera2D extends System {
 
       // Process Screen Shake decay
       if (cam.shakeIntensity > 0) {
-        const renderRandom = RandomService.getInstance("render");
+        const renderRandom = world.renderRandom;
         cam.shakeOffsetX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
         cam.shakeOffsetY = (renderRandom.next() - 0.5) * cam.shakeIntensity;
 

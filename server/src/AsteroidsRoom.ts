@@ -2,7 +2,6 @@ import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
 import { GameStateComponent } from "../../src/games/asteroids/types/AsteroidTypes";
-import { RandomService } from "../../src/engine/utils/RandomService";
 import { World } from "../../src/engine/core/World";
 import { AsteroidsGame } from "../../src/games/asteroids/AsteroidsGame";
 import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "../../src/engine/core/CoreComponents";
@@ -65,7 +64,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   private REPLICATION_MODE: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' = 'binary';
 
   private spawnAsteroids(count: number) {
-    const gameplayRandom = RandomService.getInstance("gameplay");
+    const gameplayRandom = this.world.gameplayRandom;
     for (let i = 0; i < count; i++) {
         const x = gameplayRandom.nextRange(0, 800);
         const y = gameplayRandom.nextRange(0, 600);
@@ -150,7 +149,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   }
 
   onJoin(client: Client, options: { name?: string }) {
-    const gameplayRandom = RandomService.getInstance("gameplay");
+    const gameplayRandom = this.world.gameplayRandom;
     const player = new Player();
     player.sessionId = client.sessionId;
     player.name = options.name || `Player ${this.nextPlayerNumber++}`;
@@ -373,8 +372,11 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
 
     // 7. Store history for lag compensation (Backtracking)
     this.stateHistory.set(this.state.serverTick, this.world.snapshot());
-    while (this.stateHistory.size > 120) { // Keep 2 seconds of history @ 60Hz
-        const oldestTick = Math.min(...this.stateHistory.keys());
+
+    // O(1) cleanup: Keep only the last 120 snapshots.
+    // Map.keys() returns an iterator in insertion order.
+    if (this.stateHistory.size > 120) {
+        const oldestTick = this.stateHistory.keys().next().value;
         this.stateHistory.delete(oldestTick);
     }
 

@@ -37,6 +37,13 @@ export class DailyLeaderboardStore {
       )
     `);
     this.db.exec(`CREATE INDEX IF NOT EXISTS idx_scores_lookup ON scores (gameId, dateKey, score DESC)`);
+
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS rate_limits (
+        playerId TEXT PRIMARY KEY,
+        lastSubmission INTEGER NOT NULL
+      )
+    `);
   }
 
   public addScore(gameId: string, dateKey: string, playerId: string, score: number, displayName: string = "Jugador", verified: boolean = false) {
@@ -66,6 +73,24 @@ export class DailyLeaderboardStore {
       LIMIT 100
     `);
     return stmt.all(gameId, dateKey) as LeaderboardEntry[];
+  }
+
+  public checkAndUpdateRateLimit(playerId: string, cooldownMs: number): boolean {
+    const now = Date.now();
+
+    const row = this.db.prepare(
+        "SELECT lastSubmission FROM rate_limits WHERE playerId = ?"
+    ).get(playerId) as { lastSubmission: number } | undefined;
+
+    if (row && now - row.lastSubmission < cooldownMs) {
+        return false;
+    }
+
+    this.db.prepare(
+        "INSERT OR REPLACE INTO rate_limits (playerId, lastSubmission) VALUES (?, ?)"
+    ).run(playerId, now);
+
+    return true;
   }
 }
 

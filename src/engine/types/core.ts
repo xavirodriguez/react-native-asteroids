@@ -23,8 +23,9 @@ export interface WorldSnapshot {
   structureVersion: number;
   /** Incremented on data changes or visual updates. */
   stateVersion: number;
+  /** @deprecated Use rngState for bit-perfect restoration. seed remains for legacy compatibility. */
   seed: number;
-  /** Serialized PRNG internal state. */
+  /** Serialized PRNG internal state. Provides bit-perfect restoration. */
   rngState?: number;
   /** Time accumulator from GameLoop. */
   accumulator?: number;

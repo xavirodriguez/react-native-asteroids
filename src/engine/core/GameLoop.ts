@@ -1,4 +1,3 @@
-import { RandomService } from "../utils/RandomService";
 
 export type GameLoopListener = (deltaTime: number) => void;
 export type RenderListener = (alpha: number, deltaTime: number) => void;
@@ -187,7 +186,7 @@ export class GameLoop {
       }
 
       // Determinism: ensure RNG is seeded for this tick if needed
-      RandomService.getInstance("gameplay");
+      // RandomService.getInstance("gameplay"); // Static access is deprecated
 
       if (this.needsUpdateRebuild) {
         this.activeUpdateListeners = Array.from(this.updateListeners);
