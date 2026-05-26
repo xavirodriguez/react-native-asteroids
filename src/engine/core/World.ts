@@ -29,11 +29,11 @@ interface RegisteredSystem {
  * ECS World - Central registry managing the lifecycle of entities, components, and systems.
  *
  * @remarks
- * The World acts as the central hub for the ECS architecture. It is designed to manage
- * entity allocation, component storage, and system orchestration. It aims to
- * minimize overhead in hot paths and provides tools to support deterministic simulations,
- * although results are subject to the constraints of the JavaScript environment,
- * execution timing, and strict adherence to the engine's mutation patterns.
+ * The World acts as the central hub for the ECS architecture. It is designed to coordinate
+ * entity lifecycle, component storage, and system orchestration. While it aims to
+ * reduce overhead in common execution paths, performance and determinism are
+ * dependent on the JavaScript environment, execution context, and strict adherence
+ * to the engine's mutation patterns (e.g., using {@link World.mutateComponent}).
  *
  * API status: Public
  */
@@ -133,8 +133,9 @@ export class World {
    *
    * @remarks
    * Designed to support deterministic simulations when seeded consistently and
-   * restored via snapshots. Determinism is not guaranteed if external entropy sources,
-   * non-deterministic JS features, or unmanaged side effects are used within systems.
+   * restored via snapshots. In practice, determinism is subject to the avoidance of
+   * external entropy sources, non-deterministic JavaScript features, or unmanaged
+   * side effects within systems.
    */
   public get gameplayRandom(): RandomService {
     return this._gameplayRandom;
@@ -241,15 +242,18 @@ export class World {
    *
    * @remarks
    * The snapshot is a deep-cloned representation of the world state, designed to facilitate
-   * state restoration. It seeks to ensure that:
-   * 1. Entity lists are sorted by ID.
-   * 2. Component types are sorted alphabetically.
-   * 3. Component data per type is stored in entity-order.
-   * 4. Functional or non-serializable data (like event handlers) is excluded.
+   * state restoration. It seeks to achieve consistency by:
+   * 1. Organizing entity lists sorted by ID.
+   * 2. Sorting component types alphabetically.
+   * 3. Storing component data per type in entity-order.
    *
-   * @warning Deep cloning is used to ensure snapshot independence and avoid reference sharing (aliasing),
-   * which carries a performance cost proportional to the total number of components and their complexity.
-   * Frequent snapshotting may impact the frame rate in large-scale simulations.
+   * Functional or non-serializable data (such as event handlers or complex object instances)
+   * is typically excluded or may lead to incomplete restoration if not handled as a POJO.
+   *
+   * @warning Deep cloning is used to maintain snapshot independence and avoid reference
+   * sharing (aliasing). This carries a performance cost proportional to the total number
+   * of components and their complexity. Frequent snapshotting in large simulations may
+   * impact frame rate.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const gameplayRandom = this.gameplayRandom;
@@ -359,14 +363,14 @@ export class World {
    * Restores the world state from a previously captured snapshot.
    *
    * @remarks
-   * This method performs a deep restoration to ensure the live world state
-   * becomes independent of the snapshot object. It rebuilds internal indexes and
+   * This method performs a deep restoration intended to make the live world state
+   * independent of the snapshot object. It rebuilds internal indexes and
    * re-synchronizes queries to maintain structural integrity.
    *
-   * @warning Deterministic restoration is expected only if the world's static structure
-   * (registered systems, component types) exactly matches the state when the snapshot was taken.
-   * Manual restoration of resources or external state not managed by the World
-   * must be handled by the developer to maintain full consistency.
+   * @warning Full state restoration is generally expected only if the world's static
+   * structure (registered systems, component types) matches the state when the
+   * snapshot was taken. Manual restoration of resources or external state not managed
+   * by the World must be handled by the developer to maintain consistency.
    */
   public restore(state: WorldSnapshot): void {
     this.assertCanMutateStructure("restore");
@@ -612,13 +616,14 @@ export class World {
    * Returns a READ-ONLY component reference stored in the World.
    *
    * @remarks
-   * For performance reasons, in production this returns the live reference but typed as Readonly.
-   * In development mode, the object may be frozen or proxied to detect unauthorized mutations.
+   * In production environments, this typically returns the live reference typed as `Readonly`
+   * to minimize overhead. In development mode, the object may be proxied to detect
+   * unauthorized mutations.
    *
    * API status: Public
    */
   public getComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): DeepReadonly<ComponentOf<TType>> | undefined;
-   /** @internal */ public getComponent<T extends Component>(entity: Entity, type: string): DeepReadonly<T> | undefined;
+  public getComponent<T extends Component>(entity: Entity, type: string): DeepReadonly<T> | undefined;
   public getComponent<T extends Component>(entity: Entity, type: string): DeepReadonly<T> | undefined {
     const component = this.componentMaps.get(type)?.get(entity) as T | undefined;
     if (__DEV__ && component) {
@@ -651,11 +656,11 @@ export class World {
    * Performs an immediate mutation on a component.
    *
    * @remarks
-   * This is the **authoritative** way to modify component data. It ensures
-   * that state versioning, change detection, and render-dirty flags are correctly updated.
+   * This is the recommended way to modify component data. It ensures
+   * that state versioning, change detection, and render-dirty flags are updated.
    * Direct property assignments on component references retrieved via `getComponent`
-   * bypass the engine's tracking mechanisms and are blocked in development mode
-   * to help prevent desyncs in deterministic environments.
+   * bypass these mechanisms and are typically blocked in development mode
+   * to help maintain consistency in deterministic environments.
    */
   public mutateComponent<TType extends AnyCoreComponent["type"]>(
     entity: Entity,
@@ -1096,12 +1101,12 @@ export class World {
    *
    * @remarks
    * This method bypasses `Readonly` protection and should be used with caution.
-   * It is intended for performance-critical hot paths where the overhead of the
-   * `mutateComponent` callback might be measurable. It manually triggers
-   * the state version increment and render-dirty flags.
+   * It is intended for performance-critical hot paths where the overhead of a
+   * callback might be measurable. It manually triggers state version increments
+   * and render-dirty flags.
    *
-   * @warning Bypassing the standard mutation flow increases the risk of accidental
-   * side effects or desyncs if state tracking is not handled carefully.
+   * @warning Bypassing the standard `mutateComponent` flow increases the risk of
+   * accidental side effects or state desyncs if tracking is not handled carefully.
    */
   public getMutableComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): ComponentOf<TType> | undefined;
   public getMutableComponent<T extends Component>(entity: Entity, type: string): T | undefined;

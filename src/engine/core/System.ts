@@ -10,12 +10,14 @@ import { World } from "./World";
  * See {@link BaseGame} for more details on the execution pipeline.
  *
  * Mutation Guidelines per Phase:
- * - `Input`: Intended for capturing external events. Ideally should NOT mutate component data directly.
- * - `Simulation`: Main phase for gameplay logic and data mutation. Structural changes (creation/deletion)
- *   SHOULD be deferred via {@link WorldCommandBuffer} to ensure iterator safety.
- * - `Collision`: Typically expects READ-ONLY access to spatial components.
+ * - `Input`: Intended for capturing external events. It is generally recommended NOT
+ *   to mutate component data directly in this phase.
+ * - `Simulation`: Main phase for gameplay logic and data mutation. Structural changes
+ *   (creation/deletion) should be deferred via {@link WorldCommandBuffer} to help
+ *   maintain iterator safety.
+ * - `Collision`: Typically expects read-only access to spatial components for detection.
  * - `GameRules`: High-level state changes and logic resolution.
- * - `Transform`: Designed for world-space hierarchy resolution.
+ * - `Transform`: Intended for world-space hierarchy resolution.
  *
  * @public
  */
@@ -99,16 +101,16 @@ export abstract class System {
    * @remarks
    * Systems typically query relevant entities via {@link World.query} and apply
    * transformations to their components. To support reproducibility and rollbacks,
-   * it is recommended to minimize the use of non-serializable internal mutable state.
+   * it is recommended to avoid non-serializable internal mutable state.
    *
    * @warning **Structural Mutations**: Modifying world structure (creating/removing entities
-   * or components) while iterating over a query is restricted as it may invalidate
-   * iterators. Use {@link World.getCommandBuffer} to defer these operations until
-   * the end of the tick.
+   * or components) while iterating over a query is generally restricted as it may
+   * invalidate iterators. Use {@link World.getCommandBuffer} to defer these operations
+   * until the end of the tick.
    *
-   * @warning **Asynchronous Logic**: Systems are expected to be synchronous. Using
-   * `async/await` within `update` is not supported by the engine's core loop and
-   * will likely lead to race conditions or broken simulation integrity.
+   * @warning **Asynchronous Logic**: Systems must be synchronous. Using `async/await`
+   * within `update` is not supported by the engine's core loop and will likely lead
+   * to race conditions or broken simulation integrity.
    *
    * @precondition World state is expected to be consistent at the start of the update cycle.
    */

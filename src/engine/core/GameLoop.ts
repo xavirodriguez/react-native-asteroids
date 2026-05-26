@@ -13,21 +13,21 @@ export interface GameLoopConfig {
  *
  * @remarks
  * Implements a **Fixed Timestep / Variable Rendering** scheme with interpolation,
- * designed to promote simulation consistency and visual smoothness.
+ * intended to support simulation consistency and visual smoothness.
  *
- * The loop seeks to decouple simulation logic from the device's refresh rate,
- * aiming to mitigate the impact of performance fluctuations on physical integrity.
- * Under high load conditions, the system may limit updates to preserve
- * main thread stability.
+ * The loop is designed to decouple simulation logic from the device's refresh rate,
+ * which may help mitigate the impact of performance fluctuations on physical integrity.
+ * Under high load conditions, the system may limit updates to preserve main thread stability.
  *
- * **Precision**: The simulation phase is designed to receive constant increments of
+ * **Precision**: The simulation phase is configured to target constant increments of
  * 16.67ms (1/60s). In practice, real-world precision is subject to environment
- * constraints (JS Event Loop, `performance.now()` variability, and system load).
+ * constraints such as the JavaScript Event Loop, `performance.now()` variability,
+ * and system load.
  *
  * @conceptualRisk [PERFORMANCE] The loop may encounter a "Spiral of Death" if the
  * simulation is consistently slower than real-time. A safety mechanism
  * (`maxUpdatesPerFrame`) is included to mitigate this risk by dropping simulation
- * ticks, which may affect temporal accuracy.
+ * ticks, which may affect temporal accuracy and determinism.
  */
 export class GameLoop {
   private isRunning = false;
@@ -79,13 +79,14 @@ export class GameLoop {
    * Subscribes a callback to the physical simulation phase (Fixed Update).
    *
    * @remarks
-   * This phase is oriented towards simulation consistency. The system seeks to provide
-   * a constant time increment (16.67ms) to the callback. Depending on elapsed time,
+   * This phase is oriented towards simulation consistency. The system targets a
+   * constant time increment (16.67ms) for the callback. Depending on elapsed time,
    * it may execute multiple times in a single environment frame.
    *
    * To prevent main thread blocking, the number of updates per frame is limited by
    * `maxUpdatesPerFrame`. If this limit is reached, remaining ticks for that frame
-   * are dropped, which may sacrifice absolute temporal accuracy and determinism for stability.
+   * are dropped, which may affect temporal accuracy and determinism in favor of
+   * environment stability.
    *
    * @param listener - Function receiving the fixedDeltaTime (16.67ms).
    * @returns A function to unsubscribe.
@@ -153,13 +154,13 @@ export class GameLoop {
    *
    * @remarks
    * Implements a **Time Accumulator** algorithm:
-   * 1. Calculates `deltaTime` capped by `maxDeltaMs` to prevent excessive jumps.
+   * 1. Calculates `deltaTime` capped by `maxDeltaMs` to help prevent excessive jumps.
    * 2. Adds `deltaTime` to the `accumulator`.
    * 3. Executes the simulation phase in fixed steps (16.67ms) as long as the accumulator allows.
    * 4. Calculates `alpha` as the remaining time fraction for visual interpolation.
    *
    * While this system is designed to support reproducibility, external factors
-   * in the JS environment and hardware may introduce minor variations in behavior.
+   * in the JavaScript environment and hardware may introduce variations in behavior.
    */
   private loop = (currentTime: number): void => {
     if (!this.isRunning) return;

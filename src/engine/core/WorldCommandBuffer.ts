@@ -25,22 +25,22 @@ type Command =
   | { type: CommandType.SPAWN_FROM_BLUEPRINT, blueprintId: string, x: number, y: number, overrides?: BlueprintOverrides };
 
 /**
- * ECS Command Buffer - Defers structural world mutations to ensure iterator safety.
+ * ECS Command Buffer - Defers structural world mutations to help ensure iterator safety.
  *
  * @remarks
- * The `WorldCommandBuffer` is designed for use when modifying the world during system
+ * The `WorldCommandBuffer` is intended for use when modifying the world during system
  * updates. Since systems often iterate over entities via queries, direct structural
- * modifications are restricted to prevent iterator invalidation or inconsistent results.
+ * modifications are restricted to help prevent iterator invalidation or inconsistent results.
  *
  * ### Execution Characteristics:
- * 1. **FIFO Order**: Commands are executed in the sequence they were recorded.
- * 2. **Visibility**: Structural changes are NOT reflected in the {@link World} until
+ * 1. **FIFO Order**: Commands are typically executed in the sequence they were recorded.
+ * 2. **Visibility**: Structural changes are generally NOT reflected in the {@link World} until
  *    `flush()` is called (automatically triggered at the end of the `World.update` cycle).
  *
  * Recommended practice:
  * - Systems should use `WorldCommandBuffer` for structural changes (entity creation/deletion,
  *   component addition/removal) during their `update` method.
- * - This prevents iterator invalidation and supports a predictable state transition.
+ * - This helps prevent iterator invalidation and supports predictable state transitions.
  */
 export class WorldCommandBuffer {
   private commands: Command[] = [];

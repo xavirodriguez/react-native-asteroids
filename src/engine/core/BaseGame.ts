@@ -59,14 +59,14 @@ export enum GameStatus {
  *
  * Responsibility: Coordinate the initialization of systems and entities.
  *
- * Responsibility: Manage pause, resume, and restart transitions atomically via `_transitionLock`.
+ * Responsibility: Manage pause, resume, and restart transitions via `_transitionLock`.
  *
  * Responsibility: Provide unified access to the ECS World and global resources.
  *
  * @remarks
  * This abstract class implements the engine's core loop, managing transitions between states
- * and ensuring a predictable execution pipeline. It utilizes a transition lock to
- * prevent race conditions during asynchronous initialization and scene swaps.
+ * and aiming to provide a predictable execution pipeline. It utilizes a transition lock
+ * to help prevent race conditions during asynchronous initialization and scene swaps.
  *
  * ### Standard Units
  *
@@ -82,13 +82,13 @@ export enum GameStatus {
  *
  * ### Deterministic Simulation vs. Visual Presentation
  *
- * The engine seeks to maintain a boundary between the **Deterministic Simulation**
+ * The engine is designed to maintain a boundary between the **Deterministic Simulation**
  * and the **Visual Presentation** layer:
  *
  * - **Deterministic Simulation**: Operates on a fixed time step. Logic affecting
- *   gameplay (physics, health, scores) is intended to occur here. It is designed
- *   to support replayability and synchronization across network clients when used
- *   under controlled conditions (e.g., seeded RNG, consistent execution order).
+ *   gameplay (physics, health, scores) is typically intended to occur here. It is
+ *   designed to support replayability and synchronization across network clients
+ *   when used under controlled conditions (e.g., seeded RNG, consistent execution order).
  * - **Visual Presentation**: Operates at the display's variable refresh rate. It
  *   typically uses interpolation between simulation states to provide smooth motion.
  *   Visual-only effects (Juice, Particles, UI) reside here and are expected to
@@ -106,9 +106,9 @@ export enum GameStatus {
  *
  * ### Determinism Guidelines
  *
- * - Presentation logic should avoid modifying authoritative gameplay state.
- * - Visual effects should avoid modifying `TransformComponent` if it affects physics or networking.
- * - Randomness in gameplay logic should use `world.gameplayRandom`.
+ * - Presentation logic is recommended to avoid modifying authoritative gameplay state.
+ * - Visual effects should typically avoid modifying `TransformComponent` if it affects physics or networking.
+ * - Randomness in gameplay logic is expected to use `world.gameplayRandom`.
  * - Randomness in presentation should use `world.renderRandom`.
  * - Snapshots for Replay/Rollback are designed to capture serializable authoritative state.
  *
@@ -443,8 +443,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * Restarts the game state, optionally with a new seed.
    *
    * @remarks
-   * Atomic transition protected by a lock. Pauses simulation and clears
-   * volatile resources to prevent memory leaks.
+   * State transition protected by a lock. Pauses simulation and clears
+   * volatile resources to help prevent memory leaks.
    *
    * Logic:
    * - If an active Scene exists, delegates restart to `SceneManager`.
@@ -571,12 +571,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * Initializes the game and its subsystems asynchronously.
    *
    * @remarks
-   * Critical initialization process that must occur before {@link BaseGame.start}.
+   * Initialization process that must occur before {@link BaseGame.start}.
    *
    * ### Concurrency Control:
    * The process uses an internal `_transitionLock` (Promise-based lock) designed to
-   * ensure that multiple calls to `init()` or `restart()` do not overlap, helping
-   * to prevent inconsistent engine states during system registration.
+   * help ensure that multiple calls to `init()` or `restart()` do not overlap,
+   * which may prevent inconsistent engine states during system registration.
    *
    * Flow:
    * 1. Register Essential Resources (EventBus, Input, Audio, SpatialGrid).

@@ -4,7 +4,7 @@ import { Entity } from "../types/EngineTypes";
  * Reactive Query that maintains an index of entities with a specific component signature.
  *
  * @remarks
- * Queries are designed to reduce the overhead of iterating over all entities by maintaining
+ * Queries are intended to reduce the overhead of iterating over all entities by maintaining
  * a filtered cache. The {@link World} notifies relevant queries when structural changes occur.
  *
  * ### Internals: Reactive Indexing
@@ -13,17 +13,17 @@ import { Entity } from "../types/EngineTypes";
  * 2. **Initial Matching**: If new, it performs a scan of active entities to find matches.
  * 3. **Reactive Updates**: When components are added or removed, the World notifies
  *    interested Queries to update their internal indices.
- * 4. **Lazy Sorting**: Queries use an internal `Set` for efficient membership changes.
- *    The result array is rebuilt and sorted only upon the first access after a change.
+ * 4. **Lazy Sorting**: Queries use an internal `Set` for membership changes.
+ *    The result array is typically rebuilt and sorted upon the first access after a change.
  *
  * ### Performance Characteristics:
- * - **Membership Check**: O(1) using internal `Set`.
+ * - **Membership Check**: Generally O(1) using an internal `Set`.
  * - **Retrieval**: Rebuilding the sorted array is O(N log N) upon the first access after
  *   a structural mutation. Subsequent accesses to the same view are O(1).
  * - **Memory**: Retains references to matching Entity IDs and caches one sorted array.
  *
  * @conceptualRisk [MUTABLE_CACHE_LEAK] `getEntities()` returns a shallow copy to
- * mitigate external state corruption, which incurs an allocation cost.
+ * help prevent external state corruption, which incurs an allocation cost.
  *
  * @public
  */
@@ -92,13 +92,14 @@ export class Query {
    *    as the source for the copy.
    *
    * @warning **Dynamic Query Cost**: Frequent calls to `world.query()` with varying component
-   * signatures inside hot loops may impact performance. It is recommended to reuse query instances.
+   * signatures inside hot loops may impact performance. Reusing query instances is
+   * recommended.
    *
    * @returns A read-only array of matching {@link Entity} IDs.
    *
    * @conceptualRisk [GC_PRESSURE] Frequent calls allocate new array instances.
-   * In performance-critical loops, `forEach()` or `getEntitiesView()` are preferred to
-   * minimize per-frame allocations.
+   * In performance-critical loops, `forEach()` or `getEntitiesView()` are typically
+   * preferred to help minimize per-frame allocations.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.needsUpdateArray) {
