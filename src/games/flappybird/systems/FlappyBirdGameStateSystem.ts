@@ -7,7 +7,6 @@ import {
 } from "../types/FlappyBirdTypes";
 import { IFlappyBirdGame, IFlappyStateSystem } from "../types/GameInterfaces";
 import { createPipe } from "../EntityFactory";
-import { RandomService } from "../../../engine/utils/RandomService";
 import { EventBus } from "../../../engine/core/EventBus";
 import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
 

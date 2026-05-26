@@ -1,7 +1,7 @@
 import { TransformComponent, Collider2DComponent, Entity, AABB } from "../../types/EngineTypes";
 
 export class BroadPhase {
-  static getShapeBounds(transform: TransformComponent, collider: Collider2DComponent): AABB {
+  static getShapeBounds(transform: Readonly<TransformComponent>, collider: Readonly<Collider2DComponent>): AABB {
     const worldX = transform.worldX ?? transform.x;
     const worldY = transform.worldY ?? transform.y;
     const cx = worldX + collider.offsetX;

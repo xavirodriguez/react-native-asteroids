@@ -1,5 +1,4 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { RandomService } from "../../../engine/utils/RandomService";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
 
 /**

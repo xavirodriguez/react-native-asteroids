@@ -3,7 +3,6 @@ import { PongState, BallComponent, PaddleComponent, PONG_CONFIG } from "./types"
 import { PongConfig } from "./types/PongConfigSchema";
 import { Component, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, BoundaryComponent, TagComponent, Entity } from "../../engine/types/EngineTypes";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
-import { RandomService } from "../../engine/utils/RandomService";
 
 
 /**

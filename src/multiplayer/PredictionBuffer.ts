@@ -48,7 +48,7 @@ export class PredictionBuffer {
     const index = state.tick & this.mask;
 
     // Optimized: Reuse existing object if possible to avoid allocations
-    let existing = this.buffer[index];
+    const existing = this.buffer[index];
     if (!existing || existing.tick !== state.tick) {
         this.buffer[index] = state;
     } else {

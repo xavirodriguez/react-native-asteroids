@@ -67,13 +67,13 @@ export interface PolygonShape {
    * @remarks
    * Must be in CCW order.
    */
-  vertices: Array<{ x: number; y: number }>;
+  vertices: ReadonlyArray<{ readonly x: number; readonly y: number }>;
   /**
    * Pre-calculated edge normals used for SAT collision detection.
    * @remarks
    * Inferred from vertices during creation.
    */
-  normals: Array<{ x: number; y: number }>;
+  normals: ReadonlyArray<{ readonly x: number; readonly y: number }>;
 }
 
 /**

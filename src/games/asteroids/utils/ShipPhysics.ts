@@ -4,7 +4,6 @@ import { InputComponent } from "../types/AsteroidTypes";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { BulletPool } from "../EntityPool";
 import { PhysicsUtils } from "../../../engine/physics/utils/PhysicsUtils";
-import { RandomService } from "../../../engine/utils/RandomService";
 import { createParticle } from "../EntityFactory";
 import { createProjectile } from "../../../engine/utils/ProjectileUtils";
 import { SimulationContext } from "../../../simulation/SimulationContext";

@@ -1,11 +1,8 @@
 import { World } from "../../engine/core/World";
 import { EnemyFactory } from "../EnemyFactory";
-import { EnemyBlueprints } from "../../data/blueprints/EnemyBlueprints";
 import {
     TransformComponent,
-    VelocityComponent,
     RenderComponent,
-    Collider2DComponent,
     HealthComponent
 } from "../../engine/core/CoreComponents";
 import { EnemyTagComponent } from "../../components/enemy/EnemyTagComponent";

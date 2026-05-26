@@ -8,7 +8,6 @@ import { ReplayRecorder } from "../debug/ReplayRecorder";
 import { AudioSystem } from "./AudioSystem";
 import { SpatialGrid } from "../physics/utils/SpatialGrid";
 import { SceneManager } from "../scenes/SceneManager";
-import { RandomService } from "../utils/RandomService";
 import type { IGame, UpdateListener } from "./IGame";
 import { XPSystem } from "../systems/XPSystem";
 import { PaletteSystem } from "../systems/PaletteSystem";

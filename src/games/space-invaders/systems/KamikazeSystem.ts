@@ -1,7 +1,6 @@
 import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { TransformComponent, VelocityComponent, RenderComponent, Component } from "../../../engine/types/EngineTypes";
-import { RandomService } from "../../../engine/utils/RandomService";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 

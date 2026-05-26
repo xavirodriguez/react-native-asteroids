@@ -17,7 +17,6 @@ import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { BossComponent } from "./BossSystem";
 import { ParticlePool } from "../EntityPool";
 import { createParticle } from "../EntityFactory";
-import { RandomService } from "../../../engine/utils/RandomService";
 import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
 
 /**

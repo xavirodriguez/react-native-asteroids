@@ -28,7 +28,7 @@ export class PhysicsQuery {
    * @param ignoredEntities - Optional set of entities to skip.
    * @returns The closest {@link RaycastHit} or `null` if nothing was hit.
    */
-  static raycast(world: World, ray: Ray, layerMask: number = ALL_LAYERS, ignoredEntities?: Set<Entity>): RaycastHit | null {
+  static raycast(world: World, ray: Readonly<Ray>, layerMask: number = ALL_LAYERS, ignoredEntities?: Readonly<Set<Entity>>): RaycastHit | null {
     const hits = this.raycastAll(world, ray, layerMask, ignoredEntities);
     return hits.length > 0 ? hits[0] : null;
   }
@@ -42,7 +42,7 @@ export class PhysicsQuery {
    * @param ignoredEntities - Entities to exclude from results.
    * @returns Array of {@link RaycastHit} objects.
    */
-  static raycastAll(world: World, ray: Ray, layerMask: number = ALL_LAYERS, ignoredEntities?: Set<Entity>): RaycastHit[] {
+  static raycastAll(world: World, ray: Readonly<Ray>, layerMask: number = ALL_LAYERS, ignoredEntities?: Readonly<Set<Entity>>): RaycastHit[] {
     const entities = world.query("Transform", "Collider2D");
     const results: RaycastHit[] = [];
 
@@ -156,7 +156,7 @@ export class PhysicsQuery {
    * @param dirY - Normalized direction Y.
    * @param maxDistance - [px] Maximum travel distance.
    */
-  static shapeCast(world: World, shape: Shape, startX: number, startY: number, dirX: number, dirY: number, maxDistance: number, layerMask: number = ALL_LAYERS, ignoredEntities?: Set<Entity>): RaycastHit | null {
+  static shapeCast(world: World, shape: Readonly<Shape>, startX: number, startY: number, dirX: number, dirY: number, maxDistance: number, layerMask: number = ALL_LAYERS, ignoredEntities?: Readonly<Set<Entity>>): RaycastHit | null {
       const steps = 15; const stepDist = maxDistance / steps;
       for (let i = 0; i <= steps; i++) {
           const curX = startX + dirX * stepDist * i; const curY = startY + dirY * stepDist * i;

@@ -4,7 +4,6 @@ import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { HealthComponent } from "../../../engine/core/CoreComponents";
 import { spawnAsteroidWave, createUfo } from "../EntityFactory";
 import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
-import { RandomService } from "../../../engine/utils/RandomService";
 import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
 
 /**

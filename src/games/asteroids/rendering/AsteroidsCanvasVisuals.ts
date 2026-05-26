@@ -1,6 +1,5 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
 import { TTLComponent, HealthComponent, VelocityComponent, TrailComponent } from "../../../engine/types/EngineTypes";
-import { RandomService } from "../../../engine/utils/RandomService";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 
 let shipImage: HTMLImageElement | null = null;

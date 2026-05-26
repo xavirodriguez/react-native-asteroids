@@ -67,10 +67,11 @@ function resetManifold(): CollisionManifold {
   sharedManifold.normalY = 0;
   sharedManifold.depth = 0;
   // Devolver puntos de contacto al pool
-  for (let i = 0; i < sharedManifold.contactPoints.length; i++) {
-    vertexPool.push(sharedManifold.contactPoints[i]);
+  const contacts = sharedManifold.contactPoints as Array<{x: number, y: number}>;
+  for (let i = 0; i < contacts.length; i++) {
+    vertexPool.push(contacts[i]);
   }
-  sharedManifold.contactPoints.length = 0;
+  contacts.length = 0;
   return sharedManifold;
 }
 
@@ -131,8 +132,8 @@ export class NarrowPhase {
    * @returns A manifold containing collision data.
    */
   static test(
-    shapeA: Shape, posXA: number, posYA: number, rotA: number,
-    shapeB: Shape, posXB: number, posYB: number, rotB: number
+    shapeA: Readonly<Shape>, posXA: number, posYA: number, rotA: number,
+    shapeB: Readonly<Shape>, posXB: number, posYB: number, rotB: number
   ): CollisionManifold {
     if (shapeA.type === "circle") {
       if (shapeB.type === "circle") return this.circleVsCircle(shapeA, posXA, posYA, shapeB, posXB, posYB);
@@ -189,7 +190,7 @@ export class NarrowPhase {
    * Uses distance comparison: `distance(A, B) < radiusA + radiusB`.
    * For performance, it compares squared distances to avoid `Math.sqrt`.
    */
-  static circleVsCircle(a: CircleShape, ax: number, ay: number, b: CircleShape, bx: number, by: number): CollisionManifold {
+  static circleVsCircle(a: Readonly<CircleShape>, ax: number, ay: number, b: Readonly<CircleShape>, bx: number, by: number): CollisionManifold {
     const manifold = resetManifold();
     const dx = bx - ax; const dy = by - ay;
     const distanceSq = dx * dx + dy * dy;
@@ -212,7 +213,7 @@ export class NarrowPhase {
       }
 
       // Contact point is along the normal at radius distance from A
-      manifold.contactPoints.push(_getVertex(ax + manifold.normalX * a.radius, ay + manifold.normalY * a.radius));
+      (manifold.contactPoints as Array<{x: number, y: number}>).push(_getVertex(ax + manifold.normalX * a.radius, ay + manifold.normalY * a.radius));
     }
     return manifold;
   }
@@ -221,7 +222,7 @@ export class NarrowPhase {
    * Collision detection between two Axis-Aligned Bounding Boxes (AABBs).
    * Calculates overlap on both axes and chooses the axis of minimum penetration.
    */
-  static aabbVsAabb(a: AABBShape, ax: number, ay: number, b: AABBShape, bx: number, by: number): CollisionManifold {
+  static aabbVsAabb(a: Readonly<AABBShape>, ax: number, ay: number, b: Readonly<AABBShape>, bx: number, by: number): CollisionManifold {
     const manifold = resetManifold();
     const dx = bx - ax;
     const xOverlap = a.halfWidth + b.halfWidth - Math.abs(dx);
@@ -259,7 +260,7 @@ export class NarrowPhase {
    * Special case: If the circle center is *inside* the AABB, the normal and depth are calculated
    * based on the distance to the nearest edge of the AABB.
    */
-  static circleVsAabb(circle: CircleShape, cx: number, cy: number, aabb: AABBShape, ax: number, ay: number): CollisionManifold {
+  static circleVsAabb(circle: Readonly<CircleShape>, cx: number, cy: number, aabb: Readonly<AABBShape>, ax: number, ay: number): CollisionManifold {
     const manifold = resetManifold();
     let closestX = cx;
     let closestY = cy;
@@ -299,7 +300,7 @@ export class NarrowPhase {
             manifold.depth = circle.radius + yDist;
         }
       }
-      manifold.contactPoints.push(_getVertex(closestX, closestY));
+      (manifold.contactPoints as Array<{x: number, y: number}>).push(_getVertex(closestX, closestY));
     }
     return manifold;
   }
@@ -324,7 +325,7 @@ export class NarrowPhase {
    * @param cy - Y del centro del círculo.
    * @param poly - Polígono convexo.
    */
-  static circleVsPolygon(circle: CircleShape, cx: number, cy: number, poly: PolygonShape, px: number, py: number, pr: number): CollisionManifold {
+  static circleVsPolygon(circle: Readonly<CircleShape>, cx: number, cy: number, poly: Readonly<PolygonShape>, px: number, py: number, pr: number): CollisionManifold {
     const manifold = resetManifold();
     this.populateGlobalVertices(poly, px, py, pr, worldVerticesA);
 
@@ -373,16 +374,16 @@ export class NarrowPhase {
           manifold.normalX = 1;
           manifold.normalY = 0;
         }
-        manifold.contactPoints.push(_getVertex(closestX, closestY));
+        (manifold.contactPoints as Array<{x: number, y: number}>).push(_getVertex(closestX, closestY));
     }
     return manifold;
   }
 
-  static aabbVsPolygon(aabb: AABBShape, ax: number, ay: number, poly: PolygonShape, px: number, py: number, pr: number): CollisionManifold {
-      staticAABBPoly.vertices[0].x = -aabb.halfWidth; staticAABBPoly.vertices[0].y = -aabb.halfHeight;
-      staticAABBPoly.vertices[1].x = aabb.halfWidth; staticAABBPoly.vertices[1].y = -aabb.halfHeight;
-      staticAABBPoly.vertices[2].x = aabb.halfWidth; staticAABBPoly.vertices[2].y = aabb.halfHeight;
-      staticAABBPoly.vertices[3].x = -aabb.halfWidth; staticAABBPoly.vertices[3].y = aabb.halfHeight;
+  static aabbVsPolygon(aabb: Readonly<AABBShape>, ax: number, ay: number, poly: Readonly<PolygonShape>, px: number, py: number, pr: number): CollisionManifold {
+      (staticAABBPoly.vertices[0] as any).x = -aabb.halfWidth; (staticAABBPoly.vertices[0] as any).y = -aabb.halfHeight;
+      (staticAABBPoly.vertices[1] as any).x = aabb.halfWidth; (staticAABBPoly.vertices[1] as any).y = -aabb.halfHeight;
+      (staticAABBPoly.vertices[2] as any).x = aabb.halfWidth; (staticAABBPoly.vertices[2] as any).y = aabb.halfHeight;
+      (staticAABBPoly.vertices[3] as any).x = -aabb.halfWidth; (staticAABBPoly.vertices[3] as any).y = aabb.halfHeight;
       return this.polygonVsPolygon(staticAABBPoly, ax, ay, 0, poly, px, py, pr);
   }
 
@@ -429,7 +430,7 @@ export class NarrowPhase {
    * @param br - Rotation of B in radians.
    * @returns Collision manifold with depth and normal.
    */
-  static polygonVsPolygon(a: PolygonShape, ax: number, ay: number, ar: number, b: PolygonShape, bx: number, by: number, br: number): CollisionManifold {
+  static polygonVsPolygon(a: Readonly<PolygonShape>, ax: number, ay: number, ar: number, b: Readonly<PolygonShape>, bx: number, by: number, br: number): CollisionManifold {
     const manifold = resetManifold();
 
     // 1. Transformar vértices locales a coordenadas de mundo (incluyendo rotación)
@@ -494,7 +495,7 @@ export class NarrowPhase {
    * 3. Se realiza una prueba de círculo vs círculo entre el círculo original y un círculo virtual
    *    situado en el punto más cercano de la línea con el radio de la cápsula.
    */
-  static circleVsCapsule(circle: CircleShape, cx: number, cy: number, capsule: CapsuleShape, cpx: number, cpy: number, cpr: number): CollisionManifold {
+  static circleVsCapsule(circle: Readonly<CircleShape>, cx: number, cy: number, capsule: Readonly<CapsuleShape>, cpx: number, cpy: number, cpr: number): CollisionManifold {
       const manifold = resetManifold();
       const line = this.getCapsuleLine(capsule, cpx, cpy, cpr);
       const dx = line.p2x - line.p1x; const dy = line.p2y - line.p1y;
@@ -509,12 +510,12 @@ export class NarrowPhase {
           manifold.colliding = true; manifold.depth = radiusSum - distance;
           if (distance > 0.0001) { manifold.normalX = (cx - closestX) / distance; manifold.normalY = (cy - closestY) / distance; }
           else { manifold.normalX = 1; manifold.normalY = 0; }
-          manifold.contactPoints.push(_getVertex(closestX, closestY));
+          (manifold.contactPoints as Array<{x: number, y: number}>).push(_getVertex(closestX, closestY));
       }
       return manifold;
   }
 
-  static aabbVsCapsule(aabb: AABBShape, ax: number, ay: number, capsule: CapsuleShape, cx: number, cy: number, cr: number): CollisionManifold {
+  static aabbVsCapsule(aabb: Readonly<AABBShape>, ax: number, ay: number, capsule: Readonly<CapsuleShape>, cx: number, cy: number, cr: number): CollisionManifold {
       // Treat capsule as a thick line, approximate by checking endpoints and center
       staticCircle.radius = 0.1;
       const manifold = this.circleVsCapsule(staticCircle, ax, ay, capsule, cx, cy, cr);
@@ -525,11 +526,11 @@ export class NarrowPhase {
       return manifold;
   }
 
-  static polygonVsCapsule(poly: PolygonShape, px: number, py: number, pr: number, capsule: CapsuleShape, cx: number, cy: number, cr: number): CollisionManifold {
+  static polygonVsCapsule(poly: Readonly<PolygonShape>, px: number, py: number, pr: number, capsule: Readonly<CapsuleShape>, cx: number, cy: number, cr: number): CollisionManifold {
       return this.polygonVsPolygon(poly, px, py, pr, this.capsuleToPolygon(capsule), cx, cy, cr);
   }
 
-  static capsuleVsCapsule(a: CapsuleShape, ax: number, ay: number, ar: number, b: CapsuleShape, bx: number, by: number, br: number): CollisionManifold {
+  static capsuleVsCapsule(a: Readonly<CapsuleShape>, ax: number, ay: number, ar: number, b: Readonly<CapsuleShape>, bx: number, by: number, br: number): CollisionManifold {
       // Find closest points between two line segments
       const _lineA = this.getCapsuleLine(a, ax, ay, ar);
       const _lineB = this.getCapsuleLine(b, bx, by, br);
@@ -542,7 +543,7 @@ export class NarrowPhase {
    * Internal helper to calculate world-space line segment for a capsule.
    * Uses a static object to avoid allocations.
    */
-  private static getCapsuleLine(c: CapsuleShape, x: number, y: number, r: number) {
+  private static getCapsuleLine(c: Readonly<CapsuleShape>, x: number, y: number, r: number) {
       const angle = r + c.orientation;
       const dx = Math.cos(angle) * c.halfHeight;
       const dy = Math.sin(angle) * c.halfHeight;
@@ -557,7 +558,7 @@ export class NarrowPhase {
    * Approximates a capsule as a polygon for SAT testing.
    * Uses a static mutable PolygonShape to avoid allocations.
    */
-  private static capsuleToPolygon(c: CapsuleShape): PolygonShape {
+  private static capsuleToPolygon(c: Readonly<CapsuleShape>): PolygonShape {
       // Hexagonal approximation of a capsule for SAT
       const angle = c.orientation;
       const dx = Math.cos(angle) * c.halfHeight;
@@ -565,12 +566,12 @@ export class NarrowPhase {
       const nx = -Math.sin(angle) * c.radius;
       const ny = Math.cos(angle) * c.radius;
 
-      staticCapsulePoly.vertices[0].x = -dx + nx; staticCapsulePoly.vertices[0].y = -dy + ny;
-      staticCapsulePoly.vertices[1].x = dx + nx;  staticCapsulePoly.vertices[1].y = dy + ny;
-      staticCapsulePoly.vertices[2].x = dx + nx*0.5; staticCapsulePoly.vertices[2].y = dy + ny*0.5;
-      staticCapsulePoly.vertices[3].x = dx - nx*0.5; staticCapsulePoly.vertices[3].y = dy - ny*0.5;
-      staticCapsulePoly.vertices[4].x = dx - nx;  staticCapsulePoly.vertices[4].y = dy - ny;
-      staticCapsulePoly.vertices[5].x = -dx - nx; staticCapsulePoly.vertices[5].y = -dy - ny;
+      (staticCapsulePoly.vertices[0] as any).x = -dx + nx; (staticCapsulePoly.vertices[0] as any).y = -dy + ny;
+      (staticCapsulePoly.vertices[1] as any).x = dx + nx;  (staticCapsulePoly.vertices[1] as any).y = dy + ny;
+      (staticCapsulePoly.vertices[2] as any).x = dx + nx*0.5; (staticCapsulePoly.vertices[2] as any).y = dy + ny*0.5;
+      (staticCapsulePoly.vertices[3] as any).x = dx - nx*0.5; (staticCapsulePoly.vertices[3] as any).y = dy - ny*0.5;
+      (staticCapsulePoly.vertices[4] as any).x = dx - nx;  (staticCapsulePoly.vertices[4] as any).y = dy - ny;
+      (staticCapsulePoly.vertices[5] as any).x = -dx - nx; (staticCapsulePoly.vertices[5] as any).y = -dy - ny;
 
       return staticCapsulePoly;
   }
@@ -579,7 +580,7 @@ export class NarrowPhase {
    * Transforms local polygon vertices to world space coordinates.
    * Reuse arrays to avoid GC.
    */
-  private static populateGlobalVertices(shape: PolygonShape, x: number, y: number, r: number, out: Array<{x: number, y: number}>) {
+  private static populateGlobalVertices(shape: Readonly<PolygonShape>, x: number, y: number, r: number, out: Array<{x: number, y: number}>) {
     const cos = Math.cos(r); const sin = Math.sin(r);
     for (let i = 0; i < shape.vertices.length; i++) {
         const v = shape.vertices[i];
@@ -593,7 +594,7 @@ export class NarrowPhase {
   /**
    * Transforms local polygon normals to world space based on current rotation.
    */
-  private static populateGlobalNormals(shape: PolygonShape, r: number, out: Array<{x: number, y: number}>) {
+  private static populateGlobalNormals(shape: Readonly<PolygonShape>, r: number, out: Array<{x: number, y: number}>) {
     const cos = Math.cos(r); const sin = Math.sin(r);
     const startIdx = out.length;
     for (let i = 0; i < shape.normals.length; i++) {

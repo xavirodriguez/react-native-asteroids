@@ -22,7 +22,7 @@ export type ShapeDrawer<TContext> = (
     shape: string,
     size: number,
     color: string,
-    vertices?: { x: number, y: number }[] | null,
+    vertices?: ReadonlyArray<{ readonly x: number, readonly y: number }> | null,
     hitFlashFrames: number,
     data: Record<string, unknown> | null
   },
