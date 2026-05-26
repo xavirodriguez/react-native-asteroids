@@ -23,7 +23,7 @@ export class BlueprintRegistry {
 
     this.blueprints.forEach((blueprint) => {
       sections.forEach((section) => {
-        const data = (blueprint as any)[section];
+        const data = (blueprint as unknown as Record<string, unknown>)[section];
         if (data && typeof data === 'object') {
           const planKey = `${blueprint.id}:${section}`;
           this.copyPlans.set(planKey, Object.keys(data));

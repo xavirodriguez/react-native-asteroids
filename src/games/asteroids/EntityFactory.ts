@@ -135,7 +135,7 @@ export const createBullet = ({ world, x, y, angle, ownerId, deferred }: { world:
     render: {
         rotation: angle
     }
-  } as any;
+  } as import("../../data/blueprints/types/BlueprintTypes").BlueprintOverrides;
 
   let bullet: Entity;
   if (deferred || world.isUpdating) {

@@ -12,8 +12,7 @@ export class FlappyBirdRoom extends Room<FlappyBirdState> {
     // Ensure seed is a number and fallback to random if not provided
     const seed = (typeof options.seed === 'number') ? options.seed : Math.floor(Math.random() * 0xFFFFFFFF);
     this.state.seed = seed;
-    this.random = RandomService.getInstance("flappy_server");
-    this.random.setSeed(this.state.seed);
+    this.random = new RandomService(this.state.seed);
 
     this.state.gameStarted = false;
     this.state.gameOver = false;

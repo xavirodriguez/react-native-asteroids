@@ -21,7 +21,7 @@ export class ComponentCloner {
     if (typeof structuredClone === "function") {
       try {
         return structuredClone(data);
-      } catch (e) {
+      } catch {
         // Fallback if data contains non-cloneable items (though ECS components should be POJOs)
         return this.manualDeepClone(data);
       }
