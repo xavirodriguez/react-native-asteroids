@@ -32,8 +32,8 @@ describe("Prediction vs ECS Determinism", () => {
     world1.addComponent(ship1, vel1);
     world1.addComponent(ship1, render1);
     world1.addComponent(ship1, input1);
-    world1.addComponent(ship1, { type: "Ship" } as any);
-    world1.addComponent(ship1, { type: "ManualMovement" } as any);
+    world1.addComponent(ship1, { type: "Ship" } as unknown);
+    world1.addComponent(ship1, { type: "ManualMovement" } as unknown);
 
     // --- Setup World 2 (Manual Path but using ECS correctly) ---
     const world2 = new World();

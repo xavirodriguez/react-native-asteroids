@@ -14,7 +14,7 @@ describe("Replay Isolation", () => {
     await game.init();
 
     // We need to access predictionBuffer which is private, but for testing we can cast to any
-    const predictionBuffer = (game as any).predictionBuffer;
+    const predictionBuffer = (game as unknown).predictionBuffer;
     const saveSpy = jest.spyOn(predictionBuffer, "save");
 
     const replayManager = new ReplayManager();
@@ -34,7 +34,7 @@ describe("Replay Isolation", () => {
 
     // Ensure a ship with player1 sessionId exists
     game.getWorld().query("Ship").forEach(e => {
-        game.getWorld().mutateComponent(e, "Ship", (s: any) => {
+        game.getWorld().mutateComponent(e, "Ship", (s: unknown) => {
             s.sessionId = "player1";
         });
     });

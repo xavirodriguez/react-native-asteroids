@@ -15,7 +15,7 @@ describe("FlappyBirdGameStateSystem", () => {
     // BaseGame calls registerSystems in constructor, which sets up the scene
     world = createTestWorld({ resources: { GameConfig: FLAPPY_CONFIG } });
     // Overwrite the game world with our test world
-    (game as any).world = world;
+    (game as unknown).world = world;
     system = new FlappyBirdGameStateSystem(game as unknown as BaseGame<FlappyBirdState, Record<string, unknown>>);
   });
 

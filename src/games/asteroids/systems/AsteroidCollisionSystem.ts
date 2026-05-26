@@ -267,7 +267,7 @@ export class AsteroidCollisionSystem extends System {
       const splitCount = (asteroid as Record<string, unknown>).splitCount as number | undefined;
 
       if (splitsInto && splitsInto.length > 0 && splitCount !== undefined) {
-        const offset = (this.splitConfig as Record<string, any>)?.[asteroid.size]?.offset || 10;
+        const offset = (this.splitConfig as Record<string, unknown>)?.[asteroid.size]?.offset || 10;
 
         // Momentum: Inherit parent velocity
         const parentVel = world.getComponent<VelocityComponent>(asteroidEntity, "Velocity");
@@ -288,7 +288,7 @@ export class AsteroidCollisionSystem extends System {
                     dx: parentDx + Math.cos(randomAngle) * speed,
                     dy: parentDy + Math.sin(randomAngle) * speed
                 }
-            } as any);
+            } as unknown);
           }
         }
       }

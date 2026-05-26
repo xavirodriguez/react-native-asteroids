@@ -23,7 +23,7 @@ describe("PlayerProfileService Concurrency", () => {
   beforeEach(async () => {
     await AsyncStorage.clear();
     // Force re-initialization of profile
-    (PlayerProfileService as any).profile = null;
+    (PlayerProfileService as unknown).profile = null;
   });
 
   it("should handle concurrent XP updates correctly", async () => {

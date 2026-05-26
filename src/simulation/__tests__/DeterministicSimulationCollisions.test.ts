@@ -36,13 +36,13 @@ describe("Asteroids ECS - SpatialGrid Collisions", () => {
       layer: 1, // ASTEROID_LAYER
       mask: 2   // BULLET_LAYER
     } as Collider2DComponent);
-    world.addComponent(entity, { type: "SpatialNode", active: true, lastCellKeys: [] } as any);
+    world.addComponent(entity, { type: "SpatialNode", active: true, lastCellKeys: [] } as unknown);
     return entity;
   }
 
   function createBullet(x: number, y: number): Entity {
     const entity = world.createEntity();
-    world.addComponent(entity, { type: "Bullet" } as any);
+    world.addComponent(entity, { type: "Bullet" } as unknown);
     world.addComponent(entity, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1, dirty: true } as TransformComponent);
     world.addComponent(entity, {
       type: "Collider2D",
@@ -50,7 +50,7 @@ describe("Asteroids ECS - SpatialGrid Collisions", () => {
       layer: 2, // BULLET_LAYER
       mask: 1   // ASTEROID_LAYER
     } as Collider2DComponent);
-    world.addComponent(entity, { type: "SpatialNode", active: true, lastCellKeys: [] } as any);
+    world.addComponent(entity, { type: "SpatialNode", active: true, lastCellKeys: [] } as unknown);
     return entity;
   }
 
