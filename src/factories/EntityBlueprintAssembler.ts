@@ -148,17 +148,17 @@ export class EntityBlueprintAssembler {
       if (comp) return comp;
 
       // Try to acquire from pool
-      comp = world.acquireComponent<any>(type);
+      comp = world.acquireComponent<import("../engine/core/Component").Component>(type) as T;
       if (!comp) {
           // Cold path: create new object
-          comp = { type } as any;
+          comp = { type } as unknown as T;
       }
 
       // Add to world/buffer
       if (buffer) {
-          buffer.addComponent(entity, comp as any);
+          buffer.addComponent(entity, comp);
       } else {
-          world.addComponent(entity, comp as any);
+          world.addComponent(entity, comp);
       }
 
       return comp;
@@ -170,8 +170,8 @@ export class EntityBlueprintAssembler {
     compType: string,
     blueprintId: string,
     section: string,
-    baseData: any,
-    overrideData: any,
+    baseData: Record<string, unknown>,
+    overrideData: Record<string, unknown> | undefined,
     buffer?: WorldCommandBuffer
   ): void {
     const plan = BlueprintRegistry.getCopyPlan(blueprintId, section);
