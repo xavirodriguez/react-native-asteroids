@@ -9,7 +9,7 @@ import { RandomService } from "../utils/RandomService";
  * @returns Array of Star objects.
  */
 export function generateStarField(count: number, width: number, height: number, world?: import("../core/World").World): Star[] {
-  const renderRandom = world ? world.renderRandom : RandomService.getInstance("render");
+  const renderRandom = world ? world.renderRandom : new RandomService(Date.now());
   return Array.from({ length: count }, () => ({
     type: "Star",
     x: renderRandom.next() * width,

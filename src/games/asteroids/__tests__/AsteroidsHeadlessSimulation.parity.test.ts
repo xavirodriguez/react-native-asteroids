@@ -7,7 +7,7 @@ describe("Asteroids ECS Parity", () => {
     const SEED = 12345;
 
     it("should produce identical results between two headless game instances", async () => {
-        const { createShip, createAsteroid } = require("../EntityFactory");
+        const { createAsteroid } = require("../EntityFactory");
 
         // Instance 1
         RandomService.resetInstances();

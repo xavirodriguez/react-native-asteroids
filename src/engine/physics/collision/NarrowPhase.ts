@@ -380,10 +380,14 @@ export class NarrowPhase {
   }
 
   static aabbVsPolygon(aabb: Readonly<AABBShape>, ax: number, ay: number, poly: Readonly<PolygonShape>, px: number, py: number, pr: number): CollisionManifold {
-      (staticAABBPoly.vertices[0] as any).x = -aabb.halfWidth; (staticAABBPoly.vertices[0] as any).y = -aabb.halfHeight;
-      (staticAABBPoly.vertices[1] as any).x = aabb.halfWidth; (staticAABBPoly.vertices[1] as any).y = -aabb.halfHeight;
-      (staticAABBPoly.vertices[2] as any).x = aabb.halfWidth; (staticAABBPoly.vertices[2] as any).y = aabb.halfHeight;
-      (staticAABBPoly.vertices[3] as any).x = -aabb.halfWidth; (staticAABBPoly.vertices[3] as any).y = aabb.halfHeight;
+      const v0 = staticAABBPoly.vertices[0] as { x: number; y: number };
+      const v1 = staticAABBPoly.vertices[1] as { x: number; y: number };
+      const v2 = staticAABBPoly.vertices[2] as { x: number; y: number };
+      const v3 = staticAABBPoly.vertices[3] as { x: number; y: number };
+      v0.x = -aabb.halfWidth; v0.y = -aabb.halfHeight;
+      v1.x = aabb.halfWidth; v1.y = -aabb.halfHeight;
+      v2.x = aabb.halfWidth; v2.y = aabb.halfHeight;
+      v3.x = -aabb.halfWidth; v3.y = aabb.halfHeight;
       return this.polygonVsPolygon(staticAABBPoly, ax, ay, 0, poly, px, py, pr);
   }
 
@@ -566,12 +570,13 @@ export class NarrowPhase {
       const nx = -Math.sin(angle) * c.radius;
       const ny = Math.cos(angle) * c.radius;
 
-      (staticCapsulePoly.vertices[0] as any).x = -dx + nx; (staticCapsulePoly.vertices[0] as any).y = -dy + ny;
-      (staticCapsulePoly.vertices[1] as any).x = dx + nx;  (staticCapsulePoly.vertices[1] as any).y = dy + ny;
-      (staticCapsulePoly.vertices[2] as any).x = dx + nx*0.5; (staticCapsulePoly.vertices[2] as any).y = dy + ny*0.5;
-      (staticCapsulePoly.vertices[3] as any).x = dx - nx*0.5; (staticCapsulePoly.vertices[3] as any).y = dy - ny*0.5;
-      (staticCapsulePoly.vertices[4] as any).x = dx - nx;  (staticCapsulePoly.vertices[4] as any).y = dy - ny;
-      (staticCapsulePoly.vertices[5] as any).x = -dx - nx; (staticCapsulePoly.vertices[5] as any).y = -dy - ny;
+      const v = staticCapsulePoly.vertices as Array<{ x: number; y: number }>;
+      v[0].x = -dx + nx; v[0].y = -dy + ny;
+      v[1].x = dx + nx;  v[1].y = dy + ny;
+      v[2].x = dx + nx*0.5; v[2].y = dy + ny*0.5;
+      v[3].x = dx - nx*0.5; v[3].y = dy - ny*0.5;
+      v[4].x = dx - nx;  v[4].y = dy - ny;
+      v[5].x = -dx - nx; v[5].y = -dy - ny;
 
       return staticCapsulePoly;
   }
