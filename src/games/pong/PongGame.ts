@@ -8,6 +8,7 @@ import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
 import { AssetLoader } from "../../engine/assets/AssetLoader";
 import { PongCollisionSystem } from "./systems/PongCollisionSystem";
 import { PongGameStateSystem } from "./systems/PongGameStateSystem";
+import { PongVelocityGuardrailSystem } from "./systems/PongVelocityGuardrailSystem";
 import { PongInputSystem } from "./systems/PongInputSystem";
 import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
 import { PongSpinSystem } from "./systems/PongSpinSystem";
@@ -78,7 +79,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     try {
       await Promise.all([
         audio.loadSFX("hit", "/audio/hit.mp3"),
-        audio.loadSFX("score", "/audio/hit.mp3"), // Fixed: /audio/score.mp3 was 404
+        audio.loadSFX("score", "/audio/hit.mp3"),
         audio.loadSFX("wall", "/audio/hit.mp3"),
         audio.loadSFX("game_over", "/audio/game_over.mp3"),
       ]);
@@ -108,10 +109,13 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     }
 
     this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
-    this.world.addSystem(new CollisionSystem2D(), { phase: SystemPhase.Collision });
-    this.world.addSystem(new PongCollisionSystem(this.config), { phase: SystemPhase.GameRules });
     this.world.addSystem(new PongSpinSystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(new BoundarySystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new PongVelocityGuardrailSystem(), { phase: SystemPhase.Simulation });
+
+    this.world.addSystem(new CollisionSystem2D(), { phase: SystemPhase.Collision });
+
+    this.world.addSystem(new PongCollisionSystem(this.config), { phase: SystemPhase.GameRules });
     this.world.addSystem(this.stateSystem, { phase: SystemPhase.GameRules });
 
     const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
