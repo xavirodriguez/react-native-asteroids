@@ -17,9 +17,11 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
 /**
  * Hybrid 2D Collision System.
  *
- * @responsibility Implement a two-phase collision detection pipeline (Broadphase & Narrowphase).
- * @responsibility Manage lifecycle events for triggers (Enter, Stay, Exit).
- * @responsibility Provide Continuous Collision Detection (CCD) to mitigate tunneling for fast objects.
+ * @remarks
+ * Implements a two-phase collision detection pipeline (Broadphase & Narrowphase)
+ * and manages lifecycle events for triggers. It is designed to work with
+ * fixed-step simulations and can integrate with a CCD phase to mitigate
+ * tunneling in fast-moving objects.
  *
  * API status: Public
  */

@@ -25,9 +25,9 @@ import { InputSerializer, InputBurstPayload } from "../../../multiplayer/InputSe
  *    last known-good state and re-simulated up to the current tick.
  *
  * @remarks
- * This strategy demands a high degree of determinism in the underlying simulation
- * and carries a significant CPU cost during rollback frames, as multiple simulation
- * ticks may be executed in a single frame.
+ * This strategy relies on simulation determinism and may carry a significant
+ * CPU cost during rollback frames, as multiple simulation ticks are executed
+ * in a single environment frame to catch up with the current tick.
  */
 export class FullReconciliationStrategy implements ReconciliationStrategy {
     private predictionBuffer = new PredictionBuffer();
@@ -183,10 +183,10 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
      * Re-simulation loop (Rewind + Fast-Forward).
      *
      * @remarks
-     * This process is designed to correct prediction errors by restoring the world
+     * This process seeks to correct prediction errors by restoring the world
      * to a confirmed server state and re-applying local inputs.
      *
-     * @warning The cost of this operation is O(N) where N is the number of ticks
+     * @warning The cost of this operation is proportional to the number of ticks
      * between the authoritative update and the current client tick.
      */
     private executeRollback(serverTick: number, authoritativeSnapshot: WorldSnapshot, localPlayerId?: number) {

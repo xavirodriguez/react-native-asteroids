@@ -82,16 +82,17 @@ export enum GameStatus {
  *
  * ### Deterministic Simulation vs. Visual Presentation
  *
- * The engine is designed to maintain a boundary between the **Deterministic Simulation**
+ * The engine seeks to maintain a boundary between the **Deterministic Simulation**
  * and the **Visual Presentation** layer:
  *
- * - **Deterministic Simulation**: Operates on a fixed time step (`FIXED_DELTA_TIME`). Logic
- *   affecting gameplay (physics, health, scores) is intended to happen here. It is designed to
- *   support replayability and synchronization across network clients under controlled conditions.
- * - **Visual Presentation**: Operates at the display's variable refresh rate. It uses
- *   interpolation between the previous and current simulation states (via `PreviousTransformComponent`)
- *   to provide smooth motion regardless of the simulation tick rate. Visual-only effects
- *   (Juice, Particles, UI) typically reside here and should avoid affecting the simulation state.
+ * - **Deterministic Simulation**: Operates on a fixed time step. Logic affecting
+ *   gameplay (physics, health, scores) is intended to occur here. It is designed
+ *   to support replayability and synchronization across network clients when used
+ *   under controlled conditions (e.g., seeded RNG, consistent execution order).
+ * - **Visual Presentation**: Operates at the display's variable refresh rate. It
+ *   typically uses interpolation between simulation states to provide smooth motion.
+ *   Visual-only effects (Juice, Particles, UI) reside here and are expected to
+ *   avoid affecting the simulation state to prevent desyncs.
  *
  * ### State Classification
  *
@@ -107,9 +108,9 @@ export enum GameStatus {
  *
  * - Presentation logic should avoid modifying authoritative gameplay state.
  * - Visual effects should avoid modifying `TransformComponent` if it affects physics or networking.
- * - Randomness in gameplay should use `RandomService.getGameplayRandom()`.
- * - Randomness in presentation should use `RandomService.getRenderRandom()`.
- * - Snapshots for Replay/Rollback are intended to include only authoritative state.
+ * - Randomness in gameplay logic should use `world.gameplayRandom`.
+ * - Randomness in presentation should use `world.renderRandom`.
+ * - Snapshots for Replay/Rollback are designed to capture serializable authoritative state.
  *
  * ### Execution Pipeline (Fixed Update)
  *
@@ -570,12 +571,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * Initializes the game and its subsystems asynchronously.
    *
    * @remarks
-   * Critical initialization process that MUST occur before {@link BaseGame.start}.
+   * Critical initialization process that must occur before {@link BaseGame.start}.
    *
    * ### Concurrency Control:
-   * The process uses an internal `_transitionLock` (Promise-based lock) to ensure that
-   * multiple calls to `init()` or `restart()` do not overlap, preventing inconsistent
-   * engine states and race conditions during system registration.
+   * The process uses an internal `_transitionLock` (Promise-based lock) designed to
+   * ensure that multiple calls to `init()` or `restart()` do not overlap, helping
+   * to prevent inconsistent engine states during system registration.
    *
    * Flow:
    * 1. Register Essential Resources (EventBus, Input, Audio, SpatialGrid).

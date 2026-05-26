@@ -102,13 +102,15 @@ export abstract class System {
    * it is recommended to minimize the use of non-serializable internal mutable state.
    *
    * @warning **Structural Mutations**: Modifying world structure (creating/removing entities
-   * or components) while iterating over a query can lead to inconsistent behavior or errors.
-   * Use {@link World.getCommandBuffer} to defer these operations until the end of the tick
-   * to ensure iterator safety.
+   * or components) while iterating over a query is restricted as it may invalidate
+   * iterators. Use {@link World.getCommandBuffer} to defer these operations until
+   * the end of the tick.
+   *
+   * @warning **Asynchronous Logic**: Systems are expected to be synchronous. Using
+   * `async/await` within `update` is not supported by the engine's core loop and
+   * will likely lead to race conditions or broken simulation integrity.
    *
    * @precondition World state is expected to be consistent at the start of the update cycle.
-   * @conceptualRisk [UNIT_CONSISTENCY][LOW] `deltaTime` is provided in milliseconds.
-   * Note that some physics calculations may expect units in seconds.
    */
   abstract update(world: World, deltaTime: number): void;
 

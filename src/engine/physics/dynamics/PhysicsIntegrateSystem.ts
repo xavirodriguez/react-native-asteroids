@@ -3,12 +3,15 @@ import { World } from "../../core/World";
 import { TransformComponent, PhysicsBody2DComponent } from "../../types/EngineTypes";
 
 /**
- * System for physical integration (Semi-Implicit Euler).
+ * System for physical integration using Semi-Implicit Euler.
  *
- * @responsibility Applies forces and gravity to velocity (Semi-Implicit Euler).
- * @responsibility Integrates velocity into position and rotation.
+ * @remarks
+ * Designed to apply forces and gravity to velocity, and integrate velocity
+ * into position and rotation. It is optimized for simulation stability
+ * within the fixed time-step loop.
  *
- * Runs in SystemPhase.Simulation.
+ * Runs in `SystemPhase.Simulation`.
+ *
  * @public
  */
 export class PhysicsIntegrateSystem extends System {

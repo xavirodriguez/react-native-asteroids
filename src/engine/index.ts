@@ -11,9 +11,9 @@
  * Warning: Some exports may include internal components necessary for extensibility
  * but are not recommended for high-level logic.
  *
- * The engine is designed with the goal of minimizing allocations in hot paths. It aims to
+ * The engine is designed to minimize allocations in hot paths. It seeks to
  * support simulation reproducibility when used under controlled conditions (e.g.,
- * consistent RNG, avoiding side effects in systems).
+ * seeded RNG, consistent execution order, and restricted mutation patterns).
  *
  * ### Standard Units
  *
