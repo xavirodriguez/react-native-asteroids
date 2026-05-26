@@ -18,7 +18,7 @@ export interface GameOptions<TState> {
 type GameConstructor<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, unknown>> =
   new (config: GameConfig) => TGame;
 
-export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, boolean>> {
+export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, unknown>> {
   game: TGame | null;
   gameState: TState | null;
   isPaused: boolean;
@@ -46,7 +46,7 @@ export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, T
 export function useGame<
   TGame extends BaseGame<TState, TInput>,
   TState,
-  TInput extends Record<string, boolean>
+  TInput extends Record<string, unknown>
 >(
   GameClass: GameConstructor<TGame, TState, TInput> | null,
   isMultiplayer: boolean = false,

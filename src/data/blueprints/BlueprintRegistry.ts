@@ -19,11 +19,11 @@ export class BlueprintRegistry {
   static {
     // Pre-compile copy plans for common sections
     // We do this once at startup (cold path)
-    const sections = ['render', 'physics', 'collision', 'stats', 'asteroid', 'invader', 'ufo', 'projectile'];
+    const sections: (keyof EntityBlueprint)[] = ['render', 'physics', 'collision', 'stats', 'asteroid', 'invader', 'ufo', 'projectile'] as (keyof EntityBlueprint)[];
 
     this.blueprints.forEach((blueprint) => {
       sections.forEach((section) => {
-        const data = (blueprint as unknown as Record<string, unknown>)[section];
+        const data = blueprint[section];
         if (data && typeof data === 'object') {
           const planKey = `${blueprint.id}:${section}`;
           this.copyPlans.set(planKey, Object.keys(data));

@@ -56,7 +56,7 @@ describe("CCD Robustness Tests", () => {
 
   test("Swept Circle vs Circle collision", () => {
     // Static target at x=100
-    createEntity(world, 100, 0, ShapeFactory.circle(10));
+    const _target = createEntity(world, 100, 0, ShapeFactory.circle(10));
 
     // Moving circle starting at x=50, moving towards target
     const bullet = createEntity(world, 50, 0, ShapeFactory.circle(5));

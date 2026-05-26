@@ -138,7 +138,7 @@ export enum GameStatus {
  * @public
  */
 export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
-  implements IGame<BaseGame<TState, TInput>> {
+  implements IGame<BaseGame<TState, TInput>, TState> {
 
   /** Global ECS World. */
   protected world: World;

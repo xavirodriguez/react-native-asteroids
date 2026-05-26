@@ -5,7 +5,23 @@ import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
 import { createEmitter } from "../../engine/systems/ParticleSystem";
 import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
-import { Collider2DComponent, BoundaryComponent, LootTableComponent } from "../../engine/core/CoreComponents";
+import {
+  Collider2DComponent,
+  BoundaryComponent,
+  LootTableComponent,
+  TransformComponent,
+  VelocityComponent,
+  RenderComponent,
+  HealthComponent,
+} from "../../engine/core/CoreComponents";
+import {
+  InputComponent,
+  PlayerComponent,
+  InvaderComponent,
+  ShieldComponent,
+  GameStateComponent,
+  FormationComponent,
+} from "./types/SpaceInvadersTypes";
 import { EnemyFactory } from "../../factories/EnemyFactory";
 
 /**
@@ -51,15 +67,15 @@ const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, a
 export function createPlayer(world: World, x: number, y: number, deferred?: boolean): Entity {
   const config = world.getResource<SpaceInvadersConfig>("GameConfig") || GAME_CONFIG;
   const { entity: player, add } = createBaseEntity(world, deferred);
-  add({ type: "Transform", x, y });
-  add({ type: "Velocity", dx: 0, dy: 0 });
+  add({ type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: null } as TransformComponent);
+  add({ type: "Velocity", dx: 0, dy: 0 } as VelocityComponent);
   add({
     type: "Render",
     shape: "player_ship",
     size: config.PLAYER_RENDER_WIDTH, // Using width as size for simplicity
     color: "#00FF00",
     rotation: 0,
-  });
+  } as RenderComponent);
   add({
     type: "Collider2D",
     shape: { type: "circle", radius: config.PLAYER_COLLIDER_RADIUS },
@@ -75,15 +91,15 @@ export function createPlayer(world: World, x: number, y: number, deferred?: bool
     current: config.PLAYER_INITIAL_LIVES,
     max: config.PLAYER_INITIAL_LIVES,
     invulnerableRemaining: 0,
-  });
+  } as HealthComponent);
   add({
     type: "Input",
     moveLeft: false,
     moveRight: false,
     shoot: false,
     shootCooldownRemaining: 0,
-  });
-  add({ type: "Player" });
+  } as InputComponent);
+  add({ type: "Player" } as PlayerComponent);
   add({
     type: "Boundary",
     width: config.SCREEN_WIDTH - config.PLAYER_RENDER_WIDTH,
@@ -134,7 +150,7 @@ export function createInvader(world: World, x: number, y: number, row: number, c
   const points = (5 - row) * 10;
 
   // Add game-specific Invader component that was previously part of the manual factory
-  add({ type: "Invader", row, col, points });
+  add({ type: "Invader", row, col, points } as InvaderComponent);
 
   // 10% chance to have a loot table (matching standard LootSystem logic)
   add({
@@ -192,14 +208,14 @@ export function createEnemyBullet(world: World, x: number, y: number, pool: Enem
 export function createShieldSegment(world: World, x: number, y: number, row: number, col: number, deferred?: boolean): Entity {
   const config = world.getResource<SpaceInvadersConfig>("GameConfig") || GAME_CONFIG;
   const { entity: segment, add } = createBaseEntity(world, deferred);
-  add({ type: "Transform", x, y });
+  add({ type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: null } as TransformComponent);
   add({
     type: "Render",
     shape: "shield_block",
     size: 15,
     color: "#00FF00",
     rotation: 0,
-  });
+  } as RenderComponent);
   add({
     type: "Collider2D",
     shape: { type: "aabb", halfWidth: 7.5, halfHeight: 7.5 },
@@ -215,7 +231,7 @@ export function createShieldSegment(world: World, x: number, y: number, row: num
     hp: config.SHIELD_SEGMENT_HP,
     maxHp: config.SHIELD_SEGMENT_HP,
     segment: { row, col }
-  });
+  } as ShieldComponent);
   return segment;
 }
 
@@ -237,7 +253,7 @@ export function createGameState(world: World, deferred?: boolean): Entity {
     comboTimerRemaining: 0,
     screenShake: null,
     kamikazesActive: 0,
-  });
+  } as GameStateComponent);
   return gameState;
 }
 
@@ -256,7 +272,7 @@ export function createFormationController(world: World, deferred?: boolean): Ent
     leftBound: 0,
     rightBound: 0,
     fireCooldownRemaining: config.ENEMY_FIRE_INTERVAL_MIN,
-  });
+  } as FormationComponent);
   return controller;
 }
 

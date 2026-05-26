@@ -15,7 +15,7 @@ jest.mock("../../../services/PlayerProfileService", () => ({
 import { BaseGame, GameStatus } from "../BaseGame";
 import { World } from "../World";
 import { Renderer } from "../../rendering/Renderer";
-import { GameStateComponent, INITIAL_GAME_STATE } from "../CoreComponents";
+import { GameStateComponent, INITIAL_GAME_STATE } from "../../../games/asteroids/types/AsteroidTypes";
 import { System } from "../System";
 
 // Implementación mínima para tests

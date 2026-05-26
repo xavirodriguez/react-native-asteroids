@@ -21,24 +21,7 @@ export interface InputComponent extends Component, InputState {
   shootCooldownRemaining: number;
 }
 
-/**
- * Marker component for bullet entities in Asteroids.
- */
-export interface BulletComponent extends Component {
-  type: "Bullet";
-  ownerId?: string;
-}
 
-/**
- * Marker component for the player ship in Asteroids.
- */
-export interface ShipComponent extends Component {
-  type: "Ship";
-  sessionId?: string;
-  score: number;
-  hyperspaceTimer: number;
-  hyperspaceCooldownRemaining: number;
-}
 
 /**
  * Marker component for UFO entities.
@@ -49,13 +32,6 @@ export interface UfoComponent extends Component {
   time: number;
 }
 
-/**
- * Marker component for asteroid entities.
- */
-export interface AsteroidComponent extends Component {
-  type: "Asteroid";
-  size: "large" | "medium" | "small";
-}
 
 import { Star, ScreenShakeComponent } from "../../../engine/index";
 
