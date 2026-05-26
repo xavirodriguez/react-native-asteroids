@@ -11,7 +11,7 @@ describe("Side Effect Suppression during Re-simulation", () => {
   });
 
   it("ParticleSystem should not update during re-simulation", () => {
-    const mockPool = { acquire: jest.fn() } as any;
+    const mockPool = { acquire: jest.fn() } as unknown;
     const system = new ParticleSystem(mockPool);
 
     const e = world.createEntity();
@@ -20,7 +20,7 @@ describe("Side Effect Suppression during Re-simulation", () => {
         config: { rate: 10, burst: 0, loop: true, angle: {min:0, max:0}, speed: {min:1, max:1}, lifetime: {min:1, max:1}, size: {min:1, max:1}, color: ["#fff"] },
         active: true,
         elapsed: 0
-    } as any);
+    } as unknown);
 
     world.isReSimulating = true;
     system.update(world, 1000);
@@ -35,7 +35,7 @@ describe("Side Effect Suppression during Re-simulation", () => {
   it("FeedbackSystem should not trigger haptics during re-simulation", () => {
     const system = new FeedbackSystem();
     const e = world.createEntity();
-    world.addComponent(e, { type: "HapticRequest", pattern: "shoot" } as any);
+    world.addComponent(e, { type: "HapticRequest", pattern: "shoot" } as unknown);
 
     world.isReSimulating = true;
     system.update(world, 16);
@@ -50,13 +50,13 @@ describe("Side Effect Suppression during Re-simulation", () => {
         type: "Juice",
         animations: [{ property: "opacity", target: 0, duration: 1000, elapsed: 0 }]
     };
-    world.addComponent(e, juice as any);
-    world.addComponent(e, { type: "Render", data: { opacity: 1 } } as any);
+    world.addComponent(e, juice as unknown);
+    world.addComponent(e, { type: "Render", data: { opacity: 1 } } as unknown);
 
     world.isReSimulating = true;
     system.update(world, 500);
 
-    const juiceComp = world.getComponent(e, "Juice") as any;
+    const juiceComp = world.getComponent(e, "Juice") as unknown;
     expect(juiceComp.animations[0].elapsed).toBe(0); // Should not advance
 
     world.isReSimulating = false;

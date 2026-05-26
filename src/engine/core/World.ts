@@ -2,10 +2,10 @@ import { Component, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } 
 import { Entity } from "./Entity";
 import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
 
-type DeepReadonly<T> = T extends (...args: never[]) => unknown
+type DeepReadonly<T> = T extends (...args: unknown[]) => unknown
   ? T
-  : T extends readonly (infer U)[]
-  ? ReadonlyArray<DeepReadonly<U>>
+  : T extends unknown[]
+  ? ReadonlyArray<DeepReadonly<T[number]>>
   : T extends object
   ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
   : T;
@@ -569,7 +569,7 @@ export class World {
 
     const type = component.type;
 
-    // General hierarchical invariant check for any component implementing IHierarchicalComponent
+    // General hierarchical invariant check for unknown component implementing IHierarchicalComponent
     const hComp = component as unknown as Partial<import("./CoreComponents").IHierarchicalComponent>;
     if (hComp.parentEntity !== undefined) {
       if (hComp.parentEntity !== null) {

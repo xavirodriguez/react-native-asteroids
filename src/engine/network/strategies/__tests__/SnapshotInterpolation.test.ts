@@ -56,7 +56,7 @@ describe('SnapshotInterpolationStrategy', () => {
         dateSpy.mockReturnValue(now + 50);
         strategy.update(world, 16.66);
 
-        const transform = world.getComponent(entityId, 'Transform') as any;
+        const transform = world.getComponent(entityId, 'Transform') as unknown;
         expect(transform.x).toBeCloseTo(50);
         expect(transform.y).toBeCloseTo(50);
 

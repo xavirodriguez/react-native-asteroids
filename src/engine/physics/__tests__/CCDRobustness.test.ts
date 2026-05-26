@@ -18,7 +18,7 @@ describe("CCD Robustness Tests", () => {
     ccdSystem = new CCDSystem();
   });
 
-  function createEntity(world: World, x: number, y: number, shape: any) {
+  function createEntity(world: World, x: number, y: number, shape: unknown) {
     const e = world.createEntity();
     world.addComponent(e, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
     world.addComponent(e, { type: "Collider2D", shape, offsetX: 0, offsetY: 0, isTrigger: false, layer: 1, mask: 1, enabled: true } as Collider2DComponent);

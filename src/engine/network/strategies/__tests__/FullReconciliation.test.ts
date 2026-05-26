@@ -59,7 +59,7 @@ describe('FullReconciliationStrategy', () => {
         strategy.processServerUpdate(100, serverSnapshot, 'local');
 
         // Should have restored server state
-        const transform = world.getComponent(entityId, 'Transform') as any;
+        const transform = world.getComponent(entityId, 'Transform') as unknown;
         expect(transform.x).toBe(20);
         expect(transform.y).toBe(20);
     });

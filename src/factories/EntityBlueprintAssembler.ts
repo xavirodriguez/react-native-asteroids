@@ -109,20 +109,21 @@ export class EntityBlueprintAssembler {
     const enemyTag = this.getOrAddMutableComponent<EnemyTagComponent>(world, entityId, "EnemyTag", buffer);
     enemyTag.blueprintId = blueprintId;
     enemyTag.level = 1;
-    enemyTag.variant = blueprint.kind === 'invader' ? (blueprint as any).invader.archetype : undefined;
-    enemyTag.behavior = blueprint.kind === 'ufo' ? (blueprint as any).ufo.behavior : undefined;
+    enemyTag.variant = blueprint.kind === 'invader' ? (blueprint as unknown).invader.archetype : undefined;
+    enemyTag.behavior = blueprint.kind === 'ufo' ? (blueprint as unknown).ufo.behavior : undefined;
 
     // Kind-specific logic
     if (blueprint.kind === 'asteroid') {
-        const ast = this.getOrAddMutableComponent<AsteroidComponent>(world, entityId, "Asteroid", buffer);
-        ast.size = blueprint.asteroid.size;
-        ast.splitsInto = blueprint.asteroid.splitsInto;
-        ast.splitCount = blueprint.asteroid.splitCount;
+        const ast = this.getOrAddMutableComponent<import("../engine/core/Component").GenericComponent>(world, entityId, "Asteroid", buffer);
+        const b = blueprint as unknown;
+        ast.size = b.asteroid.size;
+        ast.splitsInto = b.asteroid.splitsInto;
+        ast.splitCount = b.asteroid.splitCount;
     } else if (blueprint.kind === 'projectile') {
         this.getOrAddMutableComponent<BulletComponent>(world, entityId, "Bullet", buffer);
     } else if (blueprint.kind === 'invader') {
-        const inv = this.getOrAddMutableComponent<InvaderComponent>(world, entityId, "Invader", buffer);
-        inv.archetype = blueprint.invader.archetype;
+        const inv = this.getOrAddMutableComponent<import("../engine/core/Component").GenericComponent>(world, entityId, "Invader", buffer);
+        inv.archetype = (blueprint as unknown).invader.archetype;
     }
 
     // 8. Spatial Partitioning
@@ -181,8 +182,7 @@ export class EntityBlueprintAssembler {
     const plan = BlueprintRegistry.getCopyPlan(blueprintId, section as string);
     if (!plan || !baseData) return;
 
-    const comp = this.getOrAddMutableComponent<Component>(world, entityId, compType, buffer) as unknown as Record<string, unknown>;
-    const base = baseData as Record<string, unknown>;
+    const comp = this.getOrAddMutableComponent<unknown>(world, entityId, compType, buffer);
 
     // Hot Path Copy Loop (Zero Allocation)
     for (let i = 0; i < plan.length; i++) {
@@ -190,7 +190,7 @@ export class EntityBlueprintAssembler {
         comp[key] = base[key];
     }
 
-    // Apply Overrides if any
+    // Apply Overrides if unknown
     if (overrideData) {
         const overrides = overrideData as Record<string, unknown>;
         for (const key in overrides) {

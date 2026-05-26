@@ -186,9 +186,8 @@ export class FlappyBirdGame
         freeEntities: []
     };
 
-    if (state.players && typeof state.players === 'object') {
-        const players = state.players as Record<string, { x: number, y: number }>;
-        Object.entries(players).forEach(([sessionId, p]) => {
+    if (state.players) {
+        Object.entries(state.players).forEach(([sessionId, p]: [string, Record<string, unknown>]) => {
             const entityId = replicator.getLocalId(`player_${sessionId}`);
             if (entityId !== undefined) {
                 snapshot.entities.push(entityId);
@@ -196,9 +195,8 @@ export class FlappyBirdGame
             }
         });
     }
-    if (state.pipes && typeof state.pipes === 'object') {
-        const pipes = state.pipes as Record<string, { x: number }>;
-        Object.entries(pipes).forEach(([id, p]) => {
+    if (state.pipes) {
+        Object.entries(state.pipes).forEach(([id, p]: [string, Record<string, unknown>]) => {
             const entityId = replicator.getLocalId(`pipe_${id}`);
             if (entityId !== undefined) {
                 snapshot.entities.push(entityId);

@@ -29,8 +29,8 @@ describe("AsteroidCollisionSystem", () => {
 
     // Manually add CollisionEvents to ensure it exists for the test
     const asteroid = _asteroid;
-    world.addComponent(bullet, { type: "CollisionEvents", collisions: [{ otherEntity: asteroid }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
-    world.addComponent(asteroid, { type: "CollisionEvents", collisions: [{ otherEntity: bullet }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
+    world.addComponent(bullet, { type: "CollisionEvents", collisions: [{ otherEntity: asteroid }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as unknown);
+    world.addComponent(asteroid, { type: "CollisionEvents", collisions: [{ otherEntity: bullet }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as unknown);
 
     physicsSystem.update(world, 16.66);
     world.flush();
@@ -47,8 +47,8 @@ describe("AsteroidCollisionSystem", () => {
     const _asteroid = createAsteroid({ world, x: 100, y: 100, size: "large" });
     const bullet = createBullet({ world, x: 100, y: 100, angle: 0 });
 
-    world.addComponent(bullet, { type: "CollisionEvents", collisions: [{ otherEntity: _asteroid }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
-    world.addComponent(_asteroid, { type: "CollisionEvents", collisions: [{ otherEntity: bullet }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
+    world.addComponent(bullet, { type: "CollisionEvents", collisions: [{ otherEntity: _asteroid }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as unknown);
+    world.addComponent(_asteroid, { type: "CollisionEvents", collisions: [{ otherEntity: bullet }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as unknown);
 
     physicsSystem.update(world, 16.66);
     world.flush();
@@ -73,8 +73,8 @@ describe("AsteroidCollisionSystem", () => {
 
     const _asteroid = createAsteroid({ world, x: 100, y: 100, size: "small" });
 
-    world.addComponent(ship, { type: "CollisionEvents", collisions: [{ otherEntity: _asteroid }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
-    world.addComponent(_asteroid, { type: "CollisionEvents", collisions: [{ otherEntity: ship }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
+    world.addComponent(ship, { type: "CollisionEvents", collisions: [{ otherEntity: _asteroid }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as unknown);
+    world.addComponent(_asteroid, { type: "CollisionEvents", collisions: [{ otherEntity: ship }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as unknown);
 
     physicsSystem.update(world, 16.66);
     world.flush();
@@ -96,8 +96,8 @@ describe("AsteroidCollisionSystem", () => {
 
     const _asteroid = createAsteroid({ world, x: 100, y: 100, size: "small" });
 
-    world.addComponent(ship, { type: "CollisionEvents", collisions: [{ otherEntity: _asteroid }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
-    world.addComponent(_asteroid, { type: "CollisionEvents", collisions: [{ otherEntity: ship }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as any);
+    world.addComponent(ship, { type: "CollisionEvents", collisions: [{ otherEntity: _asteroid }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as unknown);
+    world.addComponent(_asteroid, { type: "CollisionEvents", collisions: [{ otherEntity: ship }], activeTriggers: [], triggersEntered: [], triggersExited: [] } as unknown);
 
     physicsSystem.update(world, 16.66);
     world.flush();

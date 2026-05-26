@@ -60,8 +60,8 @@ describe('HybridAuthorityStrategy', () => {
         dateSpy.mockReturnValue(now + 50);
         strategy.update(world, 16.66);
 
-        const remoteTrans = world.getComponent(remoteId, 'Transform') as any;
-        const localTrans = world.getComponent(localId, 'Transform') as any;
+        const remoteTrans = world.getComponent(remoteId, 'Transform') as unknown;
+        const localTrans = world.getComponent(localId, 'Transform') as unknown;
 
         expect(remoteTrans.x).toBeCloseTo(50);
         expect(localTrans.x).toBe(50); // Local player should NOT be interpolated by this strategy
