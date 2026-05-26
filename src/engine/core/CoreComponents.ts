@@ -100,6 +100,54 @@ export interface ManualMovementComponent extends Component {
 }
 
 /**
+ * Metadata component for enemy entities.
+ */
+export interface EnemyTagComponent extends Component {
+  type: "EnemyTag";
+  blueprintId: string;
+  level: number;
+  variant?: string;
+  behavior?: string;
+}
+
+/**
+ * Component for Asteroid entities.
+ */
+export interface AsteroidComponent extends Component {
+  type: "Asteroid";
+  size: "large" | "medium" | "small" | string;
+  splitsInto?: readonly string[];
+  splitCount?: number;
+}
+
+/**
+ * Component for Invader entities.
+ */
+export interface InvaderComponent extends Component {
+  type: "Invader";
+  archetype: string;
+}
+
+/**
+ * Component for Bullet entities.
+ */
+export interface BulletComponent extends Component {
+  type: "Bullet";
+  ownerId?: string;
+}
+
+/**
+ * Marker component for the player ship in Asteroids.
+ */
+export interface ShipComponent extends Component {
+  type: "Ship";
+  sessionId?: string;
+  score: number;
+  hyperspaceTimer: number;
+  hyperspaceCooldownRemaining: number;
+}
+
+/**
  * Stores the transform state from the previous simulation tick.
  * Used primarily for visual interpolation in renderers.
  */
@@ -777,7 +825,12 @@ export type AnyCoreComponent =
   | MoveCommand
   | RotateCommand
   | JuiceComponent
-  | CommandQueueComponent;
+  | CommandQueueComponent
+  | EnemyTagComponent
+  | AsteroidComponent
+  | InvaderComponent
+  | BulletComponent
+  | ShipComponent;
 
 /**
  * Auxiliar para inferir el tipo concreto de un componente a partir de su discriminador.

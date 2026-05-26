@@ -17,7 +17,7 @@ import { useDebugManager } from '../../hooks/useGame';
 import Svg, { Circle, Rect } from 'react-native-svg';
 
 interface DebugOverlayProps {
-  game: BaseGame<Record<string, unknown>, Record<string, boolean>> | null;
+  game: BaseGame<any, any> | null;
 }
 
 type TabType = 'Frame' | 'Systems' | 'Entities' | 'Events' | 'Colliders' | 'Replay';

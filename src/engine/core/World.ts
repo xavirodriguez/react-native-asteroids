@@ -452,7 +452,7 @@ export class World {
         // Instead of 'delete', we overwrite to maintain hidden class stability where possible.
         for (const key in component) {
           if (!(key in sourceComp)) {
-             (component as unknown as Record<string, unknown>)[key] = undefined;
+             (component as Record<string, unknown>)[key] = undefined;
           }
         }
 
@@ -825,7 +825,7 @@ export class World {
 
           for (const key in compAsRecord) {
             if (typeof compAsRecord[key] !== "function") {
-              serializedComp[key] = compAsRecord[key];
+              serializedComp[key] = compAsRecord[key] as unknown;
             }
           }
           typeData[entity] = structuredClone(serializedComp) as SerializedComponent;

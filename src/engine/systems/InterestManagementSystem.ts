@@ -10,9 +10,8 @@
 
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { Entity, TransformComponent } from "../types/EngineTypes";
+import { Entity, TransformComponent, ShipComponent } from "../types/EngineTypes";
 import { SpatialGrid } from "../physics/utils/SpatialGrid";
-import { ShipComponent } from "../../games/asteroids/types/AsteroidTypes";
 
 /**
  * Calculates and maintains a map of entities relevant for each viewer.

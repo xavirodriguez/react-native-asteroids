@@ -12,6 +12,7 @@ export interface BaseBlueprint {
     readonly size: number;
     readonly color: string;
     readonly zIndex: number;
+    readonly rotation?: number;
   };
 
   physics: {
@@ -26,7 +27,9 @@ export interface BaseBlueprint {
   };
 
   collision: {
-    readonly radius: number;
+    readonly radius?: number;
+    readonly halfWidth?: number;
+    readonly halfHeight?: number;
     readonly layer: number;
     readonly mask: number;
     readonly isTrigger: boolean;

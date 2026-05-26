@@ -1,7 +1,7 @@
 import { World, Entity } from "../engine/core/World";
 import { WorldCommandBuffer } from "../engine/core/WorldCommandBuffer";
 import { BlueprintRegistry } from "../data/blueprints/BlueprintRegistry";
-import { BlueprintOverrides } from "../data/blueprints/types/BlueprintTypes";
+import { BlueprintOverrides, EntityBlueprint } from "../data/blueprints/types/BlueprintTypes";
 import {
   TransformComponent,
   Collider2DComponent,
@@ -10,7 +10,12 @@ import {
   SpatialNodeComponent,
   TagComponent,
   TTLComponent,
-  FrictionComponent
+  FrictionComponent,
+  Component,
+  EnemyTagComponent,
+  AsteroidComponent,
+  InvaderComponent,
+  BulletComponent
 } from "../engine/core/CoreComponents";
 
 /**
@@ -101,7 +106,7 @@ export class EntityBlueprintAssembler {
     health.invulnerableRemaining = 0;
 
     // 7. Metadata (EnemyTag / Behavior markers)
-    const enemyTag = this.getOrAddMutableComponent<import("../engine/core/Component").GenericComponent>(world, entityId, "EnemyTag", buffer);
+    const enemyTag = this.getOrAddMutableComponent<EnemyTagComponent>(world, entityId, "EnemyTag", buffer);
     enemyTag.blueprintId = blueprintId;
     enemyTag.level = 1;
     enemyTag.variant = blueprint.kind === 'invader' ? (blueprint as unknown).invader.archetype : undefined;
@@ -115,7 +120,7 @@ export class EntityBlueprintAssembler {
         ast.splitsInto = b.asteroid.splitsInto;
         ast.splitCount = b.asteroid.splitCount;
     } else if (blueprint.kind === 'projectile') {
-        this.getOrAddMutableComponent<import("../engine/core/Component").GenericComponent>(world, entityId, "Bullet", buffer);
+        this.getOrAddMutableComponent<BulletComponent>(world, entityId, "Bullet", buffer);
     } else if (blueprint.kind === 'invader') {
         const inv = this.getOrAddMutableComponent<import("../engine/core/Component").GenericComponent>(world, entityId, "Invader", buffer);
         inv.archetype = (blueprint as unknown).invader.archetype;
@@ -138,7 +143,7 @@ export class EntityBlueprintAssembler {
    * Retrieves a component from the world or the recycled pool, adds it to the entity,
    * and returns a mutable reference.
    */
-  private static getOrAddMutableComponent<T extends import("../engine/core/Component").Component>(
+  private static getOrAddMutableComponent<T extends Component>(
       world: World,
       entity: Entity,
       type: string,
@@ -148,7 +153,7 @@ export class EntityBlueprintAssembler {
       if (comp) return comp;
 
       // Try to acquire from pool
-      comp = world.acquireComponent<import("../engine/core/Component").Component>(type) as T;
+      comp = world.acquireComponent<T>(type) as T;
       if (!comp) {
           // Cold path: create new object
           comp = { type } as unknown as T;
@@ -169,26 +174,27 @@ export class EntityBlueprintAssembler {
     entityId: Entity,
     compType: string,
     blueprintId: string,
-    section: string,
-    baseData: Record<string, unknown>,
-    overrideData: Record<string, unknown> | undefined,
+    section: keyof EntityBlueprint,
+    baseData: unknown,
+    overrideData: unknown,
     buffer?: WorldCommandBuffer
   ): void {
-    const plan = BlueprintRegistry.getCopyPlan(blueprintId, section);
-    if (!plan) return;
+    const plan = BlueprintRegistry.getCopyPlan(blueprintId, section as string);
+    if (!plan || !baseData) return;
 
     const comp = this.getOrAddMutableComponent<unknown>(world, entityId, compType, buffer);
 
     // Hot Path Copy Loop (Zero Allocation)
     for (let i = 0; i < plan.length; i++) {
         const key = plan[i];
-        comp[key] = baseData[key];
+        comp[key] = base[key];
     }
 
     // Apply Overrides if unknown
     if (overrideData) {
-        for (const key in overrideData) {
-            comp[key] = overrideData[key];
+        const overrides = overrideData as Record<string, unknown>;
+        for (const key in overrides) {
+            comp[key] = overrides[key];
         }
     }
   }

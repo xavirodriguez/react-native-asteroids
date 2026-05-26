@@ -38,6 +38,11 @@ import { Shape, CircleShape, AABBShape, CapsuleShape, PolygonShape } from "../sh
 import { CollisionManifold } from "./CollisionTypes";
 export { CollisionManifold };
 
+interface MutableVector2 {
+  x: number;
+  y: number;
+}
+
 const sharedManifold: CollisionManifold = {
   colliding: false,
   normalX: 0,
@@ -50,7 +55,7 @@ const sharedManifold: CollisionManifold = {
  * Pool de vértices para puntos de contacto y cálculos intermedios.
  * Reutilizado para evitar allocations en el hot path de física.
  */
-const vertexPool: Array<{x: number, y: number}> = [];
+const vertexPool: MutableVector2[] = [];
 function _getVertex(x: number, y: number) {
     let v = vertexPool.pop();
     if (!v) v = {x: 0, y: 0};
@@ -67,7 +72,7 @@ function resetManifold(): CollisionManifold {
   sharedManifold.normalY = 0;
   sharedManifold.depth = 0;
   // Devolver puntos de contacto al pool
-  const contacts = sharedManifold.contactPoints as Array<{x: number, y: number}>;
+  const contacts = sharedManifold.contactPoints as MutableVector2[];
   for (let i = 0; i < contacts.length; i++) {
     vertexPool.push(contacts[i]);
   }
@@ -75,13 +80,17 @@ function resetManifold(): CollisionManifold {
   return sharedManifold;
 }
 
-const axesCache: Array<{x: number, y: number}> = [];
-const worldVerticesA: Array<{x: number, y: number}> = [];
-const worldVerticesB: Array<{x: number, y: number}> = [];
+const axesCache: MutableVector2[] = [];
+const worldVerticesA: MutableVector2[] = [];
+const worldVerticesB: MutableVector2[] = [];
+
+const staticAABBPolyVertices: MutableVector2[] = [
+    {x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}
+];
 
 const staticAABBPoly: PolygonShape = {
     type: "polygon",
-    vertices: [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}],
+    vertices: staticAABBPolyVertices,
     normals: [{x:0,y:-1}, {x:1,y:0}, {x:0,y:1}, {x:-1,y:0}]
 };
 
@@ -92,11 +101,14 @@ const staticCircle: CircleShape = { type: "circle", radius: 0 };
 const staticProjectionA = { min: 0, max: 0 };
 const staticProjectionB = { min: 0, max: 0 };
 const staticCapsuleLine = { p1x: 0, p1y: 0, p2x: 0, p2y: 0 };
+
+const staticCapsulePolyVertices: MutableVector2[] = [
+    {x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}
+];
+
 const staticCapsulePoly: PolygonShape = {
     type: "polygon",
-    vertices: [
-        {x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}
-    ],
+    vertices: staticCapsulePolyVertices,
     normals: []
 };
 
@@ -380,14 +392,10 @@ export class NarrowPhase {
   }
 
   static aabbVsPolygon(aabb: Readonly<AABBShape>, ax: number, ay: number, poly: Readonly<PolygonShape>, px: number, py: number, pr: number): CollisionManifold {
-      const v0 = staticAABBPoly.vertices[0] as { x: number; y: number };
-      const v1 = staticAABBPoly.vertices[1] as { x: number; y: number };
-      const v2 = staticAABBPoly.vertices[2] as { x: number; y: number };
-      const v3 = staticAABBPoly.vertices[3] as { x: number; y: number };
-      v0.x = -aabb.halfWidth; v0.y = -aabb.halfHeight;
-      v1.x = aabb.halfWidth; v1.y = -aabb.halfHeight;
-      v2.x = aabb.halfWidth; v2.y = aabb.halfHeight;
-      v3.x = -aabb.halfWidth; v3.y = aabb.halfHeight;
+      staticAABBPolyVertices[0].x = -aabb.halfWidth; staticAABBPolyVertices[0].y = -aabb.halfHeight;
+      staticAABBPolyVertices[1].x = aabb.halfWidth; staticAABBPolyVertices[1].y = -aabb.halfHeight;
+      staticAABBPolyVertices[2].x = aabb.halfWidth; staticAABBPolyVertices[2].y = aabb.halfHeight;
+      staticAABBPolyVertices[3].x = -aabb.halfWidth; staticAABBPolyVertices[3].y = aabb.halfHeight;
       return this.polygonVsPolygon(staticAABBPoly, ax, ay, 0, poly, px, py, pr);
   }
 
@@ -570,13 +578,12 @@ export class NarrowPhase {
       const nx = -Math.sin(angle) * c.radius;
       const ny = Math.cos(angle) * c.radius;
 
-      const v = staticCapsulePoly.vertices as Array<{ x: number; y: number }>;
-      v[0].x = -dx + nx; v[0].y = -dy + ny;
-      v[1].x = dx + nx;  v[1].y = dy + ny;
-      v[2].x = dx + nx*0.5; v[2].y = dy + ny*0.5;
-      v[3].x = dx - nx*0.5; v[3].y = dy - ny*0.5;
-      v[4].x = dx - nx;  v[4].y = dy - ny;
-      v[5].x = -dx - nx; v[5].y = -dy - ny;
+      staticCapsulePolyVertices[0].x = -dx + nx; staticCapsulePolyVertices[0].y = -dy + ny;
+      staticCapsulePolyVertices[1].x = dx + nx;  staticCapsulePolyVertices[1].y = dy + ny;
+      staticCapsulePolyVertices[2].x = dx + nx*0.5; staticCapsulePolyVertices[2].y = dy + ny*0.5;
+      staticCapsulePolyVertices[3].x = dx - nx*0.5; staticCapsulePolyVertices[3].y = dy - ny*0.5;
+      staticCapsulePolyVertices[4].x = dx - nx;  staticCapsulePolyVertices[4].y = dy - ny;
+      staticCapsulePolyVertices[5].x = -dx - nx; staticCapsulePolyVertices[5].y = -dy - ny;
 
       return staticCapsulePoly;
   }

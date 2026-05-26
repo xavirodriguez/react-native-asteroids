@@ -1,6 +1,6 @@
 import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { HealthComponent } from "../../../engine/types/EngineTypes";
-import { FLAPPY_CONFIG, FlappyBirdState } from "../types/FlappyBirdTypes";
+import { HealthComponent, TransformComponent } from "../../../engine/types/EngineTypes";
+import { FLAPPY_CONFIG, FlappyBirdState, BirdComponent, PipeComponent } from "../types/FlappyBirdTypes";
 
 /**
  * Visuals for the bird.
@@ -87,7 +87,7 @@ export const drawFlappyPipe: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entit
   const width = size;
   const halfWidth = width / 2;
 
-  const pipe = world.getComponent<import("../EntityFactory").PipeComponent>(entity, "Pipe");
+  const pipe = world.getComponent<PipeComponent>(entity, "Pipe");
   if (!pipe) return;
 
   const halfGap = pipe.gapSize / 2;

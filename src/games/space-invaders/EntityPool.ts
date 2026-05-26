@@ -3,7 +3,12 @@ import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers"
 import {
   Entity,
   Component,
-  BoundaryComponent
+  BoundaryComponent,
+  TransformComponent,
+  VelocityComponent,
+  RenderComponent,
+  Collider2DComponent,
+  ReclaimableComponent,
 } from "../../engine/types/EngineTypes";
 import { SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
 import { ProjectilePool, ProjectileComponents, ProjectileParams } from "../../engine/core/ProjectilePool";
@@ -20,24 +25,24 @@ export class PlayerBulletPool extends ProjectilePool<InvaderBulletComponents, Pr
   constructor() {
     super({
       factory: () => ({
-        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
-        velocity: { type: "Velocity", dx: 0, dy: 0 },
-        render: { type: "Render", shape: "player_bullet", size: 0, color: "", rotation: 0 },
+        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: null } as TransformComponent,
+        velocity: { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent,
+        render: { type: "Render", shape: "player_bullet", size: 0, color: "", rotation: 0 } as RenderComponent,
         collider: {
           type: "Collider2D",
           shape: { type: "circle", radius: 0 },
           layer: CollisionLayers.PROJECTILE,
           mask: CollisionLayers.ENEMY | CollisionLayers.DEBRIS,
           offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
-        },
+        } as Collider2DComponent,
         boundary: {
           type: "Boundary",
           width: 800,
           height: 600,
           behavior: "destroy"
-        },
+        } as BoundaryComponent,
         ttl: { type: "TTL", remaining: 0, total: 0 },
-        reclaimable: { type: "Reclaimable", onReclaim: () => {} },
+        reclaimable: { type: "Reclaimable", poolId: "PlayerBulletPool" } as ReclaimableComponent,
         bullet: { type: "PlayerBullet" }
       }),
       reset: (data) => {
@@ -77,24 +82,24 @@ export class EnemyBulletPool extends ProjectilePool<InvaderBulletComponents, Pro
   constructor() {
     super({
       factory: () => ({
-        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
-        velocity: { type: "Velocity", dx: 0, dy: 0 },
-        render: { type: "Render", shape: "enemy_bullet", size: 0, color: "", rotation: 0 },
+        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: null } as TransformComponent,
+        velocity: { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent,
+        render: { type: "Render", shape: "enemy_bullet", size: 0, color: "", rotation: 0 } as RenderComponent,
         collider: {
           type: "Collider2D",
           shape: { type: "circle", radius: 0 },
           layer: CollisionLayers.ENEMY,
           mask: CollisionLayers.PLAYER,
           offsetX: 0, offsetY: 0, isTrigger: false, enabled: true
-        },
+        } as Collider2DComponent,
         boundary: {
           type: "Boundary",
           width: 800,
           height: 600,
           behavior: "destroy"
-        },
+        } as BoundaryComponent,
         ttl: { type: "TTL", remaining: 0, total: 0 },
-        reclaimable: { type: "Reclaimable", onReclaim: () => {} },
+        reclaimable: { type: "Reclaimable", poolId: "EnemyBulletPool" } as ReclaimableComponent,
         bullet: { type: "EnemyBullet" }
       }),
       reset: (data) => {
@@ -134,16 +139,16 @@ export class ParticlePool extends ProjectilePool<ProjectileComponents, Projectil
   constructor() {
     super({
       factory: () => ({
-        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
-        velocity: { type: "Velocity", dx: 0, dy: 0 },
-        render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0 },
+        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: null } as TransformComponent,
+        velocity: { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent,
+        render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0 } as RenderComponent,
         collider: {
             type: "Collider2D",
             shape: { type: "circle", radius: 0 },
             layer: 0, mask: 0, offsetX: 0, offsetY: 0, isTrigger: true, enabled: false
-        },
+        } as Collider2DComponent,
         ttl: { type: "TTL", remaining: 0, total: 0 },
-        reclaimable: { type: "Reclaimable", onReclaim: () => {} }
+        reclaimable: { type: "Reclaimable", poolId: "ParticlePool" } as ReclaimableComponent
       }),
       reset: (data) => {
         data.position.x = 0;

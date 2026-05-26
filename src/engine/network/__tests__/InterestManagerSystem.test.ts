@@ -1,8 +1,7 @@
 import { World } from "../../core/World";
 import { InterestManagerSystem } from "../InterestManagerSystem";
-import { TransformComponent } from "../../core/CoreComponents";
+import { TransformComponent, ShipComponent } from "../../core/CoreComponents";
 import { SpatialGrid } from "../../physics/utils/SpatialGrid";
-import { ShipComponent } from "../../../games/asteroids/types/AsteroidTypes";
 import { InterestedEntity } from "../types/ReplicationTypes";
 
 describe("InterestManagerSystem", () => {
