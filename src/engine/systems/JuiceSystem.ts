@@ -24,10 +24,10 @@ export class JuiceSystem extends System {
 
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
-      const juice = world.getComponent<JuiceComponent>(entity, "Juice");
+      const juice = world.getMutableComponent<JuiceComponent>(entity, "Juice");
       if (!juice) continue;
 
-      const animations = [...juice.animations];
+      const animations = juice.animations;
       if (animations.length === 0) continue;
 
       let hasOpacityAnim = false;
@@ -102,16 +102,11 @@ export class JuiceSystem extends System {
       }
 
       // Update the Juice component animations list
-      if (animationsToRemove.length > 0 || deltaTime > 0) {
-        world.mutateComponent<JuiceComponent>(entity, "Juice", jComp => {
-          // Remove completed animations (in reverse order to maintain indices)
-          for (let k = animationsToRemove.length - 1; k >= 0; k--) {
-            jComp.animations.splice(animationsToRemove[k], 1);
-          }
-          // Note: jComp.animations already has updated elapsed time because we modified references in the local array
-          // which point to the same objects if not deep cloned. But wait, we did 'const animations = [...juice.animations]'.
-          // This shallow copies the array, but the animation objects are still the same.
-        });
+      if (animationsToRemove.length > 0) {
+        // Remove completed animations (in reverse order to maintain indices)
+        for (let k = animationsToRemove.length - 1; k >= 0; k--) {
+          animations.splice(animationsToRemove[k], 1);
+        }
       }
     }
 
