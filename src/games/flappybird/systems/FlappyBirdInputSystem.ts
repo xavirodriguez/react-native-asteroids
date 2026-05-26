@@ -37,7 +37,7 @@ export class FlappyBirdInputSystem extends System {
 
       if (input && vel && bird && bird.isAlive) {
         let shouldFlap = false;
-        
+
         // Sync input state & timers
         world.mutateComponent<FlappyBirdInputComponent>(entity, "FlappyInput", mutableInput => {
           mutableInput.flap = flapRequested;
