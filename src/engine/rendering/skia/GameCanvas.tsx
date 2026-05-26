@@ -57,9 +57,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const cameraTransform = useDerivedValue(() => {
     const cam = sharedCamera.value;
     // Note: In Reanimated worklets, accessing global state should be done carefully.
-    // However, RandomService.getRenderRandom is currently the only way here
-    // unless we pass the RNG seed as a SharedValue.
-    const renderRandom = RandomService.getRenderRandom();
+    // However, we should avoid global state in worklets.
+    // For now, if we don't have a world reference, we use a local RNG for visual-only effects.
+    const renderRandom = new RandomService(Date.now());
     const shakeX = (renderRandom.next() - 0.5) * cam.shakeIntensity;
     const shakeY = (renderRandom.next() - 0.5) * cam.shakeIntensity;
 

@@ -10,8 +10,6 @@ import { leaderboardStore } from "./DailyLeaderboardStore";
 import { generateScoreSignature } from "./utils/SecurityUtils";
 import { TimeUtils } from "./utils/TimeUtils";
 
-// Simple in-memory rate limiter for score submissions
-const submissionTimestamps = new Map<string, number>();
 const SUBMISSION_COOLDOWN = 10000; // 10 seconds
 
 const app = express();
@@ -62,13 +60,10 @@ app.post("/daily-score", (req, res) => {
     return res.status(400).send("Missing body fields");
   }
 
-  // Basic Rate Limiting
-  const now = Date.now();
-  const lastSubmission = submissionTimestamps.get(playerId) || 0;
-  if (now - lastSubmission < SUBMISSION_COOLDOWN) {
+  // Persistent Rate Limiting
+  if (!leaderboardStore.checkAndUpdateRateLimit(playerId, SUBMISSION_COOLDOWN)) {
     return res.status(429).send("Too many submissions. Please wait.");
   }
-  submissionTimestamps.set(playerId, now);
 
   // Signature Verification
   // IMPORTANT: For multiplayer games, scores are now authoritative and recorded by the room onLeave.

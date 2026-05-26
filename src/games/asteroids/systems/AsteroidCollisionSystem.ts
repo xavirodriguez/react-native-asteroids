@@ -263,11 +263,11 @@ export class AsteroidCollisionSystem extends System {
       }
 
       // DATA-DRIVEN SPLIT: Read splitting rules directly from components (hydrated from blueprints)
-      const splitsInto = (asteroid as any).splitsInto as string[] | undefined;
-      const splitCount = (asteroid as any).splitCount as number | undefined;
+      const splitsInto = (asteroid as Record<string, unknown>).splitsInto as string[] | undefined;
+      const splitCount = (asteroid as Record<string, unknown>).splitCount as number | undefined;
 
       if (splitsInto && splitsInto.length > 0 && splitCount !== undefined) {
-        const offset = (this.splitConfig as any)?.[asteroid.size]?.offset || 10;
+        const offset = (this.splitConfig as Record<string, any>)?.[asteroid.size]?.offset || 10;
 
         // Momentum: Inherit parent velocity
         const parentVel = world.getComponent<VelocityComponent>(asteroidEntity, "Velocity");
