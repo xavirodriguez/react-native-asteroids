@@ -21,8 +21,8 @@ describe("AIPongController", () => {
         world.getComponent<import("../../../../engine/types/EngineTypes").TagComponent>(e, "Tag")!.tags.includes("right")
     )!;
 
-    const ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;
-    const paddlePos = world.getComponent<TransformComponent>(paddle, "Transform")!;
+    const _ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;
+    const _paddlePos = world.getComponent<TransformComponent>(paddle, "Transform")!;
 
     world.mutateComponent<TransformComponent>(ball, "Transform", t => { t.y = 100; });
     world.mutateComponent<TransformComponent>(paddle, "Transform", t => { t.y = 300; });
@@ -39,8 +39,8 @@ describe("AIPongController", () => {
         world.getComponent<import("../../../../engine/types/EngineTypes").TagComponent>(e, "Tag")!.tags.includes("right")
     )!;
 
-    const ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;
-    const paddlePos = world.getComponent<TransformComponent>(paddle, "Transform")!;
+    const _ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;
+    const _paddlePos = world.getComponent<TransformComponent>(paddle, "Transform")!;
 
     world.mutateComponent<TransformComponent>(ball, "Transform", t => { t.y = 500; });
     world.mutateComponent<TransformComponent>(paddle, "Transform", t => { t.y = 300; });

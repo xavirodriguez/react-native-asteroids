@@ -19,7 +19,7 @@ describe("PongInputSystem AI", () => {
 
   it("should move right paddle according to ball position in AI mode", () => {
     const ball = world.query("Ball", "Transform")[0];
-    const ballTransform = world.getComponent<TransformComponent>(ball, "Transform")!;
+    const _ballTransform = world.getComponent<TransformComponent>(ball, "Transform")!;
     const rightPaddle = world.query("Paddle", "Tag").find(e =>
       world.getComponent<TagComponent>(e, "Tag")!.tags.includes("right")
     )!;

@@ -26,7 +26,7 @@ export type UpdateListener<TState> = (state: TState) => void;
  * @conceptualRisk [ASYNC_LIFECYCLE] `restart` puede ser asíncrono. Invocaciones rápidas y sucesivas
  * podrían causar estados inconsistentes si el juego no maneja bloqueos de transición.
  */
-export interface IGame<_TGame = unknown> {
+export interface IGame<_TGame = unknown, TState = unknown> {
   /**
    * Inicia la ejecución del bucle de juego.
    * @remarks Se espera que invoque a `GameLoop.start()`.
@@ -86,7 +86,7 @@ export interface IGame<_TGame = unknown> {
    * @param listener - Callback que recibe el estado del juego.
    * @returns Función para cancelar la suscripción.
    */
-  subscribe(listener: UpdateListener<unknown>): () => void;
+  subscribe(listener: UpdateListener<TState>): () => void;
 
   /**
    * Obtiene la instancia del {@link GameLoop} asociada.

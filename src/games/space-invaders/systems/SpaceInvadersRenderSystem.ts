@@ -6,7 +6,7 @@ import { HealthComponent, RenderComponent } from "../../../engine/types/EngineTy
  * System that handles specific render updates for Space Invaders.
  */
 export class SpaceInvadersRenderSystem extends System {
-  public update(world: World, deltaTime: number): void {
+  public update(world: World, _deltaTime: number): void {
     const renders = world.query("Render");
 
     renders.forEach(entity => {

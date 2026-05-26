@@ -9,8 +9,10 @@ import {
 } from "../../../engine/types/EngineTypes";
 
 import { createParticle } from "../EntityFactory";
-import { type AsteroidComponent, type GameStateComponent } from "../types/AsteroidTypes";
+import { type GameStateComponent } from "../types/AsteroidTypes";
+import { AsteroidComponent, BulletComponent, ShipComponent, VelocityComponent } from "../../../engine/core/CoreComponents";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
+import { BlueprintOverrides } from "../../../data/blueprints/types/BlueprintTypes";
 import { ScreenShakeComponent, HapticRequestComponent } from "../../../engine/types/EngineTypes";
 import { releaseProjectile } from "../../../engine/utils/ProjectileUtils";
 import { ParticlePool, BulletPool } from "../EntityPool";
@@ -140,9 +142,9 @@ export class AsteroidCollisionSystem extends System {
     const commands = world.getCommandBuffer();
     const transform = world.getComponent<TransformComponent>(asteroid, "Transform");
     const asteroidComp = world.getComponent<AsteroidComponent>(asteroid, "Asteroid");
-    const size = asteroidComp?.size || "small";
+    const size = (asteroidComp?.size || "small") as AsteroidComponent["size"];
 
-    const bulletComp = world.getComponent<import("../types/AsteroidTypes").BulletComponent>(bullet, "Bullet");
+    const bulletComp = world.getComponent<BulletComponent>(bullet, "Bullet");
     const ownerId = bulletComp?.ownerId;
 
     let points = 0;
@@ -154,9 +156,9 @@ export class AsteroidCollisionSystem extends System {
 
     if (ownerId) {
       const players = world.query("Ship");
-      const ownerEntity = players.find(p => world.getComponent<import("../types/AsteroidTypes").ShipComponent>(p, "Ship")?.sessionId === ownerId);
+      const ownerEntity = players.find(p => world.getComponent<ShipComponent>(p, "Ship")?.sessionId === ownerId);
       if (ownerEntity !== undefined) {
-        world.mutateComponent<import("../types/AsteroidTypes").ShipComponent>(ownerEntity, "Ship", s => {
+        world.mutateComponent<ShipComponent>(ownerEntity, "Ship", s => {
           s.score += points;
         });
       }
@@ -263,11 +265,12 @@ export class AsteroidCollisionSystem extends System {
       }
 
       // DATA-DRIVEN SPLIT: Read splitting rules directly from components (hydrated from blueprints)
-      const splitsInto = (asteroid as any).splitsInto as string[] | undefined;
-      const splitCount = (asteroid as any).splitCount as number | undefined;
+      const splitsInto = (asteroid as AsteroidComponent & { splitsInto?: readonly string[] }).splitsInto;
+      const splitCount = (asteroid as AsteroidComponent & { splitCount?: number }).splitCount;
 
       if (splitsInto && splitsInto.length > 0 && splitCount !== undefined) {
-        const offset = (this.splitConfig as any)?.[asteroid.size]?.offset || 10;
+        const splitInfo = this.splitConfig ? this.splitConfig[asteroid.size] : undefined;
+        const offset = splitInfo?.offset || 10;
 
         // Momentum: Inherit parent velocity
         const parentVel = world.getComponent<VelocityComponent>(asteroidEntity, "Velocity");
@@ -285,10 +288,11 @@ export class AsteroidCollisionSystem extends System {
 
             commands.spawnFromBlueprint(childBlueprintId, spawnX, spawnY, {
                 physics: {
+                    maxSpeed: 0, // Placeholder, will be hydrated from blueprint
                     dx: parentDx + Math.cos(randomAngle) * speed,
                     dy: parentDy + Math.sin(randomAngle) * speed
                 }
-            } as any);
+            } as BlueprintOverrides);
           }
         }
       }

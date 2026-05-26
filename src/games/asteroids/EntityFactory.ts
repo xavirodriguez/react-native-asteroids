@@ -20,17 +20,16 @@ import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers"
 import { createEmitter } from "../../engine/systems/ParticleSystem";
 import { generateStarField } from "../../engine/rendering/StarField";
 import {
-    ShipComponent,
     InputComponent,
-    BulletComponent,
-    AsteroidComponent,
     UfoComponent,
     GameStateComponent
 } from "./types/AsteroidTypes";
+import { ShipComponent, BulletComponent, AsteroidComponent } from "../../engine/core/CoreComponents";
 import { Component, Entity } from "../../engine/types/EngineTypes";
 import { EnemyFactory } from "../../factories/EnemyFactory";
 import { EnemyBlueprints } from "../../data/blueprints/EnemyBlueprints";
 import { EntityBlueprintAssembler } from "../../factories/EntityBlueprintAssembler";
+import { BlueprintOverrides } from "../../data/blueprints/types/BlueprintTypes";
 
 /**
  * Factoría de entidades para el dominio del juego Asteroids.
@@ -126,16 +125,20 @@ export const createBullet = ({ world, x, y, angle, ownerId, deferred }: { world:
   const dx = Math.cos(angle) * config.BULLET_SPEED;
   const dy = Math.sin(angle) * config.BULLET_SPEED;
 
-  const overrides = {
+  const overrides: BlueprintOverrides = {
     physics: {
         maxSpeed: config.BULLET_SPEED,
-        vx: dx,
-        vy: dy
+        dx,
+        dy
     },
     render: {
+        shape: "bullet",
+        size: config.BULLET_SIZE,
+        color: "white",
+        zIndex: 10,
         rotation: angle
     }
-  } as any;
+  };
 
   let bullet: Entity;
   if (deferred || world.isUpdating) {

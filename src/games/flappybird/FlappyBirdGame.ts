@@ -1,5 +1,5 @@
 import { BaseGame } from "../../engine/core/BaseGame";
-import { FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE, FlappyBirdState } from "./types/FlappyBirdTypes";
+import { FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE, FlappyBirdState, BirdComponent, PipeComponent } from "./types/FlappyBirdTypes";
 import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
 import { FlappyBirdInputSystem } from "./systems/FlappyBirdInputSystem";
 import { FlappyBirdCollisionSystem } from "./systems/FlappyBirdCollisionSystem";
@@ -13,6 +13,7 @@ import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
 import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
 import { JuiceSystem } from "../../engine/systems/JuiceSystem";
 import { Renderer } from "../../engine/rendering/Renderer";
+import { TransformComponent, RenderComponent } from "../../engine/core/CoreComponents";
 import {
   createBird,
   createGameState,
@@ -138,23 +139,23 @@ export class FlappyBirdGame
 
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
-          commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "bird", size: 15, color: "yellow", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+          commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "bird", size: 15, color: "yellow", rotation: 0 } as RenderComponent);
           commands.addComponent(entity, {
             type: "Bird",
             velocityY: playerState.velocityY,
             isAlive: playerState.alive,
             isGliding: false,
             nearMissTimer: 0
-          } as import("./EntityFactory").BirdComponent);
+          } as BirdComponent);
         }
 
-        world.mutateComponent<import("./EntityFactory").BirdComponent>(entity, "Bird", bird => {
+        world.mutateComponent<BirdComponent>(entity, "Bird", bird => {
           bird.isAlive = playerState.alive;
           bird.velocityY = playerState.velocityY;
         });
 
-        world.mutateComponent<import("../../engine/types/EngineTypes").RenderComponent>(entity, "Render", render => {
+        world.mutateComponent<RenderComponent>(entity, "Render", render => {
           render.color = playerState.alive ? "yellow" : "gray";
         });
       });
@@ -168,9 +169,9 @@ export class FlappyBirdGame
 
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
-          commands.addComponent(entity, { type: "Transform", x: pipeState.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
-          commands.addComponent(entity, { type: "Pipe", gapY: pipeState.gapY, gapSize: 140, scored: false } as import("./EntityFactory").PipeComponent);
+          commands.addComponent(entity, { type: "Transform", x: pipeState.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 } as RenderComponent);
+          commands.addComponent(entity, { type: "Pipe", gapY: pipeState.gapY, gapSize: 140, scored: false } as PipeComponent);
         }
       });
     }
@@ -185,8 +186,9 @@ export class FlappyBirdGame
         freeEntities: []
     };
 
-    if (state.players) {
-        Object.entries(state.players).forEach(([sessionId, p]: [string, any]) => {
+    if (state.players && typeof state.players === 'object') {
+        const players = state.players as Record<string, { x: number, y: number }>;
+        Object.entries(players).forEach(([sessionId, p]) => {
             const entityId = replicator.getLocalId(`player_${sessionId}`);
             if (entityId !== undefined) {
                 snapshot.entities.push(entityId);
@@ -194,8 +196,9 @@ export class FlappyBirdGame
             }
         });
     }
-    if (state.pipes) {
-        Object.entries(state.pipes).forEach(([id, p]: [string, any]) => {
+    if (state.pipes && typeof state.pipes === 'object') {
+        const pipes = state.pipes as Record<string, { x: number }>;
+        Object.entries(pipes).forEach(([id, p]) => {
             const entityId = replicator.getLocalId(`pipe_${id}`);
             if (entityId !== undefined) {
                 snapshot.entities.push(entityId);

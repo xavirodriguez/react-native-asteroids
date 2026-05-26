@@ -1,7 +1,6 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { TransformComponent } from "../core/CoreComponents";
-import { ShipComponent } from "../../games/asteroids/types/AsteroidTypes";
+import { TransformComponent, ShipComponent } from "../core/CoreComponents";
 import { InterestedEntity } from "./types/ReplicationTypes";
 import { InterestManager } from "./InterestManager";
 

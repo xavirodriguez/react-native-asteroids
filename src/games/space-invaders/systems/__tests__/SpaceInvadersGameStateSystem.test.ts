@@ -47,7 +47,7 @@ describe("SpaceInvadersGameStateSystem", () => {
 
   it("should detect game over when lives reach 0", () => {
     createGameState(world);
-    const state = world.getSingleton<GameStateComponent>("GameState")!;
+    const _state = world.getSingleton<GameStateComponent>("GameState")!;
     world.mutateSingleton<GameStateComponent>("GameState", gs => {
       gs.lives = 0;
     });

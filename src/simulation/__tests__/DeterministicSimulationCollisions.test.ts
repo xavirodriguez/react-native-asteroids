@@ -2,7 +2,7 @@ import { World } from "../../engine/core/World";
 import { SpatialGrid } from "../../engine/physics/utils/SpatialGrid";
 import { AsteroidsGame } from "../../games/asteroids/AsteroidsGame";
 import { Entity, TransformComponent, Collider2DComponent } from "../../engine/types/EngineTypes";
-import { AsteroidComponent } from "../../games/asteroids/types/AsteroidTypes";
+import { AsteroidComponent } from "../../engine/core/CoreComponents";
 
 describe("Asteroids ECS - SpatialGrid Collisions", () => {
   let game: AsteroidsGame;
