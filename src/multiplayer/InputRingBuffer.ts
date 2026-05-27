@@ -1,7 +1,7 @@
 /**
  * Optimized Circular Buffer for Input Frames.
  *
- * This structure provides O(1) access to input frames by tick number.
+ * This structure provides approximately O(1) access to input frames by tick number.
  * It is essential for Rollback Netcode to store both local inputs (for re-simulation)
  * and remote inputs (as they arrive from the network).
  *

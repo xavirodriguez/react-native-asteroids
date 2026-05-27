@@ -22,12 +22,13 @@ export interface GameLoopConfig {
  * **Precision**: The simulation phase is configured to target constant increments of
  * 16.67ms (1/60s). In practice, real-world precision is subject to environment
  * constraints such as the JavaScript Event Loop, `performance.now()` variability,
- * and system load.
+ * and system load. Consistency across different devices is aimed for but cannot be
+ * absolutely guaranteed.
  *
  * @conceptualRisk [PERFORMANCE] The loop may encounter a "Spiral of Death" if the
  * simulation is consistently slower than real-time. A safety mechanism
  * (`maxUpdatesPerFrame`) is included to mitigate this risk by dropping simulation
- * ticks, which may affect temporal accuracy and determinism.
+ * ticks, which may affect temporal accuracy and reproducibility under extreme load.
  */
 export class GameLoop {
   private isRunning = false;
@@ -85,7 +86,7 @@ export class GameLoop {
    *
    * To prevent main thread blocking, the number of updates per frame is limited by
    * `maxUpdatesPerFrame`. If this limit is reached, remaining ticks for that frame
-   * are dropped, which may affect temporal accuracy and determinism in favor of
+   * are dropped, which may affect temporal accuracy and reproducibility in favor of
    * environment stability.
    *
    * @param listener - Function receiving the fixedDeltaTime (16.67ms).

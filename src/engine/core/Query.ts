@@ -17,8 +17,8 @@ import { Entity } from "../types/EngineTypes";
  *    The result array is typically rebuilt and sorted upon the first access after a change.
  *
  * ### Performance Characteristics:
- * - **Membership Check**: Generally O(1) using an internal `Set`.
- * - **Retrieval**: Rebuilding the sorted array is O(N log N) upon the first access after
+ * - **Membership Check**: Designed for O(1) performance using an internal `Set`.
+ * - **Access**: Getting the list of entities is approximately O(1) unless the world has undergone
  *   a structural mutation. Subsequent accesses to the same view are O(1).
  * - **Memory**: Retains references to matching Entity IDs and caches one sorted array.
  *
@@ -116,7 +116,7 @@ export class Query {
    * Executes a callback for each entity matching the query.
    *
    * @remarks
-   * This is a high-performance alternative to `getEntities()` that minimizes per-frame
+   * This is an alternative to `getEntities()` designed to help minimize per-frame that minimizes per-frame
    * allocations by iterating over the internal cached array.
    *
    * @param callback - Function to execute for each entity.

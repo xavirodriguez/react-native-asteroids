@@ -28,7 +28,7 @@
  *          Polygon B
  * ```
  *
- * The system uses object pooling and shared manifolds to minimize GC pressure during the physics step.
+ * The system uses object pooling and shared manifolds to help minimize GC pressure during the physics step.
  *
  * @packageDocumentation
  */
@@ -120,8 +120,8 @@ const staticCapsulePoly: PolygonShape = {
  * y puntos de contacto.
  *
  * @remarks
- * El sistema está optimizado para minimizar la presión sobre el GC mediante el uso de manifolds compartidos
- * y pools de vértices, asumiendo una simulación de alta frecuencia (60Hz+).
+ * El sistema está optimizado con la intención de reducir la presión sobre el GC mediante el uso de manifolds
+ * compartidos y pools de vértices, asumiendo una simulación de alta frecuencia (60Hz+).
  *
  * @conceptualRisk [FLOAT_PRECISION][MEDIUM] Los productos cruzados y normalizaciones dependen de un épsilon (0.0001)
  * para evitar divisiones por cero en colisiones casi perfectas.
@@ -219,7 +219,7 @@ export class NarrowPhase {
         manifold.normalX = dx / distance;
         manifold.normalY = dy / distance;
       } else {
-        // Degenerate case: centers are exactly the same
+        // Degenerate case: centers are approximately the same
         manifold.normalX = 1;
         manifold.normalY = 0;
       }

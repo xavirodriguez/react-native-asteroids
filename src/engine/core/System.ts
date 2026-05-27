@@ -78,7 +78,6 @@ export interface SystemConfig {
 export abstract class System {
   /**
    * Called when the system is registered in the World.
-   * API status: Public
    *
    * @param world - The World instance where the system is being registered.
    */
@@ -86,7 +85,6 @@ export abstract class System {
 
   /**
    * Called when the system is removed from the World or the game is destroyed.
-   * API status: Public
    *
    * @param world - The World instance where the system was registered.
    */
@@ -119,7 +117,6 @@ export abstract class System {
 
   /**
    * Cleanup system resources when it's removed or the game is destroyed.
-   * API status: Public
    */
   public dispose(): void {}
 }

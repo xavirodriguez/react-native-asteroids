@@ -2,8 +2,8 @@
  * Core rendering command definitions and buffering.
  *
  * This module defines the protocol for communicating between game systems
- * and platform-specific renderers (Canvas, Skia). It provides a high-performance
- * command buffer that minimizes object allocations during the render loop.
+ * and platform-specific renderers (Canvas, Skia). It provides a command buffer
+ * designed to help minimize object allocations during the render loop.
  *
  * @packageDocumentation
  */
@@ -73,7 +73,7 @@ export interface DrawCommandOptions {
 }
 
 /**
- * High-performance render command buffer designed to minimize per-frame allocations.
+ * Render command buffer designed to minimize per-frame allocations.
  *
  * @responsibility Store and sort drawing commands for the backend renderer.
  * @responsibility Minimize Garbage Collector (GC) pressure via pre-allocated pooling.

@@ -30,14 +30,14 @@ function resetResult(): CCDResult {
  * Utilities for Continuous Collision Detection (CCD) using Linear Sweeping.
  *
  * CCD prevents "tunneling"—a phenomenon where fast-moving objects skip over
- * obstacles between discrete simulation steps. These algorithms calculate the
- * exact Time of Impact (TOI) within a frame's duration.
+ * obstacles between discrete simulation steps. These algorithms aim to calculate the
+ * Time of Impact (TOI) within a frame's duration.
  *
  * @remarks
  * ### Mathematical Basis:
  * - Assumes constant linear velocity (Euler integration).
  * - Ignores rotational movement during the sweep.
- * - Optimized with shared result objects to minimize GC pressure.
+ * - Optimized with shared result objects to help minimize GC pressure.
  *
  * @packageDocumentation
  */

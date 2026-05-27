@@ -88,9 +88,11 @@ export class World {
   private freeEntities: Entity[] = [];
   /** @internal */
   private _freeEntitiesSorted = true;
+  /** @internal */
   private resources = new Map<string, unknown>();
   /**
    * Incremented on structural changes (entity creation/destruction, component addition/removal).
+   * @internal
    */
   private _structureVersion = 0;
   /** @internal */
@@ -178,7 +180,9 @@ export class World {
     this._tick++;
   }
 
+  /** @internal */
   private _renderDirty = false;
+  /** @internal */
   private commandBuffer = new WorldCommandBuffer();
 
   /**
@@ -242,18 +246,20 @@ export class World {
    *
    * @remarks
    * The snapshot is a deep-cloned representation of the world state, designed to facilitate
-   * state restoration. It seeks to achieve consistency by:
+   * state restoration. It aims to achieve consistency by:
    * 1. Organizing entity lists sorted by ID.
    * 2. Sorting component types alphabetically.
    * 3. Storing component data per type in entity-order.
    *
-   * Functional or non-serializable data (such as event handlers or complex object instances)
-   * is typically excluded or may lead to incomplete restoration if not handled as a POJO.
+   * Functional or non-serializable data (such as event handlers, complex object instances, or
+   * external references) is generally not captured and may lead to incomplete restoration
+   * if components are not kept as plain-old-data (POD).
    *
-   * @warning Deep cloning is used to maintain snapshot independence and avoid reference
-   * sharing (aliasing). This carries a performance cost proportional to the total number
-   * of components and their complexity. Frequent snapshotting in large simulations may
-   * impact frame rate.
+   * @warning **Performance & Allocation**: Deep cloning is used to maintain snapshot
+   * independence and avoid reference sharing (aliasing). This carries a performance
+   * cost and increases GC pressure proportional to the total number of components
+   * and their complexity. Frequent snapshotting in large or complex simulations
+   * should be monitored for impact on frame rate.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const gameplayRandom = this.gameplayRandom;
@@ -363,14 +369,19 @@ export class World {
    * Restores the world state from a previously captured snapshot.
    *
    * @remarks
-   * This method performs a deep restoration intended to make the live world state
+   * This method performs a deep restoration designed to make the live world state
    * independent of the snapshot object. It rebuilds internal indexes and
    * re-synchronizes queries to maintain structural integrity.
    *
-   * @warning Full state restoration is generally expected only if the world's static
-   * structure (registered systems, component types) matches the state when the
-   * snapshot was taken. Manual restoration of resources or external state not managed
-   * by the World must be handled by the developer to maintain consistency.
+   * To help minimize GC pressure, the restoration process attempts to reuse existing
+   * component objects when possible, overwriting their properties rather than
+   * allocating new objects.
+   *
+   * @warning **State Consistency**: Full state restoration is generally supported
+   * only if the world's static structure (registered systems, component types)
+   * matches the state when the snapshot was taken. Manual restoration of resources
+   * or external state not managed by the World must be handled by the developer
+   * to maintain consistency.
    */
   public restore(state: WorldSnapshot): void {
     this.assertCanMutateStructure("restore");
@@ -659,11 +670,11 @@ export class World {
    * Performs an immediate mutation on a component.
    *
    * @remarks
-   * This is the recommended way to modify component data. It ensures
+   * This is the recommended way to modify component data. It is designed to ensure
    * that state versioning, change detection, and render-dirty flags are updated.
    * Direct property assignments on component references retrieved via `getComponent`
    * bypass these mechanisms and are typically blocked in development mode
-   * to help maintain consistency in deterministic environments.
+   * to help maintain consistency and reproducibility.
    */
   public mutateComponent<TType extends AnyCoreComponent["type"]>(
     entity: Entity,
@@ -691,7 +702,7 @@ export class World {
   }
 
   /**
-   * Checks for entity existence. Typically O(1).
+   * Checks for entity existence. Typically O(1) via Set lookup.
    */
   public hasEntity(entity: Entity): boolean {
     return this.activeEntities.has(entity);

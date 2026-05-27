@@ -56,8 +56,10 @@ export type EffectDrawer<TContext> = (
  * is designed to support backend abstraction (e.g., Canvas, Skia) and decoupling
  * of simulation and rendering frequencies through snapshots and interpolation.
  *
- * It is intended that drawing operations do not mutate simulation components to
- * maintain state integrity.
+ * Drawing operations are intended to be side-effect free relative to simulation components.
+ * While core rendering paths aim to minimize allocations, the use of user-provided
+ * drawers, effect handlers, or complex object structures may introduce some
+ * GC pressure.
  *
  * @public
  */

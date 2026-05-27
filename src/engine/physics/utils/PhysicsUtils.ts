@@ -53,7 +53,7 @@ export class PhysicsUtils {
    *
    * @remarks
    * Formula: `P_new = P_old + V * dt`.
-   * Efficient and deterministic, but prone to "tunnelling" at extreme
+   * Designed to be efficient and reproducible, but prone to "tunnelling" at extreme
    * velocities or low framerates.
    *
    * @param pos - Position object (local or world).
@@ -191,8 +191,8 @@ export class PhysicsUtils {
    * Synchronizes mass and inertia with their respective inverse properties.
    *
    * @remarks
-   * Required after manual mass changes to ensure simulation correctness,
-   * as the engine uses inverse properties for impulse calculations.
+   * Intended to be called after manual mass changes to help ensure simulation
+   * consistency, as the engine uses inverse properties for impulse calculations.
    *
    * @param body - The rigid body component to update.
    * @param mass - [kg] New mass (\> 0 for dynamic, 0 for static).

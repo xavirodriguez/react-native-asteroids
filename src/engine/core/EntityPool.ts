@@ -25,7 +25,7 @@ export class EntityPool {
    * el contador global de IDs.
    *
    * @returns Un nuevo {@link Entity} (identificador numérico).
-   * @postcondition El ID devuelto no estará disponible en el pool hasta que sea liberado.
+ * @expectation El ID devuelto no estará disponible en el pool hasta que sea liberado.
    * @sideEffect Incrementa `nextId` si el pool está vacío.
    */
   public acquire(): Entity {
@@ -45,7 +45,7 @@ export class EntityPool {
    *
    * @param id - El identificador de la entidad a liberar.
    *
-   * @precondition Se espera que el ID haya sido obtenido previamente mediante {@link EntityPool.acquire}.
+   * @expectation Se espera que el ID haya sido obtenido previamente mediante {@link EntityPool.acquire}.
    * @postcondition El ID se añade a la pila de IDs disponibles.
    * @conceptualRisk [ENTITY_REUSE][FIXED] Se ha implementado una validación mediante `pooledSet`
    * para evitar el "double-release" (liberar el mismo ID dos veces), previniendo la corrupción
