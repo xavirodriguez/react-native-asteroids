@@ -15,8 +15,9 @@ export { PhysicsSolveSystem } from "./PhysicsSolveSystem";
  * for simple collision scenarios, though accuracy is subject to the fixed
  * time-step and integration method.
  *
- * @deprecated Use {@link PhysicsIntegrateSystem} and {@link PhysicsSolveSystem}
- * instead for correct execution order.
+ * @deprecated **Deprecated**: Use {@link PhysicsIntegrateSystem} and {@link PhysicsSolveSystem}
+ * instead. Modern architecture requires separating integration from resolution to
+ * help ensure correct execution order and determinism in complex simulations.
  * This class remains for backward compatibility but internally delegates to the new systems.
  *
  * @public

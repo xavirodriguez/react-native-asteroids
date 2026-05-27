@@ -63,7 +63,7 @@ export type { AABB } from './types/CommonTypes';
 // --- PHYSICS & COLLISION ---
 /** @public */
 export { PhysicsUtils } from './physics/utils/PhysicsUtils';
-/** @public */
+/** @deprecated Use PhysicsIntegrateSystem and PhysicsSolveSystem instead */
 export { PhysicsSystem2D } from './physics/dynamics/PhysicsSystem2D';
 /** @public */
 export { CollisionSystem2D, type CollisionCallback, type TriggerCallback } from './physics/collision/CollisionSystem2D';

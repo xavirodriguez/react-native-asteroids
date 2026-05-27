@@ -71,7 +71,7 @@ export class ReplayRecorder {
 
     this.currentTick = tick;
 
-    // O(1) insertion in circular buffer
+    // Approximately O(1) insertion in circular buffer
     this.frames[this.head] = {
       tick,
       inputs,

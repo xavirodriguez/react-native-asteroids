@@ -7,7 +7,7 @@ import { ObjectPool } from "../../utils/ObjectPool";
  * API status: Public
  *
  * Responsibility: Divide the world into square cells to accelerate spatial queries.
- * Responsibility: Provide O(1) access to cells and O(M) queries over AABBs.
+ * Responsibility: Provide approximately O(1) access to cells and O(M) queries over AABBs.
  *
  * @remarks
  * Implements a **Spatial Hash** strategy where entities are indexed in

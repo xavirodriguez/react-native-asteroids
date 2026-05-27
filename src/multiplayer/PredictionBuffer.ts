@@ -12,7 +12,11 @@ import { PredictedState } from "./NetTypes";
 
 /**
  * Manages historical predicted states for reconciliation.
- * Optimized with a circular buffer for O(1) performance and zero allocations in hot paths.
+ *
+ * @remarks
+ * Optimized with a circular buffer for O(1) lookups. To help minimize GC pressure,
+ * the buffer attempts to reuse existing state objects if the tick matches.
+ * Note that initial population or tick desyncs may still result in allocations.
  */
 export class PredictionBuffer {
   private buffer: (PredictedState | null)[];

@@ -2,7 +2,8 @@
  * System for playback and management of recorded game sessions.
  *
  * This module allows loading historical input streams and replaying them
- * through the deterministic simulation engine.
+ * through the simulation engine. Deterministic reproduction is supported
+ * when the simulation is seeded identically and remains free of unmanaged side effects.
  *
  * @packageDocumentation
  */

@@ -25,7 +25,7 @@ export interface Palette {
  *
  * @remarks
  * New palettes should be added here to be automatically available in the Profile settings.
- * The `palette_default` key must always exist as a fallback.
+ * The `palette_default` key is expected to exist as a fallback.
  */
 export const PALETTES: Record<string, Palette> = {
   palette_default:        { primary: '#FFFFFF', secondary: '#888888', accent: '#FFFF00' },

@@ -18,7 +18,11 @@ import {
 
 /**
  * High-performance assembler for creating entities from blueprints.
- * Strictly zero-allocation in the hot path by recycling component objects.
+ *
+ * @remarks
+ * Designed to minimize per-frame allocations by recycling component objects.
+ * While core hydration is optimized, some data patterns or overrides may still
+ * trigger minor allocations.
  */
 export class EntityBlueprintAssembler {
   /**
