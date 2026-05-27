@@ -4,17 +4,17 @@ import { Entity } from "../types/EngineTypes";
  * Reactive Query that maintains an index of entities with a specific component signature.
  *
  * @remarks
- * Queries are intended to reduce the overhead of iterating over all entities by maintaining
+ * Queries are intended to help reduce the overhead of iterating over all entities by maintaining
  * a filtered cache. The {@link World} notifies relevant queries when structural changes occur.
  *
  * ### Internals: Reactive Indexing
- * The Query system is designed to follow these steps:
+ * The Query system is designed to perform these steps:
  * 1. **Registration**: The World checks for an existing query matching the component signature.
- * 2. **Initial Matching**: If new, it performs a scan of active entities to find matches.
- * 3. **Reactive Updates**: When components are added or removed, the World notifies
+ * 2. **Initial Matching**: If new, it typically performs a scan of active entities to find matches.
+ * 3. **Reactive Updates**: When components are added or removed, the World is expected to notify
  *    interested Queries to update their internal indices.
  * 4. **Lazy Sorting**: Queries use an internal `Set` for membership changes.
- *    The result array is typically rebuilt and sorted upon the first access after a change.
+ *    The result array is rebuilt and sorted upon the first access after a change.
  *
  * ### Performance Characteristics:
  * - **Membership Check**: Designed for O(1) performance using an internal `Set`.
@@ -23,7 +23,7 @@ import { Entity } from "../types/EngineTypes";
  * - **Memory**: Retains references to matching Entity IDs and caches one sorted array.
  *
  * @conceptualRisk [MUTABLE_CACHE_LEAK] `getEntities()` returns a shallow copy to
- * help prevent external state corruption, which incurs an allocation cost.
+ * help prevent external state corruption, which typically incurs an allocation cost.
  *
  * @public
  */
@@ -95,8 +95,8 @@ export class Query {
    *    as the source for the copy.
    *
    * @warning **Dynamic Query Cost**: Frequent calls to `world.query()` with varying component
-   * signatures inside hot loops may impact performance. Reusing query instances is
-   * recommended.
+   * signatures inside hot loops may impact performance due to key generation and lookup.
+   * Reusing query instances or caching references is recommended.
    *
    * @returns A read-only array of matching {@link Entity} IDs.
    *
@@ -116,8 +116,8 @@ export class Query {
    * Executes a callback for each entity matching the query.
    *
    * @remarks
-   * This is an alternative to `getEntities()` designed to help minimize per-frame that minimizes per-frame
-   * allocations by iterating over the internal cached array.
+   * This is an alternative to `getEntities()` designed to help minimize per-frame
+   * allocations by iterating over the internal cached array directly.
    *
    * @param callback - Function to execute for each entity.
    */
@@ -136,8 +136,8 @@ export class Query {
    * Provides a read-only view of the internal entities array.
    *
    * @remarks
-   * **CAUTION**: Returning the internal array directly avoids allocation but is dangerous
-   * if the caller attempts to mutate it. In development mode, the array may be frozen
+   * **CAUTION**: Returning the internal array directly avoids allocation but carries the
+   * risk of accidental external mutation. In development mode, the array may be frozen
    * to help detect unauthorized mutations. Use this primarily in performance-critical hot paths.
    *
    * @returns The internal sorted array of matching {@link Entity} IDs.

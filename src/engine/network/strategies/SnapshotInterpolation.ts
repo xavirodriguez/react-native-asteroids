@@ -4,8 +4,13 @@ import { ReconciliationStrategy } from "../ReconciliationStrategy";
 import { InterpolationBuffer } from "../../../multiplayer/InterpolationSystem";
 
 /**
- * Strategy for smooth interpolation of entities based on server snapshots.
- * Used for games like Flappy Bird.
+ * Strategy for interpolation of entities based on server snapshots.
+ *
+ * @remarks
+ * Designed to help achieve smooth visual motion by interpolating between known
+ * authoritative states. This strategy does not include local prediction and is
+ * typically subject to an interpolation delay (latency) to ensure a buffer of
+ * snapshots is available.
  */
 export class SnapshotInterpolationStrategy implements ReconciliationStrategy {
     private entityInterpolationBuffers = new Map<number, InterpolationBuffer>();
@@ -26,6 +31,7 @@ export class SnapshotInterpolationStrategy implements ReconciliationStrategy {
 
             const data = buffer.getAt(targetTime);
             if (data) {
+                // Authoritative mutation via world.mutateComponent
                 world.mutateComponent(entityId, "Transform", (transform: TransformComponent) => {
                     transform.x = data.prev.x + (data.next.x - data.prev.x) * data.alpha;
                     transform.y = data.prev.y + (data.next.y - data.prev.y) * data.alpha;

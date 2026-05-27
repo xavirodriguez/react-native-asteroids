@@ -4,7 +4,7 @@ import { Entity } from "../types/EngineTypes";
  * Gestor de reciclaje de identificadores de entidades.
  *
  * @remarks
- * Proporciona una estrategia destinada a reducir las alocaciones durante la creación y destrucción de entidades.
+ * Proporciona una estrategia destinada a ayudar a reducir las alocaciones durante la creación y destrucción de entidades.
  * Al reutilizar IDs numéricos, se busca mitigar la presión sobre el recolector de basura (GC) en rutas críticas.
  *
  * @public
@@ -25,7 +25,7 @@ export class EntityPool {
    * el contador global de IDs.
    *
    * @returns Un nuevo {@link Entity} (identificador numérico).
- * @expectation El ID devuelto no estará disponible en el pool hasta que sea liberado.
+   * @expectation El ID devuelto no debería estar disponible en el pool hasta que sea liberado.
    * @sideEffect Incrementa `nextId` si el pool está vacío.
    */
   public acquire(): Entity {
@@ -65,7 +65,7 @@ export class EntityPool {
    *
    * @remarks
    * Invalida todos los IDs de entidades creados anteriormente. Se recomienda usar con precaución,
-   * generalmente solo durante el reinicio total del motor.
+   * típicamente solo durante el reinicio total del motor.
    *
    * @precondition El mundo ECS debería estar vacío para mitigar el riesgo de colisiones de IDs con entidades existentes.
    * @postcondition {@link EntityPool.pool} queda vacío y `nextId` vuelve a 1.

@@ -5,8 +5,14 @@ import { InterpolationBuffer } from "../../../multiplayer/InterpolationSystem";
 
 /**
  * Hybrid Authority Strategy.
- * Authoritative for some entities (e.g. swarm/enemies) and predicted for others (local player).
- * Used for games like Space Invaders.
+ *
+ * @remarks
+ * This strategy is intended to combine client-side prediction for certain entities
+ * (typically the local player) with server authority/interpolation for others
+ * (e.g., enemies or swarm).
+ *
+ * Prediction quality and interpolation smoothness are subject to network stability
+ * and simulation consistency.
  */
 export class HybridAuthorityStrategy implements ReconciliationStrategy {
     private entityInterpolationBuffers = new Map<number, InterpolationBuffer>();
@@ -32,6 +38,7 @@ export class HybridAuthorityStrategy implements ReconciliationStrategy {
 
             const data = buffer.getAt(targetTime);
             if (data) {
+                // Authoritative mutation via world.mutateComponent
                 world.mutateComponent(entityId, "Transform", (transform: TransformComponent) => {
                     transform.x = data.prev.x + (data.next.x - data.prev.x) * data.alpha;
                     transform.y = data.prev.y + (data.next.y - data.prev.y) * data.alpha;

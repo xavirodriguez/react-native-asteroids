@@ -19,7 +19,7 @@ import { EntityReplicator } from "./EntityReplicator";
  *
  * While it provides a unified interface for various strategies (rollback, interpolation),
  * synchronization quality is subject to the selected strategy, network conditions,
- * and simulation determinism.
+ * and the underlying simulation's consistency and determinism.
  */
 export class NetworkManager {
     private static instances = new Map<string, NetworkManager>();

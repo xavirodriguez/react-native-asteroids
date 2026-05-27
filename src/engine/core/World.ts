@@ -30,10 +30,10 @@ interface RegisteredSystem {
  *
  * @remarks
  * The World acts as the central hub for the ECS architecture. It is designed to coordinate
- * entity lifecycle, component storage, and system orchestration. While it aims to
- * reduce overhead in common execution paths, performance and determinism are
- * dependent on the JavaScript environment, execution context, and strict adherence
- * to the engine's mutation patterns (e.g., using {@link World.mutateComponent}).
+ * entity lifecycle, component storage, and system orchestration. While it attempts to
+ * reduce overhead in common execution paths, performance and consistency are
+ * influenced by the JavaScript environment, execution context, and adherence
+ * to the engine's recommended mutation patterns (e.g., using {@link World.mutateComponent}).
  *
  * API status: Public
  */
@@ -246,20 +246,20 @@ export class World {
    *
    * @remarks
    * The snapshot is a deep-cloned representation of the world state, designed to facilitate
-   * state restoration. It aims to achieve consistency by:
+   * state restoration. It seeks to achieve consistency by:
    * 1. Organizing entity lists sorted by ID.
    * 2. Sorting component types alphabetically.
    * 3. Storing component data per type in entity-order.
    *
    * Functional or non-serializable data (such as event handlers, complex object instances, or
-   * external references) is generally not captured and may lead to incomplete restoration
+   * external references) is typically not captured and may lead to incomplete restoration
    * if components are not kept as plain-old-data (POD).
    *
-   * @warning **Performance & Allocation**: Deep cloning is used to maintain snapshot
+   * @warning **Performance & Allocation**: Deep cloning is used to help ensure snapshot
    * independence and avoid reference sharing (aliasing). This carries a performance
    * cost and increases GC pressure proportional to the total number of components
    * and their complexity. Frequent snapshotting in large or complex simulations
-   * should be monitored for impact on frame rate.
+   * may impact frame rate and should be used judiciously.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const gameplayRandom = this.gameplayRandom;
@@ -369,19 +369,19 @@ export class World {
    * Restores the world state from a previously captured snapshot.
    *
    * @remarks
-   * This method performs a deep restoration designed to make the live world state
+   * This method performs a deep restoration intended to make the live world state
    * independent of the snapshot object. It rebuilds internal indexes and
    * re-synchronizes queries to maintain structural integrity.
    *
-   * To help minimize GC pressure, the restoration process attempts to reuse existing
+   * To help reduce GC pressure, the restoration process attempts to reuse existing
    * component objects when possible, overwriting their properties rather than
    * allocating new objects.
    *
-   * @warning **State Consistency**: Full state restoration is generally supported
-   * only if the world's static structure (registered systems, component types)
+   * @warning **State Consistency**: Full state restoration is expected to be successful
+   * primarily if the world's static structure (registered systems, component types)
    * matches the state when the snapshot was taken. Manual restoration of resources
    * or external state not managed by the World must be handled by the developer
-   * to maintain consistency.
+   * to maintain simulation integrity.
    */
   public restore(state: WorldSnapshot): void {
     this.assertCanMutateStructure("restore");
@@ -572,12 +572,12 @@ export class World {
    *
    * @remarks
    * **Caution**: This method is restricted during the world's update cycle
-   * (`isUpdating === true`) to protect iterator safety. Attempting to call it during
+   * (`isUpdating === true`) to help protect iterator safety. Attempting to call it during
    * an update will throw an error. Use {@link World.getCommandBuffer} to queue
    * component additions for deferred execution.
    *
    * To modify data in an existing component, {@link World.mutateComponent} is the
-   * recommended and authoritative approach as it tracks state versions.
+   * recommended and authoritative approach as it is designed to track state versions correctly.
    */
   addComponent<T extends Component>(entity: Entity, component: T): Readonly<T> {
     this.assertCanMutateStructure("addComponent");
@@ -628,11 +628,11 @@ export class World {
    *
    * @remarks
    * In production environments, this typically returns the live reference typed as `Readonly`
-   * to minimize overhead. In development mode, the object may be proxied to detect
+   * to help minimize overhead. In development mode, the object may be proxied to help detect
    * unauthorized mutations.
    *
    * For modifying component data, it is strongly recommended to use {@link World.mutateComponent}
-   * to ensure that versioning and reactive systems are correctly notified.
+   * to help ensure that versioning and reactive systems are correctly notified.
    *
    * API status: Public
    */
@@ -670,11 +670,13 @@ export class World {
    * Performs an immediate mutation on a component.
    *
    * @remarks
-   * This is the recommended way to modify component data. It is designed to ensure
-   * that state versioning, change detection, and render-dirty flags are updated.
+   * This is the authoritative and recommended way to modify component data. It is designed
+   * to help ensure that state versioning, change detection, and render-dirty flags are
+   * correctly updated.
+   *
    * Direct property assignments on component references retrieved via `getComponent`
    * bypass these mechanisms and are typically blocked in development mode
-   * to help maintain consistency and reproducibility.
+   * to help maintain simulation consistency and reproducibility.
    */
   public mutateComponent<TType extends AnyCoreComponent["type"]>(
     entity: Entity,

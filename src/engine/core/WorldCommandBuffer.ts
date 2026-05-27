@@ -28,14 +28,14 @@ type Command =
  * ECS Command Buffer - Defers structural world mutations to help ensure iterator safety.
  *
  * @remarks
- * The `WorldCommandBuffer` is intended for use when modifying the world during system
+ * The `WorldCommandBuffer` is designed for use when modifying the world during system
  * updates. Since systems often iterate over entities via queries, direct structural
- * modifications are restricted to help prevent iterator invalidation or inconsistent results.
+ * modifications are restricted to help protect iterator safety and maintain results consistency.
  *
  * ### Execution Characteristics:
  * 1. **FIFO Order**: Commands are typically executed in the sequence they were recorded.
- * 2. **Visibility**: Structural changes are generally NOT reflected in the {@link World} until
- *    `flush()` is called (automatically triggered at the end of the `World.update` cycle).
+ * 2. **Visibility**: Structural changes are NOT reflected in the {@link World} until
+ *    `flush()` is called (typically triggered at the end of the `World.update` cycle).
  *
  * Recommended practice:
  * - Systems should use `WorldCommandBuffer` for structural changes (entity creation/deletion,

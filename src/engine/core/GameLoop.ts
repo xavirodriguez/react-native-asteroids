@@ -15,15 +15,15 @@ export interface GameLoopConfig {
  * Implements a **Fixed Timestep / Variable Rendering** scheme with interpolation,
  * intended to support simulation consistency and visual smoothness.
  *
- * The loop is designed to decouple simulation logic from the device's refresh rate,
+ * The loop attempts to decouple simulation logic from the device's refresh rate,
  * which may help mitigate the impact of performance fluctuations on physical integrity.
- * Under high load conditions, the system may limit updates to preserve main thread stability.
+ * Under high load conditions, the system may limit updates to preserve environment stability.
  *
  * **Precision**: The simulation phase is configured to target constant increments of
  * 16.67ms (1/60s). In practice, real-world precision is subject to environment
  * constraints such as the JavaScript Event Loop, `performance.now()` variability,
- * and system load. Consistency across different devices is aimed for but cannot be
- * absolutely guaranteed.
+ * and system load. Consistency across different devices is intended but cannot be
+ * guaranteed.
  *
  * @conceptualRisk [PERFORMANCE] The loop may encounter a "Spiral of Death" if the
  * simulation is consistently slower than real-time. A safety mechanism
@@ -65,8 +65,8 @@ export class GameLoop {
    * Subscribes a callback to the Input phase.
    *
    * @remarks
-   * Executes once per browser frame (variable step), before the physical simulation.
-   * Useful for capturing keyboard or pointer states to be processed in the next tick.
+   * Executes once per frame (variable step), before the physical simulation.
+   * Typically used for capturing keyboard or pointer states to be processed in the next tick.
    *
    * @param listener - Function receiving the current frame's deltaTime.
    * @returns A function to unsubscribe.
@@ -80,7 +80,7 @@ export class GameLoop {
    * Subscribes a callback to the physical simulation phase (Fixed Update).
    *
    * @remarks
-   * This phase is oriented towards simulation consistency. The system targets a
+   * This phase is oriented towards simulation consistency. The system attempts to maintain a
    * constant time increment (16.67ms) for the callback. Depending on elapsed time,
    * it may execute multiple times in a single environment frame.
    *
@@ -121,9 +121,9 @@ export class GameLoop {
    * Subscribes a callback to the Presentation (Render) phase.
    *
    * @remarks
-   * Executes once per browser frame. Receives an `alpha` factor (0.0 to 1.0)
+   * Executes once per environment frame. Receives an `alpha` factor (0.0 to 1.0)
    * indicating the fraction of the fixed tick remaining in the accumulator,
-   * allowing for visual interpolation to achieve smooth motion.
+   * allowing for visual interpolation intended to achieve smoother motion.
    *
    * @param listener - Function receiving `alpha` and `deltaTime`.
    * @returns Unsubscribe function.
@@ -157,7 +157,7 @@ export class GameLoop {
    * Implements a **Time Accumulator** algorithm:
    * 1. Calculates `deltaTime` capped by `maxDeltaMs` to help prevent excessive jumps.
    * 2. Adds `deltaTime` to the `accumulator`.
-   * 3. Executes the simulation phase in fixed steps (16.67ms) as long as the accumulator allows.
+   * 3. Attempts to execute the simulation phase in fixed steps (16.67ms) as long as the accumulator allows.
    * 4. Calculates `alpha` as the remaining time fraction for visual interpolation.
    *
    * While this system is designed to support reproducibility, external factors
