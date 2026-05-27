@@ -307,8 +307,8 @@ export class World {
         for (const key in compAsRecord) {
           const val = compAsRecord[key];
           if (typeof val !== "function") {
-            // MANDATORY: Deep clone every property to ensure snapshot independence.
-            // Using ComponentCloner ensures that objects and arrays are independent.
+            // Recommendation: Deep clone every property to help ensure snapshot independence.
+            // Using ComponentCloner is intended to make objects and arrays independent.
             serializedComp[key] = ComponentCloner.cloneComponent(val);
           }
         }
@@ -339,7 +339,7 @@ export class World {
         target.structureVersion = this._structureVersion;
         target.stateVersion = this._stateVersion;
         target.seed = gameplayRandom.getSeed();
-        target.rngState = gameplayRandom.getSeed(); // Bit-perfect restoration via getSeed()
+        target.rngState = gameplayRandom.getSeed(); // High-fidelity restoration via getSeed()
         target.accumulator = this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator();
         target.tick = this._tick;
         return target;
@@ -353,7 +353,7 @@ export class World {
       structureVersion: this._structureVersion,
       stateVersion: this._stateVersion,
       seed: gameplayRandom.getSeed(),
-      rngState: gameplayRandom.getSeed(), // Bit-perfect restoration via getSeed()
+      rngState: gameplayRandom.getSeed(), // High-fidelity restoration via getSeed()
       accumulator: this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator(),
       tick: this._tick
     };
@@ -395,7 +395,7 @@ export class World {
     this._tick = state.tick ?? 0;
 
     if (state.rngState !== undefined) {
-        this.gameplayRandom.setSeed(state.rngState); // Bit-perfect restoration of internal state
+        this.gameplayRandom.setSeed(state.rngState); // High-fidelity restoration of internal state
     } else if (state.seed !== undefined) {
         this.gameplayRandom.setSeed(state.seed);
     }
@@ -461,7 +461,7 @@ export class World {
         }
 
         // Apply snapshot data with deep cloning.
-        // MANDATORY: We must clone again when restoring to ensure the live world
+        // Important: We should clone again when restoring to help ensure the live world
         // does not share references with the snapshot (aliasing).
         for (const key in sourceComp) {
           const val = sourceComp[key];
@@ -620,6 +620,9 @@ export class World {
    * to minimize overhead. In development mode, the object may be proxied to detect
    * unauthorized mutations.
    *
+   * For modifying component data, it is strongly recommended to use {@link World.mutateComponent}
+   * to ensure that versioning and reactive systems are correctly notified.
+   *
    * API status: Public
    */
   public getComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): DeepReadonly<ComponentOf<TType>> | undefined;
@@ -644,7 +647,7 @@ export class World {
       set: (obj, prop, value) => {
         console.error(
           `[World] ILLEGAL MUTATION DETECTED: Direct write to "${String(prop)}" on component "${type}" (Entity ${entity}). ` +
-          `Always use world.mutateComponent() to ensure state versioning and determinism.`
+          `It is recommended to use world.mutateComponent() to help ensure state versioning and determinism.`
         );
         (obj as Record<string | symbol, unknown>)[prop] = value;
         return true;
@@ -1146,11 +1149,11 @@ export class World {
 
   /**
    * Internal method to trigger the Transformation phase for all hierarchical components.
-   * This is called automatically during the World.update() cycle.
+   * This is intended to be called automatically during the World.update() cycle.
    */
   private runTransformPhase(deltaTime: number): void {
     // We expect HierarchySystem to be registered in the World or accessible.
-    // If not, we fall back to a built-in resolution logic to guarantee invariant.
+    // If not, we fall back to a built-in resolution logic intended to maintain invariant.
     const hierarchySystems = this.systems.filter(s => s.phase === SystemPhase.Transform);
     if (hierarchySystems.length > 0) {
       hierarchySystems.forEach(reg => reg.system.update(this, deltaTime));
