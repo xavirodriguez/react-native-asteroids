@@ -2,9 +2,9 @@ import { Component, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } 
 import { Entity } from "./Entity";
 import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
 
-type DeepReadonly<T> = T extends (...args: unknown[]) => unknown
+type DeepReadonly<T> = T extends (...args: any[]) => any
   ? T
-  : T extends unknown[]
+  : T extends any[]
   ? ReadonlyArray<DeepReadonly<T[number]>>
   : T extends object
   ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
