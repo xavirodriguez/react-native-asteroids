@@ -72,6 +72,12 @@ export class LootSystem extends System {
     const vx = (rng.next() - 0.5) * 50;
     const vy = (rng.next() - 0.5) * 50;
 
+    const screen = world.getResource<{ width: number, height: number }>("ScreenConfig");
+    const viewport = {
+      width: screen?.width ?? 800,
+      height: screen?.height ?? 600
+    };
+
     commands.createEntity((powerUp) => {
         // Physical presence
         commands.addComponent(powerUp, {
@@ -123,8 +129,8 @@ export class LootSystem extends System {
         // Screen wrapping
         commands.addComponent(powerUp, {
             type: "Boundary",
-            width: 800, // Should be dynamic ideally
-            height: 600,
+            width: viewport.width,
+            height: viewport.height,
             behavior: "wrap"
         } as BoundaryComponent);
     });

@@ -23,7 +23,14 @@ export function seedToString(seed: number): string {
 export function stringToSeed(s: string): number {
   const clean = s.replace(/-/g, "").trim();
   if (!/^[0-9A-F]{8}$/i.test(clean)) {
-    throw new Error(`Invalid seed format: ${s}`);
+    throw new Error(`Invalid seed format: ${s}. Expected format: XXXX-XXXX`);
   }
   return parseInt(clean, 16) >>> 0;
+}
+
+/**
+ * Validates if a string follows the XXXX-XXXX seed format.
+ */
+export function isValidSeedString(s: string): boolean {
+  return /^[0-9A-F]{4}-[0-9A-F]{4}$/i.test(s);
 }

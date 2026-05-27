@@ -24,7 +24,11 @@ export class TilemapRenderSystem extends System {
   public update(world: World, _deltaTime: number): void {
     const tilemaps = world.query("Tilemap");
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
-    const viewport = { width: 800, height: 600 };
+    const screen = world.getResource<{ width: number, height: number }>("ScreenConfig");
+    const viewport = {
+      width: screen?.width ?? 800,
+      height: screen?.height ?? 600
+    };
 
     for (let i = 0; i < tilemaps.length; i++) {
       const entity = tilemaps[i];

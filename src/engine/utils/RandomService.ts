@@ -47,33 +47,28 @@ export class RandomService {
   }
 
   // ==========================================================================
-  // LEGACY STATIC SUPPORT (Refactored to avoid global mutation issues)
+  // STATIC SUPPORT (Restricted to internal use and tests)
   // ==========================================================================
 
   private static namedInstances: Map<string, RandomService> = new Map();
   /** @internal */
   private static _lockGameplayContext: boolean = false;
 
+  /** @internal */
   public static get lockGameplayContext(): boolean {
     return this._lockGameplayContext;
   }
 
+  /** @internal */
   public static set lockGameplayContext(value: boolean) {
     this._lockGameplayContext = value;
   }
 
-  /** @deprecated Access RNG via World resources instead. */
-  public static getGameplayRandom(): RandomService {
-    return this.getInstance("gameplay");
-  }
-
-  /** @deprecated Access RNG via World resources instead. */
-  public static getRenderRandom(): RandomService {
-    return this.getInstance("render");
-  }
-
-  /** @deprecated Access RNG via World resources instead. */
-  public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
+  /**
+   * Internal access to static instances.
+   * @internal
+   */
+  private static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
     if (this._lockGameplayContext && name !== "gameplay") {
         throw new Error(`Deterministic violation: '${name}' random accessed during simulation. Only 'gameplay' stream is allowed.`);
     }
@@ -84,42 +79,6 @@ export class RandomService {
       this.namedInstances.set(name, instance);
     }
     return instance;
-  }
-
-  /** @deprecated Use instance method instead. */
-  public static next(): number {
-    return this.getInstance("global").next();
-  }
-
-  /** @deprecated Use instance method instead. */
-  public static nextRange(min: number, max: number): number {
-    return this.getInstance("global").nextRange(min, max);
-  }
-
-  /** @deprecated Use instance method instead. */
-  public static nextInt(min: number, max: number): number {
-    return this.getInstance("global").nextInt(min, max);
-  }
-
-  /** @deprecated Use instance method instead. */
-  public static chance(probability: number): boolean {
-    return this.getInstance("global").chance(probability);
-  }
-
-  /** @deprecated Use instance method instead. */
-  public static nextSign(): number {
-    return this.getInstance("global").nextSign();
-  }
-
-  /** @deprecated Use instance method instead. */
-  public static setSeed(seed: number): void {
-      this.getInstance("global").setSeed(seed);
-  }
-
-  private static checkStaticAccess(method: string): void {
-    if (this._lockGameplayContext) {
-      throw new Error(`Deterministic violation: Static ${method} accessed during simulation.`);
-    }
   }
 
   /**

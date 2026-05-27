@@ -21,6 +21,16 @@ export const SeedWidget: React.FC<SeedWidgetProps> = ({ seed, onSeedEnter, style
     setTimeout(() => setCopyText("Copy Seed"), 1500);
   };
 
+  const formatInput = (text: string) => {
+    // Remove non-hex characters
+    const clean = text.replace(/[^0-9A-Fa-f]/g, "").toUpperCase();
+    if (clean.length <= 4) {
+      return clean;
+    } else {
+      return `${clean.slice(0, 4)}-${clean.slice(4, 8)}`;
+    }
+  };
+
   return (
     <View style={[styles.container, style]}>
       <View style={styles.displayRow}>
@@ -38,8 +48,9 @@ export const SeedWidget: React.FC<SeedWidgetProps> = ({ seed, onSeedEnter, style
             placeholder="XXXX-XXXX"
             placeholderTextColor="#666"
             value={inputText}
-            onChangeText={setInputText}
+            onChangeText={(text) => setInputText(formatInput(text))}
             autoCapitalize="characters"
+            maxLength={9}
           />
           <TouchableOpacity
             style={styles.applyButton}

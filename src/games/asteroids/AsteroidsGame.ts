@@ -374,6 +374,26 @@ export class AsteroidsGame
     return this.gameStateSystem.isGameOver();
   }
 
+  public override start(): void {
+    super.start();
+    console.log("[AsteroidsGame] Simulation started");
+  }
+
+  public override stop(): void {
+    super.stop();
+    console.log("[AsteroidsGame] Simulation stopped");
+  }
+
+  public override pause(): void {
+    super.pause();
+    console.log("[AsteroidsGame] Simulation paused");
+  }
+
+  public override resume(): void {
+    super.resume();
+    console.log("[AsteroidsGame] Simulation resumed");
+  }
+
 }
 
 export class NullAsteroidsGame implements IAsteroidsGame {
