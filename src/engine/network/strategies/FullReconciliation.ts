@@ -15,17 +15,17 @@ import { InputSerializer, InputBurstPayload } from "../../../multiplayer/InputSe
 
 /**
  * Strategy for full prediction and rollback reconciliation.
- * Designed for fast-paced games with high interactivity requirements.
+ * Intended for fast-paced games with high interactivity requirements.
  *
  * Implements a Rollback Netcode pattern:
  * 1. Prediction: Apply local inputs immediately for low perceived latency.
  * 2. History: Maintains a buffer of recent inputs and world state snapshots.
  * 3. Validation: Compares predicted state against authoritative server snapshots.
- * 4. Rewind & Fast-Forward: If a desync is detected, the world is restored to the
- *    last known-good state and re-simulated up to the current tick.
+ * 4. Rewind & Fast-Forward: If a desync is detected, the world attempts to restore to the
+ *    last known-good state and re-simulate up to the current tick.
  *
  * @remarks
- * This strategy relies on simulation determinism and may carry a significant
+ * This strategy relies on simulation consistency and may carry a significant
  * CPU cost during rollback frames, as multiple simulation ticks are executed
  * in a single environment frame to catch up with the current tick.
  */
@@ -183,11 +183,12 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
      * Re-simulation loop (Rewind + Fast-Forward).
      *
      * @remarks
-     * This process seeks to correct prediction errors by restoring the world
+     * This process attempts to correct prediction errors by restoring the world
      * to a confirmed server state and re-applying local inputs.
      *
-     * @warning The cost of this operation is proportional to the number of ticks
-     * between the authoritative update and the current client tick.
+     * @warning The CPU cost of this operation is proportional to the number of ticks
+     * between the authoritative update and the current client tick. High latency
+     * may trigger multiple re-simulations per frame, potentially impacting frame rate.
      */
     private executeRollback(serverTick: number, authoritativeSnapshot: WorldSnapshot, localPlayerId?: number) {
         const world = this.game.getWorld();

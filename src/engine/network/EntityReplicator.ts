@@ -2,7 +2,11 @@ import { World } from "../core/World";
 
 /**
  * Manages the mapping between server-side entity IDs (strings) and local ECS entity IDs (numbers).
- * Provides utilities for creating and cleaning up networked entities.
+ *
+ * @remarks
+ * Provides utilities for creating and cleaning up networked entities. This mapping is
+ * essential for consistent synchronization but is subject to local {@link Entity} ID
+ * availability and lifecycle management in the {@link World}.
  */
 export class EntityReplicator {
     private serverToLocal = new Map<string, number>();

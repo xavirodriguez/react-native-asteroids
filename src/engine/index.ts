@@ -11,9 +11,9 @@
  * Warning: Some exports may include internal components necessary for extensibility
  * but are not recommended for high-level logic.
  *
- * The engine is designed to minimize per-frame allocations in hot paths. It seeks to
- * support simulation reproducibility when used under controlled conditions (e.g.,
- * seeded RNG, consistent execution order, and restricted mutation patterns).
+ * The engine is designed to help minimize per-frame allocations in hot paths. It seeks to
+ * support simulation consistency and reproducibility when used under controlled
+ * conditions (e.g., seeded RNG, consistent execution order, and recommended mutation patterns).
  *
  * ### Standard Units
  *

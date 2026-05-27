@@ -4,7 +4,7 @@
  *
  * @remarks
  * Components are designed to be POJOs (Plain Old JavaScript Objects) that hold data but no logic.
- * This structure is intended to facilitate serialization, snapshots, and state replication.
+ * This structure is intended to help facilitate serialization, snapshots, and state replication.
  * Systems process entities by filtering for these data structures.
  */
 export interface Component {
@@ -20,9 +20,9 @@ export interface Component {
  * Useful for components whose exact structure is defined dynamically or outside the core.
  *
  * @remarks
- * This generic version seeks to improve type safety by allowing the specification of the
+ * This generic version is intended to improve type safety by allowing the specification of the
  * expected data structure. It is recommended for use with interfaces describing simple
- * POJOs to aid compatibility with the snapshot system.
+ * POJOs to help maintain compatibility with the snapshot system.
  *
  * @conceptualRisk [TYPE_SAFETY] Using overly generic types may weaken compile-time validations.
  *

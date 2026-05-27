@@ -102,13 +102,13 @@ export abstract class System {
    * it is recommended to avoid non-serializable internal mutable state.
    *
    * @warning **Structural Mutations**: Modifying world structure (creating/removing entities
-   * or components) while iterating over a query is generally restricted as it may
-   * invalidate iterators. It is recommended to use {@link World.getCommandBuffer} to
-   * defer these operations until the end of the tick.
+   * or components) while iterating over a query is typically restricted as it may
+   * invalidate iterators or lead to inconsistent state. It is strongly recommended to
+   * use {@link World.getCommandBuffer} to defer these operations until the end of the tick.
    *
    * @warning **Asynchronous Logic**: Systems are expected to be synchronous. Using `async/await`
-   * within `update` is not supported by the engine's core loop and may lead
-   * to race conditions or broken simulation integrity.
+   * within `update` is NOT supported by the engine's core loop and will likely lead
+   * to race conditions, broken simulation integrity, and non-deterministic behavior.
    *
    * @remarks
    * World state is expected to be consistent at the start of the update cycle.

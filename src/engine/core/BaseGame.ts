@@ -59,7 +59,8 @@ export enum GameStatus {
  *
  * Responsibility: Coordinate the initialization of systems and entities.
  *
- * Responsibility: Manage pause, resume, and restart transitions via `_transitionLock`.
+ * Responsibility: Manage pause, resume, and restart transitions via `_transitionLock` to help
+ * maintain consistency during asynchronous operations.
  *
  * Responsibility: Provide unified access to the ECS World and global resources.
  *
@@ -82,17 +83,17 @@ export enum GameStatus {
  *
  * ### Deterministic Simulation vs. Visual Presentation
  *
- * The engine is designed to maintain a boundary between the **Deterministic Simulation**
+ * The engine attempts to maintain a boundary between the **Deterministic Simulation**
  * and the **Visual Presentation** layer:
  *
  * - **Deterministic Simulation**: Operates on a fixed time step. Logic affecting
  *   gameplay (physics, health, scores) is typically intended to occur here. It is
- *   designed to support replayability and synchronization across network clients
- *   when used under controlled conditions (e.g., seeded RNG, consistent execution order).
+ *   designed to support simulation consistency when used under controlled
+ *   conditions (e.g., seeded RNG, consistent execution order, and no direct mutations).
  * - **Visual Presentation**: Operates at the display's variable refresh rate. It
- *   typically uses interpolation between simulation states to provide smooth motion.
+ *   typically uses interpolation between simulation states to help provide smoother motion.
  *   Visual-only effects (Juice, Particles, UI) reside here and are expected to
- *   avoid affecting the simulation state to prevent desyncs.
+ *   avoid affecting the authoritative simulation state to prevent desyncs.
  *
  * ### State Classification
  *
@@ -118,7 +119,7 @@ export enum GameStatus {
  * | :--- | :--- | :--- | :--- |
  * | 1 | **PRE-UPDATE** | `InterpolationPrepSystem` | Reads Transform, Updates `PreviousTransform`. |
  * | 2 | **INPUT** | `UnifiedInputSystem` | Typically should NOT mutate simulation state directly. |
- * | 3 | **SIMULATION** (Logic) | `TTLSystem`, `StateMachineSystem`, Game Logic | May mutate components via `World.mutateComponent`. Structural changes via `WorldCommandBuffer`. |
+ * | 3 | **SIMULATION** (Logic) | `TTLSystem`, `StateMachineSystem`, Game Logic | May mutate components via `World.mutateComponent`. Structural changes (creation/deletion) should be deferred via `WorldCommandBuffer`. |
  * | 4 | **SIMULATION** (Physics) | `MovementSystem`, `FrictionSystem` | Updates `Transform` based on `Velocity`. |
  * | 5 | **COLLISION** | `CollisionSystem2D` | Reads Transform/Velocity. Updates `CollisionEvents`. |
  * | 6 | **GAME RULES** | `PhysicsSystem2D` (Resolution), Health/Damage | Resolves physics, applies damage, triggers game-over. |
@@ -578,7 +579,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * ### Concurrency Control:
    * The process uses an internal `_transitionLock` (Promise-based lock) designed to
    * help ensure that multiple calls to `init()` or `restart()` do not overlap,
-   * with the goal of preventing inconsistent engine states during system registration.
+   * with the goal of reducing the risk of inconsistent engine states during system registration.
    *
    * Expected Flow:
    * 1. Register Essential Resources (EventBus, Input, Audio, SpatialGrid).
