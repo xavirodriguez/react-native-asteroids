@@ -27,5 +27,8 @@ export interface Component {
  * @conceptualRisk [TYPE_SAFETY] Using overly generic types may weaken compile-time validations.
  *
  * @typeParam T - Data structure extending a record of serializable values.
+ *
+ * @warning **Serialization**: To help ensure snapshots and network replication work as intended,
+ * it is recommended to keep component data structures simple and avoid circular references.
  */
 export type GenericComponent<T extends Record<string, unknown> = Record<string, unknown>> = Component & T;

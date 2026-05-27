@@ -5,7 +5,7 @@ import { BlueprintOverrides } from "../../data/blueprints/types/BlueprintTypes";
 import { EntityBlueprintAssembler } from "../../factories/EntityBlueprintAssembler";
 
 /**
- * Tipos de comandos estructurales que pueden ser diferidos.
+ * Types of structural commands that can be deferred.
  */
 export enum CommandType {
   CREATE_ENTITY = "createEntity",
@@ -46,9 +46,9 @@ export class WorldCommandBuffer {
   private commands: Command[] = [];
 
   /**
-   * Graba la creación de una nueva entidad.
-   * @param entityOrCallback - ID reservado por el Mundo o callback de creación.
-   * @param callback - Función opcional que recibe la entidad creada tras el flush.
+   * Records the creation of a new entity.
+   * @param entityOrCallback - Reserved ID or creation callback.
+   * @param callback - Optional function receiving the created entity after flush.
    */
   public createEntity(entityOrCallback?: Entity | ((entity: Entity) => void), callback?: (entity: Entity) => void): void {
     if (typeof entityOrCallback === "function") {
@@ -59,36 +59,36 @@ export class WorldCommandBuffer {
   }
 
   /**
-   * Graba la eliminación de una entidad.
-   * @param entity - ID de la entidad a eliminar.
+   * Records the removal of an entity.
+   * @param entity - ID of the entity to remove.
    */
   public removeEntity(entity: Entity): void {
     this.commands.push({ type: CommandType.REMOVE_ENTITY, entity });
   }
 
   /**
-   * Graba la adición o reemplazo de un componente en una entidad.
-   * @param entity - ID de la entidad.
-   * @param component - Instancia del componente.
+   * Records the addition or replacement of a component on an entity.
+   * @param entity - ID of the entity.
+   * @param component - Component instance.
    */
   public addComponent(entity: Entity, component: Component): void {
     this.commands.push({ type: CommandType.ADD_COMPONENT, entity, component });
   }
 
   /**
-   * Graba la eliminación de un componente de una entidad.
-   * @param entity - ID de la entidad.
-   * @param componentType - Nombre del tipo de componente.
+   * Records the removal of a component from an entity.
+   * @param entity - ID of the entity.
+   * @param componentType - Name of the component type.
    */
   public removeComponent(entity: Entity, componentType: string): void {
     this.commands.push({ type: CommandType.REMOVE_COMPONENT, entity, componentType });
   }
 
   /**
-   * Graba una mutación de un componente.
-   * @param entity - ID de la entidad.
-   * @param componentType - Tipo de componente.
-   * @param mutator - Función de mutación.
+   * Records a mutation for a component.
+   * @param entity - ID of the entity.
+   * @param componentType - Component type.
+   * @param mutator - Mutation function.
    */
   public mutateComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, componentType: TType, mutator: (component: ComponentOf<TType>) => void): void;
   public mutateComponent<T extends Component>(entity: Entity, componentType: string, mutator: (component: T) => void): void;
@@ -97,19 +97,19 @@ export class WorldCommandBuffer {
   }
 
   /**
-   * Encola la creación de una entidad desde un blueprint.
+   * Queues the creation of an entity from a blueprint.
    */
   public spawnFromBlueprint(blueprintId: string, x: number, y: number, overrides?: BlueprintOverrides): void {
     this.commands.push({ type: CommandType.SPAWN_FROM_BLUEPRINT, blueprintId, x, y, overrides });
   }
 
   /**
-   * Aplica todos los comandos grabados sobre el mundo proporcionado y limpia el buffer.
+   * Applies all recorded commands to the provided world and clears the buffer.
    *
    * @remarks
-   * Se procesan los comandos en el orden en que fueron recibidos (FIFO).
+   * Commands are processed in FIFO (First-In, First-Out) order.
    *
-   * @param world - La instancia del mundo sobre la que aplicar los cambios.
+   * @param world - The world instance to apply changes to.
    */
   public flush(world: World): void {
     while (this.commands.length > 0) {
@@ -145,14 +145,14 @@ export class WorldCommandBuffer {
   }
 
   /**
-   * Devuelve si el buffer contiene comandos pendientes.
+   * Returns whether the buffer contains pending commands.
    */
   public get isEmpty(): boolean {
     return this.commands.length === 0;
   }
 
   /**
-   * Limpia el buffer de comandos sin ejecutarlos.
+   * Clears the command buffer without executing the commands.
    */
   public clear(): void {
     this.commands = [];

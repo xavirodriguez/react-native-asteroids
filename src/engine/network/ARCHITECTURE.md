@@ -1,35 +1,35 @@
-# Arquitectura de Red y Sincronización
+# Network Architecture and Synchronization
 
-TinyAsterEngine está orientado a un modelo **autoritativo de servidor con predicción del lado del cliente y reconciliación (rollback)**.
+TinyAsterEngine is oriented towards a **server-authoritative model with client-side prediction and reconciliation (rollback)**.
 
-## 📡 Pipeline de Comunicación
+## 📡 Communication Pipeline
 
-El flujo de sincronización intenta mitigar la latencia y mantener la consistencia bajo condiciones de red controladas:
+The synchronization flow aims to help mitigate latency and maintain consistency under controlled network conditions:
 
-1.  **Captura de Input**: El cliente registra las acciones del jugador e intenta transmitirlas al servidor asociadas a un `tick` local.
-2.  **Predicción Local**: El cliente aplica el input a su simulación local con la intención de proporcionar una respuesta visual inmediata.
-3.  **Simulación Autoritativa**: El servidor está diseñado para actuar como la fuente de verdad, validando inputs y ejecutando la lógica oficial del juego.
-4.  **Replicación Delta**: El servidor busca optimizar el ancho de banda enviando principalmente los cambios detectados (deltas) en el estado de los componentes.
-5.  **Reconciliación (Rollback)**: En caso de discrepancia detectada entre el estado predicho y el oficial, el cliente intenta restaurar el estado del servidor y re-simular los ticks locales hasta el tiempo actual.
+1.  **Input Capture**: The client records player actions and attempts to transmit them to the server associated with a local `tick`.
+2.  **Local Prediction**: The client applies the input to its local simulation intended to provide immediate visual feedback.
+3.  **Authoritative Simulation**: The server is designed to act as the source of truth, validating inputs and executing authoritative game logic.
+4.  **Delta Replication**: The server seeks to optimize bandwidth by primarily sending detected changes (deltas) in component states.
+5.  **Reconciliation (Rollback)**: In case of a detected discrepancy between predicted and authoritative state, the client attempts to restore the server state and re-simulate local ticks up to the current time.
 
-## 🗜️ Estrategias de Optimización
+## 🗜️ Optimization Strategies
 
-Para gestionar múltiples entidades, el motor incluye mecanismos que buscan reducir la carga de red:
+To manage multiple entities, the engine includes mechanisms designed to help reduce network load:
 
 ### 1. Interest Management
-Utiliza técnicas de particionamiento espacial (como `SpatialGrid`) para determinar la relevancia de las entidades para cada jugador. Esto busca limitar la transmisión de datos a lo que es potencialmente visible o interactuable.
+Uses spatial partitioning techniques (such as `SpatialGrid`) to help determine entity relevance for each player. This aims to limit data transmission to what is potentially visible or interactable.
 
-### 2. Compresión Delta
-En lugar de transmitir el estado completo del mundo, el sistema intenta utilizar el versionado de componentes (`stateVersion`) para enviar solo los datos que han mutado desde el último mensaje confirmado por el receptor.
+### 2. Delta Compression
+Instead of transmitting the full world state, the system attempts to use component versioning (`stateVersion`) to send only data that has mutated since the last acknowledged message.
 
 ### 3. Quantization
-Los valores de punto flotante (posiciones, rotaciones) se cuantizan a enteros de precisión fija antes de la transmisión para reducir el tamaño de los datos.
+Floating-point values (positions, rotations) are quantized to fixed-precision integers before transmission to help reduce data size.
 
 ### 4. Binary Serialization (MessagePack)
-Utiliza `BinaryCompression` para empaquetar los objetos en un formato binario compacto, eliminando el overhead de las claves repetitivas de JSON.
+Uses `BinaryCompression` to pack objects into a compact binary format, aiming to eliminate the overhead of repetitive JSON keys.
 
-## ⚠️ Riesgos Conceptuales
+## ⚠️ Conceptual Risks
 
-*   **[ROLLBACK_SYNC]**: Si el historial de estados en el cliente es demasiado corto, un lag excesivo impedirá una reconciliación precisa.
-*   **[BINARY_COMPATIBILITY]**: Los cambios en los esquemas de componentes requieren una actualización sincronizada de cliente y servidor.
-*   **[TICK_DRIFT]**: La deriva de reloj entre clientes puede causar que los inputs lleguen "al futuro" o "al pasado" lejano del servidor.
+*   **[ROLLBACK_SYNC]**: If the client state history is too short, excessive lag may prevent accurate reconciliation.
+*   **[BINARY_COMPATIBILITY]**: Changes in component schemas typically require synchronized updates between client and server.
+*   **[TICK_DRIFT]**: Clock drift between clients may cause inputs to arrive "in the future" or far "in the past" of the server.

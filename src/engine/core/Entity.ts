@@ -9,7 +9,7 @@
  * ID space growth.
  *
  * @conceptualRisk [ID_REUSE] If an external system holds a reference to an Entity ID
- * after it has been removed from the {@link World}, it might eventually point to a
+ * after it has been removed from the {@link World}, it may eventually point to a
  * new entity that has reused the same ID.
  */
 export type Entity = number;

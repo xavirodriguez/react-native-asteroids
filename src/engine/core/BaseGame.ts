@@ -293,7 +293,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    */
   private setupLoop(): void {
     /**
-     * Pipeline orientado al determinismo (Fixed Update Phase):
+     * Pipeline oriented towards simulation consistency (Fixed Update Phase):
      *
      * 1. PRE-UPDATE: Snapshot Transforms for Interpolation.
      * 2. INPUT: Process raw inputs into semantic actions.
@@ -305,7 +305,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
       const activeWorld = this.getWorld();
 
-      // 0. PRE-UPDATE: Snapshot for interpolation
+      // 0. PRE-UPDATE: Snapshots for interpolation
       this.interpolationPrepSystem.update(activeWorld, deltaTime);
 
       // 1. INPUT
@@ -595,7 +595,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
       throw new Error(`BaseGame: Cannot initialize from state ${this._status}`);
     }
 
-    // El lock aquí protege contra llamadas concurrentes antes de que el status cambie.
+    // The lock here helps protect against concurrent calls before the status changes.
     if (this._transitionLock) {
       await this._transitionLock;
     }

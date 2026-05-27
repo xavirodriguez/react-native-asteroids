@@ -1,11 +1,11 @@
 import { Entity } from "../types/EngineTypes";
 
 /**
- * Gestor de reciclaje de identificadores de entidades.
+ * Manager for recycling entity identifiers.
  *
  * @remarks
- * Proporciona una estrategia destinada a ayudar a reducir las alocaciones durante la creación y destrucción de entidades.
- * Al reutilizar IDs numéricos, se busca mitigar la presión sobre el recolector de basura (GC) en rutas críticas.
+ * Designed to help reduce allocations during entity creation and destruction.
+ * By reusing numeric IDs, it aims to mitigate garbage collector (GC) pressure in hot paths.
  *
  * @public
  */
@@ -18,15 +18,15 @@ export class EntityPool {
   private nextId = 1;
 
   /**
-   * Obtiene un ID de entidad disponible.
+   * Retrieves an available entity ID.
    *
    * @remarks
-   * Intenta reutilizar IDs en el pool interno. Si el pool está vacío, incrementa
-   * el contador global de IDs.
+   * Attempts to reuse IDs from the internal pool. If the pool is empty, it increments
+   * the global ID counter.
    *
-   * @returns Un nuevo {@link Entity} (identificador numérico).
-   * @expectation El ID devuelto no debería estar disponible en el pool hasta que sea liberado.
-   * @sideEffect Incrementa `nextId` si el pool está vacío.
+   * @returns A new {@link Entity} (numeric identifier).
+   * @expectation The returned ID is not expected to be available in the pool until explicitly released.
+   * @sideEffect Increments `nextId` if the pool is empty.
    */
   public acquire(): Entity {
     if (this.pool.length > 0) {
@@ -38,18 +38,18 @@ export class EntityPool {
   }
 
   /**
-   * Devuelve un ID de entidad al pool para su futura reutilización.
+   * Returns an entity ID to the pool for future reuse.
    *
    * @remarks
-   * El ID liberado se vuelve elegible para su reutilización en futuras llamadas a {@link EntityPool.acquire}.
+   * The released ID becomes eligible for reuse in subsequent calls to {@link EntityPool.acquire}.
    *
-   * @param id - El identificador de la entidad a liberar.
+   * @param id - The entity identifier to release.
    *
-   * @expectation Se espera que el ID haya sido obtenido previamente mediante {@link EntityPool.acquire}.
-   * @postcondition El ID se añade a la pila de IDs disponibles.
-   * @conceptualRisk [ENTITY_REUSE][FIXED] Se ha implementado una validación mediante `pooledSet`
-   * para evitar el "double-release" (liberar el mismo ID dos veces), previniendo la corrupción
-   * de estado en el {@link World}.
+   * @expectation The ID is expected to have been previously acquired via {@link EntityPool.acquire}.
+   * @postcondition The ID is added to the available IDs stack.
+   * @conceptualRisk [ENTITY_REUSE][FIXED] Includes validation via `pooledSet`
+   * to help prevent "double-release" scenarios (releasing the same ID twice),
+   * which could lead to state corruption in the {@link World}.
    */
   public release(id: Entity): void {
     if (this.pooledSet.has(id)) {
@@ -61,14 +61,14 @@ export class EntityPool {
   }
 
   /**
-   * Reinicia el pool y el contador de IDs.
+   * Resets the pool and the ID counter.
    *
    * @remarks
-   * Invalida todos los IDs de entidades creados anteriormente. Se recomienda usar con precaución,
-   * típicamente solo durante el reinicio total del motor.
+   * Effectively invalidates previously created entity IDs. Use with caution,
+   * typically during a total engine reset.
    *
-   * @precondition El mundo ECS debería estar vacío para mitigar el riesgo de colisiones de IDs con entidades existentes.
-   * @postcondition {@link EntityPool.pool} queda vacío y `nextId` vuelve a 1.
+   * @precondition The ECS world should be empty to help mitigate the risk of ID collisions with existing entities.
+   * @postcondition {@link EntityPool.pool} is empty and `nextId` resets to 1.
    */
   public clear(): void {
     this.pool = [];
