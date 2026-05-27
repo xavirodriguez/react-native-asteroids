@@ -12,7 +12,6 @@ import { createParticle } from "../EntityFactory";
 import { type GameStateComponent } from "../types/AsteroidTypes";
 import { AsteroidComponent, BulletComponent, ShipComponent, VelocityComponent } from "../../../engine/core/CoreComponents";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
-import { BlueprintOverrides } from "../../../data/blueprints/types/BlueprintTypes";
 import { ScreenShakeComponent, HapticRequestComponent } from "../../../engine/types/EngineTypes";
 import { releaseProjectile } from "../../../engine/utils/ProjectileUtils";
 import { ParticlePool, BulletPool } from "../EntityPool";

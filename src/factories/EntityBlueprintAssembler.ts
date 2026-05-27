@@ -13,8 +13,6 @@ import {
   FrictionComponent,
   Component,
   EnemyTagComponent,
-  AsteroidComponent,
-  InvaderComponent,
   BulletComponent
 } from "../engine/core/CoreComponents";
 
