@@ -86,7 +86,7 @@ export class EntityBlueprintAssembler {
 
     // 5. Collision
     const collider = this.getOrAddMutableComponent<Collider2DComponent>(world, entityId, "Collider2D", buffer);
-    collider.shape = { type: "circle", radius: blueprint.collision.radius }; // Note: shape is object, but usually blueprints have fixed shapes.
+    collider.shape = { type: "circle", radius: blueprint.collision.radius ?? 10 }; // Note: shape is object, but usually blueprints have fixed shapes.
     collider.layer = blueprint.collision.layer;
     collider.mask = blueprint.collision.mask;
     collider.offsetX = 0;
@@ -109,21 +109,21 @@ export class EntityBlueprintAssembler {
     const enemyTag = this.getOrAddMutableComponent<EnemyTagComponent>(world, entityId, "EnemyTag", buffer);
     enemyTag.blueprintId = blueprintId;
     enemyTag.level = 1;
-    enemyTag.variant = blueprint.kind === 'invader' ? (blueprint as unknown).invader.archetype : undefined;
-    enemyTag.behavior = blueprint.kind === 'ufo' ? (blueprint as unknown).ufo.behavior : undefined;
+    enemyTag.variant = blueprint.kind === 'invader' ? (blueprint as import("../data/blueprints/types/BlueprintTypes").InvaderBlueprint).invader.archetype : undefined;
+    enemyTag.behavior = blueprint.kind === 'ufo' ? (blueprint as import("../data/blueprints/types/BlueprintTypes").UFOBlueprint).ufo.behavior : undefined;
 
     // Kind-specific logic
     if (blueprint.kind === 'asteroid') {
-        const ast = this.getOrAddMutableComponent<import("../engine/core/Component").GenericComponent>(world, entityId, "Asteroid", buffer);
-        const b = blueprint as unknown;
+        const ast = this.getOrAddMutableComponent<any>(world, entityId, "Asteroid", buffer);
+        const b = blueprint as import("../data/blueprints/types/BlueprintTypes").AsteroidBlueprint;
         ast.size = b.asteroid.size;
         ast.splitsInto = b.asteroid.splitsInto;
         ast.splitCount = b.asteroid.splitCount;
     } else if (blueprint.kind === 'projectile') {
         this.getOrAddMutableComponent<BulletComponent>(world, entityId, "Bullet", buffer);
     } else if (blueprint.kind === 'invader') {
-        const inv = this.getOrAddMutableComponent<import("../engine/core/Component").GenericComponent>(world, entityId, "Invader", buffer);
-        inv.archetype = (blueprint as unknown).invader.archetype;
+        const inv = this.getOrAddMutableComponent<any>(world, entityId, "Invader", buffer);
+        inv.archetype = (blueprint as import("../data/blueprints/types/BlueprintTypes").InvaderBlueprint).invader.archetype;
     }
 
     // 8. Spatial Partitioning
@@ -175,19 +175,19 @@ export class EntityBlueprintAssembler {
     compType: string,
     blueprintId: string,
     section: keyof EntityBlueprint,
-    baseData: unknown,
+    baseData: any,
     overrideData: unknown,
     buffer?: WorldCommandBuffer
   ): void {
     const plan = BlueprintRegistry.getCopyPlan(blueprintId, section as string);
     if (!plan || !baseData) return;
 
-    const comp = this.getOrAddMutableComponent<unknown>(world, entityId, compType, buffer);
+    const comp = this.getOrAddMutableComponent<any>(world, entityId, compType, buffer);
 
     // Hot Path Copy Loop (Zero Allocation)
     for (let i = 0; i < plan.length; i++) {
         const key = plan[i];
-        comp[key] = base[key];
+        comp[key] = baseData[key];
     }
 
     // Apply Overrides if unknown
