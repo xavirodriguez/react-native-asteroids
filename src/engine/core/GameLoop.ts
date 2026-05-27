@@ -178,8 +178,8 @@ export class GameLoop {
       if (updatesThisFrame >= this.maxUpdatesPerFrame) {
         /**
          * Warning: Spiral of Death detected.
-         * Se descarta el tiempo acumulado sobrante para mitigar el riesgo de bloqueo del hilo principal.
-         * Esto sacrifica la precisión temporal absoluta y el determinismo en favor de la estabilidad del entorno.
+         * Se descarta el tiempo acumulado sobrante con la intención de mitigar el riesgo de bloqueo del hilo principal.
+         * En la práctica, esto sacrifica la precisión temporal y el determinismo en favor de la estabilidad del entorno.
          */
         console.warn(`[GameLoop] Spiral of Death detected. Dropping remaining ticks for this frame to preserve stability. (Updates: ${updatesThisFrame})`);
         this.accumulator = 0;

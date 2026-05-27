@@ -105,6 +105,10 @@ export class WorldCommandBuffer {
 
   /**
    * Aplica todos los comandos grabados sobre el mundo proporcionado y limpia el buffer.
+   *
+   * @remarks
+   * Se procesan los comandos en el orden en que fueron recibidos (FIFO).
+   *
    * @param world - La instancia del mundo sobre la que aplicar los cambios.
    */
   public flush(world: World): void {

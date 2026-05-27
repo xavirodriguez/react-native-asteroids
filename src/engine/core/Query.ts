@@ -56,8 +56,9 @@ export class Query {
    *
    * @param entity - Entity ID to add.
    *
-   * @precondition The entity must match the query's signature.
-   * @postcondition If the entity was new, `needsUpdateArray` is marked true.
+   * @remarks
+   * Expected to be called by the {@link World} when an entity matches the query's signature.
+   * If the entity was new to this query, `needsUpdateArray` is marked true.
    */
   public add(entity: Entity): void {
     if (!this.entities.has(entity)) {
@@ -71,7 +72,9 @@ export class Query {
    *
    * @param entity - Entity ID to remove.
    *
-   * @postcondition If the entity was present, `needsUpdateArray` is marked true.
+   * @remarks
+   * Expected to be called by the {@link World} when an entity no longer matches the signature.
+   * If the entity was present, `needsUpdateArray` is marked true.
    */
   public remove(entity: Entity): void {
     if (this.entities.delete(entity)) {
@@ -165,14 +168,11 @@ export class Query {
    * Rebuilds query results from scratch.
    *
    * @remarks
-   * Primarily used during world restoration or major state resets to ensure
+   * Primarily used during world restoration or major state resets to help ensure
    * consistency without breaking existing {@link Query} references.
    *
    * @param allEntities - Set of all active entities in the world.
    * @param entityComponentSets - Map containing component sets for each entity.
-   *
-   * @postcondition `entities` Set reflects the provided world state.
-   * @postcondition Marks `needsUpdateArray` as true.
    */
   public rebuild(allEntities: Set<Entity>, entityComponentSets: Map<Entity, Set<string>>): void {
     this.entities.clear();

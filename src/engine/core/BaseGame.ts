@@ -362,9 +362,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   /**
    * Starts the simulation loop.
    *
+   * @remarks
+   * Expects the game to be initialized and not destroyed.
+   * When successful, the {@link GameLoop} begins dispatching updates and
+   * the status transitions to `RUNNING`.
+   *
    * @throws Error - If called before `init` or on a destroyed game.
-   * Postcondition: {@link GameLoop} begins dispatching updates.
-   * Postcondition: Status transitions to `RUNNING`.
    */
   public start(): void {
     if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.INITIALIZING) {
@@ -383,8 +386,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   /**
    * Stops the simulation loop.
    *
-   * Postcondition: {@link GameLoop} stops.
-   * Postcondition: Status transitions to `STOPPED`.
+   * @remarks
+   * When called, the {@link GameLoop} is expected to stop and the
+   * status transitions to `STOPPED`.
    */
   public stop(): void {
     if (
@@ -443,16 +447,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * Restarts the game state, optionally with a new seed.
    *
    * @remarks
-   * State transition protected by a lock. Pauses simulation and clears
-   * volatile resources to help prevent memory leaks.
+   * State transition is designed to be protected by a lock. It typically pauses
+   * simulation and clears volatile resources to help prevent memory leaks.
    *
    * Logic:
    * - If an active Scene exists, delegates restart to `SceneManager`.
    * - Otherwise, clears the global World, re-registers systems, and re-spawns entities.
    *
    * @param seed - Optional new seed for deterministic PRNG.
-   * Postcondition: Tick counter reset to 0.
-   * Side Effect: Clears `EventBus`, `spatialGrid`, and {@link World}.
    */
   public async restart(seed?: number): Promise<void> {
     if (this._status === GameStatus.DESTROYED) {
@@ -571,21 +573,20 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
    * Initializes the game and its subsystems asynchronously.
    *
    * @remarks
-   * Initialization process that must occur before {@link BaseGame.start}.
+   * Initialization process intended to occur before {@link BaseGame.start}.
    *
    * ### Concurrency Control:
    * The process uses an internal `_transitionLock` (Promise-based lock) designed to
    * help ensure that multiple calls to `init()` or `restart()` do not overlap,
-   * which may prevent inconsistent engine states during system registration.
+   * with the goal of preventing inconsistent engine states during system registration.
    *
-   * Flow:
+   * Expected Flow:
    * 1. Register Essential Resources (EventBus, Input, Audio, SpatialGrid).
    * 2. Execute `registerSystems()` (User Hook).
    * 3. Execute `initializeEntities()` (User Hook).
    * 4. Transition status to `READY`.
    *
    * @throws Error - If already initialized or currently in progress.
-   * Postcondition: World is configured and ready for simulation.
    */
   public async init(): Promise<void> {
     if (this._status === GameStatus.DESTROYED) return;
