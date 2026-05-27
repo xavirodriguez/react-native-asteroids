@@ -222,6 +222,26 @@ export class SpaceInvadersGame
     return this.getGameState().isGameOver;
   }
 
+  public override start(): void {
+    super.start();
+    console.log("[SpaceInvadersGame] Simulation started");
+  }
+
+  public override stop(): void {
+    super.stop();
+    console.log("[SpaceInvadersGame] Simulation stopped");
+  }
+
+  public override pause(): void {
+    super.pause();
+    console.log("[SpaceInvadersGame] Simulation paused");
+  }
+
+  public override resume(): void {
+    super.resume();
+    console.log("[SpaceInvadersGame] Simulation resumed");
+  }
+
   protected async _onBeforeRestart(): Promise<void> {
     // During restart, we DO want to await the full transition
     await this.registerSystemsAsync();

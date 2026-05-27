@@ -1,7 +1,7 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { TTLComponent, ReclaimableComponent } from "../types/EngineTypes";
-import { IEntityPool } from "../types/core";
+import { IEntityPool } from "../types/EngineTypes";
 
 /**
  * System responsible for managing the lifetime (Time To Live) of entities.

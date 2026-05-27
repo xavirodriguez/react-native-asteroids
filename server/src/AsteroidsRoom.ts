@@ -24,7 +24,7 @@ import { BinaryCompression } from "../../src/engine/network/BinaryCompression";
  * and optimized state replication using various strategies (Interest, Delta, Binary).
  *
  * @responsibility Manage Colyseus room lifecycle and client connections.
- * @responsibility Execute authoritative {@link DeterministicSimulation} at 60Hz.
+ * @responsibility Execute authoritative {@link AsteroidsGame} (headless) at 60Hz.
  * @responsibility Implement multi-mode replication (Interest Management, Delta Compression).
  * @responsibility Maintain historical snapshots for lag compensation and re-simulation.
  *
@@ -203,7 +203,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
    *
    * 1. **Tick Sync**: Incrementa `serverTick`, la referencia temporal absoluta.
    * 2. **Input Recovery**: Extrae inputs del buffer de cada cliente correspondientes al tick actual.
-   * 3. **Authoritative Simulation**: Ejecuta la lógica compartida (`DeterministicSimulation`).
+   * 3. **Authoritative Simulation**: Ejecuta la lógica compartida (`AsteroidsGame` headless).
    * 4. **Post-Simulation**: Ejecuta sistemas exclusivos del servidor (ej. `InterestManagerSystem`).
    * 5. **Schema Sync**: Sincroniza el mundo ECS con los objetos Schema de Colyseus para clientes 'legacy'.
    * 6. **Advanced Replication**:

@@ -659,7 +659,9 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
 
     // Physics Systems
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { PhysicsIntegrateSystem, PhysicsSolveSystem } = require("../physics/dynamics/PhysicsSystem2D");
+    const { PhysicsIntegrateSystem } = require("../physics/dynamics/PhysicsIntegrateSystem");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { PhysicsSolveSystem } = require("../physics/dynamics/PhysicsSolveSystem");
     world.addSystem(new PhysicsIntegrateSystem(), { phase: SystemPhase.Simulation });
     world.addSystem(this.hierarchySystem, { phase: SystemPhase.Transform });
     world.addSystem(new PhysicsSolveSystem(), { phase: SystemPhase.GameRules });
