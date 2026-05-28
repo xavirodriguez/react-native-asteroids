@@ -22,7 +22,8 @@ describe("Asteroids ECS - SpatialGrid Collisions", () => {
     spatialGrid = new SpatialGrid(100);
     world.setResource("SpatialGrid", spatialGrid);
     world.setResource("ScreenConfig", { width: 800, height: 600 });
-    world.setResource("GameConfig", require("../../games/asteroids/config/asteroids.json"));
+    const asteroidsConfig = await import("../../games/asteroids/config/asteroids.json");
+    world.setResource("GameConfig", asteroidsConfig.default);
 
     const colSys = world.systemsList.find(s => s instanceof CollisionSystem2D) as CollisionSystem2D;
     if (colSys) {

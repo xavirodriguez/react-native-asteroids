@@ -13,7 +13,8 @@ import {
   FrictionComponent,
   Component,
   EnemyTagComponent,
-  BulletComponent
+  BulletComponent,
+  AsteroidComponent
 } from "../engine/core/CoreComponents";
 
 /**
@@ -117,15 +118,15 @@ export class EntityBlueprintAssembler {
 
     // Kind-specific logic
     if (blueprint.kind === 'asteroid') {
-        const ast = this.getOrAddMutableComponent<any>(world, entityId, "Asteroid", buffer);
+        const ast = this.getOrAddMutableComponent<AsteroidComponent>(world, entityId, "Asteroid", buffer);
         const b = blueprint as import("../data/blueprints/types/BlueprintTypes").AsteroidBlueprint;
         ast.size = b.asteroid.size;
-        ast.splitsInto = b.asteroid.splitsInto;
+        ast.splitsInto = b.asteroid.splitsInto as string[];
         ast.splitCount = b.asteroid.splitCount;
     } else if (blueprint.kind === 'projectile') {
         this.getOrAddMutableComponent<BulletComponent>(world, entityId, "Bullet", buffer);
     } else if (blueprint.kind === 'invader') {
-        const inv = this.getOrAddMutableComponent<any>(world, entityId, "Invader", buffer);
+        const inv = this.getOrAddMutableComponent<import("../engine/core/CoreComponents").InvaderComponent>(world, entityId, "Invader", buffer);
         inv.archetype = (blueprint as import("../data/blueprints/types/BlueprintTypes").InvaderBlueprint).invader.archetype;
     }
 
@@ -178,19 +179,20 @@ export class EntityBlueprintAssembler {
     compType: string,
     blueprintId: string,
     section: keyof EntityBlueprint,
-    baseData: any,
+    baseData: unknown,
     overrideData: unknown,
     buffer?: WorldCommandBuffer
   ): void {
     const plan = BlueprintRegistry.getCopyPlan(blueprintId, section as string);
     if (!plan || !baseData) return;
 
-    const comp = this.getOrAddMutableComponent<any>(world, entityId, compType, buffer);
+    const comp = this.getOrAddMutableComponent<Component>(world, entityId, compType, buffer) as unknown as Record<string, unknown>;
+    const data = baseData as Record<string, unknown>;
 
     // Hot Path Copy Loop (Aims to minimize allocations)
     for (let i = 0; i < plan.length; i++) {
         const key = plan[i];
-        comp[key] = baseData[key];
+        comp[key] = data[key];
     }
 
     // Apply Overrides if unknown

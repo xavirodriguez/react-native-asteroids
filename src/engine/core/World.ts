@@ -2,9 +2,9 @@ import { Component, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } 
 import { Entity } from "./Entity";
 import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
 
-type DeepReadonly<T> = T extends (...args: any[]) => any
+type DeepReadonly<T> = T extends (...args: unknown[]) => unknown
   ? T
-  : T extends any[]
+  : T extends unknown[]
   ? ReadonlyArray<DeepReadonly<T[number]>>
   : T extends object
   ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
@@ -34,8 +34,6 @@ interface RegisteredSystem {
  * reduce overhead in common execution paths, performance and consistency are
  * influenced by the JavaScript environment, execution context, and adherence
  * to the engine's recommended mutation patterns (e.g., using {@link World.mutateComponent}).
- *
- * @public
  */
 const __DEV__ = process.env.NODE_ENV !== "production";
 const RAW_DATA = Symbol("RAW_DATA");
@@ -348,7 +346,7 @@ export class World {
         target.structureVersion = this._structureVersion;
         target.stateVersion = this._stateVersion;
         target.seed = gameplayRandom.getSeed();
-        target.rngState = gameplayRandom.getSeed(); // High-fidelity restoration via getSeed()
+        target.rngState = gameplayRandom.getSeed();
         target.accumulator = this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator();
         target.tick = this._tick;
         return target;
@@ -362,7 +360,7 @@ export class World {
       structureVersion: this._structureVersion,
       stateVersion: this._stateVersion,
       seed: gameplayRandom.getSeed(),
-      rngState: gameplayRandom.getSeed(), // High-fidelity restoration via getSeed()
+      rngState: gameplayRandom.getSeed(),
       accumulator: this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator(),
       tick: this._tick
     };
@@ -1221,4 +1219,3 @@ export class World {
     return this.entities;
   }
 }
-
