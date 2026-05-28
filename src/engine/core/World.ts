@@ -258,11 +258,11 @@ export class World {
    * external references) is typically not captured and may lead to incomplete restoration
    * if components are not kept as plain-old-data (POD).
    *
-   * @warning **Performance & Allocation**: Deep cloning is used to help ensure snapshot
-   * independence and avoid reference sharing (aliasing). This carries a performance
-   * cost and increases GC pressure proportional to the total number of components
-   * and their complexity. Frequent snapshotting in large or complex simulations
-   * may impact frame rate and should be used judiciously.
+   * @warning **Performance & Allocation**: Snapshotting involves deep cloning, which is intended
+   * to ensure snapshot independence and avoid reference sharing (aliasing). This process
+   * incurs a performance cost and increases GC pressure proportional to the total number of
+   * components and their complexity. Frequent snapshotting in large simulations may
+   * impact frame rate and should be monitored.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const gameplayRandom = this.gameplayRandom;
@@ -372,19 +372,19 @@ export class World {
    * Restores the world state from a previously captured snapshot.
    *
    * @remarks
-   * This method performs a deep restoration intended to make the live world state
+   * This method performs a deep restoration designed to make the live world state
    * independent of the snapshot object. It rebuilds internal indexes and
-   * re-synchronizes queries to maintain structural integrity.
+   * re-synchronizes queries to help maintain structural integrity.
    *
    * To help reduce GC pressure, the restoration process attempts to reuse existing
    * component objects when possible, overwriting their properties instead of
    * allocating new objects.
    *
-   * @warning **State Consistency**: Full state restoration is expected to be successful
-   * primarily if the world's static structure (registered systems, component types)
-   * matches the state when the snapshot was taken. Manual restoration of resources
-   * or external state not managed by the World must be handled by the developer
-   * to maintain simulation integrity.
+   * @warning **State Consistency**: State restoration is intended to be used when
+   * the world's static structure (registered systems, component types) matches the
+   * state when the snapshot was taken. Manual restoration of resources or external
+   * state not managed by the World must be handled by the developer to help ensure
+   * simulation integrity.
    */
   public restore(state: WorldSnapshot): void {
     this.assertCanMutateStructure("restore");

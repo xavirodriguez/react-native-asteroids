@@ -20,8 +20,11 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
  * @remarks
  * Implements a two-phase collision detection pipeline (Broadphase & Narrowphase)
  * and manages lifecycle events for triggers. It is designed to work with
- * fixed-step simulations and can integrate with a CCD phase to mitigate
+ * fixed-step simulations and can integrate with a CCD phase to help mitigate
  * tunneling in fast-moving objects.
+ *
+ * In practice, collision determinism is subject to the stability of the underlying
+ * floating-point calculations and the consistency of the simulation tick rate.
  *
  * API status: Public
  */

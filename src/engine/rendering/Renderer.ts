@@ -57,8 +57,8 @@ export type EffectDrawer<TContext> = (
  * of simulation and rendering frequencies through snapshots and interpolation.
  *
  * Drawing operations are intended to be side-effect free relative to simulation components.
- * While core rendering paths aim to minimize allocations, the use of user-provided
- * drawers, effect handlers, or complex object structures may introduce some
+ * While core rendering paths are designed to minimize allocations, the use of
+ * user-provided drawers, effect handlers, or complex object structures may introduce
  * GC pressure.
  *
  * @public

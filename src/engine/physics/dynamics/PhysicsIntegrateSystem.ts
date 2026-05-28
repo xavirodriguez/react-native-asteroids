@@ -7,7 +7,7 @@ import { TransformComponent, PhysicsBody2DComponent } from "../../types/EngineTy
  *
  * @remarks
  * Designed to apply forces and gravity to velocity, and integrate velocity
- * into position and rotation. It is optimized for simulation stability
+ * into position and rotation. It aims to support simulation stability
  * within the fixed time-step loop.
  *
  * Runs in `SystemPhase.Simulation`.

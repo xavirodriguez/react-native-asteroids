@@ -3,7 +3,8 @@
  */
 
 /**
- * Service providing seeded, pseudo-random number generation intended for deterministic use cases.
+ * Service providing seeded, pseudo-random number generation intended for
+ * reproducible use cases.
  */
 export class RandomService {
   private seed: number;

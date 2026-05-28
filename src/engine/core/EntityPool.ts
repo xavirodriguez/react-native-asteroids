@@ -5,7 +5,7 @@ import { Entity } from "../types/EngineTypes";
  *
  * @remarks
  * Designed to help reduce allocations during entity creation and destruction.
- * By reusing numeric IDs, it aims to mitigate garbage collector (GC) pressure in hot paths.
+ * By reusing numeric IDs, it aims to help minimize garbage collector (GC) pressure.
  *
  * @public
  */

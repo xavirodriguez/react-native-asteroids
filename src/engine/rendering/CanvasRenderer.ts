@@ -26,8 +26,9 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  * Esta estructura permite que la frecuencia de dibujado se adapte al entorno
  * independientemente del tick fijo de simulación.
  *
- * @conceptualRisk [GC_PRESSURE] El uso de arrays pre-alocados mitiga alocaciones,
- * pero exceder el límite de `MAX_ENTITIES` (2000) resultará en entidades no dibujadas.
+ * @conceptualRisk [GC_PRESSURE] El uso de arrays pre-alocados está diseñado para mitigar
+ * alocaciones, pero exceder el límite de `MAX_ENTITIES` (2000) resultará en entidades
+ * no dibujadas.
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
@@ -425,8 +426,9 @@ export class CanvasRenderer implements Renderer {
    * - Reads active entities with `Transform` and `Render` components.
    * - Calculates visual interpolation using `PreviousTransform` and the `alpha` factor.
    * - Aggregates global effects like screen shake from all sources.
-   * - Performs **Frustum Culling**: Entities outside the camera viewport are excluded from the snapshot.
-   * - Recycles pre-allocated snapshot objects to avoid GC pressure.
+   * - Performs **Frustum Culling**: Entities outside the camera viewport are typically
+   *   excluded from the snapshot.
+   * - Recycles pre-allocated snapshot objects to help minimize GC pressure.
    *
    * ### 2. Draw Phase (`renderSnapshot`)
    * - Sorts the snapshot commands by `zIndex` using a stable sort to prevent flickering.

@@ -10,12 +10,12 @@ import { World } from "./World";
  * See {@link BaseGame} for more details on the execution pipeline.
  *
  * Mutation Guidelines per Phase:
- * - `Input`: Intended for capturing external events. It is generally recommended NOT
- *   to mutate component data directly in this phase.
+ * - `Input`: Intended for capturing external events. It is recommended to avoid
+ *   mutating component data directly in this phase.
  * - `Simulation`: Main phase for gameplay logic and data mutation. Structural changes
  *   (creation/deletion) should be deferred via {@link WorldCommandBuffer} to help
  *   maintain iterator safety.
- * - `Collision`: Typically expects read-only access to spatial components for detection.
+ * - `Collision`: Generally expects read-only access to spatial components for detection.
  * - `GameRules`: High-level state changes and logic resolution.
  * - `Transform`: Intended for world-space hierarchy resolution.
  *
@@ -98,20 +98,20 @@ export abstract class System {
    *
    * @remarks
    * Systems typically query relevant entities via {@link World.query} and apply
-   * transformations to their components. To support reproducibility and consistency,
-   * it is recommended to avoid non-serializable internal mutable state.
+   * transformations to their components. To support reproducibility, it is
+   * recommended to avoid non-serializable internal mutable state.
    *
    * @warning **Structural Mutations**: Modifying world structure (creating/removing entities
-   * or components) while iterating over a query is restricted as it may
-   * invalidate iterators or lead to inconsistent state. Use {@link World.getCommandBuffer}
-   * to defer these operations until the end of the tick.
+   * or components) while iterating over a query is restricted to help protect
+   * iterator safety. Use {@link World.getCommandBuffer} to defer these operations
+   * until the end of the tick.
    *
-   * @warning **Asynchronous Logic**: Systems must be synchronous. Using `async/await`
-   * within `update` is NOT supported by the engine's core loop and will likely lead
-   * to race conditions, broken simulation integrity, and unpredictable behavior.
+   * @warning **Asynchronous Logic**: Systems are intended to be synchronous. Using
+   * `async/await` within `update` is not supported by the engine's core loop and
+   * can lead to race conditions, broken simulation integrity, and unpredictable behavior.
    *
    * @remarks
-   * World state is expected to be consistent at the start of the update cycle.
+   * World state is intended to be consistent at the start of the update cycle.
    */
   abstract update(world: World, deltaTime: number): void;
 

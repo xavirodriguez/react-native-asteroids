@@ -1,6 +1,6 @@
 # TinyAsterEngine Core (ECS)
 
-The core of the engine is based on an **Entity-Component-System (ECS)** architecture designed to support performance, simulation consistency, and network synchronization.
+The core of the engine is based on an **Entity-Component-System (ECS)** architecture designed to help support performance, simulation reproducibility, and network synchronization.
 
 ## 🏗️ Fundamental Building Blocks
 
@@ -22,11 +22,11 @@ Contains execution logic. Systems iterate over groups of entities (filtered by c
 ## 🔄 The GameLoop
 
 The engine uses a **Fixed Timestep / Variable Rendering** scheme:
-1.  **Update (Logic)**: Oriented towards a fixed frequency (60Hz). Aims to support consistency in physics and game rules.
+1.  **Update (Logic)**: Oriented towards a fixed frequency (60Hz target). Aims to support consistency in physics and game rules under normal load conditions.
 2.  **Render (Presentation)**: Executes according to the environment's refresh rate. Uses an interpolation factor (`alpha`) intended to help smooth visual motion between physical ticks.
 
 ## 🛡️ Recommended Practices
 
-1.  **Authorized Mutation**: It is recommended to use `world.mutateComponent()` or `world.mutateSingleton()` as the primary method for modifying data. This is designed to allow the engine to track version changes and manage rendering state consistently.
+1.  **Authorized Mutation**: It is recommended to use `world.mutateComponent()` or `world.mutateSingleton()` as the primary method for modifying data. This is designed to allow the engine to track version changes and manage rendering state.
 2.  **Iterator Safety**: During a system's `update`, structural changes (creating/destroying entities or adding/removing components) should typically be deferred via the `WorldCommandBuffer`. This aims to avoid inconsistencies when iterating over active queries.
 3.  **Simulation Consistency**: To support reproducibility, it is recommended to avoid using external time or randomness sources (such as `Math.random()` or `Date.now()`) within Systems. Instead, use `world.gameplayRandom` and `world.tick`.
