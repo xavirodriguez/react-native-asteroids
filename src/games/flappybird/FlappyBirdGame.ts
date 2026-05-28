@@ -63,6 +63,7 @@ export class FlappyBirdGame
     this.config = enabled
       ? mutators.reduce((cfg, m) => m.apply(cfg), { ...FLAPPY_CONFIG })
       : { ...FLAPPY_CONFIG };
+    this.world.setResource("ScreenConfig", { width: this.config.SCREEN_WIDTH, height: this.config.SCREEN_HEIGHT });
     this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     await this.onPreloadAssets();
