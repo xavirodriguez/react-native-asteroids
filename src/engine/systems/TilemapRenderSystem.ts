@@ -11,6 +11,7 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
 import { TilemapComponent, Camera2DComponent } from "../types/EngineTypes";
+import { ScreenConfig } from "../types/CommonTypes";
 
 /**
  * Manages the visibility and culling of tile-based maps.
@@ -24,7 +25,7 @@ export class TilemapRenderSystem extends System {
   public update(world: World, _deltaTime: number): void {
     const tilemaps = world.query("Tilemap");
     const cam = world.getSingleton<Camera2DComponent>("Camera2D");
-    const screen = world.getResource<{ width: number, height: number }>("ScreenConfig");
+    const screen = world.getResource<ScreenConfig>("ScreenConfig");
     const viewport = {
       width: screen?.width ?? 800,
       height: screen?.height ?? 600

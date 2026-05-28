@@ -31,6 +31,7 @@ import { MutatorService } from "../../services/MutatorService";
 import { InputFrame } from "../../multiplayer/NetTypes";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
+import { ScreenConfig } from "../../engine/types/CommonTypes";
 import { Renderer } from "../../engine/rendering/Renderer";
 import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManager";
 import { NetworkManager } from "../../engine/network/NetworkManager";
@@ -60,6 +61,7 @@ export class AsteroidsGame
   private lastProcessedFullStateVersion = -1;
   public readonly gameId = "asteroids";
   private config: AsteroidConfig;
+  private resizeListener?: () => void;
 
   constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown>, headless?: boolean } = {}) {
     const seed = config.gameOptions?.seed as number || config.seed;
@@ -84,13 +86,35 @@ export class AsteroidsGame
       : { ...baseConfig };
 
     this.world.setResource("GameConfig", this.config);
-    this.world.setResource("ScreenConfig", { width: this.config.SCREEN_WIDTH, height: this.config.SCREEN_HEIGHT });
+    this.updateScreenConfig();
     this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
+
+    if (typeof window !== "undefined") {
+        this.resizeListener = () => this.updateScreenConfig();
+        window.addEventListener("resize", this.resizeListener);
+    }
 
     if (!this.isHeadless) {
         await this.onPreloadAssets();
     }
     await super.init();
+  }
+
+  private updateScreenConfig(): void {
+    let width = this.config?.SCREEN_WIDTH ?? 800;
+    let height = this.config?.SCREEN_HEIGHT ?? 600;
+
+    if (typeof window !== "undefined") {
+        width = window.innerWidth;
+        height = window.innerHeight;
+    }
+
+    const screenConfig: ScreenConfig = { width, height };
+    this.world.setResource("ScreenConfig", screenConfig);
+
+    if (__DEV__) {
+        console.log(`[AsteroidsGame] ScreenConfig updated: ${width}x${height}`);
+    }
   }
 
   /**
@@ -283,6 +307,11 @@ export class AsteroidsGame
     this.world.setResource("BulletPool", this.bulletPool);
     this.world.setResource("AssetLoader", this.assetLoader);
 
+    // Ensure ScreenConfig exists before systems are registered
+    if (!this.world.hasResource("ScreenConfig")) {
+      this.updateScreenConfig();
+    }
+
     // Configure UnifiedInputSystem bindings
     this.unifiedInput.bind("thrust", [this.config.KEYS.THRUST]);
     this.unifiedInput.bind("rotateLeft", [this.config.KEYS.ROTATE_LEFT]);
@@ -383,6 +412,13 @@ export class AsteroidsGame
   public override stop(): void {
     super.stop();
     console.log("[AsteroidsGame] Simulation stopped");
+  }
+
+  public override destroy(): void {
+    if (typeof window !== "undefined" && this.resizeListener) {
+        window.removeEventListener("resize", this.resizeListener);
+    }
+    super.destroy();
   }
 
   public override pause(): void {
