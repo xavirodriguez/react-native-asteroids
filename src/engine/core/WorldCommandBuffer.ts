@@ -33,8 +33,8 @@ type Command =
  * modifications are restricted to help protect iterator safety and maintain results consistency.
  *
  * ### Execution Characteristics:
- * 1. **FIFO Order**: Commands are typically executed in the sequence they were recorded.
- * 2. **Visibility**: Structural changes are NOT reflected in the {@link World} until
+ * 1. **FIFO Order**: Commands are intended to be executed in the sequence they were recorded.
+ * 2. **Visibility**: Structural changes are typically NOT reflected in the {@link World} until
  *    `flush()` is called (typically triggered at the end of the `World.update` cycle).
  *
  * Recommended practice:

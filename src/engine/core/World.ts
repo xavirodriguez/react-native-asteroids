@@ -580,7 +580,8 @@ export class World {
    * component additions for deferred execution.
    *
    * To modify data in an existing component, {@link World.mutateComponent} is the
-   * recommended and authoritative approach as it is designed to track state versions correctly.
+   * authoritative and recommended approach. It is designed to track state versions correctly
+   * and notify the engine of required re-renders.
    */
   addComponent<T extends Component>(entity: Entity, component: T): Readonly<T> {
     this.assertCanMutateStructure("addComponent");

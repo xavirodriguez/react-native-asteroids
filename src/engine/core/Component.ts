@@ -3,7 +3,7 @@
  * Every component is expected to have a unique type discriminator.
  *
  * @remarks
- * Components are designed to be POJOs (Plain Old JavaScript Objects) that hold data but no logic.
+ * Components are designed to be POJOs (Plain Old JavaScript Objects) that hold data.
  * This structure is intended to help facilitate serialization, snapshots, and state replication.
  * Systems process entities by filtering for these data structures.
  */

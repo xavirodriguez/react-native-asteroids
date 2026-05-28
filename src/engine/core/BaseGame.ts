@@ -131,6 +131,11 @@ export enum GameStatus {
  * ### Initialization Machine:
  * UNINITIALIZED -\> INITIALIZING -\> READY -\> RUNNING
  *
+  * @remarks
+  * In practice, determinism is a goal that requires strict adherence to engine
+  * patterns. Factors such as floating-point non-determinism across architectures
+  * or the use of unmanaged external state can lead to divergences.
+  *
  * Conceptual Risk: [DETERMINISM][CRITICAL] `currentTick` overflow happens after ~285,000 years,
  * but buffer precision limits may be hit significantly earlier.
  * Conceptual Risk: [ASYNC_RACE][HIGH] Calling `start()` before the `init()` promise resolves
@@ -181,10 +186,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected interpolationPrepSystem: InterpolationPrepSystem;
 
   /**
-   * Abstract hook to configure the platform-specific renderer.
-   *
-   * @param renderer - Instance of the renderer (Canvas, Skia, etc).
-   */
+  * Abstract hook to configure the platform-specific renderer.
+  *
+  * @param renderer - Instance of the renderer (Canvas, Skia, etc).
+  */
   public abstract initializeRenderer(renderer: import("../rendering/Renderer").Renderer<unknown>): void;
 
   constructor(config: BaseGameConfig = {}) {
@@ -217,15 +222,15 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Returns the input system aggregator.
-   */
+  * Returns the input system aggregator.
+  */
   public getInputSystem(): UnifiedInputSystem {
     return this.unifiedInput;
   }
 
   /**
-   * Configures global semantic audio listeners.
-   */
+  * Configures global semantic audio listeners.
+  */
   private _setupAudioListeners(): void {
     this.eventBus.on("audio:play_sfx", (payload: { name: string }) => {
       this.audio.playSFX(payload.name);
@@ -290,8 +295,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Internal loop configuration implementing the engine's simulation pipeline.
-   */
+  * Internal loop configuration implementing the engine's simulation pipeline.
+  */
   private setupLoop(): void {
     /**
      * Pipeline oriented towards simulation consistency (Fixed Update Phase):
@@ -345,32 +350,32 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Register game-specific ECS systems.
-   */
+  * Register game-specific ECS systems.
+  */
   protected abstract registerSystems(): void;
   /**
-   * Spawn initial entities for the current game mode.
-   */
+  * Spawn initial entities for the current game mode.
+  */
   protected abstract initializeEntities(): void;
   /**
-   * Returns a serializable representation of the high-level game state.
-   */
+  * Returns a serializable representation of the high-level game state.
+  */
   public abstract getGameState(): TState;
   /**
-   * Checks if the game has reached a terminal state.
-   */
+  * Checks if the game has reached a terminal state.
+  */
   public abstract isGameOver(): boolean;
 
   /**
-   * Starts the simulation loop.
-   *
-   * @remarks
-   * Expects the game to be initialized and not destroyed.
-   * When successful, the {@link GameLoop} begins dispatching updates and
-   * the status transitions to `RUNNING`.
-   *
-   * @throws Error - If called before `init` or on a destroyed game.
-   */
+  * Starts the simulation loop.
+  *
+  * @remarks
+  * Expects the game to be initialized and not destroyed.
+  * When successful, the {@link GameLoop} begins dispatching updates and
+  * the status transitions to `RUNNING`.
+  *
+  * @throws Error - If called before `init` or on a destroyed game.
+  */
   public start(): void {
     if (this._status === GameStatus.UNINITIALIZED || this._status === GameStatus.INITIALIZING) {
       throw new Error("BaseGame: Cannot start() before init().");
@@ -386,12 +391,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Stops the simulation loop.
-   *
-   * @remarks
-   * When called, the {@link GameLoop} is expected to stop and the
-   * status transitions to `STOPPED`.
-   */
+  * Stops the simulation loop.
+  *
+  * @remarks
+  * When called, the {@link GameLoop} is expected to stop and the
+  * status transitions to `STOPPED`.
+  */
   public stop(): void {
     if (
       this._status === GameStatus.UNINITIALIZED ||
@@ -406,14 +411,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Pauses simulation logic while keeping the renderer active.
-   *
-   * @remarks
-   * Idempotent. Only effective if status is `RUNNING`.
-   *
-   * Postcondition: `_isPaused` set to `true`.
-   * Side Effect: Notifies current scene and external subscribers.
-   */
+  * Pauses simulation logic while keeping the renderer active.
+  *
+  * @remarks
+  * Idempotent. Only effective if status is `RUNNING`.
+  *
+  * Postcondition: `_isPaused` set to `true`.
+  * Side Effect: Notifies current scene and external subscribers.
+  */
   public pause(): void {
     if (this._status !== GameStatus.RUNNING || this._isPaused) return;
     this._isPaused = true;
@@ -422,13 +427,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Resumes simulation logic.
-   *
-   * @remarks
-   * Idempotent. Only effective if currently paused.
-   *
-   * Postcondition: `_isPaused` set to `false`.
-   */
+  * Resumes simulation logic.
+  *
+  * @remarks
+  * Idempotent. Only effective if currently paused.
+  *
+  * Postcondition: `_isPaused` set to `false`.
+  */
   public resume(): void {
     if (this._status !== GameStatus.RUNNING || !this._isPaused) return;
     this._isPaused = false;
@@ -446,18 +451,18 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   public getGameLoop(): GameLoop { return this.gameLoop; }
 
   /**
-   * Restarts the game state, optionally with a new seed.
-   *
-   * @remarks
-   * State transition is designed to be protected by a lock. It typically pauses
-   * simulation and clears volatile resources to help prevent memory leaks.
-   *
-   * Logic:
-   * - If an active Scene exists, delegates restart to `SceneManager`.
-   * - Otherwise, clears the global World, re-registers systems, and re-spawns entities.
-   *
-   * @param seed - Optional new seed for deterministic PRNG.
-   */
+  * Restarts the game state, optionally with a new seed.
+  *
+  * @remarks
+  * State transition is designed to be protected by a lock. It typically pauses
+  * simulation and clears volatile resources to help prevent memory leaks.
+  *
+  * Logic:
+  * - If an active Scene exists, delegates restart to `SceneManager`.
+  * - Otherwise, clears the global World, re-registers systems, and re-spawns entities.
+  *
+  * @param seed - Optional new seed for deterministic PRNG.
+  */
   public async restart(seed?: number): Promise<void> {
     if (this._status === GameStatus.DESTROYED) {
       throw new Error("BaseGame: Cannot restart() on a destroyed game.");
@@ -525,14 +530,14 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Releases resources and shuts down the engine.
-   *
-   * @remarks
-   * Stops the loop, cleans up input listeners, and clears subscriptions.
-   * Once destroyed, the instance cannot be reused.
-   *
-   * Postcondition: Status set to `DESTROYED`.
-   */
+  * Releases resources and shuts down the engine.
+  *
+  * @remarks
+  * Stops the loop, cleans up input listeners, and clears subscriptions.
+  * Once destroyed, the instance cannot be reused.
+  *
+  * Postcondition: Status set to `DESTROYED`.
+  */
   public destroy(): void {
     if (this._status === GameStatus.DESTROYED) {
       return;
@@ -555,13 +560,13 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Returns the currently active ECS World (Global or Scene-specific).
-   *
-   * @remarks
-   * Primary source of truth for external observers (like Renderers).
-   *
-   * @returns Active {@link World} instance.
-   */
+  * Returns the currently active ECS World (Global or Scene-specific).
+  *
+  * @remarks
+  * Primary source of truth for external observers (like Renderers).
+  *
+  * @returns Active {@link World} instance.
+  */
   public getWorld(): World {
     const scene = this.sceneManager.getCurrentScene();
     return scene ? scene.getWorld() : this.world;
@@ -573,24 +578,24 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Initializes the game and its subsystems asynchronously.
-   *
-   * @remarks
-   * Initialization process intended to occur before {@link BaseGame.start}.
-   *
-   * ### Concurrency Control:
-   * The process uses an internal `_transitionLock` (Promise-based lock) designed to
-   * help ensure that multiple calls to `init()` or `restart()` do not overlap,
-   * with the goal of reducing the risk of inconsistent engine states during system registration.
-   *
-   * Expected Flow:
-   * 1. Register Essential Resources (EventBus, Input, Audio, SpatialGrid).
-   * 2. Execute `registerSystems()` (User Hook).
-   * 3. Execute `initializeEntities()` (User Hook).
-   * 4. Transition status to `READY`.
-   *
-   * @throws Error - If already initialized or currently in progress.
-   */
+  * Initializes the game and its subsystems asynchronously.
+  *
+  * @remarks
+  * Initialization process intended to occur before {@link BaseGame.start}.
+  *
+  * ### Concurrency Control:
+  * The process uses an internal `_transitionLock` (Promise-based lock) designed to
+  * help ensure that multiple calls to `init()` or `restart()` do not overlap,
+  * with the goal of reducing the risk of inconsistent engine states during system registration.
+  *
+  * Expected Flow:
+  * 1. Register Essential Resources (EventBus, Input, Audio, SpatialGrid).
+  * 2. Execute `registerSystems()` (User Hook).
+  * 3. Execute `initializeEntities()` (User Hook).
+  * 4. Transition status to `READY`.
+  *
+  * @throws Error - If already initialized or currently in progress.
+  */
   public async init(): Promise<void> {
     if (this._status === GameStatus.DESTROYED) return;
     if (this._status !== GameStatus.UNINITIALIZED) {
@@ -629,8 +634,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Registers fundamental engine resources and core systems.
-   */
+  * Registers fundamental engine resources and core systems.
+  */
   protected async registerEssentialSystems(world: World): Promise<void> {
     world.setResource("EventBus", this.eventBus);
     world.setResource("UnifiedInputSystem", this.unifiedInput);
@@ -681,10 +686,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Manually sets an input override for semantic actions.
-   *
-   * @param input - Map of action names to boolean pressed state.
-   */
+  * Manually sets an input override for semantic actions.
+  *
+  * @param input - Map of action names to boolean pressed state.
+  */
   public setInput(input: Record<string, unknown>): void {
     if (
       this._status === GameStatus.UNINITIALIZED ||
@@ -699,10 +704,10 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-   * Subscribes to lifecycle update events.
-   *
-   * @returns Unsubscribe function.
-   */
+  * Subscribes to lifecycle update events.
+  *
+  * @returns Unsubscribe function.
+  */
   public subscribe(listener: UpdateListener<TState>): () => void {
     if (this._status === GameStatus.DESTROYED) {
       console.warn("BaseGame: Attempted to subscribe to a DESTROYED game.");
@@ -716,8 +721,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected _onBeforeRestart(): void | Promise<void> {}
 
   /**
-   * Generates an external seed to avoid consuming the gameplay stream.
-   */
+  * Generates an external seed to avoid consuming the gameplay stream.
+  */
   private _generateExternalSeed(): number {
     return Math.floor(Math.random() * 0xFFFFFFFF);
   }

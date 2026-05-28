@@ -106,7 +106,7 @@ export abstract class System {
    * invalidate iterators or lead to inconsistent state. Use {@link World.getCommandBuffer}
    * to defer these operations until the end of the tick.
    *
-   * @warning **Asynchronous Logic**: Systems must be synchronous. Using `async/await`
+   * @warning **Asynchronous Logic**: Systems are expected to be synchronous. Using `async/await`
    * within `update` is NOT supported by the engine's core loop and will likely lead
    * to race conditions, broken simulation integrity, and unpredictable behavior.
    *
