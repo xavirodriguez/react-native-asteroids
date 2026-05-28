@@ -120,6 +120,11 @@ export class Query {
   * allocations by iterating over the internal cached array directly.
   *
   * @param callback - Function to execute for each entity.
+  *
+  * @warning **Mutation during iteration**: Modifying the world structure (e.g., removing the
+  * current entity) while iterating with `forEach` is not recommended and may lead to
+  * skipped entities or undefined behavior. Use {@link World.getCommandBuffer} for
+  * structural changes.
   */
   public forEach(callback: (entity: Entity) => void): void {
     if (this.needsUpdateArray) {
@@ -168,8 +173,8 @@ export class Query {
   * Rebuilds query results from scratch.
   *
   * @remarks
-  * Primarily used during world restoration or major state resets to help ensure
-  * consistency without breaking existing {@link Query} references.
+  * Primarily used during world restoration or major state resets to help synchronize
+  * the query state without breaking existing {@link Query} references.
   *
   * @param allEntities - Set of all active entities in the world.
   * @param entityComponentSets - Map containing component sets for each entity.

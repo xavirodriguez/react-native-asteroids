@@ -3,7 +3,7 @@ import { InputFrame } from "../../multiplayer/NetTypes";
 /**
  * Input frame buffer for network synchronization.
  *
- * API status: Internal
+ * @internal
  *
  * @remarks
  * Designed to buffer local and remote inputs, with the goal of applying them at

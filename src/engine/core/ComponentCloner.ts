@@ -12,10 +12,10 @@ import { WorldSnapshot } from "../types/EngineTypes";
  */
 export class ComponentCloner {
   /**
-   * Performs a deep clone of a component data object or any POJO.
+   * Attempts to perform a deep clone of a component data object or any POJO.
    *
    * @param data - The data to clone.
-   * @returns A deep copy of the input data.
+   * @returns A copy of the input data.
    */
   public static cloneComponent<T>(data: T): T {
     if (data === null || typeof data !== "object") {
@@ -36,10 +36,10 @@ export class ComponentCloner {
   }
 
   /**
-   * Deep clones an entire WorldSnapshot object.
+   * Attempts to create a deep clone of an entire WorldSnapshot object.
    *
    * @param snapshot - The snapshot to clone.
-   * @returns A completely independent WorldSnapshot instance.
+   * @returns A WorldSnapshot instance designed to be independent of the source.
    */
   public static deepCloneSnapshot(snapshot: WorldSnapshot): WorldSnapshot {
     // Entities and freeEntities are flat arrays of numbers

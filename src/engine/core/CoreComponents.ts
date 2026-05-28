@@ -57,7 +57,7 @@ export interface JuiceComponent extends Component {
  * Standard base components provided by the engine.
  *
  * This module defines the core data structures used by built-in systems for
- * physics, rendering, lifecycle, and AI. Components are intended to be POJOs
+ * physics, rendering, lifecycle, and AI. Components are typically designed as POJOs
  * (Plain Old JavaScript Objects) to facilitate serialization and snapshots.
  *
  * @packageDocumentation
@@ -93,7 +93,7 @@ export interface TransformComponent extends IHierarchicalComponent {
 }
 
 /**
- * Indica que una entidad gestiona su propia integración física.
+ * Component used to indicate that an entity manages its own physical integration.
  */
 export interface ManualMovementComponent extends Component {
   type: "ManualMovement";
@@ -179,7 +179,7 @@ export interface VelocityComponent extends Component {
 }
 
 /**
- * Aplica una fuerza de rozamiento.
+ * Applies a friction force.
  */
 export interface FrictionComponent extends Component {
   type: "Friction";
@@ -205,7 +205,7 @@ export interface BoundaryComponent extends Component {
 }
 
 /**
- * Permite añadir etiquetas semánticas.
+ * Allows adding semantic tags to an entity.
  */
 export interface TagComponent extends Component {
   type: "Tag";
@@ -273,7 +273,7 @@ export interface CollisionEventsComponent extends Component {
 export { CollisionManifold };
 
 /**
- * Habilita la detección de colisiones continuas (CCD).
+ * Enables Continuous Collision Detection (CCD).
  */
 export interface ContinuousColliderComponent extends Component {
   type: "ContinuousCollider";
@@ -391,8 +391,8 @@ export interface ReclaimableComponent extends Component {
    */
   poolId: string;
   /**
-   * Callback local para gestionar la devolución al pool.
-   * @internal No se serializa.
+   * Local callback to manage pool reclamation.
+   * @internal Not serialized.
    */
   onReclaim?: (world: World, entity: Entity) => void;
 }
@@ -451,8 +451,8 @@ export interface AnimatorComponent extends Component {
  * Attaches a Finite State Machine (FSM) to an entity.
  *
  * @remarks
- * Rediseñado como POJO puro para compatibilidad con snapshots y networking.
- * La lógica vive en el StateMachineRegistry.
+ * Redesigned as a POJO for better compatibility with snapshots and networking.
+ * Logic typically resides in the StateMachineRegistry.
  */
 export interface StateMachineComponent extends Component {
   type: "StateMachine";
@@ -786,7 +786,7 @@ export interface RotateCommand extends Component {
 }
 
 /**
- * Unión de todos los componentes base del motor para endurecimiento de tipos.
+ * Union of all core engine components for type safety.
  */
 export type AnyCoreComponent =
   | TransformComponent
@@ -834,6 +834,6 @@ export type AnyCoreComponent =
   | ShipComponent;
 
 /**
- * Auxiliar para inferir el tipo concreto de un componente a partir de su discriminador.
+ * Helper to infer the concrete component type from its discriminator.
  */
 export type ComponentOf<TType extends AnyCoreComponent["type"]> = Extract<AnyCoreComponent, { type: TType }>;

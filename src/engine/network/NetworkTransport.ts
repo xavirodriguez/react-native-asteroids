@@ -1,11 +1,11 @@
 /**
  * Interface for network communication abstractions.
  *
- * API status: Public
+ * @public
  *
  * @remarks
  * Designed to help decouple the engine from specific transport implementations
- * (WebSockets, WebRTC, etc.). Synchronization guarantees are typically provided
+ * (WebSockets, WebRTC, etc.). Synchronization behavior is typically influenced
  * by the underlying protocol and implementation rather than this interface.
  */
 export interface NetworkTransport {
@@ -20,12 +20,12 @@ export interface NetworkTransport {
   onMessage(callback: (data: unknown) => void): void;
 
   /**
-   * Connects to the network.
+   * Attempts to connect to the network.
    */
   connect(url: string, options?: Record<string, unknown>): Promise<void>;
 
   /**
-   * Disconnects from the network.
+   * Requests a disconnection from the network.
    */
   disconnect(): void;
 
