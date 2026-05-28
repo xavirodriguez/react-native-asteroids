@@ -1,65 +1,31 @@
 import { World } from "../core/World";
-import { TransformComponent } from "../types/EngineTypes";
+import { TransformComponent, CoreComponentRegistry } from "../core/CoreComponents";
 import { AbstractHierarchySystem } from "./AbstractHierarchySystem";
+import { ComponentRegistry } from "../core/Component";
+import { EventRegistry } from "../core/EventBus";
 
 /**
  * 3x3 Matrix for 2D transformations.
- * Column-major order: [a, c, tx, b, d, ty]
- *
- * @internal
  */
 type Mat3 = [number, number, number, number, number, number];
 
 /**
  * System managing hierarchical spatial transformations.
- *
- * @responsibility Calculate world-space coordinates (X, Y, Rotation, Scale) from local offsets.
- * @responsibility Propagate changes down the entity tree, typically using a topological sort.
- * @responsibility Aim to optimize updates via a dirty-flag propagation system.
- *
- * @remarks
- * Implementa una propagación top-down orientada a que los hijos se calculen
- * después de sus padres. Utiliza matrices 3x3 para composición de transformaciones.
- * This system bridges the gap between local simulation (movement) and absolute
- * rendering/collision world coordinates.
- *
- * ### Execution Order:
- * Typically runs at the end of the `Simulation` phase or start of `Presentation`.
- * It MUST run after local movement systems to avoid 1-frame visual lag.
- *
- * @conceptualRisk [LAYOUT_CASCADE][MEDIUM] Deep hierarchies incur higher
- * computational costs during root changes.
- * @conceptualRisk [WORLD_SYNC][HIGH] Systems reading `worldX/Y` before
- * this system executes will receive stale data from the previous frame.
- *
- * @public
  */
-export class HierarchySystem extends AbstractHierarchySystem {
-  /**
-   * Resolves world transforms for all entities with a Transform component.
-   *
-   * @param world - Target ECS world.
-   * @param _deltaTime - Elapsed time (ignored).
-   *
-   * @remarks
-   * Utiliza el ordenamiento topológico iterativo heredado de AbstractHierarchySystem.
-   * This system bridges the gap between local simulation (movement) and absolute
-   * rendering/collision world coordinates.
-   *
-   * @postcondition Intends to update `worldX`, `worldY`, `worldRotation`, `worldScaleX`, and `worldScaleY`
-   * for `Transform` components marked as dirty (or with dirty parents).
-   * @sideEffect Resets the `dirty` flag for processed components.
-   */
-  public update(world: World, _deltaTime: number): void {
+export class HierarchySystem<
+  TComponents extends ComponentRegistry = CoreComponentRegistry,
+  TEvents extends EventRegistry = any
+> extends AbstractHierarchySystem<TComponents, TEvents> {
+
+  public update(world: World<TComponents, TEvents, any>, _deltaTime: number): void {
     this.wasDirty.clear();
 
     const order = this.getProcessingOrder(world, "Transform");
     if (order.length === 0) return;
 
-    // 2. Iteratively process transformations in topological order
     for (let i = 0; i < order.length; i++) {
       const entity = order[i];
-      const transform = world.getComponent<TransformComponent>(entity, "Transform");
+      const transform = world.getComponent(entity, "Transform" as any) as any as TransformComponent;
       if (!transform) continue;
 
       let parentDirty = false;
@@ -70,21 +36,22 @@ export class HierarchySystem extends AbstractHierarchySystem {
       const isDirty = transform.dirty || parentDirty;
 
       if (isDirty) {
-        world.mutateComponent<TransformComponent>(entity, "Transform", mutTransform => {
-          if (mutTransform.parentEntity !== null) {
-            const parentTransform = world.getComponent<TransformComponent>(mutTransform.parentEntity, "Transform");
+        world.mutateComponent(entity, "Transform" as any, (mutTransform: any) => {
+          const t = mutTransform as TransformComponent;
+          if (t.parentEntity !== null) {
+            const parentTransform = world.getComponent(t.parentEntity, "Transform" as any) as any as TransformComponent;
             if (!parentTransform) {
-              this.setToLocal(mutTransform);
+              this.setToLocal(t);
             } else {
               const parentMat = this.getMatrixFromTransform(parentTransform, true);
-              const localMat = this.getMatrixFromTransform(mutTransform, false);
+              const localMat = this.getMatrixFromTransform(t, false);
               const worldMat = this.multiplyMat3(parentMat, localMat);
-              this.applyMatrixToWorldTransform(mutTransform, worldMat);
+              this.applyMatrixToWorldTransform(t, worldMat);
             }
           } else {
-            this.setToLocal(mutTransform);
+            this.setToLocal(t);
           }
-          mutTransform.dirty = false;
+          t.dirty = false;
         });
         this.wasDirty.add(entity);
       }
