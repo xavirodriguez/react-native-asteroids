@@ -33,9 +33,9 @@ type Command =
  * modifications are restricted to help protect iterator safety and maintain results consistency.
  *
  * ### Execution Characteristics:
- * 1. **FIFO Order**: Commands are intended to be executed in the sequence they were recorded.
- * 2. **Visibility**: Structural changes are typically NOT reflected in the {@link World} until
- *    `flush()` is called (typically triggered at the end of the `World.update` cycle).
+ * 1. **Sequential Execution**: Commands are processed in the order they were recorded (FIFO).
+ * 2. **Deferred Visibility**: Structural changes are typically NOT reflected in the {@link World} until
+ *    `flush()` is successfully called (usually at the end of the `World.update` cycle).
  *
  * Recommended practice:
  * - Systems should use `WorldCommandBuffer` for structural changes (entity creation/deletion,
@@ -104,10 +104,10 @@ export class WorldCommandBuffer {
   }
 
   /**
-   * Applies all recorded commands to the provided world and clears the buffer.
+   * Attempts to apply all recorded commands to the provided world and clears the buffer.
    *
    * @remarks
-   * Commands are processed in FIFO (First-In, First-Out) order.
+   * Commands are processed sequentially in the order they were recorded.
    *
    * @param world - The world instance to apply changes to.
    */

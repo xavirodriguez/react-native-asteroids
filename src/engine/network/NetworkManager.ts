@@ -70,6 +70,9 @@ export class NetworkManager {
         this.strategy.update(world, deltaTime);
     }
 
+    /**
+     * Informs the current strategy of an incoming authoritative update from the server.
+     */
     public processServerUpdate(serverTick: number, authoritativeSnapshot: WorldSnapshot, localSessionId?: string): void {
         this.strategy.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
     }
@@ -82,6 +85,9 @@ export class NetworkManager {
         return this.strategy;
     }
 
+    /**
+     * Resets the network state, clearing local history and replicated entities.
+     */
     public reset(): void {
         this.strategy.reset();
         this.replicator.clear();

@@ -55,7 +55,7 @@ export enum GameStatus {
 /**
  * Main orchestrator of the game lifecycle and engine state.
  *
- * API status: Public
+ * @public
  *
  * Responsibility: Coordinate the initialization of systems and entities.
  *
@@ -83,11 +83,11 @@ export enum GameStatus {
  *
  * ### Deterministic Simulation vs. Visual Presentation
  *
- * The engine attempts to maintain a boundary between the **Deterministic Simulation**
+ * The engine is designed to support a boundary between the **Deterministic Simulation**
  * and the **Visual Presentation** layer:
  *
  * - **Deterministic Simulation**: Operates on a fixed time step. Logic affecting
- *   gameplay (physics, health, scores) is typically intended to occur here. It is
+ *   gameplay (physics, health, scores) typically resides here. It is
  *   designed to support simulation consistency when used under controlled
  *   conditions (e.g., seeded RNG, consistent execution order, and no direct mutations).
  * - **Visual Presentation**: Operates at the display's variable refresh rate. It
@@ -132,9 +132,9 @@ export enum GameStatus {
  * UNINITIALIZED -\> INITIALIZING -\> READY -\> RUNNING
  *
   * @remarks
-  * In practice, determinism is a goal that requires strict adherence to engine
-  * patterns. Factors such as floating-point non-determinism across architectures
-  * or the use of unmanaged external state can lead to divergences.
+  * In practice, achieving high levels of determinism requires strict adherence to engine
+  * patterns. Factors such as floating-point non-determinism across architectures,
+  * JS engine variability, or the use of unmanaged external state can lead to divergences.
   *
  * Conceptual Risk: [DETERMINISM][CRITICAL] `currentTick` overflow happens after ~285,000 years,
  * but buffer precision limits may be hit significantly earlier.
@@ -189,6 +189,8 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   * Abstract hook to configure the platform-specific renderer.
   *
   * @param renderer - Instance of the renderer (Canvas, Skia, etc).
+  *
+  * @public
   */
   public abstract initializeRenderer(renderer: import("../rendering/Renderer").Renderer<unknown>): void;
 
@@ -451,7 +453,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   public getGameLoop(): GameLoop { return this.gameLoop; }
 
   /**
-  * Restarts the game state, optionally with a new seed.
+  * Attempts to restart the game state, optionally with a new seed.
   *
   * @remarks
   * State transition is designed to be protected by a lock. It typically pauses
@@ -578,7 +580,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   }
 
   /**
-  * Initializes the game and its subsystems asynchronously.
+  * Attempts to initialize the game and its subsystems asynchronously.
   *
   * @remarks
   * Initialization process intended to occur before {@link BaseGame.start}.

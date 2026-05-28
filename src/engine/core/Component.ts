@@ -20,7 +20,7 @@ export interface Component {
  * Useful for components whose exact structure is defined dynamically or outside the core.
  *
  * @remarks
- * This generic version is intended to improve type safety by allowing the specification of the
+ * This generic version is designed to support type safety by allowing the specification of the
  * expected data structure. It is recommended for use with interfaces describing simple
  * POJOs to help maintain compatibility with the snapshot system.
  *
@@ -28,7 +28,7 @@ export interface Component {
  *
  * @typeParam T - Data structure extending a record of serializable values.
  *
- * @warning **Serialization**: To help ensure snapshots and network replication work as intended,
+ * @warning **Serialization**: To help support snapshots and network replication,
  * it is recommended to keep component data structures simple and avoid circular references.
  */
 export type GenericComponent<T extends Record<string, unknown> = Record<string, unknown>> = Component & T;

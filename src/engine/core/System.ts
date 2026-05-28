@@ -3,7 +3,7 @@ import { World } from "./World";
 /**
  * Standard phases for system execution order.
  *
- * API status: Public
+ * @public
  *
  * @remarks
  * Systems are executed sequentially based on these phases.
@@ -32,6 +32,8 @@ export enum SystemPhase {
 
 /**
  * Configuration for registering a system within the {@link World}.
+ *
+ * @public
  */
 export interface SystemConfig {
   /**
@@ -49,7 +51,7 @@ export interface SystemConfig {
 /**
  * Abstract base class for all ECS Systems.
  *
- * API status: Public
+ * @public
  *
  * @remarks
  * Systems encapsulate game logic and behavior, typically operating on sets of

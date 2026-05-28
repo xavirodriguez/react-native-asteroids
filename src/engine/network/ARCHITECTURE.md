@@ -7,9 +7,9 @@ TinyAsterEngine is oriented towards a **server-authoritative model with client-s
 The synchronization flow aims to help mitigate latency and maintain consistency under controlled network conditions:
 
 1.  **Input Capture**: The client records player actions and attempts to transmit them to the server associated with a local `tick`.
-2.  **Local Prediction**: The client applies the input to its local simulation intended to provide immediate visual feedback.
-3.  **Authoritative Simulation**: The server is designed to act as the source of truth, validating inputs and executing authoritative game logic.
-4.  **Delta Replication**: The server seeks to optimize bandwidth by primarily sending detected changes (deltas) in component states.
+2.  **Local Prediction**: The client applies the input to its local simulation, typically providing immediate visual feedback.
+3.  **Authoritative Simulation**: The server acts as the primary source of truth, typically validating inputs and executing authoritative game logic.
+4.  **Delta Replication**: The server attempts to optimize bandwidth by primarily sending detected changes (deltas) in component states.
 5.  **Reconciliation (Rollback)**: In case of a detected discrepancy between predicted and authoritative state, the client attempts to restore the server state and re-simulate local ticks up to the current time.
 
 ## 🗜️ Optimization Strategies
@@ -31,5 +31,5 @@ Uses `BinaryCompression` to pack objects into a compact binary format, aiming to
 ## ⚠️ Conceptual Risks
 
 *   **[ROLLBACK_SYNC]**: If the client state history is too short, excessive lag may prevent accurate reconciliation.
-*   **[BINARY_COMPATIBILITY]**: Changes in component schemas typically require synchronized updates between client and server.
-*   **[TICK_DRIFT]**: Clock drift between clients may cause inputs to arrive "in the future" or far "in the past" of the server.
+*   **[BINARY_COMPATIBILITY]**: Changes in component schemas typically require synchronized updates between client and server to help ensure correct deserialization.
+*   **[TICK_DRIFT]**: Clock drift between clients and server may cause inputs to arrive "in the future" or far "in the past" of the server, potentially affecting simulation consistency.

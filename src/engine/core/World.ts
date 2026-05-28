@@ -35,7 +35,7 @@ interface RegisteredSystem {
  * influenced by the JavaScript environment, execution context, and adherence
  * to the engine's recommended mutation patterns (e.g., using {@link World.mutateComponent}).
  *
- * API status: Public
+ * @public
  */
 const __DEV__ = process.env.NODE_ENV !== "production";
 const RAW_DATA = Symbol("RAW_DATA");
@@ -177,7 +177,7 @@ export class World {
   }
 
   /**
-   * Manually advances the simulation tick.
+   * Increments the internal simulation tick counter.
    */
   public advanceTick(): void {
     this._tick++;
@@ -520,7 +520,10 @@ export class World {
 
   /**
    * Reserves a new entity ID without activating it in the world yet.
-   * Safe to call during `update()`.
+   *
+   * @remarks
+   * Intended to be safe for use during the `update()` cycle as it does not
+   * immediately modify active entity indices.
    */
   public reserveEntityId(): Entity {
     if (!this._freeEntitiesSorted) {
@@ -555,7 +558,7 @@ export class World {
   }
 
   /**
-   * Unregisters all systems from all execution phases and disposes them.
+   * Attempts to unregister all systems from all execution phases and disposes them.
    */
   clearSystems(): void {
     this.assertCanMutateStructure("clearSystems");
@@ -638,7 +641,7 @@ export class World {
    * For modifying component data, it is strongly recommended to use {@link World.mutateComponent}
    * to help ensure that versioning and reactive systems are correctly notified.
    *
-   * API status: Public
+   * @public
    */
   public getComponent<TType extends AnyCoreComponent["type"]>(entity: Entity, type: TType): DeepReadonly<ComponentOf<TType>> | undefined;
   public getComponent<T extends Component>(entity: Entity, type: string): DeepReadonly<T> | undefined;
@@ -708,7 +711,10 @@ export class World {
   }
 
   /**
-   * Checks for entity existence. Typically O(1) via Set lookup.
+   * Checks for entity existence.
+   *
+   * @remarks
+   * Performance is typically O(1) via internal Set lookup.
    */
   public hasEntity(entity: Entity): boolean {
     return this.activeEntities.has(entity);
@@ -805,8 +811,9 @@ export class World {
   }
 
   /**
-   * Spawns an entity from a data-driven blueprint.
-   * API status: Public
+   * Attempts to spawn an entity from a data-driven blueprint.
+   *
+   * @public
    */
   public spawnFromBlueprint(blueprintId: string, x: number, y: number, overrides?: BlueprintOverrides): Entity {
     return EntityBlueprintAssembler.assemble(this, blueprintId, x, y, overrides);
@@ -827,7 +834,11 @@ export class World {
   }
 
   /**
-   * Generates a partial snapshot containing modified components since a version.
+   * Attempts to generate a partial snapshot containing components modified since a specific version.
+   *
+   * @remarks
+   * This mechanism relies on tracked component versions. Its accuracy is subject to
+   * components being modified exclusively via {@link World.mutateComponent}.
    */
   public deltaSnapshot(sinceVersion: number, filterEntities?: Set<Entity>): Partial<WorldSnapshot> {
     const componentData: ComponentDataSnapshot = {};
@@ -873,7 +884,8 @@ export class World {
 
   /**
    * Acquires a component from the pool or returns undefined if empty.
-   * API status: Internal/Advanced
+   *
+   * @internal
    */
   public acquireComponent<T extends Component>(type: string): T | undefined {
     return this.componentPool.get(type)?.pop() as T | undefined;
@@ -1143,7 +1155,7 @@ export class World {
   /**
    * Performs an immediate mutation on a Singleton component.
    *
-   * API status: Public
+   * @public
    */
   public mutateSingleton<TType extends AnyCoreComponent["type"]>(
     type: TType,
