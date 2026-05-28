@@ -163,7 +163,7 @@ export class Query {
   *
   * @remarks
   * The key is a comma-separated, alphabetically sorted string of component types.
-  * This ensures that different orders of input types result in the same query key.
+  * This is intended to ensure that different orders of input types result in the same query key.
   */
   public get key(): string {
     return [...this.componentTypes].sort().join(",");

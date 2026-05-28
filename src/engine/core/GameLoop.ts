@@ -134,7 +134,7 @@ export class GameLoop {
   }
 
   /**
-   * Attempts to start the execution of the game loop.
+   * Attempts to start the execution of the game loop using requestAnimationFrame.
    */
   public start(): void {
     if (this.isRunning) return;
@@ -144,7 +144,7 @@ export class GameLoop {
   }
 
   /**
-   * Requests the game loop to stop.
+   * Requests the game loop to stop at the next possible opportunity.
    */
   public stop(): void {
     this.isRunning = false;
@@ -178,7 +178,7 @@ export class GameLoop {
     while (this.accumulator >= this.fixedDeltaTime) {
       if (updatesThisFrame >= this.maxUpdatesPerFrame) {
         /**
-         * Warning: Spiral of Death detected.
+         * @warning Spiral of Death detected.
          * Remaining accumulated time is discarded to help mitigate the risk of blocking the main thread.
          * In practice, this favors environment stability over temporal accuracy and simulation consistency.
          */
@@ -187,7 +187,7 @@ export class GameLoop {
         break;
       }
 
-      // Determinism: ensure RNG is seeded for this tick if needed
+      // Determinism: Designed to help ensure RNG is seeded for this tick if needed.
       // RandomService.getInstance("gameplay"); // Static access is deprecated
 
       if (this.needsUpdateRebuild) {

@@ -11,7 +11,7 @@ import { InputFrame } from "../../multiplayer/NetTypes";
  * include Rollback (prediction + rewind) and Snapshot Interpolation.
  *
  * Each strategy is expected to manage its own internal buffers and history
- * to maintain consistency based on its specific requirements and environmental constraints.
+ * to support consistency based on its specific requirements and environmental constraints.
  */
 export interface ReconciliationStrategy {
     /**

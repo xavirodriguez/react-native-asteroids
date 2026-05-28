@@ -21,7 +21,10 @@ export class EntityReplicator {
 
     /**
      * Resolves a local entity for the given server ID.
-     * If not found, it attempts to create one and register the mapping.
+     *
+     * @remarks
+     * If not found, it attempts to create one and register the mapping. The created
+     * entity is queued via the {@link WorldCommandBuffer} to help maintain iterator safety.
      */
     public resolveEntity(serverId: string, world: World): number {
         let localId = this.serverToLocal.get(serverId);
@@ -36,7 +39,7 @@ export class EntityReplicator {
     }
 
     /**
-     * Unregisters a mapping and returns the local ID if it existed.
+     * Attempts to unregister a mapping and returns the local ID if it existed.
      */
     public removeMapping(serverId: string): number | undefined {
         const localId = this.serverToLocal.get(serverId);

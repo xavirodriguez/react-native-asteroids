@@ -14,9 +14,10 @@ export interface DesyncThresholds {
  * Desync detection in this system is based on heuristic thresholds for spatial properties.
  * It is not an absolute check for identity but rather a mechanism to identify
  * functional divergences that may require correction.
+     *
  * Small divergences are expected due to floating-point variability or differences
- * in execution timing. The detector aims to identify significant drifts that
- * require state reconciliation.
+     * in execution timing across different environments. The detector aims to identify
+     * significant drifts that are likely to impact gameplay and require state reconciliation.
  */
 export class DesyncDetector {
     private thresholds: DesyncThresholds;
@@ -50,7 +51,7 @@ export class DesyncDetector {
         const authTransform = authoritativeSnapshot.componentData["Transform"]?.[entityId];
         const authVelocity = authoritativeSnapshot.componentData["Velocity"]?.[entityId];
 
-        if (!authTransform) return true; // Entity missing in server snapshot but exists locally
+        if (!authTransform) return true; // Entity missing in server snapshot but exists locally - treat as desync
 
         // Position check
         const dx = predicted.state.x - (authTransform.x as number);
@@ -72,7 +73,7 @@ export class DesyncDetector {
             }
         }
 
-        // Velocity check
+        // Velocity check - if velocity data is available in the authoritative snapshot
         if (authVelocity) {
             const dvx = predicted.state.vx - (authVelocity.dx as number);
             const dvy = predicted.state.vy - (authVelocity.dy as number);

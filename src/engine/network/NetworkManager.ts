@@ -72,6 +72,10 @@ export class NetworkManager {
 
     /**
      * Informs the current strategy of an incoming authoritative update from the server.
+     *
+     * @remarks
+     * The effect of this update depends on the active reconciliation strategy.
+     * In rollback-based strategies, this may trigger a state restoration and re-simulation.
      */
     public processServerUpdate(serverTick: number, authoritativeSnapshot: WorldSnapshot, localSessionId?: string): void {
         this.strategy.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
@@ -86,7 +90,7 @@ export class NetworkManager {
     }
 
     /**
-     * Resets the network state, clearing local history and replicated entities.
+     * Attempts to reset the network state, clearing local history and replicated entities.
      */
     public reset(): void {
         this.strategy.reset();

@@ -46,7 +46,7 @@ export class WorldCommandBuffer {
   private commands: Command[] = [];
 
   /**
-   * Records the creation of a new entity.
+   * Records the intent to create a new entity.
    * @param entityOrCallback - Reserved ID or creation callback.
    * @param callback - Optional function receiving the created entity after flush.
    */
@@ -59,7 +59,7 @@ export class WorldCommandBuffer {
   }
 
   /**
-   * Records the removal of an entity.
+   * Records the intent to remove an entity.
    * @param entity - ID of the entity to remove.
    */
   public removeEntity(entity: Entity): void {
@@ -67,7 +67,7 @@ export class WorldCommandBuffer {
   }
 
   /**
-   * Records the addition or replacement of a component on an entity.
+   * Records the intent to add or replace a component on an entity.
    * @param entity - ID of the entity.
    * @param component - Component instance.
    */
@@ -76,7 +76,7 @@ export class WorldCommandBuffer {
   }
 
   /**
-   * Records the removal of a component from an entity.
+   * Records the intent to remove a component from an entity.
    * @param entity - ID of the entity.
    * @param componentType - Name of the component type.
    */
@@ -85,7 +85,7 @@ export class WorldCommandBuffer {
   }
 
   /**
-   * Records a mutation for a component.
+   * Records a mutation for a component to be applied during flush.
    * @param entity - ID of the entity.
    * @param componentType - Component type.
    * @param mutator - Mutation function.

@@ -20,10 +20,10 @@ export class EntityPool {
   private nextId = 1;
 
   /**
-   * Retrieves an available entity ID.
+   * Attempts to retrieve an available entity ID.
    *
    * @remarks
-   * Attempts to reuse IDs from the internal pool. If the pool is empty, it increments
+   * Designed to reuse IDs from the internal pool. If the pool is empty, it increments
    * the global ID counter.
    *
    * @returns A new {@link Entity} (numeric identifier).
@@ -40,7 +40,7 @@ export class EntityPool {
   }
 
   /**
-   * Returns an entity ID to the pool for future reuse.
+   * Returns an entity ID to the pool for potential future reuse.
    *
    * @remarks
    * The released ID becomes eligible for reuse in subsequent calls to {@link EntityPool.acquire}.
@@ -66,7 +66,7 @@ export class EntityPool {
    * Resets the pool and the ID counter.
    *
    * @remarks
-   * Effectively invalidates previously created entity IDs. Use with caution,
+   * Effectively invalidates previously created entity IDs from this pool. Use with caution,
    * typically during a total engine reset.
    *
    * @precondition The ECS world should be empty to help mitigate the risk of ID collisions with existing entities.

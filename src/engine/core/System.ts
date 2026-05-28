@@ -7,6 +7,7 @@ import { World } from "./World";
  *
  * @remarks
  * Systems are executed sequentially based on these phases.
+ * In typical usage, the execution pipeline follows the order defined in {@link SystemPhase}.
  * See {@link BaseGame} for more details on the execution pipeline.
  *
  * Mutation Guidelines per Phase:
@@ -119,6 +120,10 @@ export abstract class System {
 
   /**
    * Cleanup system resources when it's removed or the game is destroyed.
+   *
+   * @remarks
+   * Recommended for releasing external listeners or cleaning up large caches
+   * to help mitigate memory leaks.
    */
   public dispose(): void {}
 }

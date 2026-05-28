@@ -127,6 +127,14 @@ export * from './assets/AssetTypes';
 /** @public */
 export { AssetLoader } from './assets/AssetLoader';
 
+// --- NETWORK ---
+/** @public */
+export { NetworkManager } from './network/NetworkManager';
+/** @public */
+export { DesyncDetector } from './network/DesyncDetector';
+/** @public */
+export { EntityReplicator } from './network/EntityReplicator';
+
 // --- UTILS ---
 /** @public */
 export { RandomService } from './utils/RandomService';

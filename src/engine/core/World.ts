@@ -274,7 +274,7 @@ export class World {
       this._componentTypesDirty = false;
     }
 
-    // Pre-initialize componentData with sorted types to ensure deterministic key order
+    // Pre-initialize componentData with sorted types to help achieve deterministic key order
     for (const type of this._sortedComponentTypes) {
       if (!componentData[type]) {
           componentData[type] = {};
@@ -312,7 +312,7 @@ export class World {
         }
 
         // Optimized capture: iterate over properties and copy them using deep cloning.
-        // We assume components are flat POJOs as per engine architecture.
+        // Components are expected to be flat POJOs to help ensure successful serialization.
         for (const key in compAsRecord) {
           const val = compAsRecord[key];
           if (typeof val !== "function") {
@@ -711,17 +711,20 @@ export class World {
   }
 
   /**
-   * Checks for entity existence.
+   * Checks for entity existence in the active set.
    *
    * @remarks
-   * Performance is typically O(1) via internal Set lookup.
+   * Performance is intended to be O(1) via internal Set lookup in typical conditions.
    */
   public hasEntity(entity: Entity): boolean {
     return this.activeEntities.has(entity);
   }
 
   /**
-   * Checks if an entity possesses a specific component.
+   * Checks if an entity possesses a specific component type.
+   *
+   * @remarks
+   * Performance is intended to be O(1) via internal Set lookup.
    */
   hasComponent(entity: Entity, type: string): boolean {
     return this.componentIndex.get(type)?.has(entity) ?? false;
@@ -883,7 +886,8 @@ export class World {
   }
 
   /**
-   * Acquires a component from the pool or returns undefined if empty.
+   * Attempts to acquire a component from the pool to help reduce allocations.
+   * Returns undefined if the pool is empty.
    *
    * @internal
    */
@@ -912,13 +916,16 @@ export class World {
 
   /**
    * Registers a global singleton resource.
+   *
+   * @remarks
+   * Resources are intended for services or state that do not belong to a specific entity.
    */
   setResource<T>(name: string, resource: T): void {
     this.resources.set(name, resource);
   }
 
   /**
-   * Retrieves a registered global resource.
+   * Retrieves a registered global resource, if available.
    */
   getResource<T>(name: string): T | undefined {
     if (name === "gameplay") return this.gameplayRandom as unknown as T;
@@ -927,7 +934,7 @@ export class World {
   }
 
   /**
-   * Performs a controlled mutation on a global resource.
+   * Performs a mutation on a global resource and notifies the world of a state change.
    */
   mutateResource<T>(name: string, mutator: (resource: T) => void): void {
     const resource = this.resources.get(name) as T;
@@ -1027,7 +1034,12 @@ export class World {
     return this.profilers.get(system)?.getAverageTime() ?? 0;
   }
 
-  /** Returns performance metrics for all registered systems. */
+  /**
+   * Returns performance metrics for all registered systems.
+   *
+   * @remarks
+   * Only available if `debugMode` is enabled.
+   */
   getAllSystemTimings(): Record<string, number> {
     const timings: Record<string, number> = {};
     this.sortedSystems.forEach(system => {

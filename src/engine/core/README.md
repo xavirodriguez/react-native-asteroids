@@ -1,12 +1,12 @@
 # TinyAsterEngine Core (ECS)
 
-The core of the engine is based on an **Entity-Component-System (ECS)** architecture designed to support performance, simulation consistency, and network synchronization.
+The core of the engine is based on an **Entity-Component-System (ECS)** architecture designed to help support performance, simulation consistency, and network synchronization under typical conditions.
 
 ## 🏗️ Fundamental Building Blocks
 
 ### 1. World
 The central registry. Stores entities and components. Manages their lifecycle and provides `Queries` for systems to access data.
-*   **Versioning**: Maintains `structureVersion` (structural changes) and `stateVersion` (component data changes) intended to help optimize rendering and synchronization.
+*   **Versioning**: Tracks `structureVersion` (structural changes) and `stateVersion` (component data changes) intended to help optimize rendering and synchronization processes.
 
 ### 2. Entity
 A simple unique numeric identifier. Entities do not contain logic; they act as keys to associate components.
@@ -22,8 +22,8 @@ Contains execution logic. Systems iterate over groups of entities (filtered by c
 ## 🔄 The GameLoop
 
 The engine uses a **Fixed Timestep / Variable Rendering** scheme:
-1.  **Update (Logic)**: Oriented towards a fixed frequency (60Hz). Aims to support consistency in physics and game rules.
-2.  **Render (Presentation)**: Executes according to the environment's refresh rate. Uses an interpolation factor (`alpha`) intended to help smooth visual motion between physical ticks.
+1.  **Update (Logic)**: Oriented towards a fixed frequency (60Hz). Aims to help maintain consistency in physics and game rules.
+2.  **Render (Presentation)**: Executes according to the environment's refresh rate. Uses an interpolation factor (`alpha`) intended to help smooth visual motion between simulation ticks.
 
 ## 🛡️ Recommended Practices
 
