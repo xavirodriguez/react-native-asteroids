@@ -74,6 +74,7 @@ export const ShipPhysics = {
       if (ctx?.isResimulating) return;
 
       // Particles are visual only, use render random
+      if (world.isReSimulating || world.isUpdating) return;
       const renderRandom = world.renderRandom;
       const currentSpeed = Math.sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy);
       const intensity = Math.min(1.5, 0.5 + currentSpeed / 200);

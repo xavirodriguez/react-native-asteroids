@@ -1,8 +1,9 @@
 import { World } from "../../engine/core/World";
+import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
 import { SpatialGrid } from "../../engine/physics/utils/SpatialGrid";
 import { AsteroidsGame } from "../../games/asteroids/AsteroidsGame";
-import { Entity, TransformComponent, Collider2DComponent } from "../../engine/types/EngineTypes";
-import { AsteroidComponent } from "../../engine/core/CoreComponents";
+import { Entity, TransformComponent, Collider2DComponent, CollisionEventsComponent } from "../../engine/types/EngineTypes";
+import { AsteroidComponent, BulletComponent, GameStateComponent } from "../../engine/core/CoreComponents";
 
 describe("Asteroids ECS - SpatialGrid Collisions", () => {
   let game: AsteroidsGame;
@@ -15,42 +16,68 @@ describe("Asteroids ECS - SpatialGrid Collisions", () => {
     world = game.getWorld();
 
     // Clear initial entities
-    const entities = world.query("Transform");
+    const entities = world.entities;
     entities.forEach(e => world.removeEntity(e));
 
     spatialGrid = new SpatialGrid(100);
     world.setResource("SpatialGrid", spatialGrid);
     world.setResource("ScreenConfig", { width: 800, height: 600 });
+    world.setResource("GameConfig", require("../../games/asteroids/config/asteroids.json"));
 
-    const { createGameState } = require("../../games/asteroids/EntityFactory");
-    createGameState({ world });
+    const colSys = world.systemsList.find(s => s instanceof CollisionSystem2D) as CollisionSystem2D;
+    if (colSys) {
+      colSys.useSpatialHash(100);
+    }
+
+    world.createEntity(); // Entity 0?
+    const gameStateEntity = world.createEntity();
+    world.addComponent(gameStateEntity, {
+      type: "GameState",
+      lives: 3,
+      score: 0,
+      level: 1,
+      asteroidsRemaining: 0,
+      isGameOver: false,
+      comboCount: 0,
+      comboMultiplier: 1,
+      lastBulletHit: false,
+      serverTick: 0,
+    } as unknown as GameStateComponent);
   });
 
   function createAsteroid(x: number, y: number): Entity {
     const entity = world.createEntity();
-    world.addComponent(entity, { type: "Asteroid", size: "large" } as AsteroidComponent);
-    world.addComponent(entity, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1, dirty: true } as TransformComponent);
+    world.addComponent(entity, { type: "Asteroid", size: "large", splitsInto: ["medium_asteroid"], splitCount: 2 } as AsteroidComponent);
+    world.addComponent(entity, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1, worldX: x, worldY: y, dirty: true } as TransformComponent);
     world.addComponent(entity, {
       type: "Collider2D",
       shape: { type: "circle", radius: 20 },
       layer: 1, // ASTEROID_LAYER
-      mask: 2   // BULLET_LAYER
+      mask: 2,   // BULLET_LAYER
+      enabled: true,
+      offsetX: 0,
+      offsetY: 0
     } as Collider2DComponent);
     world.addComponent(entity, { type: "SpatialNode", active: true, lastCellKeys: [] } as unknown);
+    world.addComponent(entity, { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] } as CollisionEventsComponent);
     return entity;
   }
 
   function createBullet(x: number, y: number): Entity {
     const entity = world.createEntity();
-    world.addComponent(entity, { type: "Bullet" } as unknown);
-    world.addComponent(entity, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1, dirty: true } as TransformComponent);
+    world.addComponent(entity, { type: "Bullet" } as BulletComponent);
+    world.addComponent(entity, { type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1, worldX: x, worldY: y, dirty: true } as TransformComponent);
     world.addComponent(entity, {
       type: "Collider2D",
       shape: { type: "circle", radius: 2 },
       layer: 2, // BULLET_LAYER
-      mask: 1   // ASTEROID_LAYER
+      mask: 1,   // ASTEROID_LAYER
+      enabled: true,
+      offsetX: 0,
+      offsetY: 0
     } as Collider2DComponent);
     world.addComponent(entity, { type: "SpatialNode", active: true, lastCellKeys: [] } as unknown);
+    world.addComponent(entity, { type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: [] } as CollisionEventsComponent);
     return entity;
   }
 
@@ -59,6 +86,8 @@ describe("Asteroids ECS - SpatialGrid Collisions", () => {
     const bullet = createBullet(55, 55);
 
     game.runSimulationStep(16, false);
+    world.flush();
+    game.runSimulationStep(16, false); // Step 2: Resolve collisions
     world.flush();
 
     expect(world.hasEntity(bullet)).toBe(false);
@@ -70,7 +99,9 @@ describe("Asteroids ECS - SpatialGrid Collisions", () => {
     const asteroid = createAsteroid(95, 50);
     const bullet = createBullet(105, 50); // Cell 1,0
 
-    game.runSimulationStep(16, false);
+    game.runSimulationStep(16, false); // Step 1: Detect collisions
+    world.flush();
+    game.runSimulationStep(16, false); // Step 2: Resolve collisions
     world.flush();
 
     expect(world.hasEntity(bullet)).toBe(false);
