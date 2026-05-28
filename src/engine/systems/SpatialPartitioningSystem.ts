@@ -3,6 +3,7 @@ import { World } from "../core/World";
 import { TransformComponent, SpatialNodeComponent, Camera2DComponent, Collider2DComponent } from "../core/CoreComponents";
 import { SpatialGrid } from "../physics/utils/SpatialGrid";
 import { BroadPhase } from "../physics/collision/BroadPhase";
+import { ScreenConfig } from "../types/CommonTypes";
 
 /**
  * Sistema de Particionado Espacial Unificado (USSC).
@@ -51,12 +52,15 @@ export class SpatialPartitioningSystem extends System {
     const viewY = mainCam?.y ?? 0;
 
     // ScreenConfig is a MANDATORY resource for correct spatial culling.
-    const screenResource = world.getResource<{ width: number, height: number }>("ScreenConfig");
+    let screenResource = world.getResource<ScreenConfig>("ScreenConfig");
     if (!screenResource) {
-        throw new Error(
-            "[SpatialPartitioningSystem] Missing mandatory 'ScreenConfig' resource. " +
-            "Spatial culling and partitioning require explicit viewport dimensions to operate correctly."
-        );
+        if (process.env.NODE_ENV !== "production") {
+            console.warn(
+                "[SpatialPartitioningSystem] Missing 'ScreenConfig' resource. " +
+                "Using fallback 800x600. Ensure it's set in AsteroidsGame.init()"
+            );
+        }
+        screenResource = { width: 800, height: 600 };
     }
 
     const camWithDims = mainCam as (Camera2DComponent & { width?: number; height?: number }) | null;

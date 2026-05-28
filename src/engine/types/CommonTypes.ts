@@ -13,3 +13,8 @@ export interface AABB {
   maxX: number;
   maxY: number;
 }
+
+export interface ScreenConfig {
+  width: number;
+  height: number;
+}

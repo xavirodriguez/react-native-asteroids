@@ -8,6 +8,7 @@ import { Entity } from "../core/Entity";
 import { EventBus } from "../core/EventBus";
 import { LootTableComponent, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, TTLComponent, PowerUpComponent, BoundaryComponent } from "../core/CoreComponents";
 import { RandomService } from "../utils/RandomService";
+import { ScreenConfig } from "../types/CommonTypes";
 
 /**
  * Coordinates loot generation based on entity destruction events.
@@ -72,7 +73,7 @@ export class LootSystem extends System {
     const vx = (rng.next() - 0.5) * 50;
     const vy = (rng.next() - 0.5) * 50;
 
-    const screen = world.getResource<{ width: number, height: number }>("ScreenConfig");
+    const screen = world.getResource<ScreenConfig>("ScreenConfig");
     const viewport = {
       width: screen?.width ?? 800,
       height: screen?.height ?? 600
