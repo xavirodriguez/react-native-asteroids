@@ -27,8 +27,8 @@ import { RenderSnapshotProvider } from "./RenderSnapshotProvider";
  * restauración si la aplicación permanece en segundo plano.
  *
  * ### Estrategias de Optimización:
- * 1. **Reutilización de Pinturas**: Busca minimizar alocaciones mediante la reutilización
- *    de objetos `SkPaint`.
+ * 1. **Reutilización de Pinturas**: Busca ayudar a minimizar per-frame alocaciones
+ *    mediante la reutilización de objetos `SkPaint`.
  * 2. **Aceleración por GPU**: Delega operaciones complejas al backend nativo para
  *    favorecer la fluidez visual.
  */

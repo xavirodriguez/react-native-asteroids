@@ -1,12 +1,14 @@
 import { InputFrame } from "../../multiplayer/NetTypes";
 
 /**
- * Input frame synchronization manager for lockstep-style networking.
+ * Input frame buffer for network synchronization.
  *
  * API status: Internal
  *
  * @remarks
- * Designed to buffer local and remote inputs, aiming to ensure they are applied at the correct tick.
+ * Designed to buffer local and remote inputs, with the goal of applying them at
+ * the intended simulation tick. In practice, its effectiveness is subject to
+ * network latency and the selected synchronization strategy.
  */
 export class InputBuffer {
   private localBuffer: Map<number, InputFrame> = new Map();

@@ -1,10 +1,12 @@
 /**
- * Generic interface for network communication.
+ * Interface for network communication abstractions.
  *
  * API status: Public
  *
  * @remarks
- * Allows decoupling the engine from specific transport implementations (WebSockets, WebRTC, etc.).
+ * Designed to help decouple the engine from specific transport implementations
+ * (WebSockets, WebRTC, etc.). Synchronization guarantees are typically provided
+ * by the underlying protocol and implementation rather than this interface.
  */
 export interface NetworkTransport {
   /**

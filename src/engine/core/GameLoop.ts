@@ -22,8 +22,8 @@ export interface GameLoopConfig {
  * **Precision**: The simulation phase is configured to target constant increments of
  * 16.67ms (1/60s). In practice, real-world precision is subject to environment
  * constraints such as the JavaScript Event Loop, `performance.now()` variability,
- * and system load. Consistency across different devices is intended but cannot be
- * guaranteed.
+ * and system load. Consistency across different devices is intended but is typically
+ * influenced by these factors.
  *
  * @conceptualRisk [PERFORMANCE] The loop may encounter a "Spiral of Death" if the
  * simulation is consistently slower than real-time. A safety mechanism

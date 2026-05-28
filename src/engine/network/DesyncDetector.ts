@@ -11,7 +11,9 @@ export interface DesyncThresholds {
  * Encapsulates the logic for detecting divergences between predicted and authoritative states.
  *
  * @remarks
- * Desync detection is based on heuristic thresholds for spatial properties.
+ * Desync detection in this system is based on heuristic thresholds for spatial properties.
+ * It is not an absolute check for identity but rather a mechanism to identify
+ * functional divergences that may require correction.
  * Small divergences are expected due to floating-point variability or differences
  * in execution timing. The detector aims to identify significant drifts that
  * require state reconciliation.

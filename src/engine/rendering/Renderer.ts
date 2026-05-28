@@ -53,7 +53,7 @@ export type EffectDrawer<TContext> = (
  *
  * @remarks
  * Renderers act as read-only consumers of the {@link World} state. The architecture
- * is designed to support backend abstraction (e.g., Canvas, Skia) and decoupling
+ * is designed to help support backend abstraction (e.g., Canvas, Skia) and decoupling
  * of simulation and rendering frequencies through snapshots and interpolation.
  *
  * Drawing operations are intended to be side-effect free relative to simulation components.

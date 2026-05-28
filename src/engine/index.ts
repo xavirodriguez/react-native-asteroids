@@ -13,7 +13,9 @@
  *
  * The engine is designed to help minimize per-frame allocations in hot paths. It aims to
  * support simulation consistency when used under controlled conditions (e.g., seeded RNG,
- * consistent execution order, and adherence to recommended mutation patterns).
+ * consistent execution order, and adherence to recommended mutation patterns). In
+ * practice, factors such as the JavaScript execution environment and hardware
+ * variability may influence the achieved level of consistency and performance.
  *
  * ### Standard Units
  *
