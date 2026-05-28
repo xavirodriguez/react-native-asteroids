@@ -175,6 +175,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   private _isPaused = false;
   private _listeners = new Set<UpdateListener<TState>>();
   private _globalKeyHandler = (e: KeyboardEvent) => this._handleGlobalKey(e);
+  private _resizeHandler = () => this._handleResize();
   protected _config: BaseGameConfig;
   protected hierarchySystem: HierarchySystem;
   protected interpolationPrepSystem: InterpolationPrepSystem;
@@ -539,6 +540,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     this.stop();
     this.unifiedInput.cleanup();
     this._unregisterKeyboardListeners();
+    this._unregisterResizeListener();
     this._listeners.clear();
 
     this.eventBus.clear();
@@ -634,6 +636,12 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     world.setResource("UnifiedInputSystem", this.unifiedInput);
     world.setResource("AudioSystem", this.audio);
     world.setResource("SpatialGrid", this.spatialGrid);
+
+    // Initialize ScreenConfig with safe defaults or window dimensions
+    const initialWidth = typeof window !== 'undefined' ? window.innerWidth : 800;
+    const initialHeight = typeof window !== 'undefined' ? window.innerHeight : 600;
+    world.setResource("ScreenConfig", { width: initialWidth, height: initialHeight });
+    this._registerResizeListener();
 
     // Prevent accumulation of systems during restarts if they already exist in this world instance
     const existingSystems = world.systemsList;
@@ -736,5 +744,24 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
     if (e.code === this._config.restartKey) {
       this.restart().catch(console.error);
     }
+  }
+
+  private _registerResizeListener(): void {
+    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+      window.addEventListener("resize", this._resizeHandler);
+    }
+  }
+
+  private _unregisterResizeListener(): void {
+    if (typeof window !== "undefined" && typeof window.removeEventListener === "function") {
+      window.removeEventListener("resize", this._resizeHandler);
+    }
+  }
+
+  private _handleResize(): void {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    this.getWorld().setResource("ScreenConfig", { width, height });
+    console.debug(`[BaseGame] ScreenConfig updated: ${width}x${height}`);
   }
 }

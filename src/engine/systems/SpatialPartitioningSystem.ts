@@ -50,13 +50,18 @@ export class SpatialPartitioningSystem extends System {
     const viewX = mainCam?.x ?? 0;
     const viewY = mainCam?.y ?? 0;
 
-    // ScreenConfig is a MANDATORY resource for correct spatial culling.
-    const screenResource = world.getResource<{ width: number, height: number }>("ScreenConfig");
+    // ScreenConfig is recommended for correct spatial culling.
+    let screenResource = world.getResource<{ width: number, height: number }>("ScreenConfig");
     if (!screenResource) {
-        throw new Error(
-            "[SpatialPartitioningSystem] Missing mandatory 'ScreenConfig' resource. " +
-            "Spatial culling and partitioning require explicit viewport dimensions to operate correctly."
+        console.warn(
+            "[SpatialPartitioningSystem] Missing 'ScreenConfig' resource. " +
+            "Spatial culling and partitioning require explicit viewport dimensions to operate correctly. " +
+            "Falling back to window dimensions or 800x600."
         );
+        screenResource = {
+            width: typeof window !== 'undefined' ? window.innerWidth : 800,
+            height: typeof window !== 'undefined' ? window.innerHeight : 600
+        };
     }
 
     const camWithDims = mainCam as (Camera2DComponent & { width?: number; height?: number }) | null;

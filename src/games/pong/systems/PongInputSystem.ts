@@ -2,7 +2,7 @@ import { System } from "../../../engine/core/System";
 import { World } from "../../../engine/core/World";
 import { VelocityComponent, TagComponent, InputStateComponent } from "../../../engine/types/EngineTypes";
 import { type PongInput } from "../types";
-import { PongConfig } from "../types/PongConfigSchema";
+import { PongConfig, DEFAULT_PONG_CONFIG } from "../types/PongConfigSchema";
 import { InputUtils } from "../../../engine/utils/ComponentUtils";
 import { AIPongController } from "../input/AIPongController";
 import { NetworkController } from "../input/NetworkController";
@@ -29,7 +29,7 @@ export class PongInputSystem extends System {
 
   public update(world: World, deltaTime: number): void {
     if (!this.config) {
-        this.config = world.getResource<PongConfig>("GameConfig")!;
+        this.config = world.getResource<PongConfig>("GameConfig") || DEFAULT_PONG_CONFIG;
     }
     this.currentTick++;
     this.currentTime += deltaTime;
@@ -69,7 +69,7 @@ export class PongInputSystem extends System {
       }
 
       world.mutateComponent<VelocityComponent>(entity, "Velocity", vel => {
-        vel.dy = moveDir * this.config!.PADDLE_SPEED;
+        vel.dy = moveDir * (this.config?.PADDLE_SPEED ?? DEFAULT_PONG_CONFIG.PADDLE_SPEED);
       });
     });
   }

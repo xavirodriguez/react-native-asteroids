@@ -18,3 +18,24 @@ export const PongConfigSchema = BaseConfigSchema.extend({
 });
 
 export type PongConfig = z.infer<typeof PongConfigSchema>;
+
+/**
+ * Default Pong configuration for fallback.
+ */
+export const DEFAULT_PONG_CONFIG: PongConfig = {
+  WIDTH: 800,
+  HEIGHT: 600,
+  PADDLE_WIDTH: 15,
+  PADDLE_HEIGHT: 80,
+  BALL_SIZE: 10,
+  PADDLE_SPEED: 400,
+  BALL_SPEED_START: 300,
+  BALL_SPEED_INC: 20,
+  WIN_SCORE: 11,
+  BALL_INVISIBLE_AFTER_HIT_TICKS: 0,
+  KEYS: {
+    PAUSE: "Escape",
+    RESTART: "KeyR"
+  },
+  ENEMY_SFX_ENABLED: true
+};
