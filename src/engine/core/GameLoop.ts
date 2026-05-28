@@ -4,7 +4,7 @@ export type RenderListener = (alpha: number, deltaTime: number) => void;
 
 export interface GameLoopConfig {
   maxDeltaMs?: number;
-  /** Límite máximo de actualizaciones de simulación permitidas por frame real. */
+  /** Maximum number of simulation updates allowed per real frame to help prevent main thread blocking. */
   maxUpdatesPerFrame?: number;
 }
 
@@ -43,7 +43,7 @@ export class GameLoop {
    */
   public setAccumulator(val: number): void { this.accumulator = val; }
 
-  private readonly fixedDeltaTime = 1000 / 60; // 60 FPS simulación
+  private readonly fixedDeltaTime = 1000 / 60; // 60 FPS simulation
   private readonly maxDeltaMs: number;
   private readonly maxUpdatesPerFrame: number;
 
@@ -134,7 +134,7 @@ export class GameLoop {
   }
 
   /**
-   * Inicia la ejecución del loop.
+   * Starts the execution of the game loop.
    */
   public start(): void {
     if (this.isRunning) return;
@@ -144,7 +144,7 @@ export class GameLoop {
   }
 
   /**
-   * Detiene el loop.
+   * Stops the game loop.
    */
   public stop(): void {
     this.isRunning = false;
@@ -179,8 +179,8 @@ export class GameLoop {
       if (updatesThisFrame >= this.maxUpdatesPerFrame) {
         /**
          * Warning: Spiral of Death detected.
-         * Se descarta el tiempo acumulado sobrante con la intención de mitigar el riesgo de bloqueo del hilo principal.
-         * En la práctica, esto sacrifica la precisión temporal y el determinismo en favor de la estabilidad del entorno.
+         * Remaining accumulated time is discarded to help mitigate the risk of blocking the main thread.
+         * In practice, this favors environment stability over temporal accuracy and simulation consistency.
          */
         console.warn(`[GameLoop] Spiral of Death detected. Dropping remaining ticks for this frame to preserve stability. (Updates: ${updatesThisFrame})`);
         this.accumulator = 0;

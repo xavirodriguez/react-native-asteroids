@@ -16,10 +16,10 @@ import { Entity } from "../types/EngineTypes";
  * 4. **Lazy Sorting**: Queries use an internal `Set` for membership changes.
  *    The result array is rebuilt and sorted upon the first access after a change.
  *
- * ### Performance Characteristics:
- * - **Membership Check**: Designed for O(1) performance using an internal `Set`.
- * - **Access**: Getting the list of entities is approximately O(1) unless the world has undergone
- *   a structural mutation. Subsequent accesses to the same view are O(1).
+ * ### Intended Performance Characteristics:
+ * - **Membership Check**: Designed to provide O(1) performance using an internal `Set`.
+ * - **Access**: Getting the list of entities is intended to be O(1) when the internal cache is valid.
+ *   Cache invalidation occurs during structural mutations, requiring a rebuild.
  * - **Memory**: Retains references to matching Entity IDs and caches one sorted array.
  *
  * @conceptualRisk [MUTABLE_CACHE_LEAK] `getEntities()` returns a shallow copy to

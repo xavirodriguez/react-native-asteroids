@@ -98,17 +98,17 @@ export abstract class System {
    *
    * @remarks
    * Systems typically query relevant entities via {@link World.query} and apply
-   * transformations to their components. To support reproducibility and rollbacks,
+   * transformations to their components. To support reproducibility and consistency,
    * it is recommended to avoid non-serializable internal mutable state.
    *
    * @warning **Structural Mutations**: Modifying world structure (creating/removing entities
-   * or components) while iterating over a query is typically restricted as it may
-   * invalidate iterators or lead to inconsistent state. It is strongly recommended to
-   * use {@link World.getCommandBuffer} to defer these operations until the end of the tick.
+   * or components) while iterating over a query is restricted as it may
+   * invalidate iterators or lead to inconsistent state. Use {@link World.getCommandBuffer}
+   * to defer these operations until the end of the tick.
    *
-   * @warning **Asynchronous Logic**: Systems are expected to be synchronous. Using `async/await`
+   * @warning **Asynchronous Logic**: Systems must be synchronous. Using `async/await`
    * within `update` is NOT supported by the engine's core loop and will likely lead
-   * to race conditions, broken simulation integrity, and non-deterministic behavior.
+   * to race conditions, broken simulation integrity, and unpredictable behavior.
    *
    * @remarks
    * World state is expected to be consistent at the start of the update cycle.

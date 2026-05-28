@@ -144,8 +144,11 @@ export class World {
   }
 
   /**
-   * Provee acceso al generador de números aleatorios para efectos visuales y renderizado.
-   * No garantizado para ser determinista en el rollback.
+   * Provides access to the random number generator intended for visual effects and rendering.
+   *
+   * @remarks
+   * This stream is not intended for use in simulation logic and is not expected to be
+   * deterministic during rollback re-simulations.
    */
   public get renderRandom(): RandomService {
     if (RandomService.lockGameplayContext) {
@@ -374,7 +377,7 @@ export class World {
    * re-synchronizes queries to maintain structural integrity.
    *
    * To help reduce GC pressure, the restoration process attempts to reuse existing
-   * component objects when possible, overwriting their properties rather than
+   * component objects when possible, overwriting their properties instead of
    * allocating new objects.
    *
    * @warning **State Consistency**: Full state restoration is expected to be successful
@@ -629,7 +632,7 @@ export class World {
    * @remarks
    * In production environments, this typically returns the live reference typed as `Readonly`
    * to help minimize overhead. In development mode, the object may be proxied to help detect
-   * unauthorized mutations.
+   * direct mutations.
    *
    * For modifying component data, it is strongly recommended to use {@link World.mutateComponent}
    * to help ensure that versioning and reactive systems are correctly notified.

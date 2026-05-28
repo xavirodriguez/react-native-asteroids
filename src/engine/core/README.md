@@ -1,32 +1,32 @@
 # TinyAsterEngine Core (ECS)
 
-El núcleo del motor está basado en una arquitectura **Entity-Component-System (ECS)** diseñada con el objetivo de favorecer el rendimiento, la consistencia de simulación y la sincronización en red.
+The core of the engine is based on an **Entity-Component-System (ECS)** architecture designed to support performance, simulation consistency, and network synchronization.
 
-## 🏗️ Bloques Fundamentales
+## 🏗️ Fundamental Building Blocks
 
 ### 1. World
-El registro central. Almacena entidades y componentes. Gestiona su ciclo de vida y proporciona las `Queries` para que los sistemas accedan a los datos.
-*   **Versionado**: Mantiene `structureVersion` (cambios estructurales) y `stateVersion` (cambios en datos de componentes) con la intención de ayudar a optimizar el renderizado y la sincronización.
+The central registry. Stores entities and components. Manages their lifecycle and provides `Queries` for systems to access data.
+*   **Versioning**: Maintains `structureVersion` (structural changes) and `stateVersion` (component data changes) intended to help optimize rendering and synchronization.
 
 ### 2. Entity
-Un simple identificador numérico único. Las entidades no contienen lógica; actúan como claves para asociar componentes.
+A simple unique numeric identifier. Entities do not contain logic; they act as keys to associate components.
 
 ### 3. Component
-Estructuras de datos (POJOs). Representan el estado (posición, salud, velocidad).
-*   **Recomendación**: Se sugiere que no contengan funciones ni lógica compleja para facilitar la serialización (`World.snapshot()`).
+Data structures (POJOs). They represent state (position, health, velocity).
+*   **Recommendation**: It is recommended that they do not contain functions or complex logic to help facilitate serialization (`World.snapshot()`).
 
 ### 4. System
-Contiene la lógica de ejecución. Los sistemas iteran sobre grupos de entidades (filtradas por componentes) y mutan su estado.
-*   **Pipeline**: Los sistemas se ejecutan en fases predefinidas (Input, Simulation, Collision, Presentation).
+Contains execution logic. Systems iterate over groups of entities (filtered by components) and mutate their state.
+*   **Pipeline**: Systems are executed in predefined phases (Input, Simulation, Collision, Presentation).
 
-## 🔄 El Bucle de Juego (GameLoop)
+## 🔄 The GameLoop
 
-El motor utiliza un esquema de **Fixed Timestep / Variable Rendering**:
-1.  **Update (Lógica)**: Se orienta a una frecuencia fija (60Hz). Busca favorecer la consistencia en la física y las reglas de juego.
-2.  **Render (Presentación)**: Se ejecuta según el refresco del entorno. Utiliza un factor de interpolación (`alpha`) con la intención de suavizar el movimiento visual entre ticks físicos.
+The engine uses a **Fixed Timestep / Variable Rendering** scheme:
+1.  **Update (Logic)**: Oriented towards a fixed frequency (60Hz). Aims to support consistency in physics and game rules.
+2.  **Render (Presentation)**: Executes according to the environment's refresh rate. Uses an interpolation factor (`alpha`) intended to help smooth visual motion between physical ticks.
 
-## 🛡️ Prácticas Recomendadas
+## 🛡️ Recommended Practices
 
-1.  **Mutación Autorizada**: Se recomienda utilizar `world.mutateComponent()` o `world.mutateSingleton()` como el método principal para modificar datos. Esto está diseñado para que el motor pueda rastrear cambios de versión y gestionar el estado de renderizado de forma coherente.
-2.  **Seguridad de Iteradores**: Durante el `update` de un sistema, los cambios estructurales (crear/destruir entidades o añadir/quitar componentes) deben diferirse típicamente a través del `WorldCommandBuffer`. Esto busca evitar inconsistencias al iterar sobre queries activas.
-3.  **Consistencia de Simulación**: Para favorecer la reproducibilidad, se recomienda evitar el uso de fuentes de tiempo o aleatoriedad externas (como `Math.random()` o `Date.now()`) dentro de los Sistemas. En su lugar, utilice `world.gameplayRandom` y `world.tick`.
+1.  **Authorized Mutation**: It is recommended to use `world.mutateComponent()` or `world.mutateSingleton()` as the primary method for modifying data. This is designed to allow the engine to track version changes and manage rendering state consistently.
+2.  **Iterator Safety**: During a system's `update`, structural changes (creating/destroying entities or adding/removing components) should typically be deferred via the `WorldCommandBuffer`. This aims to avoid inconsistencies when iterating over active queries.
+3.  **Simulation Consistency**: To support reproducibility, it is recommended to avoid using external time or randomness sources (such as `Math.random()` or `Date.now()`) within Systems. Instead, use `world.gameplayRandom` and `world.tick`.
