@@ -63,6 +63,7 @@ export class SpaceInvadersGame
       : { ...baseConfig };
 
     this.world.setResource("GameConfig", this.config);
+    this.world.setResource("ScreenConfig", { width: this.config.SCREEN_WIDTH, height: this.config.SCREEN_HEIGHT });
     this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     await this.onPreloadAssets();
