@@ -76,7 +76,7 @@ export class MutatorService {
       return { mutators: this.cachedMutators, source };
     }
 
-    // Deterministic selection based on seed
+    // Seed-based selection intended for cross-client consistency.
     const hash = this.stringToHash(String(seed));
     const m1 = MUTATORS[Math.abs(hash) % MUTATORS.length];
     const m2 = MUTATORS[Math.abs(hash + 1) % MUTATORS.length];

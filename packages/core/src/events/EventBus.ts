@@ -25,11 +25,6 @@ export type EventHandler<TPayload> = (payload: TPayload, event: string) => void;
 
 /**
  * Messaging system designed for synchronous and deferred communication based on the Pub/Sub pattern.
-  *
-  * @remarks
-  * The EventBus is intended to facilitate decoupled communication. While it supports
-  * synchronous emission, using {@link EventBus.emitDeferred} is recommended within
-  * simulation logic to help isolate side effects and maintain simulation integrity.
  */
 export class EventBus<TEvents extends EventRegistry = EventRegistry> {
   private handlers = new Map<string, Set<EventHandler<any>>>();

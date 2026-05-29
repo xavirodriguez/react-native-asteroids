@@ -1,15 +1,14 @@
 import { Component, IHierarchicalComponent } from "./CoreComponents";
 import { Entity } from "./Entity";
-import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
-
-type DeepReadonly<T> = T extends (...args: unknown[]) => unknown
-  ? T
-  : T extends unknown[]
-  ? ReadonlyArray<DeepReadonly<T[number]>>
-  : T extends object
-  ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
-  : T;
-
+import { WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../types/EngineTypes";
+import {
+  ComponentRegistry,
+  ComponentType,
+  ComponentOf,
+  DeepReadonly,
+  BlueprintRegistryMap
+} from "./Component";
+import { EventRegistry, EventBus } from "./EventBus";
 import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { ComponentCloner } from "./ComponentCloner";
@@ -24,16 +23,6 @@ interface RegisteredSystem<TComponents extends ComponentRegistry, TEvents extend
   priority: number;
 }
 
-/**
- * ECS World - Central registry managing the lifecycle of entities, components, and systems.
- *
- * @remarks
- * The World acts as the central hub for the ECS architecture. It is designed to coordinate
- * entity lifecycle, component storage, and system orchestration. While it attempts to
- * reduce overhead in common execution paths, performance and consistency are
- * influenced by the JavaScript environment, execution context, and adherence
- * to the engine's recommended mutation patterns (e.g., using {@link World.mutateComponent}).
- */
 const __DEV__ = process.env.NODE_ENV !== "production";
 const RAW_DATA = Symbol("RAW_DATA");
 
@@ -101,9 +90,6 @@ export class World<
     }
   }
 
-  /**
-   * Increments the internal simulation tick counter.
-   */
   public advanceTick(): void {
     this._tick++;
   }
@@ -152,26 +138,6 @@ export class World<
     typeMap.set(entity, this._stateVersion);
   }
 
-  /**
-   * Generates a serializable snapshot of the world state, intended for rollback or persistence.
-   *
-   * @remarks
-   * The snapshot is a deep-cloned representation of the world state, designed to facilitate
-   * state restoration. It seeks to achieve consistency by:
-   * 1. Organizing entity lists sorted by ID.
-   * 2. Sorting component types alphabetically.
-   * 3. Storing component data per type in entity-order.
-   *
-   * Functional or non-serializable data (such as event handlers, complex object instances, or
-   * external references) is typically not captured and may lead to incomplete restoration
-   * if components are not kept as plain-old-data (POD).
-   *
-   * @warning **Performance & Allocation**: Snapshotting involves deep cloning, which is intended
-   * to ensure snapshot independence and avoid reference sharing (aliasing). This process
-   * incurs a performance cost and increases GC pressure proportional to the total number of
-   * components and their complexity. Frequent snapshotting in large simulations may
-   * impact frame rate and should be monitored.
-   */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const gameplayRandom = this.gameplayRandom;
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
@@ -235,52 +201,20 @@ export class World<
         }
     }
 
-    if (target) {
-        target.entities = [...allEntities];
-        target.componentData = componentData;
-        target.nextEntityId = this.nextEntityId;
-        target.freeEntities = [...this.freeEntities];
-        target.structureVersion = this._structureVersion;
-        target.stateVersion = this._stateVersion;
-        target.seed = gameplayRandom.getSeed();
-        target.rngState = gameplayRandom.getSeed();
-        target.accumulator = this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator();
-        target.tick = this._tick;
-        return target;
-    }
-
-    return {
-      entities: [...allEntities],
-      componentData,
-      nextEntityId: this.nextEntityId,
-      freeEntities: [...this.freeEntities],
-      structureVersion: this._structureVersion,
-      stateVersion: this._stateVersion,
-      seed: gameplayRandom.getSeed(),
-      rngState: gameplayRandom.getSeed(),
-      accumulator: this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator(),
-      tick: this._tick
-    };
+    const result = target ?? ({} as WorldSnapshot);
+    result.entities = [...allEntities];
+    result.componentData = componentData;
+    result.nextEntityId = this.nextEntityId;
+    result.freeEntities = [...this.freeEntities];
+    result.structureVersion = this._structureVersion;
+    result.stateVersion = this._stateVersion;
+    result.seed = gameplayRandom.getSeed();
+    result.rngState = gameplayRandom.getSeed();
+    result.accumulator = this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator();
+    result.tick = this._tick;
+    return result;
   }
 
-  /**
-   * Restores the world state from a previously captured snapshot.
-   *
-   * @remarks
-   * This method performs a deep restoration designed to make the live world state
-   * independent of the snapshot object. It rebuilds internal indexes and
-   * re-synchronizes queries to help maintain structural integrity.
-   *
-   * To help reduce GC pressure, the restoration process attempts to reuse existing
-   * component objects when possible, overwriting their properties instead of
-   * allocating new objects.
-   *
-   * @warning **State Consistency**: State restoration is intended to be used when
-   * the world's static structure (registered systems, component types) matches the
-   * state when the snapshot was taken. Manual restoration of resources or external
-   * state not managed by the World must be handled by the developer to help ensure
-   * simulation integrity.
-   */
   public restore(state: WorldSnapshot): void {
     this.assertCanMutateStructure("restore");
     this.activeEntities = new Set(state.entities);
@@ -397,13 +331,6 @@ export class World<
     this.commandBuffer.clear();
   }
 
-  /**
-   * Reserves a new entity ID without activating it in the world yet.
-   *
-   * @remarks
-   * Intended to be safe for use during the `update()` cycle as it does not
-   * immediately modify active entity indices.
-   */
   public reserveEntityId(): Entity {
     if (!this._freeEntitiesSorted) {
       this.freeEntities.sort((a, b) => b - a);
@@ -511,12 +438,6 @@ export class World<
     return true;
   }
 
-  /**
-   * Checks for entity existence.
-   *
-   * @remarks
-   * Performance is typically O(1) via internal Set lookup.
-   */
   public hasEntity(entity: Entity): boolean {
     return this.activeEntities.has(entity);
   }

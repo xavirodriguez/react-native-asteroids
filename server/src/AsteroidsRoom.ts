@@ -196,10 +196,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   }
 
   /**
-   * Bucle principal de actualización del servidor (Fixed Step @ 60Hz).
+   * Bucle principal de actualización del servidor (Fixed Step Target @ 60Hz).
    *
    * @remarks
-   * Sigue un pipeline estricto para mantener la autoridad del estado y la eficiencia de red:
+   * Sigue un pipeline diseñado para mantener la autoridad del estado y la eficiencia de red:
    *
    * 1. **Tick Sync**: Incrementa `serverTick`, la referencia temporal absoluta.
    * 2. **Input Recovery**: Extrae inputs del buffer de cada cliente correspondientes al tick actual.
