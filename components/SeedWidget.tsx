@@ -31,6 +31,8 @@ export const SeedWidget: React.FC<SeedWidgetProps> = ({ seed, onSeedEnter, style
     }
   };
 
+  const SEED_REGEX = /^[0-9A-F]{4}-[0-9A-F]{4}$/i;
+
   return (
     <View style={[styles.container, style]}>
       <View style={styles.displayRow}>
@@ -53,7 +55,11 @@ export const SeedWidget: React.FC<SeedWidgetProps> = ({ seed, onSeedEnter, style
             maxLength={9}
           />
           <TouchableOpacity
-            style={styles.applyButton}
+            style={[
+              styles.applyButton,
+              !SEED_REGEX.test(inputText) && styles.applyButtonDisabled
+            ]}
+            disabled={!SEED_REGEX.test(inputText)}
             onPress={() => {
               try {
                 onSeedEnter(stringToSeed(inputText));
@@ -129,6 +135,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
+  },
+  applyButtonDisabled: {
+    backgroundColor: "#444",
+    opacity: 0.5,
   },
   applyButtonText: {
     color: "#000",

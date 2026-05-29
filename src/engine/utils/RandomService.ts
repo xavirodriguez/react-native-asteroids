@@ -71,6 +71,7 @@ export class RandomService {
    * @internal
    */
   public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
+  public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
     if (this._lockGameplayContext && name !== "gameplay") {
         throw new Error(`Deterministic violation: '${name}' random accessed during simulation. Only 'gameplay' stream is allowed.`);
     }
@@ -84,48 +85,18 @@ export class RandomService {
   }
 
   /**
-   * @deprecated Static access is non-deterministic in multiplayer environments.
+   * @deprecated Use world.gameplayRandom
    */
   public static getGameplayRandom(): RandomService {
     return this.getInstance("gameplay");
   }
 
   /**
-   * @deprecated Static access is non-deterministic in multiplayer environments.
+   * @deprecated Use world.renderRandom
    */
   public static getRenderRandom(): RandomService {
     return this.getInstance("render");
   }
-
-  /**
-   * @deprecated Static access is non-deterministic in multiplayer environments.
-   */
-  public static next(): number { return this.getInstance("global").next(); }
-
-  /**
-   * @deprecated Static access is non-deterministic in multiplayer environments.
-   */
-  public static nextRange(min: number, max: number): number { return this.getInstance("global").nextRange(min, max); }
-
-  /**
-   * @deprecated Static access is non-deterministic in multiplayer environments.
-   */
-  public static nextInt(min: number, max: number): number { return this.getInstance("global").nextInt(min, max); }
-
-  /**
-   * @deprecated Static access is non-deterministic in multiplayer environments.
-   */
-  public static chance(probability: number): boolean { return this.getInstance("global").chance(probability); }
-
-  /**
-   * @deprecated Static access is non-deterministic in multiplayer environments.
-   */
-  public static nextSign(): number { return this.getInstance("global").nextSign(); }
-
-  /**
-   * @deprecated Static access is non-deterministic in multiplayer environments.
-   */
-  public static setSeed(seed: number): void { this.getInstance("global").setSeed(seed); }
 
   /**
    * Resets all static instances. Useful for tests or full engine restarts.

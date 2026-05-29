@@ -25,7 +25,7 @@ export class ComponentCloner {
     // Use native structuredClone if available (Node 17+, Modern Browsers, React Native 0.70+)
     if (typeof structuredClone === "function") {
       try {
-        return structuredClone(data);
+        return structuredClone(data) as T;
       } catch {
         // Fallback if data contains non-cloneable items (though ECS components should be POJOs)
         return this.manualDeepClone(data);
@@ -80,8 +80,8 @@ export class ComponentCloner {
       return copy as unknown as T;
     }
 
-    const copy = {} as Record<string, unknown>;
     const obj = data as Record<string, unknown>;
+    const copy = {} as Record<string, unknown>;
 
     for (const key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
