@@ -34,8 +34,6 @@ interface RegisteredSystem {
  * reduce overhead in common execution paths, performance and consistency are
  * influenced by the JavaScript environment, execution context, and adherence
  * to the engine's recommended mutation patterns (e.g., using {@link World.mutateComponent}).
- *
- * @public
  */
 const __DEV__ = process.env.NODE_ENV !== "production";
 const RAW_DATA = Symbol("RAW_DATA");

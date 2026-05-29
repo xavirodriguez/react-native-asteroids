@@ -19,11 +19,11 @@ export interface GameLoopConfig {
  * which may help mitigate the impact of performance fluctuations on physical integrity.
  * Under high load conditions, the system may limit updates to preserve environment stability.
  *
- * **Precision**: The simulation phase is configured to target constant increments of
+ * **Precision**: The simulation phase is designed to target constant increments of
  * 16.67ms (1/60s). In practice, real-world precision is subject to environment
  * constraints such as the JavaScript Event Loop, `performance.now()` variability,
- * and system load. Consistency across different devices is intended but is typically
- * influenced by these factors.
+ * and system load. Consistency across different devices is intended but is subject
+ * to these operational constraints.
  *
  * @conceptualRisk [PERFORMANCE] The loop may encounter a "Spiral of Death" if the
  * simulation is consistently slower than real-time. A safety mechanism
@@ -173,14 +173,14 @@ export class GameLoop {
     // 1. Input Phase (Variable Step)
     this.inputListeners.forEach(listener => listener(deltaTime));
 
-    // 2. Simulation Phase (Fixed Step)
+    // 2. Simulation Phase (Fixed Step Target)
     let updatesThisFrame = 0;
     while (this.accumulator >= this.fixedDeltaTime) {
       if (updatesThisFrame >= this.maxUpdatesPerFrame) {
         /**
          * Warning: Spiral of Death detected.
          * Remaining accumulated time is discarded to help mitigate the risk of blocking the main thread.
-         * In practice, this favors environment stability over temporal accuracy and simulation consistency.
+         * In practice, this favors environment stability over temporal accuracy and simulation reproducibility.
          */
         console.warn(`[GameLoop] Spiral of Death detected. Dropping remaining ticks for this frame to preserve stability. (Updates: ${updatesThisFrame})`);
         this.accumulator = 0;
