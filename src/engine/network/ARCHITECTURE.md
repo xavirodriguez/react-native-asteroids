@@ -1,10 +1,10 @@
 # Network Architecture and Synchronization
 
-TinyAsterEngine is oriented towards a **server-authoritative model with client-side prediction and reconciliation (rollback)**.
+TinyAsterEngine is designed to support a **server-authoritative model with client-side prediction and reconciliation (rollback)**.
 
 ## 📡 Communication Pipeline
 
-The synchronization flow aims to help mitigate latency and maintain consistency under controlled network conditions:
+The synchronization flow is intended to help mitigate latency and maintain consistency under controlled network conditions:
 
 1.  **Input Capture**: The client records player actions and attempts to transmit them to the server associated with a local `tick`.
 2.  **Local Prediction**: The client applies the input to its local simulation, typically providing immediate visual feedback.
@@ -26,7 +26,7 @@ Instead of transmitting the full world state, the system attempts to use compone
 Floating-point values (positions, rotations) are quantized to fixed-precision integers before transmission to help reduce data size.
 
 ### 4. Binary Serialization (MessagePack)
-Uses `BinaryCompression` to pack objects into a compact binary format, aiming to eliminate the overhead of repetitive JSON keys.
+Uses `BinaryCompression` to pack objects into a compact binary format, aiming to reduce the overhead of repetitive JSON keys.
 
 ## ⚠️ Conceptual Risks
 

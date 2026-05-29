@@ -127,6 +127,9 @@ const staticCapsulePoly: PolygonShape = {
  * para evitar divisiones por cero en colisiones casi perfectas.
  * @conceptualRisk [GC_PRESSURE][LOW] Aunque usa pools, el manifold devuelto es una referencia compartida;
  * debe procesarse inmediatamente o copiarse si se requiere persistencia.
+   *
+   * @warning **Stateful Helpers**: El uso de manifolds y pools compartidos significa que los resultados
+   * no son thread-safe y deben consumirse de forma síncrona tras la llamada a `test()`.
  */
 export class NarrowPhase {
   /**
@@ -469,7 +472,7 @@ export class NarrowPhase {
       // Calcular el solapamiento en este eje
       const overlap = Math.min(staticProjectionA.max, staticProjectionB.max) - Math.max(staticProjectionA.min, staticProjectionB.min);
 
-      // Si en ALGÚN eje no hay solapamiento, el SAT garantiza que NO hay colisión (Teorema del Eje Separador)
+      // Si en ALGÚN eje no hay solapamiento, el SAT indica que NO hay colisión (Teorema del Eje Separador)
       if (overlap <= 0) return resetManifold();
 
       // Guardar el eje con el solapamiento mínimo (MTV - Minimum Translation Vector)
@@ -484,7 +487,7 @@ export class NarrowPhase {
     manifold.colliding = true;
     manifold.depth = minOverlap;
 
-    // Garantizar que la normal siempre apunte desde el objeto A hacia el B
+    // Intenta asegurar que la normal apunte desde el objeto A hacia el B
     const dot = (bx - ax) * smallestAxisX + (by - ay) * smallestAxisY;
     if (dot < 0) {
       manifold.normalX = -smallestAxisX;

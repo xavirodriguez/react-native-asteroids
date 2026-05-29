@@ -30,7 +30,7 @@ export class CCDSystem extends System {
         CCDSystem.entitiesCache.push(query[i]);
     }
 
-    // Orden determinista para evitar desincronizaciones en multiplayer
+    // Ordenación por ID para favorecer la consistencia en entornos multiplayer
     CCDSystem.entitiesCache.sort((a, b) => a - b);
 
     const entities = CCDSystem.entitiesCache;
