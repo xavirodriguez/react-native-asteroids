@@ -10,8 +10,8 @@ describe("DamageNumberSystem", () => {
         RandomService.resetInstances();
     });
 
-    it("should use render RNG and not advance gameplay RNG", () => {
-        const gameplayRandom = RandomService.getGameplayRandom();
+    it("should use world.renderRandom and not advance world.gameplayRandom", () => {
+        const gameplayRandom = world.gameplayRandom;
         gameplayRandom.setSeed(12345);
 
         // Initial value from gameplay RNG
@@ -28,12 +28,15 @@ describe("DamageNumberSystem", () => {
         expect(valueAfter).toBe(initialValue);
     });
 
-    it("should advance render RNG", () => {
-        const renderRandom = RandomService.getRenderRandom();
+    it("should advance world.renderRandom", () => {
+        const renderRandom = world.renderRandom;
         renderRandom.setSeed(12345);
 
-        const initialValue = renderRandom.next();
+        // Advance once to have an initial value
+        renderRandom.next();
+        const valueAtStart = renderRandom.next();
 
+        // Reset to state before createDamageNumber
         renderRandom.setSeed(12345);
 
         DamageNumberSystem.createDamageNumber(world, 100, 100, 10);
@@ -41,6 +44,6 @@ describe("DamageNumberSystem", () => {
         const valueAfter = renderRandom.next();
         // Since createDamageNumber calls next() twice for velocity x and y
         // we expect it to have advanced.
-        expect(valueAfter).not.toBe(initialValue);
+        expect(valueAfter).not.toBe(valueAtStart);
     });
 });

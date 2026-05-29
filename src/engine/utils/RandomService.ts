@@ -69,7 +69,7 @@ export class RandomService {
    * Internal access to static instances.
    * @internal
    */
-  private static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
+  public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
     if (this._lockGameplayContext && name !== "gameplay") {
         throw new Error(`Deterministic violation: '${name}' random accessed during simulation. Only 'gameplay' stream is allowed.`);
     }
@@ -80,6 +80,20 @@ export class RandomService {
       this.namedInstances.set(name, instance);
     }
     return instance;
+  }
+
+  /**
+   * @deprecated Use world.gameplayRandom
+   */
+  public static getGameplayRandom(): RandomService {
+    return this.getInstance("gameplay");
+  }
+
+  /**
+   * @deprecated Use world.renderRandom
+   */
+  public static getRenderRandom(): RandomService {
+    return this.getInstance("render");
   }
 
   /**

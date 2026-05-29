@@ -48,17 +48,17 @@ export class AsteroidInputSystem extends System {
         this.config = world.getResource<AsteroidConfig>("GameConfig")!;
     }
     if (this.isMultiplayer) return; // Inputs handled by React hook in multiplayer
+    const inputState = world.getSingleton<InputStateComponent>("InputState");
     const ships = world.query("Ship", "Input");
     ships.forEach((entity) => {
       world.mutateComponent<InputComponent>(entity, "Input", (input) => {
-        this.updateShipInputState({ world, input });
+        this.updateShipInputState({ input, inputState });
       });
     });
   }
 
-  private updateShipInputState(context: { world: World, input: InputComponent }): void {
-    const { world, input } = context;
-    const inputState = world.getSingleton<InputStateComponent>("InputState");
+  private updateShipInputState(context: { input: InputComponent, inputState?: import("../../../engine/core/CoreComponents").InputStateComponent | null }): void {
+    const { input, inputState } = context;
     if (inputState) {
       // Direct action overrides
       input.thrust = InputUtils.isPressed(inputState, "thrust");

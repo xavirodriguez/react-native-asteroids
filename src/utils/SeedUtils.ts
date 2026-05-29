@@ -34,3 +34,8 @@ export function stringToSeed(s: string): number {
 export function isValidSeedString(s: string): boolean {
   return /^[0-9A-F]{4}-[0-9A-F]{4}$/i.test(s);
 }
+
+/**
+ * Regex for XXXX-XXXX format validation.
+ */
+export const SEED_FORMAT_REGEX = /^[0-9A-F]{4}-[0-9A-F]{4}$/i;
