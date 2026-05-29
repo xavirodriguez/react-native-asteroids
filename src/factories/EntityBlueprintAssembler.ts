@@ -20,14 +20,15 @@ import {
  * High-performance assembler for creating entities from blueprints.
  *
  * @remarks
- * Designed to help minimize per-frame allocations by recycling component objects.
+ * Designed to help reduce per-frame allocations by attempting to recycle component objects.
  * While core hydration is intended to be efficient, some data patterns or overrides
  * might still trigger minor allocations depending on the environment.
  */
 export class EntityBlueprintAssembler {
   /**
    * Hydrates an entity from a blueprint.
-   * Utilizes pre-compiled copy plans and component recycling to help reduce overhead.
+   * Utilizes pre-compiled copy plans and component recycling with the goal of
+   * helping reduce overhead.
    */
   public static assemble(
     world: World,

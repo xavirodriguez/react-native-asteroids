@@ -1,16 +1,21 @@
 import { WorldSnapshot } from "../types/EngineTypes";
 
 /**
- * Utility for efficient and safe cloning of ECS components and snapshots.
- * Ensures that snapshots and live world state do not share object references (aliasing),
- * which is critical for deterministic rollback and netcode.
+ * Utility for cloning of ECS components and snapshots.
+ * Designed to help ensure that snapshots and live world state do not share object
+ * references (aliasing), which is an important factor for deterministic rollback
+ * and netcode.
+ *
+ * @warning **Performance & Allocation**: Cloning is an expensive operation that
+ * increases GC pressure. It is intended to be used judiciously, such as during
+ * snapshotting for state persistence or network synchronization.
  */
 export class ComponentCloner {
   /**
-   * Performs a deep clone of a component data object or any POJO.
+   * Attempts to perform a deep clone of a component data object or any POJO.
    *
    * @param data - The data to clone.
-   * @returns A deep copy of the input data.
+   * @returns A copy of the input data.
    */
   public static cloneComponent<T>(data: T): T {
     if (data === null || typeof data !== "object") {
@@ -31,10 +36,10 @@ export class ComponentCloner {
   }
 
   /**
-   * Deep clones an entire WorldSnapshot object.
+   * Attempts to create a deep clone of an entire WorldSnapshot object.
    *
    * @param snapshot - The snapshot to clone.
-   * @returns A completely independent WorldSnapshot instance.
+   * @returns A WorldSnapshot instance designed to be independent of the source.
    */
   public static deepCloneSnapshot(snapshot: WorldSnapshot): WorldSnapshot {
     // Entities and freeEntities are flat arrays of numbers

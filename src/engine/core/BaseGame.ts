@@ -71,6 +71,13 @@ export abstract class BaseGame<
   protected hierarchySystem: HierarchySystem;
   protected interpolationPrepSystem: InterpolationPrepSystem;
 
+  /**
+  * Abstract hook to configure the platform-specific renderer.
+  *
+  * @param renderer - Instance of the renderer (Canvas, Skia, etc).
+  *
+  * @public
+  */
   public abstract initializeRenderer(renderer: import("../rendering/Renderer").Renderer<unknown>): void;
 
   constructor(config: BaseGameConfig = {}) {
@@ -102,10 +109,16 @@ export abstract class BaseGame<
     this._setupAudioListeners();
   }
 
+  /**
+  * Returns the input system aggregator.
+  */
   public getInputSystem(): UnifiedInputSystem {
     return this.unifiedInput;
   }
 
+/**
+  * Configures global semantic audio listeners.
+  */
   private _setupAudioListeners(): void {
     this.eventBus.on("audio:play_sfx" as any, (payload: { name: string }) => {
       this.audio.playSFX(payload.name);
@@ -128,6 +141,9 @@ export abstract class BaseGame<
     });
   }
 
+  /**
+  * Internal loop configuration implementing the engine's simulation pipeline.
+  */
   private setupLoop(): void {
     this.gameLoop.subscribeUpdate((deltaTime) => {
       if (this._isPaused) return;
@@ -183,6 +199,13 @@ export abstract class BaseGame<
     this.gameLoop.start();
   }
 
+  /**
+  * Stops the simulation loop.
+  *
+  * @remarks
+  * When called, the {@link GameLoop} is expected to stop and the
+  * status transitions to `STOPPED`.
+  */
   public stop(): void {
     if (
       this._status === GameStatus.UNINITIALIZED ||
@@ -196,6 +219,15 @@ export abstract class BaseGame<
     this._status = GameStatus.STOPPED;
   }
 
+  /**
+  * Pauses simulation logic while keeping the renderer active.
+  *
+  * @remarks
+  * Idempotent. Only effective if status is `RUNNING`.
+  *
+  * Postcondition: `_isPaused` set to `true`.
+  * Side Effect: Notifies current scene and external subscribers.
+  */
   public pause(): void {
     if (this._status !== GameStatus.RUNNING || this._isPaused) return;
     this._isPaused = true;
@@ -203,6 +235,14 @@ export abstract class BaseGame<
     this._notifyListeners();
   }
 
+  /**
+  * Resumes simulation logic.
+  *
+  * @remarks
+  * Idempotent. Only effective if currently paused.
+  *
+  * Postcondition: `_isPaused` set to `false`.
+  */
   public resume(): void {
     if (this._status !== GameStatus.RUNNING || !this._isPaused) return;
     this._isPaused = false;
@@ -214,6 +254,19 @@ export abstract class BaseGame<
   public getStatus(): GameStatus { return this._status; }
   public getGameLoop(): GameLoop { return this.gameLoop; }
 
+  /**
+  * Attempts to restart the game state, optionally with a new seed.
+  *
+  * @remarks
+  * State transition is designed to be protected by a lock. It typically pauses
+  * simulation and clears volatile resources to help prevent memory leaks.
+  *
+  * Logic:
+  * - If an active Scene exists, delegates restart to `SceneManager`.
+  * - Otherwise, clears the global World, re-registers systems, and re-spawns entities.
+  *
+  * @param seed - Optional new seed for deterministic PRNG.
+  */
   public async restart(seed?: number): Promise<void> {
     if (this._status === GameStatus.DESTROYED) {
       throw new Error("BaseGame: Cannot restart() on a destroyed game.");
@@ -277,6 +330,15 @@ export abstract class BaseGame<
     }
   }
 
+  /**
+  * Releases resources and shuts down the engine.
+  *
+  * @remarks
+  * Stops the loop, cleans up input listeners, and clears subscriptions.
+  * Once destroyed, the instance cannot be reused.
+  *
+  * Postcondition: Status set to `DESTROYED`.
+  */
   public destroy(): void {
     if (this._status === GameStatus.DESTROYED) {
       return;
@@ -307,6 +369,25 @@ export abstract class BaseGame<
     return this.currentSeed;
   }
 
+  /**
+  * Attempts to initialize the game and its subsystems asynchronously.
+  *
+  * @remarks
+  * Initialization process intended to occur before {@link BaseGame.start}.
+  *
+  * ### Concurrency Control:
+  * The process uses an internal `_transitionLock` (Promise-based lock) designed to
+  * help ensure that multiple calls to `init()` or `restart()` do not overlap,
+  * with the goal of reducing the risk of inconsistent engine states during system registration.
+  *
+  * Expected Flow:
+  * 1. Register Essential Resources (EventBus, Input, Audio, SpatialGrid).
+  * 2. Execute `registerSystems()` (User Hook).
+  * 3. Execute `initializeEntities()` (User Hook).
+  * 4. Transition status to `READY`.
+  *
+  * @throws Error - If already initialized or currently in progress.
+  */
   public async init(): Promise<void> {
     if (this._status === GameStatus.DESTROYED) return;
     if (this._status !== GameStatus.UNINITIALIZED) {
@@ -394,6 +475,11 @@ export abstract class BaseGame<
     });
   }
 
+  /**
+  * Subscribes to lifecycle update events.
+  *
+  * @returns Unsubscribe function.
+  */
   public subscribe(listener: UpdateListener<TState>): () => void {
     if (this._status === GameStatus.DESTROYED) {
       console.warn("BaseGame: Attempted to subscribe to a DESTROYED game.");
@@ -405,6 +491,9 @@ export abstract class BaseGame<
 
   protected _onBeforeRestart(): void | Promise<void> {}
 
+  /**
+  * Generates an external seed to avoid consuming the gameplay stream.
+  */
   private _generateExternalSeed(): number {
     return Math.floor(Math.random() * 0xFFFFFFFF);
   }

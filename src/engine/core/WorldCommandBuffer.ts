@@ -30,6 +30,21 @@ type Command<TComponents extends ComponentRegistry, TEvents extends EventRegistr
 
 /**
  * ECS Command Buffer - Defers structural world mutations to help ensure iterator safety.
+ *
+ * @remarks
+ * The `WorldCommandBuffer` is designed for use when modifying the world during system
+ * updates. Since systems often iterate over entities via queries, direct structural
+ * modifications are restricted to help protect iterator safety and maintain results consistency.
+ *
+ * ### Execution Characteristics:
+ * 1. **Sequential Execution**: Commands are processed in the order they were recorded (FIFO).
+ * 2. **Deferred Visibility**: Structural changes are typically NOT reflected in the {@link World} until
+ *    `flush()` is successfully called (usually at the end of the `World.update` cycle).
+ *
+ * Recommended practice:
+ * - Systems should use `WorldCommandBuffer` for structural changes (entity creation/deletion,
+ *   component addition/removal) during their `update` method.
+ * - This helps prevent iterator invalidation and supports predictable state transitions.
  */
 export class WorldCommandBuffer<
   TComponents extends ComponentRegistry = any,

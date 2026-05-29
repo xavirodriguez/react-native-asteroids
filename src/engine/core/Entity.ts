@@ -5,8 +5,8 @@
  * In this ECS implementation, an Entity is a lightweight numeric ID.
  * It carries no data or behavior of its own; it serves as a key to look up components.
  *
- * IDs are reused by the {@link World} once an entity is removed to minimize
- * ID space growth.
+ * IDs are typically reused by the {@link World} once an entity is removed to help
+ * minimize ID space growth.
  *
  * @conceptualRisk [ID_REUSE] If an external system holds a reference to an Entity ID
  * after it has been removed from the {@link World}, it may eventually point to a

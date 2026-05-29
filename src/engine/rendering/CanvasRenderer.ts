@@ -26,8 +26,9 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  * Esta estructura permite que la frecuencia de dibujado se adapte al entorno
  * independientemente del tick fijo de simulación.
  *
- * @conceptualRisk [GC_PRESSURE] El uso de arrays pre-alocados mitiga alocaciones,
- * pero exceder el límite de `MAX_ENTITIES` (2000) resultará en entidades no dibujadas.
+ * @conceptualRisk [GC_PRESSURE] El uso de arrays pre-alocados busca mitigar
+ * alocaciones por frame, pero exceder el límite de `MAX_ENTITIES` (2000) resultará
+ * en entidades no dibujadas.
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';

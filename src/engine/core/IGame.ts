@@ -2,46 +2,46 @@ import type { World } from "./World";
 import type { GameLoop } from "./GameLoop";
 
 /**
- * Tipo genérico para los suscriptores de actualización del juego.
- * Recibe el estado actual del juego para mantener el principio de mínimo privilegio.
+ * Generic type for game update subscribers.
+ * Receives the current game state to maintain the principle of least privilege.
  *
- * @typeParam TState - El tipo del estado serializable del juego.
+ * @typeParam TState - The type of the serializable game state.
  */
 export type UpdateListener<TState> = (state: TState) => void;
 
 /**
- * Interfaz genérica fundamental para implementaciones de juegos.
- * Define las expectativas de ciclo de vida y comunicación entre el motor y la capa de presentación.
+ * Fundamental generic interface for game implementations.
+ * Defines lifecycle and communication expectations between the engine and the presentation layer.
  *
- * @responsibility Definir el contrato del ciclo de vida (start, stop, pause, destroy).
- * @responsibility Proveer acceso al estado del mundo y la lógica de finalización.
- * @responsibility Actuar como sumidero unificado para entradas de usuario (programáticas o UI).
+ * @responsibility Define the lifecycle contract (start, stop, pause, destroy).
+ * @responsibility Provide access to world state and completion logic.
+ * @responsibility Act as a unified sink for user inputs (programmatic or UI).
  *
  * @remarks
- * Esta interfaz permite que componentes de React o sistemas externos interactúen con cualquier juego
- * de forma unificada, facilitando el intercambio de escenas y la integración multijugador.
+ * This interface allows React components or external systems to interact with any game
+ * in a unified way, facilitating scene swapping and multiplayer integration.
  *
  * @typeParam _TGame - El tipo concreto de la clase de juego que implementa la interfaz.
  *
- * @conceptualRisk [ASYNC_LIFECYCLE] `restart` puede ser asíncrono. Invocaciones rápidas y sucesivas
- * podrían causar estados inconsistentes si el juego no maneja bloqueos de transición.
+ * @conceptualRisk [ASYNC_LIFECYCLE] `restart` may be asynchronous. Rapid, successive calls
+ * could lead to inconsistent states if the game does not handle transition locks.
  */
 export interface IGame<_TGame = unknown, TState = unknown> {
   /**
-   * Inicia la ejecución del bucle de juego.
-   * @remarks Se espera que invoque a `GameLoop.start()`.
+   * Starts the game loop execution.
+   * @remarks Expected to invoke `GameLoop.start()`.
    */
   start(): void;
 
   /**
-   * Detiene la ejecución y el renderizado.
-   * @remarks Se espera que invoque a `GameLoop.stop()`.
+   * Stops execution and rendering.
+   * @remarks Expected to invoke `GameLoop.stop()`.
    */
   stop(): void;
 
   /**
-   * Solicita pausar la simulación lógica manteniendo el estado actual.
-   * @remarks Se espera que los sistemas de simulación ignoren el tick si `isPausedState()` es true.
+   * Requests to pause logical simulation while maintaining current state.
+   * @remarks Simulation systems are expected to ignore the tick if `isPausedState()` is true.
    */
   pause(): void;
 
@@ -51,23 +51,23 @@ export interface IGame<_TGame = unknown, TState = unknown> {
   resume(): void;
 
   /**
-   * Reinicia el juego a su estado inicial. Puede ser una operación asíncrona si carga recursos.
-   * @param seed - Semilla opcional para inicializar el generador de números aleatorios.
+   * Restarts the game to its initial state. May be asynchronous if loading resources.
+   * @param seed - Optional seed to initialize the random number generator.
    *
    * @remarks
-   * Se espera que el juego realice la limpieza del {@link World} anterior antes de la re-inicialización.
+   * The game is expected to perform cleanup of the previous {@link World} before re-initialization.
    */
   restart(seed?: number): void | Promise<void>;
 
   /**
-   * Libera recursos y desconecta listeners; se recomienda llamar al desmontar el juego.
-   * @remarks Una vez destruido, el comportamiento de llamadas a `start()` o `update()` depende de la implementación.
+   * Releases resources and disconnects listeners; recommended to be called upon unmounting the game.
+   * @remarks Once destroyed, the behavior of calling `start()` or `update()` is implementation-dependent.
    */
   destroy(): void;
 
   /**
-   * Obtiene la instancia actual del {@link World} (ECS).
-   * @queries Estado actual de todas las entidades y componentes.
+   * Retrieves the current {@link World} (ECS) instance.
+   * @queries Current state of all entities and components.
    */
   getWorld(): World;
 
@@ -82,9 +82,9 @@ export interface IGame<_TGame = unknown, TState = unknown> {
   isGameOver(): boolean;
 
   /**
-   * Suscribe un listener que se notificará tras cada actualización lógica.
-   * @param listener - Callback que recibe el estado del juego.
-   * @returns Función para cancelar la suscripción.
+   * Subscribes a listener to be notified after each logical update.
+   * @param listener - Callback receiving the game state.
+   * @returns Unsubscribe function.
    */
   subscribe(listener: UpdateListener<TState>): () => void;
 
@@ -94,20 +94,20 @@ export interface IGame<_TGame = unknown, TState = unknown> {
   getGameLoop(): GameLoop;
 
   /**
-   * Intenta obtener un snapshot del estado actual del juego.
-   * Cada implementación debe sobrescribir el tipo de retorno con su estado específico.
+   * Attempts to retrieve a snapshot of the current game state.
+   * Each implementation should override the return type with its specific state.
    *
    * @remarks
-   * Para soporte de red/rollback, el objeto devuelto debe ser serializable (sin funciones ni
-   * referencias circulares).
+   * For network/rollback support, the returned object should be serializable (no functions
+   * or circular references).
    *
-   * @returns El estado serializable capturado.
+   * @returns The captured serializable state.
    */
   getGameState(): unknown;
 
   /**
    * Returns the current gameplay seed.
-   * @remarks Se espera que coincida con el seed usado para inicializar RandomService en el canal 'gameplay'.
+   * @remarks Expected to match the seed used to initialize the 'gameplay' RandomService.
    */
   getSeed(): number;
 

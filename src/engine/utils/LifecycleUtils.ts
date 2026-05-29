@@ -3,7 +3,7 @@
  *
  * @remarks
  * Provides explicit separation between synchronous and asynchronous lifecycle hooks
- * to eliminate "Zalgo" risks and favor a predictable execution order.
+ * with the goal of reducing "Zalgo" risks and favoring a more predictable execution order.
  */
 
 /**
