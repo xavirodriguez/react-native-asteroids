@@ -3,63 +3,7 @@ import { World } from "../core/World";
 
 export * from "../core/Component";
 export * from "../core/Entity";
-export {
-  IHierarchicalComponent,
-  JuiceAnimation,
-  JuiceComponent,
-  TransformComponent,
-  ManualMovementComponent,
-  EnemyTagComponent,
-  AsteroidComponent,
-  InvaderComponent,
-  BulletComponent,
-  ShipComponent,
-  PreviousTransformComponent,
-  VelocityComponent,
-  FrictionComponent,
-  BoundaryComponent,
-  TagComponent,
-  TTLComponent,
-  Collider2DComponent,
-  CollisionEvent,
-  CollisionEventsComponent,
-  ContinuousColliderComponent,
-  PhysicsBody2DComponent,
-  RenderComponent,
-  HealthComponent,
-  ReclaimableComponent,
-  InputAction,
-  InputStateComponent,
-  EventBusComponent,
-  AnimationConfig,
-  AnimatorComponent,
-  StateMachineComponent,
-  ParticleEmitterConfig,
-  ParticleEmitterComponent,
-  TilesetConfig,
-  TilemapLayer,
-  TilemapData,
-  TilemapVisibleRange,
-  TilemapComponent,
-  Camera2DComponent,
-  ScreenShakeComponent,
-  VisualOffsetComponent,
-  TrailComponent,
-  Star,
-  Modifier,
-  ModifierStackComponent,
-  LootTableComponent,
-  PowerUpComponent,
-  BallComponent,
-  SpatialNodeComponent,
-  HapticRequestComponent,
-  VirtualJoystickComponent,
-  ProcessedJoystickComponent,
-  MoveCommand,
-  RotateCommand,
-  CoreComponentRegistry,
-  AnyCoreComponent
-} from "../core/CoreComponents";
+export * from "../core/CoreComponents";
 export * from "../physics/shapes/ShapeTypes";
 export * from "./CommonTypes";
 export { CollisionManifold } from "../physics/collision/CollisionTypes";
@@ -100,5 +44,5 @@ export interface WorldSnapshot {
  * Interface for entity pools.
  */
 export interface IEntityPool {
-  release(world: World<any, any, any>, entity: Entity): void;
+  release(world: World, entity: Entity): void;
 }

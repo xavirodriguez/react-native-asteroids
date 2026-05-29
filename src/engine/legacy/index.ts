@@ -1,2 +1,3 @@
-// Legacy compatibility layer
-// This directory contains deprecated symbols for backward compatibility.
+// Legacy types for backward compatibility during transition
+export type AnyCoreComponent = any;
+export type ComponentOf<T extends string> = any;

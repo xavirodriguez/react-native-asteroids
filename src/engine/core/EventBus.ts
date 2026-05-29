@@ -1,27 +1,7 @@
 /**
- * Registry of all events available in the system.
- */
-export type EventRegistry = Record<string, unknown>;
-
-/**
- * Core events emitted by the engine.
- */
-export interface CoreEvents {
-  "engine:paused": { tick: number; timestamp: number };
-  "engine:resumed": { tick: number; timestamp: number };
-  "engine:destroyed": { timestamp: number };
-}
-
-/**
- * Combined registry of core events and user-defined events.
- */
-export type CombinedEvents<TEvents extends EventRegistry> =
-  CoreEvents & TEvents;
-
-/**
  * Typed Event Bus for decoupled communication between systems and scenes.
  */
-export type EventHandler<TPayload> = (payload: TPayload, event: string) => void;
+export type EventHandler<T = unknown> = (payload: T, event: string) => void;
 
 /**
  * Messaging system designed for synchronous and deferred communication based on the Pub/Sub pattern.
@@ -31,52 +11,46 @@ export type EventHandler<TPayload> = (payload: TPayload, event: string) => void;
   * synchronous emission, using {@link EventBus.emitDeferred} is recommended within
   * simulation logic to help isolate side effects and maintain simulation integrity.
  */
-export class EventBus<TEvents extends EventRegistry = EventRegistry> {
-  private handlers = new Map<string, Set<EventHandler<any>>>();
-  private deferredQueue: Array<{ event: string; payload?: any }> = [];
+export class EventBus {
+  private handlers = new Map<string, Set<EventHandler<unknown>>>();
+  private deferredQueue: Array<{ event: string; payload?: unknown }> = [];
   private emitDepth = 0;
   private readonly MAX_RECURSION = 10;
 
-  public on<K extends keyof CombinedEvents<TEvents> & string>(
-    event: K,
-    handler: EventHandler<CombinedEvents<TEvents>[K]>
-  ): () => void {
+  public on<T = unknown>(event: string, handler: EventHandler<T>): () => void {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, new Set());
     }
-    this.handlers.get(event)!.add(handler as EventHandler<any>);
+    this.handlers.get(event)!.add(handler as EventHandler<unknown>);
 
     return () => this.off(event, handler);
   }
 
-  public once<K extends keyof CombinedEvents<TEvents> & string>(
-    event: K,
-    handler: EventHandler<CombinedEvents<TEvents>[K]>
-  ): () => void {
-    const onceHandler: EventHandler<CombinedEvents<TEvents>[K]> = (payload, eventName) => {
+  public once<T = unknown>(event: string, handler: EventHandler<T>): () => void {
+    const onceHandler: EventHandler<T> = (payload, eventName) => {
       this.off(event, onceHandler);
       handler(payload, eventName);
     };
     return this.on(event, onceHandler);
   }
 
-  public off<K extends keyof CombinedEvents<TEvents> & string>(
-    event: K,
-    handler: EventHandler<CombinedEvents<TEvents>[K]>
-  ): void {
+  public off<T = unknown>(event: string, handler: EventHandler<T>): void {
     const set = this.handlers.get(event);
     if (set) {
-      set.delete(handler as EventHandler<any>);
+      set.delete(handler as EventHandler<unknown>);
     }
   }
 
   /**
-   * Dispatches an event synchronously to all registered handlers.
-   */
-  public emit<K extends keyof CombinedEvents<TEvents> & string>(
-    event: K,
-    payload: CombinedEvents<TEvents>[K]
-  ): void {
+  * Dispatches an event synchronously to all registered handlers.
+  *
+  * @remarks
+  * **CAUTION**: Do NOT use this method within the simulation tick or physical
+  * calculation phases if the event triggers side effects (like sound, UI updates,
+  * or spawning). Use {@link EventBus.emitDeferred} instead to ensure side effects
+  * are processed after the authoritative simulation state is finalized.
+  */
+  public emit<T = unknown>(event: string, payload?: T): void {
     if (this.emitDepth >= this.MAX_RECURSION) {
       console.warn(`EventBus: Maximum recursion depth (${this.MAX_RECURSION}) reached for event "${event}". Blocking further emission.`);
       return;
@@ -96,18 +70,24 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
   }
 
   /**
-   * Queues an event to be processed after the current execution context (usually end-of-frame).
-   */
-  public emitDeferred<K extends keyof CombinedEvents<TEvents> & string>(
-    event: K,
-    payload: CombinedEvents<TEvents>[K]
-  ): void {
+  * Queues an event to be processed after the current execution context (usually end-of-frame).
+  *
+  * @remarks
+  * This is the **RECOMMENDED** method for simulation logic to signal semantic events
+  * without causing reentrancy or side-effect contamination during deterministic ticks.
+  */
+  public emitDeferred<T = unknown>(event: string, payload?: T): void {
     this.deferredQueue.push({ event, payload });
   }
 
   /**
-   * Processes all currently queued deferred events.
-   */
+  * Processes all currently queued deferred events.
+  *
+  * @remarks
+  * This should be called once per frame, typically at the very end of the engine
+  * update cycle. It supports up to 5 iterations to handle events emitted during
+  * the flush itself (cascading events).
+  */
   public flushDeferred(): void {
     let iterations = 0;
     const MAX_ITERATIONS = 5;
@@ -118,7 +98,7 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
 
       for (let i = 0; i < queue.length; i++) {
         const item = queue[i];
-        this.emit(item.event as any, item.payload);
+        this.emit(item.event, item.payload);
       }
       iterations++;
     }
@@ -155,8 +135,7 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
   private notify(subscriptionKey: string, payload: unknown, originalEvent: string): void {
     const set = this.handlers.get(subscriptionKey);
     if (set) {
-      const handlers = Array.from(set);
-      handlers.forEach(handler => {
+      set.forEach(handler => {
         try {
           handler(payload, originalEvent);
         } catch (e) {
