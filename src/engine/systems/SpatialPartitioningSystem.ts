@@ -109,7 +109,7 @@ export class SpatialPartitioningSystem extends System {
           console.debug(`[SpatialPartitioningSystem] Entity ${entity} activation: ${node.active} -> ${isCurrentlyActive}. AABB:`, aabb, "Viewport:", activeAABB);
       }
 
-      // Always update to ensure lastCellKeys are sync
+      // Update to help ensure lastCellKeys are sync
       world.mutateComponent(entity, "SpatialNode", n => {
           n.active = isCurrentlyActive;
           n.lastCellKeys = grid.getIntersectingCells(aabb);

@@ -81,15 +81,15 @@ export enum GameStatus {
  * - **Durations/Timers**: Milliseconds `[ms]`
  * - **Rates**: Per second `[1/s]` (e.g., Particle emission)
  *
- * ### Deterministic Simulation vs. Visual Presentation
+ * ### Simulation vs. Visual Presentation
  *
- * The engine is designed to support a boundary between the **Deterministic Simulation**
+ * The engine is designed to support a boundary between the **authoritative Simulation**
  * and the **Visual Presentation** layer:
  *
- * - **Deterministic Simulation**: Operates on a fixed time step. Logic affecting
+ * - **Simulation**: Operates on a fixed time step. Logic affecting
  *   gameplay (physics, health, scores) typically resides here. It is
- *   designed to support simulation consistency when used under controlled
- *   conditions (e.g., seeded RNG, consistent execution order, and no direct mutations).
+ *   designed to support simulation consistency and reproducibility when used under controlled
+ *   conditions (e.g., seeded RNG, consistent execution order, and adherence to mutation patterns).
  * - **Visual Presentation**: Operates at the display's variable refresh rate. It
  *   typically uses interpolation between simulation states to help provide smoother motion.
  *   Visual-only effects (Juice, Particles, UI) reside here and are expected to
@@ -97,15 +97,15 @@ export enum GameStatus {
  *
  * ### State Classification
  *
- * To support determinism, state is typically classified into the following categories:
+ * To support consistency, state is typically classified into the following categories:
  *
- * 1. **Gameplay Deterministic State**: State intended for simulation (e.g., `Transform`, `Velocity`, `Health`). Should be serializable.
+ * 1. **Authoritative Simulation State**: State intended for simulation (e.g., `Transform`, `Velocity`, `Health`). Should be serializable.
  * 2. **Presentation-only State**: Visual-only data (e.g., `Render`, `VisualOffset`, `ParticleEmitter`). Typically does NOT affect gameplay simulation.
  * 3. **Derived/Cache State**: Data computed from authoritative state (e.g., `SpatialGrid` nodes, `worldX`). Designed to be rebuildable.
  * 4. **Debug-only State**: Data used for development tools (e.g., `SystemProfiler` metrics).
  * 5. **Non-serializable Runtime State**: References to services or heavy objects (e.g., `EventBus`, `AudioSystem`).
  *
- * ### Determinism Guidelines
+ * ### Consistency Guidelines
  *
  * - Presentation logic is recommended to avoid modifying authoritative gameplay state.
  * - Visual effects should typically avoid modifying `TransformComponent` if it affects physics or networking.
@@ -132,11 +132,11 @@ export enum GameStatus {
  * UNINITIALIZED -\> INITIALIZING -\> READY -\> RUNNING
  *
   * @remarks
-  * In practice, achieving high levels of determinism requires strict adherence to engine
-  * patterns. Factors such as floating-point non-determinism across architectures,
-  * JS engine variability, or the use of unmanaged external state can lead to divergences.
+  * In practice, achieving high levels of simulation consistency requires strict adherence to engine
+  * patterns. Factors such as floating-point variability across architectures,
+  * JS engine behavior, or the use of unmanaged external state can lead to divergences.
   *
- * Conceptual Risk: [DETERMINISM][CRITICAL] `currentTick` overflow happens after ~285,000 years,
+ * Conceptual Risk: [TICK_OVERFLOW][CRITICAL] `currentTick` overflow happens after ~285,000 years,
  * but buffer precision limits may be hit significantly earlier.
  * Conceptual Risk: [ASYNC_RACE][HIGH] Calling `start()` before the `init()` promise resolves
  * will lead to inconsistent simulation. Handled via state checks and locks.
@@ -160,7 +160,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected inputBuffer: InputBuffer;
   /** Network communication interface (optional). */
   protected networkTransport?: NetworkTransport;
-  /** Deterministic state/input recorder. */
+  /** State/input recorder for replays. */
   protected replayRecorder: ReplayRecorder;
   /** Audio playback and semantic bridge service. */
   public readonly audio: AudioSystem;
@@ -463,7 +463,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   * - If an active Scene exists, delegates restart to `SceneManager`.
   * - Otherwise, clears the global World, re-registers systems, and re-spawns entities.
   *
-  * @param seed - Optional new seed for deterministic PRNG.
+   * @param seed - Optional new seed for the gameplay PRNG.
   */
   public async restart(seed?: number): Promise<void> {
     if (this._status === GameStatus.DESTROYED) {

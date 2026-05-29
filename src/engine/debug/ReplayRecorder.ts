@@ -5,7 +5,7 @@ import { ReplayData, ReplayFrame, InputFrame } from "../../multiplayer/NetTypes"
  *
  * @remarks
  * Captura las entradas del usuario frame a frame para facilitar la recreación
- * orientada al determinismo de una partida.
+ * orientada a la consistencia y reproducción de una partida.
  *
  * @responsibility Almacenar la secuencia de inputs asociados a cada tick.
  * @responsibility Generar un objeto `ReplayData` compatible con el sistema de transporte.

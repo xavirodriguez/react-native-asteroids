@@ -10,7 +10,7 @@ The synchronization flow is designed to help mitigate latency and support consis
 2.  **Local Prediction**: The client applies the input to its local simulation, typically providing immediate visual feedback.
 3.  **Authoritative Simulation**: The server acts as the primary source of truth, typically validating inputs and executing authoritative game logic to help maintain a shared state.
 4.  **Delta Replication**: The server attempts to optimize bandwidth by primarily sending detected changes (deltas) in component states.
-5.  **Reconciliation (Rollback)**: In case of a detected discrepancy between predicted and authoritative state, the client attempts to restore the server state and re-simulate local ticks. Accuracy is subject to history depth and simulation determinism.
+5.  **Reconciliation (Rollback)**: In case of a detected discrepancy between predicted and authoritative state, the client attempts to restore the server state and re-simulate local ticks. Accuracy is subject to history depth and simulation consistency.
 
 ## 🗜️ Optimization Strategies
 

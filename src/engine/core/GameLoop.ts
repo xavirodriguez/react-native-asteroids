@@ -187,7 +187,7 @@ export class GameLoop {
         break;
       }
 
-      // Determinism: Designed to help ensure RNG is seeded for this tick if needed.
+      // Consistency: Designed to help ensure RNG is seeded for this tick if needed.
       // RandomService.getInstance("gameplay"); // Static access is deprecated
 
       if (this.needsUpdateRebuild) {

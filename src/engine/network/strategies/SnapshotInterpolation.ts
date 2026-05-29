@@ -9,7 +9,7 @@ import { InterpolationBuffer } from "../../../multiplayer/InterpolationSystem";
  * @remarks
  * Designed to help achieve smooth visual motion by interpolating between known
  * authoritative states. This strategy does not include local prediction and is
- * typically subject to an interpolation delay (latency) to ensure a buffer of
+ * typically subject to an interpolation delay (latency) to help ensure a buffer of
  * snapshots is available.
  */
 export class SnapshotInterpolationStrategy implements ReconciliationStrategy {

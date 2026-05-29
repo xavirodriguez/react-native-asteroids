@@ -47,7 +47,7 @@ export class EventBus {
   * @remarks
   * **CAUTION**: Do NOT use this method within the simulation tick or physical
   * calculation phases if the event triggers side effects (like sound, UI updates,
-  * or spawning). Use {@link EventBus.emitDeferred} instead to ensure side effects
+  * or spawning). Use {@link EventBus.emitDeferred} instead to help ensure side effects
   * are processed after the authoritative simulation state is finalized.
   */
   public emit<T = unknown>(event: string, payload?: T): void {
@@ -74,7 +74,7 @@ export class EventBus {
   *
   * @remarks
   * This is the **RECOMMENDED** method for simulation logic to signal semantic events
-  * without causing reentrancy or side-effect contamination during deterministic ticks.
+  * without causing reentrancy or side-effect contamination during simulation ticks.
   */
   public emitDeferred<T = unknown>(event: string, payload?: T): void {
     this.deferredQueue.push({ event, payload });

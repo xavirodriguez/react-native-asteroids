@@ -71,7 +71,7 @@ export class RandomService {
    */
   private static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
     if (this._lockGameplayContext && name !== "gameplay") {
-        throw new Error(`Deterministic violation: '${name}' random accessed during simulation. Only 'gameplay' stream is allowed.`);
+        throw new Error(`Simulation context violation: '${name}' random accessed during simulation. Only 'gameplay' stream is allowed.`);
     }
 
     let instance = this.namedInstances.get(name);

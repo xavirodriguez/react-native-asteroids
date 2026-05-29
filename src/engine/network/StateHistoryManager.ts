@@ -29,7 +29,7 @@ export class StateHistoryManager {
     public save(tick: number, snapshot: WorldSnapshot): void {
         if (!this.history.has(tick)) {
             this.tickKeys.push(tick);
-            // Ensure tickKeys stays sorted to facilitate pruning if needed,
+            // Maintain tickKeys sorted to facilitate pruning if needed,
             // though push+sort is less efficient than keeping it sorted.
             // Usually, ticks arrive in order.
             if (this.tickKeys.length > 1 && this.tickKeys[this.tickKeys.length - 1] < this.tickKeys[this.tickKeys.length - 2]) {

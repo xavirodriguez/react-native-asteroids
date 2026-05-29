@@ -134,9 +134,9 @@ export class World {
    * Provides access to the random number generator intended for simulation logic.
    *
    * @remarks
-   * Designed to support deterministic simulations when seeded consistently and
-   * restored via snapshots. In practice, determinism is subject to the avoidance of
-   * external entropy sources, non-deterministic JavaScript features, or unmanaged
+   * Designed to support consistent simulations when seeded consistently and
+   * restored via snapshots. In practice, reproducibility is subject to the avoidance of
+   * external entropy sources, inconsistent JavaScript features, or unmanaged
    * side effects within systems.
    */
   public get gameplayRandom(): RandomService {
@@ -148,12 +148,12 @@ export class World {
    *
    * @remarks
    * This stream is not intended for use in simulation logic and is not expected to be
-   * deterministic during rollback re-simulations.
+   * consistent during rollback re-simulations.
    */
   public get renderRandom(): RandomService {
     if (RandomService.lockGameplayContext) {
       throw new Error(
-        `Deterministic violation: 'render' random accessed via world.renderRandom during simulation. ` +
+        `Simulation context violation: 'render' random accessed via world.renderRandom during simulation. ` +
         `Only 'gameplay' stream is allowed.`
       );
     }
@@ -268,13 +268,13 @@ export class World {
     const gameplayRandom = this.gameplayRandom;
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
 
-    // Deterministic sort of component types (cached)
+    // Consistent sort of component types (cached)
     if (this._componentTypesDirty) {
       this._sortedComponentTypes = Array.from(this.componentMaps.keys()).sort();
       this._componentTypesDirty = false;
     }
 
-    // Pre-initialize componentData with sorted types to help achieve deterministic key order
+    // Pre-initialize componentData with sorted types to help achieve consistent key order
     for (const type of this._sortedComponentTypes) {
       if (!componentData[type]) {
           componentData[type] = {};
@@ -325,7 +325,7 @@ export class World {
     }
 
     if (!this._freeEntitiesSorted) {
-      // Sort descending so pop() returns the smallest ID deterministically and in O(1)
+      // Sort descending so pop() returns the smallest ID in O(1) and consistent order
       this.freeEntities.sort((a, b) => b - a);
       this._freeEntitiesSorted = true;
     }
@@ -665,7 +665,7 @@ export class World {
       set: (obj, prop, value) => {
         console.error(
           `[World] ILLEGAL MUTATION DETECTED: Direct write to "${String(prop)}" on component "${type}" (Entity ${entity}). ` +
-          `It is recommended to use world.mutateComponent() to help ensure state versioning and determinism.`
+          `It is recommended to use world.mutateComponent() to help ensure state versioning and reproducibility.`
         );
         (obj as Record<string | symbol, unknown>)[prop] = value;
         return true;

@@ -152,7 +152,7 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
             }
         });
 
-        // Always save the latest authoritative state in history
+        // Designed to save the latest authoritative state in history
         this.stateHistory.save(serverTick, authoritativeSnapshot);
 
         let needsRollback = false;
@@ -277,7 +277,7 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
             }
         });
 
-        // Ensure structural changes from re-simulation are applied
+        // Structural changes from re-simulation are applied via flush()
         world.flush();
     }
 

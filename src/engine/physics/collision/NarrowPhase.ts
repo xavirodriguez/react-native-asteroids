@@ -469,7 +469,7 @@ export class NarrowPhase {
       // Calcular el solapamiento en este eje
       const overlap = Math.min(staticProjectionA.max, staticProjectionB.max) - Math.max(staticProjectionA.min, staticProjectionB.min);
 
-      // Si en ALGÚN eje no hay solapamiento, el SAT garantiza que NO hay colisión (Teorema del Eje Separador)
+      // Si en ALGÚN eje no hay solapamiento, el SAT indica que NO hay colisión (Teorema del Eje Separador)
       if (overlap <= 0) return resetManifold();
 
       // Guardar el eje con el solapamiento mínimo (MTV - Minimum Translation Vector)
@@ -484,7 +484,7 @@ export class NarrowPhase {
     manifold.colliding = true;
     manifold.depth = minOverlap;
 
-    // Garantizar que la normal siempre apunte desde el objeto A hacia el B
+    // La normal debe apuntar desde el objeto A hacia el B
     const dot = (bx - ax) * smallestAxisX + (by - ay) * smallestAxisY;
     if (dot < 0) {
       manifold.normalX = -smallestAxisX;

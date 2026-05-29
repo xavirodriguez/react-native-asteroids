@@ -3,8 +3,8 @@ import { WorldSnapshot } from "../types/EngineTypes";
 /**
  * Utility for cloning of ECS components and snapshots.
  * Designed to help ensure that snapshots and live world state do not share object
- * references (aliasing), which is an important factor for deterministic rollback
- * and netcode.
+ * references (aliasing), which is an important factor for rollback
+ * and netcode synchronization.
  *
  * @warning **Performance & Allocation**: Cloning is an expensive operation that
  * increases GC pressure. It is intended to be used judiciously, such as during

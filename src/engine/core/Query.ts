@@ -90,7 +90,7 @@ export class Query {
   * cache corruption.
   *
   * ### Performance Considerations:
-  * 1. **Deterministic Order**: The returned array is sorted by Entity ID.
+  * 1. **Consistent Order**: The returned array is sorted by Entity ID.
   * 2. **Caching**: If the internal state hasn't changed, the existing sorted array is reused
   *    as the source for the copy.
   *

@@ -73,7 +73,7 @@ export class InterestManagerSystem extends System {
         }
       }
 
-      // Always include self as critical
+      // Include self as critical
       if (!interestedIds.has(playerEntity)) {
           interested.push({
               entityId: playerEntity.toString(),

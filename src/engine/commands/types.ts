@@ -34,7 +34,7 @@ export interface CommandQueueComponent extends Component {
 }
 
 /**
- * Factory pura para la inicialización determinista del componente CommandQueue.
+ * Factory pura para la inicialización consistente del componente CommandQueue.
  */
 export function createCommandQueueComponent(): CommandQueueComponent {
   return {
