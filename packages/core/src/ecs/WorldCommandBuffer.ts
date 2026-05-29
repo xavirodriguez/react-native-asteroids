@@ -1,4 +1,5 @@
 import { World, BlueprintRegistryMap, BlueprintDefinition } from "./World";
+import { BlueprintRegistry } from "./BlueprintRegistry";
 import { ComponentRegistry } from "./Component";
 import { Entity } from "./Entity";
 
@@ -8,7 +9,7 @@ export type BlueprintArgs<TBlueprints, TId extends keyof TBlueprints> =
     : never;
 
 interface Command<TComponents extends ComponentRegistry, TBlueprints extends BlueprintRegistryMap<TComponents>> {
-  execute(world: World<TComponents, any, TBlueprints>): void;
+  execute(world: World<TComponents, Record<string, any>, TBlueprints>): void;
 }
 
 export class WorldCommandBuffer<
@@ -24,7 +25,7 @@ export class WorldCommandBuffer<
     this.commands.push({
       execute: (world) => {
         const entity = world.createEntity();
-        const registry = world.getResource<any>("BlueprintRegistry");
+        const registry = world.getResource<BlueprintRegistry<TComponents, TBlueprints>>("BlueprintRegistry");
         const blueprint = registry?.get(blueprintId);
         if (blueprint) {
           blueprint.spawn(world, entity, args);
@@ -33,7 +34,7 @@ export class WorldCommandBuffer<
     });
   }
 
-  flush(world: World<TComponents, any, TBlueprints>): void {
+  flush(world: World<TComponents, Record<string, any>, TBlueprints>): void {
     const cmds = [...this.commands];
     this.commands = [];
     cmds.forEach(cmd => cmd.execute(world));

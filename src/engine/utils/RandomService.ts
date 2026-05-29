@@ -22,7 +22,7 @@ export class RandomService {
   }
 
   /**
-   * Genera un número pseudo-aleatorio de punto flotante en el rango [0, 1).
+   * Generates a pseudo-random floating point number in the range [0, 1).
    */
   public next(): number {
     let t = (this.seed = (this.seed + 0x6d2b79f5) | 0);
@@ -71,14 +71,16 @@ export class RandomService {
    * @internal
    */
   public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
-    if (this._lockGameplayContext && name !== "gameplay") {
-        throw new Error(`Deterministic violation: '${name}' random accessed during simulation. Only 'gameplay' stream is allowed.`);
+    if (RandomService._lockGameplayContext && name !== "gameplay") {
+      throw new Error(
+        `Deterministic violation: '${name}' random accessed during simulation. Only 'gameplay' stream is allowed.`
+      );
     }
 
-    let instance = this.namedInstances.get(name);
+    let instance = RandomService.namedInstances.get(name);
     if (!instance) {
       instance = new RandomService(initialSeed);
-      this.namedInstances.set(name, instance);
+      RandomService.namedInstances.set(name, instance);
     }
     return instance;
   }
@@ -87,51 +89,63 @@ export class RandomService {
    * @deprecated Static access is non-deterministic in multiplayer environments.
    */
   public static getGameplayRandom(): RandomService {
-    return this.getInstance("gameplay");
+    return RandomService.getInstance("gameplay");
   }
 
   /**
    * @deprecated Static access is non-deterministic in multiplayer environments.
    */
   public static getRenderRandom(): RandomService {
-    return this.getInstance("render");
+    return RandomService.getInstance("render");
   }
 
   /**
    * @deprecated Static access is non-deterministic in multiplayer environments.
    */
-  public static next(): number { return this.getInstance("global").next(); }
+  public static next(): number {
+    return RandomService.getInstance("global").next();
+  }
 
   /**
    * @deprecated Static access is non-deterministic in multiplayer environments.
    */
-  public static nextRange(min: number, max: number): number { return this.getInstance("global").nextRange(min, max); }
+  public static nextRange(min: number, max: number): number {
+    return RandomService.getInstance("global").nextRange(min, max);
+  }
 
   /**
    * @deprecated Static access is non-deterministic in multiplayer environments.
    */
-  public static nextInt(min: number, max: number): number { return this.getInstance("global").nextInt(min, max); }
+  public static nextInt(min: number, max: number): number {
+    return RandomService.getInstance("global").nextInt(min, max);
+  }
 
   /**
    * @deprecated Static access is non-deterministic in multiplayer environments.
    */
-  public static chance(probability: number): boolean { return this.getInstance("global").chance(probability); }
+  public static chance(probability: number): boolean {
+    return RandomService.getInstance("global").chance(probability);
+  }
 
   /**
    * @deprecated Static access is non-deterministic in multiplayer environments.
    */
-  public static nextSign(): number { return this.getInstance("global").nextSign(); }
+  public static nextSign(): number {
+    return RandomService.getInstance("global").nextSign();
+  }
 
   /**
    * @deprecated Static access is non-deterministic in multiplayer environments.
    */
-  public static setSeed(seed: number): void { this.getInstance("global").setSeed(seed); }
+  public static setSeed(seed: number): void {
+    RandomService.getInstance("global").setSeed(seed);
+  }
 
   /**
    * Resets all static instances. Useful for tests or full engine restarts.
    */
   public static resetInstances(): void {
-    this.namedInstances.clear();
-    this._lockGameplayContext = false;
+    RandomService.namedInstances.clear();
+    RandomService._lockGameplayContext = false;
   }
 }

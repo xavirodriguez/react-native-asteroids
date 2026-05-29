@@ -13,9 +13,9 @@ export type ComponentOf<
 > = TRegistry[TType];
 
 export type DeepReadonly<T> =
-  T extends (...args: any[]) => any
+  T extends (...args: unknown[]) => unknown
     ? T
-    : T extends readonly any[]
+    : T extends readonly unknown[]
       ? ReadonlyArray<DeepReadonly<T[number]>>
       : T extends object
         ? { readonly [K in keyof T]: DeepReadonly<T[K]> }

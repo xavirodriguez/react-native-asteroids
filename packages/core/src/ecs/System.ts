@@ -37,17 +37,17 @@ export abstract class System<
   /**
    * Executed every tick.
    */
-  abstract update(world: World<TComponents, TEvents, any>, deltaTime: number): void;
+  abstract update(world: World<TComponents, TEvents, Record<string, any>>, deltaTime: number): void;
 
   /**
    * Lifecycle hook: called when the system is added to a world.
    */
-  onRegister(_world: World<TComponents, TEvents, any>): void {}
+  onRegister(_world: World<TComponents, TEvents, Record<string, any>>): void {}
 
   /**
    * Lifecycle hook: called when the system is removed from a world.
    */
-  onUnregister(_world: World<TComponents, TEvents, any>): void {}
+  onUnregister(_world: World<TComponents, TEvents, Record<string, any>>): void {}
 
   /**
    * Lifecycle hook: called to clean up resources.

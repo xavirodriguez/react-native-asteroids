@@ -3,6 +3,7 @@
  */
 
 import { Component, ComponentRegistry } from "./Component";
+import { EventRegistry, EventBus as GenericEventBus } from "../events/EventBus";
 
 /**
  * Standard 2D transform.
@@ -76,7 +77,7 @@ export interface Collider2DComponent extends Component {
  */
 export interface CollisionEventsComponent extends Component {
   type: "CollisionEvents";
-  collisions: any[];
+  collisions: unknown[];
 }
 
 /**
@@ -119,9 +120,9 @@ export interface InputStateComponent extends Component {
 /**
  * Global or local EventBus reference.
  */
-export interface EventBusComponent<T = any> extends Component {
+export interface EventBusComponent<T extends EventRegistry = EventRegistry> extends Component {
   type: "EventBus";
-  bus: any;
+  bus: GenericEventBus<T>;
 }
 
 /**
@@ -129,7 +130,7 @@ export interface EventBusComponent<T = any> extends Component {
  */
 export interface AnimatorComponent extends Component {
   type: "Animator";
-  animations: any;
+  animations: unknown;
   current?: string;
 }
 
@@ -138,7 +139,7 @@ export interface AnimatorComponent extends Component {
  */
 export interface StateMachineComponent extends Component {
   type: "StateMachine";
-  states: any;
+  states: unknown;
   current?: string;
 }
 
@@ -147,7 +148,7 @@ export interface StateMachineComponent extends Component {
  */
 export interface ParticleEmitterComponent extends Component {
   type: "ParticleEmitter";
-  config: any;
+  config: unknown;
 }
 
 /**
@@ -155,7 +156,7 @@ export interface ParticleEmitterComponent extends Component {
  */
 export interface TilemapComponent extends Component {
   type: "Tilemap";
-  data: any;
+  data: unknown;
 }
 
 /**
@@ -190,7 +191,7 @@ export interface VisualOffsetComponent extends Component {
  */
 export interface TrailComponent extends Component {
   type: "Trail";
-  points: any[];
+  points: unknown[];
 }
 
 /**
@@ -226,7 +227,7 @@ export interface CoreComponentRegistry extends ComponentRegistry {
   Render: RenderComponent;
   Health: HealthComponent;
   InputState: InputStateComponent;
-  EventBus: EventBusComponent<any>;
+  EventBus: EventBusComponent<EventRegistry>;
   Animator: AnimatorComponent;
   StateMachine: StateMachineComponent;
   ParticleEmitter: ParticleEmitterComponent;
