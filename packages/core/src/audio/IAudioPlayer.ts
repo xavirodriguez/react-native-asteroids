@@ -1,8 +1,5 @@
-import { AssetDescriptor } from "../assets/AssetTypes";
+import { AssetDescriptor } from "../assets/AssetProvider";
 
-/**
- * Interface for an audio player.
- */
 export interface IAudioPlayer {
   loadSFX(name: string, source: AssetDescriptor | string): Promise<void>;
   loadMusic(name: string, source: AssetDescriptor | string): Promise<void>;
@@ -13,5 +10,4 @@ export interface IAudioPlayer {
   setVolume(volume: number): Promise<void>;
   isMuted(): boolean;
   getVolume(): number;
-  resume?(): void;
 }

@@ -1,37 +1,56 @@
 import { World } from "./World";
-import { ComponentRegistry, BlueprintRegistryMap } from "./Component";
-import { EventRegistry } from "./EventBus";
+import { ComponentRegistry } from "./Component";
 
 /**
- * Standard phases for system execution order.
+ * Execution phases for systems.
  */
 export enum SystemPhase {
   Input = "Input",
   Simulation = "Simulation",
+  Transform = "Transform",
   Collision = "Collision",
   GameRules = "GameRules",
-  Transform = "Transform",
-  Presentation = "Presentation",
+  Presentation = "Presentation"
 }
 
+/**
+ * Configuration for system registration.
+ */
 export interface SystemConfig {
-  phase?: SystemPhase | string;
+  /**
+   * The phase in which this system should execute.
+   */
+  phase?: SystemPhase;
+  /**
+   * The priority of this system within its phase (higher value = earlier execution).
+   */
   priority?: number;
 }
 
 /**
- * Abstract base class for all ECS Systems.
+ * Abstract base class for all ECS systems.
  */
 export abstract class System<
-  TComponents extends ComponentRegistry = any,
-  TEvents extends EventRegistry = any,
-  TBlueprints extends BlueprintRegistryMap<TComponents> = any
+  TComponents extends ComponentRegistry = ComponentRegistry,
+  TEvents extends Record<string, unknown> = Record<string, unknown>
 > {
-  public onRegister(_world: World<TComponents, TEvents, TBlueprints>): void {}
+  /**
+   * Executed every tick.
+   */
+  abstract update(world: World<TComponents, TEvents, any>, deltaTime: number): void;
 
-  public onUnregister(_world: World<TComponents, TEvents, TBlueprints>): void {}
+  /**
+   * Lifecycle hook: called when the system is added to a world.
+   */
+  onRegister(_world: World<TComponents, TEvents, any>): void {}
 
-  abstract update(world: World<TComponents, TEvents, TBlueprints>, deltaTime: number): void;
+  /**
+   * Lifecycle hook: called when the system is removed from a world.
+   */
+  onUnregister(_world: World<TComponents, TEvents, any>): void {}
 
-  public dispose(): void {}
+  /**
+   * Lifecycle hook: called to clean up resources.
+   */
+  dispose(): void {}
 }

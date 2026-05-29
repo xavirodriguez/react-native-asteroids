@@ -1,43 +1,45 @@
-import { Entity } from "./Entity";
-import { World } from "./World";
-import { ComponentRegistry, BlueprintRegistryMap } from "./Component";
+import { ComponentRegistry } from "./Component";
+import { BlueprintRegistryMap } from "./World";
 
-export interface BlueprintDefinition<
-  TComponents extends ComponentRegistry,
-  TArgs
-> {
-  spawn(world: World<TComponents, any, any>, entity: Entity, args: TArgs): void;
-}
-
-export type BlueprintArgs<TBlueprints, TId extends keyof TBlueprints> =
-  TBlueprints[TId] extends BlueprintDefinition<any, infer TArgs>
-    ? TArgs
-    : never;
-
+/**
+ * Registry for managing entity blueprints.
+ */
 export class BlueprintRegistry<
   TComponents extends ComponentRegistry,
   TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
 > {
-  private blueprints = new Map<string, BlueprintDefinition<TComponents, any>>();
+  private registry = new Map<keyof TBlueprints, TBlueprints[keyof TBlueprints]>();
 
+  /**
+   * Registers a blueprint definition.
+   */
   register<TId extends keyof TBlueprints & string>(
     id: TId,
     blueprint: TBlueprints[TId]
   ): void {
-    this.blueprints.set(id, blueprint);
+    this.registry.set(id, blueprint);
   }
 
+  /**
+   * Retrieves a registered blueprint.
+   */
   get<TId extends keyof TBlueprints & string>(
     id: TId
   ): TBlueprints[TId] | undefined {
-    return this.blueprints.get(id) as TBlueprints[TId] | undefined;
+    return this.registry.get(id) as TBlueprints[TId] | undefined;
   }
 
+  /**
+   * Checks if a blueprint is registered.
+   */
   has<TId extends keyof TBlueprints & string>(id: TId): boolean {
-    return this.blueprints.has(id);
+    return this.registry.has(id);
   }
 
+  /**
+   * Clears all registered blueprints.
+   */
   clear(): void {
-    this.blueprints.clear();
+    this.registry.clear();
   }
 }

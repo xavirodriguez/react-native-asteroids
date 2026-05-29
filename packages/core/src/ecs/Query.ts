@@ -1,77 +1,46 @@
-import { Entity } from "../types/EngineTypes";
-import { ComponentRegistry } from "./Component";
+import { ComponentRegistry, ComponentType } from "./Component";
+import { Entity } from "./Entity";
 
-/**
- * Reactive Query that maintains an index of entities with a specific component signature.
- */
-export class Query<TComponents extends ComponentRegistry = any> {
-  private entities: Set<Entity> = new Set();
-  private entityArray: Entity[] = [];
-  private needsUpdateArray = false;
+export class Query<TComponents extends ComponentRegistry = ComponentRegistry> {
+  private entities = new Set<Entity>();
+  private cache: Entity[] = [];
+  private cacheDirty = true;
 
-  constructor(public readonly componentTypes: string[]) {}
+  constructor(private componentTypes: ComponentType<TComponents>[]) {}
 
-  public matches(entityComponents: Set<string>): boolean {
-    return this.componentTypes.every(type => entityComponents.has(type));
+  getEntities(): ReadonlyArray<Entity> {
+    if (this.cacheDirty) {
+      this.cache = Array.from(this.entities).sort((a, b) => a - b);
+      this.cacheDirty = false;
+    }
+    return this.cache;
   }
 
-  public add(entity: Entity): void {
+  matches(entityComponentSet: Set<string>): boolean {
+    return this.componentTypes.every(type => entityComponentSet.has(type));
+  }
+
+  add(entity: Entity): void {
     if (!this.entities.has(entity)) {
       this.entities.add(entity);
-      this.needsUpdateArray = true;
+      this.cacheDirty = true;
     }
   }
 
-  public remove(entity: Entity): void {
+  remove(entity: Entity): void {
     if (this.entities.delete(entity)) {
-      this.needsUpdateArray = true;
+      this.cacheDirty = true;
     }
   }
 
-  public getEntities(): ReadonlyArray<Entity> {
-    if (this.needsUpdateArray) {
-      this.entityArray = Array.from(this.entities).sort((a, b) => a - b);
-      this.needsUpdateArray = false;
-    }
-    return [...this.entityArray];
-  }
-
-  public forEach(callback: (entity: Entity) => void): void {
-    if (this.needsUpdateArray) {
-      this.entityArray = Array.from(this.entities).sort((a, b) => a - b);
-      this.needsUpdateArray = false;
-    }
-    const len = this.entityArray.length;
-    for (let i = 0; i < len; i++) {
-      callback(this.entityArray[i]);
-    }
-  }
-
-  public getEntitiesView(): ReadonlyArray<Entity> {
-    if (this.needsUpdateArray) {
-      this.entityArray = Array.from(this.entities).sort((a, b) => a - b);
-      if (__DEV__) {
-        Object.freeze(this.entityArray);
-      }
-      this.needsUpdateArray = false;
-    }
-    return this.entityArray;
-  }
-
-  public get key(): string {
-    return [...this.componentTypes].sort().join(",");
-  }
-
-  public rebuild(allEntities: Set<Entity>, entityComponentSets: Map<Entity, Set<string>>): void {
+  rebuild(activeEntities: Set<Entity>, entityComponentSets: Map<Entity, Set<string>>): void {
     this.entities.clear();
-    allEntities.forEach(entity => {
-      const components = entityComponentSets.get(entity);
-      if (components && this.matches(components)) {
+    activeEntities.forEach(entity => {
+      const set = entityComponentSets.get(entity);
+      if (set && this.matches(set)) {
         this.entities.add(entity);
       }
     });
-    this.needsUpdateArray = true;
+    this.cacheDirty = true;
   }
 }
-
-const __DEV__ = process.env.NODE_ENV !== "production";
