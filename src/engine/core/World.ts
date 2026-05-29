@@ -1,6 +1,6 @@
 import { Component, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../types/EngineTypes";
 import { Entity } from "./Entity";
-import { AnyCoreComponent, ComponentOf } from "../legacy";
+import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
 
 type DeepReadonly<T> = T extends (...args: any[]) => any
   ? T

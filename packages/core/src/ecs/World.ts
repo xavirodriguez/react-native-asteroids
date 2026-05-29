@@ -19,7 +19,7 @@ export interface BlueprintDefinition<
   TComponents extends ComponentRegistry,
   TArgs
 > {
-  spawn(world: World<TComponents, any, any>, entity: Entity, args: TArgs): void;
+  spawn(world: World<TComponents, EventRegistry, BlueprintRegistryMap<TComponents>>, entity: Entity, args: TArgs): void;
 }
 
 /**
@@ -33,17 +33,17 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
  *
  * @typeParam TComponents - The registry of components available in this world.
  * @typeParam TEvents - The registry of events that can be emitted.
- * @typeParam TBlueprints - The registry of blueprints that can be spawned.
+ * @typeParam _TBlueprints - The registry of blueprints that can be spawned.
  */
 export class World<
   TComponents extends ComponentRegistry = ComponentRegistry,
   TEvents extends EventRegistry = EventRegistry,
-  TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
+  _TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
 > {
   private activeEntities = new Set<Entity>();
   public isUpdating = false;
   public isReSimulating = false;
-  private componentMaps = new Map<string, Map<Entity, any>>();
+  private componentMaps = new Map<string, Map<Entity, unknown>>();
   private componentIndex = new Map<string, Set<Entity>>();
   private entityComponentSets = new Map<Entity, Set<string>>();
   private queries = new Map<string, Query<TComponents>>();
@@ -107,14 +107,14 @@ export class World<
    * Gets a read-only reference to a component.
    */
   getComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): DeepReadonly<TComponents[K]> | undefined {
-    return this.componentMaps.get(type)?.get(entity);
+    return this.componentMaps.get(type as string)?.get(entity) as DeepReadonly<TComponents[K]> | undefined;
   }
 
   /**
    * Gets a mutable reference to a component.
    */
   getMutableComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): TComponents[K] | undefined {
-    return this.componentMaps.get(type)?.get(entity);
+    return this.componentMaps.get(type as string)?.get(entity) as TComponents[K] | undefined;
   }
 
   /**

@@ -3,7 +3,7 @@ import { IAssetProvider, AssetDescriptor } from "../AssetProvider";
 
 class FakeProvider implements IAssetProvider {
   async load<T>(asset: AssetDescriptor): Promise<T> {
-    return { loaded: asset.id } as any;
+    return { loaded: asset.id } as unknown as T;
   }
 }
 

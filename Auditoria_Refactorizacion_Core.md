@@ -37,10 +37,11 @@ export class World<
 El diseño es excelente. Utiliza inferencia de TypeScript avanzada para asegurar que los componentes añadidos correspondan al registro definido por el desarrollador. Se mantiene la inmutabilidad opcional con `DeepReadonly`.
 
 ### Problemas pendientes
-- Ninguno crítico. El uso de `any` en `componentMaps` es un detalle de implementación interno justificado por el rendimiento y la flexibilidad de almacenamiento.
+- Corregidos errores de restricciones genéricas en `src/engine/core/World.ts` donde `AnyCoreComponent["type"]` (previamente `any`) no satisfacía la restricción `string`.
+- Se ha sustituido el uso masivo de `any` por `unknown` en `componentMaps` y otros registros internos, mejorando la robustez sin sacrificar flexibilidad.
 
 ### Recomendaciones
-1. Considerar la inclusión de un método `getRegistry()` para facilitar la introspección de tipos en herramientas de depuración.
+1. Mantener el uso de `unknown` en lugar de `any` para datos cuyo tipo exacto se desconoce pero se recupera mediante casts seguros en los consumidores.
 
 ### Puntuación
 `5/5`
@@ -78,10 +79,10 @@ spawnFromBlueprint<TId extends keyof TBlueprints & string>(
 El desacoplamiento es total. El `WorldCommandBuffer` delega la creación en el blueprint registrado, permitiendo que la lógica de ensamblaje viva en el paquete del juego. El tipado de argumentos (`BlueprintArgs`) es robusto.
 
 ### Problemas pendientes
-- El acceso al registro dentro del comando usa `world.getResource<any>("BlueprintRegistry")`, lo que pierde algo de tipado interno, aunque la API pública es segura.
+- Corregido el tipado en `WorldCommandBuffer.ts`: se ha sustituido `getResource<any>` por un tipo de registro de blueprints más específico, eliminando el `any` innecesario.
 
 ### Recomendaciones
-1. Tipar formalmente el recurso `BlueprintRegistry` dentro del core mediante una clave constante o un símbolo para evitar el `any`.
+1. Continuar refinando las claves de recursos globales para que utilicen tipos constantes en lugar de strings arbitrarios siempre que sea posible.
 
 ### Puntuación
 `5/5`
@@ -99,10 +100,10 @@ Refactorizado con alta calidad. Se han extraído interfaces puras y la implement
 - `packages/core/src/assets/AssetLoader.ts`: Lógica de carga basada en promesas y cache, sin APIs de plataforma.
 
 ### Evaluación de calidad
-Excelente separación de preocupaciones. El `AssetLoader` actúa como un coordinador de alto nivel que consume un `IAssetProvider` inyectado, cumpliendo con el principio de inversión de dependencias.
+Excelente separación de preocupaciones. El `AssetLoader` actúa como un coordinador de alto nivel que consume un `IAssetProvider` inyectado. Se ha mejorado la seguridad de tipos interna sustituyendo `any` por `unknown` en el caché y manejando los casts de forma segura en los métodos `load` y `get`.
 
 ### Problemas pendientes
-- Ninguno detectado. El core está libre de `window`, `document` y módulos específicos de `expo-audio`.
+- Ninguno detectado.
 
 ### Recomendaciones
 1. Añadir soporte para prioridades de carga en `AssetDescriptor`.
