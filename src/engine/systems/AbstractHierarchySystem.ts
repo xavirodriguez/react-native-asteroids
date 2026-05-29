@@ -2,6 +2,8 @@ import { System } from "../core/System";
 import { World } from "../core/World";
 import { Entity } from "../core/Entity";
 import { IHierarchicalComponent } from "../core/CoreComponents";
+import { ComponentRegistry } from "../core/Component";
+import { EventRegistry } from "../core/EventBus";
 
 /**
  * Base class for systems that process hierarchical data structures.
@@ -9,7 +11,10 @@ import { IHierarchicalComponent } from "../core/CoreComponents";
  * Provides a unified iterative topological sort to ensure parents are processed
  * before their children, avoiding recursion and stack overflow risks.
  */
-export abstract class AbstractHierarchySystem extends System {
+export abstract class AbstractHierarchySystem<
+  TComponents extends ComponentRegistry = any,
+  TEvents extends EventRegistry = any
+> extends System<TComponents, TEvents> {
   /**
    * Tracks entities whose hierarchical state was updated in the current frame.
    * Used to propagate dirty state down the tree.
@@ -23,8 +28,8 @@ export abstract class AbstractHierarchySystem extends System {
    * @param componentType - The component discriminator that defines the hierarchy (e.g., "Transform", "UIElement").
    * @returns An array of entities in topological order.
    */
-  protected getProcessingOrder(world: World, componentType: string): Entity[] {
-    const entities = world.query(componentType);
+  protected getProcessingOrder(world: World<TComponents, TEvents, any>, componentType: string): Entity[] {
+    const entities = world.query(componentType as any);
     if (entities.length === 0) return [];
 
     const order: Entity[] = [];
@@ -52,7 +57,7 @@ export abstract class AbstractHierarchySystem extends System {
           processing.add(entity);
           stack.push({ entity, stage: 'exit' });
 
-          const comp = world.getComponent(entity, componentType) as unknown as IHierarchicalComponent | undefined;
+          const comp = world.getComponent(entity, componentType as any) as unknown as IHierarchicalComponent | undefined;
           if (comp && comp.parentEntity !== null) {
             stack.push({ entity: comp.parentEntity, stage: 'enter' });
           }

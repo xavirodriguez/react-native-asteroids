@@ -18,8 +18,9 @@ import { EntityReplicator } from "./EntityReplicator";
  * and the network adapter.
  *
  * While it provides a unified interface for various strategies (rollback, interpolation),
- * synchronization quality is subject to the selected strategy, network conditions,
- * and the underlying simulation's consistency.
+ * synchronization quality is typically a best-effort result subject to the selected
+ * strategy, network conditions (latency, jitter, packet loss), and the underlying
+ * simulation's consistency.
  */
 export class NetworkManager {
     private static instances = new Map<string, NetworkManager>();
@@ -69,6 +70,9 @@ export class NetworkManager {
         this.strategy.update(world, deltaTime);
     }
 
+    /**
+     * Informs the current strategy of an incoming authoritative update from the server.
+     */
     public processServerUpdate(serverTick: number, authoritativeSnapshot: WorldSnapshot, localSessionId?: string): void {
         this.strategy.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
     }
@@ -81,6 +85,9 @@ export class NetworkManager {
         return this.strategy;
     }
 
+    /**
+     * Resets the network state, clearing local history and replicated entities.
+     */
     public reset(): void {
         this.strategy.reset();
         this.replicator.clear();

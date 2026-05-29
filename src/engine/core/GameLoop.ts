@@ -134,7 +134,7 @@ export class GameLoop {
   }
 
   /**
-   * Starts the execution of the game loop.
+   * Attempts to start the execution of the game loop.
    */
   public start(): void {
     if (this.isRunning) return;
@@ -144,7 +144,7 @@ export class GameLoop {
   }
 
   /**
-   * Stops the game loop.
+   * Requests the game loop to stop.
    */
   public stop(): void {
     this.isRunning = false;

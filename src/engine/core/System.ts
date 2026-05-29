@@ -1,9 +1,11 @@
 import { World } from "./World";
+import { ComponentRegistry, BlueprintRegistryMap } from "./Component";
+import { EventRegistry } from "./EventBus";
 
 /**
  * Standard phases for system execution order.
  *
- * API status: Public
+ * @public
  *
  * @remarks
  * Systems are executed sequentially based on these phases.
@@ -32,24 +34,18 @@ export enum SystemPhase {
 
 /**
  * Configuration for registering a system within the {@link World}.
+ *
+ * @public
  */
 export interface SystemConfig {
-  /**
-   * The phase in which the system should run.
-   * Defaults to {@link SystemPhase.Simulation}.
-   */
   phase?: SystemPhase | string;
-  /**
-   * Execution priority within the phase.
-   * Higher priority runs earlier.
-   */
   priority?: number;
 }
 
 /**
  * Abstract base class for all ECS Systems.
  *
- * API status: Public
+ * @public
  *
  * @remarks
  * Systems encapsulate game logic and behavior, typically operating on sets of
@@ -75,20 +71,14 @@ export interface SystemConfig {
  *
  * @public
  */
-export abstract class System {
-  /**
-   * Called when the system is registered in the World.
-   *
-   * @param world - The World instance where the system is being registered.
-   */
-  public onRegister(_world: World): void {}
+export abstract class System<
+  TComponents extends ComponentRegistry = any,
+  TEvents extends EventRegistry = any,
+  TBlueprints extends BlueprintRegistryMap<TComponents> = any
+> {
+  public onRegister(_world: World<TComponents, TEvents, TBlueprints>): void {}
 
-  /**
-   * Called when the system is removed from the World or the game is destroyed.
-   *
-   * @param world - The World instance where the system was registered.
-   */
-  public onUnregister(_world: World): void {}
+  public onUnregister(_world: World<TComponents, TEvents, TBlueprints>): void {}
 
   /**
    * Executes the system logic for the current simulation tick.
@@ -113,10 +103,7 @@ export abstract class System {
    * @remarks
    * World state is intended to be consistent at the start of the update cycle.
    */
-  abstract update(world: World, deltaTime: number): void;
+  abstract update(world: World<TComponents, TEvents, TBlueprints>, deltaTime: number): void;
 
-  /**
-   * Cleanup system resources when it's removed or the game is destroyed.
-   */
   public dispose(): void {}
 }
