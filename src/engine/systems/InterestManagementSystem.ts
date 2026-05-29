@@ -57,7 +57,7 @@ export class InterestManagementSystem extends System {
       // Query SpatialGrid for nearby entities
       grid.query(aabb, relevantEntities);
 
-      // Ensure the viewer is always relevant to themselves
+      // Ensure the viewer is considered relevant to themselves
       relevantEntities.add(viewerEntity);
 
       interestMap.set(sessionId, relevantEntities);

@@ -71,7 +71,7 @@ export class CommandInvokerSystem extends System {
     const transform = world.getComponent<TransformComponent>(entity, "Transform");
     if (!transform) return;
 
-    // Cálculo vectorial determinista
+    // Cálculo vectorial de la fuerza
     const rotation = transform.rotation;
     const forceX = Math.cos(rotation) * CommandInvokerSystem.THRUST_ACCEL * dt;
     const forceY = Math.sin(rotation) * CommandInvokerSystem.THRUST_ACCEL * dt;
@@ -94,10 +94,14 @@ export class CommandInvokerSystem extends System {
   }
 
   /**
-   * Teletransporta la entidad a una posición aleatoria determinista.
+   * Teletransporta la entidad a una posición aleatoria.
+   *
+   * @remarks
+   * Utiliza el flujo de PRNG de gameplay para favorecer la reproducibilidad en
+   * entornos de simulación controlada (rollback/netcode).
    */
   private handleHyperspace(world: World, entity: number): void {
-    // Usamos el servicio de PRNG del motor para garantizar determinismo en rollback/netcode
+    // Usamos el servicio de PRNG del motor para favorecer el determinismo en rollback/netcode
     const rng = world.gameplayRandom;
 
     // Límites asumiendo resolución estándar (Mejorable inyectando GameConfig)
