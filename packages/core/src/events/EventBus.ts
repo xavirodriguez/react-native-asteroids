@@ -30,7 +30,7 @@ export type EventHandler<TPayload> =
  */
 export class EventBus<TEvents extends EventRegistry = EventRegistry> {
   private listeners = new Map<string, Set<EventHandler<any>>>();
-  private deferredEvents: { event: string; payload: any }[] = [];
+  private deferredEvents: { event: string; payload: unknown }[] = [];
   private readonly MAX_RECURSION = 10;
   private recursionLevel = 0;
 
@@ -117,7 +117,7 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
     const events = [...this.deferredEvents];
     this.deferredEvents = [];
     for (const { event, payload } of events) {
-      this.emit(event as any, payload);
+      this.emit(event as any, payload as any);
     }
   }
 

@@ -1,7 +1,7 @@
 import { AssetDescriptor, AssetHandle, IAssetProvider } from "./AssetProvider";
 
 export class AssetLoader {
-  private cache = new Map<string, AssetHandle<any>>();
+  private cache = new Map<string, AssetHandle<unknown>>();
   private provider: IAssetProvider;
   private refCounts = new Map<string, number>();
 
@@ -12,15 +12,15 @@ export class AssetLoader {
   async load<T = unknown>(descriptor: AssetDescriptor): Promise<T> {
     this.incrementRef(descriptor.id);
 
-    if (this.cache.has(descriptor.id)) {
-      const handle = this.cache.get(descriptor.id)!;
-      if (handle.status === "ready") return handle.data;
-      if (handle.status === "loading") {
+    const existing = this.cache.get(descriptor.id);
+    if (existing) {
+      if (existing.status === "ready") return existing.data as T;
+      if (existing.status === "loading") {
         // Wait for it
         while (this.cache.get(descriptor.id)?.status === "loading") {
           await new Promise(resolve => setTimeout(resolve, 10));
         }
-        return this.cache.get(descriptor.id)!.data;
+        return this.cache.get(descriptor.id)!.data as T;
       }
     }
 
@@ -45,7 +45,7 @@ export class AssetLoader {
 
   get<T = unknown>(id: string): T | null {
     const handle = this.cache.get(id);
-    return handle && handle.status === "ready" ? handle.data : null;
+    return handle && handle.status === "ready" ? (handle.data as T) : null;
   }
 
   private incrementRef(id: string): void {

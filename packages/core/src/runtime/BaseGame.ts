@@ -15,7 +15,7 @@ import { CoreComponentRegistry } from "../ecs/CoreComponents";
  */
 export abstract class BaseGame<
   TState,
-  TInput extends Record<string, unknown>,
+  _TInput extends Record<string, unknown>,
   TComponents extends ComponentRegistry = CoreComponentRegistry,
   TEvents extends EventRegistry = EventRegistry,
   TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
