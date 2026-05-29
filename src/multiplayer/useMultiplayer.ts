@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { ColyseusConnection } from "./ColyseusClient";
+import { ColyseusConnection } from "./ColyseusConnection";
 import { Room } from "@colyseus/sdk";
 import { InputFrame } from "./NetTypes";
 import { BinaryCompression } from "../engine/network/BinaryCompression";

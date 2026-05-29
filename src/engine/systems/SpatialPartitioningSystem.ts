@@ -52,15 +52,9 @@ export class SpatialPartitioningSystem extends System {
     const viewY = mainCam?.y ?? 0;
 
     // ScreenConfig is a MANDATORY resource for correct spatial culling.
-    let screenResource = world.getResource<ScreenConfig>("ScreenConfig");
+    const screenResource = world.getResource<ScreenConfig>("ScreenConfig");
     if (!screenResource) {
-        if (process.env.NODE_ENV !== "production") {
-            console.warn(
-                "[SpatialPartitioningSystem] Missing 'ScreenConfig' resource. " +
-                "Using fallback 800x600. Ensure it's set in AsteroidsGame.init()"
-            );
-        }
-        screenResource = { width: 800, height: 600 };
+        return; // Wait for ScreenConfig to be available
     }
 
     const camWithDims = mainCam as (Camera2DComponent & { width?: number; height?: number }) | null;

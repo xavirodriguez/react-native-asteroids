@@ -225,22 +225,24 @@ export class SpaceInvadersGame
 
   public override start(): void {
     super.start();
-    console.log("[SpaceInvadersGame] Simulation started");
+    if (__DEV__) console.log("[SpaceInvadersGame] Simulation started");
   }
 
   public override stop(): void {
     super.stop();
-    console.log("[SpaceInvadersGame] Simulation stopped");
+    if (__DEV__) console.log("[SpaceInvadersGame] Simulation stopped");
   }
 
   public override pause(): void {
     super.pause();
-    console.log("[SpaceInvadersGame] Simulation paused");
+    this.getWorld().setResource("IsPaused", true);
+    if (__DEV__) console.log("[SpaceInvadersGame] Simulation paused");
   }
 
   public override resume(): void {
     super.resume();
-    console.log("[SpaceInvadersGame] Simulation resumed");
+    this.getWorld().setResource("IsPaused", false);
+    if (__DEV__) console.log("[SpaceInvadersGame] Simulation resumed");
   }
 
   protected async _onBeforeRestart(): Promise<void> {

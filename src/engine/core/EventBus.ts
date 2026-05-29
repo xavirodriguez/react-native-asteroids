@@ -87,6 +87,13 @@ export class EventBus {
   * This should be called once per frame, typically at the very end of the engine
   * update cycle. It supports up to 5 iterations to handle events emitted during
   * the flush itself (cascading events).
+  *
+  * @see {@link BaseGame} execution pipeline.
+  *
+  * @remarks
+  * This should be called once per frame, typically at the very end of the engine
+  * update cycle. It supports up to 5 iterations to handle events emitted during
+  * the flush itself (cascading events).
   */
   public flushDeferred(): void {
     let iterations = 0;

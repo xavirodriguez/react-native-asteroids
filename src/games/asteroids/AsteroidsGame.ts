@@ -406,29 +406,33 @@ export class AsteroidsGame
 
   public override start(): void {
     super.start();
-    console.log("[AsteroidsGame] Simulation started");
+    if (__DEV__) console.log("[AsteroidsGame] Simulation started");
   }
 
   public override stop(): void {
     super.stop();
-    console.log("[AsteroidsGame] Simulation stopped");
+    if (__DEV__) console.log("[AsteroidsGame] Simulation stopped");
   }
 
   public override destroy(): void {
     if (typeof window !== "undefined" && this.resizeListener) {
         window.removeEventListener("resize", this.resizeListener);
     }
+    this.bulletPool?.clear();
+    this.particlePool?.clear();
     super.destroy();
   }
 
   public override pause(): void {
     super.pause();
-    console.log("[AsteroidsGame] Simulation paused");
+    this.world.setResource("IsPaused", true);
+    if (__DEV__) console.log("[AsteroidsGame] Simulation paused");
   }
 
   public override resume(): void {
     super.resume();
-    console.log("[AsteroidsGame] Simulation resumed");
+    this.world.setResource("IsPaused", false);
+    if (__DEV__) console.log("[AsteroidsGame] Simulation resumed");
   }
 
 }

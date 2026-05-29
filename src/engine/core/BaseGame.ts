@@ -122,11 +122,11 @@ export enum GameStatus {
  * | 3 | **SIMULATION** (Logic) | `TTLSystem`, `StateMachineSystem`, Game Logic | May mutate components via `World.mutateComponent`. Structural changes (creation/deletion) should be deferred via `WorldCommandBuffer`. |
  * | 4 | **SIMULATION** (Physics) | `MovementSystem`, `FrictionSystem` | Updates `Transform` based on `Velocity`. |
  * | 5 | **COLLISION** | `CollisionSystem2D` | Reads Transform/Velocity. Updates `CollisionEvents`. |
- * | 6 | **GAME RULES** | `PhysicsSystem2D` (Resolution), Health/Damage | Resolves physics, applies damage, triggers game-over. |
+ * | 6 | **GAME RULES** | `PhysicsSolveSystem` (Resolution), Health/Damage | Resolves physics, applies damage, triggers game-over. |
  * | 7 | **TRANSFORM** | `HierarchySystem` | Propagates world matrices. |
  * | 8 | **PRESENTATION** | `JuiceSystem`, `ParticleSystem`, `AudioSystem` | Visual-only mutations. Triggers deferred events (SFX). |
  * | 9 | **REPLAY/FLUSH** | `ReplayRecorder`, `World.flush` | Captures state. Applies deferred structural changes. |
- * | 10 | **DEFERRED** | `EventBus.processDeferred` | Side effects (SFX, logs) isolated from core simulation. |
+ * | 10 | **DEFERRED** | `EventBus.flushDeferred` | Side effects (SFX, logs) isolated from core simulation. |
  *
  * ### Initialization Machine:
  * UNINITIALIZED -\> INITIALIZING -\> READY -\> RUNNING

@@ -86,14 +86,14 @@ export class RandomService {
   }
 
   /**
-   * @deprecated Static access is non-deterministic in multiplayer environments.
+   * @deprecated Use world.gameplayRandom
    */
   public static getGameplayRandom(): RandomService {
     return RandomService.getInstance("gameplay");
   }
 
   /**
-   * @deprecated Static access is non-deterministic in multiplayer environments.
+   * @deprecated Use world.renderRandom
    */
   public static getRenderRandom(): RandomService {
     return RandomService.getInstance("render");
