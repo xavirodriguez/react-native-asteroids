@@ -153,6 +153,26 @@ export class World<
     typeMap.set(entity, this._stateVersion);
   }
 
+  /**
+   * Generates a serializable snapshot of the world state, intended for rollback or persistence.
+   *
+   * @remarks
+   * The snapshot is a deep-cloned representation of the world state, designed to facilitate
+   * state restoration. It seeks to achieve consistency by:
+   * 1. Organizing entity lists sorted by ID.
+   * 2. Sorting component types alphabetically.
+   * 3. Storing component data per type in entity-order.
+   *
+   * Functional or non-serializable data (such as event handlers, complex object instances, or
+   * external references) is typically not captured and may lead to incomplete restoration
+   * if components are not kept as plain-old-data (POD).
+   *
+   * @warning **Performance & Allocation**: Snapshotting involves deep cloning, which is intended
+   * to ensure snapshot independence and avoid reference sharing (aliasing). This process
+   * incurs a performance cost and increases GC pressure proportional to the total number of
+   * components and their complexity. Frequent snapshotting in large simulations may
+   * impact frame rate and should be monitored.
+   */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const gameplayRandom = this.gameplayRandom;
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
@@ -230,6 +250,24 @@ export class World<
     return result;
   }
 
+  /**
+   * Restores the world state from a previously captured snapshot.
+   *
+   * @remarks
+   * This method performs a deep restoration designed to make the live world state
+   * independent of the snapshot object. It rebuilds internal indexes and
+   * re-synchronizes queries to help maintain structural integrity.
+   *
+   * To help reduce GC pressure, the restoration process attempts to reuse existing
+   * component objects when possible, overwriting their properties instead of
+   * allocating new objects.
+   *
+   * @warning **State Consistency**: State restoration is intended to be used when
+   * the world's static structure (registered systems, component types) matches the
+   * state when the snapshot was taken. Manual restoration of resources or external
+   * state not managed by the World must be handled by the developer to help ensure
+   * simulation integrity.
+   */
   public restore(state: WorldSnapshot): void {
     this.assertCanMutateStructure("restore");
     this.activeEntities = new Set(state.entities);
