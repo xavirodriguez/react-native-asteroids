@@ -1,4 +1,5 @@
 import { Entity } from "../types/EngineTypes";
+import { ComponentRegistry } from "./Component";
 
 /**
  * Reactive Query that maintains an index of entities with a specific component signature.
@@ -27,39 +28,17 @@ import { Entity } from "../types/EngineTypes";
  *
  * @public
  */
-export class Query {
+export class Query<TComponents extends ComponentRegistry = any> {
   private entities: Set<Entity> = new Set();
   private entityArray: Entity[] = [];
   private needsUpdateArray = false;
 
-  /**
-  * Initializes a query for a specific component signature.
-  *
-  * @param componentTypes - List of component type discriminators defining the signature.
-  *
-  * @precondition At least one component type should be provided.
-  */
   constructor(public readonly componentTypes: string[]) {}
 
-  /**
-  * Checks if an entity's component set matches this query's signature.
-  *
-  * @param entityComponents - The set of component types currently possessed by the entity.
-  * @returns `true` if the entity possesses ALL required component types.
-  */
   public matches(entityComponents: Set<string>): boolean {
     return this.componentTypes.every(type => entityComponents.has(type));
   }
 
-  /**
-  * Adds an entity to the query result index.
-  *
-  * @param entity - Entity ID to add.
-  *
-  * @remarks
-  * Expected to be called by the {@link World} when an entity matches the query's signature.
-  * If the entity was new to this query, `needsUpdateArray` is marked true.
-  */
   public add(entity: Entity): void {
     if (!this.entities.has(entity)) {
       this.entities.add(entity);

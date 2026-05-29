@@ -1,47 +1,33 @@
 import { System } from "../core/System";
 import { World } from "../core/World";
-import { TransformComponent, PreviousTransformComponent } from "../core/CoreComponents";
+import { TransformComponent, PreviousTransformComponent, CoreComponentRegistry } from "../core/CoreComponents";
+import { ComponentRegistry } from "../core/Component";
+import { EventRegistry } from "../core/EventBus";
 
 /**
- * Sistema que intenta capturar el estado de transformación actual antes de ser modificado por la simulación.
- *
- * @responsibility Intentar almacenar la posición y rotación del tick anterior en {@link PreviousTransformComponent}.
- *
- * API status: Public
+ * System that snapshots current Transform state into PreviousTransform.
+ * Used for visual interpolation between simulation ticks.
  */
-export class InterpolationPrepSystem extends System {
-  /**
-   * Captura el estado actual del Transform en PreviousTransform.
-   *
-   * @param world - El mundo ECS.
-   * @param _deltaTime - Tiempo transcurrido (ignorado).
-   */
-  public update(world: World, _deltaTime: number): void {
-    const entities = world.query("Transform");
+export class InterpolationPrepSystem<
+  TComponents extends ComponentRegistry = CoreComponentRegistry,
+  TEvents extends EventRegistry = any
+> extends System<TComponents, TEvents> {
+  public update(world: World<TComponents, TEvents, any>, _deltaTime: number): void {
+    const query = world.query("Transform" as any, "PreviousTransform" as any);
 
-    for (let i = 0; i < entities.length; i++) {
-      const entity = entities[i];
-      const transform = world.getComponent<TransformComponent>(entity, "Transform")!;
-      const prev = world.getComponent<PreviousTransformComponent>(entity, "PreviousTransform");
+    for (const entity of query) {
+      const transform = world.getComponent(entity, "Transform" as any) as any as TransformComponent;
+      const prevTransform = world.getComponent(entity, "PreviousTransform" as any) as any as PreviousTransformComponent;
 
-      if (!prev) {
-        world.getCommandBuffer().addComponent(entity, {
-          type: "PreviousTransform",
-          x: transform.x,
-          y: transform.y,
-          rotation: transform.rotation,
-          worldX: transform.worldX,
-          worldY: transform.worldY,
-          worldRotation: transform.worldRotation,
-        } as PreviousTransformComponent);
-      } else {
-        world.mutateComponent<PreviousTransformComponent>(entity, "PreviousTransform", p => {
-            p.x = transform.x;
-            p.y = transform.y;
-            p.rotation = transform.rotation;
-            p.worldX = transform.worldX;
-            p.worldY = transform.worldY;
-            p.worldRotation = transform.worldRotation;
+      if (transform && prevTransform) {
+        world.mutateComponent(entity, "PreviousTransform" as any, (p: any) => {
+          const pt = p as PreviousTransformComponent;
+          pt.x = transform.x;
+          pt.y = transform.y;
+          pt.rotation = transform.rotation;
+          pt.worldX = transform.worldX;
+          pt.worldY = transform.worldY;
+          pt.worldRotation = transform.worldRotation;
         });
       }
     }

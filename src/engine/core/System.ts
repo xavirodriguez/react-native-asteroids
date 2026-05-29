@@ -1,4 +1,6 @@
 import { World } from "./World";
+import { ComponentRegistry, BlueprintRegistryMap } from "./Component";
+import { EventRegistry } from "./EventBus";
 
 /**
  * Standard phases for system execution order.
@@ -36,15 +38,7 @@ export enum SystemPhase {
  * @public
  */
 export interface SystemConfig {
-  /**
-   * The phase in which the system should run.
-   * Defaults to {@link SystemPhase.Simulation}.
-   */
   phase?: SystemPhase | string;
-  /**
-   * Execution priority within the phase.
-   * Higher priority runs earlier.
-   */
   priority?: number;
 }
 
@@ -77,48 +71,16 @@ export interface SystemConfig {
  *
  * @public
  */
-export abstract class System {
-  /**
-   * Called when the system is registered in the World.
-   *
-   * @param world - The World instance where the system is being registered.
-   */
-  public onRegister(_world: World): void {}
+export abstract class System<
+  TComponents extends ComponentRegistry = any,
+  TEvents extends EventRegistry = any,
+  TBlueprints extends BlueprintRegistryMap<TComponents> = any
+> {
+  public onRegister(_world: World<TComponents, TEvents, TBlueprints>): void {}
 
-  /**
-   * Called when the system is removed from the World or the game is destroyed.
-   *
-   * @param world - The World instance where the system was registered.
-   */
-  public onUnregister(_world: World): void {}
+  public onUnregister(_world: World<TComponents, TEvents, TBlueprints>): void {}
 
-  /**
-   * Executes the system logic for the current simulation tick.
-   *
-   * @param world - The {@link World} instance the system operates on.
-   * @param deltaTime - Elapsed time since last update in milliseconds.
-   *
-   * @remarks
-   * Systems typically query relevant entities via {@link World.query} and apply
-   * transformations to their components. To support reproducibility and consistency,
-   * it is recommended to avoid non-serializable internal mutable state.
-   *
-   * @warning **Structural Mutations**: Modifying world structure (creating/removing entities
-   * or components) while iterating over a query is restricted as it may
-   * invalidate iterators or lead to inconsistent state. Use {@link World.getCommandBuffer}
-   * to defer these operations until the end of the tick.
-   *
-   * @warning **Asynchronous Logic**: Systems are expected to be synchronous. Using `async/await`
-   * within `update` is NOT supported by the engine's core loop and will likely lead
-   * to race conditions, broken simulation integrity, and unpredictable behavior.
-   *
-   * @remarks
-   * World state is expected to be consistent at the start of the update cycle.
-   */
-  abstract update(world: World, deltaTime: number): void;
+  abstract update(world: World<TComponents, TEvents, TBlueprints>, deltaTime: number): void;
 
-  /**
-   * Cleanup system resources when it's removed or the game is destroyed.
-   */
   public dispose(): void {}
 }

@@ -149,7 +149,6 @@ export interface ShipComponent extends Component {
 
 /**
  * Stores the transform state from the previous simulation tick.
- * Used primarily for visual interpolation in renderers.
  */
 export interface PreviousTransformComponent extends Component {
   type: "PreviousTransform";
@@ -165,7 +164,6 @@ export interface PreviousTransformComponent extends Component {
 
 /**
  * Defines the movement vector and angular velocity.
- * Units: pixels/second for dx/dy, radians/second for vAngle.
  */
 export interface VelocityComponent extends Component {
   type: "Velocity";
@@ -214,7 +212,6 @@ export interface TagComponent extends Component {
 
 /**
  * Time To Live (TTL) component.
- * Automatically handles entity destruction after a duration.
  */
 export interface TTLComponent extends Component {
   type: "TTL";
@@ -224,7 +221,6 @@ export interface TTLComponent extends Component {
   total: number;
   /**
    * Identificador de evento a disparar al finalizar.
-   * @remarks Reemplaza callbacks para compatibilidad con snapshots.
    */
   onCompleteEvent?: string;
 }
@@ -235,7 +231,6 @@ import { CommandQueueComponent } from "../commands/types";
 
 /**
  * Modern 2D collision component.
- * Defines the shape and physical properties for collision detection.
  */
 export interface Collider2DComponent extends Component {
   type: "Collider2D";
@@ -278,13 +273,10 @@ export { CollisionManifold };
 export interface ContinuousColliderComponent extends Component {
   type: "ContinuousCollider";
   enabled: boolean;
-  /** [px/s] Velocidad mínima para activar CCD. Si no se provee, se calcula según el tamaño. */
+  /** [px/s] Velocidad mínima para activar CCD. */
   velocityThreshold?: number;
   /**
-   * Modo de detección:
-   * - raycast: ideal para balas (segmento de pos anterior a actual).
-   * - swept: ideal para círculos/AABBs (volumen barrido).
-   * - substep: divide el frame en micro-pasos (más costoso pero preciso).
+   * Modo de detección.
    */
   mode?: "raycast" | "swept" | "substep";
   /** Límite de micro-pasos para el modo 'substep'. */
@@ -295,11 +287,6 @@ export interface ContinuousColliderComponent extends Component {
 
 /**
  * Rigid body properties for physical simulation.
- * Use this when an entity requires mass, forces, and friction.
- *
- * @remarks
- * For simpler movement without complex dynamics, {@link VelocityComponent}
- * is typically preferred.
  */
 export interface PhysicsBody2DComponent extends Component {
   type: "PhysicsBody2D";
@@ -387,14 +374,12 @@ export interface ReclaimableComponent extends Component {
   type: "Reclaimable";
   /**
    * Identificador del pool para reclamación.
-   * @remarks Reemplaza callbacks para compatibilidad con snapshots.
    */
   poolId: string;
   /**
-   * Local callback to manage pool reclamation.
-   * @internal Not serialized.
+   * Callback local para gestionar la devolución al pool.
    */
-  onReclaim?: (world: World, entity: Entity) => void;
+  onReclaim?: (world: World<any, any, any>, entity: Entity) => void;
 }
 
 export type InputAction = string;
@@ -413,9 +398,9 @@ export interface InputStateComponent extends Component {
 /**
  * Singleton resource component providing access to the EventBus.
  */
-export interface EventBusComponent extends Component {
+export interface EventBusComponent<TEvents extends Record<string, unknown> = any> extends Component {
   type: "EventBus";
-  bus: EventBus;
+  bus: EventBus<TEvents>;
 }
 
 /**
@@ -427,7 +412,6 @@ export interface AnimationConfig {
   loop: boolean;
   /**
    * Identificador de evento a disparar al finalizar.
-   * @remarks Reemplaza callbacks para compatibilidad con snapshots.
    */
   onCompleteEvent?: string;
 }
@@ -449,10 +433,6 @@ export interface AnimatorComponent extends Component {
 
 /**
  * Attaches a Finite State Machine (FSM) to an entity.
- *
- * @remarks
- * Redesigned as a POJO for better compatibility with snapshots and networking.
- * Logic typically resides in the StateMachineRegistry.
  */
 export interface StateMachineComponent extends Component {
   type: "StateMachine";
@@ -544,7 +524,6 @@ export interface TilemapComponent extends Component {
 
 /**
  * Configuration for a 2D camera viewport.
- * Defines what area of the world is visible and how it follows targets.
  */
 export interface Camera2DComponent extends Component {
   type: "Camera2D";
@@ -591,7 +570,6 @@ export interface ScreenShakeComponent extends Component {
 
 /**
  * Temporary visual offset applied during rendering.
- * Used for juice effects or network error smoothing without affecting simulation.
  */
 export interface VisualOffsetComponent extends Component {
   type: "VisualOffset";
@@ -694,7 +672,6 @@ export interface BallComponent extends Component {
 
 /**
  * Tracks entity occupancy in the global SpatialGrid.
- * Used for broadphase collision and simulation culling (USSC).
  */
 export interface SpatialNodeComponent extends Component {
   type: "SpatialNode";
@@ -706,9 +683,9 @@ export interface SpatialNodeComponent extends Component {
 /**
  * Component for requesting haptic feedback in a decoupled way.
  */
-export interface HapticRequestComponent extends Component {
+export interface HapticRequestComponent<TPattern extends string = string> extends Component {
   type: "HapticRequest";
-  pattern: "shoot" | "damage" | "death" | "hyperspace" | "thrust";
+  pattern: TPattern;
   intensity?: number;
 }
 
@@ -719,9 +696,9 @@ export interface VirtualJoystickComponent extends Component {
   type: "VirtualJoystick";
   /** If the joystick is currently being touched. */
   active: boolean;
-  /** [px] Origin X coordinate (where the touch started). */
+  /** [px] Origin X coordinate. */
   originX: number;
-  /** [px] Origin Y coordinate (where the touch started). */
+  /** [px] Origin Y coordinate. */
   originY: number;
   /** [px] Current X coordinate of the touch. */
   currentX: number;
@@ -730,22 +707,12 @@ export interface VirtualJoystickComponent extends Component {
   /** [px] Maximum displacement radius. */
   radius: number;
 
-  /** Joystick configuration (deadzone, curve, etc). */
   config?: JoystickConfig;
-  /** Semantic type for automatic command generation. */
   joystickType?: JoystickType;
 
-  /** Name of the horizontal axis to update in InputState. */
   horizontalAxis: string;
-  /** Name of the vertical axis to update in InputState. */
   verticalAxis: string;
 
-  /** [unitless] Normalized deadzone radius [0, 1]. @deprecated Use config.deadzone */
-  deadzone?: number;
-  /** [unitless] Input sensitivity multiplier. @deprecated Use config.sensitivity */
-  sensitivity?: number;
-  /** Response curve algorithm. @deprecated Use config.curveType */
-  curveType?: "linear" | "quadratic" | "squared";
   /** @internal Track deadzone state for haptics. */
   _wasInDeadzone?: boolean;
 }
@@ -785,53 +752,61 @@ export interface RotateCommand extends Component {
   amount: number;
 }
 
+import { ComponentRegistry } from "./Component";
+
+/**
+ * Core component registry.
+ */
+export interface CoreComponentRegistry extends ComponentRegistry {
+  Transform: TransformComponent;
+  PreviousTransform: PreviousTransformComponent;
+  Velocity: VelocityComponent;
+  Friction: FrictionComponent;
+  Boundary: BoundaryComponent;
+  Tag: TagComponent;
+  TTL: TTLComponent;
+  Collider2D: Collider2DComponent;
+  CollisionEvents: CollisionEventsComponent;
+  ContinuousCollider: ContinuousColliderComponent;
+  PhysicsBody2D: PhysicsBody2DComponent;
+  Render: RenderComponent;
+  Health: HealthComponent;
+  Reclaimable: ReclaimableComponent;
+  InputState: InputStateComponent;
+  EventBus: EventBusComponent<any>;
+  Animator: AnimatorComponent;
+  StateMachine: StateMachineComponent;
+  ParticleEmitter: ParticleEmitterComponent;
+  Tilemap: TilemapComponent;
+  Camera2D: Camera2DComponent;
+  ScreenShake: ScreenShakeComponent;
+  VisualOffset: VisualOffsetComponent;
+  Trail: TrailComponent;
+  Star: Star;
+  ModifierStack: ModifierStackComponent;
+  LootTable: LootTableComponent;
+  PowerUp: PowerUpComponent;
+  Ball: BallComponent;
+  SpatialNode: SpatialNodeComponent;
+  HapticRequest: HapticRequestComponent<string>;
+  VirtualJoystick: VirtualJoystickComponent;
+  ProcessedJoystick: ProcessedJoystickComponent;
+  MoveCommand: MoveCommand;
+  RotateCommand: RotateCommand;
+  Juice: JuiceComponent;
+  CommandQueue: CommandQueueComponent;
+  EnemyTag: EnemyTagComponent;
+  Asteroid: AsteroidComponent;
+  Invader: InvaderComponent;
+  Bullet: BulletComponent;
+  Ship: ShipComponent;
+  [key: string]: Component;
+}
+
 /**
  * Union of all core engine components for type safety.
  */
-export type AnyCoreComponent =
-  | TransformComponent
-  | ManualMovementComponent
-  | PreviousTransformComponent
-  | VelocityComponent
-  | FrictionComponent
-  | BoundaryComponent
-  | TagComponent
-  | TTLComponent
-  | Collider2DComponent
-  | CollisionEventsComponent
-  | ContinuousColliderComponent
-  | PhysicsBody2DComponent
-  | RenderComponent
-  | HealthComponent
-  | ReclaimableComponent
-  | InputStateComponent
-  | EventBusComponent
-  | AnimatorComponent
-  | StateMachineComponent
-  | ParticleEmitterComponent
-  | TilemapComponent
-  | Camera2DComponent
-  | ScreenShakeComponent
-  | VisualOffsetComponent
-  | TrailComponent
-  | Star
-  | ModifierStackComponent
-  | LootTableComponent
-  | PowerUpComponent
-  | BallComponent
-  | SpatialNodeComponent
-  | HapticRequestComponent
-  | VirtualJoystickComponent
-  | ProcessedJoystickComponent
-  | MoveCommand
-  | RotateCommand
-  | JuiceComponent
-  | CommandQueueComponent
-  | EnemyTagComponent
-  | AsteroidComponent
-  | InvaderComponent
-  | BulletComponent
-  | ShipComponent;
+export type AnyCoreComponent = CoreComponentRegistry[keyof CoreComponentRegistry];
 
 /**
  * Helper to infer the concrete component type from its discriminator.
