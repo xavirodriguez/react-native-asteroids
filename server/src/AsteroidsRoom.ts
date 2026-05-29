@@ -196,10 +196,10 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
   }
 
   /**
-   * Bucle principal de actualización del servidor (Fixed Step @ 60Hz).
+   * Bucle principal de actualización del servidor (Fixed Step Target @ 60Hz).
    *
    * @remarks
-   * Sigue un pipeline estricto para mantener la autoridad del estado y la eficiencia de red:
+   * Sigue un pipeline diseñado para mantener la autoridad del estado y la eficiencia de red:
    *
    * 1. **Tick Sync**: Incrementa `serverTick`, la referencia temporal absoluta.
    * 2. **Input Recovery**: Extrae inputs del buffer de cada cliente correspondientes al tick actual.
@@ -374,11 +374,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     this.stateHistory.set(this.state.serverTick, this.world.snapshot());
 
     // O(1) cleanup: Keep only the last 120 snapshots.
-    // Map.keys() returns an iterator in insertion order.
-    if (this.stateHistory.size > 120) {
-        const oldestTick = this.stateHistory.keys().next().value;
-        this.stateHistory.delete(oldestTick);
-    }
+    const oldestTick = this.state.serverTick - 120;
+    this.stateHistory.delete(oldestTick);
 
     // 8. Check Game Over to broadcast replay
     if (this.state.gameOver && this.replayFrames.length > 0) {
@@ -399,6 +396,19 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
    * This is necessary because the Schema is the source of truth for the clients
    * that use standard Colyseus state synchronization.
    */
+
+  onDispose() {
+    console.log(`[AsteroidsRoom] Disposing room ${this.roomId}`);
+    this.stateHistory.clear();
+    this.inputBuffers.clear();
+    this.clientAcks.clear();
+    this.playerEntities.clear();
+    this.newClients.clear();
+    this.replayFrames = [];
+    if (this.gameSimulation) {
+        this.gameSimulation.destroy();
+    }
+  }
 
   private syncWorldToSchema() {
     // Sync Players

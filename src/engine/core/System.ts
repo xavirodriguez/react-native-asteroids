@@ -10,12 +10,12 @@ import { World } from "./World";
  * See {@link BaseGame} for more details on the execution pipeline.
  *
  * Mutation Guidelines per Phase:
- * - `Input`: Intended for capturing external events. It is generally recommended NOT
- *   to mutate component data directly in this phase.
+ * - `Input`: Intended for capturing external events. It is recommended to avoid
+ *   mutating component data directly in this phase.
  * - `Simulation`: Main phase for gameplay logic and data mutation. Structural changes
  *   (creation/deletion) should be deferred via {@link WorldCommandBuffer} to help
  *   maintain iterator safety.
- * - `Collision`: Typically expects read-only access to spatial components for detection.
+ * - `Collision`: Generally expects read-only access to spatial components for detection.
  * - `GameRules`: High-level state changes and logic resolution.
  * - `Transform`: Intended for world-space hierarchy resolution.
  *

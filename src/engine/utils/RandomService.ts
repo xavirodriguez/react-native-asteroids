@@ -3,8 +3,8 @@
  */
 
 /**
- * Service providing seeded, pseudo-random number generation designed for use
- * in cases where reproducibility is desired.
+ * Service providing seeded, pseudo-random number generation intended for
+ * reproducible use cases.
  */
 export class RandomService {
   private seed: number;
@@ -48,7 +48,7 @@ export class RandomService {
   }
 
   // ==========================================================================
-  // STATIC SUPPORT (Restricted to internal use and tests)
+  // STATIC SUPPORT (DEPRECATED - Use World-based instances instead)
   // ==========================================================================
 
   private static namedInstances: Map<string, RandomService> = new Map();
@@ -66,9 +66,11 @@ export class RandomService {
   }
 
   /**
+   * @deprecated Use `world.gameplayRandom` or `world.renderRandom` instead.
    * Internal access to static instances.
    * @internal
    */
+  public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
   public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
     if (this._lockGameplayContext && name !== "gameplay") {
         throw new Error(`Deterministic violation: '${name}' random accessed during simulation. Only 'gameplay' stream is allowed.`);

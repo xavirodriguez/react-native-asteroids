@@ -1,6 +1,6 @@
 import { Component, WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../types/EngineTypes";
 import { Entity } from "./Entity";
-import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
+import { AnyCoreComponent, ComponentOf } from "../legacy";
 
 type DeepReadonly<T> = T extends (...args: any[]) => any
   ? T
@@ -34,8 +34,6 @@ interface RegisteredSystem {
  * reduce overhead in common execution paths, performance and consistency are
  * influenced by the JavaScript environment, execution context, and adherence
  * to the engine's recommended mutation patterns (e.g., using {@link World.mutateComponent}).
- *
- * @public
  */
 const __DEV__ = process.env.NODE_ENV !== "production";
 const RAW_DATA = Symbol("RAW_DATA");
@@ -1221,4 +1219,3 @@ export class World {
     return this.entities;
   }
 }
-

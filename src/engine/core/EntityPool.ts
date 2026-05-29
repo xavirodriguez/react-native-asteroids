@@ -5,9 +5,7 @@ import { Entity } from "../types/EngineTypes";
  *
  * @remarks
  * Designed to help reduce allocations during entity creation and destruction.
- * By reusing numeric IDs, it aims to help mitigate garbage collector (GC) pressure in common paths.
- * In practice, the effectiveness of pooling is subject to the frequency of structural
- * changes and the JavaScript engine's memory management.
+ * By reusing numeric IDs, it aims to help minimize garbage collector (GC) pressure.
  *
  * @public
  */
