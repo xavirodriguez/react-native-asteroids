@@ -1,14 +1,15 @@
 import { Component, IHierarchicalComponent } from "./CoreComponents";
 import { Entity } from "./Entity";
-import { WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../types/EngineTypes";
-import {
-  ComponentRegistry,
-  ComponentType,
-  ComponentOf,
-  DeepReadonly,
-  BlueprintRegistryMap
-} from "./Component";
-import { EventRegistry, EventBus } from "./EventBus";
+import { AnyCoreComponent, ComponentOf } from "./CoreComponents";
+
+type DeepReadonly<T> = T extends (...args: unknown[]) => unknown
+  ? T
+  : T extends unknown[]
+  ? ReadonlyArray<DeepReadonly<T[number]>>
+  : T extends object
+  ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+  : T;
+
 import { System, SystemConfig, SystemPhase } from "./System";
 import { RandomService } from "../utils/RandomService";
 import { ComponentCloner } from "./ComponentCloner";
@@ -32,8 +33,6 @@ interface RegisteredSystem<TComponents extends ComponentRegistry, TEvents extend
  * reduce overhead in common execution paths, performance and consistency are
  * influenced by the JavaScript environment, execution context, and adherence
  * to the engine's recommended mutation patterns (e.g., using {@link World.mutateComponent}).
- *
- * @public
  */
 const __DEV__ = process.env.NODE_ENV !== "production";
 const RAW_DATA = Symbol("RAW_DATA");
@@ -236,18 +235,32 @@ export class World<
         }
     }
 
-    const result = target ?? ({} as WorldSnapshot);
-    result.entities = [...allEntities];
-    result.componentData = componentData;
-    result.nextEntityId = this.nextEntityId;
-    result.freeEntities = [...this.freeEntities];
-    result.structureVersion = this._structureVersion;
-    result.stateVersion = this._stateVersion;
-    result.seed = gameplayRandom.getSeed();
-    result.rngState = gameplayRandom.getSeed();
-    result.accumulator = this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator();
-    result.tick = this._tick;
-    return result;
+    if (target) {
+        target.entities = [...allEntities];
+        target.componentData = componentData;
+        target.nextEntityId = this.nextEntityId;
+        target.freeEntities = [...this.freeEntities];
+        target.structureVersion = this._structureVersion;
+        target.stateVersion = this._stateVersion;
+        target.seed = gameplayRandom.getSeed();
+        target.rngState = gameplayRandom.getSeed();
+        target.accumulator = this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator();
+        target.tick = this._tick;
+        return target;
+    }
+
+    return {
+      entities: [...allEntities],
+      componentData,
+      nextEntityId: this.nextEntityId,
+      freeEntities: [...this.freeEntities],
+      structureVersion: this._structureVersion,
+      stateVersion: this._stateVersion,
+      seed: gameplayRandom.getSeed(),
+      rngState: gameplayRandom.getSeed(),
+      accumulator: this.getResource<import("./GameLoop").GameLoop>("GameLoop")?.getAccumulator(),
+      tick: this._tick
+    };
   }
 
   /**
