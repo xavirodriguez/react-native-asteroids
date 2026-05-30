@@ -8,6 +8,9 @@ export type BlueprintArgs<TBlueprints, TId extends keyof TBlueprints> =
     ? TArgs
     : never;
 
+/**
+ * @internal
+ */
 interface Command<TComponents extends ComponentRegistry, TBlueprints extends BlueprintRegistryMap<TComponents>> {
   execute(world: World<TComponents, Record<string, any>, TBlueprints>): void;
 }
@@ -17,7 +20,7 @@ interface Command<TComponents extends ComponentRegistry, TBlueprints extends Blu
  *
  * @remarks
  * Modifications to the world structure (creating entities, adding components) are
- * restricted during the update cycle to help protect iterator safety and maintain
+ * restricted during the update cycle to help preserve iterator safety and maintain
  * results consistency. This command buffer allows systems to request these
  * changes for deferred execution.
  */

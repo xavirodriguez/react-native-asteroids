@@ -2,7 +2,7 @@
  * System for playback and management of recorded game sessions.
  *
  * This module allows loading historical input streams and replaying them
- * through the simulation engine. It is designed to support reproducible
+ * through the simulation engine. It is intended to support reproducible
  * behavior when the simulation is seeded identically and remains free of
  * unmanaged side effects.
  *
