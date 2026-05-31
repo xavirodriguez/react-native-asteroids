@@ -30,7 +30,7 @@ type Command =
  * @remarks
  * The `WorldCommandBuffer` is designed for use when modifying the world during system
  * updates. Since systems often iterate over entities via queries, direct structural
- * modifications are restricted to help protect iterator safety and maintain results consistency.
+ * modifications are restricted to help protect iterator safety and support results consistency.
  *
  * ### Execution Characteristics:
  * 1. **Sequential Execution**: Commands are processed in the order they were recorded (FIFO).

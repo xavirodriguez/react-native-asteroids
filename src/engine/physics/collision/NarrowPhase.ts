@@ -7,12 +7,12 @@
  * normals, penetration depth, and contact points.
  *
  * @remarks
- * Most algorithms here assume standard Euclidean geometry.
+ * La mayoría de los algoritmos aquí asumen geometría euclidiana estándar.
  *
- * ### Separating Axis Theorem (SAT)
- * For two convex shapes, if there exists an axis on which their projections do not overlap,
- * they are not colliding. The system tests all potential axes (edge normals for polygons,
- * and the axis between centers for circles).
+ * ### Teorema del Eje Separador (SAT)
+ * Para dos formas convexas, si existe un eje en el que sus proyecciones no se solapan,
+ * entonces no están colisionando. El sistema prueba todos los ejes potenciales (normales
+ * de las aristas para polígonos, y el eje entre centros para círculos).
  *
  * ### Reference Diagram (Polygon SAT)
  * ```
@@ -28,7 +28,8 @@
  *          Polygon B
  * ```
  *
- * The system uses object pooling and shared manifolds to help minimize GC pressure during the physics step.
+ * El sistema utiliza pooling de objetos y manifolds compartidos para ayudar a minimizar
+ * la presión sobre el recolector de basura (GC) durante el paso de física.
  *
  * @packageDocumentation
  */
@@ -199,11 +200,11 @@ export class NarrowPhase {
   }
 
   /**
-   * Collision detection between two circles.
+   * Detección de colisiones entre dos círculos.
    *
    * @remarks
-   * Uses distance comparison: `distance(A, B) < radiusA + radiusB`.
-   * For performance, it compares squared distances to avoid `Math.sqrt`.
+   * Utiliza la comparación de distancias: `distancia(A, B) < radioA + radioB`.
+   * Por rendimiento, se comparan las distancias al cuadrado para evitar `Math.sqrt`.
    */
   static circleVsCircle(a: Readonly<CircleShape>, ax: number, ay: number, b: Readonly<CircleShape>, bx: number, by: number): CollisionManifold {
     const manifold = resetManifold();
@@ -234,8 +235,8 @@ export class NarrowPhase {
   }
 
   /**
-   * Collision detection between two Axis-Aligned Bounding Boxes (AABBs).
-   * Calculates overlap on both axes and chooses the axis of minimum penetration.
+   * Detección de colisiones entre dos Axis-Aligned Bounding Boxes (AABBs).
+   * Calcula el solapamiento en ambos ejes y elige el eje de mínima penetración.
    */
   static aabbVsAabb(a: Readonly<AABBShape>, ax: number, ay: number, b: Readonly<AABBShape>, bx: number, by: number): CollisionManifold {
     const manifold = resetManifold();
@@ -264,16 +265,16 @@ export class NarrowPhase {
   }
 
   /**
-   * Collision detection between a circle and an AABB.
+   * Detección de colisiones entre un círculo y un AABB.
    *
    * @remarks
-   * Employs the "Clamping" method:
-   * 1. Find the point on the AABB closest to the circle's center by clamping the center coordinates to the AABB's range.
-   * 2. Calculate the distance between the circle center and this closest point.
-   * 3. If distance < circle radius, a collision is occurring.
+   * Emplea el método de "Clamping":
+   * 1. Encuentra el punto en el AABB más cercano al centro del círculo limitando (clamping) las coordenadas del centro al rango del AABB.
+   * 2. Calcula la distancia entre el centro del círculo y este punto más cercano.
+   * 3. Si la distancia < radio del círculo, está ocurriendo una colisión.
    *
-   * Special case: If the circle center is *inside* the AABB, the normal and depth are calculated
-   * based on the distance to the nearest edge of the AABB.
+   * Caso especial: Si el centro del círculo está *dentro* del AABB, la normal y la profundidad se calculan
+   * basándose en la distancia a la arista más cercana del AABB.
    */
   static circleVsAabb(circle: Readonly<CircleShape>, cx: number, cy: number, aabb: Readonly<AABBShape>, ax: number, ay: number): CollisionManifold {
     const manifold = resetManifold();
@@ -403,21 +404,21 @@ export class NarrowPhase {
   }
 
   /**
-   * Collision detection between convex polygons using the Separating Axis Theorem (SAT).
+   * Detección de colisiones entre polígonos convexos mediante el Teorema del Eje Separador (SAT).
    *
    * @remarks
-   * The Separating Axis Theorem (SAT) states that for two convex objects, if there exists an axis
-   * on which their projections do not overlap, then they are NOT colliding.
+   * El Teorema del Eje Separador (SAT) establece que para dos objetos convexos, si existe un eje
+   * en el que sus proyecciones no se solapan, entonces NO están colisionando.
    *
-   * ### Mathematical Steps:
-   * 1. **Transformation**: Local vertices are transformed to world coordinates using rotation and translation.
-   * 2. **Axis Generation**: For polygons, the potential axes of separation are the face normals of both shapes.
-   * 3. **Projection**: Every vertex of both polygons is projected onto each potential axis: `proj = vertex · axis`.
-   * 4. **Overlap Check**: Calculate the projection interval `[min, max]` for both polygons.
-   *    - Overlap: `L = min(maxA, maxB) - max(minA, minB)`
-   *    - If `L <= 0` on ANY axis, the shapes are separated (early exit).
-   * 5. **MTV (Minimum Translation Vector)**: The axis with the minimum overlap is the collision normal,
-   *    and the overlap value is the penetration depth.
+   * ### Pasos Matemáticos:
+   * 1. **Transformación**: Los vértices locales se transforman a coordenadas de mundo usando rotación y traslación.
+   * 2. **Generación de Ejes**: Para los polígonos, los ejes potenciales de separación son las normales de las caras de ambas formas.
+   * 3. **Proyección**: Cada vértice de ambos polígonos se proyecta sobre cada eje potencial: `proj = vértice · eje`.
+   * 4. **Comprobación de Solapamiento**: Se calcula el intervalo de proyección `[min, max]` para ambos polígonos.
+   *    - Solapamiento: `L = min(maxA, maxB) - max(minA, minB)`
+   *    - Si `L <= 0` en CUALQUIER eje, las formas están separadas (salida temprana).
+   * 5. **MTV (Vector de Traslación Mínima)**: El eje con el solapamiento mínimo es la normal de colisión,
+   *    y el valor del solapamiento es la profundidad de penetración.
    *
    * ### SAT Projection Diagram:
    * ```

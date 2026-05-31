@@ -86,7 +86,8 @@ export interface Renderer<TContext = unknown> {
    * 4. Post-Entity overlays.
    * 5. Foreground Effects / HUD.
    *
-   * @precondition Backend context must be initialized.
+   * @remarks
+   * It is expected that the backend context is initialized before calling this.
    */
   render(world: World, alpha?: number): void;
 

@@ -24,7 +24,7 @@ export interface CollisionManifold {
   /**
    * [px] Penetration depth of the collision.
    * @remarks
-   * Represents the minimum distance required to separate the overlapping shapes.
+   * Represents the minimum distance intended to separate the overlapping shapes.
    */
   depth: number;
   /**

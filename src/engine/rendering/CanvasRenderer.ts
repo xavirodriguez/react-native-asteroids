@@ -11,7 +11,7 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  * Motor de renderizado basado en el API 2D Canvas.
  *
  * @remarks
- * Implementa una arquitectura basada en snapshots diseñada para favorecer un
+ * Diseñado para implementar una arquitectura basada en snapshots orientada a facilitar un
  * renderizado desacoplado de la simulación.
  *
  * ### Proceso de Renderizado:
@@ -26,9 +26,9 @@ import { TextRenderer } from "../ui/text/TextRenderer";
  * Esta estructura permite que la frecuencia de dibujado se adapte al entorno
  * independientemente del tick fijo de simulación.
  *
- * @conceptualRisk [GC_PRESSURE] El uso de arrays pre-alocados está diseñado para mitigar
- * alocaciones, pero exceder el límite de `MAX_ENTITIES` (2000) resultará en entidades
- * no dibujadas.
+ * @conceptualRisk [GC_PRESSURE] El uso de arrays pre-alocados está diseñado para minimizar
+ * alocaciones por frame en rutas críticas. Sin embargo, exceder el límite de `MAX_ENTITIES`
+ * (2000) resultará en entidades excluidas del snapshot de renderizado.
  */
 export class CanvasRenderer implements Renderer {
   public readonly type = 'canvas';
@@ -439,8 +439,12 @@ export class CanvasRenderer implements Renderer {
    * @param world - El mundo ECS fuente de datos.
    * @param alpha - Factor de interpolación [0, 1] para suavizado de movimiento.
    *
-   * @precondition El contexto `ctx` debería haber sido establecido mediante {@link CanvasRenderer.setContext}.
-   * @postcondition Se genera la imagen del frame actual en el Canvas con el fin de aplicar interpolación.
+   * @remarks
+   * El proceso de renderizado está pensado para ser síncrono y basado en el último
+   * snapshot capturado.
+   *
+   * @param world - El mundo ECS fuente de datos.
+   * @param alpha - Factor de interpolación [0, 1] para suavizado de movimiento.
    */
   public render(world: World, alpha: number = 1): void {
     const snapshot = this.createSnapshot(world, alpha);

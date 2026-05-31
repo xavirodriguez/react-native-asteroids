@@ -133,7 +133,7 @@ export class UILayoutSystem extends AbstractHierarchySystem {
 
       this.wasDirty.add(entity);
 
-      // If this element is a container, it must layout its direct children NOW.
+      // If this element is a container, it should layout its direct children now.
       // Even though those children are later in the 'order' array, we set their computedX/Y here.
       const container = world.getComponent<UIContainerComponent>(entity, "UIContainer");
       if (container) {

@@ -46,9 +46,10 @@ export class HierarchySystem extends AbstractHierarchySystem {
    * This system bridges the gap between local simulation (movement) and absolute
    * rendering/collision world coordinates.
    *
-   * @postcondition Intends to update `worldX`, `worldY`, `worldRotation`, `worldScaleX`, and `worldScaleY`
-   * for `Transform` components marked as dirty (or with dirty parents).
-   * @sideEffect Resets the `dirty` flag for processed components.
+   * @remarks
+   * Intends to update `worldX`, `worldY`, `worldRotation`, `worldScaleX`, and
+   * `worldScaleY` for `Transform` components marked as dirty (or with dirty
+   * parents). Resets the `dirty` flag for processed components.
    */
   public update(world: World, _deltaTime: number): void {
     this.wasDirty.clear();

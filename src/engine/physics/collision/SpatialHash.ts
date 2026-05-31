@@ -30,7 +30,10 @@ export class SpatialHash {
 
   /**
    * @param cellSize - El tamaño de cada celda cuadrada en unidades del mundo.
-   * @precondition Se espera que cellSize \> 0.
+   *
+   * @remarks
+   * Para una partición espacial correcta, se espera que `cellSize` sea un valor
+   * finito y positivo (\> 0).
    */
   constructor(public cellSize: number) {}
 

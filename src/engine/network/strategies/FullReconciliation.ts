@@ -163,7 +163,7 @@ export class FullReconciliationStrategy implements ReconciliationStrategy {
         }
 
         if (!predicted) {
-            // We have no prediction for this server tick, must rollback to align
+            // We have no prediction for this server tick, triggering rollback to align
             needsRollback = true;
         } else if (localPlayerId !== undefined) {
             // Check for desync between our prediction and the server truth

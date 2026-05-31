@@ -9,8 +9,8 @@ import { AssetDescriptor, AssetHandle } from "./AssetTypes";
  * @responsibility Cache loaded assets to avoid redundant network requests.
  *
  * @remarks
- * Uses a reference counting model where consumers (Scenes/Systems) must
- * increment and decrement the `refCount`. When an asset's reference count
+ * Uses a reference counting model where consumers (Scenes/Systems) are expected
+ * to increment and decrement the `refCount`. When an asset's reference count
  * reaches zero, it is automatically purged from memory.
  *
  * ### Key Features:
@@ -102,7 +102,7 @@ export class AssetLoader {
    * Decrements reference counts and purges assets that reach zero.
    *
    * @remarks
-   * Symmetry between load/unload is required to prevent memory leaks.
+   * Symmetry between load/unload is recommended to help prevent memory leaks.
    *
    * @param ids - Array of asset IDs to release.
    */

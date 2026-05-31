@@ -37,7 +37,9 @@ export class Query {
   *
   * @param componentTypes - List of component type discriminators defining the signature.
   *
-  * @precondition At least one component type should be provided.
+  * @remarks
+  * For meaningful results, it is recommended that at least one component type
+  * be provided.
   */
   constructor(public readonly componentTypes: string[]) {}
 

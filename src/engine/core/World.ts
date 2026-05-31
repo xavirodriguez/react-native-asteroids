@@ -30,9 +30,9 @@ interface RegisteredSystem {
  *
  * @remarks
  * The World acts as the central hub for the ECS architecture. It is designed to coordinate
- * entity lifecycle, component storage, and system orchestration. While it attempts to
+ * entity lifecycle, component storage, and system orchestration. While it aims to
  * reduce overhead in common execution paths, performance and consistency are
- * influenced by the JavaScript environment, execution context, and adherence
+ * influenced by the JavaScript execution environment, system load, and adherence
  * to the engine's recommended mutation patterns (e.g., using {@link World.mutateComponent}).
  */
 const __DEV__ = process.env.NODE_ENV !== "production";
@@ -261,7 +261,8 @@ export class World {
    * cost and increases GC pressure proportional to the total number of components
    * and their complexity. Frequent snapshotting in large or complex simulations
    * may impact frame rate and should be used judiciously. The system is designed to
-   * minimize, but does not eliminate, allocations during this process.
+   * minimize per-frame allocations in core hot paths, but it does not eliminate
+   * allocations during the snapshot process.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const gameplayRandom = this.gameplayRandom;
@@ -379,11 +380,11 @@ export class World {
    * component objects when possible, overwriting their properties instead of
    * allocating new objects.
    *
-   * @warning **State Consistency**: Full state restoration is expected to be successful
+   * @warning **State Consistency**: State restoration is intended to be successful
    * primarily if the world's static structure (registered systems, component types)
    * matches the state when the snapshot was taken. Manual restoration of resources
-   * or external state not managed by the World must be handled by the developer
-   * to maintain simulation integrity.
+   * or external state not managed by the World should be handled by the developer
+   * to help maintain simulation integrity.
    */
   public restore(state: WorldSnapshot): void {
     this.assertCanMutateStructure("restore");
@@ -583,7 +584,7 @@ export class World {
    *
    * To modify data in an existing component, {@link World.mutateComponent} is the
    * authoritative and recommended approach. It is designed to track state versions correctly
-   * and notify the engine of required re-renders.
+   * and notify the engine of re-renders.
    */
   addComponent<T extends Component>(entity: Entity, component: T): Readonly<T> {
     this.assertCanMutateStructure("addComponent");

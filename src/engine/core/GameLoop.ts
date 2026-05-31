@@ -12,8 +12,8 @@ export interface GameLoopConfig {
  * Central time manager orchestrating the game's lifecycle.
  *
  * @remarks
- * Implements a **Fixed Timestep / Variable Rendering** scheme with interpolation,
- * intended to support simulation consistency and visual smoothness.
+ * Designed to implement a **Fixed Timestep / Variable Rendering** scheme with
+ * interpolation, intended to support simulation consistency and visual smoothness.
  *
  * The loop attempts to decouple simulation logic from the device's refresh rate,
  * which may help mitigate the impact of performance fluctuations on physical integrity.
@@ -80,7 +80,7 @@ export class GameLoop {
    * Subscribes a callback to the physical simulation phase (Fixed Update).
    *
    * @remarks
-   * This phase is oriented towards simulation consistency. The system attempts to maintain a
+   * This phase is oriented towards simulation consistency. The system aims to maintain a
    * constant time increment (16.67ms) for the callback. Depending on elapsed time,
    * it may execute multiple times in a single environment frame.
    *
@@ -160,8 +160,9 @@ export class GameLoop {
    * 3. Attempts to execute the simulation phase in fixed steps (16.67ms) as long as the accumulator allows.
    * 4. Calculates `alpha` as the remaining time fraction for visual interpolation.
    *
-   * While this system is designed to support reproducibility, external factors
-   * in the JavaScript environment and hardware may introduce variations in behavior.
+   * While this system is designed to support reproducibility under controlled conditions,
+   * external factors in the JavaScript execution environment, system load, and
+   * hardware may introduce variations in behavior.
    */
   private loop = (currentTime: number): void => {
     if (!this.isRunning) return;

@@ -16,7 +16,10 @@ import { PALETTES } from "../../services/PaletteService";
  * @queries Render, Tag
  * @executionOrder Fase de Presentación (Presentation Phase).
  *
- * @invariant No debe modificar el estado del juego, solo el color en el componente Render.
+ * @remarks
+ * Este sistema está diseñado para modificar únicamente el color en el componente
+ * Render y no debería afectar el estado lógico del juego.
+ *
  * @conceptualRisk [TAG_DEPENDENCY] Si una entidad tiene múltiples tags (ej: LocalPlayer y Enemy),
  * el orden de prioridad actual es fijo y podría causar confusión visual.
  */

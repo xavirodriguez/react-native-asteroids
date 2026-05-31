@@ -8,7 +8,7 @@ import { ReplicationSchema } from "./types/ReplicationTypes";
  *
  * @remarks
  * Policies define the reliability and frequency (`sendRate`) of component updates.
- * - **Reliability**: Determines if a component must be acknowledged (e.g., `Health`, `Ship`).
+ * - **Reliability**: Determines if a component is expected to be acknowledged (e.g., `Health`, `Ship`).
  * - **Send Rate**: Controls how many world ticks pass between updates for a specific type.
  *   Example: `Transform` is sent every tick (`sendRate: 1`), while `Render` is sent every 10.
  */
