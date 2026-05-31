@@ -1,9 +1,9 @@
 /**
- * Optimized Circular Buffer for Input Frames.
+ * Circular Buffer for Input Frames.
  *
- * This structure provides approximately O(1) access to input frames by tick number.
- * It is essential for Rollback Netcode to store both local inputs (for re-simulation)
- * and remote inputs (as they arrive from the network).
+ * This structure is designed to provide approximately O(1) access to input
+ * frames by tick number. It is intended for Rollback Netcode to store both
+ * local inputs (for re-simulation) and remote inputs (as they arrive from the network).
  *
  * @packageDocumentation
  */
@@ -14,8 +14,8 @@ import { InputFrame } from "./NetTypes";
  * A circular buffer that stores InputFrame objects indexed by simulation tick.
  *
  * @remarks
- * The buffer uses a fixed-size array to avoid garbage collection pressure in the hot path.
- * Ticks are mapped to array indices using a bitwise AND operation for maximum performance.
+ * The buffer uses a fixed-size array to help reduce garbage collection pressure
+ * in the hot path. Ticks are mapped to array indices using a bitwise AND operation.
  */
 export class InputRingBuffer {
   private buffer: (InputFrame | null)[];
