@@ -1,5 +1,5 @@
-import { EffectDrawer } from "../../../engine/rendering/Renderer";
-import { TransformComponent, HealthComponent, TTLComponent, Star } from "../../../engine/types/EngineTypes";
+import { EffectDrawer } from "@tiny-aster/core";
+import { TransformComponent, HealthComponent, TTLComponent, Star } from "@tiny-aster/core";
 import { Platform } from "react-native";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 import type { SkCanvas } from "@shopify/react-native-skia";

@@ -1,4 +1,4 @@
-import { Renderer } from "../../../engine/rendering/Renderer";
+import { Renderer } from "@tiny-aster/core";
 import { drawAsteroidsBullet, drawAsteroidsParticle, drawAsteroidsAsteroid, drawAsteroidsShipSprite } from "./AsteroidsCanvasVisuals";
 import { drawShip, drawUfo, drawFlash, drawAsteroidStarField, drawAsteroidCRTEffect, drawAsteroidShipTrailDrawer } from "./AsteroidShapeDrawers";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";

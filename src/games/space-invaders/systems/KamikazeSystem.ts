@@ -1,6 +1,6 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent, RenderComponent, Component } from "../../../engine/types/EngineTypes";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { TransformComponent, VelocityComponent, RenderComponent, Component } from "@tiny-aster/core";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 

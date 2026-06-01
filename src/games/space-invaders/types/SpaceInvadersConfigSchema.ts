@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BaseConfigSchema } from "../../../engine/services/ConfigService";
+import { BaseConfigSchema } from "@tiny-aster/core";
 
 /**
  * Space Invaders specific configuration schema.

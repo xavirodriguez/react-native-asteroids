@@ -1,5 +1,5 @@
-import { World, Entity } from "../engine/core/World";
-import { WorldCommandBuffer } from "../engine/core/WorldCommandBuffer";
+import { World, Entity } from "@tiny-aster/core";
+import { WorldCommandBuffer } from "@tiny-aster/core";
 import { BlueprintRegistry } from "../data/blueprints/BlueprintRegistry";
 import { BlueprintOverrides, EntityBlueprint } from "../data/blueprints/types/BlueprintTypes";
 import {
@@ -15,7 +15,7 @@ import {
   EnemyTagComponent,
   BulletComponent,
   AsteroidComponent
-} from "../engine/core/CoreComponents";
+} from "@tiny-aster/core";
 
 /**
  * High-performance assembler for creating entities from blueprints.

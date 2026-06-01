@@ -1,5 +1,5 @@
-import { World } from "../../../engine/core/World";
-import { TransformComponent } from "../../../engine/types/EngineTypes";
+import { World } from "@tiny-aster/core";
+import { TransformComponent } from "@tiny-aster/core";
 import { PongInput } from "../types";
 
 export type AIDifficulty = "easy" | "medium" | "hard";

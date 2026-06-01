@@ -1,13 +1,13 @@
-import { World } from "../../../engine/core/World";
-import { System } from "../../../engine/core/System";
-import { Entity, CollisionEventsComponent, TTLComponent } from "../../../engine/types/EngineTypes";
-import { EventBus } from "../../../engine/core/EventBus";
+import { World } from "@tiny-aster/core";
+import { System } from "@tiny-aster/core";
+import { Entity, CollisionEventsComponent, TTLComponent } from "@tiny-aster/core";
+import { EventBus } from "@tiny-aster/core";
 import {
   TransformComponent,
   HealthComponent,
   RenderComponent,
-} from "../../../engine/types/EngineTypes";
-import { UITextComponent } from "../../../engine/ui/UITypes";
+} from "@tiny-aster/core";
+import { UITextComponent } from "@tiny-aster/core";
 import {
   GameStateComponent,
   InvaderComponent,
@@ -17,7 +17,7 @@ import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { BossComponent } from "./BossSystem";
 import { ParticlePool } from "../EntityPool";
 import { createParticle } from "../EntityFactory";
-import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
+import { JuiceSystem } from "@tiny-aster/core";
 
 /**
  * System that handles all game collisions by reacting to events from CollisionSystem2D.

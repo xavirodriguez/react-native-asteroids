@@ -1,4 +1,4 @@
-import { World } from "../../engine/core/World";
+import { World } from "@tiny-aster/core";
 import { INITIAL_GAME_STATE, GAME_CONFIG } from "./types/AsteroidTypes";
 import { AsteroidConfig } from "./types/AsteroidConfigSchema";
 import {
@@ -15,17 +15,17 @@ import {
     SpatialNodeComponent,
     LootTableComponent,
     ReclaimableComponent
-} from "../../engine/core/CoreComponents";
-import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
-import { createEmitter } from "../../engine/systems/ParticleSystem";
-import { generateStarField } from "../../engine/rendering/StarField";
+} from "@tiny-aster/core";
+import { CollisionLayers } from "@tiny-aster/core";
+import { createEmitter } from "@tiny-aster/core";
+import { generateStarField } from "@tiny-aster/core";
 import {
     InputComponent,
     UfoComponent,
     GameStateComponent
 } from "./types/AsteroidTypes";
-import { ShipComponent, BulletComponent, AsteroidComponent } from "../../engine/core/CoreComponents";
-import { Component, Entity } from "../../engine/types/EngineTypes";
+import { ShipComponent, BulletComponent, AsteroidComponent } from "@tiny-aster/core";
+import { Component, Entity } from "@tiny-aster/core";
 import { EnemyFactory } from "../../factories/EnemyFactory";
 import { EnemyBlueprints } from "../../data/blueprints/EnemyBlueprints";
 import { EntityBlueprintAssembler } from "../../factories/EntityBlueprintAssembler";

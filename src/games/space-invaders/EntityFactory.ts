@@ -1,10 +1,10 @@
-import { World } from "../../engine/core/World";
-import { Entity, Component } from "../../engine/types/EngineTypes";
+import { World } from "@tiny-aster/core";
+import { Entity, Component } from "@tiny-aster/core";
 import { SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
 import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
-import { createEmitter } from "../../engine/systems/ParticleSystem";
-import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
+import { createEmitter } from "@tiny-aster/core";
+import { CollisionLayers } from "@tiny-aster/core";
 import {
   Collider2DComponent,
   BoundaryComponent,
@@ -13,7 +13,7 @@ import {
   VelocityComponent,
   RenderComponent,
   HealthComponent,
-} from "../../engine/core/CoreComponents";
+} from "@tiny-aster/core";
 import {
   InputComponent,
   PlayerComponent,

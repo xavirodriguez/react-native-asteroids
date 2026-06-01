@@ -1,11 +1,11 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent, RenderComponent } from "../../../engine/types/EngineTypes";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { TransformComponent, VelocityComponent, RenderComponent } from "@tiny-aster/core";
 import { InputComponent } from "../types/AsteroidTypes";
 import { ShipPhysics } from "../utils/ShipPhysics";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { hapticShoot } from "../../../utils/haptics";
-import { EventBus } from "../../../engine/core/EventBus";
+import { EventBus } from "@tiny-aster/core";
 
 /**
  * System that applies physical forces and actions based on the ship's input intent.

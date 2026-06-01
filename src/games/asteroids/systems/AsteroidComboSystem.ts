@@ -1,7 +1,7 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
 import { GameStateComponent } from "../types/AsteroidTypes";
-import { EventBus } from "../../../engine/core/EventBus";
+import { EventBus } from "@tiny-aster/core";
 
 export class AsteroidComboSystem extends System {
   private eventBus: EventBus | null = null;

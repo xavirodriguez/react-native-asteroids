@@ -1,6 +1,6 @@
-import { IGame } from "../../../engine/core/IGame";
+import { IGame } from "@tiny-aster/core";
 import { GameStateComponent, InputState } from "./SpaceInvadersTypes";
-import { Renderer } from "../../../engine/rendering/Renderer";
+import { Renderer } from "@tiny-aster/core";
 
 /**
  * Public interface for the Space Invaders game controller.

@@ -3,7 +3,7 @@ import {
   Component,
   Entity,
   BlueprintDefinition
-} from "../../../engine/legacy/proxy";
+} from "@tiny-aster/core";
 
 export interface AsteroidComponent extends Component {
   type: "Asteroid";

@@ -1,21 +1,21 @@
-import { Scene } from "../../../engine/scenes/Scene";
-import { World } from "../../../engine/core/World";
-import { MovementSystem } from "../../../engine/physics/systems/MovementSystem";
-import { TTLSystem } from "../../../engine/systems/TTLSystem";
-import { JuiceSystem } from "../../../engine/systems/JuiceSystem";
-import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
+import { Scene } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { MovementSystem } from "@tiny-aster/core";
+import { TTLSystem } from "@tiny-aster/core";
+import { JuiceSystem } from "@tiny-aster/core";
+import { RenderUpdateSystem } from "@tiny-aster/core";
 import { SpaceInvadersInputSystem } from "../systems/SpaceInvadersInputSystem";
-import { BoundarySystem } from "../../../engine/physics/systems/BoundarySystem";
+import { BoundarySystem } from "@tiny-aster/core";
 import { SpaceInvadersFormationSystem } from "../systems/SpaceInvadersFormationSystem";
 import { SpaceInvadersCollisionSystem } from "../systems/SpaceInvadersCollisionSystem";
 import { SpaceInvadersGameStateSystem } from "../systems/SpaceInvadersGameStateSystem";
-import { CollisionSystem2D } from "../../../engine/physics/collision/CollisionSystem2D";
+import { CollisionSystem2D } from "@tiny-aster/core";
 import { SpaceInvadersRenderSystem } from "../systems/SpaceInvadersRenderSystem";
 import { InvulnerabilitySystem } from "../systems/InvulnerabilitySystem";
 import { KamikazeSystem } from "../systems/KamikazeSystem";
 import { BossSystem } from "../systems/BossSystem";
-import { LootSystem } from "../../../engine/systems/LootSystem";
-import { PowerUpSystem } from "../../../engine/systems/PowerUpSystem";
+import { LootSystem } from "@tiny-aster/core";
+import { PowerUpSystem } from "@tiny-aster/core";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "../EntityPool";
 import {
   createPlayer,
@@ -26,9 +26,9 @@ import {
 } from "../EntityFactory";
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";
-import { MutatorSystem } from "../../../engine/systems/MutatorSystem";
+import { MutatorSystem } from "@tiny-aster/core";
 import { MutatorService } from "../../../services/MutatorService";
-import { SystemPhase } from "../../../engine/core/System";
+import { SystemPhase } from "@tiny-aster/core";
 
 /**
  * Main gameplay scene for Space Invaders.

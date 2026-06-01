@@ -1,6 +1,6 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { TransformComponent, VelocityComponent } from "@tiny-aster/core";
 import { BallComponent, PaddleComponent } from "../types";
 
 export class PongSpinSystem extends System {

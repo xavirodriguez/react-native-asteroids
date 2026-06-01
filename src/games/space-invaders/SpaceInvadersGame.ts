@@ -1,18 +1,18 @@
-import { World } from "../../engine/core/World";
-import { GameLoop } from "../../engine/core/GameLoop";
+import { World } from "@tiny-aster/core";
+import { GameLoop } from "@tiny-aster/core";
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { BaseGame } from "../../engine/core/BaseGame";
+import { BaseGame } from "@tiny-aster/core";
 import { GameStateComponent, InputState, INITIAL_GAME_STATE } from "./types/SpaceInvadersTypes";
 import { SpaceInvadersConfigSchema, SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
-import { ConfigService } from "../../engine/services/ConfigService";
+import { ConfigService } from "@tiny-aster/core";
 import { ISpaceInvadersGame } from "./types/GameInterfaces";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
 import { SpaceInvadersGameScene } from "./scenes/SpaceInvadersGameScene";
-import { Renderer } from "../../engine/rendering/Renderer";
-import { LootSystem } from "../../engine/systems/LootSystem";
-import { PowerUpSystem } from "../../engine/systems/PowerUpSystem";
-import { NetworkManager } from "../../engine/network/NetworkManager";
-import { ReplicationSystem } from "../../engine/network/systems/ReplicationSystem";
+import { Renderer } from "@tiny-aster/core";
+import { LootSystem } from "@tiny-aster/core";
+import { PowerUpSystem } from "@tiny-aster/core";
+import { NetworkManager } from "@tiny-aster/core";
+import { ReplicationSystem } from "@tiny-aster/core";
 import {
   drawSpaceInvadersPlayer,
   drawSpaceInvadersInvader,

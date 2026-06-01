@@ -1,9 +1,9 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { RandomService } from "../../../engine/utils/RandomService";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { RandomService } from "@tiny-aster/core";
 import { BirdComponent, FLAPPY_CONFIG, FlappyBirdInputComponent } from "../types/FlappyBirdTypes";
-import { createEmitter } from "../../../engine/systems/ParticleSystem";
-import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
+import { createEmitter } from "@tiny-aster/core";
+import { TransformComponent, VelocityComponent } from "@tiny-aster/core";
 
 export class FlappyBirdGlideSystem extends System {
   public update(world: World, deltaTime: number): void {

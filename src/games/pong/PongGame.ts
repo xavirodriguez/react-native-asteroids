@@ -1,28 +1,28 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { BaseGame } from "../../engine/core/BaseGame";
-import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
-import { BoundarySystem } from "../../engine/physics/systems/BoundarySystem";
-import { JuiceSystem } from "../../engine/systems/JuiceSystem";
-import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
-import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
-import { AssetLoader } from "../../engine/assets/AssetLoader";
+import { BaseGame } from "@tiny-aster/core";
+import { MovementSystem } from "@tiny-aster/core";
+import { BoundarySystem } from "@tiny-aster/core";
+import { JuiceSystem } from "@tiny-aster/core";
+import { ScreenShakeSystem } from "@tiny-aster/core";
+import { RenderUpdateSystem } from "@tiny-aster/core";
+import { AssetLoader } from "@tiny-aster/core";
 import { PongCollisionSystem } from "./systems/PongCollisionSystem";
 import { PongGameStateSystem } from "./systems/PongGameStateSystem";
 import { PongVelocityGuardrailSystem } from "./systems/PongVelocityGuardrailSystem";
 import { PongInputSystem } from "./systems/PongInputSystem";
-import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
+import { CollisionSystem2D } from "@tiny-aster/core";
 import { PongSpinSystem } from "./systems/PongSpinSystem";
 import { PongEntityFactory } from "./EntityFactory";
 import { AIPongController } from "./input/AIPongController";
 import { NetworkController } from "./input/NetworkController";
 import { type PongState, type PongInput } from "./types";
 import { PongConfigSchema, PongConfig } from "./types/PongConfigSchema";
-import { ConfigService } from "../../engine/services/ConfigService";
-import { Renderer } from "../../engine/rendering/Renderer";
+import { ConfigService } from "@tiny-aster/core";
+import { Renderer } from "@tiny-aster/core";
 import { drawPongBall } from "./rendering/PongCanvasVisuals";
 import { MutatorService } from "../../services/MutatorService";
-import { MutatorSystem } from "../../engine/systems/MutatorSystem";
-import { SystemPhase } from "../../engine/core/System";
+import { MutatorSystem } from "@tiny-aster/core";
+import { SystemPhase } from "@tiny-aster/core";
 
 export type PongMode = "local" | "ai" | "online";
 

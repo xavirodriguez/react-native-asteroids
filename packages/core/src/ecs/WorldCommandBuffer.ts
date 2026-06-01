@@ -1,63 +1,61 @@
-import { World, BlueprintRegistryMap, BlueprintDefinition } from "./World";
-import { BlueprintRegistry } from "./BlueprintRegistry";
-import { ComponentRegistry } from "./Component";
+import { ComponentRegistry, ComponentType, ComponentOf } from "./Component";
 import { Entity } from "./Entity";
 
-export type BlueprintArgs<TBlueprints, TId extends keyof TBlueprints> =
-  TBlueprints[TId] extends BlueprintDefinition<any, infer TArgs>
-    ? TArgs
-    : never;
-
 /**
- * @internal
+ * WorldCommandBuffer - Queues structural changes to be applied safely outside of system updates.
  */
-interface Command<TComponents extends ComponentRegistry, TBlueprints extends BlueprintRegistryMap<TComponents>> {
-  execute(world: World<TComponents, Record<string, any>, TBlueprints>): void;
-}
-
-/**
- * Buffer for queuing structural changes to the ECS world.
- *
- * @remarks
- * Modifications to the world structure (creating entities, adding components) are
- * restricted during the update cycle to help preserve iterator safety and maintain
- * results consistency. This command buffer allows systems to request these
- * changes for deferred execution.
- */
-export class WorldCommandBuffer<
-  TComponents extends ComponentRegistry = ComponentRegistry,
-  TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
-> {
-  private commands: Command<TComponents, TBlueprints>[] = [];
+export class WorldCommandBuffer<TComponents extends ComponentRegistry = ComponentRegistry> {
+  private commands: ((world: any) => void)[] = [];
 
   /**
-   * Queues an entity to be spawned from a blueprint.
+   * Adds a command to the buffer.
    */
-  spawnFromBlueprint<TId extends keyof TBlueprints & string>(
-    blueprintId: TId,
-    args: BlueprintArgs<TBlueprints, TId>
-  ): void {
-    this.commands.push({
-      execute: (world) => {
-        const entity = world.createEntity();
-        const registry = world.getResource<BlueprintRegistry<TComponents, TBlueprints>>("BlueprintRegistry");
-        const blueprint = registry?.get(blueprintId);
-        if (blueprint) {
-          blueprint.spawn(world, entity, args);
-        }
-      }
-    });
+  addCommand(command: (world: any) => void): void {
+    this.commands.push(command);
   }
 
   /**
-   * Executes all buffered commands in the provided world.
+   * Queues an entity creation.
    */
-  flush(world: World<TComponents, Record<string, any>, TBlueprints>): void {
-    const cmds = [...this.commands];
+  createEntity(): void {
+    this.addCommand(world => world.createEntity());
+  }
+
+  /**
+   * Queues an entity removal.
+   */
+  removeEntity(entity: Entity): void {
+    this.addCommand(world => world.removeEntity(entity));
+  }
+
+  /**
+   * Queues a component addition.
+   */
+  addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K]): void {
+    this.addCommand(world => world.addComponent(entity, component));
+  }
+
+  /**
+   * Queues a component removal.
+   */
+  removeComponent(entity: Entity, type: string): void {
+    this.addCommand(world => world.removeComponent(entity, type));
+  }
+
+  /**
+   * Applies all queued commands to the world.
+   */
+  flush(world: any): void {
+    const commands = this.commands;
     this.commands = [];
-    cmds.forEach(cmd => cmd.execute(world));
+    for (let i = 0; i < commands.length; i++) {
+      commands[i](world);
+    }
   }
 
+  /**
+   * Clears all queued commands.
+   */
   clear(): void {
     this.commands = [];
   }

@@ -1,5 +1,5 @@
-import { World } from "../../engine/core/World";
-import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
+import { World } from "@tiny-aster/core";
+import { CollisionLayers } from "@tiny-aster/core";
 import {
   Entity,
   Component,
@@ -9,9 +9,9 @@ import {
   RenderComponent,
   Collider2DComponent,
   ReclaimableComponent,
-} from "../../engine/types/EngineTypes";
+} from "@tiny-aster/core";
 import { SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
-import { ProjectilePool, ProjectileComponents, ProjectileParams } from "../../engine/core/ProjectilePool";
+import { ProjectilePool, ProjectileComponents, ProjectileParams } from "@tiny-aster/core";
 
 interface InvaderBulletComponents extends ProjectileComponents {
   boundary: BoundaryComponent;

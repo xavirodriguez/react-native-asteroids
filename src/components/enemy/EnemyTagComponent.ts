@@ -1,4 +1,4 @@
-import { Component } from "../../engine/core/Component";
+import { Component } from "@tiny-aster/core";
 
 /**
  * Component that marks an entity as an enemy and stores metadata about its origin.

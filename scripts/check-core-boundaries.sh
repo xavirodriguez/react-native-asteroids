@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+forbidden_core_patterns=(
+  "Asteroid"
+  "Ship"
+  "Invader"
+  "Ball"
+  "EnemyTag"
+  "BlueprintKind"
+  "ship:"
+  "asteroid:"
+  "si:"
+  "@colyseus"
+  "colyseus"
+  "react-native"
+  "@shopify/react-native-skia"
+  "expo-"
+)
+
+echo "Checking for forbidden patterns in packages/core/src..."
+
+for pattern in "${forbidden_core_patterns[@]}"; do
+  if grep -Ri "$pattern" packages/core/src --include="*.ts" --include="*.tsx" | grep -v "SnapshotTypes.ts" | grep -v "CoreComponents.ts"; then
+    echo "Forbidden pattern in packages/core/src: $pattern"
+  fi
+done
+
+echo "Boundary check complete."

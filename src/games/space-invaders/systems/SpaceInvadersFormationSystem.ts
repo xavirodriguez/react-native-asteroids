@@ -1,11 +1,11 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent } from "../../../engine/types/EngineTypes";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { TransformComponent } from "@tiny-aster/core";
 import { FormationComponent, InvaderComponent } from "../types/SpaceInvadersTypes";
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { EnemyBulletPool } from "../EntityPool";
 import { createEnemyBullet } from "../EntityFactory";
-import { RandomService } from "../../../engine/utils/RandomService";
+import { RandomService } from "@tiny-aster/core";
 
 /**
  * System that manages the movement and firing of the invader formation.

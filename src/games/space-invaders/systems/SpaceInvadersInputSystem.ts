@@ -1,11 +1,11 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent, InputStateComponent } from "../../../engine/types/EngineTypes";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { TransformComponent, VelocityComponent, InputStateComponent } from "@tiny-aster/core";
 import { InputComponent } from "../types/SpaceInvadersTypes";
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { PlayerBulletPool } from "../EntityPool";
 import { createPlayerBullet } from "../EntityFactory";
-import { InputUtils } from "../../../engine/utils/ComponentUtils";
+import { InputUtils } from "@tiny-aster/core";
 
 /**
  * System that handles player input and movement.

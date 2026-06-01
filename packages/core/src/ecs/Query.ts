@@ -1,25 +1,32 @@
-import { ComponentRegistry, ComponentType } from "./Component";
 import { Entity } from "./Entity";
 
-export class Query<TComponents extends ComponentRegistry = ComponentRegistry> {
+/**
+ * ECS Query - Maintains a filtered list of entities that match a specific component signature.
+ */
+export class Query<_TComponents extends Record<string, any> = Record<string, any>> {
   private entities = new Set<Entity>();
-  private cache: Entity[] = [];
+  private entitiesCache: Entity[] = [];
   private cacheDirty = true;
+  private readonly componentTypes: string[];
 
-  constructor(private componentTypes: ComponentType<TComponents>[]) {}
-
-  getEntities(): ReadonlyArray<Entity> {
-    if (this.cacheDirty) {
-      this.cache = Array.from(this.entities).sort((a, b) => a - b);
-      this.cacheDirty = false;
-    }
-    return this.cache;
+  constructor(componentTypes: string[]) {
+    this.componentTypes = componentTypes;
   }
 
+  /**
+   * Checks if an entity matches the query's signature.
+   */
   matches(entityComponentSet: Set<string>): boolean {
-    return this.componentTypes.every(type => entityComponentSet.has(type));
+    for (let i = 0; i < this.componentTypes.length; i++) {
+      if (!entityComponentSet.has(this.componentTypes[i])) return false;
+    }
+    return true;
   }
 
+  /**
+   * Adds an entity to the query if it matches.
+   * @internal
+   */
   add(entity: Entity): void {
     if (!this.entities.has(entity)) {
       this.entities.add(entity);
@@ -27,20 +34,47 @@ export class Query<TComponents extends ComponentRegistry = ComponentRegistry> {
     }
   }
 
+  /**
+   * Removes an entity from the query.
+   * @internal
+   */
   remove(entity: Entity): void {
     if (this.entities.delete(entity)) {
       this.cacheDirty = true;
     }
   }
 
-  rebuild(activeEntities: Set<Entity>, entityComponentSets: Map<Entity, Set<string>>): void {
+  /**
+   * Returns a read-only list of entities matching the query.
+   */
+  getEntities(): ReadonlyArray<Entity> {
+    if (this.cacheDirty) {
+      this.entitiesCache = Array.from(this.entities).sort((a, b) => a - b);
+      this.cacheDirty = false;
+    }
+    return this.entitiesCache;
+  }
+
+  /**
+   * Rebuilds the entity list from scratch.
+   * @internal
+   */
+  rebuild(allEntities: Set<Entity>, entityComponentSets: Map<Entity, Set<string>>): void {
     this.entities.clear();
-    activeEntities.forEach(entity => {
+    allEntities.forEach(entity => {
       const set = entityComponentSets.get(entity);
       if (set && this.matches(set)) {
         this.entities.add(entity);
       }
     });
     this.cacheDirty = true;
+  }
+
+  public forEach(callback: (entity: Entity) => void): void {
+    this.getEntities().forEach(callback);
+  }
+
+  public getEntitiesView(): ReadonlyArray<Entity> {
+    return this.getEntities();
   }
 }

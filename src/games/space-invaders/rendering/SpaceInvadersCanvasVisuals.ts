@@ -1,4 +1,4 @@
-import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
+import { ShapeDrawer, EffectDrawer } from "@tiny-aster/core";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
 
 /**

@@ -1,5 +1,4 @@
-export type CollisionLayer = number;
-export type CollisionMask = number;
+export const ALL_LAYERS = 0xFFFFFFFF;
 
 export function layer(bit: number): number {
   return 1 << bit;

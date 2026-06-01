@@ -1,5 +1,5 @@
-import { World } from "../engine/core/World";
-import { Entity, Component } from "../engine/types/EngineTypes";
+import { World } from "@tiny-aster/core";
+import { Entity, Component } from "@tiny-aster/core";
 import { EnemyBlueprints } from "../data/blueprints/EnemyBlueprints";
 import { EnemyTagComponent } from "../components/enemy/EnemyTagComponent";
 import {
@@ -13,7 +13,7 @@ import {
     TagComponent,
     TTLComponent,
     FrictionComponent
-} from "../engine/core/CoreComponents";
+} from "@tiny-aster/core";
 
 /**
  * Interface for runtime overrides when creating an enemy.

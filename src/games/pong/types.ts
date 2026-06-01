@@ -1,4 +1,4 @@
-import { Component, BallComponent } from "../../engine/types/EngineTypes";
+import { Component, BallComponent } from "@tiny-aster/core";
 
 export { BallComponent };
 

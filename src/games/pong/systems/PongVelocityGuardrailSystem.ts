@@ -1,6 +1,6 @@
-import { World } from "../../../engine/core/World";
-import { System } from "../../../engine/core/System";
-import { VelocityComponent } from "../../../engine/types/EngineTypes";
+import { World } from "@tiny-aster/core";
+import { System } from "@tiny-aster/core";
+import { VelocityComponent } from "@tiny-aster/core";
 import { PongConfig } from "../types/PongConfigSchema";
 
 /**

@@ -1,10 +1,10 @@
-import { World } from "../../../engine/core/World";
-import { System } from "../../../engine/core/System";
-import { Entity, TransformComponent, VelocityComponent, CollisionEventsComponent } from "../../../engine/types/EngineTypes";
+import { World } from "@tiny-aster/core";
+import { System } from "@tiny-aster/core";
+import { Entity, TransformComponent, VelocityComponent, CollisionEventsComponent } from "@tiny-aster/core";
 import { PongConfig } from "../types/PongConfigSchema";
-import { Juice } from "../../../engine/utils/Juice";
-import { createEmitter } from "../../../engine/systems/ParticleSystem";
-import { EventBus } from "../../../engine/core/EventBus";
+import { Juice } from "@tiny-aster/core";
+import { createEmitter } from "@tiny-aster/core";
+import { EventBus } from "@tiny-aster/core";
 import { PaddleComponent } from "../types";
 
 export class PongCollisionSystem extends System {

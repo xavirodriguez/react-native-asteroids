@@ -1,5 +1,5 @@
 import { EntityBlueprint } from './types/BlueprintTypes';
-import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
+import { CollisionLayers } from "@tiny-aster/core";
 
 export const EnemyBlueprints: Record<string, EntityBlueprint> = {
   // --- Asteroids ---

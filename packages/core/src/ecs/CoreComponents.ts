@@ -1,20 +1,38 @@
-/**
- * Generic ECS core component definitions.
- */
-
 import { Component, ComponentRegistry } from "./Component";
+import { Entity } from "./Entity";
 import { EventRegistry, EventBus as GenericEventBus } from "../events/EventBus";
+import { AABB } from "../math/CommonTypes";
+import { Shape } from "../physics/shapes/ShapeTypes";
+import { CollisionManifold } from "../physics/collision/CollisionTypes";
+
+export { Entity, AABB, Shape, CollisionManifold };
+
+/**
+ * Common interface for components that participate in a parent-child hierarchy.
+ */
+export interface IHierarchicalComponent extends Component {
+  /** Reference to the parent entity, or null if it's a root element. */
+  parentEntity: Entity | null;
+  /** Optimization flag to indicate that the hierarchy or local transform needs re-evaluation. */
+  dirty?: boolean;
+}
 
 /**
  * Standard 2D transform.
  */
-export interface TransformComponent extends Component {
+export interface TransformComponent extends IHierarchicalComponent {
   type: "Transform";
   x: number;
   y: number;
   rotation: number;
   scaleX: number;
   scaleY: number;
+
+  worldX?: number;
+  worldY?: number;
+  worldRotation?: number;
+  worldScaleX?: number;
+  worldScaleY?: number;
 }
 
 /**
@@ -25,6 +43,10 @@ export interface PreviousTransformComponent extends Component {
   x: number;
   y: number;
   rotation: number;
+
+  worldX?: number;
+  worldY?: number;
+  worldRotation?: number;
 }
 
 /**
@@ -32,8 +54,12 @@ export interface PreviousTransformComponent extends Component {
  */
 export interface VelocityComponent extends Component {
   type: "Velocity";
-  vx: number;
-  vy: number;
+  /** [px/s] velocity X. */
+  dx: number;
+  /** [px/s] velocity Y. */
+  dy: number;
+  /** [rad/s] angular velocity. */
+  vAngle?: number;
 }
 
 /**
@@ -49,9 +75,13 @@ export interface FrictionComponent extends Component {
  */
 export interface BoundaryComponent extends Component {
   type: "Boundary";
+  x?: number;
+  y?: number;
   width: number;
   height: number;
-  mode: "wrap" | "bounce" | "destroy";
+  behavior: "wrap" | "bounce" | "destroy";
+  bounceX?: boolean;
+  bounceY?: boolean;
 }
 
 /**
@@ -59,17 +89,36 @@ export interface BoundaryComponent extends Component {
  */
 export interface TTLComponent extends Component {
   type: "TTL";
-  timeLeft: number;
+  remaining: number;
+  total: number;
 }
 
 /**
- * Generic 2D circular collider.
+ * Modern 2D collision component.
  */
 export interface Collider2DComponent extends Component {
   type: "Collider2D";
-  radius: number;
+  shape: Shape;
+  /** [px] horizontal offset relative to Transform. */
+  offsetX: number;
+  /** [px] vertical offset relative to Transform. */
+  offsetY: number;
   layer: number;
   mask: number;
+  isTrigger: boolean;
+  enabled: boolean;
+}
+
+/**
+ * Component that tracks collision events.
+ */
+export interface CollisionEvent {
+  otherEntity: Entity;
+  manifold?: CollisionManifold;
+  normalX?: number;
+  normalY?: number;
+  depth?: number;
+  contactPoints?: ReadonlyArray<{ readonly x: number; readonly y: number }>;
 }
 
 /**
@@ -77,7 +126,10 @@ export interface Collider2DComponent extends Component {
  */
 export interface CollisionEventsComponent extends Component {
   type: "CollisionEvents";
-  collisions: unknown[];
+  collisions: CollisionEvent[];
+  activeTriggers: Entity[];
+  triggersEntered: Entity[];
+  triggersExited: Entity[];
 }
 
 /**
@@ -85,8 +137,42 @@ export interface CollisionEventsComponent extends Component {
  */
 export interface PhysicsBody2DComponent extends Component {
   type: "PhysicsBody2D";
+  /**
+   * static: immovable, zero mass.
+   * dynamic: fully simulated, affected by forces and gravity.
+   * kinematic: moved via velocity, not affected by forces.
+   */
+  bodyType: "static" | "dynamic" | "kinematic";
+  /** [px/s] Linear velocity X. */
+  velocityX: number;
+  /** [px/s] Linear velocity Y. */
+  velocityY: number;
+  /** [rad/s] Angular velocity. */
+  angularVelocity: number;
+  /** [px/s^2] Force X. */
+  forceX: number;
+  /** [px/s^2] Force Y. */
+  forceY: number;
+  /** [rad/s^2] Torque. */
+  torque: number;
+  /** [kg] Mass. */
   mass: number;
-  inverseMass: number;
+  /** Pre-calculated 1/mass. Use 0 for infinite mass (static). */
+  readonly inverseMass: number;
+  /** Rotational resistance. */
+  inertia: number;
+  /** Pre-calculated 1/inertia. */
+  readonly inverseInertia: number;
+  /** [unitless] Bounciness [0, 1]. */
+  restitution: number;
+  /** [unitless] Static friction coefficient. */
+  staticFriction: number;
+  /** [unitless] Dynamic friction coefficient. */
+  dynamicFriction: number;
+  /** [unitless] Multiplier for global gravity. */
+  gravityScale: number;
+  /** If true, the entity will not rotate due to torque or collisions. */
+  fixedRotation: boolean;
 }
 
 /**
@@ -97,6 +183,10 @@ export interface RenderComponent extends Component {
   visible: boolean;
   opacity: number;
   color?: string;
+  shape: string;
+  size: number;
+  rotation: number;
+  zIndex?: number;
 }
 
 /**
@@ -113,8 +203,8 @@ export interface HealthComponent extends Component {
  */
 export interface InputStateComponent extends Component {
   type: "InputState";
-  axes: Record<string, number>;
-  buttons: Record<string, boolean>;
+  axes: Map<string, number>;
+  buttons: Map<string, boolean>;
 }
 
 /**
@@ -164,8 +254,10 @@ export interface TilemapComponent extends Component {
  */
 export interface Camera2DComponent extends Component {
   type: "Camera2D";
+  x: number;
+  y: number;
   zoom: number;
-  target?: number;
+  target?: Entity;
 }
 
 /**
@@ -199,7 +291,7 @@ export interface TrailComponent extends Component {
  */
 export interface SpatialNodeComponent extends Component {
   type: "SpatialNode";
-  cellId: string;
+  active: boolean;
 }
 
 /**
@@ -209,6 +301,12 @@ export interface HapticRequestComponent<TPattern extends string = string> extend
   type: "HapticRequest";
   pattern: TPattern;
   intensity?: number;
+}
+
+export interface ReclaimableComponent extends Component {
+  type: "Reclaimable";
+  poolId: string;
+  onReclaim?: (world: any, entity: Entity) => void;
 }
 
 /**
@@ -238,4 +336,5 @@ export interface CoreComponentRegistry extends ComponentRegistry {
   Trail: TrailComponent;
   SpatialNode: SpatialNodeComponent;
   HapticRequest: HapticRequestComponent<string>;
+  Reclaimable: ReclaimableComponent;
 }

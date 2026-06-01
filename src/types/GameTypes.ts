@@ -3,7 +3,7 @@
  * Note: Game-specific types are increasingly located in their respective game folders.
  */
 
-export * from "../engine/types/EngineTypes";
+export * from "@tiny-aster/core";
 
 // Re-export Asteroids types for backward compatibility
 export * from "../games/asteroids/types/AsteroidTypes";

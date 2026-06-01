@@ -1,4 +1,4 @@
-import { ShapeDrawer } from "../../../engine/rendering/Renderer";
+import { ShapeDrawer } from "@tiny-aster/core";
 import { BallComponent } from "../types";
 
 /**
