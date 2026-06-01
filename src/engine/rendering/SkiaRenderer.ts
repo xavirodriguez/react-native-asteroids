@@ -16,7 +16,7 @@ import { RenderSnapshotProvider } from "./RenderSnapshotProvider";
  * Implementación de Renderer basada en la API de Skia para React Native.
  *
  * @remarks
- * Este renderizador está orientado a proporcionar un alto rendimiento en dispositivos
+ * Este renderizador está diseñado para proporcionar un alto rendimiento visual en dispositivos
  * móviles (iOS/Android) aprovechando la aceleración por hardware de Skia.
  *
  * Al igual que {@link CanvasRenderer}, utiliza un sistema extensible de 'shape drawers'
@@ -27,8 +27,8 @@ import { RenderSnapshotProvider } from "./RenderSnapshotProvider";
  * restauración si la aplicación permanece en segundo plano.
  *
  * ### Estrategias de Optimización:
- * 1. **Reutilización de Pinturas**: Busca ayudar a minimizar per-frame alocaciones
- *    mediante la reutilización de objetos `SkPaint`.
+ * 1. **Reutilización de Pinturas**: Busca minimizar per-frame alocaciones en rutas
+ *    críticas mediante la reutilización de objetos `SkPaint`.
  * 2. **Aceleración por GPU**: Delega operaciones complejas al backend nativo para
  *    favorecer la fluidez visual.
  */

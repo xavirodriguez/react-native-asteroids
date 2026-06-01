@@ -28,8 +28,6 @@ export class AnimationSystem extends System {
    *
    * @param world - Target ECS world.
    * @param deltaTime - [ms] Elapsed time since last update.
-   *
-   * @postcondition The `frame` index and `elapsed` time of {@link AnimatorComponent} are updated.
    */
   public update(world: World, deltaTime: number): void {
     const animators = world.query("Animator");

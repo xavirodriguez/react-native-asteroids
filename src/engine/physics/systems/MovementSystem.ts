@@ -14,7 +14,7 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * @executionOrder Fase: {@link SystemPhase.Simulation}. Debe ejecutarse antes de Collision y Boundary.
  *
  * @remarks
- * Este sistema es el motor de movimiento principal para las entidades físicas compatibles.
+ * Este sistema está diseñado para ser el motor de movimiento principal para las entidades físicas compatibles.
  * Utiliza {@link PhysicsUtils} para ayudar a mantener la consistencia con el código de predicción.
  *
  * @conceptualRisk [DETERMINISM][CRITICAL] Existe lógica de integración duplicada entre este sistema

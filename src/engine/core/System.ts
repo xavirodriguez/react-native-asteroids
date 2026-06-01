@@ -6,7 +6,7 @@ import { World } from "./World";
  * @public
  *
  * @remarks
- * Systems are executed sequentially based on these phases.
+ * Systems are intended to be executed sequentially based on these phases.
  * See {@link BaseGame} for more details on the execution pipeline.
  *
  * Mutation Guidelines per Phase:
@@ -104,16 +104,17 @@ export abstract class System {
    * it is recommended to avoid non-serializable internal mutable state.
    *
    * @warning **Structural Mutations**: Modifying world structure (creating/removing entities
-   * or components) while iterating over a query is restricted as it may
+   * or components) while iterating over a query is generally restricted as it may
    * invalidate iterators or lead to inconsistent state. Use {@link World.getCommandBuffer}
-   * to defer these operations until the end of the tick.
+   * to queue these operations for deferred execution.
    *
    * @warning **Asynchronous Logic**: Systems are expected to be synchronous. Using `async/await`
    * within `update` is NOT supported by the engine's core loop and will likely lead
    * to race conditions, broken simulation integrity, and unpredictable behavior.
    *
    * @remarks
-   * World state is expected to be consistent at the start of the update cycle.
+   * World state is intended to be consistent at the start of the update cycle,
+   * provided all preceding systems have adhered to the engine's mutation contracts.
    */
   abstract update(world: World, deltaTime: number): void;
 

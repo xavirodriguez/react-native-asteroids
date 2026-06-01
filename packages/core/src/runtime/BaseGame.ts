@@ -48,7 +48,7 @@ export abstract class BaseGame<
   }
 
   /**
-   * Subclasses should implement this to register all required ECS systems.
+   * Subclasses should implement this to register all necessary ECS systems.
    */
   protected abstract registerSystems(): void;
 

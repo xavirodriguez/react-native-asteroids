@@ -4,13 +4,13 @@ TinyAsterEngine is designed to support a **server-authoritative model with clien
 
 ## 📡 Communication Pipeline
 
-The synchronization flow is intended to help mitigate latency and maintain consistency under controlled network conditions:
+The synchronization flow is designed to help mitigate latency and maintain consistency under controlled network conditions:
 
 1.  **Input Capture**: The client records player actions and attempts to transmit them to the server associated with a local `tick`.
-2.  **Local Prediction**: The client applies the input to its local simulation, typically providing immediate visual feedback.
-3.  **Authoritative Simulation**: The server acts as the primary source of truth, typically validating inputs and executing authoritative game logic.
-4.  **Delta Replication**: The server attempts to optimize bandwidth by primarily sending detected changes (deltas) in component states.
-5.  **Reconciliation (Rollback)**: In case of a detected discrepancy between predicted and authoritative state, the client attempts to restore the server state and re-simulate local ticks up to the current time.
+2.  **Local Prediction**: The client applies the input to its local simulation, intended to provide immediate visual feedback.
+3.  **Authoritative Simulation**: The server acts as the primary source of truth, designed to validate inputs and execute authoritative game logic.
+4.  **Delta Replication**: The server aims to optimize bandwidth by primarily sending detected changes (deltas) in component states.
+5.  **Reconciliation (Rollback)**: In case of a detected discrepancy between predicted and authoritative state, the client aims to restore the server state and re-simulate local ticks up to the current time.
 
 ## 🗜️ Optimization Strategies
 

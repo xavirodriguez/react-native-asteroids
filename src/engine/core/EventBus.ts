@@ -45,10 +45,11 @@ export class EventBus {
   * Dispatches an event synchronously to all registered handlers.
   *
   * @remarks
-  * **CAUTION**: Do NOT use this method within the simulation tick or physical
-  * calculation phases if the event triggers side effects (like sound, UI updates,
-  * or spawning). Use {@link EventBus.emitDeferred} instead to ensure side effects
-  * are processed after the authoritative simulation state is finalized.
+  * **CAUTION**: It is strongly recommended NOT to use this method within the
+  * simulation tick or physical calculation phases if the event triggers side
+  * effects (like sound, UI updates, or spawning). Use {@link EventBus.emitDeferred}
+  * instead to help ensure side effects are processed after the authoritative
+  * simulation state is finalized.
   */
   public emit<T = unknown>(event: string, payload?: T): void {
     if (this.emitDepth >= this.MAX_RECURSION) {
@@ -73,8 +74,9 @@ export class EventBus {
   * Queues an event to be processed after the current execution context (usually end-of-frame).
   *
   * @remarks
-  * This is the **RECOMMENDED** method for simulation logic to signal semantic events
-  * without causing reentrancy or side-effect contamination during deterministic ticks.
+  * This is the **RECOMMENDED** method for simulation logic to signal semantic events.
+  * It is intended to avoid reentrancy or side-effect contamination during
+  * simulation ticks.
   */
   public emitDeferred<T = unknown>(event: string, payload?: T): void {
     this.deferredQueue.push({ event, payload });

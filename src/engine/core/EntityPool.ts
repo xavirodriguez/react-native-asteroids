@@ -25,7 +25,9 @@ export class EntityPool {
    * the global ID counter.
    *
    * @returns A new {@link Entity} (numeric identifier).
-   * @expectation The returned ID is not expected to be available in the pool until explicitly released.
+   * @remarks
+   * The returned ID is not expected to be available in the pool for reuse
+   * until it is explicitly released via {@link EntityPool.release}.
    * @sideEffect Increments `nextId` if the pool is empty.
    */
   public acquire(): Entity {
@@ -45,8 +47,9 @@ export class EntityPool {
    *
    * @param id - The entity identifier to release.
    *
-   * @expectation The ID is expected to have been previously acquired via {@link EntityPool.acquire}.
-   * @postcondition The ID is added to the available IDs stack.
+   * @remarks
+   * The ID is expected to have been previously acquired via {@link EntityPool.acquire}.
+   * Releasing the ID makes it eligible for future acquisition.
    * @conceptualRisk [ENTITY_REUSE][FIXED] Includes validation via `pooledSet`
    * to help prevent "double-release" scenarios (releasing the same ID twice),
    * which could lead to state corruption in the {@link World}.
@@ -67,8 +70,9 @@ export class EntityPool {
    * Effectively invalidates previously created entity IDs. Use with caution,
    * typically during a total engine reset.
    *
-   * @precondition The ECS world should be empty to help mitigate the risk of ID collisions with existing entities.
-   * @postcondition {@link EntityPool.pool} is empty and `nextId` resets to 1.
+   * @remarks
+   * To help mitigate the risk of ID collisions with existing entities, it is
+   * recommended that the ECS world be empty when calling this.
    */
   public clear(): void {
     this.pool = [];

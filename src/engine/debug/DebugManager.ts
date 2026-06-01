@@ -46,8 +46,8 @@ export interface ColliderShapeInfo {
  * ### Key Features:
  * 1. **Event Logger**: Uses a circular buffer (`MAX_EVENTS = 100`) to capture `EventBus`
  *    traffic without high allocation costs.
- * 2. **State Diffing**: Calculates property-level differences between ticks to detect
- *    unexpected state jumps or non-deterministic changes.
+ * 2. **State Diffing**: Designed to calculate property-level differences between ticks
+ *    to help identify unexpected state jumps or potential desynchronization.
  * 3. **Frame Metrics**: Tracks FPS, frame time, and the current interpolation alpha.
  *
  * ### Architectural Integration:

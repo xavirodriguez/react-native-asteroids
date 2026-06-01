@@ -36,8 +36,10 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
  * The World acts as the central hub for the ECS architecture. It aims to coordinate
  * entity lifecycle, component storage, and system orchestration.
  *
- * Performance and consistency are intended to be high but are influenced by the JavaScript
- * environment and adherence to the engine's recommended mutation patterns.
+ * Performance and consistency are influenced by the JavaScript execution environment,
+ * system load, and adherence to the engine's recommended mutation patterns.
+ * While it aims to provide a stable execution environment, it does not provide
+ * hard real-time guarantees.
  *
  * @typeParam TComponents - The registry of components available in this world.
  * @typeParam TEvents - The registry of events that can be emitted.
@@ -226,8 +228,10 @@ export class World<
    * @remarks
    * Updates are intended to be processed in a fixed order of phases: Input, Simulation,
    * Transform, Collision, GameRules, and Presentation. Priority within each phase
-   * determines the execution order of systems. Deterministic execution depends on
-   * systems avoiding unmanaged side effects.
+   * determines the execution order of systems.
+   *
+   * Note: The execution order is deterministic only if systems themselves are
+   * deterministic and no asynchronous side effects are introduced during the update.
    */
   update(deltaTime: number): void {
     this._tick++;
