@@ -29,8 +29,9 @@ export type EventHandler<TPayload> =
  * EventBus class providing synchronous and deferred event emission.
  *
  * @remarks
- * Designed to facilitate communication between systems or modules
- * without causing reentrancy or side-effect contamination during simulation ticks.
+ * Intended to facilitate communication between systems or modules.
+ * Using deferred emission can help minimize reentrancy or side-effect
+ * contamination during simulation ticks.
  */
 export class EventBus<TEvents extends EventRegistry = EventRegistry> {
   private listeners = new Map<string, Set<EventHandler<any>>>();

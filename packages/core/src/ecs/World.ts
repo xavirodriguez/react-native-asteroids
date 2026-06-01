@@ -24,6 +24,7 @@ export interface BlueprintDefinition<
 
 /**
  * A map of blueprint definitions.
+ * @internal
  */
 export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
   Record<string, BlueprintDefinition<TComponents, any>>;
@@ -32,7 +33,7 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
  * ECS World - Central registry managing the lifecycle of entities, components, and systems.
  *
  * @remarks
- * The World acts as the central hub for the ECS architecture. It is designed to coordinate
+ * The World acts as the central hub for the ECS architecture. It aims to coordinate
  * entity lifecycle, component storage, and system orchestration.
  *
  * Performance and consistency are influenced by the JavaScript execution environment,
@@ -72,9 +73,9 @@ export class World<
    * Creates a new entity.
    *
    * @remarks
-   * **Warning**: Avoid calling this directly during system updates if it might
-   * invalidate active queries or cause structural desyncs. Use a command buffer
-   * for deferred creation when necessary.
+   * **Warning**: Direct calls during system updates are discouraged if they might
+   * invalidate active queries or cause structural desyncs. Using a command buffer
+   * for deferred creation is recommended for maintaining simulation stability.
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -87,7 +88,8 @@ export class World<
    *
    * @remarks
    * **Warning**: This method performs immediate structural changes. Calling it
-   * during an update cycle may lead to unpredictable behavior in active iterators.
+   * during an update cycle is unsafe and may lead to unpredictable behavior or
+   * crashes in active iterators. Use a command buffer for deferred removal.
    */
   removeEntity(entity: Entity): void {
     if (this.activeEntities.delete(entity)) {
@@ -104,8 +106,9 @@ export class World<
    *
    * @remarks
    * **Warning**: Adding components during a world update may interfere with
-   * systems currently iterating over entities. It is generally recommended
-   * to use a command buffer for structural changes during the simulation phase.
+   * systems currently iterating over entities. It is strongly recommended
+   * to use a command buffer for structural changes during the simulation phase
+   * to ensure consistent query results.
    */
   addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K]): void {
     const type = component.type;

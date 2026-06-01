@@ -14,9 +14,10 @@ import { PredictedState } from "./NetTypes";
  * Manages historical predicted states for reconciliation.
  *
  * @remarks
- * Optimized with a circular buffer for O(1) lookups. To help minimize GC pressure,
+ * Designed with a circular buffer aiming for O(1) lookups. To help reduce GC pressure,
  * the buffer attempts to reuse existing state objects if the tick matches.
- * Note that initial population or tick desyncs may still result in allocations.
+ * Note that initial population, tick desyncs, or structural changes in state
+ * may still result in allocations.
  */
 export class PredictionBuffer {
   private buffer: (PredictedState | null)[];
@@ -75,7 +76,7 @@ export class PredictionBuffer {
 
   /**
    * Retrieves a predicted state for a specific tick.
-   * @performance O(1)
+   * @performance Aims for O(1)
    */
   public getAt(tick: number): PredictedState | undefined {
     const index = tick & this.mask;
