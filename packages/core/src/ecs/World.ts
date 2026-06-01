@@ -24,12 +24,20 @@ export interface BlueprintDefinition<
 
 /**
  * A map of blueprint definitions.
+ * @internal
  */
 export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
   Record<string, BlueprintDefinition<TComponents, any>>;
 
 /**
  * ECS World - Central registry managing the lifecycle of entities, components, and systems.
+ *
+ * @remarks
+ * The World acts as the central hub for the ECS architecture. It aims to coordinate
+ * entity lifecycle, component storage, and system orchestration.
+ *
+ * Performance and consistency are intended to be high but are influenced by the JavaScript
+ * environment and adherence to the engine's recommended mutation patterns.
  *
  * @typeParam TComponents - The registry of components available in this world.
  * @typeParam TEvents - The registry of events that can be emitted.
@@ -61,6 +69,11 @@ export class World<
 
   /**
    * Creates a new entity.
+   *
+   * @remarks
+   * **Warning**: Direct calls during system updates are discouraged if they might
+   * invalidate active queries or cause structural desyncs. Using a command buffer
+   * for deferred creation is recommended for maintaining simulation stability.
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -70,6 +83,11 @@ export class World<
 
   /**
    * Removes an entity and all its components.
+   *
+   * @remarks
+   * **Warning**: This method performs immediate structural changes. Calling it
+   * during an update cycle is unsafe and may lead to unpredictable behavior or
+   * crashes in active iterators. Use a command buffer for deferred removal.
    */
   removeEntity(entity: Entity): void {
     if (this.activeEntities.delete(entity)) {
@@ -83,6 +101,12 @@ export class World<
 
   /**
    * Adds a component to an entity.
+   *
+   * @remarks
+   * **Warning**: Adding components during a world update may interfere with
+   * systems currently iterating over entities. It is strongly recommended
+   * to use a command buffer for structural changes during the simulation phase
+   * to ensure consistent query results.
    */
   addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K]): void {
     const type = component.type;
@@ -197,7 +221,13 @@ export class World<
   }
 
   /**
-   * Updates the world by executing all registered systems.
+   * Orchestrates a simulation tick by executing registered systems in their defined phases.
+   *
+   * @remarks
+   * Updates are intended to be processed in a fixed order of phases: Input, Simulation,
+   * Transform, Collision, GameRules, and Presentation. Priority within each phase
+   * determines the execution order of systems. Deterministic execution depends on
+   * systems avoiding unmanaged side effects.
    */
   update(deltaTime: number): void {
     this._tick++;

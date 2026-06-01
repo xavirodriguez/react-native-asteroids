@@ -10,10 +10,10 @@ import { InterestedEntity, ClientNetworkBudget } from "./types/ReplicationTypes"
  * y asegura que el tamaño total de los paquetes no exceda los límites configurados.
  *
  * ### Algoritmo de Selección:
- * 1. **Filtro Crítico**: Entidades marcadas como 'critical' se incluyen siempre que haya espacio.
+ * 1. **Filtro Crítico**: Entidades marcadas como 'critical' se priorizan mientras haya presupuesto.
  * 2. **Priorización por Nivel**: Se asignan bytes restantes a niveles High, Medium y Low en ese orden.
  * 3. **Rotación (Fairness)**: Para las entidades de baja prioridad (Low), se utiliza un sistema
- *    de rotación circular para garantizar que todas reciban actualizaciones eventualmente, incluso
+ *    de rotación circular con el fin de que reciban actualizaciones periódicas, incluso
  *    si el ancho de banda es limitado.
  */
 export class NetworkBudgetManager {
@@ -30,8 +30,8 @@ export class NetworkBudgetManager {
    * Filters and prioritizes entities based on the client's network budget.
    *
    * @remarks
-   * Implements a strict prioritization hierarchy to handle bandwidth constraints:
-   * 1. **Self Player**: Always prioritized to ensure the local user has the best feedback.
+   * Implements a prioritization hierarchy to handle bandwidth constraints:
+   * 1. **Self Player**: Prioritized to help ensure the local user has responsive feedback.
    * 2. **Critical Radius**: Entities within the immediate vicinity of the player.
    * 3. **High/Medium/Low**: Distance-based selection and rotation.
    *

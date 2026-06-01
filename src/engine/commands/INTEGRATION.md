@@ -39,11 +39,11 @@ world.addComponent(player, createCommandQueueComponent());
 ## 3. Flujo de Ejecución
 
 1. **Fase INPUT (`CommandMapperSystem`)**: Lee el estado de `InputStateComponent` y genera objetos `GameCommand` planos que se insertan en la cola `pending` de la entidad.
-2. **Fase SIMULATION (`CommandInvokerSystem`)**: Consume la cola `pending`, ejecuta la lógica determinista (mutando componentes como `Transform` o `Velocity`) y limpia la cola al finalizar.
+2. **Fase SIMULATION (`CommandInvokerSystem`)**: Consume la cola `pending`, ejecuta la lógica de simulación (mutando componentes como `Transform` o `Velocity`) y limpia la cola al finalizar.
 3. **Fase SIMULATION/PHYSICS**: Los sistemas de física discretos aplican la integración basada en las velocidades ya actualizadas por los comandos.
 
 ## 4. Ventajas para Rollback y Replays
 
 - **Serialización**: Todos los comandos en `CommandQueueComponent.history` son POJOs puros.
-- **Determinismo**: No hay lógica oculta ni efectos secundarios fuera de `world.mutateComponent`.
+- **Reproducibilidad**: No hay lógica oculta ni efectos secundarios fuera de `world.mutateComponent`, facilitando la consistencia entre clientes.
 - **Previsibilidad**: El estado del mundo en el tick $N$ depende únicamente del estado en $N-1$ y los comandos del tick $N$.

@@ -81,15 +81,16 @@ export enum GameStatus {
  * - **Durations/Timers**: Milliseconds `[ms]`
  * - **Rates**: Per second `[1/s]` (e.g., Particle emission)
  *
- * ### Deterministic Simulation vs. Visual Presentation
+ * ### Simulation Logic vs. Visual Presentation
  *
- * The engine is designed to support a boundary between the **Deterministic Simulation**
+ * The engine is designed to support a boundary between the **Simulation Logic**
  * and the **Visual Presentation** layer:
  *
- * - **Deterministic Simulation**: Operates on a fixed time step. Logic affecting
+ * - **Simulation Logic**: Operates on a fixed time step. Logic affecting
  *   gameplay (physics, health, scores) typically resides here. It is
  *   designed to support simulation consistency when used under controlled
- *   conditions (e.g., seeded RNG, consistent execution order, and no direct mutations).
+ *   conditions (e.g., seeded RNG, consistent execution order, and no direct mutations of
+ *   authoritative state outside of systems).
  * - **Visual Presentation**: Operates at the display's variable refresh rate. It
  *   typically uses interpolation between simulation states to help provide smoother motion.
  *   Visual-only effects (Juice, Particles, UI) reside here and are expected to
@@ -99,7 +100,7 @@ export enum GameStatus {
  *
  * To support determinism, state is typically classified into the following categories:
  *
- * 1. **Gameplay Deterministic State**: State intended for simulation (e.g., `Transform`, `Velocity`, `Health`). Should be serializable.
+ * 1. **Authoritative Simulation State**: State intended for simulation (e.g., `Transform`, `Velocity`, `Health`). Should be serializable.
  * 2. **Presentation-only State**: Visual-only data (e.g., `Render`, `VisualOffset`, `ParticleEmitter`). Typically does NOT affect gameplay simulation.
  * 3. **Derived/Cache State**: Data computed from authoritative state (e.g., `SpatialGrid` nodes, `worldX`). Designed to be rebuildable.
  * 4. **Debug-only State**: Data used for development tools (e.g., `SystemProfiler` metrics).
@@ -132,7 +133,7 @@ export enum GameStatus {
  * UNINITIALIZED -\> INITIALIZING -\> READY -\> RUNNING
  *
   * @remarks
-  * In practice, achieving high levels of determinism requires strict adherence to engine
+  * In practice, achieving high levels of reproducibility requires adherence to engine
   * patterns. Factors such as floating-point non-determinism across architectures,
   * JS engine variability, or the use of unmanaged external state can lead to divergences.
   *
@@ -160,7 +161,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   protected inputBuffer: InputBuffer;
   /** Network communication interface (optional). */
   protected networkTransport?: NetworkTransport;
-  /** Deterministic state/input recorder. */
+  /** State/input recorder for replays. */
   protected replayRecorder: ReplayRecorder;
   /** Audio playback and semantic bridge service. */
   public readonly audio: AudioSystem;
@@ -463,7 +464,7 @@ export abstract class BaseGame<TState, TInput extends Record<string, unknown>>
   * - If an active Scene exists, delegates restart to `SceneManager`.
   * - Otherwise, clears the global World, re-registers systems, and re-spawns entities.
   *
-  * @param seed - Optional new seed for deterministic PRNG.
+  * @param seed - Optional new seed for PRNG.
   */
   public async restart(seed?: number): Promise<void> {
     if (this._status === GameStatus.DESTROYED) {

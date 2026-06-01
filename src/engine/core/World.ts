@@ -133,7 +133,7 @@ export class World {
    *
    * @remarks
    * Designed to support deterministic simulations when seeded consistently and
-   * restored via snapshots. In practice, determinism is subject to the avoidance of
+   * restored via snapshots. In practice, reproducibility is subject to the avoidance of
    * external entropy sources, non-deterministic JavaScript features, or unmanaged
    * side effects within systems.
    */
@@ -146,7 +146,7 @@ export class World {
    *
    * @remarks
    * This stream is not intended for use in simulation logic and is not expected to be
-   * deterministic during rollback re-simulations.
+   * identical during rollback re-simulations.
    */
   public get renderRandom(): RandomService {
     if (RandomService.lockGameplayContext) {
@@ -246,8 +246,8 @@ export class World {
    * Generates a serializable snapshot of the world state, intended for rollback or persistence.
    *
    * @remarks
-   * The snapshot is a deep-cloned representation of the world state, designed to facilitate
-   * state restoration. It seeks to achieve consistency by:
+   * The snapshot is a deep-cloned representation of the serializable world state, designed
+   * to facilitate state restoration. It aims to achieve consistency by:
    * 1. Organizing entity lists sorted by ID.
    * 2. Sorting component types alphabetically.
    * 3. Storing component data per type in entity-order.
@@ -260,19 +260,20 @@ export class World {
    * independence and avoid reference sharing (aliasing). This carries a performance
    * cost and increases GC pressure proportional to the total number of components
    * and their complexity. Frequent snapshotting in large or complex simulations
-   * may impact frame rate and should be used judiciously.
+   * may impact frame rate and should be used judiciously. The system is designed to
+   * minimize, but does not eliminate, allocations during this process.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const gameplayRandom = this.gameplayRandom;
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
 
-    // Deterministic sort of component types (cached)
+    // Consistent sort of component types (cached)
     if (this._componentTypesDirty) {
       this._sortedComponentTypes = Array.from(this.componentMaps.keys()).sort();
       this._componentTypesDirty = false;
     }
 
-    // Pre-initialize componentData with sorted types to ensure deterministic key order
+    // Pre-initialize componentData with sorted types to ensure consistent key order
     for (const type of this._sortedComponentTypes) {
       if (!componentData[type]) {
           componentData[type] = {};
@@ -323,7 +324,7 @@ export class World {
     }
 
     if (!this._freeEntitiesSorted) {
-      // Sort descending so pop() returns the smallest ID deterministically and in O(1)
+      // Sort descending so pop() returns the smallest ID consistently and in O(1)
       this.freeEntities.sort((a, b) => b - a);
       this._freeEntitiesSorted = true;
     }
@@ -712,7 +713,7 @@ export class World {
    * Checks for entity existence.
    *
    * @remarks
-   * Performance is typically O(1) via internal Set lookup.
+   * Performance is designed to be O(1) in practice via internal Set lookup.
    */
   public hasEntity(entity: Entity): boolean {
     return this.activeEntities.has(entity);
