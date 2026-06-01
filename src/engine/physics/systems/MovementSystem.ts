@@ -17,9 +17,10 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * Este sistema está diseñado para ser el motor de movimiento principal para las entidades físicas compatibles.
  * Utiliza {@link PhysicsUtils} para ayudar a mantener la consistencia con el código de predicción.
  *
- * @conceptualRisk [DETERMINISM][CRITICAL] Existe lógica de integración duplicada entre este sistema
- * y los helpers de predicción (ej. `predictLocalPlayer` en Asteroids). Cualquier cambio en `PhysicsUtils`
- * debe ser verificado en ambos contextos para evitar desincronización en red.
+ * @warning
+ * Reproducibilidad: Existe lógica de integración duplicada entre este sistema y los helpers
+ * de predicción (ej. `predictLocalPlayer` en Asteroids). Cualquier cambio en `PhysicsUtils`
+ * debe ser verificado en ambos contextos para ayudar a mitigar desincronizaciones en red.
  * @conceptualRisk [TIME][LOW] El sistema recibe `deltaTime` en ms pero `PhysicsUtils` opera en segundos.
  * Riesgo de errores de precisión por conversiones repetitivas si no se estandariza a nivel de motor.
  */

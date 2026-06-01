@@ -230,8 +230,11 @@ export class World<
    * Transform, Collision, GameRules, and Presentation. Priority within each phase
    * determines the execution order of systems.
    *
-   * Note: The execution order is deterministic only if systems themselves are
-   * deterministic and no asynchronous side effects are introduced during the update.
+   * @warning
+   * The execution order is only as deterministic as the systems themselves.
+   * Introduction of asynchronous side effects, reliance on unstable iteration orders
+   * of non-keyed collections, or external state mutations during the update cycle
+   * will compromise simulation reproducibility.
    */
   update(deltaTime: number): void {
     this._tick++;
