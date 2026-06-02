@@ -62,10 +62,11 @@ export class BroadPhase {
    *
    * @remarks
    * Sorts entities by their X-axis minimum bound and checks for interval overlaps.
-   * Highly efficient for sparse environments where objects are not tightly clustered.
+   * Designed to be efficient for sparse environments where objects are not tightly
+   * clustered along the sort axis.
    *
    * Warning: **Complexity O(N log N)** due to sorting. For high-density environments
-   * (>50 entities), using the `SpatialGrid` (O(1) query) is strongly recommended.
+   * or clusters, using the `SpatialGrid` is recommended to help maintain performance.
    *
    * @param entities - List of entities to process.
    * @param world - ECS world for component retrieval.

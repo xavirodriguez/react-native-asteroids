@@ -145,8 +145,9 @@ export class PhysicsQuery {
    * Casts a shape along a ray and returns the first hit.
    *
    * @remarks
-   * [Inference] Implemented via discrete sampling. The accuracy depends on the
-   * number of internal steps (currently fixed at 15).
+   * Implemented via discrete sampling. The accuracy and potential for missed
+   * collisions depend on the relationship between `maxDistance`, the number of
+   * internal steps (currently fixed at 15), and the size of the shapes involved.
    *
    * @param world - The ECS world.
    * @param shape - The shape to cast.

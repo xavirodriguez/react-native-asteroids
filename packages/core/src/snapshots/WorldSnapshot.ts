@@ -22,7 +22,10 @@ export interface WorldSnapshot {
   structureVersion: number;
   /** Incremented on data changes or visual updates. */
   stateVersion: number;
-  /** Serialized PRNG internal state. Provides bit-perfect restoration. */
+  /**
+   * Internal state of the PRNG. Intended to support bit-perfect restoration
+   * of the random number sequence.
+   */
   rngState?: number;
   /** Time accumulator from GameLoop. */
   accumulator?: number;

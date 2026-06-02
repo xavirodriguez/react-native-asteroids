@@ -30,7 +30,9 @@ export interface CollisionManifold {
   /**
    * [px] Points where the two shapes are in contact.
    * @remarks
-   * Inferred: typically one or two points in 2D manifold generation.
+   * For the NarrowPhase implementation, these points are often provided from
+   * an internal pool and are intended for immediate consumption during the
+   * collision response phase.
    */
   contactPoints: ReadonlyArray<{ readonly x: number; readonly y: number }>;
 }

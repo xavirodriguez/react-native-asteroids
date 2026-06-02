@@ -18,7 +18,7 @@ export interface TransformComponent extends Component {
 }
 
 /**
- * Stores the transform from the previous simulation tick.
+ * Intended to store the transform from the previous simulation tick for interpolation.
  */
 export interface PreviousTransformComponent extends Component {
   type: "PreviousTransform";
@@ -55,7 +55,7 @@ export interface BoundaryComponent extends Component {
 }
 
 /**
- * Time To Live - automatic entity destruction.
+ * Time To Live - used by systems to manage automatic entity destruction.
  */
 export interface TTLComponent extends Component {
   type: "TTL";
@@ -73,7 +73,7 @@ export interface Collider2DComponent extends Component {
 }
 
 /**
- * Stores collision events occurred in the current tick.
+ * Intended to store collision events detected during the current simulation tick.
  */
 export interface CollisionEventsComponent extends Component {
   type: "CollisionEvents";

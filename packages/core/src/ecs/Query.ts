@@ -20,9 +20,9 @@ export class Query<TComponents extends ComponentRegistry = ComponentRegistry> {
    * Returns a read-only list of entities matching this query.
    *
    * @remarks
-   * The returned array is sorted by entity ID to help support stable iteration orders,
-   * though true determinism depends on the caller avoiding non-deterministic logic
-   * during iteration.
+   * The returned array is sorted by entity ID to help support stable iteration orders.
+   * Consistent behavior depends on the caller avoiding non-deterministic logic
+   * (such as iterating over non-keyed external collections) during query iteration.
    */
   getEntities(): ReadonlyArray<Entity> {
     if (this.cacheDirty) {

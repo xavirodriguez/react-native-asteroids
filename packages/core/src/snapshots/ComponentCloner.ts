@@ -4,6 +4,12 @@
 export class ComponentCloner {
   /**
    * Attempts to perform a deep clone of a component data object or any POJO.
+   *
+   * @remarks
+   * This method uses `structuredClone` when available, falling back to a manual
+   * recursive clone for compatibility. It is intended for serializable data;
+   * cloning of complex objects with internal state, methods, or circular
+   * references may lead to unexpected results or errors.
    */
   public static cloneComponent<T>(data: T): T {
     if (data === null || typeof data !== "object") {

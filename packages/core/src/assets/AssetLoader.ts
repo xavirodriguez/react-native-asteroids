@@ -1,5 +1,13 @@
 import { AssetDescriptor, AssetHandle, IAssetProvider } from "./AssetProvider";
 
+/**
+ * Utility for managing the asynchronous loading and caching of game assets.
+ *
+ * @remarks
+ * The AssetLoader provides reference counting and a simple caching mechanism.
+ * Note that it uses a polling-based wait strategy for concurrent requests to the
+ * same loading asset, which may introduce minor delays.
+ */
 export class AssetLoader {
   private cache = new Map<string, AssetHandle<unknown>>();
   private provider: IAssetProvider;
