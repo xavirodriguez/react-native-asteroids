@@ -1,6 +1,14 @@
 import { ComponentRegistry, ComponentType } from "./Component";
 import { Entity } from "./Entity";
 
+/**
+ * Represents a collection of entities that possess a specific set of components.
+ *
+ * @remarks
+ * Queries are the primary mechanism for systems to iterate over entities of interest.
+ * They maintain an internal cache that is updated when entities or components are
+ * added or removed from the world.
+ */
 export class Query<TComponents extends ComponentRegistry = ComponentRegistry> {
   private entities = new Set<Entity>();
   private cache: Entity[] = [];
@@ -8,6 +16,14 @@ export class Query<TComponents extends ComponentRegistry = ComponentRegistry> {
 
   constructor(private componentTypes: ComponentType<TComponents>[]) {}
 
+  /**
+   * Returns a read-only list of entities matching this query.
+   *
+   * @remarks
+   * The returned array is sorted by entity ID to help support stable iteration orders,
+   * though true determinism depends on the caller avoiding non-deterministic logic
+   * during iteration.
+   */
   getEntities(): ReadonlyArray<Entity> {
     if (this.cacheDirty) {
       this.cache = Array.from(this.entities).sort((a, b) => a - b);

@@ -975,6 +975,19 @@ export class World {
 
   /**
    * Orchestrates a simulation tick by executing systems in order.
+   *
+   * @remarks
+   * Systems are executed according to their assigned {@link SystemPhase} and priority.
+   *
+   * @warning
+   * The execution order is only as deterministic as the systems themselves.
+   * Introduction of asynchronous side effects, reliance on unstable iteration orders
+   * of non-keyed collections, or external state mutations during the update cycle
+   * will compromise simulation reproducibility.
+   *
+   * Structural mutations (adding/removing entities or components) are restricted
+   * during this call. Use the command buffer via {@link World.getCommandBuffer}
+   * for such operations.
    */
   update(deltaTime: number): void {
     this._tick++;
@@ -1179,8 +1192,10 @@ export class World {
   /**
    * Internal method to trigger the Transformation phase for all hierarchical components.
    * This is intended to be called automatically during the World.update() cycle.
+   *
+   * @internal
    */
-  private runTransformPhase(deltaTime: number): void {
+  public runTransformPhase(deltaTime: number): void {
     // We expect HierarchySystem to be registered in the World or accessible.
     // If not, we fall back to a built-in resolution logic intended to maintain invariant.
     const hierarchySystems = this.systems.filter(s => s.phase === SystemPhase.Transform);
