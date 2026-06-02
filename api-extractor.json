@@ -1,6 +1,6 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
-  "mainEntryPointFilePath": "<projectFolder>/temp/declarations/engine/index.d.ts",
+  "mainEntryPointFilePath": "<projectFolder>/packages/core/dist/index.d.ts",
   "bundledPackages": [],
   "compiler": {
     "skipLibCheck": true
