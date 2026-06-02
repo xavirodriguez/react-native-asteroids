@@ -1,39 +1,39 @@
 import { World, EventBus, Component, Entity, WorldCommandBuffer, BlueprintDefinition } from "../index";
 
-interface AsteroidComponent extends Component {
-  type: "Asteroid";
+interface MockEntityComponent extends Component {
+  type: "MockEntity";
   size: "large" | "medium" | "small";
 }
 
-type AsteroidsRegistry = {
-  Asteroid: AsteroidComponent;
+type MockEntitysRegistry = {
+  MockEntity: MockEntityComponent;
 };
 
-type AsteroidsEvents = {
-  "ship:damaged": { shipEntity: Entity; damageAmount: number };
+type MockEntitysEvents = {
+  "mock:damaged": { shipEntity: Entity; damageAmount: number };
 };
 
-type AsteroidsBlueprints = {
-  asteroid: BlueprintDefinition<AsteroidsRegistry, { x: number; y: number; size: "large" | "medium" | "small" }>;
+type MockEntitysBlueprints = {
+  mock: BlueprintDefinition<MockEntitysRegistry, { x: number; y: number; size: "large" | "medium" | "small" }>;
 };
 
 describe("Type Validations", () => {
   it("should compile correctly with valid types", () => {
-    const world = new World<AsteroidsRegistry, AsteroidsEvents, AsteroidsBlueprints>();
+    const world = new World<MockEntitysRegistry, MockEntitysEvents, MockEntitysBlueprints>();
     const entity: Entity = 1;
 
     // @ts-expect-error unknown component
     world.getComponent(entity, "Unknown");
 
-    // @ts-expect-error invalid Asteroid payload
-    world.addComponent(entity, { type: "Asteroid", invalid: true });
+    // @ts-expect-error invalid MockEntity payload
+    world.addComponent(entity, { type: "MockEntity", invalid: true });
 
-    const eventBus = new EventBus<AsteroidsEvents>();
+    const eventBus = new EventBus<MockEntitysEvents>();
     // @ts-expect-error wrong event payload
-    eventBus.emit("ship:damaged", { fuego: true });
+    eventBus.emit("mock:damaged", { fuego: true });
 
-    const commandBuffer = new WorldCommandBuffer<AsteroidsRegistry, AsteroidsBlueprints>();
+    const commandBuffer = new WorldCommandBuffer<MockEntitysRegistry, MockEntitysBlueprints>();
     // @ts-expect-error wrong blueprint args
-    commandBuffer.spawnFromBlueprint("asteroid", { x: 1, y: 2, color: "red" });
+    commandBuffer.spawnFromBlueprint("mock", { x: 1, y: 2, color: "red" });
   });
 });
