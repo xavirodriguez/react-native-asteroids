@@ -58,7 +58,11 @@ export abstract class BaseGame<
   protected abstract initializeEntities(): void;
 
   /**
-   * Returns a serializable snapshot of the game state.
+   * Returns a snapshot representing the current game state.
+   *
+   * @remarks
+   * The returned state is intended to be serializable, though this depends on
+   * the implementation of the `TState` structure and its components.
    */
   abstract getGameState(): TState;
 

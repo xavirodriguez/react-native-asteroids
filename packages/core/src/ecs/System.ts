@@ -35,7 +35,12 @@ export abstract class System<
   TEvents extends Record<string, unknown> = Record<string, unknown>
 > {
   /**
-   * Executed every tick.
+   * Executed during the world update cycle.
+   *
+   * @remarks
+   * Systems are intended to perform logic over entities matching specific queries.
+   * To help maintain simulation consistency, systems should avoid asynchronous
+   * side effects or external mutations that are not captured by the world state.
    */
   abstract update(world: World<TComponents, TEvents, Record<string, any>>, deltaTime: number): void;
 

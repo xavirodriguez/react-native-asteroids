@@ -12,6 +12,15 @@ export interface GameLoopConfig {
 
 /**
  * Central time manager orchestrating the game's lifecycle.
+ *
+ * @remarks
+ * The GameLoop implements a fixed-timestep simulation with variable-rate rendering
+ * and alpha interpolation. It aims to provide a consistent simulation pace
+ * regardless of the rendering frame rate.
+ *
+ * Consistency depends on the system's ability to maintain the target frame rate.
+ * Under heavy load, the loop may drop simulation ticks (clamping) to avoid the
+ * "spiral of death" where the simulation falls further behind real time.
  */
 export class GameLoop {
   private isRunning = false;
@@ -28,7 +37,8 @@ export class GameLoop {
    */
   public setAccumulator(val: number): void { this.accumulator = val; }
 
-  private readonly fixedDeltaTime = 1000 / 60; // 60 FPS simulation
+  /** Target fixed simulation step (16.67ms for 60 FPS) */
+  private readonly fixedDeltaTime = 1000 / 60;
   private readonly maxDeltaMs: number;
   private readonly maxUpdatesPerFrame: number;
   private readonly scheduler: FrameScheduler;

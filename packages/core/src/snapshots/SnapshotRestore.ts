@@ -6,6 +6,17 @@ import { ComponentCloner } from "./ComponentCloner";
 import { RandomService } from "../random/RandomService";
 import { GameLoop } from "../loop/GameLoop";
 
+/**
+ * Utility for restoring the ECS world state from a snapshot.
+ *
+ * @remarks
+ * Restores the entities, components, and core service states (RNG, accumulator)
+ * from a previously captured `WorldSnapshot`.
+ *
+ * Warning: Restoration is a heavy structural operation. It is intended to
+ * reconstruct the serializable state, but non-serializable state or external
+ * references held by systems may not be restored unless manually handled.
+ */
 export class SnapshotRestore {
   public static restore<
     TComponents extends ComponentRegistry = ComponentRegistry,

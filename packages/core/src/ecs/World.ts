@@ -73,9 +73,10 @@ export class World<
    * Creates a new entity.
    *
    * @remarks
-   * **Warning**: Direct calls during system updates are discouraged if they might
-   * invalidate active queries or cause structural desyncs. Using a command buffer
-   * for deferred creation is recommended for maintaining simulation stability.
+   * **Warning**: Direct calls during system updates may lead to inconsistent query
+   * results if the simulation relies on a stable entity set for the duration of the
+   * frame. Using a command buffer for deferred creation is recommended to help maintain
+   * simulation consistency.
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -88,8 +89,9 @@ export class World<
    *
    * @remarks
    * **Warning**: This method performs immediate structural changes. Calling it
-   * during an update cycle is unsafe and may lead to unpredictable behavior or
-   * crashes in active iterators. Use a command buffer for deferred removal.
+   * during an update cycle is unsafe and may lead to unpredictable behavior in active
+   * iterators or systems that assume a stable entity population. Using a command buffer
+   * for deferred removal is recommended to help ensure iterator safety.
    */
   removeEntity(entity: Entity): void {
     if (this.activeEntities.delete(entity)) {
@@ -105,10 +107,10 @@ export class World<
    * Adds a component to an entity.
    *
    * @remarks
-   * **Warning**: Adding components during a world update may interfere with
-   * systems currently iterating over entities. It is strongly recommended
-   * to use a command buffer for structural changes during the simulation phase
-   * to ensure consistent query results.
+   * **Warning**: Adding components during a world update may interfere with systems
+   * currently iterating over entities or relying on cached query results. It is
+   * recommended to use a command buffer for structural changes during the simulation
+   * phase to help maintain consistency across system executions.
    */
   addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K]): void {
     const type = component.type;

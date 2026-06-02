@@ -7,8 +7,8 @@ import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, C
  *
  * @remarks
  * Designed to resolve impulses and positional corrections based on
- * data from {@link CollisionEventsComponent}. It also handles force
- * accumulation resets at the end of the step.
+ * data from {@link CollisionEventsComponent}. It also handles the resetting
+ * of force accumulators at the end of the physics step.
  *
  * Runs in `SystemPhase.GameRules`.
  *
@@ -59,7 +59,12 @@ export class PhysicsSolveSystem extends System {
   }
 
   /**
-   * Resolves a collision between two rigid bodies using impulse-based physics.
+   * Resolves a collision between two rigid bodies using an impulse-based model.
+   *
+   * @remarks
+   * This method applies linear and angular impulses to satisfy conservation of
+   * momentum and restitution. It also performs positional correction to help
+   * reduce shape overlapping (sinking).
    */
   private resolveCollision(
     world: World,

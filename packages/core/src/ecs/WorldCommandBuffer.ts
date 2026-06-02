@@ -20,9 +20,9 @@ interface Command<TComponents extends ComponentRegistry, TBlueprints extends Blu
  *
  * @remarks
  * Modifications to the world structure (creating entities, adding components) are
- * restricted during the update cycle to help preserve iterator safety and maintain
- * results consistency. This command buffer allows systems to request these
- * changes for deferred execution.
+ * often deferred during the update cycle to help preserve iterator safety and maintain
+ * result consistency. This command buffer allows systems to request these
+ * changes for execution at a controlled point in the simulation lifecycle.
  */
 export class WorldCommandBuffer<
   TComponents extends ComponentRegistry = ComponentRegistry,

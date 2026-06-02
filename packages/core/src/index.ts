@@ -18,6 +18,11 @@ export * from "./audio/IAudioPlayer";
 
 // Physics & Math
 export * from "./physics/CollisionHelpers";
+export * from "./physics/collision/CollisionTypes";
+export * from "./physics/shapes/ShapeTypes";
+export * from "./physics/shapes/ShapeFactory";
+export * from "./physics/query/QueryTypes";
+export * from "./physics/query/PhysicsQuery";
 
 // Runtime
 export * from "./runtime/GameCommand";

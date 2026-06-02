@@ -6,6 +6,17 @@ import { ComponentCloner } from "./ComponentCloner";
 import { RandomService } from "../random/RandomService";
 import { GameLoop } from "../loop/GameLoop";
 
+/**
+ * Utility for capturing snapshots of the ECS world state.
+ *
+ * @remarks
+ * The serializer aims to capture the serializable state of all entities and
+ * components. It performs cloning of component data to help ensure that the
+ * snapshot is decoupled from the live state.
+ *
+ * Note: Components containing functions, circular references, or complex external
+ * objects may not be fully or accurately captured depending on the cloner implementation.
+ */
 export class SnapshotSerializer {
   public static snapshot<
     TComponents extends ComponentRegistry = ComponentRegistry,

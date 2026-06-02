@@ -1,5 +1,5 @@
 /**
- * Generic pool designed for object reuse and reducing GC pressure.
+ * Generic pool designed for object reuse to help reduce GC pressure.
  *
  * Principle 6: ObjectPool Ownership and Reset
  * - reset is called BEFORE reuse in acquire()
