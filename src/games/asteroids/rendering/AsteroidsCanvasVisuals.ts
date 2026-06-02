@@ -1,5 +1,5 @@
-import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { TTLComponent, HealthComponent, VelocityComponent, TrailComponent } from "../../../engine/types/EngineTypes";
+import { ShapeDrawer, EffectDrawer } from "@tiny-aster/core";
+import { TTLComponent, HealthComponent, VelocityComponent, TrailComponent } from "@tiny-aster/core";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 
 let shipImage: HTMLImageElement | null = null;

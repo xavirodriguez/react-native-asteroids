@@ -1,14 +1,14 @@
-import { World } from "../../../engine/core/World";
-import { TransformComponent, VelocityComponent, RenderComponent, HapticRequestComponent } from "../../../engine/types/EngineTypes";
+import { World } from "@tiny-aster/core";
+import { TransformComponent, VelocityComponent, RenderComponent, HapticRequestComponent } from "@tiny-aster/core";
 import { InputComponent } from "../types/AsteroidTypes";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { BulletPool } from "../EntityPool";
-import { PhysicsUtils } from "../../../engine/physics/utils/PhysicsUtils";
+import { PhysicsUtils } from "@tiny-aster/core";
 import { createParticle } from "../EntityFactory";
-import { createProjectile } from "../../../engine/utils/ProjectileUtils";
+import { createProjectile } from "@tiny-aster/core";
 import { SimulationContext } from "../../../simulation/SimulationContext";
-import { EventBus } from "../../../engine/core/EventBus";
-import { ModifierStackComponent } from "../../../engine/core/CoreComponents";
+import { EventBus } from "@tiny-aster/core";
+import { ModifierStackComponent } from "@tiny-aster/core";
 
 /**
  * Shared Player Ship Physics & Movement.

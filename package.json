@@ -2,6 +2,10 @@
   "name": "asteroides",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -20,7 +24,13 @@
     "docs:extract": "tsc -p tsconfig.doc.json && npx api-extractor run --local",
     "docs:generate": "api-documenter markdown -i temp -o docs/api-reference",
     "docs:build": "npm run docs:extract && npm run docs:generate",
-    "check:ecs-invariants": "./scripts/check-ecs-invariants.sh"
+    "check:ecs-invariants": "./scripts/check-ecs-invariants.sh",
+    "build:core": "npm run build --workspace @tiny-aster/core",
+    "typecheck:core": "npm run typecheck --workspace @tiny-aster/core",
+    "typecheck:app": "tsc -p tsconfig.json --noEmit",
+    "check:core-boundaries": "bash ./scripts/check-core-boundaries.sh",
+    "ci": "npm run build:core && npm run check:core-boundaries && npm run typecheck:app",
+    "test:ci": "jest --runInBand"
   },
   "jest": {
     "preset": "jest-expo"
@@ -119,6 +129,5 @@
   },
   "engines": {
     "node": ">=20.0.0"
-  },
-  "private": true
+  }
 }
