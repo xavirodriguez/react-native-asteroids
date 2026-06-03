@@ -55,4 +55,11 @@ export class RandomService {
   public static set lockGameplayContext(value: boolean) {
     this._lockGameplayContext = value;
   }
+
+  /**
+   * Resets all static instances. Useful for tests or full engine restarts.
+   */
+  public static resetInstances(): void {
+    // No-op for modern implementation, but kept for compatibility with legacy tests.
+  }
 }

@@ -32,6 +32,20 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
 
 /**
  * ECS World - Central registry managing the lifecycle of entities, components, and systems.
+ *
+ * @remarks
+ * The World acts as the primary container for the simulation state.
+ *
+ * **Structural Consistency:**
+ * Modifying the world's structure (creating/removing entities or adding/removing components)
+ * while an update is in progress is supported via the command buffer, which flushes
+ * changes at the end of the update cycle. Direct structural mutations during iteration
+ * should be avoided as they may lead to inconsistent query results.
+ *
+ * **Determinism:**
+ * The World provides a seeded `gameplayRandom` stream intended for simulation logic.
+ * To support reproducible behavior, systems should rely on this stream and the
+ * provided `tick` counter, avoiding external side effects or non-deterministic APIs.
  */
 export class World<
   TComponents extends ComponentRegistry = ComponentRegistry,
@@ -68,10 +82,23 @@ export class World<
   public get gameplayRandom(): RandomService { return this._gameplayRandom; }
   public getCommandBuffer(): WorldCommandBuffer<TComponents> { return this.commandBuffer; }
 
+  /**
+   * Returns a list of all currently active entities.
+   * @remarks
+   * The list is sorted by ID to provide stable iteration, though this
+   * operation creates a new array on each call.
+   */
   public get entities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);
   }
 
+  /**
+   * Creates a new entity or recycles a previously removed ID.
+   *
+   * @warning
+   * If called during a system update, it is recommended to use `getCommandBuffer().createEntity()`
+   * to avoid structural changes during iteration.
+   */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
     this.activeEntities.add(id);
@@ -83,6 +110,13 @@ export class World<
     return this.nextEntityId++;
   }
 
+  /**
+   * Removes an entity and all its associated components.
+   *
+   * @warning
+   * If called during a system update, it is recommended to use `getCommandBuffer().removeEntity()`
+   * to avoid structural changes during iteration.
+   */
   removeEntity(entity: Entity): void {
     if (this.activeEntities.delete(entity)) {
       this.freeEntities.push(entity);
@@ -114,6 +148,13 @@ export class World<
     this.systems = [];
   }
 
+  /**
+   * Attaches a component to an entity.
+   *
+   * @remarks
+   * If a component of the same type already exists, it will be replaced.
+   * Triggers query index updates.
+   */
   addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K]): void {
     const type = (component as any).type;
     if (!this.componentMaps.has(type)) {
@@ -158,6 +199,9 @@ export class World<
     return component;
   }
 
+  /**
+   * Removes a component of the specified type from an entity.
+   */
   removeComponent(entity: Entity, type: string): void {
     const map = this.componentMaps.get(type);
     if (map && map.delete(entity)) {
@@ -224,6 +268,14 @@ export class World<
     system.onRegister(this);
   }
 
+  /**
+   * Advances the world state by the given time delta.
+   *
+   * @remarks
+   * Executes registered systems across their respective phases.
+   * Structural changes queued in the command buffer are flushed at the end
+   * of the update.
+   */
   update(deltaTime: number): void {
     this._tick++;
     this.isUpdating = true;
@@ -281,6 +333,14 @@ export class World<
     typeMap.set(entity, this._stateVersion);
   }
 
+  /**
+   * Captures the current serializable state of the world.
+   *
+   * @remarks
+   * The snapshot includes active entities, component data (cloned),
+   * versioning info, and RNG state. Non-serializable properties or
+   * complex objects without cloning support may not be fully captured.
+   */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
 
@@ -325,6 +385,14 @@ export class World<
     };
   }
 
+  /**
+   * Restores the world state from a previously captured snapshot.
+   *
+   * @remarks
+   * This is a destructive operation that replaces all current entities,
+   * components, and simulation metadata. Queries are rebuilt to match
+   * the restored state.
+   */
   public restore(state: WorldSnapshot): void {
     this.activeEntities = new Set(state.entities);
     this.nextEntityId = state.nextEntityId;

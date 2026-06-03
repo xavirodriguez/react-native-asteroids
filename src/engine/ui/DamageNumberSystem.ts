@@ -1,8 +1,8 @@
-import { System } from "../core/System";
-import { World } from "../core/World";
+import { System } from "../../../packages/core/src/ecs/System";
+import { World } from "../../../packages/core/src/ecs/World";
 import { UIFactory } from "./UIFactory";
 import { UIElementComponent } from "./UITypes";
-import { TTLComponent } from "../core/CoreComponents";
+import { TTLComponent } from "../../../packages/core/src/ecs/CoreComponents";
 
 export interface DamageNumberComponent {
     type: "DamageNumber";

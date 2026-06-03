@@ -19,9 +19,6 @@ export class MovementSystem extends System {
     const dtSeconds = deltaTime / 1000;
 
     query.forEach((entity) => {
-      const node = world.getComponent(entity, "SpatialNode" as any) as any;
-      const hasBoundary = world.hasComponent(entity, "Boundary" as any);
-
       const node = world.getComponent<SpatialNodeComponent>(entity, "SpatialNode");
       const hasBoundary = world.hasComponent(entity, "Boundary");
 

@@ -1,6 +1,6 @@
 import { Component } from "../core/Component";
 import { Entity } from "../core/Entity";
-import { IHierarchicalComponent } from "../core/CoreComponents";
+import { IHierarchicalComponent } from "../../../packages/core/src/ecs/CoreComponents";
 
 /** Ancla de posicionamiento relativo al viewport */
 export type UIAnchor =

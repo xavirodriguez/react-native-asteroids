@@ -1,4 +1,4 @@
-import { World } from "../core/World";
+import { World } from "../../../packages/core/src/ecs/World";
 import {
   UIElementComponent,
   UIAnchor,
@@ -7,7 +7,7 @@ import {
   UIWorldAttachComponent
 } from "./UITypes";
 import { Entity } from "../core/Entity";
-import { GenericComponent, TransformComponent } from "../core/CoreComponents";
+import { GenericComponent, TransformComponent } from "../../../packages/core/src/ecs/CoreComponents";
 import { AbstractHierarchySystem } from "../systems/AbstractHierarchySystem";
 
 /**

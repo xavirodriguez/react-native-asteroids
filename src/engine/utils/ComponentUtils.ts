@@ -1,4 +1,4 @@
-import { InputStateComponent, InputAction, TilemapComponent, TilesetConfig } from "../core/CoreComponents";
+import { InputStateComponent, InputAction, TilemapComponent, TilesetConfig } from "../../../packages/core/src/ecs/CoreComponents";
 
 /**
  * Utility functions for interacting with components as pure data.

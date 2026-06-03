@@ -2,7 +2,7 @@
  * Remote Input Prediction Engine.
  *
  * In Rollback Netcode, when the input for a remote player has not arrived for the current tick,
- * the engine must "guess" what the player is doing to continue the simulation.
+ * the engine is intended to "guess" (predict) what the player is doing to continue the simulation.
  *
  * @packageDocumentation
  */

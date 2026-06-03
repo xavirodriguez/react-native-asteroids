@@ -1,6 +1,6 @@
-import { World } from "../../core/World";
-import { System } from "../../core/System";
-import { TransformComponent, VelocityComponent } from "../../core/CoreComponents";
+import { World } from "../../../../packages/core/src/ecs/World";
+import { System } from "../../../../packages/core/src/ecs/System";
+import { TransformComponent, VelocityComponent } from "../../../../packages/core/src/ecs/CoreComponents";
 import { CommandQueueComponent, GameCommand } from "../types";
 
 /**

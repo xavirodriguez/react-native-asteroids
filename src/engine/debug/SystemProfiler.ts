@@ -1,5 +1,5 @@
-import { System } from "../core/System";
-import { World } from "../core/World";
+import { System } from "../../../packages/core/src/ecs/System";
+import { World } from "../../../packages/core/src/ecs/World";
 
 /**
  * Decorador encargado de medir el tiempo de ejecución de un sistema ECS.

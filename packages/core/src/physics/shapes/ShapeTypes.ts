@@ -66,7 +66,7 @@ export interface PolygonShape {
   /**
    * Vertices in local space, centered at (0,0).
    * @remarks
-   * Must be in CCW order.
+   * Expected to be in CCW order for correct normal calculation.
    */
   vertices: ReadonlyArray<{ readonly x: number; readonly y: number }>;
   /**

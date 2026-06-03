@@ -87,7 +87,7 @@ export interface UISnapshot {
  * @responsibility Ensure visual consistency across a single frame.
  *
  * @remarks
- * This structure prevents inconsistent visual states caused by simulation
+ * This structure is designed to help prevent inconsistent visual states caused by simulation
  * updates occurring mid-frame. It is typically passed to custom
  * {@link EffectDrawer} callbacks.
  *

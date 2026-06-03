@@ -23,7 +23,7 @@ export class InputRingBuffer {
   private readonly mask: number;
 
   /**
-   * @param capacity - Maximum number of frames to store. **MUST** be a power of 2.
+   * @param capacity - Maximum number of frames to store. Expected to be a power of 2.
    *                   Defaults to 256.
    */
   constructor(capacity: number = 256) {
@@ -33,7 +33,7 @@ export class InputRingBuffer {
       let p = 1;
       while (p < capacity) p <<= 1;
       capacity = p;
-      console.warn(`[InputRingBuffer] Capacity must be power of 2. Adjusted to ${capacity}.`);
+      console.warn(`[InputRingBuffer] Capacity expected to be power of 2. Adjusted to ${capacity}.`);
     }
 
     this.capacity = capacity;

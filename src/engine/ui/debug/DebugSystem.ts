@@ -1,7 +1,7 @@
-import { System } from "../../core/System";
-import { World } from "../../core/World";
+import { System } from "../../../../packages/core/src/ecs/System";
+import { World } from "../../../../packages/core/src/ecs/World";
 import { DebugConfigComponent } from "./DebugTypes";
-import { TransformComponent, Collider2DComponent, VelocityComponent } from "../../core/CoreComponents";
+import { TransformComponent, Collider2DComponent, VelocityComponent } from "../../../../packages/core/src/ecs/CoreComponents";
 
 /**
  * Sistema de depuración para visualización de métricas y componentes internos.

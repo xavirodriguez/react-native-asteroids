@@ -1,6 +1,6 @@
-import { World } from "../../core/World";
+import { World } from "../../../../packages/core/src/ecs/World";
 import { DamageNumberSystem } from "../DamageNumberSystem";
-import { RandomService } from "../../utils/RandomService";
+import { RandomService } from "../../../../packages/core/src/utils/RandomService";
 
 describe("DamageNumberSystem", () => {
     let world: World;

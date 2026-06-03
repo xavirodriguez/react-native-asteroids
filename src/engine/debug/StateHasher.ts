@@ -1,4 +1,4 @@
-import { World } from "../core/World";
+import { World } from "../../../packages/core/src/ecs/World";
 
 /**
  * Utilidad para generar hashes del estado del mundo ECS.
