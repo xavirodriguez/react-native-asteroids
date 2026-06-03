@@ -1,6 +1,6 @@
-import { System } from "../../core/System";
-import { World } from "../../core/World";
-import { VelocityComponent, FrictionComponent } from "../../types/EngineTypes";
+import { System } from "../../ecs/System";
+import { World } from "../../ecs/World";
+import { VelocityComponent, FrictionComponent } from "../../ecs/CoreComponents";
 import { PhysicsUtils } from "../utils/PhysicsUtils";
 
 /**
@@ -15,10 +15,10 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  *
  * @remarks
  * La fricción se aplica buscando reducir la velocidad cada frame, ideal para simular resistencia
- * arcade. El cálculo busca aproximar la independencia del framerate delegando en {@link PhysicsUtils}.
+ * arcade. El cálculo intenta ser independiente del framerate delegando en {@link PhysicsUtils}.
  *
  * @conceptualRisk [DETERMINISM][MEDIUM] Al igual que `MovementSystem`, la fricción debe aplicarse
- * de forma consistente en el cliente y en la predicción para ayudar a evitar drift.
+ * de forma idéntica en el cliente y en la predicción para evitar drift.
  * @conceptualRisk [PHYSICS][LOW] Si `friction * dt >= 1`, la velocidad puede invertirse o volverse
  * inestable si no hay un clamp en `PhysicsUtils`.
  */

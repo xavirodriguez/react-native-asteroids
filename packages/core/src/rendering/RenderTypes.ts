@@ -1,4 +1,4 @@
-import { Entity } from "../core/Entity";
+import { Entity } from "../ecs/Entity";
 
 /**
  * Captured transform state of an entity ready for rendering.

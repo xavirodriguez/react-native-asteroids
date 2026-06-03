@@ -1,4 +1,4 @@
-import { FrameScheduler, browserFrameScheduler } from "./FrameScheduler";
+import { FrameScheduler, defaultFrameScheduler } from "./FrameScheduler";
 
 export type GameLoopListener = (deltaTime: number) => void;
 export type RenderListener = (alpha: number, deltaTime: number) => void;
@@ -7,20 +7,12 @@ export interface GameLoopConfig {
   maxDeltaMs?: number;
   /** Maximum number of simulation updates allowed per real frame to help prevent main thread blocking. */
   maxUpdatesPerFrame?: number;
+  /** Custom scheduler implementation. Defaults to browser/RN requestAnimationFrame. */
   scheduler?: FrameScheduler;
 }
 
 /**
  * Central time manager orchestrating the game's lifecycle.
- *
- * @remarks
- * The GameLoop implements a fixed-timestep simulation with variable-rate rendering
- * and alpha interpolation. It aims to provide a consistent simulation pace
- * regardless of the rendering frame rate.
- *
- * Consistency depends on the system's ability to maintain the target frame rate.
- * Under heavy load, the loop may drop simulation ticks (clamping) to avoid the
- * "spiral of death" where the simulation falls further behind real time.
  */
 export class GameLoop {
   private isRunning = false;
@@ -28,17 +20,10 @@ export class GameLoop {
   private accumulator = 0;
   private frameHandle: unknown = null;
 
-  /**
-   * Retrieves the current time accumulator.
-   */
   public getAccumulator(): number { return this.accumulator; }
-  /**
-   * Restores the time accumulator from a snapshot.
-   */
   public setAccumulator(val: number): void { this.accumulator = val; }
 
-  /** Target fixed simulation step (16.67ms for 60 FPS) */
-  private readonly fixedDeltaTime = 1000 / 60;
+  private readonly fixedDeltaTime = 1000 / 60; // 60 FPS simulation
   private readonly maxDeltaMs: number;
   private readonly maxUpdatesPerFrame: number;
   private readonly scheduler: FrameScheduler;
@@ -48,14 +33,13 @@ export class GameLoop {
   private transformListeners = new Set<GameLoopListener>();
   private renderListeners = new Set<RenderListener>();
 
-  // Temporary arrays for safe iteration during concurrent modification
   private activeUpdateListeners: GameLoopListener[] = [];
   private needsUpdateRebuild = true;
 
   constructor(config: GameLoopConfig = {}) {
     this.maxDeltaMs = config.maxDeltaMs ?? 100;
     this.maxUpdatesPerFrame = config.maxUpdatesPerFrame ?? 240;
-    this.scheduler = config.scheduler ?? browserFrameScheduler;
+    this.scheduler = config.scheduler ?? defaultFrameScheduler;
   }
 
   public subscribeInput(listener: GameLoopListener): () => void {
@@ -111,7 +95,7 @@ export class GameLoop {
     let updatesThisFrame = 0;
     while (this.accumulator >= this.fixedDeltaTime) {
       if (updatesThisFrame >= this.maxUpdatesPerFrame) {
-        console.warn(`[GameLoop] Spiral of Death detected. Dropping remaining ticks for this frame to preserve stability. (Updates: ${updatesThisFrame})`);
+        console.warn(`[GameLoop] Spiral of Death detected. Dropping remaining ticks for this frame. (Updates: ${updatesThisFrame})`);
         this.accumulator = 0;
         break;
       }

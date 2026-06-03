@@ -11,7 +11,7 @@
     "packages/core/src/**/*.ts"
   ],
   "exclude": [
-    "src/engine/**/__tests__/*",
+    "packages/core/src/**/__tests__/*",
     "node_modules"
   ]
 }

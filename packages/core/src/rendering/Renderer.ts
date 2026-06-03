@@ -1,17 +1,9 @@
-import { World } from "../core/World";
-import { Entity, Component } from "../types/EngineTypes";
+import { World } from "../ecs/World";
+import { Entity } from "../ecs/Entity";
+import { Component } from "../ecs/Component";
 
 /**
  * Interface for custom shape drawing logic.
- *
- * @param ctx - The backend-specific drawing context (e.g., CanvasRenderingContext2D).
- * @param entity - The ID of the entity being drawn.
- * @param pos - Final visual transform (already interpolated and with offsets).
- * @param elapsedTime - Total simulation time (ms).
- * @param render - Captured render component data.
- * @param world - The ECS world (provided for read-only access to related state).
- *
- * @public
  */
 export type ShapeDrawer<TContext> = (
   ctx: TContext,
@@ -31,14 +23,6 @@ export type ShapeDrawer<TContext> = (
 
 /**
  * Interface for custom full-screen background or foreground effects.
- *
- * @param ctx - The drawing context.
- * @param snapshot - Complete state of the current frame.
- * @param width - Viewport width.
- * @param height - Viewport height.
- * @param world - The ECS world.
- *
- * @public
  */
 export type EffectDrawer<TContext> = (
   ctx: TContext,
@@ -50,18 +34,6 @@ export type EffectDrawer<TContext> = (
 
 /**
  * Abstract interface for game rendering engines.
- *
- * @remarks
- * Renderers act as read-only consumers of the {@link World} state. The architecture
- * is designed to help support backend abstraction (e.g., Canvas, Skia) and decoupling
- * of simulation and rendering frequencies through snapshots and interpolation.
- *
- * Drawing operations are intended to be side-effect free relative to simulation components.
- * While core rendering paths are designed to minimize allocations, the use of
- * user-provided drawers, effect handlers, or complex object structures may introduce
- * GC pressure.
- *
- * @public
  */
 export interface Renderer<TContext = unknown> {
   /** Renderer type identifier (e.g., 'canvas', 'skia'). */
@@ -74,26 +46,11 @@ export interface Renderer<TContext = unknown> {
 
   /**
    * Executes the full rendering pipeline for a frame.
-   *
-   * @param world - The ECS world containing the state to draw.
-   * @param alpha - [0, 1] Interpolation factor between the previous and current tick.
-   *
-   * @remarks
-   * Pipeline order:
-   * 1. Background Effects.
-   * 2. World Entities (Sorted by Z-Index).
-   * 3. Particles.
-   * 4. Post-Entity overlays.
-   * 5. Foreground Effects / HUD.
-   *
-   * @remarks
-   * It is expected that the backend context is initialized before calling this.
    */
   render(world: World, alpha?: number): void;
 
   /**
    * Immediately draws an individual entity.
-   * @deprecated Prefer using the batched {@link Renderer.render} pipeline.
    */
   drawEntity(entity: Entity, components: Record<string, Component>, world: World): void;
 

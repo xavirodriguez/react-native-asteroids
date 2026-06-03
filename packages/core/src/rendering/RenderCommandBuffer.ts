@@ -8,7 +8,7 @@
  * @packageDocumentation
  */
 
-import { Entity } from "../core/Entity";
+import { Entity } from "../ecs/Entity";
 
 /**
  * Discriminator for the type of drawing operation (e.g., "ship", "particle").
@@ -140,7 +140,7 @@ export class RenderCommandBuffer {
    */
   public addCommand(options: DrawCommandOptions): void {
     if (this.activeCount >= this.MAX_COMMANDS) {
-      if (__DEV__ && !this.overflowWarned) {
+      if (false && !this.overflowWarned) {
         console.warn(`[RenderCommandBuffer] Overflow! Maximum commands (${this.MAX_COMMANDS}) reached. Some entities will not be rendered.`);
         this.overflowWarned = true;
       }

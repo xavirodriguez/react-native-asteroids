@@ -1,25 +1,20 @@
-import { System } from "../../core/System";
-import { World } from "../../core/World";
-import {
-  TransformComponent,
-  VelocityComponent,
-  BoundaryComponent,
-  Entity,
-  ReclaimableComponent,
-} from "../../types/EngineTypes";
+import { System } from "../../ecs/System";
+import { World } from "../../ecs/World";
+import { TransformComponent, BoundaryComponent, VelocityComponent, ReclaimableComponent } from "../../ecs/CoreComponents";
 import { PhysicsUtils } from "../utils/PhysicsUtils";
 
 /**
- * Sistema universal de límites que gestiona el teletransporte (wrap), rebote (bounce)
- * o destrucción de entidades cuando salen de los límites de pantalla definidos.
+ * Sistema que gestiona las colisiones con los límites del mundo (Boundaries).
  *
- * @responsibility Mantener las entidades dentro del área de juego o destruirlas si salen.
- *
- * API status: Public
+ * @responsibility Aplicar comportamientos de wrap, bounce o destroy cuando una entidad cruza los límites.
  */
 export class BoundarySystem extends System {
-  public update(world: World, deltaTime: number): void {
-    void deltaTime;
+  /**
+   * Actualiza las entidades que poseen Transform y Boundary.
+   *
+   * @param world - El mundo ECS.
+   */
+  public update(world: World, _deltaTime: number): void {
     const query = world.getQuery("Transform", "Boundary");
 
     query.forEach((entity) => {
@@ -28,50 +23,44 @@ export class BoundarySystem extends System {
       const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
 
       if (world.hasComponent(entity, "ManualMovement")) return;
-      this.applyBoundary(world, entity, pos, boundary, vel);
-    });
-  }
 
-  private applyBoundary(
-    world: World,
-    entity: Entity,
-    pos: TransformComponent,
-    boundary: BoundaryComponent,
-    vel: VelocityComponent | undefined
-  ): void {
-    const { width, height, x = 0, y = 0 } = boundary;
-    const behavior = boundary.behavior;
+      const minX = boundary.x ?? 0;
+      const minY = boundary.y ?? 0;
+      const width = boundary.width;
+      const height = boundary.height;
+      const behavior = boundary.behavior;
 
-    const isOutOfBounds = pos.x < x || pos.x > x + width || pos.y < y || pos.y > y + height;
-
-    if (!isOutOfBounds) return;
-
-    switch (behavior) {
-      case "wrap":
-        world.mutateComponent<TransformComponent>(entity, "Transform", p => {
-            PhysicsUtils.wrapBoundary(p, width, height, x, y);
+      // Wrap Behavior
+      if (behavior === "wrap") {
+        world.mutateComponent<TransformComponent>(entity, "Transform", (p) => {
+          PhysicsUtils.wrapBoundary(p, width, height, minX, minY);
         });
-        break;
-      case "bounce":
-        if (vel) {
-          world.mutateComponent<TransformComponent>(entity, "Transform", p => {
-              world.mutateComponent<VelocityComponent>(entity, "Velocity", v => {
-                PhysicsUtils.bounceBoundary(p, v, width, height, x, y, boundary.bounceX, boundary.bounceY);
-              });
-          });
-        }
-        break;
-      case "destroy":
-        this.destroy(world, entity);
-        break;
-    }
-  }
+      }
 
-  private destroy(world: World, entity: Entity): void {
-    const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
-    if (reclaimable && reclaimable.onReclaim) {
-      reclaimable.onReclaim(world, entity);
-    }
-    world.getCommandBuffer().removeEntity(entity);
+      // Bounce Behavior
+      else if (behavior === "bounce" && vel) {
+        world.mutateComponent<TransformComponent>(entity, "Transform", (p) => {
+          const v = world.getMutableComponent<VelocityComponent>(entity, "Velocity")!;
+          PhysicsUtils.bounceBoundary(
+            p, v, width, height, minX, minY,
+            boundary.bounceX, boundary.bounceY
+          );
+        });
+      }
+
+      // Destroy Behavior
+      else if (behavior === "destroy") {
+        const maxX = minX + width;
+        const maxY = minY + height;
+        if (pos.x < minX || pos.x > maxX || pos.y < minY || pos.y > maxY) {
+          const reclaimable = world.getComponent<ReclaimableComponent>(entity, "Reclaimable");
+          if (reclaimable && (reclaimable as any).onReclaim) {
+            (reclaimable as any).onReclaim(world, entity);
+          } else {
+            world.getCommandBuffer().removeEntity(entity);
+          }
+        }
+      }
+    });
   }
 }

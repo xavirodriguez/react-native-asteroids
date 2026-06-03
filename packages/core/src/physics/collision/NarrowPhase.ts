@@ -121,8 +121,8 @@ const staticCapsulePoly: PolygonShape = {
  * y puntos de contacto.
  *
  * @remarks
- * El sistema está diseñado para reducir la presión sobre el recolector de basura (GC) mediante el uso de
- * manifolds compartidos y pools de vértices.
+ * El sistema está optimizado con la intención de reducir la presión sobre el GC mediante el uso de manifolds
+ * compartidos y pools de vértices, asumiendo una simulación de alta frecuencia (60Hz+).
  *
  * @conceptualRisk [FLOAT_PRECISION][MEDIUM] Los productos cruzados y normalizaciones dependen de un épsilon (0.0001)
  * para evitar divisiones por cero en colisiones casi perfectas.
@@ -325,7 +325,7 @@ export class NarrowPhase {
    * Detección de colisiones entre un círculo y un polígono convexo.
    *
    * @remarks
- * Combina pruebas de punto más cercano y una aplicación simplificada del SAT para círculos:
+   * Combina pruebas de punto más cercano y el principio del SAT simplificado para círculos:
    * 1. Se transforman los vértices del polígono al espacio de mundo.
    * 2. Para cada arista, se proyecta el centro del círculo sobre el segmento de la arista.
    * 3. Se determina si el centro está "dentro" del polígono verificando el signo del producto cruzado

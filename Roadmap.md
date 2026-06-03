@@ -1,39 +1,20 @@
+# TinyAster Roadmap
 
+## Fase 1: Consolidación del Core (Completada)
 
-### Objetivo real
+Se ha consolidado `@tiny-aster/core` como el paquete canónico del motor, logrando un desacoplamiento total del dominio del juego y de las APIs de plataforma.
 
-No haría una extracción masiva nueva. Haría una **consolidación por cutover**:
+### Logros:
+- **Extracción Quirúrgica**: Se movió todo el código agnóstico (ECS, Physics, Loop, Systems) a `packages/core`.
+- **Pureza Arquitectónica**: Eliminación de componentes específicos (`AsteroidComponent`, `ShipComponent`, etc.) del core. Ahora se usan registros genéricos.
+- **Contratos de Renderizado**: El core exporta `Renderer`, `ShapeDrawer` y tipos abstractos. Las implementaciones (Skia/Canvas) viven fuera.
+- **Abstracción de Red**: `NetworkTransport` es una interfaz en el core. Se creó `@tiny-aster/network-colyseus` como adapter opcional.
+- **Capa de Compatibilidad**: `src/engine/index.ts` ahora re-exporta `@tiny-aster/core`.
 
-```txt
-src/engine        = motor legacy que debe adelgazar o desaparecer
-packages/core    = nuevo core canónico
-src/games/*      = lógica de juegos concretos
-src/multiplayer  = candidato a adapter Colyseus
-root Expo app    = consumidor real inicial
-```
-
-En este repo no existe todavía `apps/asteroids`; la app Expo vive en la raíz con `src/app`, `src/games`, `src/components`, `expo-router`, etc. Por eso, antes de mover la app a `apps/asteroids`, usaría la **app raíz** como consumidor real de `@tiny-aster/core`. La migración a `apps/asteroids` puede ser una fase posterior.
-
----
-
-## Fase 1 — Convertir el repo en workspace real
-
-**Estado actual:** el root `package.json` es la app Expo privada `asteroides`, con `main: "expo-router/entry"`, dependencias de Expo, React Native, Skia y Colyseus, pero `@tiny-aster/core` vive como paquete local separado. ([GitHub][8])
-
-**Cambio concreto:**
-
-Añadir workspaces al root sin cambiar todavía a pnpm si no quieres tocar demasiado:
-
-```json
-{
-  "private": true,
-  "workspaces": [
-    "packages/*"
-  ]
-}
-```
-
-Añadir scripts:
+### Siguientes Pasos:
+1. **Formalizar Monorepo**: Mover la aplicación raíz a `apps/asteroids`.
+2. **Paquetes de Renderizado**: Crear `@tiny-aster/renderer-skia` y `@tiny-aster/renderer-canvas`.
+3. **Paquete React Native**: Extraer hooks y componentes específicos a `@tiny-aster/react-native`.
 
 ```json
 {

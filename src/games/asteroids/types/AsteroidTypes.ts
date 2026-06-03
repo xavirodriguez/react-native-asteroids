@@ -1,4 +1,4 @@
-import { Component } from "../../../engine/types/EngineTypes";
+import { Component } from "@tiny-aster/core";
 
 /**
  * Represents the current state of user inputs for Asteroids.
@@ -33,7 +33,7 @@ export interface UfoComponent extends Component {
 }
 
 
-import { Star, ScreenShakeComponent } from "../../../engine/index";
+import { Star, ScreenShakeComponent } from "@tiny-aster/core";
 
 /**
  * Component to track global game progress and state.

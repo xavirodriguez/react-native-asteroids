@@ -1,4 +1,4 @@
-import { TransformComponent, PhysicsBody2DComponent, VelocityComponent } from "../../types/EngineTypes";
+import { TransformComponent, PhysicsBody2DComponent, VelocityComponent } from "../../ecs/CoreComponents";
 
 /**
  * Minimal interface for objects representing a position in 2D space.
@@ -15,6 +15,7 @@ export interface PositionLike {
   /** [px] Absolute World Y coordinate. */
   worldY?: number;
   [key: string]: unknown;
+  dirty?: boolean;
 }
 
 /**

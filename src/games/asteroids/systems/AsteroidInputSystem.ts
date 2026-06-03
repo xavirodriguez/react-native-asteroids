@@ -1,11 +1,11 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
 import {
   type InputStateComponent,
-} from "../../../engine/core/CoreComponents";
+} from "@tiny-aster/core";
 import { type InputComponent } from "../types/AsteroidTypes";
 import { BulletPool, ParticlePool } from "../EntityPool";
-import { InputUtils } from "../../../engine/utils/ComponentUtils";
+import { InputUtils } from "@tiny-aster/core";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 
 /**

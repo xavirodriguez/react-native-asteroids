@@ -1,4 +1,4 @@
-import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
+import { RenderUpdateSystem } from "@tiny-aster/core";
 
 /**
  * System responsible for Asteroids-specific rendering logic.

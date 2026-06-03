@@ -1,4 +1,4 @@
-import { TransformComponent, Collider2DComponent, Entity, AABB } from "../../types/EngineTypes";
+import { TransformComponent, Collider2DComponent, Entity, AABB } from "../../ecs/CoreComponents";
 
 export class BroadPhase {
   static getShapeBounds(transform: Readonly<TransformComponent>, collider: Readonly<Collider2DComponent>): AABB {
@@ -62,17 +62,16 @@ export class BroadPhase {
    *
    * @remarks
    * Sorts entities by their X-axis minimum bound and checks for interval overlaps.
-   * Designed to be efficient for sparse environments where objects are not tightly
-   * clustered along the sort axis.
+   * Highly efficient for sparse environments where objects are not tightly clustered.
    *
    * Warning: **Complexity O(N log N)** due to sorting. For high-density environments
-   * or clusters, using the `SpatialGrid` is recommended to help maintain performance.
+   * (>50 entities), using the `SpatialGrid` (O(1) query) is strongly recommended.
    *
    * @param entities - List of entities to process.
    * @param world - ECS world for component retrieval.
    * @returns List of candidate entity pairs [A, B] for narrow-phase testing.
    */
-  static sweepAndPrune(entities: Entity[], world: import("../../core/World").World): Array<[Entity, Entity]> {
+  static sweepAndPrune(entities: Entity[], world: import("../../ecs/World").World): Array<[Entity, Entity]> {
     const bounds = entities.map(entity => {
       const transform = world.getComponent<TransformComponent>(entity, "Transform");
       const collider = world.getComponent<Collider2DComponent>(entity, "Collider2D");

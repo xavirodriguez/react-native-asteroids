@@ -1,9 +1,12 @@
-import { System } from "../../core/System";
-import { World } from "../../core/World";
-import { Entity, TransformComponent, Collider2DComponent, CollisionEventsComponent, CollisionManifold } from "../../types/EngineTypes";
+import { System } from "../../ecs/System";
+import { World } from "../../ecs/World";
+import { Entity } from "../../ecs/Entity";
+import { TransformComponent, Collider2DComponent, CollisionEventsComponent } from "../../ecs/CoreComponents";
+import { CollisionManifold } from "./CollisionTypes";
 import { BroadPhase } from "./BroadPhase";
 import { NarrowPhase } from "./NarrowPhase";
 import { SpatialGrid } from "../utils/SpatialGrid";
+import { AABB } from "../../math/CommonTypes";
 
 /**
  * Signature for collision response callbacks.
@@ -19,9 +22,9 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
  *
  * @remarks
  * Implements a two-phase collision detection pipeline (Broadphase & Narrowphase)
- * and manages lifecycle events for triggers. It is intended to work with
- * fixed-step simulations and can be used in conjunction with a CCD phase to help
- * reduce tunneling in fast-moving objects.
+ * and manages lifecycle events for triggers. It is designed to work with
+ * fixed-step simulations and can integrate with a CCD phase to mitigate
+ * tunneling in fast-moving objects.
  *
  * API status: Public
  */
@@ -71,7 +74,7 @@ export class CollisionSystem2D extends System {
     const grid = world.getResource<SpatialGrid>("SpatialGrid");
 
     if (this._useSpatialGrid && grid) {
-      const entityBoundsMap = new Map<Entity, import("../../types/EngineTypes").AABB>();
+      const entityBoundsMap = new Map<Entity, AABB>();
       query.forEach((entity) => {
         const bounds = BroadPhase.getShapeBounds(world.getComponent<TransformComponent>(entity, "Transform")!, world.getComponent<Collider2DComponent>(entity, "Collider2D")!);
         entityBoundsMap.set(entity, bounds);

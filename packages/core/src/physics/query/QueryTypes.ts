@@ -1,4 +1,4 @@
-import { Entity } from "../../core/Entity";
+import { Entity } from "../../ecs/Entity";
 
 /**
  * Geometric result of a raycast test.

@@ -1,14 +1,14 @@
-import { System } from "../../core/System";
-import { World } from "../../core/World";
-import { TransformComponent, PhysicsBody2DComponent } from "../../types/EngineTypes";
+import { System } from "../../ecs/System";
+import { World } from "../../ecs/World";
+import { TransformComponent, PhysicsBody2DComponent } from "../../ecs/CoreComponents";
 
 /**
  * System for physical integration using Semi-Implicit Euler.
  *
  * @remarks
  * Designed to apply forces and gravity to velocity, and integrate velocity
- * into position and rotation. This system aims to provide a stable simulation
- * when used within a fixed time-step loop.
+ * into position and rotation. It aims to support simulation stability
+ * within the fixed time-step loop.
  *
  * Runs in `SystemPhase.Simulation`.
  *

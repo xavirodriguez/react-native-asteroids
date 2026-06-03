@@ -1,14 +1,14 @@
-import { System } from "../../core/System";
-import { World } from "../../core/World";
-import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, CollisionEvent } from "../../types/EngineTypes";
+import { System } from "../../ecs/System";
+import { World } from "../../ecs/World";
+import { TransformComponent, PhysicsBody2DComponent, CollisionEventsComponent, CollisionEvent } from "../../ecs/CoreComponents";
 
 /**
  * System for collision resolution and impulse application.
  *
  * @remarks
  * Designed to resolve impulses and positional corrections based on
- * data from {@link CollisionEventsComponent}. It also handles the resetting
- * of force accumulators at the end of the physics step.
+ * data from {@link CollisionEventsComponent}. It also handles force
+ * accumulation resets at the end of the step.
  *
  * Runs in `SystemPhase.GameRules`.
  *
@@ -59,12 +59,7 @@ export class PhysicsSolveSystem extends System {
   }
 
   /**
-   * Resolves a collision between two rigid bodies using an impulse-based model.
-   *
-   * @remarks
-   * This method applies linear and angular impulses to satisfy conservation of
-   * momentum and restitution. It also performs positional correction to help
-   * reduce shape overlapping (sinking).
+   * Resolves a collision between two rigid bodies using impulse-based physics.
    */
   private resolveCollision(
     world: World,
