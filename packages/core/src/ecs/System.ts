@@ -35,22 +35,27 @@ export abstract class System<
   TEvents extends Record<string, unknown> = Record<string, unknown>
 > {
   /**
-   * Executed every tick.
+   * Executed during the world update cycle.
+   *
+   * @remarks
+   * Systems are intended to perform logic over entities matching specific queries.
+   * To help maintain simulation consistency, systems should avoid asynchronous
+   * side effects or external mutations that are not captured by the world state.
    */
   abstract update(world: World<TComponents, TEvents, Record<string, any>>, deltaTime: number): void;
 
   /**
-   * Lifecycle hook: called when the system is added to a world.
+   * Lifecycle hook: intended to be called when the system is added to a world.
    */
   onRegister(_world: World<TComponents, TEvents, Record<string, any>>): void {}
 
   /**
-   * Lifecycle hook: called when the system is removed from a world.
+   * Lifecycle hook: intended to be called when the system is removed from a world.
    */
   onUnregister(_world: World<TComponents, TEvents, Record<string, any>>): void {}
 
   /**
-   * Lifecycle hook: called to clean up resources.
+   * Lifecycle hook: intended to be used for cleaning up resources.
    */
   dispose(): void {}
 }

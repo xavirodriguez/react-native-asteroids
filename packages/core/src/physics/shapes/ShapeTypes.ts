@@ -55,7 +55,8 @@ export interface CapsuleShape {
  * Convex polygon geometry.
  *
  * @remarks
- * Vertices must be defined in counter-clockwise (CCW) order and should be
+ * For correct orientation, vertices are expected to be defined in
+ * counter-clockwise (CCW) order and should be
  * convex for the SAT (Separating Axis Theorem) collision resolver to work correctly.
  *
  * @public

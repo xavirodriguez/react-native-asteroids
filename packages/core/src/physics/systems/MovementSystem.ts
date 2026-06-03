@@ -15,10 +15,12 @@ export class MovementSystem extends System {
    * @param deltaTime - Tiempo transcurrido desde el último tick en milisegundos.
    */
   public update(world: World, deltaTime: number): void {
-    const query = world.getQuery("Transform", "Velocity");
+    const query = world.getQuery("Transform" as any, "Velocity" as any);
     const dtSeconds = deltaTime / 1000;
 
     query.forEach((entity) => {
+      const node = world.getComponent(entity, "SpatialNode" as any) as any;
+      const hasBoundary = world.hasComponent(entity, "Boundary" as any);
 
       const node = world.getComponent<SpatialNodeComponent>(entity, "SpatialNode");
       const hasBoundary = world.hasComponent(entity, "Boundary");
@@ -35,14 +37,11 @@ export class MovementSystem extends System {
         return;
       }
 
-      const pos = world.getComponent<TransformComponent>(entity, "Transform");
-      const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
+      const pos = world.getComponent(entity, "Transform" as any) as any;
+      const vel = world.getComponent(entity, "Velocity" as any) as any;
 
       if (pos && vel) {
-        if (world.hasComponent(entity, "ManualMovement")) {
-          if (world.debugMode) {
-            console.debug(`[MovementSystem] Skipping entity ${entity} due to ManualMovementComponent.`);
-          }
+        if (world.hasComponent(entity, "ManualMovement" as any)) {
           return;
         }
 

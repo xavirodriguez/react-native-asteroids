@@ -45,7 +45,7 @@ import { BinaryCompression } from "../../src/engine/network/BinaryCompression";
  */
 export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
-  /** Paso de tiempo fijo para el motor ECS (60Hz). */
+  /** Paso de tiempo objetivo para el motor ECS (60Hz). */
   private fixedTimeStep = 16.66;
   private inputBuffers = new Map<string, InputFrame[]>();
   private stateHistory = new Map<number, import("../../src/engine/types/EngineTypes").WorldSnapshot>();
@@ -201,8 +201,8 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
    * @remarks
    * Sigue un pipeline diseñado para mantener la autoridad del estado y la eficiencia de red:
    *
-   * 1. **Tick Sync**: Incrementa `serverTick`, la referencia temporal absoluta.
-   * 2. **Input Recovery**: Extrae inputs del buffer de cada cliente correspondientes al tick actual.
+   * 1. **Tick Sync**: Incrementa `serverTick`, la referencia temporal para la simulación.
+   * 2. **Input Recovery**: Intenta extraer inputs del buffer de cada cliente correspondientes al tick actual.
    * 3. **Authoritative Simulation**: Ejecuta la lógica compartida (`AsteroidsGame` headless).
    * 4. **Post-Simulation**: Ejecuta sistemas exclusivos del servidor (ej. `InterestManagerSystem`).
    * 5. **Schema Sync**: Sincroniza el mundo ECS con los objetos Schema de Colyseus para clientes 'legacy'.

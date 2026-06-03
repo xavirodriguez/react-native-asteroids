@@ -25,7 +25,10 @@ import { World } from "../ecs/World";
 export abstract class Scene {
   /**
    * The ECS world associated with this scene.
-   * @invariant Each scene possesses a unique World instance unless explicitly shared.
+   *
+   * @remarks
+   * Each scene is designed to possess a unique World instance unless
+   * explicitly shared.
    */
   protected world: World;
 

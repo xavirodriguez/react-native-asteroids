@@ -61,8 +61,13 @@ export class PhysicsUtils {
    * @param vel - Velocity object (standard or physics).
    * @param deltaTimeInSeconds - Elapsed time in SECONDS.
    *
-   * @precondition `deltaTimeInSeconds` must be a finite positive value.
-   * @postcondition Coordinates in `pos` are updated.
+   * @remarks
+   * For correct results, `deltaTimeInSeconds` is expected to be a finite positive value.
+   *
+   * @param pos - Position object (local or world).
+   * @param vel - Velocity object (standard or physics).
+   * @param deltaTimeInSeconds - Elapsed time in SECONDS.
+   *
    * @sideEffect Mutates `pos` directly by reference.
    *
    * @conceptualRisk [PRECISION_LOSS][LOW] Accumulation of floating-point errors

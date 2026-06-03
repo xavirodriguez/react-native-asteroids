@@ -25,6 +25,7 @@ export interface BlueprintDefinition<
 
 /**
  * A map of blueprint definitions.
+ * @internal
  */
 export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
   Record<string, BlueprintDefinition<TComponents, any>>;

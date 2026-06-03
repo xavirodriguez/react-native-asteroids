@@ -5,11 +5,13 @@ import { World } from "../core/World";
  * Fundamental para ayudar en la detección de desincronización (desync) en entornos multijugador o replay.
  *
  * @responsibility Serializar y hashear el estado serializable de todas las entidades y componentes activos.
- * @conceptualRisk [JSON_DETERMINISM] Se espera que `JSON.stringify` no garantice un orden determinista de las propiedades de los objetos.
- * Si dos clientes tienen los mismos datos pero las propiedades del objeto se insertaron en orden distinto,
- * los hashes diferirán. Esto genera **falsos positivos de desync**.
- * @conceptualRisk [FLOAT_PRECISION] Diferencias minúsculas en cálculos de punto flotante entre arquitecturas
- * (ej. x86 vs ARM) pueden causar que el string serializado difiera y el hash falle.
+ * @conceptualRisk [JSON_DETERMINISM] El `JSON.stringify` nativo no garantiza un orden determinista
+ * de las propiedades de los objetos. Si dos clientes poseen datos idénticos pero las propiedades
+ * se insertaron en distinto orden, los hashes resultantes pueden diferir, provocando
+ * **falsos positivos de desincronización**.
+ * @conceptualRisk [FLOAT_PRECISION] Pequeñas diferencias en cálculos de punto flotante
+ * entre distintas arquitecturas (ej. x86 vs ARM) o motores pueden causar que las
+ * representaciones serializadas diverjan, resultando potencialmente en discrepancias de hash.
  */
 export class StateHasher {
   /**
@@ -22,7 +24,9 @@ export class StateHasher {
    * PERFORMANCE WARNING: Esta es una operación costosa O(E * C) donde E es el número de entidades
    * y C el promedio de componentes. Debe usarse con moderación, preferiblemente fuera del hot path de renderizado.
    *
-   * @precondition El mundo no debería estar en proceso de modificación (mitad de un update).
+   * @remarks
+   * Para que el hash sea válido, el estado del mundo no debería estar en proceso de modificación
+   * (ej. en mitad de un ciclo de actualización).
    *
    * @conceptualRisk [PERFORMANCE] La concatenación masiva de strings y el uso de `JSON.stringify` genera
    * mucha presión sobre el recolector de basura (GC).

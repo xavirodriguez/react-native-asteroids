@@ -32,6 +32,9 @@
     "ci": "npm run build:core && npm run check:core-boundaries && npm run typecheck:app",
     "test:ci": "jest --runInBand"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "jest": {
     "preset": "jest-expo"
   },
