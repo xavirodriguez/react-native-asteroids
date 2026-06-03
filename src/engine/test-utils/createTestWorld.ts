@@ -1,4 +1,4 @@
-import { World } from "../core/World";
+import { World } from "../../../packages/core/src/ecs/World";
 
 /**
  * Helper to create a World instance with common resources for testing.

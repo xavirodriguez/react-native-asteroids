@@ -2,6 +2,11 @@ import { Entity } from "./Entity";
 
 /**
  * ECS Query - Maintains a filtered list of entities that match a specific component signature.
+ *
+ * @remarks
+ * Queries are automatically updated by the {@link World} when components are added
+ * or removed from entities. The entity list is lazily sorted by ID to ensure
+ * stable iteration order.
  */
 export class Query<_TComponents extends Record<string, any> = Record<string, any>> {
   private entities = new Set<Entity>();

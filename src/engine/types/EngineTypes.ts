@@ -1,9 +1,9 @@
 import { Entity } from "../core/Entity";
-import { World } from "../core/World";
+import { World } from "../../../packages/core/src/ecs/World";
 
 export * from "../core/Component";
 export * from "../core/Entity";
-export * from "../core/CoreComponents";
+export * from "../../../packages/core/src/ecs/CoreComponents";
 export * from "../physics/shapes/ShapeTypes";
 export * from "./CommonTypes";
 export { CollisionManifold } from "../physics/collision/CollisionTypes";

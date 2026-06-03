@@ -25,7 +25,7 @@ type Mat3 = [number, number, number, number, number, number];
  *
  * ### Execution Order:
  * Typically runs at the end of the `Simulation` phase or start of `Presentation`.
- * It MUST run after local movement systems to avoid 1-frame visual lag.
+ * It is intended to run after local movement systems to minimize 1-frame visual lag.
  *
  * @conceptualRisk [LAYOUT_CASCADE][MEDIUM] Deep hierarchies incur higher
  * computational costs during root changes.

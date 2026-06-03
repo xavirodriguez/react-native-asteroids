@@ -41,6 +41,10 @@ export abstract class System<
    * Systems are intended to perform logic over entities matching specific queries.
    * To help maintain simulation consistency, systems should avoid asynchronous
    * side effects or external mutations that are not captured by the world state.
+   *
+   * @warning
+   * Direct structural mutations (entity creation/destruction) should be deferred
+   * using the `world.getCommandBuffer()` to ensure stable iteration over queries.
    */
   abstract update(world: World<TComponents, TEvents, Record<string, any>>, deltaTime: number): void;
 

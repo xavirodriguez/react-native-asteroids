@@ -94,7 +94,7 @@ export class PredictionBuffer {
    * Removes all states older than or equal to the specified tick.
    *
    * @remarks
-   * In a circular buffer, we don't strictly "remove" for efficiency,
+   * In a circular buffer, we don't remove elements for efficiency,
    * but we can nullify to avoid stale data if we wrap around partially.
    */
   public clearBefore(tick: number): void {

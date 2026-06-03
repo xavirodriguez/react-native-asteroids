@@ -1,4 +1,4 @@
-import { World } from "../core/World";
+import { World } from "../../../packages/core/src/ecs/World";
 import { Entity } from "../core/Entity";
 import {
     UIElementComponent,

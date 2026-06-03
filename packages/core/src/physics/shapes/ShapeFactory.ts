@@ -45,7 +45,7 @@ export class ShapeFactory {
    * @param vertices - Array of points in local space.
    *
    * @remarks
-   * Vertices MUST be in Counter-Clockwise (CCW) order.
+   * Vertices are expected to be in Counter-Clockwise (CCW) order.
    * Automatically calculates edge normals for use in the SAT collision resolver.
    *
    * @returns Polygon shape with pre-calculated normals.

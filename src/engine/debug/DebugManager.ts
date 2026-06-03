@@ -1,5 +1,5 @@
 import { BaseGame } from "../core/BaseGame";
-import { World } from "../core/World";
+import { World } from "../../../packages/core/src/ecs/World";
 import { Entity, WorldSnapshot } from "../types/EngineTypes";
 import { EventBus } from "../core/EventBus";
 

@@ -121,16 +121,16 @@ const staticCapsulePoly: PolygonShape = {
  * y puntos de contacto.
  *
  * @remarks
- * El sistema está optimizado con la intención de reducir la presión sobre el GC mediante el uso de manifolds
- * compartidos y pools de vértices, asumiendo una simulación de alta frecuencia (60Hz+).
+ * El sistema está diseñado para minimizar las allocaciones por frame mediante el uso de manifolds
+ * compartidos y pools de objetos, asumiendo una simulación de alta frecuencia (60Hz+).
  *
  * @conceptualRisk [FLOAT_PRECISION][MEDIUM] Los productos cruzados y normalizaciones dependen de un épsilon (0.0001)
  * para evitar divisiones por cero en colisiones casi perfectas.
  * @conceptualRisk [GC_PRESSURE][LOW] Aunque usa pools, el manifold devuelto es una referencia compartida;
- * debe procesarse inmediatamente o copiarse si se requiere persistencia.
-   *
-   * @warning **Stateful Helpers**: El uso de manifolds y pools compartidos significa que los resultados
-   * no son thread-safe y deben consumirse de forma síncrona tras la llamada a `test()`.
+ * se recomienda procesarlo inmediatamente o copiarlo si se requiere persistencia.
+ *
+ * @warning **Shared State**: El uso de manifolds y pools compartidos significa que los resultados
+ * no son thread-safe y deben consumirse de forma síncrona inmediatamente tras la llamada a `test()`.
  */
 export class NarrowPhase {
   /**

@@ -15,8 +15,8 @@ import { ObjectPool } from "../../utils/ObjectPool";
  * complexity from O(N^2) to approximately O(N).
  *
  * ### Configuración:
- * - **cellSize**: Tamaño de cada celda en píxeles. Debe ser mayor que el objeto más grande
- *   para un rendimiento óptimo.
+ * - **cellSize**: Tamaño de cada celda en píxeles. Se recomienda que sea mayor que el objeto
+ *   más grande para mejorar el rendimiento de las consultas espaciales.
  */
 export class SpatialGrid {
   private grid = new Map<string, Entity[]>();

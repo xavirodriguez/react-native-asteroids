@@ -13,7 +13,8 @@ import { GameLoop } from "../loop/GameLoop";
  * Restores the entities, components, and core service states (RNG, accumulator)
  * from a previously captured `WorldSnapshot`.
  *
- * Warning: Restoration is a heavy structural operation. It is intended to
+ * @warning
+ * Restoration is a heavy structural operation. It is intended to
  * reconstruct the serializable state, but non-serializable state or external
  * references held by systems may not be restored unless manually handled.
  */

@@ -1,6 +1,6 @@
 # Command System
 
-Este módulo implementa el **Command Pattern** adaptado a la arquitectura ECS del motor. Su objetivo es desacoplar por completo la captura de inputs de la ejecución lógica para facilitar el soporte futuro de Netcode Predictivo (Rollback) y sistemas de Replay.
+Este módulo implementa el **Command Pattern** adaptado a la arquitectura ECS del motor. Su objetivo es facilitar el desacoplamiento entre la captura de inputs y la ejecución lógica, apoyando la implementación de Netcode Predictivo (Rollback) y sistemas de Replay.
 
 ## Componentes
 
@@ -10,10 +10,10 @@ Almacena una cola de comandos pendientes para el tick actual y un histórico com
 ## Sistemas
 
 ### `CommandMapperSystem`
-Lee el `InputStateComponent` y traduce las acciones semánticas (ej: `'FORWARD'`) en objetos de comando planos (`GameCommand`). Debe registrarse en la fase de entrada.
+Lee el `InputStateComponent` y traduce las acciones semánticas (ej: `'FORWARD'`) en objetos de comando planos (`GameCommand`). Se recomienda registrarlo en la fase de entrada.
 
 ### `CommandInvokerSystem`
-Consume los comandos de la cola y aplica las mutaciones físicas y lógicas correspondientes. Debe registrarse en la fase de simulación.
+Consume los comandos de la cola y aplica las mutaciones físicas y lógicas correspondientes. Se recomienda registrarlo en la fase de simulación.
 
 ## Integración en `BaseGame`
 

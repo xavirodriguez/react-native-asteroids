@@ -1,6 +1,6 @@
-import { World } from "../../core/World";
-import { System } from "../../core/System";
-import { InputStateComponent } from "../../core/CoreComponents";
+import { World } from "../../../../packages/core/src/ecs/World";
+import { System } from "../../../../packages/core/src/ecs/System";
+import { InputStateComponent } from "../../../../packages/core/src/ecs/CoreComponents";
 import { CommandQueueComponent, GameCommand, CommandType } from "../types";
 
 /**

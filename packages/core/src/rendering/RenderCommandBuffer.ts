@@ -73,10 +73,10 @@ export interface DrawCommandOptions {
 }
 
 /**
- * Render command buffer designed to minimize per-frame allocations.
+ * Render command buffer designed to minimize per-frame allocations in core hot paths.
  *
  * @responsibility Store and sort drawing commands for the backend renderer.
- * @responsibility Minimize Garbage Collector (GC) pressure via pre-allocated pooling.
+ * @responsibility Reduce Garbage Collector (GC) pressure via pre-allocated pooling.
  *
  * @remarks
  * Encapsulates all drawing operations of a frame in a flat list.
@@ -200,7 +200,7 @@ export class RenderCommandBuffer {
    *
    * @remarks
    * Optimized for nearly-sorted arrays, which is common for Z-indices in 2D games.
-   * Stability prevents visual flickering between entities sharing the same Z-index.
+   * Aims to provide a stable sort to prevent visual flickering between entities sharing the same Z-index.
    */
   public sort(): void {
     for (let i = 1; i < this.activeCount; i++) {
