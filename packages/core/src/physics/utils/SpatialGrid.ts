@@ -6,13 +6,13 @@ import { ObjectPool } from "../../utils/ObjectPool";
  *
  * API status: Public
  *
- * Responsibility: Divide the world into square cells to accelerate spatial queries.
- * Responsibility: Provide approximately O(1) access to cells and O(M) queries over AABBs.
+ * Responsibility: Divide the world into square cells to help accelerate spatial queries.
+ * Responsibility: Intended to provide approximately O(1) access to cells and O(M) queries over AABBs.
  *
  * @remarks
  * Implements a **Spatial Hash** strategy where entities are indexed in
- * one or more cells based on their AABB. This reduces collision detection
- * complexity from O(N^2) to approximately O(N).
+ * one or more cells based on their AABB. This aims to reduce collision detection
+ * complexity from O(N^2) toward approximately O(N) in typical scenarios.
  *
  * ### Configuración:
  * - **cellSize**: Tamaño de cada celda en píxeles. Se recomienda que sea mayor que el objeto

@@ -21,7 +21,7 @@ import { BinaryCompression } from "../../src/engine/network/BinaryCompression";
  * Authoritative Game Room for Asteroids.
  *
  * Orchestrates the authoritative server-side simulation, client input synchronization,
- * and optimized state replication using various strategies (Interest, Delta, Binary).
+ * and state replication intended to be optimized using various strategies (Interest, Delta, Binary).
  *
  * @responsibility Manage Colyseus room lifecycle and client connections.
  * @responsibility Execute authoritative {@link AsteroidsGame} (headless) at 60Hz.
@@ -29,7 +29,7 @@ import { BinaryCompression } from "../../src/engine/network/BinaryCompression";
  * @responsibility Maintain historical snapshots for lag compensation and re-simulation.
  *
  * @remarks
- * ### Data Flow (The Server Tick Pipeline)
+ * ### Data Flow (Target Server Tick Pipeline)
  * 1. **Input Recovery**: Retrieves buffered user actions matching the current `serverTick`.
  * 2. **Authoritative Simulation**: Advances the ECS World using the shared simulation logic.
  * 3. **World Sync**: Copies authoritative state from ECS components to Colyseus Schema objects.

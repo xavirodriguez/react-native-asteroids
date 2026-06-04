@@ -11,7 +11,7 @@ export type SerializedComponent = Record<string, unknown>;
 export type ComponentDataSnapshot = Record<string, Record<Entity, SerializedComponent>>;
 
 /**
- * Represents a snapshot of the ECS world state intended for serialization and state restoration.
+ * Represents a snapshot of the ECS world state intended to support serialization and state restoration.
  */
 export interface WorldSnapshot {
   entities: Entity[];

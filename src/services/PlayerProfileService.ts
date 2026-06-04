@@ -33,7 +33,7 @@ const PROFILE_KEY = "player:profile";
  *
  * @remarks
  * Implementa la persistencia mediante {@link AsyncStorage} y valida los datos
- * utilizando esquemas de Zod para garantizar la integridad entre sesiones.
+ * utilizando esquemas de Zod para ayudar a mantener la integridad entre sesiones.
  * Gestiona el sistema de XP, niveles y desbloqueo de cosméticos (paletas y estelas).
  *
  * @conceptualRisk [ASYNC_RACE][LOW] Múltiples llamadas a `addXP` seguidas pueden

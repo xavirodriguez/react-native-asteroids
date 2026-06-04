@@ -1,5 +1,10 @@
 /**
  * Generic object pool implementation.
+ *
+ * @remarks
+ * Designed to help reduce garbage collector pressure by reusing objects
+ * instead of allocating new ones in high-frequency paths.
+ * Performance gains are subject to the efficiency of the factory and reset functions.
  */
 export class ObjectPool<T> {
   private pool: T[] = [];

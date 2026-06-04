@@ -4,9 +4,9 @@ import { ReplayData, ReplayFrame, InputFrame } from "../../multiplayer/NetTypes"
  * Grabador de sesiones de juego para propósitos de replay y depuración.
  *
  * @remarks
- * Diseñado para capturar las entradas del usuario frame a frame para facilitar la recreación
- * de una partida. La fidelidad está sujeta al determinismo de la simulación
- * y a la captura del estado inicial.
+ * Diseñado para capturar las entradas del usuario frame a frame para facilitar la posible recreación
+ * de una partida. La fidelidad está sujeta al determinismo de la simulación,
+ * la captura del estado inicial y las limitaciones del hardware.
  *
  * @responsibility Almacenar la secuencia de inputs asociados a cada tick.
  * @responsibility Generar un objeto `ReplayData` compatible con el sistema de transporte.
