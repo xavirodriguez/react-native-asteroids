@@ -8,6 +8,11 @@ export interface ServerTimeResponse {
 
 /**
  * Servicio encargado de sincronizar el tiempo del cliente con el servidor.
+ *
+ * @remarks
+ * Proporciona una estimación del tiempo del servidor calculando el desfase (offset)
+ * entre el reloj local y el remoto. La precisión de `getCorrectedTime()` depende de
+ * la latencia de la red y la estabilidad del reloj del sistema.
  */
 export class ServerTimeService {
   private static timeOffset: number = 0;

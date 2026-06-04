@@ -150,7 +150,9 @@ export class AsteroidsGame
 
   /**
    * Applies an input frame to a specific player ship entity.
-   * Side-effect free (only mutates the component data in the world).
+   *
+   * @remarks
+   * Intended to be side-effect free by only mutating the component data in the world.
    */
   public applyInputToEntity(entityId: number, input: InputFrame) {
     this.world.mutateComponent<import("./types/AsteroidTypes").InputComponent>(entityId, "Input", inputComp => {
@@ -195,7 +197,7 @@ export class AsteroidsGame
    *
    * @remarks
    * Migrated to pure ECS pipeline. DeterministicSimulation is deprecated.
-   * Support for deterministic reproduction depends on consistent seeding and
+   * Reproducibility depends on consistent seeding and
    * the absence of unmanaged side effects in the system pipeline.
    */
   public runSimulationStep(deltaTime: number, _isResimulating: boolean) {

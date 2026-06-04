@@ -5,8 +5,8 @@ import { EnemyBlueprints } from './EnemyBlueprints';
  * Registry for all entity blueprints.
  *
  * @remarks
- * Aims to provide O(1) access and maintains pre-compiled property lists (copy plans)
- * intended to help minimize allocations during hydration in hot paths.
+ * Aims to provide approximately O(1) access and maintains pre-compiled property lists (copy plans)
+ * intended to help reduce allocations during hydration in hot paths.
  */
 export class BlueprintRegistry {
   private static readonly blueprints = new Map<string, EntityBlueprint>(

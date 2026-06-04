@@ -126,7 +126,7 @@ export class MutatorService {
 
   /**
    * Calcula el número de semana ISO para una fecha dada (fallback).
-   * Usa métodos UTC para garantizar consistencia con el servidor.
+   * Usa métodos UTC para ayudar a mantener la consistencia con el servidor.
    */
   private static getISOWeekNumber(date: Date): number {
     const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));

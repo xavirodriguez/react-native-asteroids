@@ -15,17 +15,17 @@ export interface GameLoopConfig {
  * Central time manager orchestrating the game's lifecycle.
  *
  * @remarks
- * Implements a semi-fixed timestep loop (Fix Your Timestep!) to decouple
+ * Designed to implement a semi-fixed timestep loop (Fix Your Timestep!) to decouple
  * simulation from rendering.
  *
  * ### Lifecycle Phases:
  * 1. **Input**: Variable step, processes raw inputs.
- * 2. **Simulation**: Fixed step (target 60Hz), runs simulation logic.
+ * 2. **Simulation**: Fixed step target (60Hz), runs simulation logic.
  * 3. **Transform**: Post-simulation updates (e.g., hierarchy resolution).
  * 4. **Render**: Variable step, provides interpolation alpha.
  *
  * @warning
- * Under extreme load, the loop may clamp or skip simulation steps to avoid
+ * Under extreme load, the loop is designed to clamp or limit simulation steps to avoid
  * the "Spiral of Death" (endless simulation catch-up).
  */
 export class GameLoop {

@@ -28,7 +28,7 @@
  *          Polygon B
  * ```
  *
- * El sistema utiliza pooling de objetos y manifolds compartidos para ayudar a minimizar
+ * El sistema utiliza pooling de objetos y manifolds compartidos para ayudar a reducir
  * la presión sobre el recolector de basura (GC) durante el paso de física.
  *
  * @packageDocumentation
@@ -121,7 +121,7 @@ const staticCapsulePoly: PolygonShape = {
  * y puntos de contacto.
  *
  * @remarks
- * El sistema está diseñado para minimizar las allocaciones por frame mediante el uso de manifolds
+ * El sistema está diseñado para reducir las allocaciones por frame mediante el uso de manifolds
  * compartidos y pools de objetos, asumiendo una simulación de alta frecuencia (60Hz+).
  *
  * @conceptualRisk [FLOAT_PRECISION][MEDIUM] Los productos cruzados y normalizaciones dependen de un épsilon (0.0001)

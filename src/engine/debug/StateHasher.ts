@@ -2,12 +2,12 @@ import { World } from "../../../packages/core/src/ecs/World";
 
 /**
  * Utilidad para generar hashes del estado del mundo ECS.
- * Fundamental para ayudar en la detección de desincronización (desync) en entornos multijugador o replay.
+ * Diseñado para ayudar en la detección de posibles desincronizaciones (desync) en entornos multijugador o replay.
  *
  * @responsibility Serializar y hashear el estado serializable de todas las entidades y componentes activos.
  * @conceptualRisk [JSON_DETERMINISM] El `JSON.stringify` nativo no garantiza un orden determinista
  * de las propiedades de los objetos. Si dos clientes poseen datos idénticos pero las propiedades
- * se insertaron en distinto orden, los hashes resultantes pueden diferir, provocando
+ * se insertaron en distinto orden, los hashes resultantes pueden diferir, lo que podría provocar
  * **falsos positivos de desincronización**.
  * @conceptualRisk [FLOAT_PRECISION] Pequeñas diferencias en cálculos de punto flotante
  * entre distintas arquitecturas (ej. x86 vs ARM) o motores pueden causar que las

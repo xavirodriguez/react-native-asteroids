@@ -250,7 +250,7 @@ export class SpaceInvadersCollisionSystem extends System {
   }
 
   private createExplosion(world: World, x: number, y: number, color: string): void {
-    // Solución: Usar el stream determinista aprobado para la fase de simulación
+    // Solución: Usar el stream diseñado para la reproducción determinista en la fase de simulación
     const rng = world.gameplayRandom;
 
     for (let i = 0; i < this.config!.PARTICLE_COUNT; i++) {

@@ -39,13 +39,17 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
  * **Structural Consistency:**
  * Modifying the world's structure (creating/removing entities or adding/removing components)
  * while an update is in progress is supported via the command buffer, which flushes
- * changes at the end of the update cycle. Direct structural mutations during iteration
- * should be avoided as they may lead to inconsistent query results.
+ * changes at the end of the update cycle.
+ *
+ * @warning
+ * Direct structural mutations during iteration should be avoided as they may lead
+ * to inconsistent query results.
  *
  * **Determinism:**
  * The World provides a seeded `gameplayRandom` stream intended for simulation logic.
- * To support reproducible behavior, systems should rely on this stream and the
- * provided `tick` counter, avoiding external side effects or non-deterministic APIs.
+ * To support reproducible behavior under controlled conditions, systems should rely
+ * on this stream and the provided `tick` counter, avoiding external side effects
+ * or non-deterministic APIs.
  */
 export class World<
   TComponents extends ComponentRegistry = ComponentRegistry,
@@ -337,9 +341,12 @@ export class World<
    * Captures the current serializable state of the world.
    *
    * @remarks
-   * The snapshot includes active entities, component data (cloned),
-   * versioning info, and RNG state. Non-serializable properties or
-   * complex objects without cloning support may not be fully captured.
+   * The snapshot is intended to include active entities, component data (cloned),
+   * versioning info, and RNG state.
+   *
+   * @warning
+   * Non-serializable properties, circular references, or complex objects without
+   * explicit cloning support may not be accurately captured.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
@@ -389,9 +396,13 @@ export class World<
    * Restores the world state from a previously captured snapshot.
    *
    * @remarks
-   * This is a destructive operation that replaces all current entities,
+   * This is designed to be a destructive operation that replaces all current entities,
    * components, and simulation metadata. Queries are rebuilt to match
    * the restored state.
+   *
+   * @warning
+   * Exact restoration depends on the serializability of the components and
+   * the stability of the component registry.
    */
   public restore(state: WorldSnapshot): void {
     this.activeEntities = new Set(state.entities);

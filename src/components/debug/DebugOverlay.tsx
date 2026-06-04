@@ -209,7 +209,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
     <View style={styles.tabContent}>
       <Text style={styles.statText}>Replay System</Text>
       <Text style={styles.statLabel}>
-        Captures the last 60 seconds of input for debugging and deterministic reproduction.
+        Captures historical input intended to support debugging and deterministic reproduction under controlled conditions.
       </Text>
       <TouchableOpacity style={styles.exportButton} onPress={exportReplay}>
         <Text style={styles.exportButtonText}>

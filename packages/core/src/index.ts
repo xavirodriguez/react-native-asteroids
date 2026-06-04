@@ -22,10 +22,13 @@ export * from "./physics/shapes/ShapeTypes";
 export * from "./physics/shapes/ShapeFactory";
 export * from "./physics/collision/CollisionTypes";
 export * from "./physics/collision/CollisionSystem2D";
+/** @internal */
 export * from "./physics/dynamics/PhysicsIntegrateSystem";
+/** @internal */
 export * from "./physics/dynamics/PhysicsSolveSystem";
 export * from "./physics/query/QueryTypes";
 export * from "./physics/query/PhysicsQuery";
+/** @internal */
 export * from "./physics/utils/PhysicsUtils";
 export * from "./physics/utils/SpatialGrid";
 
@@ -50,12 +53,15 @@ export * from "./runtime/BaseGame";
 
 // Loop
 export * from "./loop/GameLoop";
+/** @internal */
 export * from "./loop/FrameScheduler";
 
 // Utils
 export * from "./utils/RandomService";
 export * from "./utils/ObjectPool";
+/** @internal */
 export * from "./utils/LifecycleUtils";
+/** @internal */
 export * from "./utils/PrefabPool";
 
 // Math
