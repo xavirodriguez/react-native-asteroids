@@ -3,7 +3,7 @@
  *
  * This module defines the protocol for communicating between game systems
  * and platform-specific renderers (Canvas, Skia). It provides a command buffer
- * designed to help minimize object allocations during the render loop.
+ * designed to help minimize per-frame object allocations during the render loop.
  *
  * @packageDocumentation
  */
@@ -73,18 +73,18 @@ export interface DrawCommandOptions {
 }
 
 /**
- * Render command buffer designed to minimize per-frame allocations in core hot paths.
+ * Render command buffer designed to help minimize per-frame allocations in core hot paths.
  *
  * @responsibility Store and sort drawing commands for the backend renderer.
  * @responsibility Reduce Garbage Collector (GC) pressure via pre-allocated pooling.
  *
  * @remarks
  * Encapsulates all drawing operations of a frame in a flat list.
- * Allows decoupling simulation logic (what to draw) from presentation logic (how to draw).
+ * Aims to decouple simulation logic (what to draw) from presentation logic (how to draw).
  *
  * ### Key Features:
- * 1. **Z-Index Sorting**: Ensures stable draw order via insertion sort.
- * 2. **Object Pooling**: Recycles {@link DrawCommand} objects to avoid mid-frame allocations.
+ * 1. **Z-Index Sorting**: Aims to provide stable draw order via insertion sort.
+ * 2. **Object Pooling**: Recycles {@link DrawCommand} objects to help reduce mid-frame allocations.
  *
  * @public
  */

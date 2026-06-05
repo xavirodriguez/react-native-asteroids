@@ -15,6 +15,11 @@ export interface InputSource {
  * System that synchronizes raw hardware input into the ECS InputState.
  * Supports logical action mapping.
  *
+ * @remarks
+ * Capture and synchronization of input are performed during the Input phase
+ * of the {@link GameLoop}. The order of event processing may depend on the
+ * underlying {@link InputSource} implementation.
+ *
  * API status: Public
  */
 export class UnifiedInputSystem extends System {

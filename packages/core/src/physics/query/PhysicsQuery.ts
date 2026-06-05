@@ -13,8 +13,9 @@ import { NarrowPhase } from "../collision/NarrowPhase";
  *
  * @remarks
  * Most methods in this class iterate over entities with `Collider2DComponent`.
- * While efficient, these queries are O(N) relative to the number of colliders.
- * For massive worlds, consider using spatial partitioning optimizations.
+ * These queries are generally O(N) relative to the number of colliders in the world
+ * or the broadphase results. For large scale worlds, consider using spatial
+ * partitioning optimizations to prune candidates.
  *
  * @public
  */

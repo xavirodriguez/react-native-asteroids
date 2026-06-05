@@ -1,7 +1,11 @@
 import { Entity } from "../ecs/Entity";
 
 /**
- * Represents a serialized component, intended to contain only flat, serializable data.
+ * Represents a serialized component, intended to contain only serializable data.
+ *
+ * @remarks
+ * For optimal results, components should avoid containing functions,
+ * class instances (unless they can be cloned as plain objects), or circular references.
  */
 export type SerializedComponent = Record<string, unknown>;
 
@@ -12,6 +16,10 @@ export type ComponentDataSnapshot = Record<string, Record<Entity, SerializedComp
 
 /**
  * Represents a snapshot of the ECS world state intended to support serialization and state restoration.
+ *
+ * @remarks
+ * This structure aims to capture the state needed for features like rollback,
+ * save games, or network synchronization.
  */
 export interface WorldSnapshot {
   entities: Entity[];

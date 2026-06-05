@@ -14,7 +14,8 @@ import { GameLoop } from "../loop/GameLoop";
  * components. It performs cloning of component data to help ensure that the
  * snapshot is decoupled from the live state.
  *
- * Note: Components containing functions, circular references, or complex external
+ * @warning
+ * Components containing functions, circular references, or complex external
  * objects may not be fully or accurately captured depending on the cloner implementation.
  */
 export class SnapshotSerializer {

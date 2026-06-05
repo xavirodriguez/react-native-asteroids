@@ -4,9 +4,9 @@ import { Entity } from "./Entity";
  * ECS Query - Maintains a filtered list of entities that match a specific component signature.
  *
  * @remarks
- * Queries are automatically updated by the {@link World} when components are added
- * or removed from entities. The entity list is lazily sorted by ID to ensure
- * stable iteration order.
+ * Queries are updated by the {@link World} when components are added
+ * or removed from entities. The entity list is lazily sorted by ID to support
+ * stable iteration order across different runs.
  */
 export class Query<_TComponents extends Record<string, any> = Record<string, any>> {
   private entities = new Set<Entity>();
@@ -51,6 +51,10 @@ export class Query<_TComponents extends Record<string, any> = Record<string, any
 
   /**
    * Returns a read-only list of entities matching the query.
+   *
+   * @remarks
+   * The returned array is a cached version that is rebuilt only when the
+   * query's matching entity set changes.
    */
   getEntities(): ReadonlyArray<Entity> {
     if (this.cacheDirty) {
@@ -75,6 +79,15 @@ export class Query<_TComponents extends Record<string, any> = Record<string, any
     this.cacheDirty = true;
   }
 
+  /**
+   * Iterates over all entities matching the query.
+   *
+   * @warning
+   * Do not perform direct structural mutations on the {@link World} (like removing the
+   * current entity or adding/removing components) during iteration, as it may lead
+   * to inconsistent results or skipped entities. Use the world's command buffer
+   * for safe mutations.
+   */
   public forEach(callback: (entity: Entity) => void): void {
     this.getEntities().forEach(callback);
   }

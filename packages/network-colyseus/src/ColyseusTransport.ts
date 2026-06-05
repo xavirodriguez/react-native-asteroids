@@ -6,8 +6,9 @@ import { Client, Room } from "@colyseus/sdk";
  *
  * @remarks
  * Provides a bridge between the game engine and Colyseus server.
- * Note that real-time synchronization and determinism depend on the
- * server-side room implementation and network conditions.
+ * Real-time synchronization and reproducible behavior are not guaranteed
+ * and depend heavily on the server-side room implementation, message ordering,
+ * and network latency.
  */
 export class ColyseusTransport implements NetworkTransport {
   private client: Client;
