@@ -38,18 +38,18 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
  *
  * **Structural Consistency:**
  * Modifying the world's structure (creating/removing entities or adding/removing components)
- * while an update is in progress is supported via the command buffer, which flushes
- * changes at the end of the update cycle.
+ * while an update is in progress is intended to be handled via the {@link WorldCommandBuffer},
+ * which flushes changes at the end of the update cycle.
  *
  * @warning
- * Direct structural mutations during iteration should be avoided as they may lead
- * to inconsistent query results.
+ * Direct structural mutations during system updates or query iteration are discouraged as they
+ * may lead to inconsistent results, skipped entities, or invalid iterator states.
  *
  * **Determinism:**
- * The World provides a seeded `gameplayRandom` stream intended for simulation logic.
- * To support reproducible behavior under controlled conditions, systems should rely
- * on this stream and the provided `tick` counter, avoiding external side effects
- * or non-deterministic APIs.
+ * The World provides a seeded `gameplayRandom` stream designed for simulation logic.
+ * To support reproducible behavior under controlled conditions, systems should aim to
+ * rely on this stream and the provided `tick` counter, while avoiding external side effects,
+ * unseeded `Math.random()`, or non-deterministic asynchronous APIs.
  */
 export class World<
   TComponents extends ComponentRegistry = ComponentRegistry,
@@ -88,9 +88,13 @@ export class World<
 
   /**
    * Returns a list of all currently active entities.
+   *
    * @remarks
-   * The list is sorted by ID to provide stable iteration, though this
-   * operation creates a new array on each call.
+   * The list is sorted by ID to support stable iteration.
+   *
+   * @warning
+   * This operation creates a new array and performs a sort on each call.
+   * Avoid calling this in hot paths; prefer using {@link Query} for efficient iteration.
    */
   public get entities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);
@@ -100,8 +104,8 @@ export class World<
    * Creates a new entity or recycles a previously removed ID.
    *
    * @warning
-   * If called during a system update, it is recommended to use `getCommandBuffer().createEntity()`
-   * to avoid structural changes during iteration.
+   * If called during a system update or query iteration, use `getCommandBuffer().createEntity()`
+   * to avoid immediate structural changes that could invalidate active iterators.
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -118,8 +122,8 @@ export class World<
    * Removes an entity and all its associated components.
    *
    * @warning
-   * If called during a system update, it is recommended to use `getCommandBuffer().removeEntity()`
-   * to avoid structural changes during iteration.
+   * If called during a system update or query iteration, use `getCommandBuffer().removeEntity()`
+   * to avoid immediate structural changes that could invalidate active iterators.
    */
   removeEntity(entity: Entity): void {
     if (this.activeEntities.delete(entity)) {
@@ -158,6 +162,10 @@ export class World<
    * @remarks
    * If a component of the same type already exists, it will be replaced.
    * Triggers query index updates.
+   *
+   * @warning
+   * If called during a system update or query iteration, use `getCommandBuffer().addComponent()`
+   * to avoid immediate structural changes that could affect current queries.
    */
   addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K]): void {
     const type = (component as any).type;
@@ -205,6 +213,10 @@ export class World<
 
   /**
    * Removes a component of the specified type from an entity.
+   *
+   * @warning
+   * If called during a system update or query iteration, use `getCommandBuffer().removeComponent()`
+   * to avoid immediate structural changes that could affect current queries.
    */
   removeComponent(entity: Entity, type: string): void {
     const map = this.componentMaps.get(type);
@@ -341,12 +353,13 @@ export class World<
    * Captures the current serializable state of the world.
    *
    * @remarks
-   * The snapshot is intended to include active entities, component data (cloned),
+   * The snapshot aims to include active entities, component data (cloned),
    * versioning info, and RNG state.
    *
    * @warning
-   * Non-serializable properties, circular references, or complex objects without
-   * explicit cloning support may not be accurately captured.
+   * Only serializable properties are captured. Circular references, class instances
+   * without a plain-object representation, or complex objects without explicit
+   * cloning support may result in partial or broken state data.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
@@ -396,13 +409,13 @@ export class World<
    * Restores the world state from a previously captured snapshot.
    *
    * @remarks
-   * This is designed to be a destructive operation that replaces all current entities,
+   * This is a destructive operation that aims to replace all current entities,
    * components, and simulation metadata. Queries are rebuilt to match
    * the restored state.
    *
    * @warning
-   * Exact restoration depends on the serializability of the components and
-   * the stability of the component registry.
+   * Successful restoration depends on the serializability of the component data
+   * and the consistency of the component registry between the snapshot and the current world.
    */
   public restore(state: WorldSnapshot): void {
     this.activeEntities = new Set(state.entities);

@@ -6,6 +6,7 @@
  * It carries no data or behavior of its own; it serves as a key to look up components.
  *
  * IDs are typically reused by the {@link World} once an entity is removed to help
- * minimize ID space growth.
+ * minimize ID space growth. This ECS does not guarantee that ID recycling is
+ * immediate or follows a strict order.
  */
 export type Entity = number;

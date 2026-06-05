@@ -61,8 +61,9 @@ export abstract class BaseGame<
    * Returns a snapshot representing the current game state.
    *
    * @remarks
-   * The returned state is intended to be serializable, though this depends on
-   * the implementation of the `TState` structure and its components.
+   * The returned state is intended to be serializable to support features like
+   * rollback or replay, though this depends on the serializability of the
+   * implementation of the `TState` structure and its components.
    */
   abstract getGameState(): TState;
 

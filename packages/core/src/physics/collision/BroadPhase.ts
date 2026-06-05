@@ -65,8 +65,8 @@ export class BroadPhase {
    * Designed for efficiency in sparse environments where objects are not tightly clustered.
    *
    * @warning
-   * **Complexity O(N log N)** due to sorting. For high-density environments
-   * (>50 entities), using the `SpatialGrid` (approximately O(1) query) is recommended.
+   * **Complexity O(N log N)** due to sorting in the worst case. For high-density environments
+   * (>50 entities), using the `SpatialGrid` for more efficient queries is recommended.
    *
    * @param entities - List of entities to process.
    * @param world - ECS world for component retrieval.

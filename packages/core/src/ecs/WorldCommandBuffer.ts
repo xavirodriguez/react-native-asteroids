@@ -3,6 +3,11 @@ import { Entity } from "./Entity";
 
 /**
  * WorldCommandBuffer - Queues structural changes to be applied safely outside of system updates.
+ *
+ * @remarks
+ * Using the command buffer is the recommended way to modify the world structure
+ * (creating/removing entities or components) from within systems to avoid
+ * invalidating iterators or causing inconsistent query results during an update.
  */
 export class WorldCommandBuffer<TComponents extends ComponentRegistry = ComponentRegistry> {
   private commands: ((world: any) => void)[] = [];

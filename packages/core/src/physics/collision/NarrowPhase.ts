@@ -30,6 +30,8 @@
  *
  * El sistema utiliza pooling de objetos y manifolds compartidos para ayudar a reducir
  * la presión sobre el recolector de basura (GC) durante el paso de física.
+ * Cabe destacar que el sistema minimiza pero no elimina por completo todas las
+ * allocaciones internas (ej. iteradores o cierres locales si los hubiera).
  *
  * @packageDocumentation
  */
@@ -54,7 +56,7 @@ const sharedManifold: CollisionManifold = {
 
 /**
  * Pool de vértices para puntos de contacto y cálculos intermedios.
- * Reutilizado para evitar allocations en el hot path de física.
+ * Reutilizado para ayudar a reducir allocations en el hot path de física.
  */
 const vertexPool: MutableVector2[] = [];
 function _getVertex(x: number, y: number) {
@@ -116,12 +118,12 @@ const staticCapsulePoly: PolygonShape = {
 /**
  * Implementación de algoritmos de detección de colisiones de Fase Estrecha (Narrow Phase).
  *
- * Proporciona detección precisa entre primitivas geométricas mediante el Teorema del Eje Separador (SAT)
+ * Proporciona detección entre primitivas geométricas mediante el Teorema del Eje Separador (SAT)
  * y comprobaciones basadas en distancia. Genera un {@link CollisionManifold} con normales, profundidad
  * y puntos de contacto.
  *
  * @remarks
- * El sistema está diseñado para reducir las allocaciones por frame mediante el uso de manifolds
+ * El sistema está diseñado para ayudar a reducir las allocaciones por frame mediante el uso de manifolds
  * compartidos y pools de objetos, asumiendo una simulación de alta frecuencia (60Hz+).
  *
  * @conceptualRisk [FLOAT_PRECISION][MEDIUM] Los productos cruzados y normalizaciones dependen de un épsilon (0.0001)
@@ -435,7 +437,7 @@ export class NarrowPhase {
    * ```
    *
    * @conceptualRisk [CONVEX_ONLY] This method only supports convex polygons. Concave shapes will produce false negatives.
-   * @conceptualRisk [PERFORMANCE] Complexity is O(N + M) where N and M are the number of vertices.
+   * @conceptualRisk [PERFORMANCE] Complexity is approximately O(N + M) where N and M are the number of vertices.
    * @param a - Shape A.
    * @param ax - X position of A.
    * @param ay - Y position of A.

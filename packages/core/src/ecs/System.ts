@@ -44,7 +44,7 @@ export abstract class System<
    *
    * @warning
    * Direct structural mutations (entity creation/destruction) should be deferred
-   * using the `world.getCommandBuffer()` to ensure stable iteration over queries.
+   * using the `world.getCommandBuffer()` to support stable iteration over queries.
    */
   abstract update(world: World<TComponents, TEvents, Record<string, any>>, deltaTime: number): void;
 
