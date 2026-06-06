@@ -39,17 +39,20 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
  * **Structural Consistency:**
  * Modifying the world's structure (creating/removing entities or adding/removing components)
  * while an update is in progress is intended to be handled via the {@link WorldCommandBuffer},
- * which flushes changes at the end of the update cycle.
+ * which helps maintain consistency by flushing changes at the end of the update cycle.
  *
  * @warning
  * Direct structural mutations during system updates or query iteration are discouraged as they
- * may lead to inconsistent results, skipped entities, or invalid iterator states.
+ * may lead to inconsistent results, skipped entities, or invalid iterator states. Although the
+ * {@link WorldCommandBuffer} is provided to mitigate this, developers should avoid direct
+ * manipulations of `componentMaps` or `activeEntities` during iteration.
  *
  * **Determinism:**
- * The World provides a seeded `gameplayRandom` stream designed for simulation logic.
- * To support reproducible behavior under controlled conditions, systems should aim to
- * rely on this stream and the provided `tick` counter, while avoiding external side effects,
- * unseeded `Math.random()`, or non-deterministic asynchronous APIs.
+ * The World provides a seeded `gameplayRandom` stream designed to support simulation logic.
+ * To help achieve reproducible behavior under controlled conditions, systems should aim to
+ * rely on this stream and the provided `tick` counter. Developers should avoid external
+ * side effects, unseeded `Math.random()`, or non-deterministic asynchronous APIs, as these
+ * can compromise simulation stability.
  */
 export class World<
   TComponents extends ComponentRegistry = ComponentRegistry,

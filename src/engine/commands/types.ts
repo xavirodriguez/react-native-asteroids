@@ -13,7 +13,7 @@ export type CommandType = 'THRUST' | 'ROTATE_LEFT' | 'ROTATE_RIGHT' | 'FIRE' | '
 export interface GameCommand {
   /** Discriminador del tipo de comando. */
   type: CommandType;
-  /** ID de la entidad que debe ejecutar el comando. */
+  /** ID de la entidad que ejecuta el comando. */
   entityId: Entity;
   /** Tick de la simulación en el que se originó el comando. */
   tick: number;
