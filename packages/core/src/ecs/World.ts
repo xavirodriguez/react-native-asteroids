@@ -5,7 +5,7 @@
 
 import { ComponentRegistry, ComponentType, DeepReadonly } from "./Component";
 import { Entity } from "./Entity";
-import { EventRegistry } from "../events/EventBus";
+import { EventRegistry, EventBus } from "../events/EventBus";
 import { Query } from "./Query";
 import { System, SystemPhase, SystemConfig } from "./System";
 import { RandomService } from "../utils/RandomService";
@@ -84,6 +84,7 @@ export class World<
   public get structureVersion(): number { return this._structureVersion; }
   public get stateVersion(): number { return this._stateVersion; }
   public get gameplayRandom(): RandomService { return this._gameplayRandom; }
+  public getEventBus(): EventBus<TEvents> { return this.getResource<EventBus<TEvents>>("EventBus")!; }
   public getCommandBuffer(): WorldCommandBuffer<TComponents> { return this.commandBuffer; }
 
   /**

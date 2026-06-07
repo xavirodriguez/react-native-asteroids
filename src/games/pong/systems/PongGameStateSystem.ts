@@ -1,9 +1,9 @@
-import { World } from "../../../engine/core/World";
+import { World } from "@tiny-aster/core";
 import { PongState } from "../types";
 import { PongConfig } from "../types/PongConfigSchema";
-import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
-import { TransformComponent, VelocityComponent } from "../../../engine/types/EngineTypes";
-import { EventBus } from "../../../engine/core/EventBus";
+import { BaseGameStateSystem } from "@tiny-aster/core";
+import { TransformComponent, VelocityComponent } from "@tiny-aster/core";
+import { EventBus } from "@tiny-aster/core";
 
 export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
   private config?: PongConfig;

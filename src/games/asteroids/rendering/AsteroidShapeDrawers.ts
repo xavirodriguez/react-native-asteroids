@@ -1,6 +1,7 @@
 import { World } from "@tiny-aster/core";
 import { Entity } from "@tiny-aster/core";
-import { TransformComponent, TTLComponent, HealthComponent, Star, TrailComponent } from "@tiny-aster/core";
+import { TransformComponent, TTLComponent, HealthComponent, TrailComponent } from "@tiny-aster/core";
+import { Star } from "@/src/games/shared/components/Star";
 import { drawStarField } from "@tiny-aster/core";
 import { InputComponent } from "../types/AsteroidTypes";
 

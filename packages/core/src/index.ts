@@ -83,3 +83,12 @@ export * from "./input/UnifiedInputSystem";
 // Scenes
 export * from "./scenes/Scene";
 export * from "./scenes/SceneManager";
+
+// Additional exports for compatibility and migration
+export * from "./ecs/ComponentCloner";
+export * from "./systems/BaseGameStateSystem";
+export * from "./utils/InputUtils";
+export * from "./utils/Juice";
+export * from "./utils/DebugManager";
+export * from "./network/BinaryCompression";
+export * from "./runtime/IGame";

@@ -1,8 +1,8 @@
-import { World } from "../../../engine/core/World";
+import { World } from "@tiny-aster/core";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
 import { spawnInvaderWave } from "../EntityFactory";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";
-import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
+import { BaseGameStateSystem } from "@tiny-aster/core";
 
 /**
  * System that manages the overall game state, level progression, and game over.

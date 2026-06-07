@@ -1,4 +1,4 @@
-import { World } from "../../../packages/core/src/ecs/World";
+import { World } from "@tiny-aster/core";
 import { Entity, Component } from "../types/EngineTypes";
 import { PrefabPool } from "./PrefabPool";
 

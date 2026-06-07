@@ -1,8 +1,8 @@
-import { System } from "../../../packages/core/src/ecs/System";
-import { World } from "../../../packages/core/src/ecs/World";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
 import { UIFactory } from "./UIFactory";
 import { UIElementComponent } from "./UITypes";
-import { TTLComponent } from "../../../packages/core/src/ecs/CoreComponents";
+import { TTLComponent } from "@tiny-aster/core";
 
 export interface DamageNumberComponent {
     type: "DamageNumber";

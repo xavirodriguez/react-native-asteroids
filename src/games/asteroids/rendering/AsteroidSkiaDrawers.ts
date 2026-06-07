@@ -1,7 +1,8 @@
 import { Skia, BlurStyle, SkCanvas, SkPaint } from "@shopify/react-native-skia";
 import { World } from "@tiny-aster/core";
 import { Entity } from "@tiny-aster/core";
-import { TransformComponent, RenderComponent, TTLComponent, HealthComponent, Star, TrailComponent } from "@tiny-aster/core";
+import { TransformComponent, RenderComponent, TTLComponent, HealthComponent, TrailComponent } from "@tiny-aster/core";
+import { Star } from "@/src/games/shared/components/Star";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 
 export const drawSkiaShip = (canvas: SkCanvas, entity: Entity, world: World, render: RenderComponent, paint: SkPaint) => {

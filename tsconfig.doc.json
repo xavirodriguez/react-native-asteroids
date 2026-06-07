@@ -3,15 +3,8 @@
   "compilerOptions": {
     "declaration": true,
     "emitDeclarationOnly": true,
-    "outDir": "./temp/declarations",
-    "noEmit": false,
-    "skipLibCheck": true
+    "outDir": "temp/declarations"
   },
-  "include": [
-    "packages/core/src/**/*.ts"
-  ],
-  "exclude": [
-    "packages/core/src/**/__tests__/*",
-    "node_modules"
-  ]
+  "include": ["packages/core/src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

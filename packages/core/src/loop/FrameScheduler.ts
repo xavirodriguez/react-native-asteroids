@@ -16,6 +16,6 @@ export interface FrameScheduler {
  */
 export const defaultFrameScheduler: FrameScheduler = {
   now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
-  requestFrame: (callback) => globalThis.requestAnimationFrame(callback),
-  cancelFrame: (handle) => globalThis.cancelAnimationFrame(handle as number),
+  requestFrame: (callback) => (globalThis as any).requestAnimationFrame?.(callback),
+  cancelFrame: (handle) => (globalThis as any).cancelAnimationFrame?.(handle as number),
 };

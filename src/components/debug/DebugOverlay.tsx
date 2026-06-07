@@ -11,8 +11,8 @@ import {
   Alert,
   Clipboard
 } from 'react-native';
-import { BaseGame } from '../../engine/core/BaseGame';
-import type { EventLogEntry, FrameStats, ColliderShapeInfo } from '../../engine/debug/DebugManager';
+import { BaseGame } from "@tiny-aster/core";
+import type { EventLogEntry, FrameStats, ColliderShapeInfo } from "@tiny-aster/core";
 import { useDebugManager } from '../../hooks/useGame';
 import Svg, { Circle, Rect } from 'react-native-svg';
 

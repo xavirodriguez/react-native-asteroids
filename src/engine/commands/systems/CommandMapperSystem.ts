@@ -1,6 +1,6 @@
-import { World } from "../../../../packages/core/src/ecs/World";
-import { System } from "../../../../packages/core/src/ecs/System";
-import { InputStateComponent } from "../../../../packages/core/src/ecs/CoreComponents";
+import { World } from "@tiny-aster/core";
+import { System } from "@tiny-aster/core";
+import { InputStateComponent } from "@tiny-aster/core";
 import { CommandQueueComponent, GameCommand, CommandType } from "../types";
 
 /**

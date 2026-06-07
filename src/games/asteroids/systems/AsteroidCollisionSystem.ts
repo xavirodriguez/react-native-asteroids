@@ -1,16 +1,13 @@
 import { World } from "@tiny-aster/core";
 import { System } from "@tiny-aster/core";
-import {
-  type HealthComponent,
-  type Entity,
-  TransformComponent,
-  RenderComponent,
-  CollisionEventsComponent,
-} from "@tiny-aster/core";
+import { type HealthComponent, type Entity, TransformComponent, RenderComponent, CollisionEventsComponent } from "@tiny-aster/core";
 
 import { createParticle } from "../EntityFactory";
 import { type GameStateComponent } from "../types/AsteroidTypes";
-import { AsteroidComponent, BulletComponent, ShipComponent, VelocityComponent } from "@tiny-aster/core";
+import { VelocityComponent } from "@tiny-aster/core";
+import { AsteroidComponent } from "@/src/games/asteroids/components/AsteroidComponent";
+import { BulletComponent } from "@/games/asteroids/components/BulletComponent";
+import { ShipComponent } from "@/src/games/asteroids/components/ShipComponent";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { ScreenShakeComponent, HapticRequestComponent } from "@tiny-aster/core";
 import { releaseProjectile } from "@tiny-aster/core";

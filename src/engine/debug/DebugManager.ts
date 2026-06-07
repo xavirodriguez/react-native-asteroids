@@ -1,5 +1,5 @@
 import { BaseGame } from "../core/BaseGame";
-import { World } from "../../../packages/core/src/ecs/World";
+import { World } from "@tiny-aster/core";
 import { Entity, WorldSnapshot } from "../types/EngineTypes";
 import { EventBus } from "../core/EventBus";
 

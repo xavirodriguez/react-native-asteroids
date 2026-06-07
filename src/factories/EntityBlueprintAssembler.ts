@@ -1,21 +1,11 @@
-import { World, Entity } from "../engine/core/World";
-import { WorldCommandBuffer } from "../engine/core/WorldCommandBuffer";
+import { World, Entity } from "@tiny-aster/core";
+import { WorldCommandBuffer } from "@tiny-aster/core";
 import { BlueprintRegistry } from "../data/blueprints/BlueprintRegistry";
 import { BlueprintOverrides, EntityBlueprint } from "../data/blueprints/types/BlueprintTypes";
-import {
-  TransformComponent,
-  Collider2DComponent,
-  HealthComponent,
-  BoundaryComponent,
-  SpatialNodeComponent,
-  TagComponent,
-  TTLComponent,
-  FrictionComponent,
-  Component,
-  EnemyTagComponent,
-  BulletComponent,
-  AsteroidComponent
-} from "../engine/core/CoreComponents";
+import { TransformComponent, Collider2DComponent, HealthComponent, BoundaryComponent, SpatialNodeComponent, TagComponent, TTLComponent, FrictionComponent, Component } from "@tiny-aster/core";
+import { EnemyTagComponent } from "@/src/games/shared/components/EnemyTagComponent";
+import { BulletComponent } from "@/games/asteroids/components/BulletComponent";
+import { AsteroidComponent } from "@/src/games/asteroids/components/AsteroidComponent";
 
 /**
  * High-performance assembler for creating entities from blueprints.

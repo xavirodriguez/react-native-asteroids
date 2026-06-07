@@ -6,7 +6,7 @@
  * New code should use the modern equivalents in the core modules.
  */
 
-import { AnyCoreComponent as ModernAnyCoreComponent, ComponentOf as ModernComponentOf } from "../../../packages/core/src/ecs/CoreComponents";
+import { AnyCoreComponent as ModernAnyCoreComponent, ComponentOf as ModernComponentOf } from "@tiny-aster/core";
 
 /** @deprecated Use core components directly. */
 export type AnyCoreComponent = ModernAnyCoreComponent;

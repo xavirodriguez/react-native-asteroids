@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import { World } from "../engine/core/World";
-import { GameLoop } from "../engine/core/GameLoop";
+import { World } from "@tiny-aster/core";
+import { GameLoop } from "@tiny-aster/core";
 
 interface GameEngineProps {
   world: World;

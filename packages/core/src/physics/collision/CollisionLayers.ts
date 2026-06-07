@@ -1,25 +1,24 @@
 /**
- * Predefined collision layers (bitmasks).
- * Games can extend these or define their own.
+ * Generic collision layer utilities.
+ * Games should define their own specific bitmasks using layer().
  */
-export const CollisionLayers = {
-  DEFAULT:    0b00000001,  // 1
-  PLAYER:     0b00000010,  // 2
-  ENEMY:      0b00000100,  // 4
-  PROJECTILE: 0b00001000,  // 8
-  PLATFORM:   0b00010000,  // 16
-  TRIGGER:    0b00100000,  // 32
-  PICKUP:     0b01000000,  // 64
-  DEBRIS:     0b10000000,  // 128
-} as const;
 
-export const ALL_LAYERS = 0xFFFFFFFF;
+export type CollisionLayer = number;
+export type CollisionMask = number;
 
 /**
- * Helper to combine multiple layers into a single bitmask.
+ * Creates a bitmask for a single layer.
+ * @param bit - Bit index (0-31).
  */
-export function layerMask(...layers: number[]): number {
-  return layers.reduce((acc, l) => acc | l, 0);
+export function layer(bit: number): number {
+  return 1 << bit;
+}
+
+/**
+ * Combines multiple layers into a single mask.
+ */
+export function maskOf(...layers: number[]): number {
+  return layers.reduce((acc, value) => acc | value, 0);
 }
 
 /**
@@ -28,3 +27,5 @@ export function layerMask(...layers: number[]): number {
 export function shouldCollide(layerA: number, maskA: number, layerB: number, maskB: number): boolean {
   return (layerA & maskB) !== 0 && (layerB & maskA) !== 0;
 }
+
+export const ALL_LAYERS = 0xFFFFFFFF;

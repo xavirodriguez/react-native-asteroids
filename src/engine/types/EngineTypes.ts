@@ -1,5 +1,5 @@
 import { Entity } from "../core/Entity";
-import { World } from "../../../packages/core/src/ecs/World";
+import { World } from "@tiny-aster/core";
 
 export * from "../core/Component";
 export * from "../core/Entity";

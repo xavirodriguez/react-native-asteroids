@@ -1,4 +1,4 @@
-import { World } from "../../../packages/core/src/ecs/World";
+import { World } from "@tiny-aster/core";
 
 /**
  * Utilidad para generar hashes del estado del mundo ECS.
