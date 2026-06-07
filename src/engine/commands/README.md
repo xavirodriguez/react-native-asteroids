@@ -34,7 +34,7 @@ this.world.addSystem(new CommandInvokerSystem(), {
 });
 ```
 
-Asegúrate de que las entidades que deben responder a comandos posean el componente `CommandQueueComponent`:
+Las entidades que responden a comandos requieren el componente `CommandQueueComponent`:
 
 ```typescript
 import { createCommandQueueComponent } from './engine/commands/types';

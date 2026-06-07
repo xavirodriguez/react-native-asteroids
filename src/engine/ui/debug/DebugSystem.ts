@@ -7,7 +7,7 @@ import { TransformComponent, Collider2DComponent, VelocityComponent } from "../.
  * Sistema de depuración para visualización de métricas y componentes internos.
  *
  * @conceptualRisk [DETERMINISM][LOW] El uso de `Date.now()` para el cálculo de FPS
- * es aceptable en un sistema de depuración, pero debe evitarse en la lógica de juego.
+ * es aceptable en un sistema de depuración, pero no se recomienda en la lógica de simulación.
  */
 export class DebugSystem extends System {
   private fps: number = 0;

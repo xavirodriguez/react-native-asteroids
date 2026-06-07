@@ -17,8 +17,9 @@ import { PhysicsUtils } from "../utils/PhysicsUtils";
  * La fricción se aplica buscando reducir la velocidad cada frame, ideal para simular resistencia
  * arcade. El cálculo intenta ser independiente del framerate delegando en {@link PhysicsUtils}.
  *
- * @conceptualRisk [DETERMINISM][MEDIUM] Al igual que `MovementSystem`, la fricción se debe aplicar
- * de forma consistente en el cliente y en la predicción para minimizar el drift.
+ * @conceptualRisk [DETERMINISM][MEDIUM] Al igual que `MovementSystem`, la fricción está diseñada para
+ * aplicarse de forma consistente. Sin embargo, ligeras variaciones en el tiempo de simulación o
+ * precisión numérica pueden contribuir al drift entre el cliente y el servidor en entornos con predicción.
  * @conceptualRisk [PHYSICS][LOW] Si `friction * dt >= 1`, la velocidad puede invertirse o volverse
  * inestable si no hay un clamp en `PhysicsUtils`.
  */

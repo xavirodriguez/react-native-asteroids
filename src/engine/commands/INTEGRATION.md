@@ -4,7 +4,7 @@ Esta guía detalla cómo integrar el nuevo sistema de comandos desacoplado en el
 
 ## 1. Registro de Sistemas
 
-Para que el sistema funcione correctamente, los sistemas deben registrarse en las fases adecuadas en la clase base del juego (ej. `BaseGame` o el archivo principal de tu juego).
+Para que el sistema funcione según lo previsto, se recomienda registrar los sistemas en las fases adecuadas en la clase base del juego (ej. `BaseGame` o el archivo principal de tu juego).
 
 ```typescript
 import { SystemPhase } from "../engine/core/System";
@@ -25,7 +25,7 @@ this.world.addSystem(new CommandInvokerSystem(), {
 
 ## 2. Configuración de Entidades
 
-Cualquier entidad que deba ser controlada por comandos debe poseer el `CommandQueueComponent`.
+Las entidades que se pretenda controlar mediante comandos requieren el componente `CommandQueueComponent`.
 
 ```typescript
 import { createCommandQueueComponent } from "../engine/commands/types";
@@ -44,6 +44,6 @@ world.addComponent(player, createCommandQueueComponent());
 
 ## 4. Ventajas para Rollback y Replays
 
-- **Serialización**: Todos los comandos en `CommandQueueComponent.history` son POJOs puros.
-- **Reproducibilidad**: No hay lógica oculta ni efectos secundarios fuera de `world.mutateComponent`, facilitando la consistencia entre clientes.
-- **Previsibilidad**: El estado del mundo en el tick $N$ depende únicamente del estado en $N-1$ y los comandos del tick $N$.
+- **Serialización**: Los comandos en `CommandQueueComponent.history` están diseñados como POJOs puros para facilitar la serialización.
+- **Reproducibilidad**: Se busca evitar lógica oculta o efectos secundarios fuera de `world.mutateComponent` para ayudar a mantener la consistencia entre clientes.
+- **Previsibilidad**: En una simulación ideal, el estado del mundo en el tick $N$ depende del estado en $N-1$ y los comandos del tick $N$.
