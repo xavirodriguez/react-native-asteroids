@@ -1,4 +1,4 @@
-import { InputStateComponent, InputAction, TilemapComponent, TilesetConfig } from "../../../packages/core/src/ecs/CoreComponents";
+import { InputStateComponent, InputAction, TilemapComponent, TilesetConfig } from "@tiny-aster/core";
 
 /**
  * Utility functions for interacting with components as pure data.

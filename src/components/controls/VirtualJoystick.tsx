@@ -7,10 +7,10 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { World } from "@/engine/core/World";
-import { Entity } from "@/engine/core/Entity";
-import { VirtualJoystickComponent, TagComponent } from "@/engine/core/CoreComponents";
-import { JoystickType } from "@/engine/input/JoystickTypes";
+import { World } from "@tiny-aster/core";
+import { Entity } from "@tiny-aster/core";
+import { VirtualJoystickComponent, TagComponent } from "@tiny-aster/core";
+import { JoystickType } from "@tiny-aster/core";
 
 export interface VirtualJoystickProps {
   /** Unique ID for identifying the ECS entity. */

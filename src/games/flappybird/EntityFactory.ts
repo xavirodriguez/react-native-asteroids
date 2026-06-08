@@ -1,9 +1,9 @@
-import { World } from "../../engine/core/World";
-import { Entity, Component } from "../../engine/types/EngineTypes";
+import { World } from "@tiny-aster/core";
+import { Entity, Component } from "@tiny-aster/core";
 import { FLAPPY_CONFIG } from "./types/FlappyBirdTypes";
-import { createEmitter } from "../../engine/systems/ParticleSystem";
-import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
-import { Collider2DComponent } from "../../engine/core/CoreComponents";
+import { createEmitter } from "@tiny-aster/core";
+import { CollisionLayers } from "@/src/games/shared/types/CollisionLayers";
+import { Collider2DComponent } from "@tiny-aster/core";
 /**
  * Entity factory for the Flappy Bird game domain.
  *
@@ -14,7 +14,7 @@ import { Collider2DComponent } from "../../engine/core/CoreComponents";
  * @packageDocumentation
  */
 
-import { createInputBufferComponent } from "../../engine/types/InputBufferComponent";
+import { createInputBufferComponent } from "@tiny-aster/core";
 
 /**
  * Helper to handle deferred or immediate entity creation and component attachment.

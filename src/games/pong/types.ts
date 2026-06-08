@@ -1,4 +1,5 @@
-import { Component, BallComponent } from "../../engine/types/EngineTypes";
+import { Component } from "@tiny-aster/core";
+import { BallComponent } from "@/src/games/pong/components/BallComponent";
 
 export { BallComponent };
 

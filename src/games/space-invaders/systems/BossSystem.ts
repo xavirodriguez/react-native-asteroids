@@ -1,11 +1,11 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent, RenderComponent, Component, Collider2DComponent } from "../../../engine/types/EngineTypes";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { TransformComponent, RenderComponent, Component, Collider2DComponent } from "@tiny-aster/core";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
-import { createEmitter } from "../../../engine/systems/ParticleSystem";
-import { CollisionLayers } from "../../../engine/physics/collision/CollisionLayers";
-import { Juice } from "../../../engine/utils/Juice";
+import { createEmitter } from "@tiny-aster/core";
+import { CollisionLayers } from "@/src/games/shared/types/CollisionLayers";
+import { Juice } from "@tiny-aster/core";
 
 export interface BossComponent extends Component {
   type: "Boss";

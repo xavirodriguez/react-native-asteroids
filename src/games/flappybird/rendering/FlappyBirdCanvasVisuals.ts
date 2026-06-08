@@ -1,5 +1,5 @@
-import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { HealthComponent, TransformComponent } from "../../../engine/types/EngineTypes";
+import { ShapeDrawer, EffectDrawer } from "@tiny-aster/core";
+import { HealthComponent, TransformComponent } from "@tiny-aster/core";
 import { FLAPPY_CONFIG, FlappyBirdState, BirdComponent, PipeComponent } from "../types/FlappyBirdTypes";
 
 /**

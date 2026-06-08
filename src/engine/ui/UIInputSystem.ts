@@ -1,5 +1,5 @@
-import { System } from "../../../packages/core/src/ecs/System";
-import { World } from "../../../packages/core/src/ecs/World";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
 import {
   UIElementComponent,
   UIButtonStateComponent

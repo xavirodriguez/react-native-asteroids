@@ -1,9 +1,4 @@
-import {
-  CoreComponentRegistry,
-  Component,
-  Entity,
-  BlueprintDefinition
-} from "@tiny-aster/core";
+import { CoreComponentRegistry, Component, Entity, BlueprintDefinition } from "@tiny-aster/core";
 
 export interface AsteroidComponent extends Component {
   type: "Asteroid";

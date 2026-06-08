@@ -1,8 +1,8 @@
-import { World } from "../../engine/core/World";
+import { World } from "@tiny-aster/core";
 import { PongState, BallComponent, PaddleComponent, PONG_CONFIG } from "./types";
 import { PongConfig } from "./types/PongConfigSchema";
-import { Component, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, BoundaryComponent, TagComponent, Entity } from "../../engine/types/EngineTypes";
-import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
+import { Component, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, BoundaryComponent, TagComponent, Entity } from "@tiny-aster/core";
+import { CollisionLayers } from "@/src/games/shared/types/CollisionLayers";
 
 
 /**

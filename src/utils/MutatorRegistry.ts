@@ -12,7 +12,7 @@
  * @packageDocumentation
  */
 
-import { World } from "../engine/core/World";
+import { World } from "@tiny-aster/core";
 
 /**
  * Interface for a beneficial mutator definition.

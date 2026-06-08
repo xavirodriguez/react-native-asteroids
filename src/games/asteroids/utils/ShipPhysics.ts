@@ -8,7 +8,7 @@ import { createParticle } from "../EntityFactory";
 import { createProjectile } from "@tiny-aster/core";
 import { SimulationContext } from "../../../simulation/SimulationContext";
 import { EventBus } from "@tiny-aster/core";
-import { ModifierStackComponent } from "@tiny-aster/core";
+import { ModifierStackComponent } from "@/src/games/arcade/components/ModifierStackComponent";
 
 /**
  * Shared Player Ship Physics & Movement.

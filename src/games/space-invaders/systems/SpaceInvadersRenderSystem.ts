@@ -1,6 +1,6 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { HealthComponent, RenderComponent } from "../../../engine/types/EngineTypes";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { HealthComponent, RenderComponent } from "@tiny-aster/core";
 
 /**
  * System that handles specific render updates for Space Invaders.

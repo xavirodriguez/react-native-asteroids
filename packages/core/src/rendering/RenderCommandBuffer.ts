@@ -11,7 +11,7 @@
 import { Entity } from "../ecs/Entity";
 
 /**
- * Discriminator for the type of drawing operation (e.g., "ship", "particle").
+ * Discriminator for the type of drawing operation (e.g., "rect", "particle").
  *
  * @public
  */

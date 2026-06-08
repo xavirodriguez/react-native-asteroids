@@ -1,10 +1,7 @@
-import { World } from "../../engine/core/World";
-import { CollisionLayers } from "../../engine/physics/collision/CollisionLayers";
-import {
-  type Component,
-  Entity
-} from "../../engine/types/EngineTypes";
-import { ProjectilePool, ProjectileComponents, ProjectileParams } from "../../engine/core/ProjectilePool";
+import { World } from "@tiny-aster/core";
+import { CollisionLayers } from "@/src/games/shared/types/CollisionLayers";
+import { type Component, Entity } from "@tiny-aster/core";
+import { ProjectilePool, ProjectileComponents, ProjectileParams } from "@tiny-aster/core";
 
 interface AsteroidBulletComponents extends ProjectileComponents {
   bullet: Component & { type: "Bullet" };

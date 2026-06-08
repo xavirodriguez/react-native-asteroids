@@ -1,4 +1,4 @@
-import { Component } from "../../../engine/types/EngineTypes";
+import { Component } from "@tiny-aster/core";
 
 /**
  * Represents the current state of user inputs for Flappy Bird.

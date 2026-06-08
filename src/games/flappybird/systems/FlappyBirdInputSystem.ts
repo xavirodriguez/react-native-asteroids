@@ -1,11 +1,11 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { VelocityComponent, InputStateComponent } from "../../../engine/types/EngineTypes";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { VelocityComponent, InputStateComponent } from "@tiny-aster/core";
 import { FlappyBirdInputComponent, BirdComponent, FLAPPY_CONFIG } from "../types/FlappyBirdTypes";
-import { Juice } from "../../../engine/utils/Juice";
+import { Juice } from "@tiny-aster/core";
 import { hapticShoot } from "../../../utils/haptics";
-import { InputBufferSystem } from "../../../engine/systems/InputBufferSystem";
-import { InputUtils } from "../../../engine/utils/ComponentUtils";
+import { InputBufferSystem } from "@tiny-aster/core";
+import { InputUtils } from "@tiny-aster/core";
 
 /**
  * System that handles player input and bird flap mechanics.

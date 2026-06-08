@@ -11,7 +11,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { ColyseusConnection } from "./ColyseusConnection";
 import { Room } from "@colyseus/sdk";
 import { InputFrame } from "./NetTypes";
-import { BinaryCompression } from "../engine/network/BinaryCompression";
+import { BinaryCompression } from "@tiny-aster/core";
 
 /**
  * Manages the network lifecycle for a game session.

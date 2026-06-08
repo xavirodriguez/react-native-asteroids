@@ -1,6 +1,6 @@
-import { World } from "../../../engine/core/World";
-import { RenderUpdateSystem } from "../../../engine/systems/RenderUpdateSystem";
-import { RenderComponent } from "../../../engine/types/EngineTypes";
+import { World } from "@tiny-aster/core";
+import { RenderUpdateSystem } from "@tiny-aster/core";
+import { RenderComponent } from "@tiny-aster/core";
 import { BirdComponent } from "../types/FlappyBirdTypes";
 
 /**

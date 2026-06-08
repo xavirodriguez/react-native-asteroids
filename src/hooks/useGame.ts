@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useKeepAwake } from "./useKeepAwake";
-import type { BaseGame, BaseGameConfig } from "../engine/core/BaseGame";
-import type { DebugManager } from "../engine/debug/DebugManager";
+import type { BaseGame, BaseGameConfig } from "@tiny-aster/core";
+import type { DebugManager } from "@tiny-aster/core";
 
 export type GameConfig = BaseGameConfig & {
   seed?: number;

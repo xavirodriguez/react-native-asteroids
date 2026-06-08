@@ -1,7 +1,7 @@
-import { World } from "../../engine/core/World";
-import { BaseGame } from "../../engine/core/BaseGame";
-import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
-import { CollisionSystem } from "../../engine/systems/CollisionSystem";
+import { World } from "@tiny-aster/core";
+import { BaseGame } from "@tiny-aster/core";
+import { MovementSystem } from "@tiny-aster/core";
+import { CollisionSystem } from "@tiny-aster/core";
 
 type PongState = { score: number };
 type PongInput = { up: boolean, down: boolean };

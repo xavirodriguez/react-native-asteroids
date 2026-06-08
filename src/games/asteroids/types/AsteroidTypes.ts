@@ -33,7 +33,8 @@ export interface UfoComponent extends Component {
 }
 
 
-import { Star, ScreenShakeComponent } from "@tiny-aster/core";
+import { ScreenShakeComponent } from "@tiny-aster/core";
+import { Star } from "@/src/games/shared/components/Star";
 
 /**
  * Component to track global game progress and state.
