@@ -2,9 +2,9 @@
  * Generic object pool implementation.
  *
  * @remarks
- * Designed to help reduce garbage collector pressure by reusing objects
- * instead of allocating new ones in high-frequency paths.
- * Performance gains are subject to the efficiency of the factory and reset functions.
+ * Designed to help minimize garbage collector pressure in high-frequency paths by
+ * reusing objects. Effectiveness depends on the implementation of the factory and
+ * reset functions, and the nature of the objects being pooled.
  */
 export class ObjectPool<T> {
   private pool: T[] = [];

@@ -48,11 +48,11 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
  * manipulations of `componentMaps` or `activeEntities` during iteration.
  *
  * **Determinism:**
- * The World provides a seeded `gameplayRandom` stream designed to support simulation logic.
- * To help achieve reproducible behavior under controlled conditions, systems should aim to
- * rely on this stream and the provided `tick` counter. Developers should avoid external
- * side effects, unseeded `Math.random()`, or non-deterministic asynchronous APIs, as these
- * can compromise simulation stability.
+ * The World provides a seeded `gameplayRandom` stream intended to support simulation logic.
+ * To help facilitate reproducible behavior under controlled conditions, systems are
+ * recommended to rely on this stream and the provided `tick` counter. Simulation stability
+ * depends on avoiding external side effects, unseeded `Math.random()`, or non-deterministic
+ * asynchronous APIs.
  */
 export class World<
   TComponents extends ComponentRegistry = ComponentRegistry,
@@ -356,7 +356,7 @@ export class World<
    * Captures the current serializable state of the world.
    *
    * @remarks
-   * The snapshot aims to include active entities, component data (cloned),
+   * The snapshot is intended to include active entities, component data (cloned),
    * versioning info, and RNG state.
    *
    * @warning

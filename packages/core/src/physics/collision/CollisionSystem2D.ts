@@ -22,7 +22,7 @@ export type TriggerCallback = (world: World, entityA: Entity, entityB: Entity) =
  *
  * @remarks
  * Implements a two-phase collision detection pipeline (Broadphase & Narrowphase)
- * and manages lifecycle events for triggers. It is designed to work with
+ * and manages lifecycle events for triggers. It is intended to work with
  * fixed-step simulations and can optionally integrate with a CCD phase to help mitigate
  * tunneling in fast-moving objects.
  *
@@ -50,6 +50,11 @@ export class CollisionSystem2D extends System {
 
   /**
    * Orchestrates the collision detection pipeline for the current tick.
+   *
+   * @warning
+   * Structural changes (creating/removing entities or components) during collision callbacks
+   * are recommended to be performed via the {@link WorldCommandBuffer} to avoid
+   * potential iteration inconsistencies.
    *
    * @param world - The ECS world instance.
    * @param _deltaTime - Time elapsed in milliseconds.
