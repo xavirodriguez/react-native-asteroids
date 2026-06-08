@@ -5,10 +5,10 @@ import { Client, Room } from "@colyseus/sdk";
  * Network transport implementation using Colyseus.
  *
  * @remarks
- * Provides a bridge between the game engine and Colyseus server.
- * Real-time synchronization and reproducible behavior are not guaranteed
- * and depend heavily on the server-side room implementation, message ordering,
- * and network latency.
+ * Provides a bridge between the game engine and a Colyseus server.
+ * Reproducible behavior and real-time synchronization are subject to
+ * server-side room implementation, message ordering, network latency,
+ * and client-side interpolation/prediction strategies.
  */
 export class ColyseusTransport implements NetworkTransport {
   private client: Client;

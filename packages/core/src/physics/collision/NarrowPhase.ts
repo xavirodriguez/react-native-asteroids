@@ -31,8 +31,8 @@
  * El sistema utiliza pooling de objetos y manifolds compartidos para ayudar a reducir
  * la presión sobre el recolector de basura (GC) durante el paso de física.
  * Cabe destacar que el sistema está diseñado para minimizar las allocaciones en el hot path,
- * pero no garantiza la ausencia total de las mismas (ej. iteradores internos, cierres
- * locales o crecimiento de los pools).
+ * aunque pueden ocurrir allocaciones por iteradores internos, cierres
+ * locales o crecimiento de los pools.
  *
  * @packageDocumentation
  */

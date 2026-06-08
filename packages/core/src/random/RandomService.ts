@@ -102,7 +102,7 @@ export class RandomService {
   /**
    * @deprecated Static access can compromise simulation consistency in concurrent
    * or non-deterministic environments.
-   * @warning Static access is not recommended for deterministic simulation or multiplayer environments.
+   * @warning Static access is discouraged for reproducible simulation or multiplayer environments.
    */
   public static next(): number {
     return RandomService.getInstance("global").next();

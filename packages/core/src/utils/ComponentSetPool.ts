@@ -4,7 +4,10 @@ import { ObjectPool } from "./ObjectPool";
 
 /**
  * Generic ComponentSetPool that manages a pool of component sets.
- * Reduces GC pressure by reusing component objects across entities.
+ *
+ * @remarks
+ * Aims to reduce garbage collector pressure by reusing component objects across
+ * entities in high-churn scenarios.
  *
  * Type parameter T: T - A record of component types that form the pooled entity.
  */

@@ -31,7 +31,7 @@ export interface WorldSnapshot {
   /** Incremented on data changes or visual updates. */
   stateVersion: number;
   /**
-   * Internal state of the PRNG. Intended to support bit-perfect restoration
+   * Internal state of the PRNG. Intended to support restoration
    * of the random number sequence.
    */
   rngState?: number;
