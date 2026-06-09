@@ -103,6 +103,16 @@ export class World<
   public get entities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);
   }
+  /** @internal */
+  public getAllEntities(): ReadonlyArray<Entity> {
+    return this.entities;
+  }
+
+  /** @internal */
+  public getEntityComponentTypes(entity: Entity): string[] {
+    const set = this.entityComponentSets.get(entity);
+    return set ? Array.from(set) : [];
+  }
 
   /**
    * Creates a new entity or recycles a previously removed ID.

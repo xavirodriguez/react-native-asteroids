@@ -1,4 +1,4 @@
-import { World } from "@tiny-aster/core";
+import { World } from "../index";
 import {
   UIElementComponent,
   UIAnchor,
@@ -6,8 +6,8 @@ import {
   UIContainerComponent,
   UIWorldAttachComponent
 } from "./UITypes";
-import { Entity } from "../core/Entity";
-import { GenericComponent, TransformComponent } from "@tiny-aster/core";
+import { Entity } from "../ecs/Entity";
+import { GenericComponent, TransformComponent } from "../index";
 import { AbstractHierarchySystem } from "../systems/AbstractHierarchySystem";
 
 /**

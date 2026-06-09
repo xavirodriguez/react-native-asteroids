@@ -92,3 +92,28 @@ export * from "./utils/Juice";
 export * from "./utils/DebugManager";
 export * from "./network/BinaryCompression";
 export * from "./runtime/IGame";
+
+// Debug
+export * from "./debug/ReplayRecorder";
+export * from "./debug/StateHasher";
+export * from "./debug/SystemProfiler";
+
+// UI Engine
+export * from "./ui/UITypes";
+export * from "./ui/UIFactory";
+export * from "./ui/UIInputSystem";
+export * from "./ui/UILayoutSystem";
+export * from "./ui/UIRenderer";
+export * from "./ui/UITweenSystem";
+export * from "./ui/DamageNumberSystem";
+
+// Additional Utils
+export * from "./utils/SaveSystem";
+export * from "./utils/ProjectileUtils";
+
+// Test Utils
+export * from "./test-utils/createTestWorld";
+
+// Core Types aliases
+export * from "./ecs/Component";
+export * from "./utils/VisualRandom";

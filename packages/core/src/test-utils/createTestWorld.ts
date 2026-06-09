@@ -1,4 +1,4 @@
-import { World } from "@tiny-aster/core";
+import { World } from "../index";
 
 /**
  * Helper to create a World instance with common resources for testing.

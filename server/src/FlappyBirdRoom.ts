@@ -1,6 +1,6 @@
 import { Room, type Client } from "@colyseus/core";
 import { FlappyBirdState, Player, Pipe } from "./schema/GameState";
-import { RandomService } from "../../src/engine/utils/RandomService";
+import { RandomService } from "@tiny-aster/core";
 
 export class FlappyBirdRoom extends Room<FlappyBirdState> {
   maxClients = 8;

@@ -1,5 +1,5 @@
-import { World } from "@tiny-aster/core";
-import { Entity } from "../core/Entity";
+import { World } from "../index";
+import { Entity } from "../ecs/Entity";
 import {
     UIElementComponent,
     UIStyleComponent,
@@ -33,7 +33,7 @@ export class UIFactory {
         const entity = world.isUpdating ? world.reserveEntityId() : world.createEntity();
 
         if (world.isUpdating) {
-            commands.createEntity(entity);
+            commands.addCommand(w => (w as any).activeEntities.add(entity));
         }
 
         const element: UIElementComponent = {
@@ -101,7 +101,7 @@ export class UIFactory {
         const entity = world.isUpdating ? world.reserveEntityId() : world.createEntity();
 
         if (world.isUpdating) {
-            commands.createEntity(entity);
+            commands.addCommand(w => (w as any).activeEntities.add(entity));
         }
 
         const padding: UIEdgeInsets = {
@@ -230,7 +230,7 @@ export class UIFactory {
         const entity = world.isUpdating ? world.reserveEntityId() : world.createEntity();
 
         if (world.isUpdating) {
-            commands.createEntity(entity);
+            commands.addCommand(w => (w as any).activeEntities.add(entity));
         }
 
         const element: UIElementComponent = {
