@@ -82,11 +82,11 @@ export class Query<_TComponents extends Record<string, any> = Record<string, any
   /**
    * Iterates over all entities matching the query.
    *
-   * @warning
-   * Do not perform direct structural mutations on the {@link World} (like removing the
-   * current entity or adding/removing components) during iteration, as it may lead
-   * to inconsistent results or skipped entities. Use the world's command buffer
-   * for safe mutations.
+   * @warning **Structural Mutations**: Performing direct structural mutations on the
+   * {@link World} (like removing the current entity or adding/removing components)
+   * during iteration is discouraged, as it may lead to inconsistent results, skipped
+   * entities, or invalid iterator states. The world's command buffer is recommended
+   * for deferred, consistent mutations.
    */
   public forEach(callback: (entity: Entity) => void): void {
     this.getEntities().forEach(callback);

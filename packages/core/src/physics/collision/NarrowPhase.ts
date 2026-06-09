@@ -30,8 +30,9 @@
  *
  * El sistema utiliza pooling de objetos y manifolds compartidos para ayudar a reducir
  * la presión sobre el recolector de basura (GC) durante el paso de física.
- * Cabe destacar que el sistema está diseñado para minimizar las allocaciones en el hot path,
- * aunque pueden ocurrir allocaciones por iteradores internos, cierres
+ *
+ * @warning **Allocations**: El sistema está diseñado para minimizar las allocaciones en el
+ * hot path; sin embargo, pueden ocurrir allocaciones por iteradores internos, cierres
  * locales o crecimiento de los pools.
  *
  * @packageDocumentation
@@ -125,7 +126,7 @@ const staticCapsulePoly: PolygonShape = {
  *
  * @remarks
  * El sistema está diseñado para ayudar a reducir las allocaciones por frame mediante el uso de manifolds
- * compartidos y pools de objetos. Está optimizado para simulaciones de alta frecuencia (60Hz+).
+ * compartidos y pools de objetos.
  *
  * @conceptualRisk [FLOAT_PRECISION][MEDIUM] Los productos cruzados y normalizaciones dependen de un épsilon (0.0001)
  * para evitar divisiones por cero en colisiones casi perfectas.
