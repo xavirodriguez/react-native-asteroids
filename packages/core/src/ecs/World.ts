@@ -41,11 +41,11 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
  * while an update is in progress is intended to be handled via the {@link WorldCommandBuffer},
  * which helps maintain consistency by flushing changes at the end of the update cycle.
  *
- * @warning
- * Direct structural mutations during system updates or query iteration are discouraged as they
- * may lead to inconsistent results, skipped entities, or invalid iterator states. Although the
- * {@link WorldCommandBuffer} is provided to mitigate this, developers should avoid direct
- * manipulations of `componentMaps` or `activeEntities` during iteration.
+ * @warning **Structural Mutations**: Direct structural mutations during system updates or
+ * query iteration are discouraged as they may lead to inconsistent results, skipped entities,
+ * or invalid iterator states. Although the {@link WorldCommandBuffer} is provided to
+ * mitigate this, developers should generally avoid direct manipulations of `componentMaps`
+ * or `activeEntities` during iteration.
  *
  * **Determinism:**
  * The World provides a seeded `gameplayRandom` stream intended to support simulation logic.
@@ -357,13 +357,12 @@ export class World<
    * Captures the current serializable state of the world.
    *
    * @remarks
-   * The snapshot is intended to include active entities, component data (cloned),
-   * versioning info, and RNG state.
+   * The snapshot is designed to capture the serializable state, including active entities,
+   * component data (cloned), versioning info, and RNG state.
    *
-   * @warning
-   * Only serializable properties are captured. Circular references, class instances
-   * without a plain-object representation, or complex objects without explicit
-   * cloning support may result in partial or broken state data.
+   * @warning **Partial Serialization**: Only serializable properties are captured. Circular
+   * references, class instances without a plain-object representation, or complex objects
+   * without explicit cloning support may result in partial or broken state data.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
@@ -413,13 +412,12 @@ export class World<
    * Restores the world state from a previously captured snapshot.
    *
    * @remarks
-   * This is a destructive operation that aims to replace all current entities,
-   * components, and simulation metadata. Queries are rebuilt to match
-   * the restored state.
+   * This is a destructive operation that aims to restore the serializable state captured
+   * by the snapshot. Queries are rebuilt to match the restored state.
    *
-   * @warning
-   * Successful restoration depends on the serializability of the component data
-   * and the consistency of the component registry between the snapshot and the current world.
+   * @warning **Restoration Constraints**: Successful restoration depends on the serializability
+   * of the component data and the consistency of the component registry between the snapshot
+   * and the current world. It does not restore non-serializable references or external state.
    */
   public restore(state: WorldSnapshot): void {
     this.activeEntities = new Set(state.entities);

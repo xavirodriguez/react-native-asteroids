@@ -24,8 +24,8 @@ export interface TransformSnapshot {
  * @remarks
  * Represents a platform-agnostic drawing operation.
  *
- * @conceptualRisk [ALLOCATION_FREE][HIGH] Implementation should ideally use
- * object pooling to minimize GC pressure during the render loop.
+ * @conceptualRisk [ALLOCATION_FREE][HIGH] Implementation is designed to use
+ * object pooling to help minimize GC pressure during the render loop.
  *
  * @public
  */

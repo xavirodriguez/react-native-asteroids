@@ -18,7 +18,10 @@ export interface StateDefinition {
 /**
  * System responsible for executing Finite State Machines.
  *
- * API status: Public
+ * @remarks
+ * State transitions are processed synchronously during the update.
+ * Circular transitions within the same frame may lead to infinite loops
+ * if not handled by the state definitions.
  */
 export class StateMachineSystem extends System {
   /**

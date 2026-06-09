@@ -13,10 +13,11 @@ import { GameLoop } from "../loop/GameLoop";
  * Restores the entities, components, and core service states (RNG, accumulator)
  * from a previously captured `WorldSnapshot`.
  *
- * @warning
- * Restoration is a heavy structural operation. It is intended to
- * reconstruct the serializable state, but non-serializable state or external
- * references held by systems may not be restored unless manually handled.
+ * @warning **Restoration Constraints**: Restoration is a heavy structural operation
+ * designed to reconstruct the serializable state captured by a snapshot.
+ * Non-serializable state (e.g., closures, class instances without POJO representation),
+ * hardware-level state, or external references held by systems may not be restored
+ * unless manually handled.
  */
 export class SnapshotRestore {
   public static restore<

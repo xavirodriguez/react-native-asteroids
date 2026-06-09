@@ -8,6 +8,9 @@ import { AssetDescriptor, AssetHandle, IAssetProvider } from "./AssetProvider";
  * Note that it uses a polling-based wait strategy for concurrent requests to the
  * same loading asset, which may introduce minor delays and depends on the
  * environment's `setTimeout` precision.
+ *
+ * @warning **Memory Management**: Assets must be manually unloaded to avoid memory
+ * leaks. The ref-counting mechanism helps track usage but does not automate disposal.
  */
 export class AssetLoader {
   private cache = new Map<string, AssetHandle<unknown>>();

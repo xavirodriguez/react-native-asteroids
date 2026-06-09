@@ -61,12 +61,14 @@ export class BroadPhase {
    * Implementation of the Sweep and Prune algorithm (1D).
    *
    * @remarks
-   * Sorts entities by their X-axis minimum bound and checks for interval overlaps.
-   * Intended for efficiency in sparse environments where objects are not tightly clustered.
+   * Aims to sort entities by their X-axis minimum bound and check for interval overlaps.
+   * Designed for efficiency in sparse environments where objects are not tightly clustered.
    *
-   * @warning
-   * **Complexity O(N log N)** due to sorting in the worst case. For high-density environments
-   * (typically >50-100 entities), using the `SpatialGrid` for more efficient queries is recommended.
+   * @warning **Complexity**: Approximately O(N log N) due to sorting in the worst case.
+   * For high-density environments, using {@link SpatialGrid} is recommended.
+   *
+   * @warning **Allocations**: The current implementation performs per-call allocations
+   * (mapping and sorting) and is not zero-allocation.
    *
    * @param entities - List of entities to process.
    * @param world - ECS world for component retrieval.

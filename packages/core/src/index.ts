@@ -84,7 +84,10 @@ export * from "./input/UnifiedInputSystem";
 export * from "./scenes/Scene";
 export * from "./scenes/SceneManager";
 
-// Additional exports for compatibility and migration
+/**
+ * Additional exports for compatibility and migration purposes.
+ * @deprecated Many of these will be moved to internal or specialized modules in future versions.
+ */
 export * from "./ecs/ComponentCloner";
 export * from "./systems/BaseGameStateSystem";
 export * from "./utils/InputUtils";

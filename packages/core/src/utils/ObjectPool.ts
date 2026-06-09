@@ -5,6 +5,9 @@
  * Designed to help minimize garbage collector pressure in high-frequency paths by
  * reusing objects. Effectiveness depends on the implementation of the factory and
  * reset functions, and the nature of the objects being pooled.
+ *
+ * @warning **Stale Data**: Failure to correctly implement the `reset` function may
+ * lead to "memory" effects where recycled objects retain state from previous usages.
  */
 export class ObjectPool<T> {
   private pool: T[] = [];

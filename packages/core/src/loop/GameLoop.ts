@@ -20,14 +20,15 @@ export interface GameLoopConfig {
  *
  * ### Lifecycle Phases:
  * 1. **Input**: Variable step, processes raw inputs.
- * 2. **Simulation**: Fixed-step target (60Hz), designed to support reproducible simulation logic.
+ * 2. **Simulation**: Uses a fixed-step target (60Hz); designed to support reproducible
+ *    simulation logic under controlled conditions.
  * 3. **Transform**: Post-simulation updates (e.g., hierarchy resolution).
  * 4. **Render**: Variable-step, providing interpolation alpha for visual smoothing.
  *
- * @warning
- * Under extreme load, the loop is designed to clamp or limit simulation steps to help avoid
- * the "Spiral of Death" (endless simulation catch-up). This may result in "slow-motion"
- * gameplay or dropped ticks when the CPU cannot maintain the fixed-step target.
+ * @warning **Spiral of Death**: Under extreme load, the loop is designed to clamp or limit
+ * simulation steps to help avoid the "Spiral of Death" (endless simulation catch-up).
+ * This may result in "slow-motion" gameplay or dropped ticks when the CPU cannot maintain
+ * the fixed-step target. Deterministic behavior may be compromised if ticks are dropped.
  */
 export class GameLoop {
   private isRunning = false;

@@ -11,9 +11,9 @@ import { ObjectPool } from "../../utils/ObjectPool";
  *
  * @remarks
  * Implements a **Spatial Hash** strategy where entities are indexed in
- * one or more cells based on their AABB. This aims to reduce collision detection
- * complexity from O(N^2) toward approximately O(N) in typical scenarios, although
- * performance may vary based on cell size and entity density.
+ * one or more cells based on their AABB. This is designed to help reduce collision
+ * detection complexity from O(N^2) toward approximately O(N) in typical scenarios,
+ * although performance depends on cell size, entity distribution, and density.
  *
  * ### Configuración:
  * - **cellSize**: Tamaño de cada celda en píxeles. Se recomienda que sea mayor que el objeto
@@ -31,6 +31,10 @@ export class SpatialGrid {
 
   /**
    * Inserts an entity into the grid based on its AABB.
+   *
+   * @warning **Allocations**: While cell arrays are pooled, inserting into multiple
+   * cells may trigger map lookups and pool acquisitions. Key strings are generated
+   * per cell, which contributes to per-frame allocations.
    */
   public insert(id: Entity, aabb: AABB): void {
     const minX = Math.floor(aabb.minX / this.cellSize);
@@ -53,6 +57,9 @@ export class SpatialGrid {
 
   /**
    * Queries entities within an AABB.
+   *
+   * @warning **Allocations**: Generates cell key strings during iteration, which
+   * contributes to per-frame allocations.
    */
   public query(aabb: AABB, result: Set<Entity>): void {
     const minX = Math.floor(aabb.minX / this.cellSize);

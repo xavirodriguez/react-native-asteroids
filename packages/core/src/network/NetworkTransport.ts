@@ -1,5 +1,10 @@
 /**
  * Interface for network communication abstractions.
+ *
+ * @remarks
+ * Implementations are designed to handle message delivery across the network.
+ * Note that delivery guarantees (reliability, ordering, latency) depend on
+ * the underlying implementation and protocol (e.g., WebSocket vs WebRTC).
  */
 export interface NetworkTransport {
   /**

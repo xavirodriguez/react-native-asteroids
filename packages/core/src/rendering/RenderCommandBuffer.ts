@@ -76,7 +76,7 @@ export interface DrawCommandOptions {
  * Render command buffer designed to help minimize per-frame allocations in core hot paths.
  *
  * @responsibility Store and sort drawing commands for the backend renderer.
- * @responsibility Reduce Garbage Collector (GC) pressure via pre-allocated pooling.
+ * @responsibility Help reduce Garbage Collector (GC) pressure via pre-allocated pooling.
  *
  * @remarks
  * Encapsulates all drawing operations of a frame in a flat list.
@@ -137,6 +137,10 @@ export class RenderCommandBuffer {
    * @remarks
    * If the `MAX_COMMANDS` limit is reached, subsequent calls are silently
    * ignored to preserve stability.
+   *
+   * @warning **Allocations**: While the command object itself is pooled, passing a
+   * `data` record or complex `vertices` in the options may still result in
+   * allocations if they are created per-frame by the caller.
    */
   public addCommand(options: DrawCommandOptions): void {
     if (this.activeCount >= this.MAX_COMMANDS) {
