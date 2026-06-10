@@ -3,10 +3,10 @@ import { View, StyleSheet, Platform } from "react-native";
 import {
   GAME_CONFIG,
 } from "../src/types/GameTypes";
-import { CanvasRenderer as EngineCanvasRenderer } from "../src/engine/rendering/CanvasRenderer";
-import type { World } from "../src/engine/core/World";
-import { Renderer } from "../src/engine/rendering/Renderer";
-import { GameLoop } from "../src/engine/core/GameLoop";
+import { CanvasRenderer as EngineCanvasRenderer } from "@tiny-aster/core";
+import type { World } from "@tiny-aster/core";
+import { Renderer } from "@tiny-aster/core";
+import { GameLoop } from "@tiny-aster/core";
 import { GameRenderer } from "./GameRenderer";
 
 interface CanvasRendererProps {

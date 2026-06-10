@@ -1,5 +1,5 @@
-import { System } from "@tiny-aster/core";
-import { World } from "@tiny-aster/core";
+import { System } from "../index";
+import { World } from "../index";
 
 /**
  * Decorador encargado de medir el tiempo de ejecución de un sistema ECS.

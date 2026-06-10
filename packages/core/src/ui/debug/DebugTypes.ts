@@ -1,4 +1,4 @@
-import { Component } from "../../core/Component";
+import { Component } from "../../ecs/Component";
 
 export interface DebugConfigComponent extends Component {
   type: "DebugConfig";

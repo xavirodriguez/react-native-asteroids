@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Circle, Group } from "@shopify/react-native-skia";
-import type { World } from "../src/engine/core/World";
+import type { World } from "@tiny-aster/core";
 import {
   type TransformComponent,
   type RenderComponent,

@@ -1,11 +1,11 @@
 import React, { useMemo, useRef, useEffect, useState } from "react";
 import { View, StyleSheet, Platform } from "react-native";
-import type { World } from "../src/engine/core/World";
+import type { World } from "@tiny-aster/core";
 import { GAME_CONFIG } from "../src/types/GameTypes";
 import type { SkCanvas } from "@shopify/react-native-skia";
-import type { SkiaRenderer as SkiaRendererType } from "../src/engine/rendering/SkiaRenderer";
-import type { Renderer } from "../src/engine/rendering/Renderer";
-import { GameLoop } from "../src/engine/core/GameLoop";
+import type { SkiaRenderer as SkiaRendererType } from "@tiny-aster/core";
+import type { Renderer } from "@tiny-aster/core";
+import { GameLoop } from "@tiny-aster/core";
 
 /**
  * Type definition for the @shopify/react-native-skia module.

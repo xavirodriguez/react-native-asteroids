@@ -1,7 +1,7 @@
-import { System } from "@tiny-aster/core";
-import { World } from "@tiny-aster/core";
+import { System } from "../../index";
+import { World } from "../../index";
 import { DebugConfigComponent } from "./DebugTypes";
-import { TransformComponent, Collider2DComponent, VelocityComponent } from "@tiny-aster/core";
+import { TransformComponent, Collider2DComponent, VelocityComponent } from "../../index";
 
 /**
  * Sistema de depuración para visualización de métricas y componentes internos.

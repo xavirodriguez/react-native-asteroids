@@ -2,6 +2,11 @@ export interface Component {
   type: string;
 }
 
+/**
+ * Fallback type for components when the specific registry is not known or needed.
+ */
+export type GenericComponent = Component & Record<string, any>;
+
 export type ComponentRegistry = Record<string, Component>;
 
 export type ComponentType<TRegistry extends ComponentRegistry> =

@@ -1,6 +1,6 @@
-import { World } from "@tiny-aster/core";
+import { World } from "../../index";
 import { DamageNumberSystem } from "../DamageNumberSystem";
-import { RandomService } from "@tiny-aster/core";
+import { RandomService } from "../../index";
 
 describe("DamageNumberSystem", () => {
     let world: World;

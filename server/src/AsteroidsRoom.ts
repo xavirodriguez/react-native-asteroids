@@ -2,20 +2,20 @@ import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
 import { GameStateComponent } from "../../src/games/asteroids/types/AsteroidTypes";
-import { World } from "../../src/engine/core/World";
+import { World } from "@tiny-aster/core";
 import { AsteroidsGame } from "../../src/games/asteroids/AsteroidsGame";
-import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "../../src/engine/core/CoreComponents";
+import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "@tiny-aster/core";
 import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
 import { ShipComponent, BulletComponent } from "../../src/games/asteroids/types/AsteroidTypes";
-import { InterestManagerSystem } from "../../src/engine/network/InterestManagerSystem";
+import { InterestManagerSystem } from "@tiny-aster/core";
  import { leaderboardStore } from "./DailyLeaderboardStore";
  import { getDateKey } from "./utils/DateUtils";
 import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
-import { ReplicationStateTracker } from "../../src/engine/network/ReplicationStateTracker";
-import { ClientAckTracker } from "../../src/engine/network/ClientAckTracker";
-import { NetworkDeltaSystem } from "../../src/engine/network/NetworkDeltaSystem";
-import { NetworkBudgetManager } from "../../src/engine/network/NetworkBudgetManager";
-import { BinaryCompression } from "../../src/engine/network/BinaryCompression";
+import { ReplicationStateTracker } from "@tiny-aster/core";
+import { ClientAckTracker } from "@tiny-aster/core";
+import { NetworkDeltaSystem } from "@tiny-aster/core";
+import { NetworkBudgetManager } from "@tiny-aster/core";
+import { BinaryCompression } from "@tiny-aster/core";
 
 /**
  * Authoritative Game Room for Asteroids.
