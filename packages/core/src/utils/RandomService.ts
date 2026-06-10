@@ -1,7 +1,11 @@
 /**
  * PRNG Random Service - Multi-stream Seeded Randomness.
+ *
+ * @remarks
+ * Designed to provide a seedable pseudo-random sequence intended to support
+ * reproducible simulation. Reproducibility depends on all simulation components
+ * using the appropriate stream exclusively and ensuring identical seeding across participants.
  */
-
 export class RandomService {
   private seed: number;
 

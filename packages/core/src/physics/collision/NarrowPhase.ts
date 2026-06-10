@@ -133,8 +133,8 @@ const staticCapsulePoly: PolygonShape = {
  * @conceptualRisk [GC_PRESSURE][LOW] Aunque usa pools, el manifold devuelto es una referencia compartida;
  * se recomienda procesarlo inmediatamente o copiarlo si se requiere persistencia.
  *
- * @warning **Shared State**: El uso de manifolds y pools compartidos significa que los resultados
- * no son thread-safe y deben consumirse de forma síncrona inmediatamente tras la llamada a `test()`.
+ * @warning **Shared State**: El uso de manifolds y pools compartidos significa que esta implementación
+ * no es reentrante y los resultados deben consumirse de forma síncrona inmediatamente tras la llamada a `test()`.
  */
 export class NarrowPhase {
   /**

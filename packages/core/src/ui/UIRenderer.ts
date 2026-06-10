@@ -8,6 +8,14 @@ import {
 } from "./UITypes";
 import { TextRenderer } from "./text/TextRenderer";
 
+/**
+ * Renders the UI elements defined in the ECS world.
+ *
+ * @warning **Performance & Allocations**:
+ * This function performs an entity query and an array sort on every call to respect
+ * the `zIndex` of UI elements. This contributes to per-frame allocations and
+ * may impact performance if the number of UI elements is large.
+ */
 export function renderUI(ctx: CanvasRenderingContext2D, world: World): void {
     const uiEntities = world.query("UIElement");
 

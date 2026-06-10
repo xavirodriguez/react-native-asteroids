@@ -6,9 +6,9 @@ import { World } from "../index";
  *
  * @responsibility Serializar y hashear el estado serializable de todas las entidades y componentes activos.
  * @conceptualRisk [JSON_DETERMINISM] El `JSON.stringify` nativo no garantiza un orden determinista
- * de las propiedades de los objetos en todas las circunstancias. Si dos clientes poseen datos
- * idénticos pero las propiedades se insertaron en distinto orden, los hashes resultantes pueden
- * diferir, lo que podría provocar **falsos positivos de desincronización**.
+ * de las propiedades de los objetos en todas las versiones o motores de JavaScript. Si dos clientes
+ * poseen datos idénticos pero las propiedades se insertaron en distinto orden, los hashes resultantes
+ * pueden diferir, lo que podría provocar **falsos positivos de desincronización**.
  * @conceptualRisk [FLOAT_PRECISION] Pequeñas diferencias en cálculos de punto flotante
  * entre distintas arquitecturas (ej. x86 vs ARM) o motores pueden causar que las
  * representaciones serializadas diverjan, resultando potencialmente en discrepancias de hash.
@@ -21,15 +21,16 @@ export class StateHasher {
    * @returns Un string hexadecimal representando el hash del estado.
    *
    * @remarks
-   * PERFORMANCE WARNING: Esta es una operación costosa O(E * C) donde E es el número de entidades
-   * y C el promedio de componentes. Debe usarse con moderación, preferiblemente fuera del hot path de renderizado.
+   * @warning **Performance**: Esta es una operación costosa O(E * C) donde E es el número de entidades
+   * y C el promedio de componentes por entidad. Debe usarse con moderación, preferiblemente fuera
+   * del hot path de simulación o renderizado.
    *
    * @remarks
    * Para que el hash sea válido, el estado del mundo no debería estar en proceso de modificación
    * (ej. en mitad de un ciclo de actualización).
    *
  * @conceptualRisk [PERFORMANCE] La concatenación masiva de strings y el uso de `JSON.stringify`
- * incrementa la presión sobre el recolector de basura (GC) y puede impactar el rendimiento.
+ * incrementa la presión sobre el recolector de basura (GC) y puede impactar negativamente el rendimiento.
    */
   public static calculateHash(world: World): string {
     const entities = [...world.getAllEntities()].sort((a, b) => a - b);

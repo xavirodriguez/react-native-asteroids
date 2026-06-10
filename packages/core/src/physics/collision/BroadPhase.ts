@@ -64,7 +64,8 @@ export class BroadPhase {
    * Aims to sort entities by their X-axis minimum bound and check for interval overlaps.
    * Designed for efficiency in sparse environments where objects are not tightly clustered.
    *
-   * @warning **Complexity**: Approximately O(N log N) due to sorting in the worst case.
+   * @warning **Complexity**: Average case is O(N log N) due to sorting; however, the overlap
+   * check phase can reach O(N^2) in high-density scenarios where many objects' X-intervals overlap.
    * For high-density environments, using {@link SpatialGrid} is recommended.
    *
    * @warning **Allocations**: The current implementation performs per-call allocations
