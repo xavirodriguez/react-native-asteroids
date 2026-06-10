@@ -34,6 +34,12 @@ export type EffectDrawer<TContext> = (
 
 /**
  * Abstract interface for game rendering engines.
+ *
+ * @remarks
+ * Implementations are expected to handle the visual representation of the ECS world.
+ * While core systems aim to minimize allocations, specific renderer implementations
+ * may introduce per-frame allocations depending on the underlying platform API
+ * (e.g., Canvas, Skia).
  */
 export interface Renderer<TContext = unknown> {
   /** Renderer type identifier (e.g., 'canvas', 'skia'). */

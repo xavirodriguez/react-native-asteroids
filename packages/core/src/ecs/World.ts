@@ -94,11 +94,13 @@ export class World<
    * Returns a list of all currently active entities.
    *
    * @remarks
-   * The list is sorted by ID to support stable iteration.
+   * The list is sorted by numeric ID to support stable iteration when the entity set
+   * is identical.
    *
-   * @warning
+   * @warning **Performance & Allocations**:
    * This operation creates a new array and performs a sort on each call.
-   * Avoid calling this in hot paths; prefer using {@link Query} for efficient iteration.
+   * Frequent access in hot paths is discouraged; prefer using {@link Query} for efficient
+   * and cached iteration.
    */
   public get entities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);

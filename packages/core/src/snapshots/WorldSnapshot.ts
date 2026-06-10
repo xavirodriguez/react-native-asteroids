@@ -18,7 +18,7 @@ export type ComponentDataSnapshot = Record<string, Record<Entity, SerializedComp
  * Represents a snapshot of the ECS world state intended to support serialization and state restoration.
  *
  * @remarks
- * This structure aims to capture the state needed for features like rollback,
+ * This structure aims to capture the serializable state needed for features like rollback,
  * save games, or network synchronization.
  */
 export interface WorldSnapshot {

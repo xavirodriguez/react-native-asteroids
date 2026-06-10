@@ -87,6 +87,7 @@ export * from "./scenes/SceneManager";
 /**
  * Additional exports for compatibility and migration purposes.
  * @deprecated Many of these will be moved to internal or specialized modules in future versions.
+ * Prefer using their modern counterparts in the core modules.
  */
 export * from "./ecs/ComponentCloner";
 export * from "./systems/BaseGameStateSystem";

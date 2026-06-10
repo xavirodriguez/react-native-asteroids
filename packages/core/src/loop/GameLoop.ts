@@ -25,10 +25,11 @@ export interface GameLoopConfig {
  * 3. **Transform**: Post-simulation updates (e.g., hierarchy resolution).
  * 4. **Render**: Variable-step, providing interpolation alpha for visual smoothing.
  *
- * @warning **Spiral of Death**: Under extreme load, the loop is designed to clamp or limit
- * simulation steps to help avoid the "Spiral of Death" (endless simulation catch-up).
+ * @warning **Spiral of Death & Determinism**: Under extreme load, the loop is designed to clamp
+ * or limit simulation steps to help avoid the "Spiral of Death" (endless simulation catch-up).
  * This may result in "slow-motion" gameplay or dropped ticks when the CPU cannot maintain
- * the fixed-step target. Deterministic behavior may be compromised if ticks are dropped.
+ * the fixed-step target. Deterministic behavior is generally compromised if ticks are dropped,
+ * as the simulation state will no longer align with the expected timeline.
  */
 export class GameLoop {
   private isRunning = false;
