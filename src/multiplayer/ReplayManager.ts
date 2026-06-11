@@ -44,7 +44,7 @@ export class ReplayManager {
       // Find the entity for this sessionId
       const ships = game.getWorld().query("Ship");
       const entity = ships.find(e => {
-        const ship = game.getWorld().getComponent<import("../engine/core/CoreComponents").ShipComponent>(e, "Ship");
+        const ship = game.getWorld().getComponent<import("@tiny-aster/core").ShipComponent>(e, "Ship");
         return ship && ship.sessionId === sessionId;
       });
 

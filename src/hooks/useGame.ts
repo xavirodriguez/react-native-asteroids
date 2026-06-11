@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useKeepAwake } from "./useKeepAwake";
-import type { BaseGame, BaseGameConfig } from "../engine/core/BaseGame";
-import type { DebugManager } from "../engine/debug/DebugManager";
+import type { BaseGame, BaseGameConfig } from "@tiny-aster/core";
+import type { DebugManager } from "@tiny-aster/core";
 
 export type GameConfig = BaseGameConfig & {
   seed?: number;
@@ -166,7 +166,7 @@ export function useDebugManager(game: BaseGame<Record<string, unknown>, Record<s
       return;
     }
 
-    const { DebugManager: DebugManagerClass } = require("../engine/debug/DebugManager");
+    const { DebugManager: DebugManagerClass } = require("@tiny-aster/core");
     const debugManager = DebugManagerClass.getInstance();
     debugManager.attach(game);
     setManager(debugManager);

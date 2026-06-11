@@ -1,18 +1,18 @@
-import { World } from "../../engine/core/World";
-import { GameLoop } from "../../engine/core/GameLoop";
+import { World } from "@tiny-aster/core";
+import { GameLoop } from "@tiny-aster/core";
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { BaseGame } from "../../engine/core/BaseGame";
+import { BaseGame } from "@tiny-aster/core";
 import { GameStateComponent, InputState, INITIAL_GAME_STATE } from "./types/SpaceInvadersTypes";
 import { SpaceInvadersConfigSchema, SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
-import { ConfigService } from "../../engine/services/ConfigService";
+import { ConfigService } from "@tiny-aster/core";
 import { ISpaceInvadersGame } from "./types/GameInterfaces";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
 import { SpaceInvadersGameScene } from "./scenes/SpaceInvadersGameScene";
-import { Renderer } from "../../engine/rendering/Renderer";
-import { LootSystem } from "../../engine/systems/LootSystem";
-import { PowerUpSystem } from "../../engine/systems/PowerUpSystem";
-import { NetworkManager } from "../../engine/network/NetworkManager";
-import { ReplicationSystem } from "../../engine/network/systems/ReplicationSystem";
+import { Renderer } from "@tiny-aster/core";
+import { LootSystem } from "@tiny-aster/core";
+import { PowerUpSystem } from "@tiny-aster/core";
+import { NetworkManager } from "@tiny-aster/core";
+import { ReplicationSystem } from "@tiny-aster/core";
 import {
   drawSpaceInvadersPlayer,
   drawSpaceInvadersInvader,
@@ -133,7 +133,7 @@ export class SpaceInvadersGame
     const currentServerEntities = new Set<string>();
 
     // Sync with NetworkManager for interpolation
-    const snapshot: import("../../engine/types/EngineTypes").WorldSnapshot = {
+    const snapshot: import("@tiny-aster/core").WorldSnapshot = {
         tick: (state.tick as number) || 0,
         entities: [],
         componentData: { Transform: {} },
@@ -151,15 +151,15 @@ export class SpaceInvadersGame
 
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
-          commands.addComponent(entity, { type: "Player" } as import("../../engine/types/EngineTypes").Component);
-          commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "player_ship", size: 20, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+          commands.addComponent(entity, { type: "Player" } as import("@tiny-aster/core").Component);
+          commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("@tiny-aster/core").TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "player_ship", size: 20, color: "green", rotation: 0 } as import("@tiny-aster/core").RenderComponent);
         }
 
         snapshot.entities.push(entity);
         snapshot.componentData["Transform"][entity] = { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 };
 
-        world.mutateComponent<import("../../engine/types/EngineTypes").RenderComponent>(entity, "Render", render => {
+        world.mutateComponent<import("@tiny-aster/core").RenderComponent>(entity, "Render", render => {
           render.color = playerState.alive ? "green" : "red";
         });
       });
@@ -176,8 +176,8 @@ export class SpaceInvadersGame
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
           commands.addComponent(entity, { type: "Invader", row: 0, col: 0, points: 10 } as import("./types/SpaceInvadersTypes").InvaderComponent);
-          commands.addComponent(entity, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+          commands.addComponent(entity, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("@tiny-aster/core").TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 } as import("@tiny-aster/core").RenderComponent);
         }
 
         snapshot.entities.push(entity);
@@ -194,9 +194,9 @@ export class SpaceInvadersGame
 
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
-          commands.addComponent(entity, { type: "PlayerBullet" } as import("../../engine/types/EngineTypes").Component);
-          commands.addComponent(entity, { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "player_bullet", size: 5, color: "yellow", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+          commands.addComponent(entity, { type: "PlayerBullet" } as import("@tiny-aster/core").Component);
+          commands.addComponent(entity, { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("@tiny-aster/core").TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "player_bullet", size: 5, color: "yellow", rotation: 0 } as import("@tiny-aster/core").RenderComponent);
         }
 
         snapshot.entities.push(entity);
@@ -300,6 +300,6 @@ export class NullSpaceInvadersGame implements ISpaceInvadersGame {
   public isGameOver() { return false; }
   public getGameState() { return INITIAL_GAME_STATE; }
   public getSeed() { return 0; }
-  public subscribe(_listener: import("../../engine/core/IGame").UpdateListener<unknown>) { return () => {}; }
+  public subscribe(_listener: import("@tiny-aster/core").UpdateListener<unknown>) { return () => {}; }
   public initializeRenderer() {}
 }

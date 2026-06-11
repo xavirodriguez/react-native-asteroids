@@ -1,11 +1,11 @@
 import React, { useMemo } from "react";
 import { Circle, Group } from "@shopify/react-native-skia";
-import type { World } from "../src/engine/core/World";
+import type { World } from "@tiny-aster/core";
 import {
   type TransformComponent,
   type RenderComponent,
   type TTLComponent,
-} from "../src/types/GameTypes";
+} from "@tiny-aster/core";
 
 interface ParticleSystemProps {
   world: World;

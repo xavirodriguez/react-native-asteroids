@@ -1,5 +1,5 @@
-import { World } from "../../../engine/core/World";
-import { TransformComponent } from "../../../engine/types/EngineTypes";
+import { World } from "@tiny-aster/core";
+import { TransformComponent } from "@tiny-aster/core";
 import {
   PipeComponent,
   FLAPPY_CONFIG,
@@ -7,15 +7,15 @@ import {
 } from "../types/FlappyBirdTypes";
 import { IFlappyBirdGame, IFlappyStateSystem } from "../types/GameInterfaces";
 import { createPipe } from "../EntityFactory";
-import { EventBus } from "../../../engine/core/EventBus";
-import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
+import { EventBus } from "@tiny-aster/core";
+import { BaseGameStateSystem } from "@tiny-aster/core";
 
 /**
  * System that manages game logic: scores, spawner, and game over condition.
  */
 export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdState> implements IFlappyStateSystem {
   constructor(game: IFlappyBirdGame, private config: typeof FLAPPY_CONFIG = FLAPPY_CONFIG) {
-    super(game as unknown as IFlappyBirdGame & import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, boolean>>);
+    super(game as unknown as IFlappyBirdGame & import("@tiny-aster/core").BaseGame<unknown, Record<string, boolean>>);
   }
 
   protected updateGameState(world: World, gameState: FlappyBirdState, deltaTime: number): void {

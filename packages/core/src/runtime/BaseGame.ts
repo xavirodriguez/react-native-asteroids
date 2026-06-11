@@ -1,5 +1,18 @@
 import { World, BlueprintRegistryMap } from "../ecs/World";
 import { ComponentRegistry } from "../ecs/Component";
+
+export interface BaseGameConfig {
+  /** [KeyboardEvent.code] Key to toggle pause. */
+  pauseKey?: string;
+  /** [KeyboardEvent.code] Key to restart the game. */
+  restartKey?: string;
+  /** Enables multiplayer-specific synchronization logic. */
+  isMultiplayer?: boolean;
+  /** Global game options, including the initial simulation seed. */
+  gameOptions?: Record<string, unknown>;
+  /** Runs the game without visual systems or asset loading. Suitable for server-side execution. */
+  headless?: boolean;
+}
 import { EventRegistry, EventBus } from "../events/EventBus";
 import { BlueprintRegistry } from "../ecs/BlueprintRegistry";
 import { CoreComponentRegistry } from "../ecs/CoreComponents";
@@ -61,8 +74,9 @@ export abstract class BaseGame<
    * Returns a snapshot representing the current game state.
    *
    * @remarks
-   * The returned state is intended to be serializable, though this depends on
-   * the implementation of the `TState` structure and its components.
+   * The returned state is intended to be serializable to support features like
+   * rollback or replay, though this depends on the serializability of the
+   * implementation of the `TState` structure and its components.
    */
   abstract getGameState(): TState;
 

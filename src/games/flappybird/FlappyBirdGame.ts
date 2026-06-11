@@ -1,4 +1,4 @@
-import { BaseGame } from "../../engine/core/BaseGame";
+import { BaseGame } from "@tiny-aster/core";
 import { FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE, FlappyBirdState, BirdComponent, PipeComponent } from "./types/FlappyBirdTypes";
 import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
 import { FlappyBirdInputSystem } from "./systems/FlappyBirdInputSystem";
@@ -6,14 +6,14 @@ import { FlappyBirdCollisionSystem } from "./systems/FlappyBirdCollisionSystem";
 import { FlappyBirdGlideSystem } from "./systems/FlappyBirdGlideSystem";
 import { FlappyBirdRenderSystem } from "./systems/FlappyBirdRenderSystem";
 import { IFlappyBirdGame } from "./types/GameInterfaces";
-import { GameLoop } from "../../engine/core/GameLoop";
-import { World } from "../../engine/core/World";
-import { InputBufferSystem } from "../../engine/systems/InputBufferSystem";
-import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
-import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
-import { JuiceSystem } from "../../engine/systems/JuiceSystem";
-import { Renderer } from "../../engine/rendering/Renderer";
-import { TransformComponent, RenderComponent } from "../../engine/core/CoreComponents";
+import { GameLoop } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { InputBufferSystem } from "@tiny-aster/core";
+import { MovementSystem } from "@tiny-aster/core";
+import { CollisionSystem2D } from "@tiny-aster/core";
+import { JuiceSystem } from "@tiny-aster/core";
+import { Renderer } from "@tiny-aster/core";
+import { TransformComponent, RenderComponent } from "@tiny-aster/core";
 import {
   createBird,
   createGameState,
@@ -26,10 +26,10 @@ import {
   scrollingBackgroundEffect
 } from "./rendering/FlappyBirdCanvasVisuals";
 import { MutatorService } from "../../services/MutatorService";
-import { MutatorSystem } from "../../engine/systems/MutatorSystem";
-import { NetworkManager } from "../../engine/network/NetworkManager";
-import { ReplicationSystem } from "../../engine/network/systems/ReplicationSystem";
-import { SystemPhase } from "../../engine/core/System";
+import { MutatorSystem } from "@tiny-aster/core";
+import { NetworkManager } from "@tiny-aster/core";
+import { ReplicationSystem } from "@tiny-aster/core";
+import { SystemPhase } from "@tiny-aster/core";
 
 /**
  * Controlador principal del juego Flappy Bird.
@@ -178,7 +178,7 @@ export class FlappyBirdGame
     }
 
     // Sync with NetworkManager for interpolation
-    const snapshot: import("../../engine/types/EngineTypes").WorldSnapshot = {
+    const snapshot: import("@tiny-aster/core").WorldSnapshot = {
         tick: (state.tick as number) || 0,
         entities: [],
         componentData: { Transform: {} },
@@ -266,6 +266,6 @@ export class NullFlappyBirdGame implements IFlappyBirdGame {
   public getGameState() { return INITIAL_FLAPPY_STATE; }
   public getSeed() { return 0; }
   public setInput() {}
-  public subscribe(_listener: import("../../engine/core/IGame").UpdateListener<unknown>) { return () => {}; }
+  public subscribe(_listener: import("@tiny-aster/core").UpdateListener<unknown>) { return () => {}; }
   public initializeRenderer() {}
 }
