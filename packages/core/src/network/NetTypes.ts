@@ -1,4 +1,5 @@
 import { Entity } from "../ecs/Entity";
+<<<<<<< HEAD
 import { WorldSnapshot } from "../ecs/SnapshotTypes";
 
 export { Entity };
@@ -47,12 +48,23 @@ export interface EntitySnapshot {
   y: number;
   angle?: number;
   timestamp: number;
+=======
+
+export interface InputFrame {
+  tick: number;
+  input: any;
+>>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
 }
 
 export interface ReplayFrame {
   tick: number;
+<<<<<<< HEAD
   inputs: Record<string, InputFrame[]>;
   events: string[];
+=======
+  inputs: Record<Entity, any>;
+  events: any[];
+>>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
 }
 
 export interface ReplayData {
@@ -62,6 +74,7 @@ export interface ReplayData {
   endTick: number;
   frames: ReplayFrame[];
 }
+<<<<<<< HEAD
 
 export interface DeltaPacket {
     tick: number;
@@ -71,3 +84,5 @@ export interface DeltaPacket {
     updated?: Record<number, Record<string, any>>;
     removed?: number[];
 }
+=======
+>>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376

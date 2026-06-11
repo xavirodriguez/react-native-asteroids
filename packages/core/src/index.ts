@@ -22,7 +22,10 @@ export * from "./physics/shapes/ShapeTypes";
 export * from "./physics/shapes/ShapeFactory";
 export * from "./physics/collision/CollisionTypes";
 export * from "./physics/collision/CollisionSystem2D";
+<<<<<<< HEAD
 export * from "./physics/collision/CCDSystem";
+=======
+>>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
 /** @internal */
 export * from "./physics/dynamics/PhysicsIntegrateSystem";
 /** @internal */
@@ -47,12 +50,15 @@ export * from "./systems/StateMachineSystem";
 export * from "./systems/TilemapRenderSystem";
 export * from "./systems/FeedbackSystem";
 export * from "./systems/HierarchySystem";
+<<<<<<< HEAD
 export * from "./systems/LootSystem";
 export * from "./systems/ModifierSystem";
 export * from "./systems/PowerUpSystem";
 export * from "./systems/MutatorSystem";
 export * from "./systems/JoystickSystem";
 export * from "./systems/SpatialPartitioningSystem";
+=======
+>>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
 
 // Runtime
 export * from "./runtime/GameCommand";
@@ -76,7 +82,10 @@ export * from "./math/CommonTypes";
 
 // Rendering
 export type { Renderer, ShapeDrawer, EffectDrawer } from "./rendering/Renderer";
+<<<<<<< HEAD
 export * from "./rendering/Renderer";
+=======
+>>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
 export * from "./rendering/RenderTypes";
 export * from "./rendering/RenderSnapshot";
 export * from "./rendering/RenderCommandBuffer";
@@ -84,12 +93,18 @@ export * from "./rendering/Camera2D";
 
 // Network
 export * from "./network/NetworkTransport";
+<<<<<<< HEAD
 export * from "./network/NetworkManager";
 export * from "./network/systems/ReplicationSystem";
 
 // Input
 export * from "./input/UnifiedInputSystem";
 export * from "./input/JoystickTypes";
+=======
+
+// Input
+export * from "./input/UnifiedInputSystem";
+>>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
 
 // Scenes
 export * from "./scenes/Scene";
@@ -125,7 +140,10 @@ export * from "./ui/DamageNumberSystem";
 // Additional Utils
 export * from "./utils/SaveSystem";
 export * from "./utils/ProjectileUtils";
+<<<<<<< HEAD
 export * from "./utils/ConfigService";
+=======
+>>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
 
 // Test Utils
 export * from "./test-utils/createTestWorld";
@@ -133,6 +151,7 @@ export * from "./test-utils/createTestWorld";
 // Core Types aliases
 export * from "./ecs/Component";
 export * from "./utils/VisualRandom";
+<<<<<<< HEAD
 
 // Server-side Network Utils
 export * from "./network/InterestManagerSystem";
@@ -140,3 +159,5 @@ export * from "./network/ReplicationStateTracker";
 export * from "./network/ClientAckTracker";
 export * from "./network/NetworkDeltaSystem";
 export * from "./network/NetworkBudgetManager";
+=======
+>>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376

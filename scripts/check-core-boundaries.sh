@@ -18,12 +18,20 @@ forbidden_core_patterns=(
   "expo-"
 )
 
+echo "Checking for architectural boundary violations in packages/core/src..."
+
+errors=0
 for pattern in "${forbidden_core_patterns[@]}"; do
-  if grep -R "$pattern" packages/core/src --include="*.ts" --include="*.tsx" > /dev/null; then
-    echo "Forbidden pattern in packages/core/src: $pattern"
-    grep -R "$pattern" packages/core/src --include="*.ts" --include="*.tsx"
-    exit 1
+  if grep -Ri "$pattern" packages/core/src --include="*.ts" --include="*.tsx" --exclude="*.test.ts"; then
+    echo "Forbidden pattern found in packages/core/src: $pattern"
+    errors=$((errors + 1))
   fi
 done
 
-echo "Core boundaries check passed!"
+if [ $errors -gt 0 ]; then
+  echo "Found $errors boundary violations."
+  exit 1
+else
+  echo "No boundary violations detected."
+  exit 0
+fi

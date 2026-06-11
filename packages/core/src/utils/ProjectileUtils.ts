@@ -1,4 +1,8 @@
+<<<<<<< HEAD:packages/core/src/utils/ProjectileUtils.ts
 import { World } from "../ecs/World";
+=======
+import { World } from "../index";
+>>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376:packages/core/src/utils/ProjectileUtils.ts
 import { Entity, Component } from "../ecs/CoreComponents";
 import { PrefabPool } from "./PrefabPool";
 
