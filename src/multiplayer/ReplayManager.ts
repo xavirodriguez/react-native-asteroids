@@ -3,7 +3,7 @@
  *
  * This module allows loading historical input streams and replaying them
  * through the simulation engine. It is intended to support reproducible
- * behavior when the simulation is seeded identically and remains free of
+ * behavior when the simulation is seeded consistently and remains free of
  * unmanaged side effects.
  *
  * @packageDocumentation

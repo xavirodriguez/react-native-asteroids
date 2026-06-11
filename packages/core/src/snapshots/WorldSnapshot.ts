@@ -4,8 +4,9 @@ import { Entity } from "../ecs/Entity";
  * Represents a serialized component, intended to contain only serializable data.
  *
  * @remarks
- * For optimal results, components should avoid containing functions,
+ * For best results, components should avoid containing functions,
  * class instances (unless they can be cloned as plain objects), or circular references.
+ * State restoration depends on the serializability of the component data.
  */
 export type SerializedComponent = Record<string, unknown>;
 

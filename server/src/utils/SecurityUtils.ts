@@ -1,6 +1,6 @@
 /**
  * Security utilities for data integrity and validation on the server.
- * MUST MATCH CLIENT IMPLEMENTATION.
+ * Implementation should match the client-side counterpart.
  */
 
 const SCORE_SALT = "retro-arcade-v1-salt-99";

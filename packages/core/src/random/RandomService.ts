@@ -73,7 +73,7 @@ export class RandomService {
   public static getInstance(name: string = "global", initialSeed: number = 12345): RandomService {
     if (RandomService._lockGameplayContext && name !== "gameplay") {
       throw new Error(
-        `Deterministic violation: '${name}' random accessed during simulation. Only 'gameplay' stream is allowed.`
+        `Reproducibility violation: '${name}' random accessed during simulation. Only 'gameplay' stream is intended for use here.`
       );
     }
 
@@ -102,7 +102,7 @@ export class RandomService {
   /**
    * @deprecated Static access can compromise simulation consistency in concurrent
    * or non-deterministic environments.
-   * @warning **Determinism**: Static access is discouraged for reproducible simulation
+   * @warning **Reproducibility**: Static access is discouraged for reproducible simulation
    * or multiplayer environments as it relies on shared global state.
    */
   public static next(): number {
@@ -111,7 +111,7 @@ export class RandomService {
 
   /**
    * @deprecated Static access is non-deterministic in multiplayer environments.
-   * @warning **Determinism**: Relies on shared global state.
+   * @warning **Reproducibility**: Relies on shared global state.
    */
   public static nextRange(min: number, max: number): number {
     return RandomService.getInstance("global").nextRange(min, max);
@@ -119,7 +119,7 @@ export class RandomService {
 
   /**
    * @deprecated Static access is non-deterministic in multiplayer environments.
-   * @warning **Determinism**: Relies on shared global state.
+   * @warning **Reproducibility**: Relies on shared global state.
    */
   public static nextInt(min: number, max: number): number {
     return RandomService.getInstance("global").nextInt(min, max);
@@ -127,7 +127,7 @@ export class RandomService {
 
   /**
    * @deprecated Static access is non-deterministic in multiplayer environments.
-   * @warning **Determinism**: Relies on shared global state.
+   * @warning **Reproducibility**: Relies on shared global state.
    */
   public static chance(probability: number): boolean {
     return RandomService.getInstance("global").chance(probability);
@@ -135,7 +135,7 @@ export class RandomService {
 
   /**
    * @deprecated Static access is non-deterministic in multiplayer environments.
-   * @warning **Determinism**: Relies on shared global state.
+   * @warning **Reproducibility**: Relies on shared global state.
    */
   public static nextSign(): number {
     return RandomService.getInstance("global").nextSign();
@@ -143,7 +143,7 @@ export class RandomService {
 
   /**
    * @deprecated Static access is non-deterministic in multiplayer environments.
-   * @warning **Determinism**: Relies on shared global state.
+   * @warning **Reproducibility**: Relies on shared global state.
    */
   public static setSeed(seed: number): void {
     RandomService.getInstance("global").setSeed(seed);

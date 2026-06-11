@@ -17,7 +17,7 @@ interface ControlButtonProps {
 }
 
 /**
- * Atomic component for on-screen game controls.
+ * Button component for on-screen game controls.
  */
 export const ControlButton: React.FC<ControlButtonProps> = ({
   label,

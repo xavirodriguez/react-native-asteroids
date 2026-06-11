@@ -141,7 +141,7 @@ export function drawAsteroidShipTrail(ctx: CanvasRenderingContext2D, trail: Trai
     // So transform = CameraMatrix * EntityMatrix.
     // inverse = (CameraMatrix * EntityMatrix)^-1 = EntityMatrix^-1 * CameraMatrix^-1.
     // localP = EntityMatrix^-1 * CameraMatrix^-1 * WorldP.
-    // This is EXACTLY what we want to draw in the current (Camera*Entity) context.
+    // This is the intended state we want to draw in the current (Camera*Entity) context.
 
     // Improvement 2: Trail cyan with alpha/size fade
     for (let i = 0; i < trail.count; i++) {

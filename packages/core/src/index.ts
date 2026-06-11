@@ -7,6 +7,7 @@ export * from "./ecs/System";
 export * from "./ecs/WorldCommandBuffer";
 export * from "./ecs/BlueprintRegistry";
 export * from "./ecs/CoreComponents";
+export * from "./ecs/SnapshotTypes";
 
 // Events
 export * from "./events/EventBus";
@@ -89,11 +90,15 @@ export * from "./scenes/SceneManager";
  * @deprecated Many of these will be moved to internal or specialized modules in future versions.
  * Prefer using their modern counterparts in the core modules.
  */
+/** @internal */
 export * from "./ecs/ComponentCloner";
 export * from "./systems/BaseGameStateSystem";
 export * from "./utils/InputUtils";
+/** @internal */
 export * from "./utils/Juice";
+/** @internal */
 export * from "./utils/DebugManager";
+/** @internal */
 export * from "./network/BinaryCompression";
 export * from "./runtime/IGame";
 

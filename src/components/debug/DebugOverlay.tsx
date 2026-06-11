@@ -209,7 +209,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
     <View style={styles.tabContent}>
       <Text style={styles.statText}>Replay System</Text>
       <Text style={styles.statLabel}>
-        Captures historical input intended to support debugging and deterministic reproduction under controlled conditions.
+        Captures historical input intended to support debugging and reproducible simulation under controlled conditions.
       </Text>
       <TouchableOpacity style={styles.exportButton} onPress={exportReplay}>
         <Text style={styles.exportButtonText}>

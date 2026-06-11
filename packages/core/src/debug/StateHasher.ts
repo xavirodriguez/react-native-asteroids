@@ -1,36 +1,37 @@
 import { World } from "../index";
 
 /**
- * Utilidad para generar hashes del estado del mundo ECS.
- * Diseñado para ayudar en la detección de posibles desincronizaciones (desync) en entornos multijugador o replay.
+ * Utility for generating hashes of the ECS world state.
+ * Designed to assist in detecting potential desynchronizations (desync) in multiplayer
+ * or replay environments.
  *
- * @responsibility Serializar y hashear el estado serializable de todas las entidades y componentes activos.
- * @conceptualRisk [JSON_DETERMINISM] El `JSON.stringify` nativo no garantiza un orden determinista
- * de las propiedades de los objetos en todas las versiones o motores de JavaScript. Si dos clientes
- * poseen datos idénticos pero las propiedades se insertaron en distinto orden, los hashes resultantes
- * pueden diferir, lo que podría provocar **falsos positivos de desincronización**.
- * @conceptualRisk [FLOAT_PRECISION] Pequeñas diferencias en cálculos de punto flotante
- * entre distintas arquitecturas (ej. x86 vs ARM) o motores pueden causar que las
- * representaciones serializadas diverjan, resultando potencialmente en discrepancias de hash.
+ * @responsibility Serialize and hash the serializable state of all active entities and components.
+ * @conceptualRisk [JSON_DETERMINISM] Native `JSON.stringify` does not guarantee a deterministic
+ * order of object properties across all JavaScript versions or engines. If two clients
+ * possess identical data but properties were inserted in a different order, the
+ * resulting hashes may differ, potentially causing **false desync positives**.
+ * @conceptualRisk [FLOAT_PRECISION] Slight differences in floating-point calculations
+ * across different architectures (e.g., x86 vs. ARM) or engines may cause serialized
+ * representations to diverge, potentially resulting in hash discrepancies.
  */
 export class StateHasher {
   /**
-   * Genera un hash que representa el estado actual de todas las entidades y sus componentes.
+   * Generates a hash representing the current state of all entities and their components.
    *
-   * @param world - El mundo ECS a hashear.
-   * @returns Un string hexadecimal representando el hash del estado.
-   *
-   * @remarks
-   * @warning **Performance**: Esta es una operación costosa O(E * C) donde E es el número de entidades
-   * y C el promedio de componentes por entidad. Debe usarse con moderación, preferiblemente fuera
-   * del hot path de simulación o renderizado.
+   * @param world - The ECS world to hash.
+   * @returns A hexadecimal string representing the state hash.
    *
    * @remarks
-   * Para que el hash sea válido, el estado del mundo no debería estar en proceso de modificación
-   * (ej. en mitad de un ciclo de actualización).
+   * @warning **Performance**: This is a costly O(E * C) operation where E is the number of
+   * entities and C is the average number of components per entity. It should be used
+   * sparingly, preferably outside the simulation or rendering hot paths.
    *
- * @conceptualRisk [PERFORMANCE] La concatenación masiva de strings y el uso de `JSON.stringify`
- * incrementa la presión sobre el recolector de basura (GC) y puede impactar negativamente el rendimiento.
+   * @remarks
+   * For the hash to be valid, the world state should not be in the process of
+   * modification (e.g., in the middle of an update cycle).
+   *
+   * @conceptualRisk [PERFORMANCE] Massive string concatenation and the use of `JSON.stringify`
+   * increases garbage collector (GC) pressure and may negatively impact performance.
    */
   public static calculateHash(world: World): string {
     const entities = [...world.getAllEntities()].sort((a, b) => a - b);

@@ -8,7 +8,7 @@ import { BulletComponent } from "@/games/asteroids/components/BulletComponent";
 import { AsteroidComponent } from "@/src/games/asteroids/components/AsteroidComponent";
 
 /**
- * High-performance assembler for creating entities from blueprints.
+ * Assembler designed for efficient entity creation from blueprints.
  *
  * @remarks
  * Designed to help reduce per-frame allocations by attempting to recycle component objects.

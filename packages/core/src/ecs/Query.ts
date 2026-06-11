@@ -5,8 +5,8 @@ import { Entity } from "./Entity";
  *
  * @remarks
  * Queries are updated by the {@link World} when components are added
- * or removed from entities. The entity list is lazily sorted by ID to support
- * stable iteration order when the entity set is identical.
+ * or removed from entities. The entity list is lazily sorted by ID to help support
+ * stable iteration order when the set of matching entities is the same.
  */
 export class Query<_TComponents extends Record<string, any> = Record<string, any>> {
   private entities = new Set<Entity>();

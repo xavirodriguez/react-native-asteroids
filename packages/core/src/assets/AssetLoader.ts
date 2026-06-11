@@ -9,8 +9,9 @@ import { AssetDescriptor, AssetHandle, IAssetProvider } from "./AssetProvider";
  * same loading asset, which may introduce minor delays and depends on the
  * environment's `setTimeout` precision.
  *
- * @warning **Memory Management**: Assets must be manually unloaded to avoid memory
- * leaks. The ref-counting mechanism helps track usage but does not automate disposal.
+ * @warning **Memory Management**: Manual unloading of assets is required to avoid
+ * memory leaks. The ref-counting mechanism helps track usage but does not automate
+ * garbage collection or final disposal of low-level resources.
  */
 export class AssetLoader {
   private cache = new Map<string, AssetHandle<unknown>>();

@@ -47,12 +47,12 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
  * mitigate this, developers should generally avoid direct manipulations of `componentMaps`
  * or `activeEntities` during iteration.
  *
- * **Determinism:**
+ * **Reproducibility:**
  * The World provides a seeded `gameplayRandom` stream intended to support simulation logic.
  * To help facilitate reproducible behavior under controlled conditions, systems are
  * recommended to rely on this stream and the provided `tick` counter. Simulation stability
- * depends on avoiding external side effects, unseeded `Math.random()`, or non-deterministic
- * asynchronous APIs.
+ * and reproducibility may be compromised by external side effects, unseeded `Math.random()`,
+ * or non-deterministic asynchronous APIs.
  */
 export class World<
   TComponents extends ComponentRegistry = ComponentRegistry,
@@ -94,8 +94,8 @@ export class World<
    * Returns a list of all currently active entities.
    *
    * @remarks
-   * The list is sorted by numeric ID to support stable iteration when the entity set
-   * is identical.
+   * The list is sorted by numeric ID to help support stable iteration when the set
+   * of active entities is the same across calls.
    *
    * @warning **Performance & Allocations**:
    * This operation creates a new array and performs a sort on each call.

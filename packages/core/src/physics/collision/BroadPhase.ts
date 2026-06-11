@@ -69,7 +69,7 @@ export class BroadPhase {
    * For high-density environments, using {@link SpatialGrid} is recommended.
    *
    * @warning **Allocations**: The current implementation performs per-call allocations
-   * (mapping and sorting) and is not zero-allocation.
+   * (mapping and sorting) and does not currently aim for zero-allocation performance.
    *
    * @param entities - List of entities to process.
    * @param world - ECS world for component retrieval.

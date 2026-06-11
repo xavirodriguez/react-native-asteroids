@@ -3,9 +3,9 @@
  *
  * @remarks
  * Implementations are intended to handle message delivery across the network.
- * Note that specific delivery guarantees (such as reliability, ordering, or latency)
- * are generally dependent on the underlying transport implementation and protocol
- * (e.g., WebSocket, WebRTC, or UDP-based solutions).
+ * Specific delivery characteristics (such as reliability, ordering, or latency)
+ * are dependent on the underlying transport implementation, protocol
+ * (e.g., WebSocket, WebRTC, or UDP-based solutions), and network conditions.
  */
 export interface NetworkTransport {
   /**

@@ -15,7 +15,7 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ onPlay }
   const [score, setScore] = useState<number | null>(null);
 
   useEffect(() => {
-    // Deterministic daily game rotation
+    // Reproducible daily game rotation based on seed
     const availableGames = ["asteroids", "pong", "flappybird", "space-invaders"];
     const dateKey = DailyChallengeService.getDateKey();
     const dateNum = parseInt(dateKey, 10);

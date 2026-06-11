@@ -10,7 +10,7 @@ const SCORE_SALT = "retro-arcade-v1-salt-99";
  * Generates a signature for a score submission.
  *
  * @remarks
- * The signature is designed to be deterministic based on the provided inputs
+ * The signature is designed to be reproducible based on the provided inputs
  * and a shared salt to help prevent basic spoofing.
  *
  * @param gameId - The ID of the game.
