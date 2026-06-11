@@ -78,11 +78,8 @@ export class World<
 
   private _structureVersion = 0;
   private _stateVersion = 0;
-<<<<<<< HEAD
   public componentVersions = new Map<string, Map<Entity, number>>();
-=======
-  private componentVersions = new Map<string, Map<Entity, number>>();
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
+
   private _gameplayRandom = new RandomService();
 
   public debugMode = false;
@@ -349,7 +346,6 @@ export class World<
   getSingleton<T extends TComponents[keyof TComponents]>(type: string): DeepReadonly<T> | undefined {
     const entities = this.query(type);
     if (entities.length === 0) return undefined;
-<<<<<<< HEAD
     return this.getComponent<T>(entities[0], type as any);
   }
 
@@ -361,9 +357,6 @@ export class World<
     if (entities.length > 0) {
       this.mutateComponent<T>(entities[0], type as any, mutator);
     }
-=======
-    return this.getComponent<T>(entities[0], type);
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
   }
 
   setResource<T>(name: string, resource: T): void {

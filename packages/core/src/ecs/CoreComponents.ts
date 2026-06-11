@@ -1,7 +1,6 @@
 import { Component, ComponentRegistry, ComponentType, ComponentOf, DeepReadonly } from "./Component";
 import { Entity } from "./Entity";
 import { EventRegistry, EventBus as GenericEventBus } from "../events/EventBus";
-<<<<<<< HEAD
 import { AABB, ScreenConfig } from "../math/CommonTypes";
 import { Shape } from "../physics/shapes/ShapeTypes";
 import { CollisionManifold } from "../physics/collision/CollisionTypes";
@@ -13,13 +12,7 @@ export {
   ComponentType, ComponentOf, DeepReadonly, WorldSnapshot, 
   ComponentDataSnapshot, SerializedComponent, ScreenConfig
 };
-=======
-import { AABB } from "../math/CommonTypes";
-import { Shape } from "../physics/shapes/ShapeTypes";
-import { CollisionManifold } from "../physics/collision/CollisionTypes";
 
-export { Entity, AABB, Shape, CollisionManifold, Component, ComponentRegistry, ComponentType, ComponentOf, DeepReadonly };
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
 
 /**
  * Common interface for components that participate in a parent-child hierarchy.
@@ -30,7 +23,6 @@ export interface IHierarchicalComponent extends Component {
   /** Optimization flag to indicate that the hierarchy or local transform needs re-evaluation. */
   dirty?: boolean;
 }
-<<<<<<< HEAD
 
 /**
  * Basic tag component for identification.
@@ -39,8 +31,7 @@ export interface TagComponent extends Component {
   type: "Tag";
   tags: string[];
 }
-=======
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
+
 
 /**
  * Standard 2D transform.
@@ -136,7 +127,6 @@ export interface Collider2DComponent extends Component {
 }
 
 /**
-<<<<<<< HEAD
  * Continuous Collision Detection configuration.
  */
 export interface ContinuousColliderComponent extends Component {
@@ -158,8 +148,6 @@ export interface ContinuousColliderComponent extends Component {
 }
 
 /**
-=======
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
  * Component that tracks collision events.
  */
 export interface CollisionEvent {
@@ -251,7 +239,6 @@ export interface HealthComponent extends Component {
 }
 
 /**
-<<<<<<< HEAD
  * Standard Player/Ship component for multiplayer.
  */
 export interface PlayerComponent extends Component {
@@ -261,8 +248,6 @@ export interface PlayerComponent extends Component {
 }
 
 /**
-=======
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
  * Logical input actions.
  */
 export type InputAction = string;
@@ -345,7 +330,6 @@ export interface ParticleEmitterComponent extends Component {
   config: ParticleEmitterConfig;
   active: boolean;
   elapsed: number;
-<<<<<<< HEAD
 }
 
 /**
@@ -358,9 +342,7 @@ export interface TilemapData {
   tiles: number[];
 }
 
-/**
-=======
-}
+
 
 /**
  * Grid-based tilemap data structure.
@@ -373,7 +355,6 @@ export interface TilemapData {
 }
 
 /**
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
  * Grid-based tilemap component.
  */
 export interface TilemapComponent extends Component {
@@ -397,11 +378,7 @@ export interface Camera2DComponent extends Component {
   zoom: number;
   target?: Entity;
   targetEntity?: Entity;
-<<<<<<< HEAD
   targets?: ReadonlyArray<Entity>;
-=======
-  targets?: Entity[];
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
   offset: { x: number; y: number };
   deadzone: { minX: number; minY: number; maxX: number; maxY: number };
   smoothing: number;
@@ -409,10 +386,7 @@ export interface Camera2DComponent extends Component {
   shakeIntensity: number;
   shakeOffsetX: number;
   shakeOffsetY: number;
-<<<<<<< HEAD
   isMain?: boolean;
-=======
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
 }
 
 /**
@@ -478,10 +452,7 @@ export interface TrailComponent extends Component {
 export interface SpatialNodeComponent extends Component {
   type: "SpatialNode";
   active: boolean;
-<<<<<<< HEAD
   lastCellKeys: string[];
-=======
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
 }
 
 /**
@@ -500,7 +471,6 @@ export interface ReclaimableComponent extends Component {
 }
 
 /**
-<<<<<<< HEAD
  * Component representing a virtual joystick input device.
  */
 export interface VirtualJoystickComponent extends Component {
@@ -637,8 +607,6 @@ export interface PowerUpComponent extends Component {
 }
 
 /**
-=======
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
  * Interface for entity pools.
  */
 export interface IEntityPool {
@@ -677,7 +645,6 @@ export interface CoreComponentRegistry extends ComponentRegistry {
   SpatialNode: SpatialNodeComponent;
   HapticRequest: HapticRequestComponent<string>;
   Reclaimable: ReclaimableComponent;
-<<<<<<< HEAD
   VirtualJoystick: VirtualJoystickComponent;
   ProcessedJoystick: ProcessedJoystickComponent;
   MoveCommand: MoveCommand;
@@ -686,6 +653,4 @@ export interface CoreComponentRegistry extends ComponentRegistry {
   LootTable: LootTableComponent;
   ObjectEffect: ObjectEffectComponent;
   PowerUp: PowerUpComponent;
-=======
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
 }

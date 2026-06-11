@@ -24,7 +24,6 @@ export class WorldCommandBuffer<TComponents extends ComponentRegistry = Componen
    */
   mutateComponent<T>(entity: Entity, type: string, updater: (component: T) => void): void {
     this.addCommand(world => world.mutateComponent(entity, type, updater));
-<<<<<<< HEAD
   }
 
   /**
@@ -43,20 +42,6 @@ export class WorldCommandBuffer<TComponents extends ComponentRegistry = Componen
   /**
    * Queues an entity removal.
    */
-=======
-  }
-
-  /**
-   * Queues an entity creation.
-   */
-  createEntity(): void {
-    this.addCommand(world => world.createEntity());
-  }
-
-  /**
-   * Queues an entity removal.
-   */
->>>>>>> 93349d556c08ba34cd14983bf284c3a8e1459376
   removeEntity(entity: Entity): void {
     this.addCommand(world => world.removeEntity(entity));
   }
