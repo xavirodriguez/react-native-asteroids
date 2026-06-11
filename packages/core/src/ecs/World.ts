@@ -79,6 +79,7 @@ export class World<
   private _structureVersion = 0;
   private _stateVersion = 0;
   public componentVersions = new Map<string, Map<Entity, number>>();
+
   private _gameplayRandom = new RandomService();
 
   public debugMode = false;

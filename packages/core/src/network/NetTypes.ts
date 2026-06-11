@@ -47,12 +47,14 @@ export interface EntitySnapshot {
   y: number;
   angle?: number;
   timestamp: number;
+
 }
 
 export interface ReplayFrame {
   tick: number;
   inputs: Record<string, InputFrame[]>;
   events: string[];
+
 }
 
 export interface ReplayData {
@@ -71,3 +73,4 @@ export interface DeltaPacket {
     updated?: Record<number, Record<string, any>>;
     removed?: number[];
 }
+

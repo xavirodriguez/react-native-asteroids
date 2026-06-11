@@ -1,6 +1,6 @@
 # React Native Asteroids & Retro Arcade
 
-An arcade engine built with React Native, ECS, and dual-renderer support (Canvas & Skia), designed for performance and supporting deterministic simulation.
+An arcade engine built with React Native, ECS, and dual-renderer support (Canvas & Skia), designed for performance and intended to support deterministic simulation under controlled conditions.
 
 ## 🚀 Quick Start
 

@@ -3,6 +3,9 @@ import { View, StyleSheet, Platform } from "react-native";
 import { World, GameLoop, Renderer } from "@tiny-aster/core";
 import { SkiaRenderer } from "../src/rendering/SkiaRenderer";
 import type { SkCanvas } from "@shopify/react-native-skia";
+import { World, GameLoop, Renderer } from "@tiny-aster/core";
+import { SkiaRenderer } from "../src/rendering/SkiaRenderer";
+import type { SkCanvas } from "@shopify/react-native-skia";
 
 interface GameRendererProps {
   world: World;

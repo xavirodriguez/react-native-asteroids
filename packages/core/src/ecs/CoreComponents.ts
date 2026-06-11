@@ -13,6 +13,7 @@ export {
   ComponentDataSnapshot, SerializedComponent, ScreenConfig
 };
 
+
 /**
  * Common interface for components that participate in a parent-child hierarchy.
  */
@@ -30,6 +31,7 @@ export interface TagComponent extends Component {
   type: "Tag";
   tags: string[];
 }
+
 
 /**
  * Standard 2D transform.
@@ -329,6 +331,18 @@ export interface ParticleEmitterComponent extends Component {
   active: boolean;
   elapsed: number;
 }
+
+/**
+ * Grid-based tilemap data structure.
+ */
+export interface TilemapData {
+  width: number;
+  height: number;
+  tileSize: number;
+  tiles: number[];
+}
+
+
 
 /**
  * Grid-based tilemap data structure.

@@ -2,26 +2,26 @@ import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
 import { GameStateComponent } from "../../src/games/asteroids/types/AsteroidTypes";
-import { World } from "../../src/engine/core/World";
+import { World } from "@tiny-aster/core";
 import { AsteroidsGame } from "../../src/games/asteroids/AsteroidsGame";
-import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "../../src/engine/core/CoreComponents";
+import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "@tiny-aster/core";
 import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
 import { ShipComponent, BulletComponent } from "../../src/games/asteroids/types/AsteroidTypes";
-import { InterestManagerSystem } from "../../src/engine/network/InterestManagerSystem";
+import { InterestManagerSystem } from "@tiny-aster/core";
  import { leaderboardStore } from "./DailyLeaderboardStore";
  import { getDateKey } from "./utils/DateUtils";
 import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
-import { ReplicationStateTracker } from "../../src/engine/network/ReplicationStateTracker";
-import { ClientAckTracker } from "../../src/engine/network/ClientAckTracker";
-import { NetworkDeltaSystem } from "../../src/engine/network/NetworkDeltaSystem";
-import { NetworkBudgetManager } from "../../src/engine/network/NetworkBudgetManager";
-import { BinaryCompression } from "../../src/engine/network/BinaryCompression";
+import { ReplicationStateTracker } from "@tiny-aster/core";
+import { ClientAckTracker } from "@tiny-aster/core";
+import { NetworkDeltaSystem } from "@tiny-aster/core";
+import { NetworkBudgetManager } from "@tiny-aster/core";
+import { BinaryCompression } from "@tiny-aster/core";
 
 /**
  * Authoritative Game Room for Asteroids.
  *
  * Orchestrates the authoritative server-side simulation, client input synchronization,
- * and optimized state replication using various strategies (Interest, Delta, Binary).
+ * and state replication intended to be optimized using various strategies (Interest, Delta, Binary).
  *
  * @responsibility Manage Colyseus room lifecycle and client connections.
  * @responsibility Execute authoritative {@link AsteroidsGame} (headless) at 60Hz.
@@ -29,7 +29,7 @@ import { BinaryCompression } from "../../src/engine/network/BinaryCompression";
  * @responsibility Maintain historical snapshots for lag compensation and re-simulation.
  *
  * @remarks
- * ### Data Flow (The Server Tick Pipeline)
+ * ### Data Flow (Target Server Tick Pipeline)
  * 1. **Input Recovery**: Retrieves buffered user actions matching the current `serverTick`.
  * 2. **Authoritative Simulation**: Advances the ECS World using the shared simulation logic.
  * 3. **World Sync**: Copies authoritative state from ECS components to Colyseus Schema objects.
