@@ -1,10 +1,10 @@
-import { World } from "../../../engine/core/World";
+import { World } from "@tiny-aster/core";
 import { type GameStateComponent } from "../types/AsteroidTypes";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
-import { HealthComponent } from "../../../engine/core/CoreComponents";
+import { HealthComponent } from "@tiny-aster/core";
 import { spawnAsteroidWave, createUfo } from "../EntityFactory";
 import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
-import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
+import { BaseGameStateSystem } from "@tiny-aster/core";
 
 /**
  * System responsible for managing global game state, wave spawning, and game over conditions.
@@ -13,7 +13,7 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
   private config?: AsteroidConfig;
 
   constructor(gameInstance?: IAsteroidsGame) {
-    super(gameInstance as unknown as import("../../../engine/core/BaseGame").BaseGame<Record<string, unknown>, Record<string, unknown>>);
+    super(gameInstance as unknown as import("@tiny-aster/core").BaseGame<Record<string, unknown>, Record<string, unknown>>);
   }
 
   /**

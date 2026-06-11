@@ -1,11 +1,9 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import {
-  type InputStateComponent,
-} from "../../../engine/core/CoreComponents";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { type InputStateComponent } from "@tiny-aster/core";
 import { type InputComponent } from "../types/AsteroidTypes";
 import { BulletPool, ParticlePool } from "../EntityPool";
-import { InputUtils } from "../../../engine/utils/ComponentUtils";
+import { InputUtils } from "@tiny-aster/core";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 
 /**
@@ -57,7 +55,7 @@ export class AsteroidInputSystem extends System {
     });
   }
 
-  private updateShipInputState(context: { input: InputComponent, inputState?: import("../../../engine/core/CoreComponents").InputStateComponent | null }): void {
+  private updateShipInputState(context: { input: InputComponent, inputState?: import("@tiny-aster/core").InputStateComponent | null }): void {
     const { input, inputState } = context;
     if (inputState) {
       // Direct action overrides

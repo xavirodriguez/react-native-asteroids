@@ -1,15 +1,15 @@
-import { World } from "../../../engine/core/World";
+import { World } from "@tiny-aster/core";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
 import { spawnInvaderWave } from "../EntityFactory";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";
-import { BaseGameStateSystem } from "../../../engine/systems/BaseGameStateSystem";
+import { BaseGameStateSystem } from "@tiny-aster/core";
 
 /**
  * System that manages the overall game state, level progression, and game over.
  */
 export class SpaceInvadersGameStateSystem extends BaseGameStateSystem<GameStateComponent> {
   constructor(game: ISpaceInvadersGame) {
-    super(game as unknown as import("../../../engine/core/BaseGame").BaseGame<Record<string, unknown>, Record<string, unknown>>);
+    super(game as unknown as import("@tiny-aster/core").BaseGame<Record<string, unknown>, Record<string, unknown>>);
   }
 
   protected updateGameState(world: World, gameState: GameStateComponent, deltaTime: number): void {

@@ -1,11 +1,11 @@
-import { System } from "../../../engine/core/System";
-import { World } from "../../../engine/core/World";
-import { TransformComponent, RenderComponent, Component, Collider2DComponent } from "../../../engine/types/EngineTypes";
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { TransformComponent, RenderComponent, Component, Collider2DComponent } from "@tiny-aster/core";
 import { GameStateComponent } from "../types/SpaceInvadersTypes";
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
-import { createEmitter } from "../../../engine/systems/ParticleSystem";
-import { CollisionLayers } from "../../../engine/physics/collision/CollisionLayers";
-import { Juice } from "../../../engine/utils/Juice";
+import { createEmitter } from "@tiny-aster/core";
+import { CollisionLayers } from "@/src/games/shared/types/CollisionLayers";
+import { Juice } from "@tiny-aster/core";
 
 export interface BossComponent extends Component {
   type: "Boss";
@@ -91,7 +91,7 @@ export class BossSystem extends System {
           enabled: true
         } as Collider2DComponent);
         commands.addComponent(boss, { type: "Boss", hp, maxHp: hp, timer: 0, phase: 1 } as BossComponent);
-        commands.addComponent(boss, { type: "Health", current: hp, max: hp, invulnerableRemaining: 0 } as import("../../../engine/types/EngineTypes").HealthComponent);
+        commands.addComponent(boss, { type: "Health", current: hp, max: hp, invulnerableRemaining: 0 } as import("@tiny-aster/core").HealthComponent);
     });
   }
 
@@ -113,7 +113,7 @@ export class BossSystem extends System {
         gs.score += 5000;
     });
 
-    const eventBus = world.getResource<import("../../../engine/core/EventBus").EventBus>("EventBus");
+    const eventBus = world.getResource<import("@tiny-aster/core").EventBus>("EventBus");
     if (eventBus) eventBus.emitDeferred("si:boss_defeated");
 
     world.getCommandBuffer().removeEntity(entity);

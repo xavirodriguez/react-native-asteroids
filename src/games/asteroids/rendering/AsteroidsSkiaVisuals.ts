@@ -1,5 +1,6 @@
-import { EffectDrawer } from "../../../engine/rendering/Renderer";
-import { TransformComponent, HealthComponent, TTLComponent, Star } from "../../../engine/types/EngineTypes";
+import { EffectDrawer } from "@tiny-aster/core";
+import { TransformComponent, HealthComponent, TTLComponent } from "@tiny-aster/core";
+import { Star } from "@/src/games/shared/components/Star";
 import { Platform } from "react-native";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 import type { SkCanvas } from "@shopify/react-native-skia";
@@ -13,7 +14,7 @@ export const createSkiaShipSpriteDrawer = () => {
     let shipImage: import("@shopify/react-native-skia").SkImage | null = null;
     let isLoading = false;
 
-    return (canvas: SkCanvas, entity: import("../../../engine/core/Entity").Entity, _pos: { x: number, y: number }, elapsedTime: number, render: { size: number, hitFlashFrames?: number, color: string }, world: import("../../../engine/core/World").World) => {
+    return (canvas: SkCanvas, entity: import("@tiny-aster/core").Entity, _pos: { x: number, y: number }, elapsedTime: number, render: { size: number, hitFlashFrames?: number, color: string }, world: import("@tiny-aster/core").World) => {
         if (Platform.OS === "web") return;
         try {
             const { Skia, BlurStyle } = require("@shopify/react-native-skia");
@@ -40,7 +41,7 @@ export const createSkiaShipSpriteDrawer = () => {
 
             // Load sprite if not loaded (using AssetLoader resource)
             if (!shipImage && !isLoading) {
-                const loader = world.getResource<import("../../../engine/assets/AssetLoader").AssetLoader>("AssetLoader");
+                const loader = world.getResource<import("@tiny-aster/core").AssetLoader>("AssetLoader");
                 const handle = loader?.get<string>("ship_sprite");
                 if (handle?.status === "ready" && handle.data) {
                     isLoading = true;
@@ -119,7 +120,7 @@ export const createSkiaShipSpriteDrawer = () => {
 
 export const createSkiaShipDrawer = () => {
     let paint: import("@shopify/react-native-skia").SkPaint | null = null;
-    return (canvas: SkCanvas, entity: import("../../../engine/core/Entity").Entity, _pos: { x: number, y: number }, elapsedTime: number, render: { size: number, color: string }, world: import("../../../engine/core/World").World) => {
+    return (canvas: SkCanvas, entity: import("@tiny-aster/core").Entity, _pos: { x: number, y: number }, elapsedTime: number, render: { size: number, color: string }, world: import("@tiny-aster/core").World) => {
         if (Platform.OS === "web") return;
         try {
             const { Skia, BlurStyle } = require("@shopify/react-native-skia");
@@ -184,7 +185,7 @@ export const createSkiaShipDrawer = () => {
 
 export const createSkiaUfoDrawer = () => {
     let paint: import("@shopify/react-native-skia").SkPaint | null = null;
-    return (canvas: SkCanvas, _entity: import("../../../engine/core/Entity").Entity, _pos: { x: number, y: number }, _elapsedTime: number, render: { size: number, color: string }) => {
+    return (canvas: SkCanvas, _entity: import("@tiny-aster/core").Entity, _pos: { x: number, y: number }, _elapsedTime: number, render: { size: number, color: string }) => {
         if (Platform.OS === "web") return;
         try {
             const { Skia, BlurStyle } = require("@shopify/react-native-skia");
@@ -226,7 +227,7 @@ export const createSkiaUfoDrawer = () => {
 
 export const createSkiaStarfieldEffect = () => {
     let paint: import("@shopify/react-native-skia").SkPaint | null = null;
-    return (canvas: SkCanvas, snapshot: import("../../../engine/rendering/RenderSnapshot").RenderSnapshot, width: number, height: number, world: import("../../../engine/core/World").World) => {
+    return (canvas: SkCanvas, snapshot: import("@tiny-aster/core").RenderSnapshot, width: number, height: number, world: import("@tiny-aster/core").World) => {
         if (Platform.OS === "web") return;
         try {
             const { Skia } = require("@shopify/react-native-skia");
@@ -280,7 +281,7 @@ export const skiaScreenShakeEffect: EffectDrawer<SkCanvas> = (canvas, _snapshot,
 
 export const createSkiaParticleDrawer = () => {
     let paint: import("@shopify/react-native-skia").SkPaint | null = null;
-    return (canvas: SkCanvas, entity: import("../../../engine/core/Entity").Entity, _pos: { x: number, y: number }, _elapsedTime: number, render: { size: number }, world: import("../../../engine/core/World").World) => {
+    return (canvas: SkCanvas, entity: import("@tiny-aster/core").Entity, _pos: { x: number, y: number }, _elapsedTime: number, render: { size: number }, world: import("@tiny-aster/core").World) => {
         if (Platform.OS === "web") return;
         try {
             const { Skia } = require("@shopify/react-native-skia");
@@ -308,7 +309,7 @@ export const createSkiaParticleDrawer = () => {
 
 export const createSkiaBulletDrawer = () => {
     let paint: import("@shopify/react-native-skia").SkPaint | null = null;
-    return (canvas: SkCanvas, _entity: import("../../../engine/core/Entity").Entity, _pos: { x: number, y: number }, _elapsedTime: number, render: { size: number }) => {
+    return (canvas: SkCanvas, _entity: import("@tiny-aster/core").Entity, _pos: { x: number, y: number }, _elapsedTime: number, render: { size: number }) => {
         if (Platform.OS === "web") return;
         try {
             const { Skia, BlurStyle } = require("@shopify/react-native-skia");

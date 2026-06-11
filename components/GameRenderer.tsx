@@ -1,123 +1,49 @@
 import React, { useMemo, useRef, useEffect, useState } from "react";
 import { View, StyleSheet, Platform } from "react-native";
-import type { World } from "../src/engine/core/World";
-import { GAME_CONFIG } from "../src/types/GameTypes";
+import { World, GameLoop, Renderer } from "@tiny-aster/core";
+import { SkiaRenderer } from "../src/rendering/SkiaRenderer";
 import type { SkCanvas } from "@shopify/react-native-skia";
-import type { SkiaRenderer as SkiaRendererType } from "../src/engine/rendering/SkiaRenderer";
-import type { Renderer } from "../src/engine/rendering/Renderer";
-import { GameLoop } from "../src/engine/core/GameLoop";
 
-/**
- * Type definition for the @shopify/react-native-skia module.
- */
-type SkiaModuleType = typeof import("@shopify/react-native-skia");
-
-/**
- * Props for the Skia Canvas component.
- */
-interface CanvasProps {
-  style?: import("react-native").StyleProp<import("react-native").ViewStyle>;
-  children?: React.ReactNode;
-}
-
-/**
- * Props for the Skia Drawing component.
- */
-interface DrawingProps {
-  onDraw: (canvas: SkCanvas) => void;
-}
-
-type CanvasComponent = React.ComponentType<CanvasProps>;
-type DrawingComponent = React.ComponentType<DrawingProps>;
-
-// Conditionally import Skia components for non-web platforms
-let Canvas: CanvasComponent | null = null;
-let Drawing: DrawingComponent | null = null;
-
-if (Platform.OS !== "web") {
-  try {
-    // Explicitly typed require to satisfy ESLint and provide type safety
-    const SkiaModule = require("@shopify/react-native-skia") as SkiaModuleType;
-    Canvas = SkiaModule.Canvas as unknown as CanvasComponent;
-    Drawing = SkiaModule.Drawing as unknown as DrawingComponent;
-  } catch (_err) {
-    console.warn("Skia not available");
-  }
-}
-
-/**
- * Properties for the {@link GameRenderer} component.
- */
 interface GameRendererProps {
-  /** The ECS world containing the entities to be rendered. */
   world: World;
-  /** Optional callback to initialize the renderer. */
-  onInitialize?: (renderer: Renderer) => void;
-  /** The game loop to subscribe for render ticks. */
   gameLoop?: GameLoop;
+  onInitialize?: (renderer: any) => void;
 }
 
-/**
- * Component responsible for rendering the game world using @shopify/react-native-skia.
- */
-export const GameRenderer = React.memo(function GameRenderer({ world, onInitialize, gameLoop }: GameRendererProps) {
-  const rendererRef = useRef<SkiaRendererType | null>(null);
-  const [, setTick] = useState(0);
-  const alphaRef = useRef(1);
+export const GameRenderer: React.FC<GameRendererProps> = ({ world, gameLoop, onInitialize }) => {
+  const rendererRef = useRef<SkiaRenderer | null>(null);
+
+  const [CanvasComponent, setCanvasComponent] = useState<any>(null);
 
   useEffect(() => {
-    if (gameLoop) {
-      const unsubscribe = gameLoop.subscribeRender((alpha) => {
-        alphaRef.current = alpha;
-        setTick(t => t + 1);
-      });
-      return unsubscribe;
-    }
-  }, [gameLoop]);
+    if (Platform.OS === "web") return;
 
-  const onDraw = useMemo(() => (canvas: SkCanvas) => {
+    // Dynamically import Skia components for native
+    const { Canvas } = require("@shopify/react-native-skia");
+    setCanvasComponent(() => Canvas);
+
     if (!rendererRef.current) {
-        try {
-            // Refined dynamic import for renderer to avoid naming collisions and improve clarity
-            const { SkiaRenderer: EngineSkiaRenderer } = require("../src/engine/rendering/SkiaRenderer") as typeof import("../src/engine/rendering/SkiaRenderer");
-            const renderer = new EngineSkiaRenderer(canvas);
-            if (onInitialize) onInitialize(renderer);
-            rendererRef.current = renderer;
-        } catch (err) {
-            console.error("Failed to initialize Skia renderer", err);
+        rendererRef.current = new SkiaRenderer();
+        if (onInitialize) {
+            onInitialize(rendererRef.current);
         }
-    } else {
-      rendererRef.current.setCanvas(canvas);
     }
-    if (rendererRef.current) {
-        rendererRef.current.setSize(GAME_CONFIG.SCREEN_WIDTH, GAME_CONFIG.SCREEN_HEIGHT);
-        rendererRef.current.setAlpha(alphaRef.current);
-        rendererRef.current.render(world);
-    }
-  }, [world, onInitialize]);
+  }, [onInitialize]);
 
-  if (Platform.OS === 'web' || !Canvas || !Drawing || !world || typeof world.query !== "function") {
-    return <View style={[styles.container, { width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT, backgroundColor: 'black' }]} />;
+  if (Platform.OS === "web" || !CanvasComponent) {
+    return null;
   }
 
   return (
-    <View style={styles.container}>
-      <Canvas style={styles.canvas}>
-        <Drawing onDraw={onDraw} />
-      </Canvas>
-    </View>
+    <CanvasComponent style={styles.container}>
+        {/* We need a way to trigger render in Skia component */}
+    </CanvasComponent>
   );
-});
-GameRenderer.displayName = "GameRenderer";
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "black",
-  },
-  canvas: {
-    width: GAME_CONFIG.SCREEN_WIDTH,
-    height: GAME_CONFIG.SCREEN_HEIGHT,
-    backgroundColor: "black",
+    backgroundColor: "#000",
   },
 });

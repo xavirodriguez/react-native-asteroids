@@ -11,8 +11,8 @@ import {
   Alert,
   Clipboard
 } from 'react-native';
-import { BaseGame } from '../../engine/core/BaseGame';
-import type { EventLogEntry, FrameStats, ColliderShapeInfo } from '../../engine/debug/DebugManager';
+import { BaseGame } from "@tiny-aster/core";
+import type { EventLogEntry, FrameStats, ColliderShapeInfo } from "@tiny-aster/core";
 import { useDebugManager } from '../../hooks/useGame';
 import Svg, { Circle, Rect } from 'react-native-svg';
 
@@ -180,7 +180,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
   const exportReplay = () => {
     if (!game) return;
     try {
-      const recorder = (game as unknown as { replayRecorder: import('../../engine/debug/ReplayRecorder').ReplayRecorder }).replayRecorder;
+      const recorder = (game as unknown as { replayRecorder: import("@tiny-aster/core").ReplayRecorder }).replayRecorder;
       const data = recorder.stopRecording();
       const json = JSON.stringify(data, null, 2);
 
@@ -209,7 +209,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
     <View style={styles.tabContent}>
       <Text style={styles.statText}>Replay System</Text>
       <Text style={styles.statLabel}>
-        Captures the last 60 seconds of input for debugging and deterministic reproduction.
+        Captures historical input intended to support debugging and deterministic reproduction under controlled conditions.
       </Text>
       <TouchableOpacity style={styles.exportButton} onPress={exportReplay}>
         <Text style={styles.exportButtonText}>

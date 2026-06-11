@@ -1,21 +1,18 @@
-import { World } from "../../../engine/core/World";
-import { System } from "../../../engine/core/System";
-import {
-  type HealthComponent,
-  type Entity,
-  TransformComponent,
-  RenderComponent,
-  CollisionEventsComponent,
-} from "../../../engine/types/EngineTypes";
+import { World } from "@tiny-aster/core";
+import { System } from "@tiny-aster/core";
+import { type HealthComponent, type Entity, TransformComponent, RenderComponent, CollisionEventsComponent } from "@tiny-aster/core";
 
 import { createParticle } from "../EntityFactory";
 import { type GameStateComponent } from "../types/AsteroidTypes";
-import { AsteroidComponent, BulletComponent, ShipComponent, VelocityComponent } from "../../../engine/core/CoreComponents";
+import { VelocityComponent } from "@tiny-aster/core";
+import { AsteroidComponent } from "@/src/games/asteroids/components/AsteroidComponent";
+import { BulletComponent } from "@/games/asteroids/components/BulletComponent";
+import { ShipComponent } from "@/src/games/asteroids/components/ShipComponent";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
-import { ScreenShakeComponent, HapticRequestComponent } from "../../../engine/types/EngineTypes";
-import { releaseProjectile } from "../../../engine/utils/ProjectileUtils";
+import { ScreenShakeComponent, HapticRequestComponent } from "@tiny-aster/core";
+import { releaseProjectile } from "@tiny-aster/core";
 import { ParticlePool, BulletPool } from "../EntityPool";
-import { EventBus } from "../../../engine/core/EventBus";
+import { EventBus } from "@tiny-aster/core";
 
 /**
  * Sistema responsable de reaccionar a los eventos de colisión detectados por el motor físico.
@@ -200,7 +197,7 @@ export class AsteroidCollisionSystem extends System {
   }
 
   private canShipTakeDamage(world: World, shipEntity: Entity, health: HealthComponent | undefined): health is HealthComponent {
-    const modifiers = world.getComponent<import("../../../engine/core/CoreComponents").ModifierStackComponent>(shipEntity, "ModifierStack")?.modifiers || [];
+    const modifiers = world.getComponent<import("@tiny-aster/core").ModifierStackComponent>(shipEntity, "ModifierStack")?.modifiers || [];
     const hasShield = modifiers.some(m => m.type === "shield");
 
     return !!health && health.invulnerableRemaining <= 0 && !hasShield;
@@ -239,7 +236,7 @@ export class AsteroidCollisionSystem extends System {
         type: "TTL",
         remaining: this.config!.SHAKE_DURATION_IMPACT * 16.66, // Roughly duration in ms if duration is frames
         total: this.config!.SHAKE_DURATION_IMPACT * 16.66
-      } as import("../../../engine/types/EngineTypes").TTLComponent);
+      } as import("@tiny-aster/core").TTLComponent);
     });
 
     if (health.current <= 0) {

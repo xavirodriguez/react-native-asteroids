@@ -1,5 +1,5 @@
-import { ShapeDrawer, EffectDrawer } from "../../../engine/rendering/Renderer";
-import { TTLComponent, HealthComponent, VelocityComponent, TrailComponent } from "../../../engine/types/EngineTypes";
+import { ShapeDrawer, EffectDrawer } from "@tiny-aster/core";
+import { TTLComponent, HealthComponent, VelocityComponent, TrailComponent } from "@tiny-aster/core";
 import { InputComponent, GameStateComponent } from "../types/AsteroidTypes";
 
 let shipImage: HTMLImageElement | null = null;
@@ -13,7 +13,7 @@ export const drawAsteroidsShipSprite: ShapeDrawer<CanvasRenderingContext2D> = (c
   const health = world.getComponent<HealthComponent>(entity, "Health");
 
   if (typeof window !== "undefined" && !shipImage) {
-    const loader = world.getResource<import("../../../engine/assets/AssetLoader").AssetLoader>("AssetLoader");
+    const loader = world.getResource<import("@tiny-aster/core").AssetLoader>("AssetLoader");
     const handle = loader?.get<string>("ship_sprite");
     if (handle?.status === "ready" && handle.data) {
       shipImage = new Image();

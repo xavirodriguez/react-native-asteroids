@@ -1,47 +1,47 @@
-import { World } from "../../engine/core/World";
-import { GameLoop } from "../../engine/core/GameLoop";
+import { World } from "@tiny-aster/core";
+import { GameLoop } from "@tiny-aster/core";
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { BaseGame } from "../../engine/core/BaseGame";
-import { AssetLoader } from "../../engine/assets/AssetLoader";
+import { BaseGame } from "@tiny-aster/core";
+import { AssetLoader } from "@tiny-aster/core";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
 import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
 import { AsteroidComboSystem } from "./systems/AsteroidComboSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { UfoSystem } from "./systems/UfoSystem";
-import { LootSystem } from "../../engine/systems/LootSystem";
-import { ModifierSystem } from "../../engine/systems/ModifierSystem";
-import { PowerUpSystem } from "../../engine/systems/PowerUpSystem";
-import { JuiceSystem } from "../../engine/systems/JuiceSystem";
-import { MutatorSystem } from "../../engine/systems/MutatorSystem";
-import { SpatialPartitioningSystem } from "../../engine/systems/SpatialPartitioningSystem";
-import { RenderUpdateSystem } from "../../engine/systems/RenderUpdateSystem";
-import { MovementSystem } from "../../engine/physics/systems/MovementSystem";
-import { BoundarySystem } from "../../engine/physics/systems/BoundarySystem";
-import { FrictionSystem } from "../../engine/physics/systems/FrictionSystem";
-import { ScreenShakeSystem } from "../../engine/systems/ScreenShakeSystem";
-import { JoystickSystem } from "../../engine/systems/JoystickSystem";
+import { LootSystem } from "@tiny-aster/core";
+import { ModifierSystem } from "@tiny-aster/core";
+import { PowerUpSystem } from "@tiny-aster/core";
+import { JuiceSystem } from "@tiny-aster/core";
+import { MutatorSystem } from "@tiny-aster/core";
+import { SpatialPartitioningSystem } from "@tiny-aster/core";
+import { RenderUpdateSystem } from "@tiny-aster/core";
+import { MovementSystem } from "@tiny-aster/core";
+import { BoundarySystem } from "@tiny-aster/core";
+import { FrictionSystem } from "@tiny-aster/core";
+import { ScreenShakeSystem } from "@tiny-aster/core";
+import { JoystickSystem } from "@tiny-aster/core";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
 import { ShipControlSystem } from "./systems/ShipControlSystem";
-import { TTLSystem } from "../../engine/systems/TTLSystem";
-import { CollisionSystem2D } from "../../engine/physics/collision/CollisionSystem2D";
-import { CCDSystem } from "../../engine/physics/collision/CCDSystem";
-import { FeedbackSystem } from "../../engine/systems/FeedbackSystem";
+import { TTLSystem } from "@tiny-aster/core";
+import { CollisionSystem2D } from "@tiny-aster/core";
+import { CCDSystem } from "@tiny-aster/core";
+import { FeedbackSystem } from "@tiny-aster/core";
 import { type GameStateComponent, type InputState, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { MutatorService } from "../../services/MutatorService";
 import { InputFrame } from "../../multiplayer/NetTypes";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
-import { ScreenConfig } from "../../engine/types/CommonTypes";
-import { Renderer } from "../../engine/rendering/Renderer";
+import { ScreenConfig } from "@tiny-aster/core";
+import { Renderer } from "@tiny-aster/core";
 import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManager";
-import { NetworkManager } from "../../engine/network/NetworkManager";
-import { ReplicationSystem } from "../../engine/network/systems/ReplicationSystem";
-import { INetworkGame } from "../../engine/network/types/NetworkTypes";
-import { ConfigService } from "../../engine/services/ConfigService";
-import { NetworkReplicationUtils } from "../../engine/network/NetworkReplicationUtils";
+import { NetworkManager } from "@tiny-aster/core";
+import { ReplicationSystem } from "@tiny-aster/core";
+import { INetworkGame } from "@tiny-aster/core";
+import { ConfigService } from "@tiny-aster/core";
+import { NetworkReplicationUtils } from "@tiny-aster/core";
 import { AsteroidConfigSchema, AsteroidConfig } from "./types/AsteroidConfigSchema";
-import { SystemPhase } from "../../engine/core/System";
-import { ComponentCloner } from "../../engine/core/ComponentCloner";
+import { SystemPhase } from "@tiny-aster/core";
+import { ComponentCloner } from "@tiny-aster/core";
 
 const __DEV__ = process.env.NODE_ENV !== "production";
 
@@ -150,7 +150,9 @@ export class AsteroidsGame
 
   /**
    * Applies an input frame to a specific player ship entity.
-   * Side-effect free (only mutates the component data in the world).
+   *
+   * @remarks
+   * Intended to be side-effect free by only mutating the component data in the world.
    */
   public applyInputToEntity(entityId: number, input: InputFrame) {
     this.world.mutateComponent<import("./types/AsteroidTypes").InputComponent>(entityId, "Input", inputComp => {
@@ -195,7 +197,7 @@ export class AsteroidsGame
    *
    * @remarks
    * Migrated to pure ECS pipeline. DeterministicSimulation is deprecated.
-   * Support for deterministic reproduction depends on consistent seeding and
+   * Reproducibility depends on consistent seeding and
    * the absence of unmanaged side effects in the system pipeline.
    */
   public runSimulationStep(deltaTime: number, _isResimulating: boolean) {
@@ -232,9 +234,9 @@ export class AsteroidsGame
 
   private handleDeltaServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
     const serverTick = serverState.tick as number;
-    const delta = serverState.delta as Partial<import("../../engine/types/EngineTypes").WorldSnapshot>;
+    const delta = serverState.delta as Partial<import("@tiny-aster/core").WorldSnapshot>;
 
-    let authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot;
+    let authoritativeSnapshot: import("@tiny-aster/core").WorldSnapshot;
 
     if (delta.created || delta.updated || delta.removed) {
       const strategy = this.networkManager.getStrategy();
@@ -247,12 +249,12 @@ export class AsteroidsGame
       }
     } else {
       // If it's a full snapshot sent as a delta, deep clone it for safety
-      authoritativeSnapshot = ComponentCloner.deepCloneSnapshot(delta as import("../../engine/types/EngineTypes").WorldSnapshot);
+      authoritativeSnapshot = ComponentCloner.deepCloneSnapshot(delta as import("@tiny-aster/core").WorldSnapshot);
     }
 
     this.networkManager.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
 
-    const eventBus = this.world.getResource<import("../../engine/core/EventBus").EventBus>("EventBus");
+    const eventBus = this.world.getResource<import("@tiny-aster/core").EventBus>("EventBus");
     if (eventBus && delta.stateVersion !== undefined) {
       eventBus.emitDeferred("net:ack_version", { version: delta.stateVersion, tick: serverTick });
     }
@@ -262,9 +264,9 @@ export class AsteroidsGame
    * Safely integrates a delta into a base snapshot using deep cloning.
    */
   private applyDeltaToSnapshot(
-    base: import("../../engine/types/EngineTypes").WorldSnapshot,
-    delta: import("../../engine/network/types/ReplicationTypes").DeltaPacket
-  ): import("../../engine/types/EngineTypes").WorldSnapshot {
+    base: import("@tiny-aster/core").WorldSnapshot,
+    delta: import("@tiny-aster/core").DeltaPacket
+  ): import("@tiny-aster/core").WorldSnapshot {
     // 1. Create a deep clone of the base state to avoid aliasing with history
     const snapshot = ComponentCloner.deepCloneSnapshot(base);
 
@@ -275,13 +277,13 @@ export class AsteroidsGame
   }
 
   private handleFullServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
-    let authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot;
+    let authoritativeSnapshot: import("@tiny-aster/core").WorldSnapshot;
 
     if (typeof serverState.fullWorldState === "string") {
       authoritativeSnapshot = JSON.parse(serverState.fullWorldState);
     } else {
       // Use ComponentCloner for consistent deep cloning
-      authoritativeSnapshot = ComponentCloner.deepCloneSnapshot(serverState.fullWorldState as import("../../engine/types/EngineTypes").WorldSnapshot);
+      authoritativeSnapshot = ComponentCloner.deepCloneSnapshot(serverState.fullWorldState as import("@tiny-aster/core").WorldSnapshot);
     }
 
     if (authoritativeSnapshot.stateVersion === this.lastProcessedFullStateVersion) return;
@@ -446,6 +448,6 @@ export class NullAsteroidsGame implements IAsteroidsGame {
   public isGameOver() { return false; }
   public getGameState() { return INITIAL_GAME_STATE; }
   public getSeed() { return 0; }
-  public subscribe(_listener: import("../../engine/core/IGame").UpdateListener<unknown>) { return () => {}; }
+  public subscribe(_listener: import("@tiny-aster/core").UpdateListener<unknown>) { return () => {}; }
   public initializeRenderer() {}
 }
