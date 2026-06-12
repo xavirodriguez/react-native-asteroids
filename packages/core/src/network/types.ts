@@ -1,19 +1,23 @@
-import { Entity } from "../ecs/Entity";
-import { WorldSnapshot } from "../ecs/SnapshotTypes";
+import { InterestLevel } from "./ReplicationTypes";
 
-export type ReplicationStrategyType = 'full' | 'snapshot' | 'hybrid' | 'dead-reckoning';
-
-export interface ReplicationConfig {
-  strategy: ReplicationStrategyType;
-  snapshotRate?: number;      // ms entre snapshots
-  priority?: number;          // 1 = crítico (nave), 10 = bajo (partículas)
-  components?: string[];      // Componentes que se sincronizan
-  authority?: 'server' | 'client' | 'both';
-  interpolationDelay?: number;
+export interface EntityPayload {
+    id: number;
+    components: Record<string, any>;
 }
 
-export interface GameNetworkAdapter {
-  getReplicableEntities?: () => Entity[];
-  onServerSnapshot?: (snapshot: WorldSnapshot) => void;
-  onEntityDestroyed?: (entityId: string) => void;
+export interface EntityDeltaPayload {
+    id: number;
+    updated?: Record<string, any>;
+    removed?: string[];
+    components?: Record<string, any>;
+}
+
+export interface ClientNetworkBudget {
+    sessionId?: string;
+    totalBytes?: number;
+    interestLevel?: InterestLevel;
+    maxBytesPerPacket: number;
+    maxEntitiesPerPacket: number;
+    maxCriticalPerTick: number;
+    maxLowPriorityPerSecond: number;
 }

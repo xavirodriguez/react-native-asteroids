@@ -1,43 +1,16 @@
-import { World } from "../ecs/World";
-import { InputFrame } from "./NetTypes";
+import { EntityPayload, DeltaPacket } from "./ReplicationTypes";
 
-/**
- * Interface representing the game instance during network reconciliation.
- */
+export interface ReplicationSchema {
+    componentType: string;
+    reliable: boolean;
+    sendRate: number;
+    importance: 'critical' | 'high' | 'medium' | 'low';
+}
+
 export interface INetworkGame {
-    /** Run a single simulation step. */
-    runSimulationStep(deltaTime: number, isResimulating: boolean): void;
-    /** Get the current authoritative world state. */
-    getWorld(): World;
-    /** Apply input frame to a specific entity. */
-    applyInputToEntity(entityId: number, input: InputFrame): void;
+    updateFromServer(serverState: Record<string, unknown>, localSessionId?: string): void;
+    predictLocalPlayer(input: any, deltaTime: number): void;
+    applyInputToEntity(entityId: number, input: any): void;
 }
 
-/**
- * Configuration for the NetworkSystem.
- */
-export interface NetworkConfig {
-    /** Delay in milliseconds for interpolation of remote entities. */
-    interpolationDelay?: number;
-    /** Maximum number of history frames to keep for rollback. */
-    maxHistory?: number;
-    /** Fixed delay in ticks for local input application. */
-    inputDelayTicks?: number;
-    /** Whether to enable debug logging for reconciliation. */
-    debug?: boolean;
-}
-
-/**
- * Interface for predicting the local player's state.
- */
-export interface PredictionData {
-    tick: number;
-    entityId: string;
-    state: {
-        x: number;
-        y: number;
-        vx: number;
-        vy: number;
-        angle?: number;
-    };
-}
+export { EntityPayload, DeltaPacket };

@@ -1,6 +1,6 @@
 import { System, World } from "../../ecs";
 
-export class CCDSystem extends System {
+export class PhysicsSolveSystem extends System {
   update(_world: World, _deltaTime: number): void {
     // Placeholder
   }

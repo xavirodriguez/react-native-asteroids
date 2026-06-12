@@ -62,13 +62,13 @@ export class NetworkDeltaSystem {
 
     const created: EntityPayload[] = [];
     const updated: EntityDeltaPayload[] = [];
-    const removed: string[] = [];
+    const removed: number[] = [];
 
     // 1. Identify removed entities (were known, but no longer interested or active)
     const knownEntities = this.stateTracker.getKnownEntities(clientId);
     knownEntities.forEach(entityId => {
       if (!interestedEntities.has(entityId) || !world.hasEntity(entityId)) {
-        removed.push(entityId.toString());
+        removed.push(entityId);
         this.stateTracker.removeEntityForClient(clientId, entityId);
       }
     });
@@ -81,7 +81,8 @@ export class NetworkDeltaSystem {
       if (!isKnown || forceFull) {
         // Created / New to client
         const payload: EntityPayload = {
-          entityId: entityId.toString(),
+          entityId: entityId,
+          id: entityId,
           components: {}
         };
 
@@ -101,7 +102,8 @@ export class NetworkDeltaSystem {
       } else {
         // Potential update
         const deltaPayload: EntityDeltaPayload = {
-          entityId: entityId.toString(),
+          entityId: entityId,
+          id: entityId,
           components: {}
         };
         let hasChanges = false;
@@ -116,7 +118,7 @@ export class NetworkDeltaSystem {
           if (this.stateTracker.hasChanged(clientId, entityId, type, currentVersion)) {
             const comp = world.getComponent(entityId, type);
             if (comp) {
-              deltaPayload.components[type] = this.serializeComponent(comp);
+              deltaPayload.components![type] = this.serializeComponent(comp);
               this.stateTracker.recordSent(clientId, entityId, type, currentVersion);
               hasChanges = true;
             }
@@ -130,6 +132,8 @@ export class NetworkDeltaSystem {
     });
 
     return {
+      tick: world.tick,
+      stateVersion: world.stateVersion,
       protocolVersion: this.protocolVersion,
       sequence,
       baselineAck,

@@ -239,7 +239,7 @@ export interface HealthComponent extends Component {
 }
 
 /**
- * Standard Player/Ship component for multiplayer.
+ * Standard Player component for multiplayer.
  */
 export interface PlayerComponent extends Component {
   type: "Player";

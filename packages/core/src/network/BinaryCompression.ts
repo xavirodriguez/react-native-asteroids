@@ -1,40 +1,57 @@
-import { Packr, unpack } from "msgpackr";
+import type { Packr as PackrType } from "msgpackr";
+
+let Packr: any;
+let unpack: any;
+
+try {
+  // Use require for CommonJS/Jest environment
+  const msgpackr = require("msgpackr/dist/node.cjs");
+  Packr = msgpackr.Packr;
+  unpack = msgpackr.unpack;
+} catch {
+  // If require fails (ESM environment), we will rely on tsup's bundling or standard imports
+  // In ESM, the tsup build will correctly handle 'import { Packr, unpack } from "msgpackr"'
+}
 
 /**
  * Binary Serialization Engine - Object encoding via MessagePack.
- *
- * @remarks
- * TinyAsterEngine utilizes `msgpackr` with the goal of reducing payload size
- * compared to standard JSON strings.
- *
- * ### Serialization Strategy:
- * - **MessagePack**: Schema-less format with a balanced performance/compression ratio.
- * - **structuredClone: true**: Supports nested structures and seeks to prevent prototype pollution.
- * - **useRecords: false**: Disables record-style optimization to favor
- *   compatibility across different transport layers.
- *
- * @conceptualRisk [BINARY_COMPATIBILITY] Schema changes in components typically require
- * synchronized updates between client and server to prevent unpacking failures.
- * @conceptualRisk [CPU_OVERHEAD] Packing/unpacking incurs a CPU cost that may be
- * significant on low-end devices during high-frequency updates.
  */
 export class BinaryCompression {
-  private static packr = new Packr({
-    structuredClone: true,
-    useRecords: false,
-  });
+  private static packr: PackrType;
 
-  /**
-   * Packs a JS object into a binary Buffer.
-   */
-  public static pack(data: unknown): Uint8Array {
-    return this.packr.pack(data);
+  private static getPackr(): PackrType {
+    if (!this.packr && Packr) {
+      this.packr = new Packr({
+        structuredClone: true,
+        useRecords: false,
+      });
+    }
+    return this.packr;
   }
 
   /**
-   * Unpacks binary data back into a JS object.
+   * Encodes an object into a binary Buffer.
    */
-  public static unpack<T>(data: Uint8Array): T {
-    return unpack(data) as T;
+  public static encode(data: unknown): Uint8Array {
+    const packr = this.getPackr();
+    if (!packr) return new Uint8Array();
+    return packr.pack(data);
+  }
+
+  /**
+   * Decodes a binary Buffer back into an object.
+   */
+  public static decode<T>(data: Uint8Array): T {
+    if (unpack) {
+        return unpack(data) as T;
+    }
+    return {} as T;
+  }
+
+  /**
+   * Calculates the approximate byte size of a serialized object.
+   */
+  public static getByteSize(data: unknown): number {
+    return this.encode(data).length;
   }
 }

@@ -1,17 +1,18 @@
-import { InterestedEntity, ClientNetworkBudget } from "./ReplicationTypes";
+import { ClientNetworkBudget, InterestedEntity } from "./ReplicationTypes";
 
 /**
- * Sistema encargado de gestionar el presupuesto de ancho de banda para la replicación de red.
+ * Network Budget Manager.
  *
- * @responsibility Priorizar y filtrar entidades para mantenerse dentro de los límites de red.
+ * This system ensures that replication packets do not exceed size or complexity
+ * constraints, which is critical for maintaining high performance and low latency.
  *
- * @remarks
- * Este manager prioriza las entidades basándose en su nivel de interés espacial
- * y asegura que el tamaño total de los paquetes no exceda los límites configurados.
+ * @responsibility Filter and prioritize entities to be included in a network update.
  *
- * ### Algoritmo de Selección:
- * 1. **Filtro Crítico**: Entidades marcadas como 'critical' se priorizan mientras haya presupuesto.
- * 2. **Priorización por Nivel**: Se asignan bytes restantes a niveles High, Medium y Low en ese orden.
+ * ### Key strategies:
+ * 1. **Priorización por Interés**: Se da prioridad absoluta a las entidades marcadas
+ *    como 'critical' o 'high' por el `InterestManager`.
+ * 2. **Límite de Bytes**: Se estima el tamaño del paquete y se detiene la inclusión
+ *    de entidades si se supera el presupuesto (default 8KB).
  * 3. **Rotación (Fairness)**: Para las entidades de baja prioridad (Low), se utiliza un sistema
  *    de rotación circular con el fin de que reciban actualizaciones periódicas, incluso
  *    si el ancho de banda es limitado.
@@ -20,6 +21,9 @@ export class NetworkBudgetManager {
   private lowPriorityRotation = new Map<string, number>(); // clientId -> startIndex
 
   public static readonly DEFAULT_BUDGET: ClientNetworkBudget = {
+    sessionId: "default",
+    totalBytes: 0,
+    interestLevel: "medium",
     maxBytesPerPacket: 8192, // 8KB
     maxEntitiesPerPacket: 50,
     maxCriticalPerTick: 20,
@@ -29,44 +33,25 @@ export class NetworkBudgetManager {
   /**
    * Filters and prioritizes entities based on the client's network budget.
    *
-   * @remarks
-   * Implements a prioritization hierarchy to handle bandwidth constraints:
-   * 1. **Self Player**: Prioritized to help ensure the local user has responsive feedback.
-   * 2. **Critical Radius**: Entities within the immediate vicinity of the player.
-   * 3. **High/Medium/Low**: Distance-based selection and rotation.
-   *
-   * The method estimates the byte size of each entity (Critical: 200B, High: 150B, etc.)
-   * to respect the `maxBytesPerPacket` limit (default 8KB).
-   *
-   * @param clientId - Target client ID.
-   * @param entities - List of entities currently in interest.
-   * @param budget - Bandwidth limits.
-   * @param selfEntityId - ID of the client's own ship.
-   * @returns Filtered list of entities that fit within the current packet budget.
+   * @param clientId - The ID of the client for rotation tracking.
+   * @param entities - The full list of interested entities.
+   * @param budget - The network budget configuration.
+   * @param selfEntityId - Optional local player entity ID to always prioritize.
    */
-  public prioritize(
+  public filterEntities(
     clientId: string,
     entities: InterestedEntity[],
     budget: ClientNetworkBudget = NetworkBudgetManager.DEFAULT_BUDGET,
-    selfEntityId?: string
+    selfEntityId?: number | string
   ): InterestedEntity[] {
     const result: InterestedEntity[] = [];
     let currentBytes = 0;
-    // Base packet overhead (headers, sequence, etc.)
-    const ESTIMATED_OVERHEAD = 256;
-    currentBytes += ESTIMATED_OVERHEAD;
 
-    // 1. Sort by importance level
-    const importanceOrder = { 'critical': 0, 'high': 1, 'medium': 2, 'low': 3, 'none': 4 };
-    const sorted = [...entities].sort((a, b) => {
-      if (a.interestLevel !== b.interestLevel) {
-        return importanceOrder[a.interestLevel] - importanceOrder[b.interestLevel];
-      }
-      return a.distance - b.distance;
-    });
+    // 1. Sort by interest level
+    const priorityMap: Record<string, number> = { 'critical': 0, 'high': 1, 'medium': 2, 'low': 3, 'none': 4 };
+    const sorted = [...entities].sort((a, b) => priorityMap[a.interestLevel] - priorityMap[b.interestLevel]);
 
-    const critical = sorted.filter(e => e.interestLevel === 'critical');
-    const high = sorted.filter(e => e.interestLevel === 'high');
+    const critical = sorted.filter(e => e.interestLevel === 'critical' || e.interestLevel === 'high');
     const medium = sorted.filter(e => e.interestLevel === 'medium');
     const low = sorted.filter(e => e.interestLevel === 'low');
 
@@ -75,8 +60,8 @@ export class NetworkBudgetManager {
 
     // 2. Add Self Entity first (Hallazgo 7 / Prioridad 1)
     let count = 0;
-    if (selfEntityId) {
-        const self = entities.find(e => e.entityId === selfEntityId);
+    if (selfEntityId !== undefined) {
+        const self = entities.find(e => e.entityId == selfEntityId);
         if (self) {
             result.push(self);
             count++;
@@ -86,61 +71,48 @@ export class NetworkBudgetManager {
 
     // 3. Add Critical (within budget)
     for (const e of critical) {
-      if (e.entityId === selfEntityId) continue; // Already added
+      if (e.entityId == selfEntityId) continue; // Already added
       const estimated = bytesPerEntity[e.interestLevel];
-      if (count < budget.maxEntitiesPerPacket &&
-          count < budget.maxCriticalPerTick &&
-          currentBytes + estimated < budget.maxBytesPerPacket) {
+      if (currentBytes + estimated <= budget.maxBytesPerPacket && count < budget.maxEntitiesPerPacket) {
         result.push(e);
-        count++;
         currentBytes += estimated;
+        count++;
       }
     }
 
-    // 4. Add High
-    for (const e of high) {
-      if (e.entityId === selfEntityId) continue; // Already added
-      const estimated = bytesPerEntity[e.interestLevel];
-      if (count < budget.maxEntitiesPerPacket && currentBytes + estimated < budget.maxBytesPerPacket) {
-        result.push(e);
-        count++;
-        currentBytes += estimated;
-      }
-    }
-
-    // 5. Add Medium
+    // 4. Add Medium (within budget)
     for (const e of medium) {
-      if (e.entityId === selfEntityId) continue; // Already added
+      if (e.entityId == selfEntityId) continue;
       const estimated = bytesPerEntity[e.interestLevel];
-      if (count < budget.maxEntitiesPerPacket && currentBytes + estimated < budget.maxBytesPerPacket) {
+      if (currentBytes + estimated <= budget.maxBytesPerPacket && count < budget.maxEntitiesPerPacket) {
         result.push(e);
-        count++;
         currentBytes += estimated;
+        count++;
       }
     }
 
-    // 6. Add Low (rotating)
-    if (count < budget.maxEntitiesPerPacket && low.length > 0) {
-      const startIndex = this.lowPriorityRotation.get(clientId) ?? 0;
-      const amountToTry = Math.min(budget.maxLowPriorityPerSecond, budget.maxEntitiesPerPacket - count, low.length);
+    // 5. Add Low (Rotation / Fairness)
+    if (low.length > 0) {
+      let startIndex = this.lowPriorityRotation.get(clientId) ?? 0;
+      if (startIndex >= low.length) startIndex = 0;
 
-      let addedLow = 0;
-      for (let i = 0; i < amountToTry; i++) {
-        const index = (startIndex + i) % low.length;
-        const e = low[index];
+      for (let i = 0; i < low.length; i++) {
+        const idx = (startIndex + i) % low.length;
+        const e = low[idx];
+        if (e.entityId == selfEntityId) continue;
+
         const estimated = bytesPerEntity[e.interestLevel];
-
-        if (currentBytes + estimated < budget.maxBytesPerPacket) {
-            result.push(e);
-            count++;
-            currentBytes += estimated;
-            addedLow++;
-        } else {
+        if (currentBytes + estimated <= budget.maxBytesPerPacket && count < budget.maxEntitiesPerPacket) {
+          result.push(e);
+          currentBytes += estimated;
+          count++;
+          // Rotation increment (only if we have more low priority entities than budget)
+          if (i === budget.maxLowPriorityPerSecond - 1) {
+            this.lowPriorityRotation.set(clientId, (idx + 1) % low.length);
             break;
+          }
         }
       }
-
-      this.lowPriorityRotation.set(clientId, (startIndex + addedLow) % low.length);
     }
 
     return result;
