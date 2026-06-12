@@ -1,11 +1,6 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
-import { ObjectEffectComponent } from "../ecs/CoreComponents";
-
-export interface IMutator {
-  id: string;
-  apply: (config: any) => any;
-}
+import { Mutator } from "../../config/MutatorConfig";
 
 /**
  * Sistema encargado de inyectar variaciones dinámicas en las reglas de juego (mutadores).
@@ -13,7 +8,7 @@ export interface IMutator {
  * de las entidades frame a frame basado en condiciones activas.
  *
  * @responsibility Aplicar lógica transitoria basada en mutadores seleccionados para la sesión.
- * @queries `ObjectEffect`, `Render`.
+ * @queries `Ball`, `Render`.
  * @mutates Entidades que coincidan con la lógica específica del mutador.
  * @dependsOn `MutatorConfig`.
  * @executionOrder Logic Phase.
@@ -24,7 +19,7 @@ export class MutatorSystem extends System {
    *
    * @param activeMutators - Lista de mutadores que deben aplicarse en esta ejecución del motor.
    */
-  constructor(private activeMutators: IMutator[]) {
+  constructor(private activeMutators: Mutator[]) {
     super();
   }
 
@@ -35,16 +30,16 @@ export class MutatorSystem extends System {
    * @param deltaTime - El tiempo transcurrido en milisegundos.
    */
   public update(world: World, _deltaTime: number): void {
-    // Ghost ObjectEffect: Manejar el temporizador de visibilidad
-    const hasGhostObjectEffect = this.activeMutators.some(m => m.id === 'effect_timer');
-    if (hasGhostObjectEffect) {
-      const objects = world.query("ObjectEffect");
-      objects.forEach(entity => {
-        world.mutateComponent<ObjectEffectComponent>(entity, "ObjectEffect", object => {
-          if (object.visibilityTimer !== undefined && object.visibilityTimer > 0) {
+    // Ghost Ball: Manejar el temporizador de visibilidad
+    const hasGhostBall = this.activeMutators.some(m => m.id === 'ghost_ball');
+    if (hasGhostBall) {
+      const balls = world.query("Ball");
+      balls.forEach(entity => {
+        world.mutateComponent(entity, "Ball", ball => {
+          if (ball.visibilityTimer !== undefined && ball.visibilityTimer > 0) {
             // Decrease by deltaTime-based ticks (approx 60fps)
             const ticksToSub = Math.max(1, Math.round(_deltaTime / 16.66));
-            object.visibilityTimer = Math.max(0, object.visibilityTimer - ticksToSub);
+            ball.visibilityTimer = Math.max(0, ball.visibilityTimer - ticksToSub);
           }
         });
       });

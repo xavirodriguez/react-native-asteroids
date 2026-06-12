@@ -1,4 +1,4 @@
-import { WorldSnapshot } from "../ecs/SnapshotTypes";
+import { WorldSnapshot } from "../types/EngineTypes";
 import { PredictedState } from "./NetTypes";
 
 export interface DesyncThresholds {

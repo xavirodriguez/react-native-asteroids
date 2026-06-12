@@ -1,11 +1,11 @@
 import { World } from "../ecs/World";
-import { WorldSnapshot } from "../ecs/SnapshotTypes";
+import { WorldSnapshot } from "../types/EngineTypes";
 import { ReconciliationStrategy } from "./ReconciliationStrategy";
-import { ReplicationConfig, GameNetworkAdapter } from "./NetTypes";
+import { ReplicationConfig, GameNetworkAdapter } from "./types";
 import { FullReconciliationStrategy } from "./strategies/FullReconciliation";
 import { SnapshotInterpolationStrategy } from "./strategies/SnapshotInterpolation";
 import { HybridAuthorityStrategy } from "./strategies/HybridAuthority";
-import { INetworkGame } from "./NetworkTypes";
+import { INetworkGame } from "./types/NetworkTypes";
 import { EntityReplicator } from "./EntityReplicator";
 
 /**
@@ -18,9 +18,9 @@ import { EntityReplicator } from "./EntityReplicator";
  * and the network adapter.
  *
  * While it provides a unified interface for various strategies (rollback, interpolation),
- * synchronization quality is typically a result subject to the selected strategy,
- * network conditions (latency, jitter, packet loss), and the underlying simulation's
- * consistency.
+ * synchronization quality is typically a best-effort result subject to the selected
+ * strategy, network conditions (latency, jitter, packet loss), and the underlying
+ * simulation's consistency.
  */
 export class NetworkManager {
     private static instances = new Map<string, NetworkManager>();

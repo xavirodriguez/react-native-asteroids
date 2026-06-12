@@ -1,6 +1,5 @@
-import { System } from "@tiny-aster/core";
-import { World } from "@tiny-aster/core";
-import { type InputStateComponent } from "@tiny-aster/core";
+import { System, World, InputStateComponent } from "@tiny-aster/core";
+import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
 import { type InputComponent } from "../types/AsteroidTypes";
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { InputUtils } from "@tiny-aster/core";
@@ -13,7 +12,7 @@ import { AsteroidConfig } from "../types/AsteroidConfigSchema";
  * This system reads from the UnifiedInputSystem (via InputStateComponent)
  * and applies it to game entities.
  */
-export class AsteroidInputSystem extends System {
+export class AsteroidInputSystem extends System<AsteroidsComponentRegistry, AsteroidsEventRegistry> {
   /**
    * Creates a new AsteroidInputSystem.
    *
@@ -41,7 +40,7 @@ export class AsteroidInputSystem extends System {
     this.isMultiplayer = active;
   }
 
-  public update(world: World, _deltaTime: number): void {
+  public update(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, _deltaTime: number): void {
     if (!this.config) {
         this.config = world.getResource<AsteroidConfig>("GameConfig")!;
     }
@@ -49,13 +48,13 @@ export class AsteroidInputSystem extends System {
     const inputState = world.getSingleton<InputStateComponent>("InputState");
     const ships = world.query("Ship", "Input");
     ships.forEach((entity) => {
-      world.mutateComponent<InputComponent>(entity, "Input", (input) => {
+      world.mutateComponent(entity, "Input", (input) => {
         this.updateShipInputState({ input, inputState });
       });
     });
   }
 
-  private updateShipInputState(context: { input: InputComponent, inputState?: import("@tiny-aster/core").InputStateComponent | null }): void {
+  private updateShipInputState(context: { input: InputComponent, inputState?: import("../../../engine/core/CoreComponents").InputStateComponent | null }): void {
     const { input, inputState } = context;
     if (inputState) {
       // Direct action overrides

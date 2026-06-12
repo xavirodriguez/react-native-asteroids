@@ -1,18 +1,13 @@
-import { World } from "@tiny-aster/core";
-import { System } from "@tiny-aster/core";
-import { type HealthComponent, type Entity, TransformComponent, RenderComponent, CollisionEventsComponent } from "@tiny-aster/core";
+import { World, System, HealthComponent, Entity, TransformComponent, RenderComponent, CollisionEventsComponent, VelocityComponent, ScreenShakeComponent, HapticRequestComponent, releaseProjectile, EventBus } from "@tiny-aster/core";
 
 import { createParticle } from "../EntityFactory";
 import { type GameStateComponent } from "../types/AsteroidTypes";
-import { VelocityComponent } from "@tiny-aster/core";
-import { AsteroidComponent } from "@/src/games/asteroids/components/AsteroidComponent";
-import { BulletComponent } from "@/games/asteroids/components/BulletComponent";
-import { ShipComponent } from "@/src/games/asteroids/components/ShipComponent";
+import { AsteroidComponent } from "../components/AsteroidComponent";
+import { BulletComponent } from "../components/BulletComponent";
+import { ShipComponent } from "../components/ShipComponent";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
-import { ScreenShakeComponent, HapticRequestComponent } from "@tiny-aster/core";
-import { releaseProjectile } from "@tiny-aster/core";
 import { ParticlePool, BulletPool } from "../EntityPool";
-import { EventBus } from "@tiny-aster/core";
+import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
 
 /**
  * Sistema responsable de reaccionar a los eventos de colisión detectados por el motor físico.
@@ -30,7 +25,7 @@ import { EventBus } from "@tiny-aster/core";
  *    - **Naves**: Pierden vida, activan invulnerabilidad temporal y disparan efectos de juice (shake).
  *    - **Eventos**: Notifica al `EventBus` para disparar efectos de sonido y actualizaciones de UI.
  */
-export class AsteroidCollisionSystem extends System {
+export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, AsteroidsEventRegistry> {
   private config?: AsteroidConfig;
   private splitConfig?: Record<
     AsteroidComponent["size"],
@@ -44,7 +39,7 @@ export class AsteroidCollisionSystem extends System {
   /**
    * Processes collision events from the CollisionEventsComponent.
    */
-  public update(world: World, _deltaTime: number): void {
+  public update(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, _deltaTime: number): void {
     if (!this.config) {
       const config = world.getResource<AsteroidConfig>("GameConfig");
 
@@ -197,7 +192,7 @@ export class AsteroidCollisionSystem extends System {
   }
 
   private canShipTakeDamage(world: World, shipEntity: Entity, health: HealthComponent | undefined): health is HealthComponent {
-    const modifiers = world.getComponent<import("@tiny-aster/core").ModifierStackComponent>(shipEntity, "ModifierStack")?.modifiers || [];
+    const modifiers = world.getComponent<import("../../../engine/core/CoreComponents").ModifierStackComponent>(shipEntity, "ModifierStack")?.modifiers || [];
     const hasShield = modifiers.some(m => m.type === "shield");
 
     return !!health && health.invulnerableRemaining <= 0 && !hasShield;
@@ -236,7 +231,7 @@ export class AsteroidCollisionSystem extends System {
         type: "TTL",
         remaining: this.config!.SHAKE_DURATION_IMPACT * 16.66, // Roughly duration in ms if duration is frames
         total: this.config!.SHAKE_DURATION_IMPACT * 16.66
-      } as import("@tiny-aster/core").TTLComponent);
+      } as import("../../../engine/types/EngineTypes").TTLComponent);
     });
 
     if (health.current <= 0) {

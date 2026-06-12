@@ -1,37 +1,27 @@
-import { Entity } from "./Entity";
-
-/**
- * Base interface for all components.
- * Components are intended to be plain data objects.
- */
 export interface Component {
-  /**
-   * Unique identifier for the component type.
-   */
   type: string;
 }
 
 /**
- * A component with dynamic properties.
+ * Fallback type for components when the specific registry is not known or needed.
  */
-export interface GenericComponent extends Component {
-  [key: string]: any;
-}
+export type GenericComponent = Component & Record<string, any>;
 
 export type ComponentRegistry = Record<string, Component>;
 
-export type ComponentType<T extends ComponentRegistry> = keyof T & string;
+export type ComponentType<TRegistry extends ComponentRegistry> =
+  Extract<keyof TRegistry, string>;
 
-export type ComponentOf<T extends ComponentRegistry, K extends ComponentType<T>> = T[K];
+export type ComponentOfWorld<
+  TRegistry extends ComponentRegistry,
+  TType extends ComponentType<TRegistry>
+> = TRegistry[TType];
 
-/**
- * Recursively makes all properties of a type readonly.
- * Used to help enforce immutability when retrieving components from the World.
- */
-export type DeepReadonly<T> = {
-  readonly [P in keyof T]: T[P] extends (infer U)[]
-    ? ReadonlyArray<DeepReadonly<U>>
-    : T[P] extends object
-    ? DeepReadonly<T[P]>
-    : T[P];
-};
+export type DeepReadonly<T> =
+  T extends (...args: unknown[]) => unknown
+    ? T
+    : T extends readonly unknown[]
+      ? ReadonlyArray<DeepReadonly<T[number]>>
+      : T extends object
+        ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+        : T;

@@ -27,7 +27,7 @@ export class ConfigService {
   /**
    * Loads and validates a configuration.
    *
-   * @param id - Unique identifier for the config (e.g., 'game').
+   * @param id - Unique identifier for the config (e.g., 'asteroids').
    * @param schema - Zod schema to validate against.
    * @param data - Raw data to validate.
    * @returns Validated configuration.

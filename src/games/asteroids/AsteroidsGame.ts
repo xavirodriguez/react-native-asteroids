@@ -1,8 +1,6 @@
-import { World } from "@tiny-aster/core";
-import { GameLoop } from "@tiny-aster/core";
+import { World, GameLoop, BaseGame, AssetLoader } from "@tiny-aster/core";
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { BaseGame } from "@tiny-aster/core";
-import { AssetLoader } from "@tiny-aster/core";
+import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "./types/AsteroidRegistry";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
 import { AsteroidRenderSystem } from "./systems/AsteroidRenderSystem";
 import { AsteroidComboSystem } from "./systems/AsteroidComboSystem";
@@ -50,7 +48,7 @@ const __DEV__ = process.env.NODE_ENV !== "production";
  * Manages the ECS world, systems, and lifecycle.
  */
 export class AsteroidsGame
-  extends BaseGame<GameStateComponent, InputState>
+  extends BaseGame<GameStateComponent, InputState, AsteroidsComponentRegistry, AsteroidsEventRegistry>
   implements IAsteroidsGame, INetworkGame {
 
   private gameStateSystem: AsteroidGameStateSystem;
@@ -234,9 +232,9 @@ export class AsteroidsGame
 
   private handleDeltaServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
     const serverTick = serverState.tick as number;
-    const delta = serverState.delta as Partial<import("@tiny-aster/core").WorldSnapshot>;
+    const delta = serverState.delta as Partial<import("../../engine/types/EngineTypes").WorldSnapshot>;
 
-    let authoritativeSnapshot: import("@tiny-aster/core").WorldSnapshot;
+    let authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot;
 
     if (delta.created || delta.updated || delta.removed) {
       const strategy = this.networkManager.getStrategy();
@@ -249,12 +247,12 @@ export class AsteroidsGame
       }
     } else {
       // If it's a full snapshot sent as a delta, deep clone it for safety
-      authoritativeSnapshot = ComponentCloner.deepCloneSnapshot(delta as import("@tiny-aster/core").WorldSnapshot);
+      authoritativeSnapshot = ComponentCloner.deepCloneSnapshot(delta as import("../../engine/types/EngineTypes").WorldSnapshot);
     }
 
     this.networkManager.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
 
-    const eventBus = this.world.getResource<import("@tiny-aster/core").EventBus>("EventBus");
+    const eventBus = this.world.getResource<import("../../engine/core/EventBus").EventBus>("EventBus");
     if (eventBus && delta.stateVersion !== undefined) {
       eventBus.emitDeferred("net:ack_version", { version: delta.stateVersion, tick: serverTick });
     }
@@ -264,9 +262,9 @@ export class AsteroidsGame
    * Safely integrates a delta into a base snapshot using deep cloning.
    */
   private applyDeltaToSnapshot(
-    base: import("@tiny-aster/core").WorldSnapshot,
-    delta: import("@tiny-aster/core").DeltaPacket
-  ): import("@tiny-aster/core").WorldSnapshot {
+    base: import("../../engine/types/EngineTypes").WorldSnapshot,
+    delta: import("../../engine/network/types/ReplicationTypes").DeltaPacket
+  ): import("../../engine/types/EngineTypes").WorldSnapshot {
     // 1. Create a deep clone of the base state to avoid aliasing with history
     const snapshot = ComponentCloner.deepCloneSnapshot(base);
 
@@ -277,13 +275,13 @@ export class AsteroidsGame
   }
 
   private handleFullServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
-    let authoritativeSnapshot: import("@tiny-aster/core").WorldSnapshot;
+    let authoritativeSnapshot: import("../../engine/types/EngineTypes").WorldSnapshot;
 
     if (typeof serverState.fullWorldState === "string") {
       authoritativeSnapshot = JSON.parse(serverState.fullWorldState);
     } else {
       // Use ComponentCloner for consistent deep cloning
-      authoritativeSnapshot = ComponentCloner.deepCloneSnapshot(serverState.fullWorldState as import("@tiny-aster/core").WorldSnapshot);
+      authoritativeSnapshot = ComponentCloner.deepCloneSnapshot(serverState.fullWorldState as import("../../engine/types/EngineTypes").WorldSnapshot);
     }
 
     if (authoritativeSnapshot.stateVersion === this.lastProcessedFullStateVersion) return;
@@ -448,6 +446,6 @@ export class NullAsteroidsGame implements IAsteroidsGame {
   public isGameOver() { return false; }
   public getGameState() { return INITIAL_GAME_STATE; }
   public getSeed() { return 0; }
-  public subscribe(_listener: import("@tiny-aster/core").UpdateListener<unknown>) { return () => {}; }
+  public subscribe(_listener: import("../../engine/core/IGame").UpdateListener<unknown>) { return () => {}; }
   public initializeRenderer() {}
 }
