@@ -4,6 +4,9 @@
   "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@10.30.3",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",

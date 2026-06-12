@@ -1,8 +1,3 @@
-/**
- * @packageDocumentation
- * Core ECS World implementation.
- */
-
 import { ComponentRegistry, ComponentType, DeepReadonly } from "./Component";
 import { Entity } from "./Entity";
 import { EventRegistry, EventBus } from "../events/EventBus";
@@ -13,56 +8,22 @@ import { WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "./Sna
 import { ComponentCloner } from "./ComponentCloner";
 import { WorldCommandBuffer } from "./WorldCommandBuffer";
 
-/**
- * Interface for entity blueprints.
- */
-export interface BlueprintDefinition<
-  TComponents extends ComponentRegistry,
-  TArgs
-> {
-  spawn(world: World<TComponents, EventRegistry, BlueprintRegistryMap<TComponents>>, entity: Entity, args: TArgs): void;
+export interface BlueprintDefinition<TComponents extends ComponentRegistry, TArgs> {
+  spawn(world: World<TComponents, any, any>, entity: Entity, args: TArgs): void;
 }
 
-/**
- * A map of blueprint definitions.
- * @internal
- */
 export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
   Record<string, BlueprintDefinition<TComponents, any>>;
 
-/**
- * ECS World - Central registry managing the lifecycle of entities, components, and systems.
- *
- * @remarks
- * The World acts as the primary container for the simulation state.
- *
- * **Structural Consistency:**
- * Modifying the world's structure (creating/removing entities or adding/removing components)
- * while an update is in progress is intended to be handled via the {@link WorldCommandBuffer},
- * which helps maintain consistency by flushing changes at the end of the update cycle.
- *
- * @warning **Structural Mutations**: Direct structural mutations during system updates or
- * query iteration are discouraged as they may lead to inconsistent results, skipped entities,
- * or invalid iterator states. Although the {@link WorldCommandBuffer} is provided to
- * mitigate this, developers should generally avoid direct manipulations of `componentMaps`
- * or `activeEntities` during iteration.
- *
- * **Determinism:**
- * The World provides a seeded `gameplayRandom` stream intended to support simulation logic.
- * To help facilitate reproducible behavior under controlled conditions, systems are
- * recommended to rely on this stream and the provided `tick` counter. Simulation stability
- * depends on avoiding external side effects, unseeded `Math.random()`, or non-deterministic
- * asynchronous APIs.
- */
 export class World<
-  TComponents extends ComponentRegistry = ComponentRegistry,
-  TEvents extends EventRegistry = EventRegistry,
-  _TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
+  TComponents extends ComponentRegistry = any,
+  TEvents extends EventRegistry = any,
+  _TBlueprints extends BlueprintRegistryMap<TComponents> = any
 > {
   private activeEntities = new Set<Entity>();
   public isUpdating = false;
   public isReSimulating = false;
-  private componentMaps = new Map<string, Map<Entity, unknown>>();
+  private componentMaps = new Map<string, Map<Entity, any>>();
   private componentIndex = new Map<string, Set<Entity>>();
   private entityComponentSets = new Map<Entity, Set<string>>();
   private queries = new Map<string, Query<TComponents>>();
@@ -91,39 +52,19 @@ export class World<
   public getEventBus(): EventBus<TEvents> { return this.getResource<EventBus<TEvents>>("EventBus")!; }
   public getCommandBuffer(): WorldCommandBuffer<TComponents> { return this.commandBuffer; }
 
-  /**
-   * Returns a list of all currently active entities.
-   *
-   * @remarks
-   * The list is sorted by numeric ID to support stable iteration when the entity set
-   * is identical.
-   *
-   * @warning **Performance & Allocations**:
-   * This operation creates a new array and performs a sort on each call.
-   * Frequent access in hot paths is discouraged; prefer using {@link Query} for efficient
-   * and cached iteration.
-   */
   public get entities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);
   }
-  /** @internal */
+
   public getAllEntities(): ReadonlyArray<Entity> {
     return this.entities;
   }
 
-  /** @internal */
   public getEntityComponentTypes(entity: Entity): string[] {
     const set = this.entityComponentSets.get(entity);
     return set ? Array.from(set) : [];
   }
 
-  /**
-   * Creates a new entity or recycles a previously removed ID.
-   *
-   * @warning
-   * If called during a system update or query iteration, use `getCommandBuffer().createEntity()`
-   * to avoid immediate structural changes that could invalidate active iterators.
-   */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
     this.activeEntities.add(id);
@@ -135,13 +76,6 @@ export class World<
     return this.nextEntityId++;
   }
 
-  /**
-   * Removes an entity and all its associated components.
-   *
-   * @warning
-   * If called during a system update or query iteration, use `getCommandBuffer().removeEntity()`
-   * to avoid immediate structural changes that could invalidate active iterators.
-   */
   removeEntity(entity: Entity): void {
     if (this.activeEntities.delete(entity)) {
       this.freeEntities.push(entity);
@@ -173,19 +107,8 @@ export class World<
     this.systems = [];
   }
 
-  /**
-   * Attaches a component to an entity.
-   *
-   * @remarks
-   * If a component of the same type already exists, it will be replaced.
-   * Triggers query index updates.
-   *
-   * @warning
-   * If called during a system update or query iteration, use `getCommandBuffer().addComponent()`
-   * to avoid immediate structural changes that could affect current queries.
-   */
   addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K]): void {
-    const type = (component as any).type;
+    const type = (component as any).type as string;
     if (!this.componentMaps.has(type)) {
       this.componentMaps.set(type, new Map());
       this.componentIndex.set(type, new Set());
@@ -211,64 +134,57 @@ export class World<
     this.updateComponentVersion(entity, type);
   }
 
-  public hasComponent(entity: Entity, type: string): boolean {
-    return this.componentIndex.get(type)?.has(entity) ?? false;
+  public hasComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): boolean {
+    return this.componentIndex.get(type as string)?.has(entity) ?? false;
   }
 
-  getComponent<T extends TComponents[keyof TComponents]>(entity: Entity, type: string): DeepReadonly<T> | undefined {
-    return this.componentMaps.get(type)?.get(entity) as DeepReadonly<T> | undefined;
+  getComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): DeepReadonly<TComponents[K]> | undefined {
+    return this.componentMaps.get(type as string)?.get(entity) as unknown as DeepReadonly<TComponents[K]> | undefined;
   }
 
-  getMutableComponent<T extends TComponents[keyof TComponents]>(entity: Entity, type: string): T | undefined {
-    const component = this.componentMaps.get(type)?.get(entity) as T | undefined;
+  getMutableComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): TComponents[K] | undefined {
+    const component = this.componentMaps.get(type as string)?.get(entity) as TComponents[K] | undefined;
     if (component) {
       this._stateVersion++;
-      this.updateComponentVersion(entity, type);
+      this.updateComponentVersion(entity, type as string);
     }
     return component;
   }
 
-  /**
-   * Removes a component of the specified type from an entity.
-   *
-   * @warning
-   * If called during a system update or query iteration, use `getCommandBuffer().removeComponent()`
-   * to avoid immediate structural changes that could affect current queries.
-   */
-  removeComponent(entity: Entity, type: string): void {
-    const map = this.componentMaps.get(type);
+  removeComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): void {
+    const map = this.componentMaps.get(type as string);
     if (map && map.delete(entity)) {
-      this.componentIndex.get(type)?.delete(entity);
-      this.componentVersions.get(type)?.delete(entity);
+      this.componentIndex.get(type as string)?.delete(entity);
+      this.componentVersions.get(type as string)?.delete(entity);
       const set = this.entityComponentSets.get(entity);
       if (set) {
-        set.delete(type);
-        this.notifyQueries(entity, set, type);
+        set.delete(type as string);
+        this.notifyQueries(entity, set, type as string);
       }
       this._structureVersion++;
     }
   }
 
-  mutateComponent<T extends TComponents[keyof TComponents]>(
+  mutateComponent<K extends ComponentType<TComponents>>(
     entity: Entity,
-    type: string,
-    updater: (component: T) => void
+    type: K,
+    updater: (component: TComponents[K]) => void
   ): boolean {
-    const component = this.getMutableComponent<T>(entity, type);
+    const component = this.getMutableComponent(entity, type);
     if (!component) return false;
     updater(component);
     return true;
   }
 
-  getQuery(...componentTypes: string[]): Query<TComponents> {
+  getQuery<K extends ComponentType<TComponents>>(...componentTypes: K[]): Query<TComponents> {
     const key = [...componentTypes].sort().join(",");
     let query = this.queries.get(key);
     if (!query) {
-      query = new Query<TComponents>(componentTypes);
+      query = new Query<TComponents>(componentTypes as string[]);
       this.queries.set(key, query);
       for (const type of componentTypes) {
-        if (!this.queriesByComponent.has(type)) this.queriesByComponent.set(type, new Set());
-        this.queriesByComponent.get(type)!.add(query);
+        if (!this.queriesByComponent.has(type as string)) this.queriesByComponent.set(type as string, new Set());
+        this.queriesByComponent.get(type as string)!.add(query);
       }
       this.activeEntities.forEach(entity => {
         const set = this.entityComponentSets.get(entity);
@@ -278,7 +194,7 @@ export class World<
     return query;
   }
 
-  query(...componentTypes: string[]): ReadonlyArray<Entity> {
+  query<K extends ComponentType<TComponents>>(...componentTypes: K[]): ReadonlyArray<Entity> {
     return this.getQuery(...componentTypes).getEntities();
   }
 
@@ -295,20 +211,12 @@ export class World<
   addSystem(system: System<TComponents, TEvents>, config: SystemConfig = {}): void {
     this.systems.push({
       system,
-      phase: config.phase ?? SystemPhase.Simulation,
+      phase: (config.phase as string) ?? SystemPhase.Simulation,
       priority: config.priority ?? 0
     });
     system.onRegister(this);
   }
 
-  /**
-   * Advances the world state by the given time delta.
-   *
-   * @remarks
-   * Executes registered systems across their respective phases.
-   * Structural changes queued in the command buffer are flushed at the end
-   * of the update.
-   */
   update(deltaTime: number): void {
     this._tick++;
     this.isUpdating = true;
@@ -343,19 +251,19 @@ export class World<
     this.commandBuffer.flush(this);
   }
 
-  getSingleton<T extends TComponents[keyof TComponents]>(type: string): DeepReadonly<T> | undefined {
+  getSingleton<K extends ComponentType<TComponents>>(type: K): DeepReadonly<TComponents[K]> | undefined {
     const entities = this.query(type);
     if (entities.length === 0) return undefined;
-    return this.getComponent<T>(entities[0], type as any);
+    return this.getComponent(entities[0], type);
   }
 
-  mutateSingleton<T extends TComponents[keyof TComponents]>(
-    type: string,
-    mutator: (component: T) => void
+  mutateSingleton<K extends ComponentType<TComponents>>(
+    type: K,
+    mutator: (component: TComponents[K]) => void
   ): void {
     const entities = this.query(type);
     if (entities.length > 0) {
-      this.mutateComponent<T>(entities[0], type as any, mutator);
+      this.mutateComponent(entities[0], type, mutator);
     }
   }
 
@@ -376,17 +284,6 @@ export class World<
     typeMap.set(entity, this._stateVersion);
   }
 
-  /**
-   * Captures the current serializable state of the world.
-   *
-   * @remarks
-   * The snapshot is designed to capture the serializable state, including active entities,
-   * component data (cloned), versioning info, and RNG state.
-   *
-   * @warning **Partial Serialization**: Only serializable properties are captured. Circular
-   * references, class instances without a plain-object representation, or complex objects
-   * without explicit cloning support may result in partial or broken state data.
-   */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
 
@@ -408,7 +305,7 @@ export class World<
           componentData[type][entity] = serializedComp;
         }
 
-        const compAsRecord = component as Record<string, unknown>;
+        const compAsRecord = component as unknown as Record<string, unknown>;
         for (const key in compAsRecord) {
           const val = compAsRecord[key];
           if (typeof val !== "function") {
@@ -431,17 +328,6 @@ export class World<
     };
   }
 
-  /**
-   * Restores the world state from a previously captured snapshot.
-   *
-   * @remarks
-   * This is a destructive operation that aims to restore the serializable state captured
-   * by the snapshot. Queries are rebuilt to match the restored state.
-   *
-   * @warning **Restoration Constraints**: Successful restoration depends on the serializability
-   * of the component data and the consistency of the component registry between the snapshot
-   * and the current world. It does not restore non-serializable references or external state.
-   */
   public restore(state: WorldSnapshot): void {
     this.activeEntities = new Set(state.entities);
     this.nextEntityId = state.nextEntityId;
@@ -462,7 +348,7 @@ export class World<
     this.componentVersions.clear();
 
     for (const type in state.componentData) {
-      const storage = new Map<Entity, unknown>();
+      const storage = new Map<Entity, any>();
       const index = new Set<Entity>();
       const versions = new Map<Entity, number>();
 
@@ -508,7 +394,7 @@ export class World<
         const version = typeVersions.get(entity) ?? 0;
         if (version > sinceVersion) {
           const serializedComp: SerializedComponent = {};
-          const compAsRecord = component as Record<string, unknown>;
+          const compAsRecord = component as unknown as Record<string, unknown>;
 
           for (const key in compAsRecord) {
             if (typeof compAsRecord[key] !== "function") {

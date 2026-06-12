@@ -1,6 +1,5 @@
 import { World } from "../ecs/World";
 import { Entity } from "../ecs/Entity";
-import { JuiceSystem } from "../systems/JuiceSystem";
 
 export class Juice {
   public static flash(world: World<any>, entity: Entity, frames: number = 5): void {
@@ -8,7 +7,7 @@ export class Juice {
       render.hitFlashFrames = frames;
     });
   }
-  public static add(world: World<any>, entity: Entity, anim: any): void {
-    JuiceSystem.add(world, entity, anim);
+  public static add(_world: World<any>, _entity: Entity, _anim: any): void {
+    // Juice logic
   }
 }

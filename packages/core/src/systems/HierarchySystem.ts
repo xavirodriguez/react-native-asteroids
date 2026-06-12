@@ -1,66 +1,19 @@
 import { World } from "../ecs/World";
-import { TransformComponent } from "../ecs/CoreComponents";
+import { TransformComponent, CoreComponentRegistry } from "../ecs/CoreComponents";
 import { AbstractHierarchySystem } from "./AbstractHierarchySystem";
 
-/**
- * 3x3 Matrix for 2D transformations.
- * Column-major order: [a, c, tx, b, d, ty]
- *
- * @internal
- */
 type Mat3 = [number, number, number, number, number, number];
 
-/**
- * System managing hierarchical spatial transformations.
- *
- * @responsibility Calculate world-space coordinates (X, Y, Rotation, Scale) from local offsets.
- * @responsibility Propagate changes down the entity tree, typically using a topological sort.
- * @responsibility Aim to optimize updates via a dirty-flag propagation system.
- *
- * @remarks
- * Implementa una propagación top-down orientada a que los hijos se calculen
- * después de sus padres. Utiliza matrices 3x3 para composición de transformaciones.
- * This system bridges the gap between local simulation (movement) and absolute
- * rendering/collision world coordinates.
- *
- * ### Execution Order:
- * Typically runs at the end of the `Simulation` phase or start of `Presentation`.
- * It is intended to run after local movement systems to minimize 1-frame visual lag.
- *
- * @conceptualRisk [LAYOUT_CASCADE][MEDIUM] Deep hierarchies incur higher
- * computational costs during root changes.
- * @conceptualRisk [WORLD_SYNC][HIGH] Systems reading `worldX/Y` before
- * this system executes will receive stale data from the previous frame.
- *
- * @public
- */
-export class HierarchySystem extends AbstractHierarchySystem {
-  /**
-   * Resolves world transforms for all entities with a Transform component.
-   *
-   * @param world - Target ECS world.
-   * @param _deltaTime - Elapsed time (ignored).
-   *
-   * @remarks
-   * Utiliza el ordenamiento topológico iterativo heredado de AbstractHierarchySystem.
-   * This system bridges the gap between local simulation (movement) and absolute
-   * rendering/collision world coordinates.
-   *
-   * @remarks
-   * Intends to update `worldX`, `worldY`, `worldRotation`, `worldScaleX`, and
-   * `worldScaleY` for `Transform` components marked as dirty (or with dirty
-   * parents). Resets the `dirty` flag for processed components.
-   */
-  public update(world: World, _deltaTime: number): void {
+export class HierarchySystem extends AbstractHierarchySystem<CoreComponentRegistry> {
+  public override update(world: World<CoreComponentRegistry>, _deltaTime: number): void {
     this.wasDirty.clear();
 
     const order = this.getProcessingOrder(world, "Transform");
     if (order.length === 0) return;
 
-    // 2. Iteratively process transformations in topological order
     for (let i = 0; i < order.length; i++) {
       const entity = order[i];
-      const transform = world.getComponent<TransformComponent>(entity, "Transform");
+      const transform = world.getComponent(entity, "Transform");
       if (!transform) continue;
 
       let parentDirty = false;
@@ -68,16 +21,16 @@ export class HierarchySystem extends AbstractHierarchySystem {
         parentDirty = this.wasDirty.has(transform.parentEntity);
       }
 
-      const isDirty = transform.dirty || parentDirty;
+      const isDirty = !!(transform.dirty || parentDirty);
 
       if (isDirty) {
-        world.mutateComponent<TransformComponent>(entity, "Transform", mutTransform => {
+        world.mutateComponent(entity, "Transform", mutTransform => {
           if (mutTransform.parentEntity !== null) {
-            const parentTransform = world.getComponent<TransformComponent>(mutTransform.parentEntity, "Transform");
+            const parentTransform = world.getComponent(mutTransform.parentEntity, "Transform");
             if (!parentTransform) {
               this.setToLocal(mutTransform);
             } else {
-              const parentMat = this.getMatrixFromTransform(parentTransform, true);
+              const parentMat = this.getMatrixFromTransform(parentTransform as any, true);
               const localMat = this.getMatrixFromTransform(mutTransform, false);
               const worldMat = this.multiplyMat3(parentMat, localMat);
               this.applyMatrixToWorldTransform(mutTransform, worldMat);

@@ -1,36 +1,21 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
-import { ScreenShakeComponent } from "../ecs/CoreComponents";
+import { CoreComponentRegistry } from "../ecs/CoreComponents";
 
-/**
- * Sistema encargado de gestionar el ciclo de vida de los efectos de sacudida de pantalla (Screen Shake).
- *
- * @responsibility Decrementar el temporizador de los componentes {@link ScreenShakeComponent}.
- * @responsibility Eliminar el componente una vez que el efecto ha expirado.
- *
- * @public
- */
-export class ScreenShakeSystem extends System {
-  /**
-   * Updates screen shake timers for all active shake sources.
-   */
-  public update(world: World, deltaTime: number): void {
-    const shakeEntities = world.query("ScreenShake");
+export class ScreenShakeSystem extends System<CoreComponentRegistry> {
+  public update(world: World<CoreComponentRegistry>, deltaTime: number): void {
+    if (world.isReSimulating) return;
 
-    for (let i = 0; i < shakeEntities.length; i++) {
-      const entity = shakeEntities[i];
-      let expired = false;
+    const entities = world.query("ScreenShake");
 
-      world.mutateComponent<ScreenShakeComponent>(entity, "ScreenShake", (shake) => {
-        if (shake.remaining > 0) {
-            shake.remaining -= deltaTime;
+    for (const entity of entities) {
+      world.mutateComponent(entity, "ScreenShake", shake => {
+        shake.remaining -= deltaTime;
+        if (shake.remaining <= 0) {
+          shake.remaining = 0;
+          shake.intensity = 0;
         }
-        expired = shake.remaining <= 0;
       });
-
-      if (expired) {
-        world.getCommandBuffer().removeComponent(entity, "ScreenShake");
-      }
     }
   }
 }

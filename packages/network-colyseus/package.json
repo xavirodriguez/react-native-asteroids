@@ -1,6 +1,6 @@
 {
-  "name": "@tiny-aster/core",
-  "version": "1.0.0",
+  "name": "@tiny-aster/network-colyseus",
+  "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -17,7 +17,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "msgpackr": "^1.11.12"
+    "@colyseus/sdk": "^0.17.37",
+    "@tiny-aster/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",
