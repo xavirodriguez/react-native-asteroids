@@ -1,27 +1,23 @@
+import { Entity } from "./Entity";
+
 export interface Component {
   type: string;
 }
 
-/**
- * Fallback type for components when the specific registry is not known or needed.
- */
-export type GenericComponent = Component & Record<string, any>;
+export interface GenericComponent extends Component {
+  [key: string]: any;
+}
 
 export type ComponentRegistry = Record<string, Component>;
 
-export type ComponentType<TRegistry extends ComponentRegistry> =
-  Extract<keyof TRegistry, string>;
+export type ComponentType<T extends ComponentRegistry> = keyof T & string;
 
-export type ComponentOfWorld<
-  TRegistry extends ComponentRegistry,
-  TType extends ComponentType<TRegistry>
-> = TRegistry[TType];
+export type ComponentOf<T extends ComponentRegistry, K extends ComponentType<T>> = T[K];
 
-export type DeepReadonly<T> =
-  T extends (...args: unknown[]) => unknown
-    ? T
-    : T extends readonly unknown[]
-      ? ReadonlyArray<DeepReadonly<T[number]>>
-      : T extends object
-        ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
-        : T;
+export type DeepReadonly<T> = {
+  readonly [P in keyof T]: T[P] extends (infer U)[]
+    ? ReadonlyArray<DeepReadonly<U>>
+    : T[P] extends object
+    ? DeepReadonly<T[P]>
+    : T[P];
+};
