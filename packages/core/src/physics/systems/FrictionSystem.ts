@@ -1,17 +1,16 @@
 import { System, World } from "../../ecs";
-import { VelocityComponent, FrictionComponent } from "../../ecs/CoreComponents";
+import { VelocityComponent, FrictionComponent, CoreComponentRegistry } from "../../ecs/CoreComponents";
 
-export class FrictionSystem extends System {
-  update(world: World, deltaTime: number): void {
+export class FrictionSystem extends System<CoreComponentRegistry> {
+  update(world: World<CoreComponentRegistry>, deltaTime: number): void {
     const entities = world.query("Velocity", "Friction");
     for (const entity of entities) {
-      const friction = world.getComponent<FrictionComponent>(entity, "Friction")!;
-      world.mutateComponent<VelocityComponent>(entity, "Velocity", (v) => {
-        const factor = 1 - friction.value * deltaTime;
-        v.dx *= factor;
-        v.dy *= factor;
+      const f = world.getComponent(entity, "Friction")!;
+      world.mutateComponent(entity, "Velocity", (v) => {
+        v.dx *= (1 - f.value * deltaTime);
+        v.dy *= (1 - f.value * deltaTime);
         if (v.vAngle) {
-          v.vAngle *= factor;
+          v.vAngle *= (1 - f.value * deltaTime);
         }
       });
     }

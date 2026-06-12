@@ -1,6 +1,5 @@
 // ECS Core
 export * from "./ecs/Entity";
-export * from "./ecs/Component";
 export * from "./ecs/World";
 export * from "./ecs/Query";
 export * from "./ecs/System";
@@ -48,7 +47,10 @@ export * from "./systems/StateMachineSystem";
 export * from "./systems/TilemapRenderSystem";
 export * from "./systems/FeedbackSystem";
 export * from "./systems/HierarchySystem";
+export * from "./systems/LootSystem";
 export * from "./systems/ModifierSystem";
+export * from "./systems/PowerUpSystem";
+export * from "./systems/MutatorSystem";
 export * from "./systems/JoystickSystem";
 export * from "./systems/SpatialPartitioningSystem";
 
@@ -111,6 +113,7 @@ export * from "./debug/ReplayRecorder";
 export * from "./debug/StateHasher";
 export * from "./debug/SystemProfiler";
 
+export * from "./ui/debug/DebugSystem";
 // UI Engine
 export * from "./ui/UITypes";
 export * from "./ui/UIFactory";
@@ -130,7 +133,6 @@ export * from "./utils/ConfigService";
 export * from "./test-utils/createTestWorld";
 
 // Core Types aliases
-export * from "./ecs/Component";
 export * from "./utils/VisualRandom";
 
 // Server-side Network Utils

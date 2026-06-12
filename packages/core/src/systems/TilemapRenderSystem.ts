@@ -1,46 +1,40 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
-import { TilemapComponent, Camera2DComponent } from "../ecs/CoreComponents";
+import { TilemapComponent, Camera2DComponent, CoreComponentRegistry } from "../ecs/CoreComponents";
 
-/**
- * System that calculates which part of the tilemap is visible.
- * It doesn't render anything directly, but updates the TilemapComponent's visible range
- * based on the active camera.
- *
- * API status: Public
- */
-export class TilemapRenderSystem extends System {
-  public update(world: World, _deltaTime: number): void {
-    if (world.isReSimulating) return;
+export class TilemapRenderSystem extends System<CoreComponentRegistry> {
+  public update(world: World<CoreComponentRegistry>, _deltaTime: number): void {
+    const cameras = world.query("Camera2D");
+    let mainCam: import("../index").DeepReadonly<Camera2DComponent> | null = null;
+    for (const camEntity of cameras) {
+        const cam = world.getComponent(camEntity, "Camera2D");
+        if (cam?.isMain) {
+            mainCam = cam;
+            break;
+        }
+    }
 
-    const cameraEntity = world.query("Camera2D")[0];
-    if (cameraEntity === undefined) return;
-
-    const camera = world.getComponent<Camera2DComponent>(cameraEntity, "Camera2D")!;
     const tilemaps = world.query("Tilemap");
+    for (const entity of tilemaps) {
+        const tilemap = world.getComponent(entity, "Tilemap")!;
+        
+        if (mainCam) {
+            const viewport = {
+                minX: mainCam.x,
+                minY: mainCam.y,
+                maxX: mainCam.x + 800, // Should use screen config
+                maxY: mainCam.y + 600
+            };
 
-    for (let i = 0; i < tilemaps.length; i++) {
-      const entity = tilemaps[i];
-
-      world.mutateComponent<TilemapComponent>(entity, "Tilemap", (tilemap) => {
-        const data = tilemap.data;
-
-        // Simple culling logic: define a visible range in tiles.
-        // For a real app, this would use the viewport dimensions.
-        const buffer = 2;
-        const viewWidthTiles = 20;
-        const viewHeightTiles = 15;
-
-        const centerX = Math.floor(camera.x / data.tileSize);
-        const centerY = Math.floor(camera.y / data.tileSize);
-
-        tilemap.visibleRange = {
-            minX: Math.max(0, centerX - Math.floor(viewWidthTiles / 2) - buffer),
-            minY: Math.max(0, centerY - Math.floor(viewHeightTiles / 2) - buffer),
-            maxX: Math.min(data.width - 1, centerX + Math.ceil(viewWidthTiles / 2) + buffer),
-            maxY: Math.min(data.height - 1, centerY + Math.ceil(viewHeightTiles / 2) + buffer),
-        };
-      });
+            world.mutateComponent(entity, "Tilemap", t => {
+                t.visibleRange = {
+                    minX: Math.floor(viewport.minX / tilemap.data.tileSize),
+                    minY: Math.floor(viewport.minY / tilemap.data.tileSize),
+                    maxX: Math.ceil(viewport.maxX / tilemap.data.tileSize),
+                    maxY: Math.ceil(viewport.maxY / tilemap.data.tileSize)
+                };
+            });
+        }
     }
   }
 }

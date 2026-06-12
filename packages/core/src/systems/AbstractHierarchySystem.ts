@@ -1,29 +1,17 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
 import { Entity } from "../ecs/Entity";
-import { IHierarchicalComponent } from "../ecs/CoreComponents";
+import { IHierarchicalComponent, CoreComponentRegistry } from "../ecs/CoreComponents";
+import { ComponentRegistry } from "../ecs/Component";
+import { EventRegistry } from "../events/EventBus";
 
-/**
- * Base class for systems that process hierarchical data structures.
- *
- * Provides a unified iterative topological sort to ensure parents are processed
- * before their children, avoiding recursion and stack overflow risks.
- */
-export abstract class AbstractHierarchySystem extends System {
-  /**
-   * Tracks entities whose hierarchical state was updated in the current frame.
-   * Used to propagate dirty state down the tree.
-   */
+export abstract class AbstractHierarchySystem<
+  TComponents extends ComponentRegistry = CoreComponentRegistry,
+  TEvents extends EventRegistry = any
+> extends System<TComponents, TEvents> {
   protected wasDirty = new Set<Entity>();
 
-  /**
-   * Generates a processing order where parents appear before their children.
-   *
-   * @param world - The ECS world instance.
-   * @param componentType - The component discriminator that defines the hierarchy (e.g., "Transform", "UIElement").
-   * @returns An array of entities in topological order.
-   */
-  protected getProcessingOrder(world: World, componentType: string): Entity[] {
+  protected getProcessingOrder(world: World<TComponents, TEvents>, componentType: keyof TComponents & string): Entity[] {
     const entities = world.query(componentType);
     if (entities.length === 0) return [];
 
