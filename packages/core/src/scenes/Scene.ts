@@ -129,6 +129,6 @@ export abstract class Scene {
    * @deprecated Delegate rendering to {@link Renderer.render}.
    */
   public render(renderer: import("../rendering/Renderer").Renderer): void {
-    renderer.render(this.world);
+    renderer.render(this.world, 1);
   }
 }

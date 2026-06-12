@@ -1,4 +1,4 @@
-import { ReplicationSchema } from "./types/ReplicationTypes";
+import { ReplicationSchema } from "./ReplicationTypes";
 
 /**
  * Component Replication Policy Manager.
@@ -8,7 +8,7 @@ import { ReplicationSchema } from "./types/ReplicationTypes";
  *
  * @remarks
  * Policies define the reliability and frequency (`sendRate`) of component updates.
- * - **Reliability**: Determines if a component is expected to be acknowledged (e.g., `Health`, `Ship`).
+ * - **Reliability**: Determines if a component is expected to be acknowledged (e.g., `Health`, `Transform`).
  * - **Send Rate**: Controls how many world ticks pass between updates for a specific type.
  *   Example: `Transform` is sent every tick (`sendRate: 1`), while `Render` is sent every 10.
  */
@@ -24,9 +24,6 @@ export class ReplicationPolicy {
     this.register({ componentType: 'Velocity', reliable: false, sendRate: 2, importance: 'high' });
     this.register({ componentType: 'Health', reliable: true, sendRate: 1, importance: 'critical' });
     this.register({ componentType: 'GameState', reliable: true, sendRate: 5, importance: 'medium' });
-    this.register({ componentType: 'Ship', reliable: true, sendRate: 1, importance: 'critical' });
-    this.register({ componentType: 'Bullet', reliable: true, sendRate: 1, importance: 'high' });
-    this.register({ componentType: 'Asteroid', reliable: false, sendRate: 3, importance: 'medium' });
     this.register({ componentType: 'Render', reliable: false, sendRate: 10, importance: 'low' });
     this.initialized = true;
   }

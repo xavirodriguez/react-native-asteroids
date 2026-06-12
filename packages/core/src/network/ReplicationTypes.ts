@@ -1,4 +1,3 @@
-import { Entity } from "../ecs/Entity";
 import { WorldSnapshot } from "../ecs/SnapshotTypes";
 
 export type ReplicationStrategyType = 'full' | 'snapshot' | 'hybrid' | 'dead-reckoning';
@@ -6,7 +5,7 @@ export type ReplicationStrategyType = 'full' | 'snapshot' | 'hybrid' | 'dead-rec
 export type InterestLevel = 'critical' | 'high' | 'medium' | 'low' | 'none';
 
 export interface InterestedEntity {
-    entityId: string;
+    entityId: number | string;
     interestLevel: InterestLevel;
     distance: number;
 }
@@ -23,12 +22,15 @@ export interface ReplicationConfig {
 export interface EntityPayload {
     id: number;
     components: Record<string, any>;
+    entityId?: number | string;
 }
 
 export interface EntityDeltaPayload {
     id: number;
     updated?: Record<string, any>;
     removed?: string[];
+    components?: Record<string, any>;
+    entityId?: number | string;
 }
 
 export interface DeltaPacket {
@@ -37,7 +39,8 @@ export interface DeltaPacket {
     stateVersion: number;
     created?: EntityPayload[];
     updated?: EntityDeltaPayload[];
-    removed?: number[];
+    removed?: (number | string)[];
+    [key: string]: any;
 }
 
 export interface ClientNetworkBudget {
