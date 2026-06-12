@@ -7,16 +7,29 @@ export interface AssetDescriptor {
   url?: string;
 }
 
+/**
+ * Coordinator for loading and caching game assets.
+ *
+ * @remarks
+ * The `AssetLoader` is platform-agnostic and relies on an injected `IAssetProvider`
+ * to handle actual I/O operations (web, native, etc.).
+ */
 export class AssetLoader {
   private assets = new Map<string, any>();
   private queue: AssetDescriptor[] = [];
 
   constructor(private provider?: IAssetProvider) {}
 
+  /**
+   * Adds assets to the loading queue.
+   */
   queueAssets(assets: AssetDescriptor[]) {
     this.queue.push(...assets);
   }
 
+  /**
+   * Loads all queued assets.
+   */
   async loadAll(): Promise<void> {
     const promises = this.queue.map(async (asset) => {
       let data: any;

@@ -5,6 +5,10 @@
  * Designed to provide a seedable pseudo-random sequence intended to support
  * reproducible simulation. Reproducibility depends on all simulation components
  * using the appropriate stream exclusively and ensuring identical seeding across participants.
+ *
+ * @warning **Floating Point Consistency**: While the algorithm is deterministic,
+ * floating point results may vary slightly across different JS engines or architectures
+ * due to precision differences.
  */
 export class RandomService {
   private seed: number;

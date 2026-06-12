@@ -5,7 +5,7 @@ import { WorldSnapshot } from "../ecs/SnapshotTypes";
  *
  * @remarks
  * In Rollback Netcode, we need to keep a history of states to rewind the simulation
- * when a mis-prediction is detected. This manager provides O(1) access to states
+ * when a mis-prediction is detected. This manager aims for efficient access to states
  * by tick via an internal Map.
  */
 export class StateHistoryManager {
