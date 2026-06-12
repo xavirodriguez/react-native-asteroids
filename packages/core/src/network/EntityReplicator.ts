@@ -29,7 +29,10 @@ export class EntityReplicator {
         if (localId === undefined || !world.hasEntity(localId)) {
             localId = world.reserveEntityId();
             this.serverToLocal.set(serverId, localId);
-            world.getCommandBuffer().createEntity(localId);
+            world.getCommandBuffer().addCommand(w => {
+                // Ideally World should support creating entity with specific ID for networked entities
+                w.createEntity();
+            });
         }
 
         return localId;

@@ -1,11 +1,11 @@
 import { World } from "../ecs/World";
-import { WorldSnapshot } from "../types/EngineTypes";
+import { WorldSnapshot } from "../ecs/SnapshotTypes";
 import { ReconciliationStrategy } from "./ReconciliationStrategy";
-import { ReplicationConfig, GameNetworkAdapter } from "./types";
+import { ReplicationConfig, GameNetworkAdapter } from "./NetTypes";
 import { FullReconciliationStrategy } from "./strategies/FullReconciliation";
 import { SnapshotInterpolationStrategy } from "./strategies/SnapshotInterpolation";
 import { HybridAuthorityStrategy } from "./strategies/HybridAuthority";
-import { INetworkGame } from "./types/NetworkTypes";
+import { INetworkGame } from "./NetworkTypes";
 import { EntityReplicator } from "./EntityReplicator";
 
 /**

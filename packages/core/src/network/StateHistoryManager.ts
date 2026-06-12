@@ -1,4 +1,4 @@
-import { WorldSnapshot } from "../types/EngineTypes";
+import { WorldSnapshot } from "../ecs/SnapshotTypes";
 
 /**
  * Manages a rolling history of world states (snapshots) for rollback reconciliation.

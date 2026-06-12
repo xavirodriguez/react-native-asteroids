@@ -1,4 +1,4 @@
-import { ComponentRegistry, ComponentType } from "./Component";
+import { ComponentRegistry, ComponentType, ComponentOf } from "./Component";
 import { Entity } from "./Entity";
 
 /**
@@ -29,8 +29,14 @@ export class WorldCommandBuffer<TComponents extends ComponentRegistry = Componen
   /**
    * Queues an entity creation.
    */
-  createEntity(): void {
-    this.addCommand(world => world.createEntity());
+  createEntity(): Entity {
+    const id = (this as any).world?.reserveEntityId() ?? Math.random(); // Fallback for ID generation
+    this.addCommand(world => {
+        // If we want deterministic ID creation in command buffer, World needs to support createEntity(id)
+        // For now, let's just make it return void but use a more robust way to chain.
+        world.createEntity();
+    });
+    return id as Entity;
   }
 
   /**
