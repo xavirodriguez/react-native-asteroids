@@ -1,9 +1,9 @@
 /**
  * Circular Buffer for Input Frames.
  *
- * This structure is designed to provide efficient access to input frames by
- * tick number. It is intended for Rollback Netcode to store both local
- * inputs (for re-simulation) and remote inputs (as they arrive from the network).
+ * This structure is designed to provide approximately O(1) access to input
+ * frames by tick number. It is intended for Rollback Netcode to store both
+ * local inputs (for re-simulation) and remote inputs (as they arrive from the network).
  *
  * @packageDocumentation
  */
@@ -23,7 +23,7 @@ export class InputRingBuffer {
   private readonly mask: number;
 
   /**
-   * @param capacity - Maximum number of frames to store. Expected to be a power of 2.
+   * @param capacity - Maximum number of frames to store. **MUST** be a power of 2.
    *                   Defaults to 256.
    */
   constructor(capacity: number = 256) {
@@ -33,7 +33,7 @@ export class InputRingBuffer {
       let p = 1;
       while (p < capacity) p <<= 1;
       capacity = p;
-      console.warn(`[InputRingBuffer] Capacity expected to be power of 2. Adjusted to ${capacity}.`);
+      console.warn(`[InputRingBuffer] Capacity must be power of 2. Adjusted to ${capacity}.`);
     }
 
     this.capacity = capacity;

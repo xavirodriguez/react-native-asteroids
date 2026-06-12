@@ -188,23 +188,23 @@ export class UIFactory {
         };
 
         if (world.isUpdating) {
-            commands.mutateComponent<UIElementComponent>(entity, "UIElement", element => {
+            commands.mutateComponent(entity, "UIElement", (element: any) => {
                 element.elementType = "button";
                 element.interactive = true;
             });
-            commands.mutateComponent<UIStyleComponent>(entity, "UIStyle", style => {
+            commands.mutateComponent(entity, "UIStyle", (style: any) => {
                 style.textAlign = "center";
                 style.textColor = config.textColor ?? "white";
             });
             commands.addComponent(entity, btnState);
             commands.addComponent(entity, text);
         } else {
-            world.mutateComponent<UIElementComponent>(entity, "UIElement", element => {
+            world.mutateComponent(entity, "UIElement", (element: any) => {
                 element.elementType = "button";
                 element.interactive = true;
             });
 
-            world.mutateComponent<UIStyleComponent>(entity, "UIStyle", style => {
+            world.mutateComponent(entity, "UIStyle", (style: any) => {
                 style.textAlign = "center";
                 style.textColor = config.textColor ?? "white";
             });

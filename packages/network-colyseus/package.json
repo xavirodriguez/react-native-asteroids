@@ -17,7 +17,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@tiny-aster/core": "*",
+    "@tiny-aster/core": "workspace:*",
     "@colyseus/sdk": "^0.17.37"
   },
   "devDependencies": {

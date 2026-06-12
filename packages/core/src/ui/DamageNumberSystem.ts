@@ -22,7 +22,7 @@ export class DamageNumberSystem extends System {
 
         const commands = world.getCommandBuffer();
 
-        commands.mutateComponent<UIElementComponent>(entity, "UIElement", element => {
+        commands.mutateComponent(entity, "UIElement", (element: any) => {
             element.offsetX = x;
             element.offsetY = y;
         });
@@ -58,7 +58,7 @@ export class DamageNumberSystem extends System {
                 vy = dn.velocity.y;
             });
 
-            world.mutateComponent<UIElementComponent>(entity, "UIElement", element => {
+            world.mutateComponent(entity, "UIElement", (element: any) => {
                 element.offsetX += vx * dt;
                 element.offsetY += vy * dt;
                 element.opacity = ttl.remaining / ttl.total;

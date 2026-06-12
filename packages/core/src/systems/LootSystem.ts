@@ -8,8 +8,6 @@ import { Entity } from "../ecs/Entity";
 import { EventBus } from "../events/EventBus";
 import { LootTableComponent, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, TTLComponent, PowerUpComponent, BoundaryComponent } from "../ecs/CoreComponents";
 import { RandomService } from "../utils/RandomService";
-import { ScreenConfig } from "../math/CommonTypes";
-import { layer, maskOf } from "../physics/collision/CollisionLayers";
 
 /**
  * Coordinates loot generation based on entity destruction events.
@@ -24,19 +22,19 @@ export class LootSystem extends System {
   }
 
   public onRegister(world: World): void {
-    const eventBus = world.getEventBus();
+    const eventBus = world.getResource<EventBus>("EventBus");
     if (eventBus) {
-      const entityDestroyedHandler = (payload: any) => {
+      const entityDestroyedHandler = (payload: { entity: Entity, type: string }) => {
         this.handleEntityDestruction(world, payload.entity);
       };
-      this._unsubs.push(eventBus.on("entity:destroyed" as any, entityDestroyedHandler));
+      this._unsubs.push(eventBus.on("entity:destroyed" as any, entityDestroyedHandler as any));
 
-      const objectDestroyedHandler = (payload: any) => {
+      const asteroidDestroyedHandler = (payload: { entity?: Entity }) => {
         if (payload.entity !== undefined) {
            this.handleEntityDestruction(world, payload.entity);
         }
       };
-      this._unsubs.push(eventBus.on("game:object_destroyed" as any, objectDestroyedHandler));
+      this._unsubs.push(eventBus.on("asteroid:destroyed" as any, asteroidDestroyedHandler as any));
     }
   }
 
@@ -70,27 +68,19 @@ export class LootSystem extends System {
 
   private spawnPowerUp(world: World, x: number, y: number, drop: { type: string, config?: { value?: number, duration?: number } }): void {
     const commands = world.getCommandBuffer();
-    const rng = world.getResource<RandomService>("gameplay")!;
-    const vx = (rng.next() - 0.5) * 50;
-    const vy = (rng.next() - 0.5) * 50;
 
-    const screen = world.getResource<ScreenConfig>("ScreenConfig");
-    const viewport = {
-      width: screen?.width ?? 800,
-      height: screen?.height ?? 600
-    };
-
-    const powerUp = commands.createEntity();
-    // Physical presence
-    commands.addComponent(powerUp, {
+    commands.createEntity((powerUp: number) => {
+        // Physical presence
+        commands.addComponent(powerUp, {
           type: "Transform",
           x, y, rotation: 0, scaleX: 1, scaleY: 1
         } as TransformComponent);
 
+        const random = world.gameplayRandom;
         commands.addComponent(powerUp, {
           type: "Velocity",
-          dx: vx,
-          dy: vy
+          dx: (random.next() - 0.5) * 50,
+          dy: (random.next() - 0.5) * 50
         } as VelocityComponent);
 
         // Visuals
@@ -107,8 +97,8 @@ export class LootSystem extends System {
           type: "Collider2D",
           shape: { type: "circle", radius: 10 },
           offsetX: 0, offsetY: 0,
-          layer: layer(6), // PICKUP
-          mask: maskOf(layer(1)),  // PLAYER
+          layer: 0b01000000, // CollisionLayers.PICKUP
+          mask: 0b00000010,  // CollisionLayers.PLAYER
           isTrigger: true,
           enabled: true
         } as Collider2DComponent);
@@ -128,13 +118,14 @@ export class LootSystem extends System {
           total: 10000
         } as TTLComponent);
 
-    // Screen wrapping
-    commands.addComponent(powerUp, {
-        type: "Boundary",
-        width: viewport.width,
-        height: viewport.height,
-        behavior: "wrap"
-    } as BoundaryComponent);
+        // Screen wrapping
+        commands.addComponent(powerUp, {
+            type: "Boundary",
+            width: 800, // Should be dynamic ideally
+            height: 600,
+            behavior: "wrap"
+        } as BoundaryComponent);
+    });
   }
 
   private getColorForType(type: string): string {

@@ -9,6 +9,9 @@
       "@/*": [
         "./*",
         "./src/*"
+      ],
+      "@tiny-aster/core": [
+        "./packages/core/src/index.ts"
       ]
     }
   },

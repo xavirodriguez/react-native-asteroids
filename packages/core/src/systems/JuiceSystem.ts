@@ -173,10 +173,10 @@ export class JuiceSystem extends System {
       commands.addComponent(entity, {
         type: "Juice",
         animations: [{ ...anim, elapsed: 0 }]
-      } as JuiceComponent);
+      } as any);
     } else {
       // Defer mutation if it exists
-      commands.mutateComponent<JuiceComponent>(entity, "Juice", (jComp) => {
+      commands.mutateComponent(entity, "Juice", (jComp: any) => {
         jComp.animations.push({ ...anim, elapsed: 0 });
       });
     }

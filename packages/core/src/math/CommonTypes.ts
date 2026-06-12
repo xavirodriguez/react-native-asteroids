@@ -13,7 +13,15 @@ export interface AABB {
 }
 
 /**
- * Global screen/viewport configuration.
+ * Common vector representation.
+ */
+export interface Vector2 {
+  x: number;
+  y: number;
+}
+
+/**
+ * Screen dimensions configuration.
  */
 export interface ScreenConfig {
   width: number;

@@ -1,7 +1,7 @@
 import { World } from "../../ecs/World";
-import { WorldSnapshot, TransformComponent } from "../../ecs/CoreComponents";
+import { WorldSnapshot, TransformComponent } from "../../types/EngineTypes";
 import { ReconciliationStrategy } from "../ReconciliationStrategy";
-import { InterpolationBuffer } from "../InterpolationSystem";
+import { InterpolationBuffer } from ".././InterpolationSystem";
 
 /**
  * Hybrid Authority Strategy.

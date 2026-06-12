@@ -13,8 +13,7 @@ import { ScreenConfig } from "../math/CommonTypes";
  *
  * @remarks
  * Este sistema es el corazón de las optimizaciones espaciales del motor. Permite que otros
- * sistemas (colisiones, renderizado, replicación) realicen consultas de proximidad eficientes
- * basadas en la cuadrícula espacial.
+ * sistemas (colisiones, renderizado, replicación) realicen consultas de proximidad O(1).
  *
  * ### Criterios de Actualización:
  * 1. Solo procesa entidades con `SpatialNodeComponent` y `Transform`.
@@ -105,7 +104,7 @@ export class SpatialPartitioningSystem extends System {
       }
 
       // Always update to ensure lastCellKeys are sync
-      world.mutateComponent<SpatialNodeComponent>(entity, "SpatialNode", n => {
+      world.mutateComponent(entity, "SpatialNode", n => {
           n.active = isCurrentlyActive;
           n.lastCellKeys = grid.getIntersectingCells(aabb);
       });
