@@ -38,21 +38,25 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
  *
  * **Structural Consistency:**
  * Modifying the world's structure (creating/removing entities or adding/removing components)
- * while an update is in progress is intended to be handled via the {@link WorldCommandBuffer},
- * which helps maintain consistency by flushing changes at the end of the update cycle.
+ * while an update is in progress is intended to be handled via the {@link WorldCommandBuffer}.
+ * This mechanism is designed to help maintain consistency by deferring changes until the end
+ * of the update cycle.
  *
  * @warning **Structural Mutations**: Direct structural mutations during system updates or
- * query iteration are discouraged as they may lead to inconsistent results, skipped entities,
- * or invalid iterator states. Although the {@link WorldCommandBuffer} is provided to
- * mitigate this, developers should generally avoid direct manipulations of `componentMaps`
- * or `activeEntities` during iteration.
+ * query iteration should be avoided as they may lead to inconsistent results, skipped entities,
+ * or invalid iterator states. The {@link WorldCommandBuffer} is the recommended way to
+ * perform these operations safely.
  *
- * **Determinism:**
- * The World provides a seeded `gameplayRandom` stream intended to support simulation logic.
- * To help facilitate reproducible behavior under controlled conditions, systems are
- * recommended to rely on this stream and the provided `tick` counter. Simulation stability
- * depends on avoiding external side effects, unseeded `Math.random()`, or non-deterministic
- * asynchronous APIs.
+ * **Determinism & Reproducibility:**
+ * The World provides a seeded `gameplayRandom` stream designed to support simulation logic.
+ * To help facilitate reproducible behavior under controlled conditions, systems should
+ * rely on this stream and the provided `tick` counter.
+ *
+ * @warning **Simulation Stability**: Determinism is not absolute and depends on several factors:
+ * - Avoiding external side effects or unseeded `Math.random()`.
+ * - Avoiding non-deterministic asynchronous APIs or promises within the simulation path.
+ * - Ensuring identical initial state and stable iteration order of non-sorted collections.
+ * - Floating point consistency across different platforms/architectures.
  */
 export class World<
   TComponents extends ComponentRegistry = ComponentRegistry,
@@ -95,13 +99,13 @@ export class World<
    * Returns a list of all currently active entities.
    *
    * @remarks
-   * The list is sorted by numeric ID to support stable iteration when the entity set
-   * is identical.
+   * The returned list is sorted by numeric ID to help maintain a stable iteration order
+   * when the entity set remains the same.
    *
    * @warning **Performance & Allocations**:
    * This operation creates a new array and performs a sort on each call.
-   * Frequent access in hot paths is discouraged; prefer using {@link Query} for efficient
-   * and cached iteration.
+   * Frequent access in hot paths is discouraged; prefer using {@link Query} for more
+   * efficient, cached iteration.
    */
   public get entities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);
@@ -380,12 +384,13 @@ export class World<
    * Captures the current serializable state of the world.
    *
    * @remarks
-   * The snapshot is designed to capture the serializable state, including active entities,
-   * component data (cloned), versioning info, and RNG state.
+   * The snapshot is intended to capture the serializable state, including active entities,
+   * component data (cloned via {@link ComponentCloner}), versioning info, and RNG state.
    *
-   * @warning **Partial Serialization**: Only serializable properties are captured. Circular
-   * references, class instances without a plain-object representation, or complex objects
-   * without explicit cloning support may result in partial or broken state data.
+   * @warning **Partial Serialization**: Only properties compatible with the cloning
+   * mechanism are captured. Circular references, class instances without a plain-object
+   * representation, or complex objects without explicit cloning support may result in
+   * partial, non-restorable, or broken state data.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
@@ -436,11 +441,15 @@ export class World<
    *
    * @remarks
    * This is a destructive operation that aims to restore the serializable state captured
-   * by the snapshot. Queries are rebuilt to match the restored state.
+   * by the snapshot. All existing entities and components will be replaced.
+   * Queries are rebuilt to match the restored state.
    *
-   * @warning **Restoration Constraints**: Successful restoration depends on the serializability
-   * of the component data and the consistency of the component registry between the snapshot
-   * and the current world. It does not restore non-serializable references or external state.
+   * @warning **Restoration Constraints**: Successful restoration depends on:
+   * - Serializability of the component data.
+   * - Consistency of the component registry between the snapshot and the current world.
+   * - Absence of external references to destroyed entities or components.
+   *
+   * It does not restore non-serializable references, event listeners, or other external state.
    */
   public restore(state: WorldSnapshot): void {
     this.activeEntities = new Set(state.entities);

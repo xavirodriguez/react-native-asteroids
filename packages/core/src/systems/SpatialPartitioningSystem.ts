@@ -13,7 +13,8 @@ import { ScreenConfig } from "../math/CommonTypes";
  *
  * @remarks
  * Este sistema es el corazón de las optimizaciones espaciales del motor. Permite que otros
- * sistemas (colisiones, renderizado, replicación) realicen consultas de proximidad O(1).
+ * sistemas (colisiones, renderizado, replicación) realicen consultas de proximidad eficientes
+ * basadas en la cuadrícula espacial.
  *
  * ### Criterios de Actualización:
  * 1. Solo procesa entidades con `SpatialNodeComponent` y `Transform`.

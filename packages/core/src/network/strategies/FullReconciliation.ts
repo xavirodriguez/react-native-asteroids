@@ -18,16 +18,16 @@ import { InputSerializer, InputBurstPayload } from "../InputSerializer";
  * Designed to support fast-paced games with high interactivity requirements.
  *
  * Implements a Rollback Netcode pattern:
- * 1. Prediction: Attempts to apply local inputs immediately to help reduce perceived latency.
+ * 1. Prediction: Designed to apply local inputs immediately to help reduce perceived latency.
  * 2. History: Maintains a buffer of recent inputs and world state snapshots.
  * 3. Validation: Compares predicted state against authoritative server snapshots.
- * 4. Rewind & Fast-Forward: If a desync is detected, the world is designed to restore to the
- *    last known-good state and re-simulate up to the current tick.
+ * 4. Rewind & Fast-Forward: If a desync is detected, the strategy is intended to restore
+ *    the world to the last known-good state and re-simulate up to the current tick.
  *
  * @remarks
- * This strategy relies on simulation consistency and is expected to carry a
- * CPU cost during rollback frames, as multiple simulation ticks may be executed
- * in a single environment frame to synchronize with the authoritative state.
+ * This strategy relies on simulation consistency and carries a CPU cost during rollback
+ * frames, as multiple simulation ticks may be executed in a single environment frame
+ * to synchronize with the authoritative state.
  */
 export class FullReconciliationStrategy implements ReconciliationStrategy {
     private predictionBuffer = new PredictionBuffer();

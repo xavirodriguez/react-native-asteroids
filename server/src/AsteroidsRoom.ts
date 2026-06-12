@@ -373,7 +373,7 @@ export class AsteroidsRoom extends Room<AsteroidsState> {
     // 7. Store history for lag compensation (Backtracking)
     this.stateHistory.set(this.state.serverTick, this.world.snapshot());
 
-    // O(1) cleanup: Keep only the last 120 snapshots.
+    // Efficient cleanup: Keep only the last 120 snapshots.
     const oldestTick = this.state.serverTick - 120;
     this.stateHistory.delete(oldestTick);
 

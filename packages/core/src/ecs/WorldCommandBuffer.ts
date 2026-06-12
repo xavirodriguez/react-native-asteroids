@@ -28,12 +28,16 @@ export class WorldCommandBuffer<TComponents extends ComponentRegistry = Componen
 
   /**
    * Queues an entity creation.
+   *
+   * @warning **Deterministic IDs**: The entity ID returned by this method during the update
+   * phase is a reserved ID. To help ensure deterministic ID generation in the command buffer,
+   * the World must support stable ID reservation.
    */
   createEntity(): Entity {
     const id = (this as any).world?.reserveEntityId() ?? Math.random(); // Fallback for ID generation
     this.addCommand(world => {
-        // If we want deterministic ID creation in command buffer, World needs to support createEntity(id)
-        // For now, let's just make it return void but use a more robust way to chain.
+        // Implementation note: The world should support creating an entity with a pre-reserved ID
+        // if we want strict consistency between the returned ID and the eventual entity.
         world.createEntity();
     });
     return id as Entity;
