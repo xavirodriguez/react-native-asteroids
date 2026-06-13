@@ -1,16 +1,17 @@
-import { System, World } from "../../ecs";
-import { TransformComponent, VelocityComponent, CoreComponentRegistry } from "../../ecs/CoreComponents";
+import { System } from "../../ecs/System";
+import { World } from "../../ecs/World";
+import { CoreComponentRegistry } from "../../ecs/CoreComponents";
 
 export class MovementSystem extends System<CoreComponentRegistry> {
   update(world: World<CoreComponentRegistry>, deltaTime: number): void {
     const entities = world.query("Transform", "Velocity");
     for (const entity of entities) {
+      const v = world.getComponent(entity, "Velocity")!;
       world.mutateComponent(entity, "Transform", (t) => {
-        const v = world.getComponent(entity, "Velocity")!;
-        t.x += v.dx * deltaTime;
-        t.y += v.dy * deltaTime;
-        if (v.vAngle) {
-          t.rotation += v.vAngle * deltaTime;
+        t.x += v.vx * deltaTime;
+        t.y += v.vy * deltaTime;
+        if (v.angularVelocity) {
+          t.rotation += v.angularVelocity * deltaTime;
         }
       });
     }

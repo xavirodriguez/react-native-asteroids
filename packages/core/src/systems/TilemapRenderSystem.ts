@@ -1,11 +1,11 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
-import { TilemapComponent, Camera2DComponent, CoreComponentRegistry } from "../ecs/CoreComponents";
+import { CoreComponentRegistry } from "../ecs/CoreComponents";
 
 export class TilemapRenderSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, _deltaTime: number): void {
     const cameras = world.query("Camera2D");
-    let mainCam: import("../index").DeepReadonly<Camera2DComponent> | null = null;
+    let mainCam: any = null;
     for (const camEntity of cameras) {
         const cam = world.getComponent(camEntity, "Camera2D");
         if (cam?.isMain) {
@@ -28,10 +28,10 @@ export class TilemapRenderSystem extends System<CoreComponentRegistry> {
 
             world.mutateComponent(entity, "Tilemap", t => {
                 t.visibleRange = {
-                    minX: Math.floor(viewport.minX / tilemap.data.tileSize),
-                    minY: Math.floor(viewport.minY / tilemap.data.tileSize),
-                    maxX: Math.ceil(viewport.maxX / tilemap.data.tileSize),
-                    maxY: Math.ceil(viewport.maxY / tilemap.data.tileSize)
+                    minX: Math.floor(viewport.minX / tilemap.tileSize),
+                    minY: Math.floor(viewport.minY / tilemap.tileSize),
+                    maxX: Math.ceil(viewport.maxX / tilemap.tileSize),
+                    maxY: Math.ceil(viewport.maxY / tilemap.tileSize)
                 };
             });
         }

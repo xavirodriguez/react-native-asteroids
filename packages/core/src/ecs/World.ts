@@ -7,10 +7,7 @@ import { RandomService } from "../utils/RandomService";
 import { WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "./SnapshotTypes";
 import { ComponentCloner } from "./ComponentCloner";
 import { WorldCommandBuffer } from "./WorldCommandBuffer";
-
-export interface BlueprintDefinition<TComponents extends ComponentRegistry, TArgs> {
-  spawn(world: World<TComponents, any, any>, entity: Entity, args: TArgs): void;
-}
+import { BlueprintDefinition } from "./BlueprintRegistry";
 
 export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
   Record<string, BlueprintDefinition<TComponents, any>>;
@@ -18,7 +15,7 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
 export class World<
   TComponents extends ComponentRegistry = any,
   TEvents extends EventRegistry = any,
-  _TBlueprints extends BlueprintRegistryMap<TComponents> = any
+  TBlueprints extends BlueprintRegistryMap<TComponents> = any
 > {
   private activeEntities = new Set<Entity>();
   public isUpdating = false;
@@ -33,7 +30,7 @@ export class World<
   private freeEntities: Entity[] = [];
   private resources = new Map<string, unknown>();
   private _tick = 0;
-  private commandBuffer = new WorldCommandBuffer<TComponents>();
+  private commandBuffer = new WorldCommandBuffer<TComponents, TBlueprints>();
 
   public renderRandom = new RandomService();
 
@@ -50,7 +47,7 @@ export class World<
   public get stateVersion(): number { return this._stateVersion; }
   public get gameplayRandom(): RandomService { return this._gameplayRandom; }
   public getEventBus(): EventBus<TEvents> { return this.getResource<EventBus<TEvents>>("EventBus")!; }
-  public getCommandBuffer(): WorldCommandBuffer<TComponents> { return this.commandBuffer; }
+  public getCommandBuffer(): WorldCommandBuffer<TComponents, TBlueprints> { return this.commandBuffer; }
 
   public get entities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);
@@ -138,12 +135,12 @@ export class World<
     return this.componentIndex.get(type as string)?.has(entity) ?? false;
   }
 
-  getComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): DeepReadonly<TComponents[K]> | undefined {
-    return this.componentMaps.get(type as string)?.get(entity) as unknown as DeepReadonly<TComponents[K]> | undefined;
+  getComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): TComponents[K] | undefined {
+    return this.componentMaps.get(type as string)?.get(entity) as TComponents[K] | undefined;
   }
 
   getMutableComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): TComponents[K] | undefined {
-    const component = this.componentMaps.get(type as string)?.get(entity) as TComponents[K] | undefined;
+    const component = this.getComponent(entity, type);
     if (component) {
       this._stateVersion++;
       this.updateComponentVersion(entity, type as string);
@@ -251,7 +248,7 @@ export class World<
     this.commandBuffer.flush(this);
   }
 
-  getSingleton<K extends ComponentType<TComponents>>(type: K): DeepReadonly<TComponents[K]> | undefined {
+  getSingleton<K extends ComponentType<TComponents>>(type: K): TComponents[K] | undefined {
     const entities = this.query(type);
     if (entities.length === 0) return undefined;
     return this.getComponent(entities[0], type);
@@ -419,3 +416,5 @@ export class World<
     };
   }
 }
+
+export { ComponentRegistry, ComponentType };

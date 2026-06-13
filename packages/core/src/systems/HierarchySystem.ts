@@ -17,7 +17,7 @@ export class HierarchySystem extends AbstractHierarchySystem<CoreComponentRegist
       if (!transform) continue;
 
       let parentDirty = false;
-      if (transform.parentEntity !== null) {
+      if (transform.parentEntity !== undefined) {
         parentDirty = this.wasDirty.has(transform.parentEntity);
       }
 
@@ -25,7 +25,7 @@ export class HierarchySystem extends AbstractHierarchySystem<CoreComponentRegist
 
       if (isDirty) {
         world.mutateComponent(entity, "Transform", mutTransform => {
-          if (mutTransform.parentEntity !== null) {
+          if (mutTransform.parentEntity !== undefined) {
             const parentTransform = world.getComponent(mutTransform.parentEntity, "Transform");
             if (!parentTransform) {
               this.setToLocal(mutTransform);
@@ -54,11 +54,11 @@ export class HierarchySystem extends AbstractHierarchySystem<CoreComponentRegist
   }
 
   private getMatrixFromTransform(t: TransformComponent, useWorld: boolean): Mat3 {
-    const x = useWorld ? (t.worldX ?? t.x) : t.x;
-    const y = useWorld ? (t.worldY ?? t.y) : t.y;
-    const rot = useWorld ? (t.worldRotation ?? t.rotation) : t.rotation;
-    const sx = useWorld ? (t.worldScaleX ?? t.scaleX) : t.scaleX;
-    const sy = useWorld ? (t.worldScaleY ?? t.scaleY) : t.scaleY;
+    const x = useWorld ? t.worldX : t.x;
+    const y = useWorld ? t.worldY : t.y;
+    const rot = useWorld ? t.worldRotation : t.rotation;
+    const sx = useWorld ? t.worldScaleX : t.scaleX;
+    const sy = useWorld ? t.worldScaleY : t.scaleY;
 
     const cos = Math.cos(rot);
     const sin = Math.sin(rot);
