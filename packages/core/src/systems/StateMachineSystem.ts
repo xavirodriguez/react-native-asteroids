@@ -1,6 +1,6 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
-import { StateMachineComponent, CoreComponentRegistry } from "../ecs/CoreComponents";
+import { CoreComponentRegistry } from "../ecs/CoreComponents";
 
 export interface StateMachineDefinition {
   states: Record<string, StateDefinition>;
@@ -14,16 +14,16 @@ export interface StateDefinition {
 
 export class StateMachineSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, deltaTime: number): void {
-    const query = world.getQuery("StateMachine");
+    const entities = world.query("StateMachine");
 
-    query.forEach((entity) => {
+    for (const entity of entities) {
       const sm = world.getComponent(entity, "StateMachine");
-      if (!sm) return;
+      if (!sm) continue;
 
       const registry = world.getResource<Record<string, StateMachineDefinition>>("StateMachineRegistry");
       const definition = registry ? registry[sm.machineId] : undefined;
 
-      if (!definition) return;
+      if (!definition) continue;
 
       const stateDef = definition.states[sm.currentState];
 
@@ -37,7 +37,7 @@ export class StateMachineSystem extends System<CoreComponentRegistry> {
           this.transition(world, entity, nextState, definition);
         }
       }
-    });
+    }
   }
 
   private transition(world: World<CoreComponentRegistry>, entity: number, nextState: string, definition: StateMachineDefinition): void {

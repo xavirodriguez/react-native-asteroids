@@ -2,7 +2,7 @@ import { System } from "../ecs/System";
 import { World } from "../ecs/World";
 import { Entity } from "../ecs/Entity";
 import { IHierarchicalComponent, CoreComponentRegistry } from "../ecs/CoreComponents";
-import { ComponentRegistry } from "../ecs/Component";
+import { ComponentRegistry, ComponentType } from "../ecs/Component";
 import { EventRegistry } from "../events/EventBus";
 
 export abstract class AbstractHierarchySystem<
@@ -11,7 +11,7 @@ export abstract class AbstractHierarchySystem<
 > extends System<TComponents, TEvents> {
   protected wasDirty = new Set<Entity>();
 
-  protected getProcessingOrder(world: World<TComponents, TEvents>, componentType: keyof TComponents & string): Entity[] {
+  protected getProcessingOrder(world: World<TComponents, TEvents>, componentType: ComponentType<TComponents>): Entity[] {
     const entities = world.query(componentType);
     if (entities.length === 0) return [];
 
@@ -41,7 +41,7 @@ export abstract class AbstractHierarchySystem<
           stack.push({ entity, stage: 'exit' });
 
           const comp = world.getComponent(entity, componentType) as unknown as IHierarchicalComponent | undefined;
-          if (comp && comp.parentEntity !== null) {
+          if (comp && comp.parentEntity !== undefined) {
             stack.push({ entity: comp.parentEntity, stage: 'enter' });
           }
         } else {

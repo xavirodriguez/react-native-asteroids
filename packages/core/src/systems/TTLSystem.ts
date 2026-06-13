@@ -1,6 +1,6 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
-import { TTLComponent, ReclaimableComponent, IEntityPool, CoreComponentRegistry } from "../ecs/CoreComponents";
+import { IEntityPool, CoreComponentRegistry } from "../ecs/CoreComponents";
 import { EventBus } from "../events/EventBus";
 
 /**
@@ -8,9 +8,9 @@ import { EventBus } from "../events/EventBus";
  */
 export class TTLSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, deltaTime: number): void {
-    const query = world.getQuery("TTL");
+    const entities = world.query("TTL");
 
-    query.forEach((entity) => {
+    for (const entity of entities) {
       let expired = false;
 
       world.mutateComponent(entity, "TTL", (ttl) => {
@@ -30,12 +30,12 @@ export class TTLSystem extends System<CoreComponentRegistry> {
         if (reclaimable) {
           const pool = world.getResource<IEntityPool>(reclaimable.poolId);
           if (pool && typeof pool.release === "function") {
-            pool.release(world, entity);
+            pool.release(entity);
           }
         }
 
         world.getCommandBuffer().removeEntity(entity);
       }
-    });
+    }
   }
 }

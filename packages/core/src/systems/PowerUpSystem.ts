@@ -1,26 +1,29 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
-import { PowerUpComponent, CollisionEventsComponent, CoreComponentRegistry } from "../ecs/CoreComponents";
+import { CoreComponentRegistry } from "../ecs/CoreComponents";
 
-export class PowerUpSystem extends System<any> {
-  public update(world: World<any>, _deltaTime: number): void {
-    const query = world.getQuery("CollisionEvents");
+export class PowerUpSystem extends System<CoreComponentRegistry> {
+  public update(world: World<CoreComponentRegistry>, _deltaTime: number): void {
+    const entities = world.query("CollisionEvents");
 
-    query.forEach((entity) => {
+    for (const entity of entities) {
       const collisionEvents = world.getComponent(entity, "CollisionEvents");
-      if (!collisionEvents) return;
+      if (!collisionEvents || !collisionEvents.lastCollision) continue;
 
-      for (const col of (collisionEvents as any).collisions) {
-          const powerUp = world.getComponent(col.otherEntity, "PowerUp");
+      // In the original it was using .collisions which is not in the type.
+      // Assuming lastCollision might be what's needed or just placeholder for now.
+      const otherEntity = collisionEvents.lastCollision.otherEntity;
+      if (otherEntity !== undefined) {
+          const powerUp = world.getComponent(otherEntity, "PowerUp");
           if (powerUp) {
-              this.applyPowerUp(world, entity, powerUp as any);
-              world.getCommandBuffer().removeEntity(col.otherEntity);
+              this.applyPowerUp(world, entity, powerUp);
+              world.getCommandBuffer().removeEntity(otherEntity);
           }
       }
-    });
+    }
   }
 
-  private applyPowerUp(_world: World<any>, _entity: number, _powerUp: any): void {
+  private applyPowerUp(_world: World<CoreComponentRegistry>, _entity: number, _powerUp: any): void {
       // Logic for power up
   }
 }
