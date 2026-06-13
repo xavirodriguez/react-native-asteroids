@@ -1,7 +1,17 @@
+/**
+ * Base interface for all components.
+ *
+ * @remarks
+ * Every component must have a unique 'type' property that matches its
+ * key in the {@link ComponentRegistry}.
+ */
 export interface Component {
   type: string;
 }
 
+/**
+ * Registry of all components available in a specific World instance.
+ */
 export type ComponentRegistry = Record<string, Component>;
 
 export type ComponentType<TRegistry extends ComponentRegistry> =
@@ -12,6 +22,13 @@ export type ComponentOf<
   TType extends ComponentType<TRegistry>
 > = TRegistry[TType];
 
+/**
+ * Recursively makes all properties of a type readonly.
+ *
+ * @remarks
+ * This is used to enforce immutability when accessing components through
+ * non-mutating world methods.
+ */
 export type DeepReadonly<T> =
   T extends (...args: any[]) => any
     ? T

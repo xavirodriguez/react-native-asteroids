@@ -10,6 +10,16 @@ export type CombinedEvents<TEvents extends EventRegistry> = CoreEvents & TEvents
 
 export type EventHandler<TPayload> = (payload: TPayload, event: string) => void;
 
+/**
+ * A central event bus for decoupling world events from system logic.
+ *
+ * @remarks
+ * Supports both immediate (`emit`) and deferred (`emitDeferred`) execution.
+ * Deferred events are processed when `flushDeferred` is called, typically at
+ * the end of a simulation step.
+ *
+ * @typeParam TEvents - The registry of custom events for this bus.
+ */
 export class EventBus<TEvents extends EventRegistry = any> {
   private handlers = new Map<string, Set<EventHandler<any>>>();
   private deferredEvents: { event: string; payload: any }[] = [];
@@ -17,6 +27,11 @@ export class EventBus<TEvents extends EventRegistry = any> {
   private static MAX_RECURSION = 10;
   private recursionDepth = 0;
 
+  /**
+   * Subscribes a handler to an event.
+   *
+   * @returns A function to unsubscribe the handler.
+   */
   on<K extends keyof CombinedEvents<TEvents> & string>(
     event: K,
     handler: EventHandler<CombinedEvents<TEvents>[K]>
@@ -46,6 +61,13 @@ export class EventBus<TEvents extends EventRegistry = any> {
     this.handlers.get(event)?.delete(handler);
   }
 
+  /**
+   * Synchronously notifies all handlers of an event.
+   *
+   * @warning
+   * Excessive use of immediate `emit` can lead to complex call stacks and
+   * circular dependencies. It is limited to {@link MAX_RECURSION} levels.
+   */
   emit<K extends keyof CombinedEvents<TEvents> & string>(
     event: K,
     payload: CombinedEvents<TEvents>[K]
@@ -70,6 +92,9 @@ export class EventBus<TEvents extends EventRegistry = any> {
     }
   }
 
+  /**
+   * Queues an event to be processed later during {@link flushDeferred}.
+   */
   emitDeferred<K extends keyof CombinedEvents<TEvents> & string>(
     event: K,
     payload: CombinedEvents<TEvents>[K]
@@ -77,6 +102,11 @@ export class EventBus<TEvents extends EventRegistry = any> {
     this.deferredEvents.push({ event, payload });
   }
 
+  /**
+   * Executes all deferred events.
+   *
+   * @internal
+   */
   flushDeferred(): void {
     if (this.isProcessing) return;
     this.isProcessing = true;

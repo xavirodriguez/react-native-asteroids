@@ -9,16 +9,40 @@ import { ComponentCloner } from "./ComponentCloner";
 import { WorldCommandBuffer } from "./WorldCommandBuffer";
 import { BlueprintDefinition } from "./BlueprintRegistry";
 
+/**
+ * Map type for blueprint definitions.
+ */
 export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
   Record<string, BlueprintDefinition<TComponents, any>>;
 
+/**
+ * The World acts as the central container for an ECS (Entity Component System) simulation.
+ * It manages entities, components, systems, and resources.
+ *
+ * @remarks
+ * This implementation aims to support reproducible simulations when provided with consistent
+ * initial states and inputs. However, absolute determinism may be affected by floating-point
+ * precision differences across platforms.
+ *
+ * @typeParam TComponents - The registry of components allowed in this world.
+ * @typeParam TEvents - The registry of events handled by the world's event bus.
+ * @typeParam TBlueprints - The registry of blueprints available for spawning entities.
+ */
 export class World<
   TComponents extends ComponentRegistry = any,
   TEvents extends EventRegistry = any,
   TBlueprints extends BlueprintRegistryMap<TComponents> = any
 > {
   private activeEntities = new Set<Entity>();
+
+  /**
+   * Indicates if the world is currently executing its update loop.
+   */
   public isUpdating = false;
+
+  /**
+   * Indicates if the world is in a re-simulation phase (e.g., during network rollback).
+   */
   public isReSimulating = false;
   private componentMaps = new Map<string, Map<Entity, any>>();
   private componentIndex = new Map<string, Set<Entity>>();
@@ -49,10 +73,21 @@ export class World<
   public getEventBus(): EventBus<TEvents> { return this.getResource<EventBus<TEvents>>("EventBus")!; }
   public getCommandBuffer(): WorldCommandBuffer<TComponents, TBlueprints> { return this.commandBuffer; }
 
+  /**
+   * Returns a list of all active entities, sorted by ID to help maintain
+   * consistent iteration order.
+   *
+   * @remarks
+   * This operation creates a new array and sorts it. Frequent access in hot paths
+   * should be avoided; prefer using {@link Query} for efficient entity filtering.
+   */
   public get entities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);
   }
 
+  /**
+   * Alias for {@link entities}.
+   */
   public getAllEntities(): ReadonlyArray<Entity> {
     return this.entities;
   }
@@ -62,6 +97,14 @@ export class World<
     return set ? Array.from(set) : [];
   }
 
+  /**
+   * Creates a new entity or recycles a previously removed ID.
+   * Increments the structure version of the world.
+   *
+   * @warning
+   * Direct entity creation during world update is allowed but may affect
+   * ongoing iterations. Consider using the command buffer for deferred creation.
+   */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
     this.activeEntities.add(id);
@@ -69,10 +112,21 @@ export class World<
     return id;
   }
 
+  /**
+   * Reserves an entity ID without activating it.
+   */
   reserveEntityId(): Entity {
     return this.nextEntityId++;
   }
 
+  /**
+   * Removes an entity and all its associated components from the world.
+   *
+   * @warning
+   * Structural changes (removing entities) during system updates can lead to
+   * undefined behavior in active queries. It is strongly recommended to use
+   * {@link WorldCommandBuffer} to defer entity removal until the end of the frame.
+   */
   removeEntity(entity: Entity): void {
     if (this.activeEntities.delete(entity)) {
       this.freeEntities.push(entity);
@@ -214,6 +268,18 @@ export class World<
     system.onRegister(this);
   }
 
+  /**
+   * Updates the world by executing all registered systems in their designated phases.
+   *
+   * @param deltaTime - Time elapsed since the last update in seconds.
+   *
+   * @remarks
+   * Systems are executed following the order of {@link SystemPhase} and their priority
+   * within each phase. After all phases, the {@link WorldCommandBuffer} is flushed.
+   *
+   * This method is intended to be synchronous. Asynchronous side effects within
+   * systems should be managed carefully to avoid breaking simulation consistency.
+   */
   update(deltaTime: number): void {
     this._tick++;
     this.isUpdating = true;
@@ -281,6 +347,17 @@ export class World<
     typeMap.set(entity, this._stateVersion);
   }
 
+  /**
+   * Captures the current serializable state of the world.
+   *
+   * @param target - Optional snapshot object to reuse and minimize allocations.
+   * @returns A snapshot of the world's entities, components, and RNG state.
+   *
+   * @remarks
+   * Only components and their serializable properties (non-functions) are captured.
+   * Snapshotting is designed to support save/load and network synchronization,
+   * but its performance depends on the number of entities and components.
+   */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
 
@@ -325,6 +402,16 @@ export class World<
     };
   }
 
+  /**
+   * Restores the world state from a snapshot.
+   *
+   * @param state - The snapshot to restore.
+   *
+   * @remarks
+   * This method performs a deep restoration of entities and components,
+   * rebuilding internal indexes and queries. It is a heavy operation
+   * intended for scene transitions, rollback, or game loading.
+   */
   public restore(state: WorldSnapshot): void {
     this.activeEntities = new Set(state.entities);
     this.nextEntityId = state.nextEntityId;

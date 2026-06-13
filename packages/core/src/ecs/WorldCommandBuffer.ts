@@ -6,12 +6,24 @@ export interface Command<TComponents extends ComponentRegistry, TBlueprints exte
   execute(world: World<TComponents, any, TBlueprints>): void;
 }
 
+/**
+ * Buffer for deferring world modifications until the end of a frame.
+ *
+ * @remarks
+ * Using the command buffer is the recommended way to modify the world
+ * (removing entities, adding/removing components) from within systems.
+ * This ensures that the world state remains stable during system updates
+ * and avoids issues with iterator invalidation.
+ */
 export class WorldCommandBuffer<
   TComponents extends ComponentRegistry = any,
   TBlueprints extends BlueprintRegistryMap<TComponents> = any
 > {
   private commands: Command<TComponents, TBlueprints>[] = [];
 
+  /**
+   * Schedules an entity to be spawned from a blueprint.
+   */
   public spawnFromBlueprint<TId extends keyof TBlueprints & string>(
     blueprintId: TId,
     args: BlueprintArgs<TBlueprints, TId>
@@ -52,6 +64,11 @@ export class WorldCommandBuffer<
     });
   }
 
+  /**
+   * Executes all buffered commands on the provided world.
+   *
+   * @internal
+   */
   public flush(world: World<TComponents, any, TBlueprints>): void {
     const commands = [...this.commands];
     this.commands = [];
@@ -60,6 +77,12 @@ export class WorldCommandBuffer<
     }
   }
 
+  /**
+   * @deprecated
+   * Directly creating entities via the command buffer is not supported as it
+   * cannot return a valid entity ID immediately.
+   * Use {@link spawnFromBlueprint} or defer entity creation manually.
+   */
   public createEntity(): number {
       console.warn("WorldCommandBuffer.createEntity() is not recommended. Use spawnFromBlueprint if possible.");
       return -1;
