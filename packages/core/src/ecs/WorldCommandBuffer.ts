@@ -12,8 +12,8 @@ export interface Command<TComponents extends ComponentRegistry, TBlueprints exte
  * @remarks
  * Using the command buffer is the recommended way to modify the world
  * (removing entities, adding/removing components) from within systems.
- * This ensures that the world state remains stable during system updates
- * and avoids issues with iterator invalidation.
+ * This helps maintain a stable world state during system updates
+ * and reduces issues with iterator invalidation during structural changes.
  */
 export class WorldCommandBuffer<
   TComponents extends ComponentRegistry = any,
@@ -81,7 +81,8 @@ export class WorldCommandBuffer<
    * @deprecated
    * Directly creating entities via the command buffer is not supported as it
    * cannot return a valid entity ID immediately.
-   * Use {@link spawnFromBlueprint} or defer entity creation manually.
+   * Use {@link spawnFromBlueprint} if possible, or create entities directly in the world
+   * if the ID is needed immediately.
    */
   public createEntity(): number {
       console.warn("WorldCommandBuffer.createEntity() is not recommended. Use spawnFromBlueprint if possible.");
