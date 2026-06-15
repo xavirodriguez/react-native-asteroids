@@ -1,3 +1,15 @@
+/**
+ * @packageDocumentation
+ * TinyAster Core: A lightweight, extensible ECS engine for high-performance
+ * arcade-style games.
+ *
+ * @remarks
+ * This package provides the foundational building blocks for entities,
+ * components, systems, and world management. It is designed to be
+ * platform-agnostic and supports reproducible simulations under
+ * controlled conditions.
+ */
+
 // ECS Core
 export * from "./ecs/Entity";
 export * from "./ecs/Component";
