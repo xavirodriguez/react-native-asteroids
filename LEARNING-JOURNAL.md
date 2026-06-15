@@ -17,5 +17,11 @@
 - **Command Buffer Tipado:** Permite operaciones diferidas manteniendo la inferencia de tipos de componentes.
 - **Jerarquías Genéricas:** El `HierarchySystem` ahora trabaja sobre cualquier componente que implemente `IHierarchicalComponent`, aunque por defecto se enfoca en `Transform`.
 
+### Día 6-7: Migración de AsteroidsGame y Validación Final
+- **Migración Exitosa:** `AsteroidsGame` ahora extiende la nueva clase `BaseGame` del core.
+- **Refactorización de Sistemas:** Se han actualizado `AsteroidGameStateSystem`, `AsteroidCollisionSystem` y `AsteroidInputSystem` para cumplir con las nuevas interfaces del motor y mejorar la seguridad de tipos.
+- **Paridad Técnica:** Se han integrado los cambios más recientes de `master`, asegurando que la refactorización no rompa la funcionalidad existente del servidor o del cliente.
+- **Type-Safety:** El proyecto completo pasa `tsc --noEmit`, garantizando una integración sólida entre los paquetes del monorepo.
+
 ---
-*(Próxima actualización: Día 6 - Migración de AsteroidsGame)*
+*(Próxima actualización: Semana 2 - Refactor Técnico)*
