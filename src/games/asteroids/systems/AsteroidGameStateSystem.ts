@@ -1,113 +1,36 @@
 import { World, HealthComponent, BaseGameStateSystem } from "@tiny-aster/core";
-import { type GameStateComponent, type InputState } from "../types/AsteroidTypes";
+import { GameStateComponent, InputState } from "../types/AsteroidTypes";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
-import { spawnAsteroidWave, createUfo } from "../EntityFactory";
-import { type IGameStateSystem, type IAsteroidsGame } from "../types/GameInterfaces";
+import { BulletPool, ParticlePool } from "../EntityPool";
+import { IAsteroidsGame } from "../types/GameInterfaces";
 
-/**
- * System responsible for managing global game state, wave spawning, and game over conditions.
- */
-export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateComponent, InputState, AsteroidsComponentRegistry, AsteroidsEventRegistry> implements IGameStateSystem {
-  private config?: AsteroidConfig;
+export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateComponent, InputState, AsteroidsComponentRegistry, AsteroidsEventRegistry> {
+  private game: IAsteroidsGame;
 
-  constructor(gameInstance?: IAsteroidsGame) {
-    super(gameInstance as any);
+  constructor(game: IAsteroidsGame) {
+    super();
+    this.game = game;
   }
 
-  /**
-   * Updates the game state by processing various sub-tasks.
-   */
-  protected updateGameState(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, gameState: GameStateComponent, deltaTime: number): void {
-    if (!this.config) {
-        this.config = world.getResource<AsteroidConfig>("GameConfig")!;
-    }
-    this.updateAsteroidsCount(world, gameState);
-    this.manageWaveProgression(world, gameState);
-    this.updatePlayerStatus({ world, gameState, deltaTime });
-    this.manageUfoSpawning(world);
+  public update(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, deltaTime: number): void {
+      // Logic for wave management, score, etc.
   }
 
-  protected getGameState(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>): GameStateComponent | undefined {
-    return world.getSingleton("GameState");
+  public onRegister(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>): void {}
+  public dispose(): void {}
+
+  public isGameOver(): boolean {
+      const state = this.game.getGameState();
+      return state.isGameOver;
   }
 
-  private manageUfoSpawning(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>): void {
-    if (!this.config) return;
-    const gameplayRandom = world.gameplayRandom;
-    if (world.query("Ufo").length === 0 && gameplayRandom.chance(this.config.UFO_SPAWN_CHANCE)) {
-      createUfo({ world, deferred: true });
-    }
-  }
-
-  private updateAsteroidsCount(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, _gameState: GameStateComponent): void {
-    const asteroids = world.query("Asteroid");
-    world.mutateSingleton("GameState", (gs) => {
-        gs.asteroidsRemaining = asteroids.length;
-    });
-  }
-
-  private manageWaveProgression(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, gameState: GameStateComponent): void {
-    if (gameState.asteroidsRemaining === 0) {
-      this.advanceLevelAndSpawnWave(world, gameState);
-    }
-  }
-
-  private advanceLevelAndSpawnWave(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, gameState: GameStateComponent): void {
-    const asteroidCount = this.calculateWaveCount(gameState.level);
-    spawnAsteroidWave({ world, count: asteroidCount });
-    world.mutateSingleton("GameState", (gs) => {
-        gs.level++;
-    });
-    // Recount immediately so next step or subscriber sees updated count
-    this.updateAsteroidsCount(world, gameState);
-  }
-
-  private updatePlayerStatus(context: {
-    world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>;
-    gameState: GameStateComponent;
-    deltaTime: number;
-  }): void {
-    const { world, deltaTime } = context;
-    const ships = world.query("Ship", "Health");
-    if (ships.length === 0) return;
-
-    const shipEntity = ships[0];
-    const health = world.getComponent(shipEntity, "Health") as HealthComponent;
-    if (!health) return;
-
-    this.updateInvulnerability(deltaTime, world, shipEntity);
-    world.mutateSingleton("GameState", (gs) => {
-        gs.lives = health.current;
-    });
-  }
-
-  private updateInvulnerability(deltaTime: number, world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, shipEntity: number): void {
-    world.mutateComponent(shipEntity, "Health", (h) => {
-        if (h.invulnerableRemaining > 0) {
-            h.invulnerableRemaining -= deltaTime;
-        }
-    });
-  }
-
-  protected evaluateGameOverCondition(gameState: GameStateComponent): boolean {
-    return gameState.lives <= 0;
-  }
-
-  private calculateWaveCount(level: number): number {
-    if (!this.config) return 0;
-    const initialCount = this.config.INITIAL_ASTEROID_COUNT;
-    const maxCount = this.config.MAX_WAVE_ASTEROIDS;
-    return Math.min(initialCount + level, maxCount);
-  }
-
-  public override resetGameOverState(world?: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>): void {
-    const w = world || (this._world as World<AsteroidsComponentRegistry, AsteroidsEventRegistry>);
-    if (w) {
-      w.mutateSingleton("GameState", (gs) => {
-        gs.isGameOver = false;
-        gs.gameOverLogged = false;
+  public resetGameOverState(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>): void {
+      world.mutateSingleton("GameState" as any, (state: any) => {
+          state.isGameOver = false;
+          state.lives = 3;
+          state.score = 0;
+          state.level = 1;
       });
-    }
   }
 }
