@@ -7,11 +7,8 @@ import { EventBus } from "../events/EventBus";
  * System responsible for managing the lifetime (Time To Live) of entities.
  *
  * @remarks
- * This system decrements the `TTL` component and schedules entities for removal
- * when their time expires. It can also emit events via the {@link EventBus}
- * and release entities back to designated object pools.
- *
- * Note: Entity removal is deferred through the {@link WorldCommandBuffer}.
+ * This system decrements the `TTL` component and removes entities when their
+ * time expires. It can also emit events and release entities back to pools.
  */
 export class TTLSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, deltaTime: number): void {

@@ -1,11 +1,16 @@
-import React, { useRef, useEffect, useState } from "react";
-import { StyleSheet, Platform } from "react-native";
-import { World, GameLoop, SkiaRenderer } from "@tiny-aster/core";
+import React, { useMemo, useRef, useEffect, useState } from "react";
+import { View, StyleSheet, Platform } from "react-native";
+import { World, GameLoop, Renderer } from "@tiny-aster/core";
+import { SkiaRenderer } from "../src/rendering/SkiaRenderer";
+import type { SkCanvas } from "@shopify/react-native-skia";
+import { World, GameLoop, Renderer } from "@tiny-aster/core";
+import { SkiaRenderer } from "../src/rendering/SkiaRenderer";
+import type { SkCanvas } from "@shopify/react-native-skia";
 
 interface GameRendererProps {
-  world: World<any>;
+  world: World;
   gameLoop?: GameLoop;
-  onInitialize?: (renderer: SkiaRenderer) => void;
+  onInitialize?: (renderer: any) => void;
 }
 
 export const GameRenderer: React.FC<GameRendererProps> = ({ world, gameLoop, onInitialize }) => {

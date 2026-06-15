@@ -2,7 +2,7 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "strictPropertyInitialization": false,
+    "strictPropertyInitialization": true,
     "noImplicitAny": true,
     "downlevelIteration": true,
     "paths": {
@@ -15,10 +15,6 @@
       ]
     }
   },
-  "exclude": [
-      "server",
-      "packages/core/tests"
-  ],
   "include": [
     "**/*.ts",
     "**/*.tsx",

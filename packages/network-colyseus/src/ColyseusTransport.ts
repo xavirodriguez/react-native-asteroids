@@ -1,17 +1,6 @@
 import { NetworkTransport } from "@tiny-aster/core";
 import { Client, Room } from "@colyseus/sdk";
 
-/**
- * Colyseus-based implementation of {@link NetworkTransport}.
- *
- * @remarks
- * This transport provides a wrapper around the Colyseus SDK to handle
- * room-based networking. It facilitates joining/creating rooms,
- * sending messages, and listening for server updates.
- *
- * Note: Connection and message delivery are subject to network latency
- * and Colyseus's internal synchronization protocol.
- */
 export class ColyseusTransport implements NetworkTransport {
   private client: Client;
   private room: Room | null = null;

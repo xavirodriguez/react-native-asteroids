@@ -1,19 +1,25 @@
 {
   "compilerOptions": {
-    "target": "esnext",
+    "target": "es2020",
     "module": "commonjs",
-    "lib": ["esnext", "dom"],
-    "strict": false,
+    "lib": ["es2020"],
+    "declaration": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
-    "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "baseUrl": ".",
-    "paths": {
-      "@tiny-aster/core": ["../packages/core/src/index.ts"]
-    }
+    "experimentalDecorators": true,
+    "outDir": "dist"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*"]
 }

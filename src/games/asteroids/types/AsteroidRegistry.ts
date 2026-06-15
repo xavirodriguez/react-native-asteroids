@@ -5,17 +5,26 @@ import {
   UfoComponent
 } from "./AsteroidTypes";
 
+/**
+ * Registry of all components used in the Asteroids game.
+ * Extends the Core registry to include game-specific components.
+ */
 export interface AsteroidsComponentRegistry extends CoreComponentRegistry {
   GameState: GameStateComponent;
   Input: InputComponent;
   Ufo: UfoComponent;
-  Asteroid: { type: "Asteroid"; size: string };
-  Ship: { type: "Ship"; sessionId: string };
-  Bullet: { type: "Bullet"; ownerId?: string };
+  // Note: Asteroid, Ship, Bullet, etc., are currently markers or use Transform/Velocity
+  // If they had specific data, they would be added here.
+  Asteroid: { type: "Asteroid" };
+  Ship: { type: "Ship" };
+  Bullet: { type: "Bullet" };
   LocalPlayer: { type: "LocalPlayer" };
   RemotePlayer: { type: "RemotePlayer"; sessionId: string };
 }
 
+/**
+ * Registry of all events used in the Asteroids game.
+ */
 export interface AsteroidsEventRegistry extends CoreEvents {
   "game:start": { seed: number };
   "game:over": { score: number; level: number };

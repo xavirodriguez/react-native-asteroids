@@ -1,24 +1,58 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
-import { GameStateComponent, ShipComponent, BulletComponent } from "../../src/games/asteroids/types/AsteroidTypes";
-import { World, TransformComponent, VelocityComponent, HealthComponent, RenderComponent, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot } from "@tiny-aster/core";
+import { GameStateComponent } from "../../src/games/asteroids/types/AsteroidTypes";
+import { World } from "@tiny-aster/core";
 import { AsteroidsGame } from "../../src/games/asteroids/AsteroidsGame";
+import { TransformComponent, VelocityComponent, HealthComponent, RenderComponent, Component } from "@tiny-aster/core";
 import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
-import { leaderboardStore } from "./DailyLeaderboardStore";
-import { getDateKey } from "./utils/DateUtils";
+import { ShipComponent, BulletComponent } from "../../src/games/asteroids/types/AsteroidTypes";
+import { InterestManagerSystem } from "@tiny-aster/core";
+ import { leaderboardStore } from "./DailyLeaderboardStore";
+ import { getDateKey } from "./utils/DateUtils";
 import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
-import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../../src/games/asteroids/types/AsteroidRegistry";
+import { ReplicationStateTracker } from "@tiny-aster/core";
+import { ClientAckTracker } from "@tiny-aster/core";
+import { NetworkDeltaSystem } from "@tiny-aster/core";
+import { NetworkBudgetManager } from "@tiny-aster/core";
+import { BinaryCompression } from "@tiny-aster/core";
 
-export class AsteroidsRoom extends (Room as any) {
+/**
+ * Authoritative Game Room for Asteroids.
+ *
+ * Orchestrates the authoritative server-side simulation, client input synchronization,
+ * and state replication intended to be optimized using various strategies (Interest, Delta, Binary).
+ *
+ * @responsibility Manage Colyseus room lifecycle and client connections.
+ * @responsibility Execute authoritative {@link AsteroidsGame} (headless) at 60Hz.
+ * @responsibility Implement multi-mode replication (Interest Management, Delta Compression).
+ * @responsibility Maintain historical snapshots for lag compensation and re-simulation.
+ *
+ * @remarks
+ * ### Data Flow (Target Server Tick Pipeline)
+ * 1. **Input Recovery**: Retrieves buffered user actions matching the current `serverTick`.
+ * 2. **Authoritative Simulation**: Advances the ECS World using the shared simulation logic.
+ * 3. **World Sync**: Copies authoritative state from ECS components to Colyseus Schema objects.
+ * 4. **Filtering & Encoding**:
+ *    - Applies **Interest Management** (Spatial Hash) to determine visibility per client.
+ *    - Generates **Delta Packets** by comparing `world.stateVersion` against client ACKs.
+ *    - (Optional) Compresses payloads using **MessagePack** (Binary Mode).
+ * 5. **Dispatch**: Transmits optimized updates to connected clients.
+ *
+ * @conceptualRisk [BANDWIDTH][HIGH] 'legacy' mode sends full JSON snapshots (avoid for >20 entities).
+ * @conceptualRisk [TICK_DRIFT] Discrepancies between fixed simulation and variable patch rates
+ * can cause visual jitter without client-side interpolation.
+ */
+export class AsteroidsRoom extends Room<AsteroidsState> {
   maxClients = 4;
+  /** Paso de tiempo objetivo para el motor ECS (60Hz). */
   private fixedTimeStep = 16.66;
   private inputBuffers = new Map<string, InputFrame[]>();
-  private stateHistory = new Map<number, WorldSnapshot>();
-  private clientAcks = new Map<string, number>();
+  private stateHistory = new Map<number, import("../../src/engine/types/EngineTypes").WorldSnapshot>();
+  private clientAcks = new Map<string, number>(); // sessionId -> lastAckedStateVersion
   private replayFrames: ReplayFrame[] = [];
   private gameSimulation!: AsteroidsGame;
-  private world!: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>;
+  private world!: World;
   private playerEntities = new Map<string, number>();
   private newClients = new Set<string>();
   private nextPlayerNumber = 1;
@@ -43,7 +77,7 @@ export class AsteroidsRoom extends (Room as any) {
         this.REPLICATION_MODE = options.replicationMode;
     }
     this.newClients.clear();
-    this.setState(new AsteroidsState());
+    this.state = new AsteroidsState();
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
 
     this.gameSimulation = new AsteroidsGame({
@@ -51,7 +85,7 @@ export class AsteroidsRoom extends (Room as any) {
         isMultiplayer: true,
         seed: this.state.seed
     });
-    await this.gameSimulation.initialize();
+    await this.gameSimulation.init();
     this.world = this.gameSimulation.getWorld();
 
     this.state.gameWidth = 800;
@@ -60,16 +94,16 @@ export class AsteroidsRoom extends (Room as any) {
     this.state.gameOver = false;
     this.state.serverTick = 0;
 
-    this.setPatchRate(50);
-    this.setSimulationInterval((dt: any) => this.update(dt));
+    this.setPatchRate(50); // 20 FPS network patches
+    this.setSimulationInterval((dt) => this.update(dt), this.fixedTimeStep);
 
-    this.onMessage("input", (client: any, frame: InputFrame) => {
+    this.onMessage("input", (client, frame: InputFrame) => {
       const buffer = this.inputBuffers.get(client.sessionId) || [];
       buffer.push(frame);
       this.inputBuffers.set(client.sessionId, buffer);
     });
 
-    this.onMessage("sync_tick", (client: any, data: any) => {
+    this.onMessage("sync_tick", (client, data) => {
       if (data?.lastAckedVersion !== undefined) {
         this.clientAcks.set(client.sessionId, data.lastAckedVersion);
       }
@@ -88,20 +122,30 @@ export class AsteroidsRoom extends (Room as any) {
       this.state.gameStarted = true;
       this.spawnAsteroids(6);
 
-      this.world.getEventBus().on("game:over" as any, () => {
+      // Listen for game:over to finalize authoritative score if needed
+      this.world.getResource<import("../../src/engine/core/EventBus").EventBus>("EventBus")!.on("game:over", () => {
           this.state.gameOver = true;
           console.log(`[AsteroidsRoom] Game Over. Final Authoritative Score: ${this.state.score}`);
       });
     });
 
-    this.onMessage("metrics", (client: any) => {
+    this.onMessage("metrics", (client) => {
       client.send("metrics", {
         protocolVersion: this.state.protocolVersion,
         ...this.networkMetrics.getMetrics()
       });
     });
 
-    this.world.addSystem(new InterestManagerSystem() as any);
+    // Initialized Headless ECS simulation
+    this.gameSimulation = new AsteroidsGame({
+        headless: true,
+        isMultiplayer: true,
+        gameOptions: { seed: this.state.seed }
+    });
+    await this.gameSimulation.init();
+    this.world = this.gameSimulation.getWorld();
+
+    this.world.addSystem(new InterestManagerSystem());
   }
 
   onJoin(client: Client, options: { name?: string }) {
@@ -117,17 +161,22 @@ export class AsteroidsRoom extends (Room as any) {
     player.alive = true;
     this.state.players.set(client.sessionId, player);
 
+    // Create ECS entity for player
     const entity = createShip({ world: this.world, x: player.x, y: player.y });
     this.playerEntities.set(client.sessionId, entity);
     this.newClients.add(client.sessionId);
 
-    (this.world as any).addComponent(entity, "Ship", {
+    // Add necessary multiplayer components
+    this.world.addComponent(entity, {
         type: "Ship",
         sessionId: client.sessionId,
-    });
+        hyperspaceTimer: 0,
+        hyperspaceCooldownRemaining: 0
+    } as ShipComponent);
   }
 
   async onLeave(client: Client, _code: number) {
+    // Record authoritative score before cleaning up player
     const player = this.state.players.get(client.sessionId);
     if (player && player.score > 0) {
         const dateKey = getDateKey();
@@ -146,11 +195,29 @@ export class AsteroidsRoom extends (Room as any) {
     }
   }
 
+  /**
+   * Bucle principal de actualización del servidor (Fixed Step Target @ 60Hz).
+   *
+   * @remarks
+   * Sigue un pipeline diseñado para mantener la autoridad del estado y la eficiencia de red:
+   *
+   * 1. **Tick Sync**: Incrementa `serverTick`, la referencia temporal para la simulación.
+   * 2. **Input Recovery**: Intenta extraer inputs del buffer de cada cliente correspondientes al tick actual.
+   * 3. **Authoritative Simulation**: Ejecuta la lógica compartida (`AsteroidsGame` headless).
+   * 4. **Post-Simulation**: Ejecuta sistemas exclusivos del servidor (ej. `InterestManagerSystem`).
+   * 5. **Schema Sync**: Sincroniza el mundo ECS con los objetos Schema de Colyseus para clientes 'legacy'.
+   * 6. **Advanced Replication**:
+   *    - **Legacy**: Envía JSON completo del estado.
+   *    - **Interest**: Filtra entidades por cercanía espacial.
+   *    - **Delta/Binary**: Calcula qué componentes han cambiado basándose en `stateVersion` y ACKs.
+   * 7. **Replay & Cleanup**: Registra frames para repeticiones y limpia buffers de entrada antiguos.
+   */
   update(_dt: number) {
     if (!this.state.gameStarted) return;
     this.state.serverTick++;
     this.state.lastProcessedTick = this.state.serverTick;
 
+    // 1. Collect and Update Inputs in ECS from buffers
     const currentInputs: Record<string, InputFrame[]> = {};
     this.state.players.forEach((_player: Player, sessionId: string) => {
       const entity = this.playerEntities.get(sessionId);
@@ -167,10 +234,13 @@ export class AsteroidsRoom extends (Room as any) {
       }
     });
 
+    // 2. Run ECS Simulation Step
     this.gameSimulation.runSimulationStep(this.fixedTimeStep, false);
 
+    // 3. Sync ECS World back to Colyseus Schema
     this.syncWorldToSchema();
 
+    // 4. Update per-client delta snapshots (Interest-based)
     let totalBytesSentThisTick = 0;
     let totalSerializationMs = 0;
     let totalEntitiesFiltered = 0;
@@ -184,18 +254,19 @@ export class AsteroidsRoom extends (Room as any) {
         this.state.fullWorldState = serialized;
         totalBytesSentThisTick = serialized.length;
     } else {
-        const detailedInterestMap = this.world.getResource<Map<string, any[]>>("DetailedInterestMap");
-        this.clients.forEach((client: any) => {
+        const detailedInterestMap = this.world.getResource<Map<string, import("../../src/engine/network/types/ReplicationTypes").InterestedEntity[]>>("DetailedInterestMap");
+        this.clients.forEach(client => {
             const isNew = this.newClients.has(client.sessionId);
             const interest = detailedInterestMap?.get(client.sessionId) || [];
             let interestIds: Set<number>;
 
             if (this.REPLICATION_MODE === 'interest' || isNew) {
-                interestIds = new Set(interest.map((e: any) => parseInt(e.entityId)));
+                interestIds = new Set(interest.map(e => parseInt(e.entityId)));
             } else {
+                // Iteration 4: Budgeting
                 const selfEntityId = this.playerEntities.get(client.sessionId)?.toString();
-                const prioritized = this.budgetManager.prioritize(client.sessionId, interest, selfEntityId);
-                interestIds = new Set(prioritized.map((e: any) => parseInt(e.entityId)));
+                const prioritized = this.budgetManager.prioritize(client.sessionId, interest, undefined, selfEntityId);
+                interestIds = new Set(prioritized.map(e => parseInt(e.entityId)));
             }
 
             totalEntitiesFiltered += (totalEntitiesInWorld - interestIds.size);
@@ -204,6 +275,7 @@ export class AsteroidsRoom extends (Room as any) {
 
             if (this.REPLICATION_MODE === 'interest' || isNew) {
                 const snapshot = this.world.snapshot();
+                // Filter snapshot entities (unless it's a legacy or we want full for new clients)
                 if (!isNew) {
                     snapshot.entities = snapshot.entities.filter(id => interestIds.has(id));
                     for (const type in snapshot.componentData) {
@@ -224,6 +296,7 @@ export class AsteroidsRoom extends (Room as any) {
                 });
                 if (isNew) this.newClients.delete(client.sessionId);
             } else {
+                // Iteration 3: Delta Compression
                 const sequence = this.ackTracker.nextSequence(client.sessionId);
                 const baselineAck = this.ackTracker.getLastAckedSequence(client.sessionId);
                 const idleTime = this.ackTracker.getIdleTime(client.sessionId);
@@ -239,6 +312,7 @@ export class AsteroidsRoom extends (Room as any) {
                 );
 
                 if (this.REPLICATION_MODE === 'binary') {
+                    // Iteration 5: Binary Compression
                     const binaryPacket = BinaryCompression.pack(deltaPacket);
                     totalSerializationMs += (Date.now() - serializationStart);
                     totalBytesSentThisTick += binaryPacket.length;
@@ -256,33 +330,39 @@ export class AsteroidsRoom extends (Room as any) {
             }
         });
 
+        // Optimization: Only update fullWorldState occasionally for late joiners
         if (this.state.serverTick % 60 === 0) {
             const snapshot = this.world.snapshot();
             this.state.fullWorldState = JSON.stringify(snapshot);
         }
     }
 
+    // Record metrics every tick
+    // We count specific entities (players + asteroids + bullets) as per Iteration 1 requirements
     const trackedEntitiesCount = this.state.players.size + this.state.asteroids.size + this.state.bullets.size;
 
     this.networkMetrics.recordTick(
         totalBytesSentThisTick,
         trackedEntitiesCount,
         totalSerializationMs,
-        (this as any).clients.length,
-        (this as any).clients.length > 0 ? totalEntitiesFiltered / (this as any).clients.length : 0
+        this.clients.length,
+        this.clients.length > 0 ? totalEntitiesFiltered / this.clients.length : 0
     );
 
 
+    // 5. Record for Replay
     this.replayFrames.push({
         tick: this.state.serverTick,
         inputs: currentInputs,
         events: []
     });
 
+    // Limit replay to 5 minutes (18000 ticks)
     if (this.replayFrames.length > 18000) {
         this.replayFrames.shift();
     }
 
+    // 6. Cleanup input buffers (processed ticks)
     this.state.players.forEach((_player: Player, sessionId: string) => {
       const buffer = this.inputBuffers.get(sessionId);
       if (buffer) {
@@ -290,11 +370,14 @@ export class AsteroidsRoom extends (Room as any) {
       }
     });
 
+    // 7. Store history for lag compensation (Backtracking)
     this.stateHistory.set(this.state.serverTick, this.world.snapshot());
 
+    // Efficient cleanup: Keep only the last 120 snapshots.
     const oldestTick = this.state.serverTick - 120;
     this.stateHistory.delete(oldestTick);
 
+    // 8. Check Game Over to broadcast replay
     if (this.state.gameOver && this.replayFrames.length > 0) {
         this.broadcast("replay", {
             protocolVersion: this.state.protocolVersion,
@@ -304,9 +387,15 @@ export class AsteroidsRoom extends (Room as any) {
             endTick: this.state.serverTick,
             frames: this.replayFrames
         });
-        this.replayFrames = [];
+        this.replayFrames = []; // Clear after broadcast
     }
   }
+
+  /**
+   * Synchronizes the authoritative ECS World state into the Colyseus Schema.
+   * This is necessary because the Schema is the source of truth for the clients
+   * that use standard Colyseus state synchronization.
+   */
 
   onDispose() {
     console.log(`[AsteroidsRoom] Disposing room ${this.roomId}`);
@@ -322,14 +411,15 @@ export class AsteroidsRoom extends (Room as any) {
   }
 
   private syncWorldToSchema() {
+    // Sync Players
     this.playerEntities.forEach((entity, sessionId) => {
         const player = this.state.players.get(sessionId);
         if (!player) return;
 
-        const pos = this.world.getComponent(entity, "Transform");
-        const vel = this.world.getComponent(entity, "Velocity");
-        const render = this.world.getComponent(entity, "Render");
-        const health = this.world.getComponent(entity, "Health");
+        const pos = this.world.getComponent<TransformComponent>(entity, "Transform");
+        const vel = this.world.getComponent<VelocityComponent>(entity, "Velocity");
+        const render = this.world.getComponent<RenderComponent>(entity, "Render");
+        const health = this.world.getComponent<HealthComponent>(entity, "Health");
 
         if (pos) {
             player.x = pos.x;
@@ -337,30 +427,32 @@ export class AsteroidsRoom extends (Room as any) {
             player.angle = pos.rotation;
         }
         if (render) {
+            // Priority to render rotation if it's the one being mutated by physics
             if (render.rotation !== undefined) player.angle = render.rotation;
         }
         if (vel) {
-            player.velocityX = vel.vx;
-            player.velocityY = vel.vy;
+            player.velocityX = vel.dx;
+            player.velocityY = vel.dy;
         }
         if (health) {
             player.lives = health.current;
             player.alive = health.current > 0;
         }
 
-        const ship = this.world.getComponent(entity, "Ship");
+        const ship = this.world.getComponent<import("../../src/games/asteroids/types/AsteroidTypes").ShipComponent>(entity, "Ship");
         if (ship) {
-            // score logic if available
+            player.score = ship.score;
         }
     });
 
+    // Sync Asteroids
     const asteroidEntities = this.world.query("Asteroid", "Transform");
     const currentAsteroidIds = new Set<string>();
     asteroidEntities.forEach(entity => {
         const id = entity.toString();
         currentAsteroidIds.add(id);
-        const pos = this.world.getComponent(entity, "Transform")!;
-        const asteroidComp = this.world.getComponent(entity, "Asteroid")!;
+        const pos = this.world.getComponent<TransformComponent>(entity, "Transform")!;
+        const asteroidComp = this.world.getComponent<Component & { size: string }>(entity, "Asteroid")!;
 
         let asteroid = this.state.asteroids.get(id);
         if (!asteroid) {
@@ -372,16 +464,18 @@ export class AsteroidsRoom extends (Room as any) {
         asteroid.y = pos.y;
         asteroid.size = asteroidComp.size === "large" ? 3 : asteroidComp.size === "medium" ? 2 : 1;
     });
+    // Cleanup removed asteroids
     this.state.asteroids.forEach((_: Asteroid, id: string) => {
         if (!currentAsteroidIds.has(id)) this.state.asteroids.delete(id);
     });
 
+    // Sync Bullets
     const bulletEntities = this.world.query("Bullet", "Transform");
     const currentBulletIds = new Set<string>();
     bulletEntities.forEach(entity => {
         const id = entity.toString();
         currentBulletIds.add(id);
-        const pos = this.world.getComponent(entity, "Transform")!;
+        const pos = this.world.getComponent<TransformComponent>(entity, "Transform")!;
 
         let bullet = this.state.bullets.get(id);
         if (!bullet) {
@@ -391,7 +485,7 @@ export class AsteroidsRoom extends (Room as any) {
         bullet.x = pos.x;
         bullet.y = pos.y;
 
-        const bulletComp = this.world.getComponent(entity, "Bullet");
+        const bulletComp = this.world.getComponent<BulletComponent>(entity, "Bullet");
         if (bulletComp?.ownerId) {
             bullet.ownerId = bulletComp.ownerId;
         }
@@ -400,10 +494,12 @@ export class AsteroidsRoom extends (Room as any) {
         if (!currentBulletIds.has(id)) this.state.bullets.delete(id);
     });
 
-    const gameState = this.world.getSingleton("GameState");
+    const gameState = this.world.getSingleton<GameStateComponent>("GameState");
     if (gameState && this.state.players.size > 0) {
+        // Authoritative score from ECS GameState
         this.state.score = gameState.score;
 
+        // Simple game over check
         let anyAlive = false;
         this.state.players.forEach((p: Player) => { if (p.alive) anyAlive = true; });
         if (!anyAlive && this.state.gameStarted) this.state.gameOver = true;

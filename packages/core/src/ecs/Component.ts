@@ -26,9 +26,8 @@ export type ComponentOf<
  * Recursively makes all properties of a type readonly.
  *
  * @remarks
- * This is used to encourage immutability when accessing components through
- * non-mutating world methods. Note that this is a compile-time check and
- * does not prevent runtime mutations if the type is cast back to mutable.
+ * This is used to enforce immutability when accessing components through
+ * non-mutating world methods.
  */
 export type DeepReadonly<T> =
   T extends (...args: any[]) => any

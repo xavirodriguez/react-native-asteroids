@@ -2,15 +2,6 @@ import { System } from "../../ecs/System";
 import { World } from "../../ecs/World";
 import { CoreComponentRegistry } from "../../ecs/CoreComponents";
 
-/**
- * System that enforces world boundaries on entities.
- *
- * @remarks
- * Supports different boundary modes:
- * - `wrap`: Teleports the entity to the opposite side of the boundary.
- * - `destroy`: Schedules the entity for removal via the {@link WorldCommandBuffer}.
- * - `bounce`: (Currently not implemented in this version).
- */
 export class BoundarySystem extends System<CoreComponentRegistry> {
   update(world: World<CoreComponentRegistry>, _deltaTime: number): void {
     const entities = world.query("Transform", "Boundary");

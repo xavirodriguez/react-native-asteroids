@@ -18,10 +18,6 @@ export type EventHandler<TPayload> = (payload: TPayload, event: string) => void;
  * Deferred events are processed when `flushDeferred` is called, typically at
  * the end of a simulation step.
  *
- * Note: Handlers are executed in the order they were registered.
- * While the bus itself is synchronous, handlers may trigger asynchronous
- * side effects which are not managed by the bus.
- *
  * @typeParam TEvents - The registry of custom events for this bus.
  */
 export class EventBus<TEvents extends EventRegistry = any> {
@@ -69,9 +65,8 @@ export class EventBus<TEvents extends EventRegistry = any> {
    * Synchronously notifies all handlers of an event.
    *
    * @warning
-   * Immediate `emit` can lead to complex call stacks and side effects that are
-   * hard to trace. It is limited to a maximum recursion depth to prevent infinite loops.
-   * For cross-system communication during the update loop, `emitDeferred` is generally preferred.
+   * Excessive use of immediate `emit` can lead to complex call stacks and
+   * circular dependencies. It is limited to {@link MAX_RECURSION} levels.
    */
   emit<K extends keyof CombinedEvents<TEvents> & string>(
     event: K,
