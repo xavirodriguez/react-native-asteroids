@@ -45,8 +45,9 @@ export class Query<TComponents extends ComponentRegistry> {
    * Returns a sorted list of entities that match the query.
    *
    * @remarks
-   * Sorting happens lazily when the query is dirty. The sort order is by entity ID,
-   * which helps in maintaining deterministic-like behavior during iteration across frames.
+   * Sorting happens lazily when the query is dirty (i.e., after entities are added or removed).
+   * The list is sorted by entity ID, which provides a stable iteration order across frames
+   * as long as the world state remains consistent.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.isDirty) {

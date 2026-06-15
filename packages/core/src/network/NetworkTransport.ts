@@ -3,7 +3,8 @@
  *
  * @remarks
  * Defines the contract for sending and receiving messages over the network.
- * Implementations are expected to handle platform-specific socket logic.
+ * Implementations are responsible for platform-specific socket logic,
+ * connection management, and message serialization.
  */
 export interface NetworkTransport {
     /**

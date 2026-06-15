@@ -1,111 +1,29 @@
-import { Room, type Client } from "@colyseus/core";
-import { FlappyBirdState, Player, Pipe } from "./schema/GameState";
-import { RandomService } from "@tiny-aster/core";
+import { Room, Client } from "@colyseus/core";
+import { Schema, type, MapSchema } from "@colyseus/schema";
 
-export class FlappyBirdRoom extends Room<FlappyBirdState> {
-  maxClients = 8;
-  pipeTimer = 0;
-  private random: RandomService;
+class Bird extends Schema {
+  @type("number") x: number;
+  @type("number") y: number;
+}
 
-  onCreate(options: { seed?: number }) {
-    this.state = new FlappyBirdState();
-    // Ensure seed is a number and fallback to random if not provided
-    const seed = (typeof options.seed === 'number') ? options.seed : Math.floor(Math.random() * 0xFFFFFFFF);
-    this.state.seed = seed;
-    this.random = new RandomService(this.state.seed);
+class FlappyState extends Schema {
+  @type({ map: Bird }) birds = new MapSchema<Bird>();
+}
 
-    this.state.gameStarted = false;
-    this.state.gameOver = false;
+export class FlappyBirdRoom extends (Room as any) {
+  private random: any;
 
-    this.setSimulationInterval((deltaTime) => this.update(deltaTime));
-
-    this.onMessage("flap", (client) => {
-      const bird = this.state.players.get(client.sessionId);
-      if (!bird || !bird.alive) return;
-      bird.velocityY = -300;
-    });
-
-    this.onMessage("start_game", () => {
-      this.state.gameStarted = true;
-      this.state.pipes.clear();
-      this.state.players.forEach(p => {
-          p.y = 300;
-          p.velocityY = 0;
-          p.alive = true;
-          p.score = 0;
-      });
-    });
+  onCreate(options: any) {
+    this.setState(new FlappyState());
+    this.setSimulationInterval((dt: number) => {});
+    this.onMessage("jump", (client: Client) => {});
   }
 
-  onJoin(client: Client, options: { name?: string }) {
-    const bird = new Player();
-    bird.x = 100;
-    bird.y = 300;
-    bird.velocityY = 0;
-    bird.score = 0;
-    bird.alive = true;
-    bird.name = options.name || `Bird ${this.clients.length}`;
-    this.state.players.set(client.sessionId, bird);
+  onJoin(client: Client) {
+    this.state.birds.set(client.sessionId, new Bird());
   }
 
-  onLeave(client: Client, _code: number) {
-    this.state.players.delete(client.sessionId);
-  }
-
-  update(deltaTime: number) {
-    if (!this.state.gameStarted) return;
-    const dt = deltaTime / 1000;
-
-    this.state.players.forEach((bird) => {
-        if (!bird.alive) return;
-        bird.y += bird.velocityY * dt;
-        bird.velocityY += 800 * dt;
-
-        if (bird.y > 580) {
-            bird.y = 580;
-            bird.alive = false;
-        }
-        if (bird.y < 0) bird.y = 0;
-    });
-
-    this.pipeTimer += deltaTime;
-    if (this.pipeTimer > 1500) {
-        this.pipeTimer = 0;
-        this.spawnPipe();
-    }
-
-    this.state.pipes.forEach((pipe, id) => {
-        pipe.x -= 150 * dt;
-
-        // Scoring
-        this.state.players.forEach((bird, sessionId) => {
-            if (bird.alive && bird.x > pipe.x + 60 && !pipe.scoredBy.has(sessionId)) {
-                bird.score += 1;
-                pipe.scoredBy.set(sessionId, true);
-            }
-        });
-
-        if (pipe.x < -100) {
-            this.state.pipes.delete(id);
-        }
-
-        // Collision with birds
-        this.state.players.forEach(bird => {
-            if (!bird.alive) return;
-            if (bird.x + 15 > pipe.x && bird.x - 15 < pipe.x + 60) {
-                if (bird.y - 15 < pipe.gapY - 70 || bird.y + 15 > pipe.gapY + 70) {
-                    bird.alive = false;
-                }
-            }
-        });
-    });
-  }
-
-  spawnPipe() {
-      const pipe = new Pipe();
-      pipe.id = Math.floor(this.random.next() * 0xFFFFFFFFFF).toString(36);
-      pipe.x = 450;
-      pipe.gapY = 150 + this.random.next() * 300;
-      this.state.pipes.set(pipe.id, pipe);
+  onLeave(client: Client) {
+    this.state.birds.delete(client.sessionId);
   }
 }

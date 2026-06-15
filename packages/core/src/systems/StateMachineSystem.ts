@@ -12,6 +12,17 @@ export interface StateDefinition {
   onExit?: (world: World<CoreComponentRegistry>, entity: number, data: any) => void;
 }
 
+/**
+ * System that manages entity state machines.
+ *
+ * @remarks
+ * This system updates the state of entities based on defined transitions and behaviors.
+ * State definitions can include `onEnter`, `onUpdate`, and `onExit` hooks.
+ *
+ * Warning: State transitions and hook execution may involve complex logic.
+ * Ensure that hooks do not perform unauthorized structural changes to the world
+ * while the system is iterating over entities.
+ */
 export class StateMachineSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, deltaTime: number): void {
     const entities = world.query("StateMachine");
