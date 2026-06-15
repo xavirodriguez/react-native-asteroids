@@ -1,98 +1,27 @@
-import { Server, LocalPresence, LocalDriver } from "@colyseus/core";
+import { Server } from "@colyseus/core";
 import { WebSocketTransport } from "@colyseus/ws-transport";
 import express from "express";
-import http from "http";
+import { createServer } from "http";
 import { AsteroidsRoom } from "./AsteroidsRoom";
-import { SpaceInvadersRoom } from "./SpaceInvadersRoom";
 import { FlappyBirdRoom } from "./FlappyBirdRoom";
 import { PongRoom } from "./PongRoom";
-import { leaderboardStore } from "./DailyLeaderboardStore";
-import { generateScoreSignature } from "./utils/SecurityUtils";
-import { TimeUtils } from "./utils/TimeUtils";
+import { SpaceInvadersRoom } from "./SpaceInvadersRoom";
 
-const SUBMISSION_COOLDOWN = 10000; // 10 seconds
-
+const port = Number(process.env.PORT || 2567);
 const app = express();
-app.use(express.json());
 
-const server = http.createServer(app);
+app.use(express.json());
 
 const gameServer = new Server({
   transport: new WebSocketTransport({
-    server: server
-  }),
-  presence: new LocalPresence(),
-  driver: new LocalDriver(),
+    server: createServer(app)
+  })
 });
 
-gameServer.define("asteroids", AsteroidsRoom);
-gameServer.define("spaceinvaders", SpaceInvadersRoom);
-gameServer.define("flappybird", FlappyBirdRoom);
-gameServer.define("pong", PongRoom);
+gameServer.define("asteroids", AsteroidsRoom as any);
+gameServer.define("flappybird", FlappyBirdRoom as any);
+gameServer.define("pong", PongRoom as any);
+gameServer.define("spaceinvaders", SpaceInvadersRoom as any);
 
-// HTTP Endpoints for Server Time and Mutators
-app.get("/api/server-time", (req, res) => {
-  const now = Date.now();
-  const weekSeed = TimeUtils.getCurrentWeekSeed(now);
-  const { weekIndex } = TimeUtils.getISOWeek(now);
-  const { validFrom, validUntil } = TimeUtils.getWeekRange(now);
-
-  res.json({
-    serverTime: now,
-    weekSeed: weekSeed,
-    weekIndex: weekIndex,
-    validFrom: validFrom,
-    validUntil: validUntil
-  });
-});
-
-// HTTP Endpoints for Leaderboard
-app.get("/daily-leaderboard", (req, res) => {
-  const { gameId, dateKey } = req.query;
-  if (!gameId || !dateKey) return res.status(400).send("Missing query params");
-  const entries = leaderboardStore.getEntries(gameId as string, dateKey as string);
-  res.json(entries);
-});
-
-app.post("/daily-score", (req, res) => {
-  const { gameId, dateKey, playerId, score, displayName, signature } = req.body;
-  if (!gameId || !dateKey || !playerId || score === undefined || !signature) {
-    return res.status(400).send("Missing body fields");
-  }
-
-  // Persistent Rate Limiting
-  if (!leaderboardStore.checkAndUpdateRateLimit(playerId, SUBMISSION_COOLDOWN)) {
-    return res.status(429).send("Too many submissions. Please wait.");
-  }
-
-  // Signature Verification
-  // IMPORTANT: For multiplayer games, scores are now authoritative and recorded by the room onLeave.
-  // This endpoint is only preserved for solo daily challenges.
-  const expectedSignature = generateScoreSignature(gameId, dateKey, playerId, score);
-  if (signature !== expectedSignature) {
-    console.warn(`[Security] Invalid score signature from ${playerId} for ${gameId}. Expected ${expectedSignature}, got ${signature}`);
-    return res.status(403).send("Invalid score signature. Nice try!");
-  }
-
-  // Validation
-  const validGames = ["asteroids", "spaceinvaders", "flappybird", "pong"];
-  if (!validGames.includes(gameId)) return res.status(400).send("Invalid gameId");
-
-  if (typeof score !== "number" || score < 0 || score > 10000000) {
-    return res.status(400).send("Invalid score");
-  }
-
-  if (displayName && (typeof displayName !== "string" || displayName.length > 20)) {
-    return res.status(400).send("Invalid displayName");
-  }
-
-  // Note: For fully authoritative leaderboards, score should be pulled
-  // from the room state at game over, rather than submitted via HTTP.
-  // For now, we'll keep the endpoint but add a note about this.
-  leaderboardStore.addScore(gameId, dateKey, playerId, score, displayName);
-  res.json({ success: true });
-});
-
-gameServer.listen(2567).then(() => {
-  console.log("Retro Arcade server listening on http://localhost:2567");
-});
+gameServer.listen(port);
+console.log(`Listening on ws://localhost:${port}`);

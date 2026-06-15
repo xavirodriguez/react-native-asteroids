@@ -1,14 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Platform } from "react-native";
-import { World, GameLoop, Renderer } from "@tiny-aster/core";
-import { CanvasRenderer as EngineCanvasRenderer } from "../src/rendering/CanvasRenderer";
-import { World, GameLoop, Renderer } from "@tiny-aster/core";
-import { CanvasRenderer as EngineCanvasRenderer } from "../src/rendering/CanvasRenderer";
+import { World, GameLoop, CanvasRenderer as EngineCanvasRenderer } from "@tiny-aster/core";
 
 interface CanvasRendererProps {
-  world: World;
+  world: World<any>;
   gameLoop?: GameLoop;
-  onInitialize?: (renderer: any) => void;
+  onInitialize?: (renderer: EngineCanvasRenderer) => void;
 }
 
 export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, gameLoop, onInitialize }) => {
@@ -30,7 +27,7 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, gameLoop,
     }
 
     const unsub = gameLoop?.subscribeRender((alpha) => {
-      if (rendererRef.current) {
+      if (rendererRef.current && ctx) {
         rendererRef.current.render(world, ctx);
       }
     });
