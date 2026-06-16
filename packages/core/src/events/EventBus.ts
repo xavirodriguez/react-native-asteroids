@@ -68,10 +68,14 @@ export class EventBus<TEvents extends EventRegistry = any> {
   /**
    * Synchronously notifies all handlers of an event.
    *
+   * @remarks
+   * This method triggers immediate execution of all registered handlers for the event.
+   *
    * @warning
-   * Immediate `emit` can lead to complex call stacks and side effects that are
-   * hard to trace. It is limited to a maximum recursion depth to prevent infinite loops.
-   * For cross-system communication during the update loop, `emitDeferred` is generally preferred.
+   * Immediate `emit` can lead to deeply nested call stacks and side effects that are
+   * difficult to trace. It is strictly limited to a maximum recursion depth (10) to
+   * prevent infinite loops. For cross-system communication during the update loop,
+   * `emitDeferred` is strongly recommended to maintain simulation predictability.
    */
   emit<K extends keyof CombinedEvents<TEvents> & string>(
     event: K,

@@ -7,13 +7,15 @@ export interface Command<TComponents extends ComponentRegistry, TBlueprints exte
 }
 
 /**
- * Buffer for deferring world modifications until the end of a frame.
+ * Buffer for deferring world modifications until the end of an update cycle.
  *
  * @remarks
  * Using the command buffer is the recommended way to modify the world
- * (removing entities, adding/removing components) from within systems.
- * This helps maintain a stable world state during system updates
- * and reduces issues with iterator invalidation during structural changes.
+ * (e.g., spawning/removing entities, adding/removing components) from within systems.
+ *
+ * This approach helps maintain a stable world state throughout the frame's update
+ * phases and helps prevent issues like iterator invalidation or inconsistent
+ * query results caused by mid-frame structural changes.
  */
 export class WorldCommandBuffer<
   TComponents extends ComponentRegistry = any,
