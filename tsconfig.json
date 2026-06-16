@@ -12,6 +12,12 @@
       ],
       "@tiny-aster/core": [
         "./packages/core/src/index.ts"
+      ],
+      "@tiny-aster/renderer-skia": [
+        "./packages/renderer-skia/src/index.ts"
+      ],
+      "@tiny-aster/renderer-canvas": [
+        "./packages/renderer-canvas/src/index.ts"
       ]
     }
   },

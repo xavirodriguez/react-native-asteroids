@@ -4,7 +4,7 @@ import { EventRegistry, EventBus } from "../events/EventBus";
 import { Query } from "./Query";
 import { System, SystemPhase, SystemConfig } from "./System";
 import { RandomService } from "../utils/RandomService";
-import { WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "./SnapshotTypes";
+import { WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../snapshots/WorldSnapshot";
 import { ComponentCloner } from "./ComponentCloner";
 import { WorldCommandBuffer } from "./WorldCommandBuffer";
 import { BlueprintDefinition } from "./BlueprintRegistry";

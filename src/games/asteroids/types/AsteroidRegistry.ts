@@ -5,7 +5,11 @@ import {
   UfoComponent
 } from "./AsteroidTypes";
 
+import { LootTableComponent, PowerUpComponent } from "../../arcade/types/ArcadeTypes";
+
 export interface AsteroidsComponentRegistry extends CoreComponentRegistry {
+  LootTable: LootTableComponent;
+  PowerUp: PowerUpComponent;
   GameState: GameStateComponent;
   Input: InputComponent;
   Ufo: UfoComponent;

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Platform } from "react-native";
-import { World, GameLoop, CanvasRenderer as EngineCanvasRenderer } from "@tiny-aster/core";
+import { World, GameLoop } from "@tiny-aster/core";
+import { CanvasRenderer as EngineCanvasRenderer } from "@tiny-aster/renderer-canvas";
 
 interface CanvasRendererProps {
   world: World<any>;
