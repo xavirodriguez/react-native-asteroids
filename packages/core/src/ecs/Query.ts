@@ -6,7 +6,10 @@ import { ComponentRegistry } from "./Component";
  *
  * @remarks
  * Queries are automatically updated by the {@link World} when components are added or removed.
- * They maintain a sorted list of entities to support stable iteration.
+ * They maintain an internally sorted list of entities to support a stable iteration order.
+ *
+ * Note: Queries are highly efficient as they cache their results and only update when
+ * structural changes occur in the world.
  *
  * @typeParam TComponents - The component registry this query operates on.
  */
@@ -42,12 +45,13 @@ export class Query<TComponents extends ComponentRegistry> {
   }
 
   /**
-   * Returns a sorted list of entities that match the query.
+   * Returns a list of entities that match the query, sorted by ID.
    *
    * @remarks
-   * Sorting happens lazily when the query is dirty (i.e., after entities are added or removed).
-   * The list is sorted by entity ID, which provides a stable iteration order across frames
-   * as long as the world state remains consistent.
+   * Sorting happens lazily and only when the query is "dirty" (after entities are added or
+   * removed). The list is sorted by entity ID, which helps provide a stable iteration order
+   * across frames, provided that the world's entity IDs are created and recycled in
+   * a deterministic manner.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.isDirty) {

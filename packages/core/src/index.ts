@@ -1,13 +1,13 @@
 /**
  * @packageDocumentation
- * TinyAster Core: A lightweight, extensible ECS engine for high-performance
+ * TinyAster Core: A lightweight, extensible ECS engine designed for
  * arcade-style games.
  *
  * @remarks
  * This package provides the foundational building blocks for entities,
- * components, systems, and world management. It is designed to be
- * platform-agnostic and supports reproducible simulations under
- * controlled conditions.
+ * components, systems, and world management. It aims to support
+ * reproducible simulations under controlled conditions (e.g., fixed timestep,
+ * stable PRNG, and no asynchronous side effects in core logic).
  */
 
 // ECS Core
@@ -21,13 +21,6 @@ export * from "./ecs/BlueprintRegistry";
 export * from "./ecs/CoreComponents";
 export * from "./snapshots/WorldSnapshot";
 export * from "./ecs/ComponentCloner";
-
-// Core Game Abstractions
-export * from "./core/BaseGame";
-export * from "./core/GameLoop";
-export * from "./core/FrameScheduler";
-export * from "./core/AssetLoader";
-export * from "./core/Renderer";
 
 // Events
 export * from "./events/EventBus";
@@ -46,7 +39,6 @@ export * from "./audio/IAudioPlayer";
 export * from "./physics/systems/MovementSystem";
 export * from "./physics/systems/FrictionSystem";
 export * from "./physics/systems/BoundarySystem";
-export * from "./physics/CollisionHelpers";
 export * from "./physics/collision/CollisionSystems";
 export * from "./physics/collision/CollisionTypes";
 export * from "./physics/utils/PhysicsUtils";
@@ -69,20 +61,15 @@ export * from "./systems/TTLSystem";
 export * from "./systems/SpatialPartitioningSystem";
 export * from "./systems/RenderUpdateSystem";
 export * from "./systems/ParticleSystem";
-export * from "./systems/LootSystem";
 export * from "./systems/JoystickSystem";
-export * from "./systems/PowerUpSystem";
 export * from "./systems/AnimationSystem";
 export * from "./systems/FeedbackSystem";
 export * from "./systems/HierarchySystem";
-export * from "./systems/JoystickSystem";
-export * from "./systems/JuiceSystem";
-export * from "./systems/MutatorSystem";
-export * from "./systems/ParticleSystem";
-export * from "./systems/RenderUpdateSystem";
 export * from "./systems/ScreenShakeSystem";
-export * from "./systems/HierarchySystem";
 export * from "./systems/StateMachineSystem";
+export * from "./systems/MutatorSystem";
+export * from "./systems/AbstractHierarchySystem";
+export * from "./systems/TilemapRenderSystem";
 
 // Network
 export * from "./network/NetworkTransport";

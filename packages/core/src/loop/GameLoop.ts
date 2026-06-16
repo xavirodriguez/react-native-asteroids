@@ -3,13 +3,44 @@ import { FrameScheduler, browserFrameScheduler } from "./FrameScheduler";
 export type UpdateListener<T> = (deltaTime: number, state: T) => void;
 export type RenderListener = (interpolation: number) => void;
 
+/**
+ * Configuration options for the GameLoop.
+ */
 export interface GameLoopConfig {
+  /**
+   * The maximum allowed delta time in milliseconds per frame.
+   * If the actual time elapsed exceeds this, it is clamped to prevent the "spiral of death".
+   */
   maxDeltaMs?: number;
+  /**
+   * The maximum number of update steps allowed per frame.
+   * If the accumulator exceeds this many steps, the remaining time is discarded
+   * to maintain a minimum framerate.
+   */
   maxUpdatesPerFrame?: number;
+  /**
+   * The scheduler used for timing and frame requests.
+   */
   scheduler?: FrameScheduler;
+  /**
+   * Target updates per second (frequency of the fixed timestep).
+   */
   fps?: number;
 }
 
+/**
+ * A platform-agnostic game loop implementation using a fixed-timestep accumulator.
+ *
+ * @remarks
+ * This loop is designed to provide a consistent internal simulation frequency
+ * (fixed timestep) independent of the rendering framerate.
+ *
+ * @warning
+ * Under heavy load, if the simulation takes longer than the available frame time,
+ * the loop may clamp `deltaTime` or limit `maxUpdatesPerFrame`. In such cases,
+ * the simulation will appear to slow down (the "spiral of death" mitigation),
+ * and absolute temporal consistency with real-time is lost.
+ */
 export class GameLoop {
   private scheduler: FrameScheduler;
   private maxDeltaMs: number;
