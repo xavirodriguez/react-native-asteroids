@@ -1,11 +1,12 @@
-import { ComponentRegistry, ComponentType, DeepReadonly } from "./Component";
+import { ComponentRegistry, ComponentType } from "./Component";
 import { Entity } from "./Entity";
 import { EventRegistry, EventBus } from "../events/EventBus";
 import { Query } from "./Query";
 import { System, SystemPhase, SystemConfig } from "./System";
 import { RandomService } from "../utils/RandomService";
-import { WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "../snapshots/WorldSnapshot";
-import { ComponentCloner } from "./ComponentCloner";
+import { WorldSnapshot } from "../snapshots/WorldSnapshot";
+import { SnapshotSerializer } from "../snapshots/SnapshotSerializer";
+import { SnapshotRestore } from "../snapshots/SnapshotRestore";
 import { WorldCommandBuffer } from "./WorldCommandBuffer";
 import { BlueprintDefinition } from "./BlueprintRegistry";
 
@@ -366,161 +367,28 @@ export class World<
    *
    * @param target - Optional snapshot object to reuse and minimize allocations.
    * @returns A snapshot of the world's entities, components, and RNG state.
-   *
-   * @remarks
-   * Only components and their serializable properties (primitive values, nested objects/arrays)
-   * are captured. Functions, non-serializable objects (e.g., class instances without a custom
-   * cloner), and circular references are not supported.
-   *
-   * Snapshotting aims to support save/load and network synchronization,
-   * but it involves significant allocations and should be used judiciously in hot paths.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
-    const componentData: ComponentDataSnapshot = target?.componentData ?? {};
-
-    this.activeEntities.forEach(entity => {
-      const componentSet = this.entityComponentSets.get(entity);
-      if (!componentSet) return;
-
-      for (const type of componentSet) {
-        const map = this.componentMaps.get(type);
-        if (!map) continue;
-        const component = map.get(entity);
-        if (!component) continue;
-
-        if (!componentData[type]) componentData[type] = {};
-
-        let serializedComp = componentData[type][entity];
-        if (!serializedComp) {
-          serializedComp = {};
-          componentData[type][entity] = serializedComp;
-        }
-
-        const compAsRecord = component as unknown as Record<string, unknown>;
-        for (const key in compAsRecord) {
-          const val = compAsRecord[key];
-          if (typeof val !== "function") {
-            serializedComp[key] = ComponentCloner.cloneComponent(val);
-          }
-        }
-      }
-    });
-
-    return {
-      entities: Array.from(this.activeEntities).sort((a, b) => a - b),
-      componentData,
-      nextEntityId: this.nextEntityId,
-      freeEntities: [...this.freeEntities],
-      structureVersion: this._structureVersion,
-      stateVersion: this._stateVersion,
-      seed: this._gameplayRandom.getSeed(),
-      rngState: this._gameplayRandom.getSeed(),
-      tick: this._tick
-    };
+    return SnapshotSerializer.snapshot(this, target);
   }
 
   /**
    * Restores the world state from a snapshot.
    *
    * @param state - The snapshot to restore.
-   *
-   * @remarks
-   * This method performs a deep restoration of entities and components,
-   * rebuilding internal indexes and queries. It is a computationally expensive
-   * operation intended for scene transitions, rollback, or game loading.
-   *
-   * Note: This only restores the serializable state captured in the snapshot.
-   * Transient state or non-serializable resources must be managed manually.
    */
   public restore(state: WorldSnapshot): void {
-    this.activeEntities = new Set(state.entities);
-    this.nextEntityId = state.nextEntityId;
-    this.freeEntities = [...state.freeEntities];
-    this._structureVersion = state.structureVersion;
-    this._stateVersion = state.stateVersion;
-    this._tick = state.tick;
-
-    if (state.rngState !== undefined) {
-      this._gameplayRandom.setSeed(state.rngState);
-    } else if (state.seed !== undefined) {
-      this._gameplayRandom.setSeed(state.seed);
-    }
-
-    this.entityComponentSets.clear();
-    this.componentMaps.clear();
-    this.componentIndex.clear();
-    this.componentVersions.clear();
-
-    for (const type in state.componentData) {
-      const storage = new Map<Entity, any>();
-      const index = new Set<Entity>();
-      const versions = new Map<Entity, number>();
-
-      this.componentMaps.set(type, storage);
-      this.componentIndex.set(type, index);
-      this.componentVersions.set(type, versions);
-
-      const snapshotEntities = state.componentData[type];
-      for (const entityIdStr in snapshotEntities) {
-        const entityId = parseInt(entityIdStr);
-        const sourceComp = snapshotEntities[entityId];
-        const component = ComponentCloner.cloneComponent(sourceComp);
-
-        storage.set(entityId, component);
-        index.add(entityId);
-        versions.set(entityId, this._stateVersion);
-
-        let componentSet = this.entityComponentSets.get(entityId);
-        if (!componentSet) {
-          componentSet = new Set();
-          this.entityComponentSets.set(entityId, componentSet);
-        }
-        componentSet.add(type);
-      }
-    }
-
-    this.queries.forEach(query => {
-      query.rebuild(this.activeEntities, this.entityComponentSets);
-    });
+    SnapshotRestore.restore(this, state);
   }
 
+  /**
+   * Captures the changes in component data since a specific version.
+   *
+   * @param sinceVersion - The state version to compare against.
+   * @returns A partial snapshot containing only the changed components.
+   */
   public deltaSnapshot(sinceVersion: number): Partial<WorldSnapshot> {
-    const componentData: ComponentDataSnapshot = {};
-
-    this.componentMaps.forEach((map, type) => {
-      const typeVersions = this.componentVersions.get(type);
-      if (!typeVersions) return;
-
-      const typeData: Record<number, SerializedComponent> = {};
-      let hasData = false;
-
-      map.forEach((component, entity) => {
-        const version = typeVersions.get(entity) ?? 0;
-        if (version > sinceVersion) {
-          const serializedComp: SerializedComponent = {};
-          const compAsRecord = component as unknown as Record<string, unknown>;
-
-          for (const key in compAsRecord) {
-            if (typeof compAsRecord[key] !== "function") {
-              serializedComp[key] = ComponentCloner.cloneComponent(compAsRecord[key]);
-            }
-          }
-          typeData[entity] = serializedComp;
-          hasData = true;
-        }
-      });
-
-      if (hasData) {
-        componentData[type] = typeData;
-      }
-    });
-
-    return {
-      componentData,
-      stateVersion: this._stateVersion,
-      structureVersion: this._structureVersion,
-      tick: this._tick
-    };
+    return SnapshotSerializer.deltaSnapshot(this, sinceVersion);
   }
 }
 

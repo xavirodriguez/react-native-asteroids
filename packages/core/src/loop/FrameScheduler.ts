@@ -1,24 +1,52 @@
+/**
+ * Interface for scheduling frames and retrieving high-resolution time.
+ *
+ * @remarks
+ * Decouples the GameLoop from browser-specific APIs like requestAnimationFrame
+ * and performance.now, allowing it to run in headless or custom environments.
+ */
 export interface FrameScheduler {
+  /**
+   * Returns the current time in milliseconds.
+   */
   now(): number;
+
+  /**
+   * Schedules a callback to be executed before the next repaint.
+   * @param callback - The function to execute.
+   * @returns A handle that can be used to cancel the request.
+   */
   requestFrame(callback: (time: number) => void): unknown;
+
+  /**
+   * Cancels a previously scheduled frame request.
+   * @param handle - The handle returned by requestFrame.
+   */
   cancelFrame(handle: unknown): void;
 }
 
+/**
+ * A FrameScheduler implementation that uses browser/DOM APIs when available,
+ * falling back to setTimeout and Date.now for Node.js or headless environments.
+ */
 export const browserFrameScheduler: FrameScheduler = {
-  now: () => (typeof globalThis !== 'undefined' && (globalThis as any).performance?.now?.()) || Date.now(),
+  now: () => {
+    const gt = globalThis as any;
+    return (gt.performance?.now?.() ?? Date.now());
+  },
   requestFrame: (callback) => {
     const gt = globalThis as any;
-    if (typeof gt !== 'undefined' && gt.requestAnimationFrame) {
+    if (gt.requestAnimationFrame) {
       return gt.requestAnimationFrame(callback);
     }
     return setTimeout(() => callback(Date.now()), 16);
   },
   cancelFrame: (handle) => {
     const gt = globalThis as any;
-    if (typeof gt !== 'undefined' && gt.cancelAnimationFrame) {
+    if (gt.cancelAnimationFrame) {
       gt.cancelAnimationFrame(handle as number);
     } else {
       clearTimeout(handle as any);
     }
-  }
+  },
 };

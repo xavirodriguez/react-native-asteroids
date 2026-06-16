@@ -1,96 +1,114 @@
 import { FrameScheduler, browserFrameScheduler } from "./FrameScheduler";
 
-export type UpdateListener<T> = (deltaTime: number, state: T) => void;
-export type RenderListener = (interpolation: number) => void;
+export type RenderCallback = (alpha: number) => void;
+export type UpdateCallback = (dt: number) => void;
 
+/**
+ * Configuration options for the GameLoop.
+ */
 export interface GameLoopConfig {
-  maxDeltaMs?: number;
-  maxUpdatesPerFrame?: number;
+  /**
+   * The fixed timestep in seconds. Defaults to 1/60.
+   */
+  step?: number;
+  /**
+   * The maximum allowed delta time per frame in seconds to prevent "spiral of death".
+   */
+  maxDelta?: number;
+  /**
+   * The scheduler used for timing and frame requests.
+   */
   scheduler?: FrameScheduler;
-  fps?: number;
 }
 
+/**
+ * A platform-agnostic game loop implementation using a fixed-timestep accumulator.
+ *
+ * @remarks
+ * This loop ensures that the simulation runs at a consistent internal frequency
+ * regardless of the rendering framerate.
+ */
 export class GameLoop {
-  private scheduler: FrameScheduler;
-  private maxDeltaMs: number;
-  private maxUpdatesPerFrame: number;
-  private msPerUpdate: number;
-
-  private isRunning = false;
+  private renderSubscribers: Set<RenderCallback> = new Set();
+  private updateSubscribers: Set<UpdateCallback> = new Set();
   private lastTime = 0;
   private accumulator = 0;
-  private frameHandle: unknown = null;
-
-  private updateListeners: Set<UpdateListener<any>> = new Set();
-  private renderListeners: Set<RenderListener> = new Set();
+  private readonly step: number;
+  private readonly maxDelta: number;
+  private readonly scheduler: FrameScheduler;
+  private isRunning = false;
+  private frameHandle: unknown;
 
   constructor(config: GameLoopConfig = {}) {
+    this.step = config.step ?? 1 / 60;
+    this.maxDelta = config.maxDelta ?? 0.25;
     this.scheduler = config.scheduler ?? browserFrameScheduler;
-    this.maxDeltaMs = config.maxDeltaMs ?? 250;
-    this.maxUpdatesPerFrame = config.maxUpdatesPerFrame ?? 10;
-    const fps = config.fps ?? 60;
-    this.msPerUpdate = 1000 / fps;
   }
 
-  public start(): void {
+  /**
+   * Starts the game loop.
+   */
+  public start() {
     if (this.isRunning) return;
     this.isRunning = true;
     this.lastTime = this.scheduler.now();
-    this.accumulator = 0;
     this.frameHandle = this.scheduler.requestFrame(this.loop);
   }
 
-  public stop(): void {
+  /**
+   * Stops the game loop.
+   */
+  public stop() {
     this.isRunning = false;
-    if (this.frameHandle !== null) {
+    if (this.frameHandle !== undefined) {
       this.scheduler.cancelFrame(this.frameHandle);
-      this.frameHandle = null;
+      this.frameHandle = undefined;
     }
   }
 
-  public subscribeUpdate<T>(listener: UpdateListener<T>): () => void {
-    this.updateListeners.add(listener);
-    return () => this.updateListeners.delete(listener);
-  }
-
-  public subscribeRender(listener: RenderListener): () => void {
-    this.renderListeners.add(listener);
-    return () => this.renderListeners.delete(listener);
-  }
-
-  private loop = (time: number): void => {
+  private loop = (currentTime: number) => {
     if (!this.isRunning) return;
 
-    let deltaTime = time - this.lastTime;
-    if (deltaTime > this.maxDeltaMs) {
-      deltaTime = this.maxDeltaMs;
+    // Use scheduler time if not provided by requestFrame
+    const now = currentTime ?? this.scheduler.now();
+    let deltaTime = (now - this.lastTime) / 1000;
+    this.lastTime = now;
+
+    // Prevent spiral of death
+    if (deltaTime > this.maxDelta) {
+      deltaTime = this.maxDelta;
     }
 
-    this.lastTime = time;
     this.accumulator += deltaTime;
 
-    let updates = 0;
-    while (this.accumulator >= this.msPerUpdate && updates < this.maxUpdatesPerFrame) {
-      this.update(this.msPerUpdate / 1000);
-      this.accumulator -= this.msPerUpdate;
-      updates++;
+    while (this.accumulator >= this.step) {
+      this.updateSubscribers.forEach(sub => sub(this.step));
+      this.accumulator -= this.step;
     }
 
-    const interpolation = this.accumulator / this.msPerUpdate;
-    this.render(interpolation);
+    const alpha = this.accumulator / this.step;
+    this.renderSubscribers.forEach(sub => sub(alpha));
 
     this.frameHandle = this.scheduler.requestFrame(this.loop);
   };
 
-  private update(dt: number): void {
-    for (const listener of this.updateListeners) {
-      listener(dt, null);
-    }
+  /**
+   * Subscribes a callback to be called every fixed update step.
+   * @param callback - The callback receiving the fixed delta time.
+   * @returns A function to unsubscribe.
+   */
+  public subscribeUpdate(callback: UpdateCallback): () => void {
+    this.updateSubscribers.add(callback);
+    return () => this.updateSubscribers.delete(callback);
   }
 
-  private render(interpolation: number): void {
-    for (const listener of this.renderListeners) {
-      listener(interpolation);
-    }
+  /**
+   * Subscribes a callback to be called every frame for rendering.
+   * @param callback - The callback receiving the interpolation alpha.
+   * @returns A function to unsubscribe.
+   */
+  public subscribeRender(callback: RenderCallback): () => void {
+    this.renderSubscribers.add(callback);
+    return () => this.renderSubscribers.delete(callback);
   }
 }

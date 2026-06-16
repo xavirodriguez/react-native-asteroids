@@ -1,5 +1,7 @@
 import { Component, ComponentRegistry } from "./Component";
 import { Entity } from "./Entity";
+import { Shape } from "../physics/shapes/Shapes";
+import { CollisionLayer, CollisionMask, Collision } from "../physics/collision/CollisionTypes";
 
 export interface TransformComponent extends Component {
   type: "Transform";
@@ -173,7 +175,21 @@ export interface JuiceComponent extends Component {
 
 export interface CollisionEventsComponent extends Component {
     type: "CollisionEvents";
-    lastCollision?: any;
+    collisions: Collision[];
+    activeTriggers: Entity[];
+    triggersEntered: Entity[];
+    triggersExited: Entity[];
+}
+
+export interface ColliderComponent extends Component {
+  type: "Collider";
+  shape: Shape;
+  layer: CollisionLayer;
+  mask: CollisionMask;
+  enabled: boolean;
+  isTrigger: boolean;
+  offsetX?: number;
+  offsetY?: number;
 }
 
 export interface TrailComponent extends Component {
@@ -210,6 +226,7 @@ export interface CoreComponentRegistry extends ComponentRegistry {
   HapticRequest: HapticRequestComponent<string>;
   Juice: JuiceComponent;
   CollisionEvents: CollisionEventsComponent;
+  Collider: ColliderComponent;
   Trail: TrailComponent;
 }
 
