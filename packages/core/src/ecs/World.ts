@@ -20,9 +20,11 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
  * It manages entities, components, systems, and resources.
  *
  * @remarks
- * This implementation aims to support reproducible simulations when provided with consistent
- * initial states and inputs. However, absolute determinism may be affected by floating-point
- * precision differences across platforms.
+ * This implementation is designed to support reproducible simulations when provided with consistent
+ * initial states and inputs. However, absolute determinism is not guaranteed and can be affected by:
+ * - Floating-point precision differences across platforms/engines.
+ * - Non-deterministic behavior in user-defined systems or callbacks.
+ * - External state mutations during the update loop.
  *
  * @typeParam TComponents - The registry of components allowed in this world.
  * @typeParam TEvents - The registry of events handled by the world's event bus.
@@ -44,6 +46,7 @@ export class World<
    * Indicates if the world is in a re-simulation phase (e.g., during network rollback).
    */
   public isReSimulating = false;
+
   private componentMaps = new Map<string, Map<Entity, any>>();
   private componentIndex = new Map<string, Set<Entity>>();
   private entityComponentSets = new Map<Entity, Set<string>>();
@@ -56,10 +59,17 @@ export class World<
   private _tick = 0;
   private commandBuffer = new WorldCommandBuffer<TComponents, TBlueprints>();
 
+  /**
+   * @internal
+   */
   public renderRandom = new RandomService();
 
   private _structureVersion = 0;
   private _stateVersion = 0;
+
+  /**
+   * @internal
+   */
   public componentVersions = new Map<string, Map<Entity, number>>();
 
   private _gameplayRandom = new RandomService();
@@ -75,11 +85,12 @@ export class World<
 
   /**
    * Returns a list of all active entities, sorted by ID to help maintain
-   * consistent iteration order.
+   * a stable iteration order.
    *
    * @remarks
-   * This operation creates a new array and sorts it. Frequent access in hot paths
-   * should be avoided; prefer using {@link Query} for efficient entity filtering.
+   * This operation creates a new array and performs a sort (O(N log N)). Frequent access in hot paths
+   * should be avoided as it increases GC pressure. Prefer using {@link Query} for efficient and
+   * cached entity filtering.
    */
   public get entities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);
@@ -103,7 +114,9 @@ export class World<
    *
    * @warning
    * Direct entity creation during world update is allowed but may affect
-   * ongoing iterations. Consider using the command buffer for deferred creation.
+   * ongoing iterations in systems that do not use stable queries. It is generally
+   * recommended to use the {@link WorldCommandBuffer} for deferred creation to ensure
+   * a predictable state during the frame.
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -123,9 +136,9 @@ export class World<
    * Removes an entity and all its associated components from the world.
    *
    * @warning
-   * Structural changes (removing entities) during system updates can lead to
-   * undefined behavior in active queries. It is strongly recommended to use
-   * {@link WorldCommandBuffer} to defer entity removal until the end of the frame.
+   * Structural changes (removing entities) during system updates can disrupt
+   * active iterations. It is strongly recommended to use {@link WorldCommandBuffer}
+   * to defer entity removal until the end of the frame to maintain simulation stability.
    */
   removeEntity(entity: Entity): void {
     if (this.activeEntities.delete(entity)) {
@@ -277,8 +290,9 @@ export class World<
    * Systems are executed following the order of {@link SystemPhase} and their priority
    * within each phase. After all phases, the {@link WorldCommandBuffer} is flushed.
    *
-   * This method is intended to be synchronous. Asynchronous side effects within
-   * systems should be managed carefully to avoid breaking simulation consistency.
+   * This method is synchronous. Asynchronous systems or side effects (like `await`)
+   * are not natively supported within the core update loop and should be avoided
+   * as they can lead to race conditions and non-deterministic behavior.
    */
   update(deltaTime: number): void {
     this._tick++;
@@ -354,9 +368,12 @@ export class World<
    * @returns A snapshot of the world's entities, components, and RNG state.
    *
    * @remarks
-   * Only components and their serializable properties (non-functions) are captured.
-   * Snapshotting is designed to support save/load and network synchronization,
-   * but its performance depends on the number of entities and components.
+   * Only components and their serializable properties (primitive values, nested objects/arrays)
+   * are captured. Functions, non-serializable objects (e.g., class instances without a custom
+   * cloner), and circular references are not supported.
+   *
+   * Snapshotting aims to support save/load and network synchronization,
+   * but it involves significant allocations and should be used judiciously in hot paths.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
@@ -409,8 +426,11 @@ export class World<
    *
    * @remarks
    * This method performs a deep restoration of entities and components,
-   * rebuilding internal indexes and queries. It is a heavy operation
-   * intended for scene transitions, rollback, or game loading.
+   * rebuilding internal indexes and queries. It is a computationally expensive
+   * operation intended for scene transitions, rollback, or game loading.
+   *
+   * Note: This only restores the serializable state captured in the snapshot.
+   * Transient state or non-serializable resources must be managed manually.
    */
   public restore(state: WorldSnapshot): void {
     this.activeEntities = new Set(state.entities);
