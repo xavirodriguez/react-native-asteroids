@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { StyleSheet, Platform } from "react-native";
-import { World, GameLoop, SkiaRenderer } from "@tiny-aster/core";
+import { World, GameLoop } from "@tiny-aster/core";
+import { SkiaRenderer } from "@tiny-aster/renderer-skia";
 
 interface GameRendererProps {
   world: World<any>;

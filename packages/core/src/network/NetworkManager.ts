@@ -1,4 +1,4 @@
-import { WorldSnapshot } from "../ecs/SnapshotTypes";
+import { WorldSnapshot } from "../snapshots/WorldSnapshot";
 
 export class NetworkManager {
   public static registerGame(gameId: string, game: any, options: any): NetworkManager {
@@ -11,7 +11,7 @@ export class NetworkManager {
     };
   }
 
-  public processServerUpdate(tick: number, snapshot: WorldSnapshot, localSessionId?: string): void {}
+  public processServerUpdate(tick: number, snapshot: WorldSnapshot, sessionId?: string): void {}
   public reset(): void {}
 }
 

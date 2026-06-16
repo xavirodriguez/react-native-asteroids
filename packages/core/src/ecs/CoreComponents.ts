@@ -171,19 +171,9 @@ export interface JuiceComponent extends Component {
     animations: any[];
 }
 
-export interface LootTableComponent extends Component {
-    type: "LootTable";
-    tableId: string;
-}
-
 export interface CollisionEventsComponent extends Component {
     type: "CollisionEvents";
     lastCollision?: any;
-}
-
-export interface PowerUpComponent extends Component {
-    type: "PowerUp";
-    powerUpType: string;
 }
 
 export interface TrailComponent extends Component {
@@ -219,9 +209,7 @@ export interface CoreComponentRegistry extends ComponentRegistry {
   SpatialNode: SpatialNodeComponent;
   HapticRequest: HapticRequestComponent<string>;
   Juice: JuiceComponent;
-  LootTable: LootTableComponent;
   CollisionEvents: CollisionEventsComponent;
-  PowerUp: PowerUpComponent;
   Trail: TrailComponent;
 }
 

@@ -1,45 +1,100 @@
+import { FrameScheduler, browserFrameScheduler } from "./FrameScheduler";
+
 export type RenderCallback = (alpha: number) => void;
 
+/**
+ * Configuration options for the GameLoop.
+ */
+export interface GameLoopConfig {
+  /**
+   * The fixed timestep in seconds. Defaults to 1/60.
+   */
+  step?: number;
+  /**
+   * The maximum allowed delta time per frame in seconds to prevent "spiral of death".
+   */
+  maxDelta?: number;
+  /**
+   * The scheduler used for timing and frame requests.
+   */
+  scheduler?: FrameScheduler;
+}
+
+/**
+ * A platform-agnostic game loop implementation using a fixed-timestep accumulator.
+ *
+ * @remarks
+ * This loop ensures that the simulation runs at a consistent internal frequency
+ * regardless of the rendering framerate.
+ */
 export class GameLoop {
   private subscribers: Set<RenderCallback> = new Set();
   private lastTime = 0;
   private accumulator = 0;
-  private readonly step = 1 / 60;
+  private readonly step: number;
+  private readonly maxDelta: number;
+  private readonly scheduler: FrameScheduler;
   private isRunning = false;
+  private frameHandle: unknown;
 
-  constructor() {}
-
-  public start() {
-    this.isRunning = true;
-    this.lastTime = performance.now();
-    this.loop();
+  constructor(config: GameLoopConfig = {}) {
+    this.step = config.step ?? 1 / 60;
+    this.maxDelta = config.maxDelta ?? 0.25;
+    this.scheduler = config.scheduler ?? browserFrameScheduler;
   }
 
+  /**
+   * Starts the game loop.
+   */
+  public start() {
+    if (this.isRunning) return;
+    this.isRunning = true;
+    this.lastTime = this.scheduler.now();
+    this.frameHandle = this.scheduler.requestFrame(this.loop);
+  }
+
+  /**
+   * Stops the game loop.
+   */
   public stop() {
     this.isRunning = false;
+    if (this.frameHandle !== undefined) {
+      this.scheduler.cancelFrame(this.frameHandle);
+      this.frameHandle = undefined;
+    }
   }
 
-  private loop = () => {
+  private loop = (currentTime: number) => {
     if (!this.isRunning) return;
 
-    const currentTime = performance.now();
-    const deltaTime = (currentTime - this.lastTime) / 1000;
-    this.lastTime = currentTime;
+    // Use scheduler time if not provided by requestFrame
+    const now = currentTime ?? this.scheduler.now();
+    let deltaTime = (now - this.lastTime) / 1000;
+    this.lastTime = now;
+
+    // Prevent spiral of death
+    if (deltaTime > this.maxDelta) {
+      deltaTime = this.maxDelta;
+    }
 
     this.accumulator += deltaTime;
 
     while (this.accumulator >= this.step) {
-      // Logic update would go here if GameLoop managed World.update
-      // For now it seems intended for rendering orchestration
+      // Internal simulation tick would be triggered here if managed by GameLoop
       this.accumulator -= this.step;
     }
 
     const alpha = this.accumulator / this.step;
     this.subscribers.forEach(sub => sub(alpha));
 
-    requestAnimationFrame(this.loop);
+    this.frameHandle = this.scheduler.requestFrame(this.loop);
   };
 
+  /**
+   * Subscribes a callback to be called every frame for rendering.
+   * @param callback - The callback receiving the interpolation alpha.
+   * @returns A function to unsubscribe.
+   */
   public subscribeRender(callback: RenderCallback): () => void {
     this.subscribers.add(callback);
     return () => this.subscribers.delete(callback);
