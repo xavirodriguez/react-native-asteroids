@@ -1,32 +1,36 @@
-import { World, HealthComponent, BaseGameStateSystem } from "@tiny-aster/core";
-import { GameStateComponent, InputState } from "../types/AsteroidTypes";
-import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
-import { AsteroidConfig } from "../types/AsteroidConfigSchema";
-import { BulletPool, ParticlePool } from "../EntityPool";
+import { World, BaseGameStateSystem } from "@tiny-aster/core";
+import { GameStateComponent } from "../types/AsteroidTypes";
+import { AsteroidsComponentRegistry } from "../types/AsteroidRegistry";
 import { IAsteroidsGame } from "../types/GameInterfaces";
 
-export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateComponent, InputState, AsteroidsComponentRegistry, AsteroidsEventRegistry> {
-  private game: IAsteroidsGame;
-
+export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateComponent, AsteroidsComponentRegistry> {
   constructor(game: IAsteroidsGame) {
-    super();
-    this.game = game;
+    super(game as any);
   }
 
-  public update(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, deltaTime: number): void {
+  protected getGameState(world: World<AsteroidsComponentRegistry>): GameStateComponent | undefined {
+    return world.getSingleton("GameState");
+  }
+
+  protected updateGameState(world: World<AsteroidsComponentRegistry>, gameState: GameStateComponent, deltaTime: number): void {
       // Logic for wave management, score, etc.
   }
 
-  public onRegister(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>): void {}
-  public dispose(): void {}
+  protected evaluateGameOverCondition(gameState: GameStateComponent): boolean {
+    return gameState.lives <= 0;
+  }
+
+  public update(world: World<AsteroidsComponentRegistry>, deltaTime: number): void {
+      super.update(world, deltaTime);
+  }
 
   public isGameOver(): boolean {
       const state = this.game.getGameState();
       return state.isGameOver;
   }
 
-  public resetGameOverState(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>): void {
-      world.mutateSingleton("GameState" as any, (state: any) => {
+  public resetGameOverState(world: World<AsteroidsComponentRegistry>): void {
+      world.mutateSingleton("GameState", (state: any) => {
           state.isGameOver = false;
           state.lives = 3;
           state.score = 0;

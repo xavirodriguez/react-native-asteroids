@@ -4,12 +4,12 @@ import { BaseGame } from "../runtime/BaseGame";
 import { ComponentRegistry } from "../ecs/Component";
 
 export abstract class BaseGameStateSystem<
-  TGameState,
+  TGameState = any,
   TComponents extends ComponentRegistry = any
 > extends System<TComponents> {
   protected _world?: World<TComponents>;
 
-  constructor(protected game?: BaseGame<TGameState, any, TComponents>) {
+  constructor(protected game: BaseGame<TComponents>) {
     super();
   }
 

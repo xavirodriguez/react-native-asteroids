@@ -22,12 +22,6 @@ export * from "./ecs/CoreComponents";
 export * from "./ecs/SnapshotTypes";
 export * from "./ecs/ComponentCloner";
 
-// Core Game Abstractions
-export * from "./core/BaseGame";
-export * from "./core/GameLoop";
-export * from "./core/AssetLoader";
-export * from "./core/Renderer";
-
 // Events
 export * from "./events/EventBus";
 
@@ -39,7 +33,6 @@ export * from "./runtime/IGame";
 
 // Assets & Audio
 export * from "./assets/AssetLoader";
-export * from "./assets/AssetProvider";
 export * from "./audio/IAudioPlayer";
 
 // Physics
@@ -47,6 +40,7 @@ export * from "./physics/systems/MovementSystem";
 export * from "./physics/systems/FrictionSystem";
 export * from "./physics/systems/BoundarySystem";
 export * from "./physics/CollisionHelpers";
+export * from "./physics/collision/CollisionSystems";
 
 // Rendering
 export * from "./rendering/Renderer";
@@ -54,6 +48,8 @@ export * from "./rendering/RenderTypes";
 export * from "./rendering/RenderSnapshot";
 export * from "./rendering/RenderCommandBuffer";
 export * from "./rendering/Camera2D";
+export * from "./rendering/backends/CanvasRenderer";
+export * from "./rendering/backends/SkiaRenderer";
 
 // Systems
 export * from "./systems/BaseGameStateSystem";
@@ -76,6 +72,11 @@ export * from "./systems/StateMachineSystem";
 
 // Network
 export * from "./network/NetworkTransport";
+export * from "./network/NetworkManager";
+export * from "./network/ReplicationSystem";
+
+// Config
+export * from "./config/ConfigService";
 
 // Utils
 export * from "./utils/RandomService";

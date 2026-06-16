@@ -1,5 +1,7 @@
 import { World, BlueprintRegistryMap } from "../ecs/World";
 import { ComponentRegistry } from "../ecs/Component";
+import { EventRegistry, EventBus } from "../events/EventBus";
+import { BlueprintRegistry } from "../ecs/BlueprintRegistry";
 
 export interface BaseGameConfig {
   /** [KeyboardEvent.code] Key to toggle pause. */
@@ -13,29 +15,22 @@ export interface BaseGameConfig {
   /** Runs the game without visual systems or asset loading. Suitable for server-side execution. */
   headless?: boolean;
 }
-import { EventRegistry, EventBus } from "../events/EventBus";
-import { BlueprintRegistry } from "../ecs/BlueprintRegistry";
-import { CoreComponentRegistry } from "../ecs/CoreComponents";
 
 /**
  * Base class for game implementations using the TinyAster engine.
  *
- * @typeParam TState - The structure of the game state.
- * @typeParam TInput - The structure of game input commands.
  * @typeParam TComponents - The registry of components available in this game.
  * @typeParam TEvents - The registry of events that can be emitted.
  * @typeParam TBlueprints - The registry of blueprints that can be spawned.
  */
 export abstract class BaseGame<
-  TState,
-  _TInput extends Record<string, unknown>,
-  TComponents extends ComponentRegistry = CoreComponentRegistry,
-  TEvents extends EventRegistry = EventRegistry,
-  TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
+  TComponents extends ComponentRegistry = any,
+  TEvents extends EventRegistry = any,
+  TBlueprints extends BlueprintRegistryMap<TComponents> = any
 > {
-  protected world: World<TComponents, TEvents, TBlueprints>;
-  protected eventBus: EventBus<TEvents>;
-  protected blueprints: BlueprintRegistry<TComponents, TBlueprints>;
+  public world: World<TComponents, TEvents, TBlueprints>;
+  public eventBus: EventBus<TEvents>;
+  public blueprints: BlueprintRegistry<TComponents, TBlueprints>;
 
   constructor() {
     this.world = new World<TComponents, TEvents, TBlueprints>();
@@ -44,6 +39,7 @@ export abstract class BaseGame<
 
     // Register the blueprint registry as a world resource for the command buffer
     this.world.setResource("BlueprintRegistry", this.blueprints);
+    this.world.setResource("EventBus", this.eventBus);
   }
 
   /**
@@ -61,6 +57,16 @@ export abstract class BaseGame<
   }
 
   /**
+   * Called during game initialization.
+   */
+  public abstract initialize(): Promise<void>;
+
+  /**
+   * Updates the game simulation.
+   */
+  public abstract update(dt: number): void;
+
+  /**
    * Subclasses should implement this to register all necessary ECS systems.
    */
   protected abstract registerSystems(): void;
@@ -71,17 +77,12 @@ export abstract class BaseGame<
   protected abstract initializeEntities(): void;
 
   /**
-   * Returns a snapshot representing the current game state.
-   *
-   * @remarks
-   * The returned state is intended to be serializable to support features like
-   * rollback or replay, though this depends on the serializability of the
-   * implementation of the `TState` structure and its components.
+   * Returns a representation of the current game state.
    */
-  abstract getGameState(): TState;
+  public abstract getGameState(): any;
 
   /**
    * Returns whether the game has ended.
    */
-  abstract isGameOver(): boolean;
+  public abstract isGameOver(): boolean;
 }
