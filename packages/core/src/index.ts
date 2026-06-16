@@ -32,13 +32,21 @@ export * from "./core/Renderer";
 // Events
 export * from "./events/EventBus";
 
-// Input
-export * from "./input/UnifiedInputSystem";
+// Loop & Runtime
+export * from "./loop/GameLoop";
+export * from "./loop/FrameScheduler";
+export * from "./runtime/BaseGame";
+export * from "./runtime/IGame";
+
+// Assets & Audio
+export * from "./assets/AssetLoader";
+export * from "./audio/IAudioPlayer";
 
 // Physics
-export * from "./physics/systems/BoundarySystem";
-export * from "./physics/systems/FrictionSystem";
 export * from "./physics/systems/MovementSystem";
+export * from "./physics/systems/FrictionSystem";
+export * from "./physics/systems/BoundarySystem";
+export * from "./physics/CollisionHelpers";
 export * from "./physics/collision/CollisionSystems";
 export * from "./physics/collision/CollisionTypes";
 export * from "./physics/utils/PhysicsUtils";
@@ -48,10 +56,22 @@ export * from "./physics/dynamics/PhysicsIntegrateSystem";
 export * from "./physics/dynamics/PhysicsSolveSystem";
 
 // Rendering
+export * from "./rendering/Renderer";
+export * from "./rendering/RenderTypes";
+export * from "./rendering/RenderSnapshot";
+export * from "./rendering/RenderCommandBuffer";
 export * from "./rendering/Camera2D";
 
 // Systems
-export * from "./systems/AbstractHierarchySystem";
+export * from "./systems/BaseGameStateSystem";
+export * from "./systems/JuiceSystem";
+export * from "./systems/TTLSystem";
+export * from "./systems/SpatialPartitioningSystem";
+export * from "./systems/RenderUpdateSystem";
+export * from "./systems/ParticleSystem";
+export * from "./systems/LootSystem";
+export * from "./systems/JoystickSystem";
+export * from "./systems/PowerUpSystem";
 export * from "./systems/AnimationSystem";
 export * from "./systems/FeedbackSystem";
 export * from "./systems/HierarchySystem";
@@ -61,21 +81,12 @@ export * from "./systems/MutatorSystem";
 export * from "./systems/ParticleSystem";
 export * from "./systems/RenderUpdateSystem";
 export * from "./systems/ScreenShakeSystem";
-export * from "./systems/SpatialPartitioningSystem";
+export * from "./systems/HierarchySystem";
 export * from "./systems/StateMachineSystem";
-export * from "./systems/TTLSystem";
-export * from "./systems/TilemapRenderSystem";
-export * from "./systems/BaseGameStateSystem";
-
-// UI
-export * from "./ui/UIFactory";
-export * from "./ui/UIInputSystem";
-export * from "./ui/debug/DebugSystem";
 
 // Network
 export * from "./network/NetworkTransport";
 export * from "./network/NetworkManager";
-export * from "./network/MultiplayerSystems";
 export * from "./network/ReplicationSystem";
 
 // Config
