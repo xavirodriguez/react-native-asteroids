@@ -1,3 +1,5 @@
+import { Entity } from "../../ecs/Entity";
+
 /**
  * Generic collision layer and mask types.
  */
@@ -20,4 +22,33 @@ export function layer(bit: number): number {
  */
 export function maskOf(...layers: number[]): number {
   return layers.reduce((acc, value) => acc | value, 0);
+}
+
+/**
+ * Information about a collision between two entities.
+ */
+export interface CollisionManifold {
+  colliding: boolean;
+  normalX: number;
+  normalY: number;
+  depth: number;
+  contactPoints: Array<{ x: number, y: number }>;
+}
+
+/**
+ * Axis-Aligned Bounding Box.
+ */
+export interface AABB {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+export interface Collision {
+  otherEntity: Entity;
+  normalX: number;
+  normalY: number;
+  depth: number;
+  contactPoints: Array<{ x: number, y: number }>;
 }

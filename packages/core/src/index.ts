@@ -22,13 +22,6 @@ export * from "./ecs/CoreComponents";
 export * from "./snapshots/WorldSnapshot";
 export * from "./ecs/ComponentCloner";
 
-// Core Game Abstractions
-export * from "./core/BaseGame";
-export * from "./core/GameLoop";
-export * from "./core/FrameScheduler";
-export * from "./core/AssetLoader";
-export * from "./core/Renderer";
-
 // Events
 export * from "./events/EventBus";
 
@@ -46,7 +39,6 @@ export * from "./audio/IAudioPlayer";
 export * from "./physics/systems/MovementSystem";
 export * from "./physics/systems/FrictionSystem";
 export * from "./physics/systems/BoundarySystem";
-export * from "./physics/CollisionHelpers";
 export * from "./physics/collision/CollisionSystems";
 export * from "./physics/collision/CollisionTypes";
 export * from "./physics/utils/PhysicsUtils";
@@ -69,25 +61,21 @@ export * from "./systems/TTLSystem";
 export * from "./systems/SpatialPartitioningSystem";
 export * from "./systems/RenderUpdateSystem";
 export * from "./systems/ParticleSystem";
-export * from "./systems/LootSystem";
 export * from "./systems/JoystickSystem";
-export * from "./systems/PowerUpSystem";
 export * from "./systems/AnimationSystem";
 export * from "./systems/FeedbackSystem";
 export * from "./systems/HierarchySystem";
-export * from "./systems/JoystickSystem";
-export * from "./systems/JuiceSystem";
+export * from "./systems/AbstractHierarchySystem";
 export * from "./systems/MutatorSystem";
-export * from "./systems/ParticleSystem";
-export * from "./systems/RenderUpdateSystem";
 export * from "./systems/ScreenShakeSystem";
-export * from "./systems/HierarchySystem";
 export * from "./systems/StateMachineSystem";
+export * from "./systems/TilemapRenderSystem";
 
 // Network
 export * from "./network/NetworkTransport";
 export * from "./network/NetworkManager";
 export * from "./network/ReplicationSystem";
+export * from "./network/MultiplayerSystems";
 
 // Config
 export * from "./config/ConfigService";

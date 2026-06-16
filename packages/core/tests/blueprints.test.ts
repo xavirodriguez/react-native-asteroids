@@ -1,4 +1,4 @@
-import { World, BlueprintRegistry, CoreComponentRegistry, BlueprintDefinition } from "../src";
+import { World, BlueprintRegistry, CoreComponentRegistry, BlueprintDefinition, TransformComponent } from "../src";
 
 describe("Blueprints", () => {
   it("should spawn entities from blueprints", () => {
@@ -7,12 +7,13 @@ describe("Blueprints", () => {
 
     const asteroidBlueprint: BlueprintDefinition<CoreComponentRegistry, { size: number }> = {
       spawn: (world, entity, args) => {
-        world.addComponent(entity, {
+        const transform: TransformComponent = {
           type: "Transform",
           x: 0, y: 0, rotation: 0, scaleX: args.size, scaleY: args.size,
           worldX: 0, worldY: 0, worldRotation: 0, worldScaleX: args.size, worldScaleY: args.size,
           dirty: false
-        });
+        };
+        world.addComponent(entity, transform);
       }
     };
 
