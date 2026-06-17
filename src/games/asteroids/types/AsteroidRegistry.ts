@@ -20,7 +20,7 @@ export interface AsteroidsComponentRegistry extends CoreComponentRegistry {
   RemotePlayer: { type: "RemotePlayer"; sessionId: string };
 }
 
-export interface AsteroidsEventRegistry extends CoreEvents {
+export interface AsteroidsEventRegistry extends CoreEvents, Record<string, unknown> {
   "game:start": { seed: number };
   "game:over": { score: number; level: number };
   "ship:destroyed": { entity: number };

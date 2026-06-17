@@ -34,9 +34,9 @@ export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
  * @typeParam TBlueprints - The registry of blueprints available for spawning entities.
  */
 export class World<
-  TComponents extends ComponentRegistry = any,
-  TEvents extends EventRegistry = any,
-  TBlueprints extends BlueprintRegistryMap<TComponents> = any
+  TComponents extends ComponentRegistry = ComponentRegistry,
+  TEvents extends EventRegistry = EventRegistry,
+  TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
 > {
   private activeEntities = new Set<Entity>();
 
@@ -50,7 +50,7 @@ export class World<
    */
   public isReSimulating = false;
 
-  private componentMaps = new Map<string, Map<Entity, any>>();
+  private componentMaps = new Map<string, Map<Entity, unknown>>();
   private componentIndex = new Map<string, Set<Entity>>();
   private entityComponentSets = new Map<Entity, Set<string>>();
   private queries = new Map<string, Query<TComponents>>();

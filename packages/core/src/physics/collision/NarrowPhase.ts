@@ -1,4 +1,4 @@
-import { Shape, ShapeType } from "../shapes/Shapes";
+import { Shape, ShapeType, CircleShape } from "../shapes/Shapes";
 import { CollisionManifold } from "./CollisionTypes";
 
 const manifoldCache: CollisionManifold = {
@@ -32,8 +32,8 @@ export class NarrowPhase {
   }
 
   private static circleVsCircle(
-    a: any, ax: number, ay: number,
-    b: any, bx: number, by: number
+    a: CircleShape, ax: number, ay: number,
+    b: CircleShape, bx: number, by: number
   ): CollisionManifold {
     const manifold = resetManifold();
     const dx = bx - ax;

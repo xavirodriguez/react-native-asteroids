@@ -1,6 +1,6 @@
 import { World, BlueprintRegistryMap } from "./World";
 import { ComponentRegistry, ComponentType } from "./Component";
-import { BlueprintArgs } from "./BlueprintRegistry";
+import { BlueprintArgs, BlueprintRegistry } from "./BlueprintRegistry";
 
 export interface Command<TComponents extends ComponentRegistry, TBlueprints extends BlueprintRegistryMap<TComponents>> {
   execute(world: World<TComponents, any, TBlueprints>): void;
@@ -18,8 +18,8 @@ export interface Command<TComponents extends ComponentRegistry, TBlueprints exte
  * query results caused by mid-frame structural changes.
  */
 export class WorldCommandBuffer<
-  TComponents extends ComponentRegistry = any,
-  TBlueprints extends BlueprintRegistryMap<TComponents> = any
+  TComponents extends ComponentRegistry = ComponentRegistry,
+  TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
 > {
   private commands: Command<TComponents, TBlueprints>[] = [];
 
@@ -33,7 +33,7 @@ export class WorldCommandBuffer<
     this.commands.push({
       execute: (world) => {
         const entity = world.createEntity();
-        const registry = world.getResource<any>("BlueprintRegistry");
+        const registry = world.getResource<BlueprintRegistry<TComponents, TBlueprints>>("BlueprintRegistry");
         const blueprint = registry?.get(blueprintId);
         if (blueprint) {
           blueprint.spawn(world, entity, args);

@@ -33,8 +33,8 @@ export interface SystemConfig {
  * They are executed by the {@link World} during its update loop.
  */
 export abstract class System<
-  TComponents extends ComponentRegistry = any,
-  TEvents extends EventRegistry = any
+  TComponents extends ComponentRegistry = ComponentRegistry,
+  TEvents extends EventRegistry = EventRegistry
 > {
   /**
    * Main update logic for the system.
