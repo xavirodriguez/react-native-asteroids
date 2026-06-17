@@ -1,4 +1,4 @@
-import { TransformComponent, ColliderComponent } from "../../ecs/CoreComponents";
+import { TransformComponent, ColliderComponent, CoreComponentRegistry } from "../../ecs/CoreComponents";
 import { Entity } from "../../ecs/Entity";
 import { World } from "../../ecs/World";
 import { AABB } from "./CollisionTypes";
@@ -47,7 +47,7 @@ export class BroadPhase {
   /**
    * Implementation of the Sweep and Prune algorithm (1D) optimized to minimize allocations.
    */
-  static sweepAndPrune(entities: Entity[], world: World<any>): Array<[Entity, Entity]> {
+  static sweepAndPrune(entities: Entity[], world: World<CoreComponentRegistry>): Array<[Entity, Entity]> {
     // Re-use or expand boundsPool to avoid re-allocating the array and objects
     const count = entities.length;
     for (let i = 0; i < count; i++) {

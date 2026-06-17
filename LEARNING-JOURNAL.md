@@ -28,5 +28,16 @@
 - **Plan de Acción Inmediato:** Consolidar el core eliminando la carpeta `src/core/` y unificando las clases `BaseGame`, `GameLoop`, `AssetLoader` y `Renderer` bajo una única fuente de verdad.
 - **Limpieza de Entorno:** Eliminar lockfiles redundantes (`package-lock.json`) para estandarizar en `pnpm`.
 
+### Día 8 (Revisión de Arquitectura - Jules)
+- **Auditoría de Tipado:** Se detectó que aunque el ECS es genérico, las clases base (`World`, `EventBus`, `System`) todavía usan `any` como valor por defecto, lo que degrada la experiencia de desarrollo (DX) y la seguridad de tipos en las implementaciones.
+- **Sistemas Core:** Varios sistemas internos (como `CollisionSystem2D`) realizan casts manuales a `any` para consultar componentes, en lugar de usar el `CoreComponentRegistry`.
+- **Command Buffer:** El `WorldCommandBuffer` carece de una integración fuertemente tipada con el `BlueprintRegistry`, obligando al uso de casts de tipos en el punto de spawn.
+
+**Hoja de Ruta - Resto de la Semana 1:**
+1.  **Limpieza de Tipos:** Eliminar `any` de las APIs públicas del motor.
+2.  **Registro Centralizado:** Asegurar que todos los sistemas core utilicen el `CoreComponentRegistry`.
+3.  **Spawn Tipado:** Refactorizar el flujo de Blueprints para eliminar la necesidad de casts manuales.
+4.  **Validación de Monorepo:** Garantizar que todo el proyecto compile con `strict: true`.
+
 ---
 *(Próxima actualización: Semana 2 - Refactor Técnico)*

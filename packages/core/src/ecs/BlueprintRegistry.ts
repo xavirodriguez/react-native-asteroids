@@ -13,7 +13,7 @@ export interface BlueprintDefinition<
 }
 
 export class BlueprintRegistry<
-  TComponents extends ComponentRegistry,
+  TComponents extends ComponentRegistry = ComponentRegistry,
   TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
 > {
   private blueprints = new Map<string, BlueprintDefinition<TComponents, any>>();

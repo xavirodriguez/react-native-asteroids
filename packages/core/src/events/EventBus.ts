@@ -1,4 +1,4 @@
-export type EventRegistry = Record<string, any>;
+export type EventRegistry = Record<string, unknown>;
 
 export interface CoreEvents {
   "engine:paused": { tick: number; timestamp: number };
@@ -24,7 +24,7 @@ export type EventHandler<TPayload> = (payload: TPayload, event: string) => void;
  *
  * @typeParam TEvents - The registry of custom events for this bus.
  */
-export class EventBus<TEvents extends EventRegistry = any> {
+export class EventBus<TEvents extends EventRegistry = EventRegistry> {
   private handlers = new Map<string, Set<EventHandler<any>>>();
   private deferredEvents: { event: string; payload: any }[] = [];
   private isProcessing = false;
@@ -122,7 +122,7 @@ export class EventBus<TEvents extends EventRegistry = any> {
     const events = [...this.deferredEvents];
     this.deferredEvents = [];
     for (const { event, payload } of events) {
-      this.emit(event as any, payload);
+      this.emit(event as keyof CombinedEvents<TEvents> & string, payload);
     }
     this.isProcessing = false;
   }
