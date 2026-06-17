@@ -35,7 +35,7 @@ function walkDir(dir: string) {
   });
 }
 
-const targetDirs = ['src/engine/systems', 'src/simulation'];
+const targetDirs = ['packages/core/src/systems', 'packages/core/src/physics/systems'];
 targetDirs.forEach(dir => {
     const fullDir = path.resolve(process.cwd(), dir);
     if (fs.existsSync(fullDir)) {

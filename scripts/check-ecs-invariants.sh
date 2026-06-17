@@ -11,8 +11,8 @@ echo "Checking for direct component property assignments in systems..."
 # Pattern 2: comp.prop = val (where comp was likely retrieved via getComponent)
 # This is tricky, but we can look for assignments that don't have const/let/var and are not 'this.' or 'p.' (common in mutateComponent callbacks)
 
-# We search in src/engine/systems, src/simulation, src/games
-SEARCH_DIRS="src/engine/systems src/simulation src/games"
+# We search in packages/core/src/systems, src/games
+SEARCH_DIRS="packages/core/src/systems src/games"
 
 echo "--- Potential Direct Mutations ---"
 # Look for assignments like identifier.property = value
