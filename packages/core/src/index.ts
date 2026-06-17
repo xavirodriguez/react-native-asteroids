@@ -5,9 +5,9 @@
  *
  * @remarks
  * This package provides the foundational building blocks for entities,
- * components, systems, and world management. It aims to support
+ * components, systems, and world management. It is designed to support
  * reproducible simulations under controlled conditions (e.g., fixed timestep,
- * stable PRNG, and no asynchronous side effects in core logic).
+ * seeded RNG, and avoidance of asynchronous side effects in core logic).
  */
 
 // ECS Core

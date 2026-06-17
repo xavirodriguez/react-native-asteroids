@@ -2,13 +2,13 @@
  * A service for generating pseudo-random numbers.
  *
  * @remarks
- * This service uses a Linear Congruential Generator (LCG) which provides
+ * This service uses a Linear Congruential Generator (LCG) designed to provide
  * consistent results across platforms when provided with the same seed,
  * supporting reproducible simulations.
  *
  * Note: It is not cryptographically secure and may show patterns over
- * very large sequences. The generator is designed for speed and
- * reproducibility rather than high-quality randomness.
+ * large sequences. The generator is optimized for speed and
+ * reproducibility under controlled conditions rather than high-quality randomness.
  */
 export class RandomService {
   private seed: number;

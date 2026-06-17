@@ -50,11 +50,40 @@ export class World<
    */
   public isReSimulating = false;
 
+  /**
+   * Internal component storage.
+   * @internal
+   */
   private componentMaps = new Map<string, Map<Entity, unknown>>();
+
+  /**
+   * Internal entity index by component type.
+   * @internal
+   */
   private componentIndex = new Map<string, Set<Entity>>();
+
+  /**
+   * Internal set of components for each entity.
+   * @internal
+   */
   private entityComponentSets = new Map<Entity, Set<string>>();
+
+  /**
+   * Internal query cache.
+   * @internal
+   */
   private queries = new Map<string, Query<TComponents>>();
+
+  /**
+   * Internal query index by component type.
+   * @internal
+   */
   private queriesByComponent = new Map<string, Set<Query<TComponents>>>();
+
+  /**
+   * Internal systems list.
+   * @internal
+   */
   private systems: { system: System<TComponents, TEvents>; phase: string; priority: number }[] = [];
   private nextEntityId = 1;
   private freeEntities: Entity[] = [];
@@ -87,10 +116,11 @@ export class World<
   public getCommandBuffer(): WorldCommandBuffer<TComponents, TBlueprints> { return this.commandBuffer; }
 
   /**
-   * Returns a list of all active entities, sorted by ID to support
-   * a stable iteration order.
+   * Returns a list of all active entities, sorted by ID.
    *
    * @remarks
+   * Iterating over this list provides a stable order based on entity IDs.
+   *
    * @warning
    * This operation creates a new array and performs a sort (O(N log N)) on every call.
    * Frequent access in hot paths (like system updates) will significantly increase GC pressure
@@ -124,9 +154,9 @@ export class World<
    *
    * @warning
    * Direct entity creation during world update is allowed but may affect
-   * ongoing iterations in systems that do not use stable queries. It is generally
-   * recommended to use the {@link WorldCommandBuffer} for deferred creation to support
-   * a more predictable state during the frame.
+   * ongoing iterations in systems that do not use stable queries. Using the
+   * {@link WorldCommandBuffer} for deferred creation is recommended to help maintain
+   * a predictable state during the frame.
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -147,8 +177,9 @@ export class World<
    *
    * @warning
    * Structural changes (removing entities) during system updates can disrupt
-   * active iterations. It is strongly recommended to use {@link WorldCommandBuffer}
-   * to defer entity removal until the end of the frame to help maintain simulation stability.
+   * active iterations if not handled carefully. Using {@link WorldCommandBuffer}
+   * to defer entity removal until the end of the frame is recommended to help maintain
+   * simulation stability.
    */
   removeEntity(entity: Entity): void {
     if (this.activeEntities.delete(entity)) {
@@ -300,14 +331,14 @@ export class World<
    * Systems are executed following the order of {@link SystemPhase} and their priority
    * within each phase. After all phases, the {@link WorldCommandBuffer} is flushed.
    *
-   * This method is synchronous. Asynchronous systems or side effects (like `await`)
-   * are not supported within the core update loop. Using them can lead to race conditions,
-   * broken invariants, and non-deterministic behavior.
+   * This method is synchronous. The core update loop is designed for synchronous execution;
+   * asynchronous side effects (like `await`) within systems should be avoided as they
+   * can lead to race conditions, inconsistent state, and non-deterministic behavior.
    *
    * @warning
    * Making structural changes (like adding/removing components or entities) directly
-   * during this call can disrupt active iterations. Use the {@link WorldCommandBuffer}
-   * to defer these changes until the end of the update.
+   * during this call can disrupt active iterations. It is recommended to use
+   * {@link WorldCommandBuffer} to defer these changes until the end of the update.
    */
   update(deltaTime: number): void {
     this._tick++;

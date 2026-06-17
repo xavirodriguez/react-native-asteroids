@@ -10,11 +10,11 @@ export interface Command<TComponents extends ComponentRegistry, TBlueprints exte
  * Buffer for deferring world modifications until the end of an update cycle.
  *
  * @remarks
- * Using the command buffer is the recommended way to modify the world
+ * Using the command buffer is a recommended way to modify the world
  * (e.g., spawning/removing entities, adding/removing components) from within systems.
  *
- * This approach helps maintain a stable world state throughout the frame's update
- * phases and helps prevent issues like iterator invalidation or inconsistent
+ * This approach is designed to help maintain a stable world state throughout the frame's update
+ * phases and helps reduce issues like iterator invalidation or inconsistent
  * query results caused by mid-frame structural changes.
  */
 export class WorldCommandBuffer<
@@ -83,7 +83,7 @@ export class WorldCommandBuffer<
    * @deprecated
    * Directly creating entities via the command buffer is not supported as it
    * cannot return a valid entity ID immediately.
-   * Use {@link spawnFromBlueprint} if possible, or create entities directly in the world
+   * Use {@link spawnFromBlueprint} for deferred spawning, or create entities directly in the world
    * if the ID is needed immediately.
    */
   public createEntity(): number {
