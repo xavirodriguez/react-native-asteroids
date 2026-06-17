@@ -4,6 +4,21 @@ import { World } from "../ecs/World";
 import { WorldSnapshot } from "./WorldSnapshot";
 
 export class SnapshotRestore {
+  /**
+   * Restores the world state from a snapshot.
+   *
+   * @remarks
+   * This method performs a deep restoration of entities and components,
+   * rebuilding internal indexes and queries.
+   *
+   * @warning
+   * This only restores the serializable state captured in the snapshot.
+   * Any transient state, non-serializable resources, or external subscriptions
+   * must be managed or re-initialized manually after this call.
+   *
+   * @param world - The world instance to restore.
+   * @param state - The snapshot to restore.
+   */
   public static restore<TComponents extends ComponentRegistry>(
     world: World<TComponents>,
     state: WorldSnapshot

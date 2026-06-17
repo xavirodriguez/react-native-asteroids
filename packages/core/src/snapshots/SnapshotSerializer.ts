@@ -4,6 +4,18 @@ import { World } from "../ecs/World";
 import { WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "./WorldSnapshot";
 
 export class SnapshotSerializer {
+  /**
+   * Captures the current serializable state of the world.
+   *
+   * @remarks
+   * This method captures entities and their components. Only serializable properties
+   * are included; functions and complex objects without a custom cloning path
+   * will be skipped or partially captured.
+   *
+   * @param world - The world to snapshot.
+   * @param target - Optional snapshot object to reuse.
+   * @returns A snapshot of the world's entities, components, and RNG state.
+   */
   public static snapshot<TComponents extends ComponentRegistry>(
     world: World<TComponents>,
     target?: WorldSnapshot
@@ -58,6 +70,17 @@ export class SnapshotSerializer {
     };
   }
 
+  /**
+   * Captures the changes in component data since a specific version.
+   *
+   * @remarks
+   * Identifies components that have been modified (based on `stateVersion`)
+   * and returns their serialized state.
+   *
+   * @param world - The world to snapshot.
+   * @param sinceVersion - The state version to compare against.
+   * @returns A partial snapshot containing only the changed components.
+   */
   public static deltaSnapshot<TComponents extends ComponentRegistry>(
     world: World<TComponents>,
     sinceVersion: number

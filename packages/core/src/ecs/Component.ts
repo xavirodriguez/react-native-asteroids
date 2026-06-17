@@ -2,7 +2,7 @@
  * Base interface for all components.
  *
  * @remarks
- * Every component must have a unique 'type' property that matches its
+ * Components are expected to have a unique 'type' property that matches their
  * key in the {@link ComponentRegistry}.
  */
 export interface Component {

@@ -1,6 +1,9 @@
 /**
  * Security utilities for data integrity and validation on the server.
- * MUST MATCH CLIENT IMPLEMENTATION.
+ *
+ * @remarks
+ * The signature logic is intended to match the client implementation to
+ * allow for verification of score integrity.
  */
 
 const SCORE_SALT = "retro-arcade-v1-salt-99";

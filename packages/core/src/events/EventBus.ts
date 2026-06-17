@@ -19,8 +19,8 @@ export type EventHandler<TPayload> = (payload: TPayload, event: string) => void;
  * the end of a simulation step.
  *
  * Note: Handlers are executed in the order they were registered.
- * While the bus itself is synchronous, handlers may trigger asynchronous
- * side effects which are not managed by the bus.
+ * While the bus itself is synchronous, handlers may trigger side effects
+ * (including asynchronous ones) that are not managed or tracked by the bus.
  *
  * @typeParam TEvents - The registry of custom events for this bus.
  */
@@ -73,9 +73,9 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
    *
    * @warning
    * Immediate `emit` can lead to deeply nested call stacks and side effects that are
-   * difficult to trace. It is strictly limited to a maximum recursion depth (10) to
-   * prevent infinite loops. For cross-system communication during the update loop,
-   * `emitDeferred` is strongly recommended to maintain simulation predictability.
+   * difficult to trace. Recursion is limited to a maximum depth (default 10) to
+   * help prevent infinite loops. For cross-system communication during the update loop,
+   * `emitDeferred` is recommended to help maintain simulation predictability.
    */
   emit<K extends keyof CombinedEvents<TEvents> & string>(
     event: K,

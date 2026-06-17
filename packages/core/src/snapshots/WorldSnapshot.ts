@@ -5,9 +5,9 @@
  * Snapshots include entity lists, component data, and RNG state. They are
  * designed for persistence, networking, and rollback mechanisms.
  *
- * Note: A snapshot only captures serializable state. Non-serializable
- * properties (functions, class instances, circular references) are not
- * included and must be restored manually if needed.
+ * Note: A snapshot is intended to capture only serializable state. Non-serializable
+ * properties (functions, class instances, circular references, or external resources)
+ * are not captured and must be managed or re-initialized manually after restoration.
  */
 export interface WorldSnapshot {
   entities: number[];

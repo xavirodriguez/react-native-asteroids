@@ -50,8 +50,8 @@ export class Query<TComponents extends ComponentRegistry> {
    * @remarks
    * Sorting happens lazily and only when the query is "dirty" (after entities are added or
    * removed). The list is sorted by entity ID, which helps provide a stable iteration order
-   * across frames, provided that the world's entity IDs are created and recycled in
-   * a deterministic manner.
+   * across frames, provided that the world's entity IDs are created and recycled
+   * consistently.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.isDirty) {
