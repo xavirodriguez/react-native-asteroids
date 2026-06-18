@@ -6,9 +6,9 @@ import { ComponentRegistry } from "./Component";
  *
  * @remarks
  * Queries are automatically updated by the {@link World} when components are added or removed.
- * They maintain an internally sorted list of entities to support a stable iteration order.
+ * They maintain an internally sorted list of entities to support a stable iteration order based on entity IDs.
  *
- * Note: Queries are highly efficient as they cache their results and only update when
+ * Performance: Queries are designed for efficiency as they cache their results and only update when
  * structural changes occur in the world.
  *
  * @typeParam TComponents - The component registry this query operates on.

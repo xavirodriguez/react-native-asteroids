@@ -10,8 +10,12 @@ import { CoreComponentRegistry } from "../ecs/CoreComponents";
  * and other proximity-based checks.
  *
  * Note: The effectiveness of spatial partitioning depends on appropriate grid/tree
- * bounds and regular updates. The implementation may use auxiliary caches that
- * are not fully captured in world snapshots.
+ * bounds and regular updates.
+ *
+ * @warning
+ * State management: This system may maintain internal auxiliary caches that
+ * are not captured in world snapshots. These caches are generally rebuilt on the
+ * next update, but state dependent on previous frames may be lost after restoration.
  */
 export class SpatialPartitioningSystem extends System<any> {
   public update(world: World<any>, _deltaTime: number): void {

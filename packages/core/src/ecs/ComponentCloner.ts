@@ -2,12 +2,12 @@
  * Utility for deep cloning component data.
  *
  * @remarks
- * This cloner performs a recursive shallow-copy of objects and arrays.
- * It is primarily intended for serializable data and does not handle:
- * - Circular references (will cause stack overflow)
- * - Class instances (preserves properties but loses prototype/methods)
- * - Special types like Map, Set, Date, etc.
- * - Functions (skipped during snapshotting, but this cloner itself doesn't filter them)
+ * This cloner performs a recursive copy of objects and arrays.
+ * It is primarily intended for serializable data and has several known limitations:
+ * - Circular references: Will cause a stack overflow.
+ * - Class instances: Preserves own properties but loses prototype, methods, and private state.
+ * - Special types: Does not correctly clone Map, Set, Date, TypedArrays, or other built-in objects.
+ * - Functions: Although skipped during world snapshotting, this cloner will return them by reference if encountered.
  *
  * Used during world snapshotting and restoration.
  */

@@ -10,8 +10,9 @@ import { World } from "../ecs/World";
  *
  * Note: Input capture is subject to the platform's event loop and OS-level
  * latency. While this system aims to provide a consistent view of input for
- * a given frame, it does not guarantee perfect synchronization with the
- * exact moment a physical button was pressed.
+ * a given frame, it cannot guarantee synchronization with the
+ * exact moment of physical input. Captured state reflects the latest available data at the start
+ * of the update.
  */
 export class UnifiedInputSystem extends System<any> {
   public bind(_action: string, _keys: string[]): void {}

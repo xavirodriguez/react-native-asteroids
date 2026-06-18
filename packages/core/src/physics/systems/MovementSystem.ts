@@ -6,9 +6,9 @@ import { CoreComponentRegistry } from "../../ecs/CoreComponents";
  * System that applies velocity to entity transforms.
  *
  * @remarks
- * This system performs basic Euler integration. It is designed for arcade-style
+ * This system performs basic semi-implicit Euler integration. It is designed for arcade-style
  * movement and is intended to be used with a fixed timestep to support
- * reproducible behavior.
+ * reproducible behavior under consistent conditions.
  *
  * @warning
  * As this system relies on standard floating-point arithmetic, small precision

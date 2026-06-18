@@ -4,7 +4,7 @@
  * @remarks
  * This service uses a Linear Congruential Generator (LCG) designed to provide
  * consistent results across platforms when provided with the same seed,
- * supporting reproducible simulations.
+ * supporting reproducible simulations under controlled conditions.
  *
  * Note: It is not cryptographically secure and may show patterns over
  * large sequences. The generator is optimized for speed and
