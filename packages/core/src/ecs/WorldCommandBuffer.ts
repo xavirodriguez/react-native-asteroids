@@ -74,8 +74,6 @@ export class WorldCommandBuffer<
 
   /**
    * Executes all buffered commands on the provided world.
-   *
-   * @internal
    */
   public flush(world: World<TComponents, TEvents, TBlueprints>): void {
     const commands = [...this.commands];
@@ -89,7 +87,7 @@ export class WorldCommandBuffer<
    * @deprecated
    * Directly creating entities via the command buffer is not supported as it
    * cannot return a valid entity ID immediately.
-   * Use {@link spawnFromBlueprint} for deferred spawning, or create entities directly in the world
+   * Use {@link WorldCommandBuffer.spawnFromBlueprint} for deferred spawning, or create entities directly in the world
    * if the ID is needed immediately.
    */
   public createEntity(): number {
