@@ -376,6 +376,17 @@ export class World<
     this.commandBuffer.flush(this);
   }
 
+  /**
+   * Manually advances the world's simulation tick.
+   *
+   * @remarks
+   * This is typically called automatically by {@link update}, but can be used
+   * manually in custom simulation loops or for re-simulation/rollback.
+   */
+  public advanceTick(): void {
+    this._tick++;
+  }
+
   getSingleton<K extends ComponentType<TComponents>>(type: K): TComponents[K] | undefined {
     const entities = this.query(type);
     if (entities.length === 0) return undefined;
