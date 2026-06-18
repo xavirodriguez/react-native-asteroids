@@ -24,12 +24,12 @@ export type BlueprintRegistryMap<
  *
  * @remarks
  * This implementation is designed to support reproducible simulations when provided with consistent
- * initial states and stable inputs. It aims to minimize non-deterministic factors, but absolute
- * bit-for-bit determinism is not guaranteed and can be affected by:
- * - Floating-point precision differences across different JS engines or platforms.
+ * initial states and stable inputs. It aims to minimize non-deterministic factors; however,
+ * bit-for-bit determinism depends on external constraints and can be affected by:
+ * - Floating-point precision differences across different JS engines, WASM runtimes, or platforms.
  * - Non-deterministic behavior in user-defined systems, hooks, or callbacks.
- * - External state mutations during the update loop.
- * - Reliance on non-serializable resource state.
+ * - External state mutations or side effects during the update loop.
+ * - Reliance on non-serializable resource state or external volatile state.
  *
  * @typeParam TComponents - The registry of components allowed in this world.
  * @typeParam TEvents - The registry of events handled by the world's event bus.
@@ -124,10 +124,9 @@ export class World<
    * Iterating over this list provides a stable order based on entity IDs.
    *
    * @warning
-   * This operation creates a new array and performs a sort (O(N log N)) on every call.
-   * Frequent access in hot paths (like system updates) will significantly increase GC pressure
-   * and impact performance. It is strongly recommended to use {@link Query} for efficient,
-   * cached, and reactive entity filtering.
+   * Performance impact: This operation creates a new array and performs a sort (O(N log N)) on every call.
+   * Frequent access in performance-critical paths will increase GC pressure and may impact frame budget.
+   * It is recommended to use {@link Query} for efficient, cached entity filtering.
    */
   public get entities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);
@@ -155,10 +154,10 @@ export class World<
    * Increments the structure version of the world.
    *
    * @warning
-   * Direct entity creation during world update is allowed but may affect
+   * Structural change: Direct entity creation during world update is allowed but may disrupt
    * ongoing iterations in systems that do not use stable queries. Using the
-   * {@link WorldCommandBuffer} for deferred creation is recommended to help maintain
-   * a predictable state during the frame.
+   * {@link WorldCommandBuffer} for deferred creation is recommended to maintain
+   * simulation stability during the frame.
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -178,9 +177,9 @@ export class World<
    * Removes an entity and all its associated components from the world.
    *
    * @warning
-   * Structural changes (removing entities) during system updates can disrupt
+   * Structural change: Removing entities during system updates can disrupt
    * active iterations if not handled carefully. Using {@link WorldCommandBuffer}
-   * to defer entity removal until the end of the frame is recommended to help maintain
+   * to defer entity removal until the end of the frame is recommended to maintain
    * simulation stability.
    */
   removeEntity(entity: Entity): void {
@@ -333,14 +332,14 @@ export class World<
    * Systems are executed following the order of {@link SystemPhase} and their priority
    * within each phase. After all phases, the {@link WorldCommandBuffer} is flushed.
    *
-   * This method is synchronous. The core update loop is designed for synchronous execution;
+   * This method is synchronous. The core update loop is intended for synchronous execution;
    * asynchronous side effects (like `await`) within systems should be avoided as they
    * can lead to race conditions, inconsistent state, and non-deterministic behavior.
    *
    * @warning
-   * Making structural changes (like adding/removing components or entities) directly
-   * during this call can disrupt active iterations. It is recommended to use
-   * {@link WorldCommandBuffer} to defer these changes until the end of the update.
+   * Direct structural changes: Making structural changes (like adding/removing components or entities)
+   * directly during this call can disrupt active iterations. Use {@link WorldCommandBuffer}
+   * to defer these changes until the end of the update for better stability.
    */
   update(deltaTime: number): void {
     this._tick++;
@@ -427,14 +426,14 @@ export class World<
    * @returns A snapshot of the world's entities, components, and RNG state.
    *
    * @remarks
-   * This operation only captures components and their serializable properties (primitive values,
-   * plain nested objects/arrays). Functions, non-serializable objects (e.g., class instances
-   * without a custom cloner), and circular references are not supported and will lead
-   * to incomplete state restoration.
+   * This operation is designed to capture components and their serializable properties (primitive values,
+   * plain nested objects/arrays).
    *
-   * Snapshotting is intended to support save/load and network synchronization.
-   * However, it involves significant allocations and deep cloning; use it judiciously
-   * in performance-sensitive paths.
+   * @warning
+   * - Limitations: Functions, non-serializable objects (e.g., class instances without a custom cloner),
+   *   and circular references are not supported and will lead to incomplete state restoration.
+   * - Performance: Snapshotting involves significant allocations and deep cloning; frequent use
+   *   in hot paths should be avoided to minimize GC pressure.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     return SnapshotSerializer.snapshot(this, target);
@@ -446,14 +445,14 @@ export class World<
    * @param state - The snapshot to restore.
    *
    * @remarks
-   * This method performs a deep restoration of entities and components,
+   * This method performs a restoration of entities and components from the snapshot,
    * rebuilding internal indexes and queries. It is a computationally expensive
    * operation intended for scene transitions, rollback, or game loading.
    *
    * @warning
-   * This only restores the serializable state captured in the snapshot.
-   * Any transient state, non-serializable resources, or external subscriptions
-   * must be managed or re-initialized manually after this call.
+   * - Serializable only: This only restores the serializable state captured in the snapshot.
+   * - Manual management: Any transient state, non-serializable resources, or external subscriptions
+   *   must be managed or re-initialized manually after this call.
    */
   public restore(state: WorldSnapshot): void {
     SnapshotRestore.restore(this, state);

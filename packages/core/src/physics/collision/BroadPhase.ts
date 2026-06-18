@@ -5,7 +5,8 @@ import { AABB } from "./CollisionTypes";
 import { ShapeType } from "../shapes/Shapes";
 
 /**
- * Bounds object used for Sweep and Prune to avoid allocations.
+ * Bounds object used for Sweep and Prune.
+ * @internal
  */
 interface EntityBounds {
   entity: Entity;
@@ -45,10 +46,12 @@ export class BroadPhase {
   }
 
   /**
-   * Implementation of the Sweep and Prune algorithm (1D) optimized to minimize allocations.
+   * Implementation of the Sweep and Prune algorithm (1D) designed to minimize per-frame allocations
+   * by reusing an internal object pool for entity bounds.
    */
   static sweepAndPrune(entities: Entity[], world: World<CoreComponentRegistry>): Array<[Entity, Entity]> {
-    // Re-use or expand boundsPool to avoid re-allocating the array and objects
+    // Re-use or expand boundsPool to reduce object allocation overhead.
+    // Note: slice() and sort() still perform temporary allocations.
     const count = entities.length;
     for (let i = 0; i < count; i++) {
       const entity = entities[i];
