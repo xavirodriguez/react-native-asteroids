@@ -5,14 +5,14 @@ export interface AssetDescriptor {
 }
 
 export interface IAssetProvider {
-  loadImage(path: string): Promise<any>;
-  loadAudio(path: string): Promise<any>;
-  loadFont(path: string): Promise<any>;
-  load?(path: string): Promise<any>;
+  loadImage(path: string): Promise<unknown>;
+  loadAudio(path: string): Promise<unknown>;
+  loadFont(path: string): Promise<unknown>;
+  load?(path: string): Promise<unknown>;
 }
 
 export class AssetLoader {
-  private cache = new Map<string, any>();
+  private cache = new Map<string, unknown>();
   private queue: AssetDescriptor[] = [];
 
   constructor(private provider?: IAssetProvider) {}
@@ -34,7 +34,7 @@ export class AssetLoader {
     const promises = assets.map(async asset => {
       if (this.cache.has(asset.id)) return;
 
-      let loadedAsset: any;
+      let loadedAsset: unknown;
       switch (asset.type) {
         case "image":
         case "texture":
@@ -45,6 +45,11 @@ export class AssetLoader {
           break;
         case "font":
           loadedAsset = await this.provider!.loadFont(asset.path);
+          break;
+        case "json":
+          if (this.provider!.load) {
+            loadedAsset = await this.provider!.load(asset.path);
+          }
           break;
       }
       this.cache.set(asset.id, loadedAsset);

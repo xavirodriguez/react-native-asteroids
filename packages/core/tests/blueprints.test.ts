@@ -5,7 +5,7 @@ describe("Blueprints", () => {
     const world = new World<CoreComponentRegistry>();
     const registry = new BlueprintRegistry<CoreComponentRegistry>();
 
-    const asteroidBlueprint: BlueprintDefinition<CoreComponentRegistry, { size: number }> = {
+    const asteroidBlueprint: BlueprintDefinition<CoreComponentRegistry, any, { size: number }> = {
       spawn: (world, entity, args) => {
         const transform: TransformComponent = {
           type: "Transform",

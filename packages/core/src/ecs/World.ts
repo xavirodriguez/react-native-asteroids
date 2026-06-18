@@ -13,8 +13,10 @@ import { BlueprintDefinition } from "./BlueprintRegistry";
 /**
  * Map type for blueprint definitions.
  */
-export type BlueprintRegistryMap<TComponents extends ComponentRegistry> =
-  Record<string, BlueprintDefinition<TComponents, any>>;
+export type BlueprintRegistryMap<
+  TComponents extends ComponentRegistry,
+  TEvents extends EventRegistry = EventRegistry
+> = Record<string, BlueprintDefinition<TComponents, TEvents, any>>;
 
 /**
  * The World acts as the central container for an ECS (Entity Component System) simulation.
@@ -89,7 +91,7 @@ export class World<
   private freeEntities: Entity[] = [];
   private resources = new Map<string, unknown>();
   private _tick = 0;
-  private commandBuffer = new WorldCommandBuffer<TComponents, TBlueprints>();
+  private commandBuffer = new WorldCommandBuffer<TComponents, TEvents, TBlueprints>();
 
   /**
    * @internal

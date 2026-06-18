@@ -136,7 +136,7 @@ export class CollisionSystem2D<TRegistry extends ComponentRegistry = CoreCompone
 /**
  * Continuous Collision Detection System.
  */
-export class CCDSystem<TRegistry extends ComponentRegistry = any> extends System<TRegistry> {
+export class CCDSystem<TRegistry extends ComponentRegistry = CoreComponentRegistry> extends System<TRegistry> {
   public update(world: World<TRegistry>, deltaTime: number): void {
     // CCD logic for fast-moving objects
   }
