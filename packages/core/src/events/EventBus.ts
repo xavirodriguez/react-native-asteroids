@@ -102,7 +102,7 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
   }
 
   /**
-   * Queues an event to be processed later during {@link flushDeferred}.
+   * Queues an event to be processed later during {@link EventBus.flushDeferred}.
    */
   emitDeferred<K extends keyof CombinedEvents<TEvents> & string>(
     event: K,
@@ -113,8 +113,6 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
 
   /**
    * Executes all deferred events.
-   *
-   * @internal
    */
   flushDeferred(): void {
     if (this.isProcessing) return;

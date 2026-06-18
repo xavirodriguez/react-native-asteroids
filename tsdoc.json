@@ -53,6 +53,11 @@
       "tagName": "@contract",
       "syntaxKind": "block",
       "allowMultiple": true
+    },
+    {
+      "tagName": "@warning",
+      "syntaxKind": "block",
+      "allowMultiple": true
     }
   ],
   "supportForTags": {
@@ -68,6 +73,7 @@
     "@invariant": true,
     "@sideEffect": true,
     "@contract": true,
+    "@warning": true,
     "@remarks": true,
     "@param": true,
     "@returns": true,

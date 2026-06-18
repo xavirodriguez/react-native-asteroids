@@ -134,7 +134,7 @@ export class World<
   }
 
   /**
-   * Alias for {@link entities}.
+   * Alias for {@link World.entities}.
    *
    * @remarks
    * @warning
