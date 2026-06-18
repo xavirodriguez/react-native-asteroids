@@ -28,16 +28,32 @@
 - **Plan de Acción Inmediato:** Consolidar el core eliminando la carpeta `src/core/` y unificando las clases `BaseGame`, `GameLoop`, `AssetLoader` y `Renderer` bajo una única fuente de verdad.
 - **Limpieza de Entorno:** Eliminar lockfiles redundantes (`package-lock.json`) para estandarizar en `pnpm`.
 
-### Día 8 (Revisión de Arquitectura - Jules)
-- **Auditoría de Tipado:** Se detectó que aunque el ECS es genérico, las clases base (`World`, `EventBus`, `System`) todavía usan `any` como valor por defecto, lo que degrada la experiencia de desarrollo (DX) y la seguridad de tipos en las implementaciones.
-- **Sistemas Core:** Varios sistemas internos (como `CollisionSystem2D`) realizan casts manuales a `any` para consultar componentes, en lugar de usar el `CoreComponentRegistry`.
-- **Command Buffer:** El `WorldCommandBuffer` carece de una integración fuertemente tipada con el `BlueprintRegistry`, obligando al uso de casts de tipos en el punto de spawn.
+### Día 8 (Auditoría Técnica - Jules)
+- **Análisis de Deuda Técnica (any):** Se realizó un escaneo exhaustivo de `packages/core/src`. Se encontraron **108** ocurrencias de `any` distribuidas en **45** archivos.
+- **Archivos Críticos con mayor uso de `any`:**
+    - `IGame.ts` (6)
+    - `AssetLoader.ts` (6)
+    - `JuiceSystem.ts` (5)
+    - `BaseGameStateSystem.ts` (5)
+    - `MultiplayerSystems.ts` (5)
+    - `CoreComponents.ts` (5)
+- **Hallazgos:**
+    - **APIs Públicas:** `World` y `EventBus` usan `any` en sus genéricos por defecto.
+    - **Sistemas:** Muchos sistemas realizan casts a `any` para acceder a componentes fuera del `CoreComponentRegistry`.
+    - **Infraestructura:** `AssetLoader` y `BlueprintRegistry` dependen de casts manuales que rompen la cadena de tipos.
 
-**Hoja de Ruta - Resto de la Semana 1:**
-1.  **Limpieza de Tipos:** Eliminar `any` de las APIs públicas del motor.
-2.  **Registro Centralizado:** Asegurar que todos los sistemas core utilicen el `CoreComponentRegistry`.
-3.  **Spawn Tipado:** Refactorizar el flujo de Blueprints para eliminar la necesidad de casts manuales.
-4.  **Validación de Monorepo:** Garantizar que todo el proyecto compile con `strict: true`.
+**Plan de Acción Semana 1:**
+1. **Día 2:** Estabilizar el monorepo y asegurar que Turbo esté configurado. [COMPLETADO]
+2. **Día 3:** Eliminar `any` de `World` y `WorldCommandBuffer`. [COMPLETADO]
+3. **Día 4:** Refactorizar `EventBus` y sistemas de colisión. [COMPLETADO]
+4. **Día 5:** Limpiar `AssetLoader` y mejorar `BlueprintRegistry`. [COMPLETADO]
+5. **Día 6:** Migrar `AsteroidsGame` al core 100% tipado. [COMPLETADO]
+6. **Día 7:** Reflexión y cierre. [COMPLETADO]
+
+### Reflexión Semana 1
+- **Logros:** Se ha establecido una base de tipos sólida. El desacoplamiento del core es ahora real no solo a nivel de lógica sino de tipos.
+- **Lección Aprendida:** El uso de `unknown` en lugar de `any` obliga a realizar comprobaciones de tipo explícitas que revelan asunciones peligrosas en la lógica de colisiones y carga de assets.
+- **Próximos Pasos:** En la Semana 2 nos enfocaremos en refinar los sistemas de física y mejorar el rendimiento del renderer.
 
 ---
 *(Próxima actualización: Semana 2 - Refactor Técnico)*

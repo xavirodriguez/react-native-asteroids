@@ -1,9 +1,13 @@
-import { World, BaseGameStateSystem } from "@tiny-aster/core";
+import { World, BaseGameStateSystem, EventRegistry } from "@tiny-aster/core";
 import { GameStateComponent } from "../types/AsteroidTypes";
-import { AsteroidsComponentRegistry } from "../types/AsteroidRegistry";
+import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
 import { IAsteroidsGame } from "../types/GameInterfaces";
 
-export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateComponent, AsteroidsComponentRegistry> {
+export class AsteroidGameStateSystem extends BaseGameStateSystem<
+  GameStateComponent,
+  AsteroidsComponentRegistry,
+  AsteroidsEventRegistry
+> {
   constructor(game: IAsteroidsGame) {
     super(game as any);
   }
@@ -30,7 +34,7 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<GameStateCompon
   }
 
   public resetGameOverState(world: World<AsteroidsComponentRegistry>): void {
-      world.mutateSingleton("GameState", (state: any) => {
+      world.mutateSingleton("GameState", (state) => {
           state.isGameOver = false;
           state.lives = 3;
           state.score = 0;

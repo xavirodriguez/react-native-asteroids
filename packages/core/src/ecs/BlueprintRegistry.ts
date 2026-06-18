@@ -1,22 +1,25 @@
-import { World, BlueprintRegistryMap, ComponentRegistry, ComponentType } from "./World";
+import { World, BlueprintRegistryMap, ComponentRegistry } from "./World";
+import { EventRegistry } from "../events/EventBus";
 
 export type BlueprintArgs<TBlueprints, TId extends keyof TBlueprints> =
-  TBlueprints[TId] extends BlueprintDefinition<any, infer TArgs>
+  TBlueprints[TId] extends BlueprintDefinition<any, any, infer TArgs>
     ? TArgs
     : never;
 
 export interface BlueprintDefinition<
   TComponents extends ComponentRegistry,
+  TEvents extends EventRegistry,
   TArgs
 > {
-  spawn(world: World<TComponents, any, any>, entity: number, args: TArgs): void;
+  spawn(world: World<TComponents, TEvents, any>, entity: number, args: TArgs): void;
 }
 
 export class BlueprintRegistry<
   TComponents extends ComponentRegistry = ComponentRegistry,
+  TEvents extends EventRegistry = EventRegistry,
   TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
 > {
-  private blueprints = new Map<string, BlueprintDefinition<TComponents, any>>();
+  private blueprints = new Map<string, BlueprintDefinition<TComponents, TEvents, any>>();
 
   register<TId extends keyof TBlueprints & string>(
     id: TId,

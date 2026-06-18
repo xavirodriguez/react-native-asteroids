@@ -1,9 +1,14 @@
 import { World, BlueprintRegistryMap } from "./World";
 import { ComponentRegistry, ComponentType } from "./Component";
 import { BlueprintArgs, BlueprintRegistry } from "./BlueprintRegistry";
+import { EventRegistry } from "../events/EventBus";
 
-export interface Command<TComponents extends ComponentRegistry, TBlueprints extends BlueprintRegistryMap<TComponents>> {
-  execute(world: World<TComponents, any, TBlueprints>): void;
+export interface Command<
+  TComponents extends ComponentRegistry,
+  TEvents extends EventRegistry,
+  TBlueprints extends BlueprintRegistryMap<TComponents>
+> {
+  execute(world: World<TComponents, TEvents, TBlueprints>): void;
 }
 
 /**
@@ -19,9 +24,10 @@ export interface Command<TComponents extends ComponentRegistry, TBlueprints exte
  */
 export class WorldCommandBuffer<
   TComponents extends ComponentRegistry = ComponentRegistry,
+  TEvents extends EventRegistry = EventRegistry,
   TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
 > {
-  private commands: Command<TComponents, TBlueprints>[] = [];
+  private commands: Command<TComponents, TEvents, TBlueprints>[] = [];
 
   /**
    * Schedules an entity to be spawned from a blueprint.
@@ -33,7 +39,7 @@ export class WorldCommandBuffer<
     this.commands.push({
       execute: (world) => {
         const entity = world.createEntity();
-        const registry = world.getResource<BlueprintRegistry<TComponents, TBlueprints>>("BlueprintRegistry");
+        const registry = world.getResource<BlueprintRegistry<TComponents, TEvents, TBlueprints>>("BlueprintRegistry");
         const blueprint = registry?.get(blueprintId);
         if (blueprint) {
           blueprint.spawn(world, entity, args);
@@ -71,7 +77,7 @@ export class WorldCommandBuffer<
    *
    * @internal
    */
-  public flush(world: World<TComponents, any, TBlueprints>): void {
+  public flush(world: World<TComponents, TEvents, TBlueprints>): void {
     const commands = [...this.commands];
     this.commands = [];
     for (const command of commands) {

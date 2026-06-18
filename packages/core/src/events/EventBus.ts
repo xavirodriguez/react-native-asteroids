@@ -25,8 +25,8 @@ export type EventHandler<TPayload> = (payload: TPayload, event: string) => void;
  * @typeParam TEvents - The registry of custom events for this bus.
  */
 export class EventBus<TEvents extends EventRegistry = EventRegistry> {
-  private handlers = new Map<string, Set<EventHandler<any>>>();
-  private deferredEvents: { event: string; payload: any }[] = [];
+  private handlers = new Map<string, Set<EventHandler<unknown>>>();
+  private deferredEvents: { event: string; payload: unknown }[] = [];
   private isProcessing = false;
   private static MAX_RECURSION = 10;
   private recursionDepth = 0;
@@ -43,7 +43,7 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, new Set());
     }
-    this.handlers.get(event)!.add(handler);
+    this.handlers.get(event)!.add(handler as EventHandler<unknown>);
     return () => this.off(event, handler);
   }
 
@@ -62,7 +62,7 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
     event: K,
     handler: EventHandler<CombinedEvents<TEvents>[K]>
   ): void {
-    this.handlers.get(event)?.delete(handler);
+    this.handlers.get(event)?.delete(handler as EventHandler<unknown>);
   }
 
   /**
@@ -122,7 +122,7 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
     const events = [...this.deferredEvents];
     this.deferredEvents = [];
     for (const { event, payload } of events) {
-      this.emit(event as keyof CombinedEvents<TEvents> & string, payload);
+      this.emit(event as keyof CombinedEvents<TEvents> & string, payload as any);
     }
     this.isProcessing = false;
   }
