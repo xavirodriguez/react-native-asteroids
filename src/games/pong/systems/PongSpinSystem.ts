@@ -1,0 +1,40 @@
+import { System } from "@tiny-aster/core";
+import { World } from "@tiny-aster/core";
+import { TransformComponent, VelocityComponent } from "@tiny-aster/core";
+import { BallComponent, PaddleComponent } from "../types";
+
+export class PongSpinSystem extends System {
+  public update(world: World, deltaTime: number): void {
+    const balls = world.query("Ball", "Velocity");
+    const dtSeconds = deltaTime / 1000;
+
+    balls.forEach(entity => {
+      const ball = world.getComponent<BallComponent>(entity, "Ball")!;
+
+      if (ball.spinFactor !== 0) {
+        world.mutateComponent<VelocityComponent>(entity, "Velocity", vel => {
+          // Apply curve effect
+          vel.dy += ball.spinFactor * 500 * dtSeconds;
+        });
+
+        world.mutateComponent(entity, "Ball", b => {
+          b.spinFactor *= (1 - b.spinDecay);
+          if (Math.abs(b.spinFactor) < 0.01) {
+            b.spinFactor = 0;
+          }
+        });
+      }
+    });
+
+    const paddles = world.query("Paddle", "Transform");
+    paddles.forEach(entity => {
+      const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
+
+      // Paddle no está en el registro central aún
+      world.mutateComponent<PaddleComponent>(entity, "Paddle", paddle => {
+        paddle.lastVelocityY = (pos.y - paddle.previousY) / dtSeconds;
+        paddle.previousY = pos.y;
+      });
+    });
+  }
+}
