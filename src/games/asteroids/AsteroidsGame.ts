@@ -191,8 +191,8 @@ export class AsteroidsGame
     this.networkManager.processServerUpdate(serverTick, delta, localSessionId);
 
     const eventBus = this.world.getEventBus();
-    if (eventBus && delta.stateVersion !== undefined) {
-      eventBus.emit("net:ack_version" as any, { version: delta.stateVersion, tick: serverTick } as any);
+    if (eventBus && (delta as any).stateVersion !== undefined) {
+      eventBus.emit("net:ack_version" as any, { version: (delta as any).stateVersion, tick: serverTick } as any);
     }
   }
 

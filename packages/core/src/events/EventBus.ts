@@ -120,7 +120,7 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
     const events = [...this.deferredEvents];
     this.deferredEvents = [];
     for (const { event, payload } of events) {
-      this.emit(event as keyof CombinedEvents<TEvents> & string, payload as any);
+      this.emit(event as keyof CombinedEvents<TEvents> & string, payload as CombinedEvents<TEvents>[keyof CombinedEvents<TEvents> & string]);
     }
     this.isProcessing = false;
   }
