@@ -24,9 +24,9 @@ export interface BaseGameConfig {
  * @typeParam TBlueprints - The registry of blueprints that can be spawned.
  */
 export abstract class BaseGame<
-  TComponents extends ComponentRegistry = any,
-  TEvents extends EventRegistry = any,
-  TBlueprints extends BlueprintRegistryMap<TComponents> = any
+  TComponents extends ComponentRegistry = ComponentRegistry,
+  TEvents extends EventRegistry = EventRegistry,
+  TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
 > {
   public world: World<TComponents, TEvents, TBlueprints>;
   public eventBus: EventBus<TEvents>;

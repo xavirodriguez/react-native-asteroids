@@ -11,7 +11,7 @@ export interface BlueprintDefinition<
   TEvents extends EventRegistry,
   TArgs
 > {
-  spawn(world: World<TComponents, TEvents, any>, entity: number, args: TArgs): void;
+  spawn(world: World<TComponents, TEvents, BlueprintRegistryMap<TComponents>>, entity: number, args: TArgs): void;
 }
 
 export class BlueprintRegistry<

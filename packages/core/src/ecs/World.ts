@@ -16,7 +16,7 @@ import { BlueprintDefinition } from "./BlueprintRegistry";
 export type BlueprintRegistryMap<
   TComponents extends ComponentRegistry,
   TEvents extends EventRegistry = EventRegistry
-> = Record<string, BlueprintDefinition<TComponents, TEvents, any>>;
+> = Record<string, BlueprintDefinition<TComponents, TEvents, unknown>>;
 
 /**
  * The World acts as the central container for an ECS (Entity Component System) simulation.
@@ -115,7 +115,7 @@ export class World<
   public get stateVersion(): number { return this._stateVersion; }
   public get gameplayRandom(): RandomService { return this._gameplayRandom; }
   public getEventBus(): EventBus<TEvents> { return this.getResource<EventBus<TEvents>>("EventBus")!; }
-  public getCommandBuffer(): WorldCommandBuffer<TComponents, TBlueprints> { return this.commandBuffer; }
+  public getCommandBuffer(): WorldCommandBuffer<TComponents, TEvents, TBlueprints> { return this.commandBuffer; }
 
   /**
    * Returns a list of all active entities, sorted by ID.
