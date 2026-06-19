@@ -8,9 +8,13 @@ export class SnapshotSerializer {
    * Captures the current serializable state of the world.
    *
    * @remarks
-   * This method captures entities and their components. Only serializable properties
-   * are included; functions and complex objects without a custom cloning path
-   * will be skipped or partially captured.
+   * This method captures entities and their components.
+   *
+   * @warning
+   * **Serialization limits**: Only serializable properties (primitive values, plain
+   * objects/arrays) are included. Functions, circular references, and complex
+   * class instances without a custom cloning path will be skipped, partially
+   * captured, or may cause issues during restoration.
    *
    * @param world - The world to snapshot.
    * @param target - Optional snapshot object to reuse.
@@ -76,6 +80,9 @@ export class SnapshotSerializer {
    * @remarks
    * Identifies components that have been modified (based on `stateVersion`)
    * and returns their serialized state.
+   *
+   * @warning
+   * Subject to the same serialization limits as {@link snapshot}.
    *
    * @param world - The world to snapshot.
    * @param sinceVersion - The state version to compare against.

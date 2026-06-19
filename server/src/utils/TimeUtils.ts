@@ -18,7 +18,7 @@ export class TimeUtils {
   }
 
   /**
-   * Calcula una semilla semanal determinista basada en UTC.
+   * Calcula una semilla semanal reproducible basada en UTC.
    * Evita dependencias de la zona horaria del servidor.
    *
    * @param serverTime - Tiempo actual del servidor en ms (opcional, usa Date.now() si no se provee).

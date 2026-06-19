@@ -23,9 +23,9 @@ export type BlueprintRegistryMap<
  * It manages entities, components, systems, and resources.
  *
  * @remarks
- * This implementation is designed to support reproducible simulations when provided with consistent
+ * This implementation is intended to support reproducible simulations when provided with consistent
  * initial states and stable inputs. It aims to minimize non-deterministic factors; however,
- * bit-for-bit determinism depends on external constraints and can be affected by:
+ * bit-for-bit determinism is not guaranteed and depends on external constraints such as:
  * - Floating-point precision differences across different JS engines, WASM runtimes, or platforms.
  * - Non-deterministic behavior in user-defined systems, hooks, or callbacks.
  * - External state mutations or side effects during the update loop.
@@ -121,7 +121,8 @@ export class World<
    * Returns a list of all active entities, sorted by ID.
    *
    * @remarks
-   * Iterating over this list provides a stable order based on entity IDs.
+   * Iterating over this list provides a stable order based on entity IDs, assuming
+   * consistent entity creation and recycling.
    *
    * @warning
    * Performance impact: This operation creates a new array and performs a sort (O(N log N)) on every call.
@@ -332,14 +333,15 @@ export class World<
    * Systems are executed following the order of {@link SystemPhase} and their priority
    * within each phase. After all phases, the {@link WorldCommandBuffer} is flushed.
    *
-   * This method is synchronous. The core update loop is intended for synchronous execution;
-   * asynchronous side effects (like `await`) within systems should be avoided as they
+   * This method is synchronous. The core update loop is designed for synchronous execution;
+   * asynchronous side effects (like `await`) within systems are discouraged as they
    * can lead to race conditions, inconsistent state, and non-deterministic behavior.
    *
    * @warning
-   * Direct structural changes: Making structural changes (like adding/removing components or entities)
-   * directly during this call can disrupt active iterations. Use {@link WorldCommandBuffer}
-   * to defer these changes until the end of the update for better stability.
+   * **Structural changes during iteration**: Direct structural changes (like adding/removing
+   * components or entities) during this call can lead to undefined behavior or disrupt
+   * active iterations in systems. It is strongly recommended to use {@link WorldCommandBuffer}
+   * to defer these changes until the end of the update for better simulation stability.
    */
   update(deltaTime: number): void {
     this._tick++;
@@ -450,9 +452,11 @@ export class World<
    * operation intended for scene transitions, rollback, or game loading.
    *
    * @warning
-   * - Serializable only: This only restores the serializable state captured in the snapshot.
-   * - Manual management: Any transient state, non-serializable resources, or external subscriptions
-   *   must be managed or re-initialized manually after this call.
+   * - **Serializable state only**: This only restores the serializable state captured in
+   *   the snapshot (primitive values, plain objects/arrays).
+   * - **Manual management**: Any transient state, non-serializable resources (e.g. textures,
+   *   audio buffers), or external subscriptions are not captured and must be managed
+   *   or re-initialized manually after this call.
    */
   public restore(state: WorldSnapshot): void {
     SnapshotRestore.restore(this, state);

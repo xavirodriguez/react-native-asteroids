@@ -112,6 +112,10 @@ export class AsteroidsGame
 
   /**
    * Preloads game assets (SFX and Textures) to prevent cold-start latency.
+   *
+   * @warning
+   * Asset loading may fail due to network or filesystem issues. Failure to
+   * preload assets may result in visual or audio artifacts during gameplay.
    */
   private async onPreloadAssets(): Promise<void> {
     const loader = this.assetLoader;

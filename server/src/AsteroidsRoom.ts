@@ -10,6 +10,19 @@ import { getDateKey } from "./utils/DateUtils";
 import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../../src/games/asteroids/types/AsteroidRegistry";
 
+/**
+ * Authoritative game room for the Asteroids simulation.
+ *
+ * @remarks
+ * This room runs a headless version of the {@link AsteroidsGame} and manages
+ * authoritative state synchronization, input buffering, and replication budgets.
+ *
+ * @warning
+ * **Replication & Bandwidth**: Large numbers of entities or frequent state
+ * updates may exceed the network budget. The room uses different replication
+ * modes (interest management, delta compression) to mitigate this, but
+ * consistency depends on the configured patch rate and client ACK stability.
+ */
 export class AsteroidsRoom extends (Room as any) {
   maxClients = 4;
   private fixedTimeStep = 16.66;
