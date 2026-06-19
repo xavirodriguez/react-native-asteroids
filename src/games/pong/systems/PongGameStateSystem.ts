@@ -1,0 +1,98 @@
+import { World } from "@tiny-aster/core";
+import { PongState } from "../types";
+import { PongConfig } from "../types/PongConfigSchema";
+import { BaseGameStateSystem } from "@tiny-aster/core";
+import { TransformComponent, VelocityComponent } from "@tiny-aster/core";
+import { EventBus } from "@tiny-aster/core";
+
+export class PongGameStateSystem extends BaseGameStateSystem<PongState> {
+  private config?: PongConfig;
+
+  constructor(config?: PongConfig) {
+    super();
+    this.config = config;
+  }
+
+  protected updateGameState(world: World, state: PongState, deltaTime: number): void {
+    if (!this.config) {
+        this.config = world.getResource<PongConfig>("GameConfig")!;
+    }
+    void deltaTime;
+
+    if (state.isGameOver) {
+        return;
+    }
+
+    // Monitor ball position for scoring
+    const balls = world.query("Ball", "Transform", "Velocity");
+    balls.forEach(ballEntity => {
+        const pos = world.getComponent<TransformComponent>(ballEntity, "Transform")!;
+        const vel = world.getComponent<VelocityComponent>(ballEntity, "Velocity")!;
+        const ballSize = this.config!.BALL_SIZE;
+
+        if (pos.x < -ballSize) {
+            world.mutateSingleton<PongState>("PongState", (gs) => {
+                gs.scoreP2++;
+            });
+            this.resetBall(world, ballEntity, pos, vel, "right");
+        } else if (pos.x > this.config!.WIDTH + ballSize) {
+            world.mutateSingleton<PongState>("PongState", (gs) => {
+                gs.scoreP1++;
+            });
+            this.resetBall(world, ballEntity, pos, vel, "left");
+        }
+
+        const currentState = this.getGameState(world);
+        if (currentState && currentState.scoreP1 >= this.config!.WIN_SCORE) {
+            world.mutateSingleton<PongState>("PongState", (gs) => {
+                gs.isGameOver = true;
+                gs.winner = 1;
+            });
+            const eventBus = world.getResource<EventBus>("EventBus");
+            if (eventBus) {
+                eventBus.emitDeferred("pong:set_won");
+            }
+        } else if (currentState && currentState.scoreP2 >= this.config!.WIN_SCORE) {
+            world.mutateSingleton<PongState>("PongState", (gs) => {
+                gs.isGameOver = true;
+                gs.winner = 2;
+            });
+        }
+    });
+  }
+
+  private resetBall(world: World, entity: number, _pos: TransformComponent, _vel: VelocityComponent, direction: "left" | "right"): void {
+    const gameplayRandom = world.gameplayRandom;
+
+    world.mutateComponent<TransformComponent>(entity, "Transform", pos => {
+        pos.x = this.config!.WIDTH / 2;
+        pos.y = this.config!.HEIGHT / 2;
+        pos.dirty = true;
+    });
+
+    world.mutateComponent<VelocityComponent>(entity, "Velocity", vel => {
+        vel.dx = direction === "right" ? -this.config!.BALL_SPEED_START : this.config!.BALL_SPEED_START;
+        vel.dy = (gameplayRandom.next() - 0.5) * this.config!.BALL_SPEED_START;
+    });
+  }
+
+  protected getGameState(world: World): PongState | undefined {
+    return world.getSingleton<PongState>("PongState");
+  }
+
+  protected evaluateGameOverCondition(state: PongState): boolean {
+    return state.isGameOver;
+  }
+
+  public resetGameOverState(world?: World): void {
+    if (world) {
+        world.mutateSingleton<PongState>("PongState", (state) => {
+            state.isGameOver = false;
+            state.scoreP1 = 0;
+            state.scoreP2 = 0;
+            state.winner = undefined;
+            state.gameOverLogged = false;
+        });
+    }
+  }
+}
