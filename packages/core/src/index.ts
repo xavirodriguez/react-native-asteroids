@@ -5,7 +5,7 @@
  *
  * @remarks
  * This package provides the foundational building blocks for entities,
- * components, systems, and world management. It is designed to support
+ * components, systems, and world management. It is intended to support
  * reproducible simulations under controlled conditions (e.g., fixed timestep,
  * seeded RNG, and avoidance of asynchronous side effects in core logic).
  */

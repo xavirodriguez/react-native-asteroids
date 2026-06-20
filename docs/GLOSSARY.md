@@ -16,7 +16,7 @@ Este documento define los términos clave utilizados en el desarrollo y la arqui
 
 ### D
 *   **Delta**: Representa la diferencia entre dos estados. En red, se refiere a enviar solo los componentes que han cambiado.
-*   **Determinismo**: Propiedad de la simulación donde, dados los mismos inputs y semilla inicial, el resultado es idéntico en cualquier máquina.
+*   **Determinismo**: Propiedad de la simulación donde, dados los mismos inputs y semilla inicial, el resultado es consistente y reproducible en diferentes entornos bajo condiciones controladas.
 
 ### E
 *   **ECS (Entity Component System)**: Patrón arquitectónico que separa los datos (Componentes) de la lógica (Sistemas), organizados mediante identificadores únicos (Entidades).
@@ -35,7 +35,7 @@ Este documento define los términos clave utilizados en el desarrollo y la arqui
 *   **MTV (Minimum Translation Vector)**: El vector más pequeño necesario para separar dos objetos que están colisionando.
 
 ### N
-*   **Narrow-phase (Fase Estrecha)**: Segunda etapa de la detección de colisiones que realiza cálculos exactos (ej: SAT) sobre los pares candidatos detectados en la Broad-phase.
+*   **Narrow-phase (Fase Estrecha)**: Segunda etapa de la detección de colisiones que realiza cálculos geométricos precisos (ej: SAT) sobre los pares candidatos detectados en la Broad-phase.
 
 ### Q
 *   **Quantization (Cuantización)**: Proceso de convertir valores de punto flotante de alta precisión en enteros más pequeños para reducir el ancho de banda.

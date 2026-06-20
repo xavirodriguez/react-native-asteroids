@@ -1,6 +1,8 @@
 /**
  * Utility for deep cloning component data.
  *
+ * @internal
+ *
  * @remarks
  * This cloner performs a recursive copy of objects and arrays.
  * It is primarily intended for serializable data and has several known limitations:

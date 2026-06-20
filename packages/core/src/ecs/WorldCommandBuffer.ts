@@ -15,12 +15,17 @@ export interface Command<
  * Buffer for deferring world modifications until the end of an update cycle.
  *
  * @remarks
- * Using the command buffer is a recommended way to modify the world
+ * Using the command buffer is the recommended way to modify the world
  * (e.g., spawning/removing entities, adding/removing components) from within systems.
  *
- * This approach is designed to help maintain a stable world state throughout the frame's update
+ * This approach aims to maintain a stable world state throughout the frame's update
  * phases and helps reduce issues like iterator invalidation or inconsistent
  * query results caused by mid-frame structural changes.
+ *
+ * @warning
+ * **Deferred execution**: Commands are not executed immediately. Changes will only
+ * be reflected in the world state after {@link WorldCommandBuffer.flush} is
+ * called (typically at the end of the {@link World.update} cycle).
  */
 export class WorldCommandBuffer<
   TComponents extends ComponentRegistry = ComponentRegistry,

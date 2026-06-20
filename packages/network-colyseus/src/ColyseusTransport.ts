@@ -9,8 +9,11 @@ import { Client, Room } from "@colyseus/sdk";
  * room-based networking. It facilitates joining/creating rooms,
  * sending messages, and listening for server updates.
  *
- * Note: Connection and message delivery are subject to network latency
- * and Colyseus's internal synchronization protocol.
+ * @warning
+ * **Network Latency & Consistency**: Connection and message delivery are subject
+ * to network latency and Colyseus's internal synchronization protocol. State
+ * synchronization is eventually consistent and may be affected by packet loss
+ * or jitter.
  */
 export class ColyseusTransport implements NetworkTransport {
   private client: Client;

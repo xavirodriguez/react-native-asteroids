@@ -9,6 +9,18 @@ interface GameRendererProps {
   onInitialize?: (renderer: SkiaRenderer) => void;
 }
 
+/**
+ * React component for rendering the ECS world using Skia.
+ *
+ * @remarks
+ * This component acts as a bridge between the React lifecycle and the
+ * simulation's rendering phase.
+ *
+ * @warning
+ * **Loop Decoupling**: Rendering is decoupled from the logical simulation loop.
+ * While the simulation may run at a fixed timestep, the renderer attempts to
+ * match the device's native refresh rate.
+ */
 export const GameRenderer: React.FC<GameRendererProps> = ({ world, gameLoop, onInitialize }) => {
   const rendererRef = useRef<SkiaRenderer | null>(null);
 
