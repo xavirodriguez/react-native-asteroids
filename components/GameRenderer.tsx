@@ -1,7 +1,8 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useMemo } from "react";
 import { StyleSheet, Platform } from "react-native";
 import { World, GameLoop } from "@tiny-aster/core";
 import { SkiaRenderer } from "@tiny-aster/renderer-skia";
+import { useFrameCallback, runOnJS } from "react-native-reanimated";
 
 interface GameRendererProps {
   world: World<any>;
@@ -21,10 +22,25 @@ interface GameRendererProps {
  * While the simulation may run at a fixed timestep, the renderer attempts to
  * match the device's native refresh rate.
  */
-export const GameRenderer: React.FC<GameRendererProps> = ({ world, gameLoop, onInitialize }) => {
+export const GameRenderer: React.FC<GameRendererProps> = ({ world, gameLoop: propGameLoop, onInitialize }) => {
   const rendererRef = useRef<SkiaRenderer | null>(null);
+  const onInitializeRef = useRef(onInitialize);
+  onInitializeRef.current = onInitialize;
 
   const [CanvasComponent, setCanvasComponent] = useState<any>(null);
+
+  const gameLoop = useMemo(() => {
+    if (propGameLoop) return propGameLoop;
+    return new GameLoop({ manual: Platform.OS !== "web" });
+  }, [propGameLoop]);
+
+  useFrameCallback((frameInfo) => {
+    if (Platform.OS === "web") return;
+
+    if (gameLoop) {
+      runOnJS(gameLoop.tick.bind(gameLoop))(frameInfo.timestamp);
+    }
+  }, true);
 
   useEffect(() => {
     if (Platform.OS === "web") return;
@@ -35,11 +51,21 @@ export const GameRenderer: React.FC<GameRendererProps> = ({ world, gameLoop, onI
 
     if (!rendererRef.current) {
         rendererRef.current = new SkiaRenderer();
-        if (onInitialize) {
-            onInitialize(rendererRef.current);
+        if (onInitializeRef.current) {
+          onInitializeRef.current(rendererRef.current);
         }
     }
-  }, [onInitialize]);
+
+    if (Platform.OS !== "web") {
+      gameLoop.stopInternalLoop();
+    }
+
+    gameLoop.start();
+
+    return () => {
+      gameLoop.stop();
+    };
+  }, [gameLoop]);
 
   if (Platform.OS === "web" || !CanvasComponent) {
     return null;

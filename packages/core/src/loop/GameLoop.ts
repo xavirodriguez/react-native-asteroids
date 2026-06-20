@@ -19,6 +19,11 @@ export interface GameLoopConfig {
    * The scheduler used for timing and frame requests.
    */
   scheduler?: FrameScheduler;
+  /**
+   * If true, the loop will not automatically schedule frames.
+   * Useful when an external driver (like Reanimated) calls `tick()` manually.
+   */
+  manual?: boolean;
 }
 
 /**
@@ -43,6 +48,7 @@ export class GameLoop {
   private readonly step: number;
   private readonly maxDelta: number;
   private readonly scheduler: FrameScheduler;
+  public manual: boolean;
   private isRunning = false;
   private frameHandle: unknown;
 
@@ -50,6 +56,7 @@ export class GameLoop {
     this.step = config.step ?? 1 / 60;
     this.maxDelta = config.maxDelta ?? 0.25;
     this.scheduler = config.scheduler ?? browserFrameScheduler;
+    this.manual = config.manual ?? false;
   }
 
   /**
@@ -59,7 +66,9 @@ export class GameLoop {
     if (this.isRunning) return;
     this.isRunning = true;
     this.lastTime = this.scheduler.now();
-    this.frameHandle = this.scheduler.requestFrame(this.loop);
+    if (!this.manual) {
+      this.frameHandle = this.scheduler.requestFrame(this.loop);
+    }
   }
 
   /**
@@ -73,10 +82,25 @@ export class GameLoop {
     }
   }
 
-  private loop = (currentTime: number) => {
+  /**
+   * Stops the internal automatic loop and switches to manual mode.
+   */
+  public stopInternalLoop() {
+    this.manual = true;
+    if (this.frameHandle !== undefined) {
+      this.scheduler.cancelFrame(this.frameHandle);
+      this.frameHandle = undefined;
+    }
+  }
+
+  /**
+   * Executes a single tick of the game loop.
+   * @param currentTime - The current time in milliseconds. If not provided, the scheduler's time is used.
+   */
+  public tick(currentTime?: number) {
     if (!this.isRunning) return;
 
-    // Use scheduler time if not provided by requestFrame
+    // Use scheduler time if not provided
     const now = currentTime ?? this.scheduler.now();
     let deltaTime = (now - this.lastTime) / 1000;
     this.lastTime = now;
@@ -95,8 +119,14 @@ export class GameLoop {
 
     const alpha = this.accumulator / this.step;
     this.renderSubscribers.forEach(sub => sub(alpha));
+  }
 
-    this.frameHandle = this.scheduler.requestFrame(this.loop);
+  private loop = (currentTime: number) => {
+    this.tick(currentTime);
+
+    if (this.isRunning && !this.manual) {
+      this.frameHandle = this.scheduler.requestFrame(this.loop);
+    }
   };
 
   /**
