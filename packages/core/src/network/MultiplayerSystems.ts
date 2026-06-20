@@ -14,9 +14,13 @@ export class NetworkBudgetManager {
 }
 export class BinaryCompression {
     public static pack(packet: any): any { return packet; }
+    public static unpack<T = any>(packet: any): T { return packet as T; }
 }
-export class InterestManagerSystem {
+
+import { System } from "../ecs/System";
+
+export class InterestManagerSystem extends System<any, any> {
     public update(world: any, deltaTime: number): void {}
-    public onRegister(world: any): void {}
-    public dispose(): void {}
+    public override onRegister(world: any): void {}
+    public override dispose(): void {}
 }

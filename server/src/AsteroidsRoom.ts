@@ -101,7 +101,7 @@ export class AsteroidsRoom extends (Room as any) {
       });
     });
 
-    this.world.addSystem(new InterestManagerSystem() as any);
+    this.world.addSystem(new InterestManagerSystem());
   }
 
   onJoin(client: Client, options: { name?: string }) {
@@ -121,10 +121,10 @@ export class AsteroidsRoom extends (Room as any) {
     this.playerEntities.set(client.sessionId, entity);
     this.newClients.add(client.sessionId);
 
-    (this.world as any).addComponent(entity, "Ship", {
+    this.world.addComponent(entity, {
         type: "Ship",
         sessionId: client.sessionId,
-    });
+    } as AsteroidsComponentRegistry["Ship"]);
   }
 
   async onLeave(client: Client, _code: number) {
