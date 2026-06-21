@@ -8,13 +8,17 @@ export class SnapshotSerializer {
    * Captures the current serializable state of the world.
    *
    * @remarks
-   * This method captures entities and their components.
+   * This method captures entities and their components. It is intended to minimize
+   * allocations when a `target` is provided.
    *
    * @warning
    * **Serialization limits**: Only serializable properties (primitive values, plain
    * objects/arrays) are included. Functions, circular references, and complex
-   * class instances without a custom cloning path will be skipped, partially
-   * captured, or may cause issues during restoration.
+   * class instances without a custom cloning path (like Map, Set, or custom classes)
+   * will be skipped, partially captured, or may cause issues during restoration.
+   *
+   * **Performance**: This operation is computationally expensive and may impact
+   * frame budget if called frequently on large worlds.
    *
    * @param world - The world to snapshot.
    * @param target - Optional snapshot object to reuse.

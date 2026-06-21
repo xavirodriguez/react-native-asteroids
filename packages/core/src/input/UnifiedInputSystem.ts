@@ -11,7 +11,7 @@ import { World } from "../ecs/World";
  * @warning
  * **Synchronization latency**: Input capture is subject to the platform's event
  * loop and OS-level latency. Captured state reflects the latest available data
- * at the start of the simulation update and is not guaranteed to be perfectly
+ * at the start of the simulation update and may not be perfectly
  * synchronized with the exact moment of physical input.
  */
 export class UnifiedInputSystem extends System<any> {

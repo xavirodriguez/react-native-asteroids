@@ -8,13 +8,16 @@ export class SnapshotRestore {
    * Restores the world state from a snapshot.
    *
    * @remarks
-   * This method performs a deep restoration of entities and components,
-   * rebuilding internal indexes and queries.
+   * This method performs a restoration of entities and components from the snapshot,
+   * rebuilding internal indexes and queries. It is a computationally expensive
+   * operation intended for scene transitions, rollback, or game loading.
    *
    * @warning
-   * This only restores the serializable state captured in the snapshot.
-   * Any transient state, non-serializable resources, or external subscriptions
-   * must be managed or re-initialized manually after this call.
+   * - **Restores serializable state**: This only restores the serializable state captured in
+   *   the snapshot (primitive values, plain objects/arrays).
+   * - **Manual state management**: Any transient state, non-serializable resources (e.g. textures,
+   *   audio buffers), or external subscriptions are not captured and should be managed
+   *   or re-initialized manually after this call.
    *
    * @param world - The world instance to restore.
    * @param state - The snapshot to restore.
