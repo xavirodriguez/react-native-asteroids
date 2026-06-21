@@ -30,15 +30,15 @@ export interface GameLoopConfig {
  * A platform-agnostic game loop implementation using a fixed-timestep accumulator.
  *
  * @remarks
- * This loop is designed to provide a consistent internal simulation frequency
+ * This loop is designed to support a consistent internal simulation frequency
  * (fixed timestep target) independent of the rendering framerate.
  *
  * @warning
  * **Spiral of Death Mitigation**: Under heavy load, if the simulation takes longer
  * than the available frame time, the loop will clamp `deltaTime` to `maxDelta`.
- * In such cases, the simulation will appear to slow down relative to real-time,
- * losing temporal consistency with the wall clock to prevent an unrecoverable
- * accumulation of lag.
+ * In such cases, the simulation update may be limited, causing the simulation to appear
+ * to slow down relative to real-time. This helps prevent an unrecoverable
+ * accumulation of lag (spiral of death) but may disrupt temporal consistency with the wall clock.
  */
 export class GameLoop {
   private renderSubscribers: Set<RenderCallback> = new Set();

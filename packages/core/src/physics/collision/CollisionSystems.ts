@@ -21,6 +21,15 @@ export class CollisionSystem2D<TRegistry extends ComponentRegistry = CoreCompone
   public onTriggerEnter(callback: TriggerCallback<TRegistry>): void { this.onTriggerEnterCallbacks.push(callback); }
   public onTriggerExit(callback: TriggerCallback<TRegistry>): void { this.onTriggerExitCallbacks.push(callback); }
 
+  /**
+   * Updates the collision system, detecting overlaps and notifying listeners.
+   *
+   * @warning
+   * **Mutation during callbacks**: Mutating the world (e.g., creating/removing entities)
+   * within collision callbacks is supported but should be done with care to avoid
+   * disrupting the current iteration or causing inconsistent frame state. Using
+   * {@link WorldCommandBuffer} is the recommended way to handle structural changes.
+   */
   public update(world: World<TRegistry>, deltaTime: number): void {
     const query = world.query("Transform" as ComponentType<TRegistry>, "Collider" as ComponentType<TRegistry>);
     const currentFramePairs = new Set<string>();

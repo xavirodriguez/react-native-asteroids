@@ -94,6 +94,7 @@ export class World<
   private commandBuffer = new WorldCommandBuffer<TComponents, TEvents, TBlueprints>();
 
   /**
+   * RNG service for visual-only effects.
    * @internal
    */
   public renderRandom = new RandomService();
@@ -102,17 +103,26 @@ export class World<
   private _stateVersion = 0;
 
   /**
+   * Internal component version tracking for delta snapshots.
    * @internal
    */
   public componentVersions = new Map<string, Map<Entity, number>>();
 
   private _gameplayRandom = new RandomService();
 
+  /**
+   * Internal debug flag.
+   * @internal
+   */
   public debugMode = false;
 
+  /** Current simulation tick. */
   public get tick(): number { return this._tick; }
+  /** Incremented on structural changes (entity create/remove, component add/remove). */
   public get structureVersion(): number { return this._structureVersion; }
+  /** Incremented on any state change (structural change or component mutation). */
   public get stateVersion(): number { return this._stateVersion; }
+  /** Seeded RNG service intended for gameplay logic to support reproducibility. */
   public get gameplayRandom(): RandomService { return this._gameplayRandom; }
   public getEventBus(): EventBus<TEvents> { return this.getResource<EventBus<TEvents>>("EventBus")!; }
   public getCommandBuffer(): WorldCommandBuffer<TComponents, TEvents, TBlueprints> { return this.commandBuffer; }
@@ -334,13 +344,13 @@ export class World<
    * within each phase. After all phases, the {@link WorldCommandBuffer} is flushed.
    *
    * This method is synchronous. The core update loop is designed for synchronous execution;
-   * asynchronous side effects (like `await`) within systems are discouraged as they
-   * can lead to race conditions, inconsistent state, and non-deterministic behavior.
+   * asynchronous side effects (like `await`) within systems are avoided in core logic
+   * to prevent race conditions, inconsistent state, and non-deterministic behavior.
    *
    * @warning
    * **Structural changes during iteration**: Direct structural changes (like adding/removing
-   * components or entities) during this call can lead to undefined behavior or disrupt
-   * active iterations in systems. It is strongly recommended to use {@link WorldCommandBuffer}
+   * components or entities) during this call can disrupt active iterations in systems
+   * that do not use stable queries. It is strongly recommended to use {@link WorldCommandBuffer}
    * to defer these changes until the end of the update for better simulation stability.
    */
   update(deltaTime: number): void {
@@ -432,10 +442,11 @@ export class World<
    * plain nested objects/arrays).
    *
    * @warning
-   * - Limitations: Functions, non-serializable objects (e.g., class instances without a custom cloner),
-   *   and circular references are not supported and will lead to incomplete state restoration.
-   * - Performance: Snapshotting involves significant allocations and deep cloning; frequent use
-   *   in hot paths should be avoided to minimize GC pressure.
+   * - **Serialization limits**: Functions, non-serializable objects (e.g., class instances without
+   *   a custom cloner), and circular references are not supported and may lead to incomplete
+   *   state restoration.
+   * - **Performance impact**: Snapshotting involves deep cloning; frequent use in performance-critical
+   *   hot paths is discouraged to minimize GC pressure and maintain frame budget.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     return SnapshotSerializer.snapshot(this, target);
@@ -452,10 +463,10 @@ export class World<
    * operation intended for scene transitions, rollback, or game loading.
    *
    * @warning
-   * - **Serializable state only**: This only restores the serializable state captured in
+   * - **Restores serializable state**: This only restores the serializable state captured in
    *   the snapshot (primitive values, plain objects/arrays).
-   * - **Manual management**: Any transient state, non-serializable resources (e.g. textures,
-   *   audio buffers), or external subscriptions are not captured and must be managed
+   * - **Manual state management**: Any transient state, non-serializable resources (e.g. textures,
+   *   audio buffers), or external subscriptions are not captured and should be managed
    *   or re-initialized manually after this call.
    */
   public restore(state: WorldSnapshot): void {

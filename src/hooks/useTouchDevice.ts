@@ -7,7 +7,7 @@ import { Platform } from "react-native";
  * @returns true if the device is touch-enabled, false otherwise.
  *
  * @remarks
- * - On native platforms (iOS/Android), it always returns true.
+ * - On native platforms (iOS/Android), it generally returns true, assuming touch-enabled mobile hardware.
  * - On web, it uses the `(pointer: coarse)` media query to detect touch capability.
  * - Handles SSR by returning false if `window` is not defined.
  */

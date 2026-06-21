@@ -53,8 +53,11 @@ export class Query<TComponents extends ComponentRegistry> {
    *
    * @warning
    * **Stable iteration order**: The list is sorted by entity ID to support stable
-   * iteration across frames. However, this stability depends on entity IDs being
+   * iteration across frames. This stability depends on entity IDs being
    * created and recycled consistently within the {@link World}.
+   *
+   * **Performance impact**: The first access after a structural change (add/remove)
+   * incurs an O(N log N) sorting cost.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.isDirty) {

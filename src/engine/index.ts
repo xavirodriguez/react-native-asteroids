@@ -1,6 +1,11 @@
 /**
  * Legacy engine entry point.
- * This is a compatibility layer that re-exports everything from the new core package.
+ *
+ * @remarks
+ * This is a compatibility layer that re-exports symbols from the new core package.
+ * New projects should prefer importing directly from `@tiny-aster/core`.
+ *
+ * @deprecated Use `@tiny-aster/core` instead.
  */
 
 export * from "@tiny-aster/core";
