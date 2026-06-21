@@ -124,6 +124,18 @@ export default function AsteroidsScreen() {
         }
     } else {
         handleInput(input);
+
+        // Task 3: Integration with ECS world for touch controls
+        const world = game?.getWorld();
+        const localPlayer = world?.query("LocalPlayer")[0];
+        if (localPlayer !== undefined && world) {
+          world.mutateComponent(localPlayer, "Input", (inputComp: any) => {
+            if (input.thrust !== undefined) inputComp.thrust = input.thrust;
+            if (input.shoot !== undefined) inputComp.shoot = input.shoot;
+            if (input.rotateLeft !== undefined) inputComp.rotateLeft = input.rotateLeft;
+            if (input.rotateRight !== undefined) inputComp.rotateRight = input.rotateRight;
+          });
+        }
     }
   }, [isMulti, room, sendInput, game, handleInput]);
 
