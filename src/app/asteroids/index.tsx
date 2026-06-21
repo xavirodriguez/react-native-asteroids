@@ -126,14 +126,17 @@ export default function AsteroidsScreen() {
         handleInput(input);
 
         // Task 3: Integration with ECS world for touch controls
+        // We write the input state to the InputState component of the ship entity.
+        // The ECS systems will process this in the next tick.
         const world = game?.getWorld();
-        const localPlayer = world?.query("LocalPlayer")[0];
+        // Finding the player entity (usually tagged as LocalPlayer or simply the Ship entity)
+        const localPlayer = world?.query("LocalPlayer" as any)[0];
         if (localPlayer !== undefined && world) {
-          world.mutateComponent(localPlayer, "Input", (inputComp: any) => {
-            if (input.thrust !== undefined) inputComp.thrust = input.thrust;
-            if (input.shoot !== undefined) inputComp.shoot = input.shoot;
-            if (input.rotateLeft !== undefined) inputComp.rotateLeft = input.rotateLeft;
-            if (input.rotateRight !== undefined) inputComp.rotateRight = input.rotateRight;
+          world.mutateComponent(localPlayer, "InputState" as any, (inputComp: any) => {
+            if (input.thrust !== undefined) inputComp.buttons["thrust"] = input.thrust;
+            if (input.shoot !== undefined) inputComp.buttons["shoot"] = input.shoot;
+            if (input.rotateLeft !== undefined) inputComp.buttons["left"] = input.rotateLeft;
+            if (input.rotateRight !== undefined) inputComp.buttons["right"] = input.rotateRight;
           });
         }
     }

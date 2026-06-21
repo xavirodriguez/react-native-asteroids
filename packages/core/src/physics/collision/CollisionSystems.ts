@@ -6,7 +6,7 @@ import { CollisionManifold, Collision } from "./CollisionTypes";
 import { BroadPhase } from "./BroadPhase";
 import { NarrowPhase } from "./NarrowPhase";
 import { ColliderComponent, TransformComponent, VelocityComponent, CollisionEventsComponent, CoreComponentRegistry } from "../../ecs/CoreComponents";
-import { ShapeType } from "../shapes/Shapes";
+import { ShapeType, CircleShape, BoxShape } from "../shapes/Shapes";
 
 export type CollisionCallback<TRegistry extends ComponentRegistry = CoreComponentRegistry> = (world: World<TRegistry>, entityA: Entity, entityB: Entity, manifold: CollisionManifold) => void;
 export type TriggerCallback<TRegistry extends ComponentRegistry = CoreComponentRegistry> = (world: World<TRegistry>, entityA: Entity, entityB: Entity) => void;
@@ -47,9 +47,16 @@ export class CollisionSystem2D<TRegistry extends ComponentRegistry = CoreCompone
       const transA = world.getComponent(entityA, "Transform" as ComponentType<TRegistry>) as unknown as TransformComponent;
       const transB = world.getComponent(entityB, "Transform" as ComponentType<TRegistry>) as unknown as TransformComponent;
 
+      // Implement collision detection using NarrowPhase
       const manifold = NarrowPhase.test(
-        colA.shape, (transA.worldX ?? transA.x) + (colA.offsetX ?? 0), (transA.worldY ?? transA.y) + (colA.offsetY ?? 0), transA.worldRotation ?? transA.rotation,
-        colB.shape, (transB.worldX ?? transB.x) + (colB.offsetX ?? 0), (transB.worldY ?? transB.y) + (colB.offsetY ?? 0), transB.worldRotation ?? transB.rotation
+        colA.shape,
+        (transA.worldX ?? transA.x) + (colA.offsetX ?? 0),
+        (transA.worldY ?? transA.y) + (colA.offsetY ?? 0),
+        transA.worldRotation ?? transA.rotation,
+        colB.shape,
+        (transB.worldX ?? transB.x) + (colB.offsetX ?? 0),
+        (transB.worldY ?? transB.y) + (colB.offsetY ?? 0),
+        transB.worldRotation ?? transB.rotation
       );
 
       if (manifold.colliding) {
@@ -164,14 +171,18 @@ export class CCDSystem<TRegistry extends ComponentRegistry = CoreComponentRegist
         const ox = (otherTrans.worldX ?? otherTrans.x);
         const oy = (otherTrans.worldY ?? otherTrans.y);
 
+        // Continuous Collision Detection (CCD) logic
+        // We use a linear raycasting approach between current position and next position
         if (otherCol.shape.type === ShapeType.Circle) {
-          const circle = otherCol.shape as any;
-          if (this.rayIntersectsCircle(p0x, p0y, p1x, p1y, ox, oy, circle.radius)) {
+          const circle = otherCol.shape as CircleShape;
+          // P(t) = P0 + (P1 - P0) * t
+          if (this.rayIntersectsCircle(p0x, p0y, p1x, p1y, ox + (otherCol.offsetX ?? 0), oy + (otherCol.offsetY ?? 0), circle.radius)) {
              this.notifyCollision(world, entity, other);
           }
         } else if (otherCol.shape.type === ShapeType.Box) {
-          const box = otherCol.shape as any;
-          if (this.rayIntersectsBox(p0x, p0y, p1x, p1y, ox, oy, box.width, box.height)) {
+          const box = otherCol.shape as BoxShape;
+          // Using Slab Method for ray/box intersection
+          if (this.rayIntersectsBox(p0x, p0y, p1x, p1y, ox + (otherCol.offsetX ?? 0), oy + (otherCol.offsetY ?? 0), box.width, box.height)) {
             this.notifyCollision(world, entity, other);
           }
         }
