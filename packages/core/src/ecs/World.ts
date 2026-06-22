@@ -87,10 +87,16 @@ export class World<
    * @internal
    */
   private systems: { system: System<TComponents, TEvents>; phase: string; priority: number }[] = [];
+
+  /** @internal */
   private nextEntityId = 1;
+  /** @internal */
   private freeEntities: Entity[] = [];
+  /** @internal */
   private resources = new Map<string, unknown>();
+  /** @internal */
   private _tick = 0;
+  /** @internal */
   private commandBuffer = new WorldCommandBuffer<TComponents, TEvents, TBlueprints>();
 
   /**
@@ -99,7 +105,9 @@ export class World<
    */
   public renderRandom = new RandomService();
 
+  /** @internal */
   private _structureVersion = 0;
+  /** @internal */
   private _stateVersion = 0;
 
   /**
@@ -108,6 +116,7 @@ export class World<
    */
   public componentVersions = new Map<string, Map<Entity, number>>();
 
+  /** @internal */
   private _gameplayRandom = new RandomService();
 
   /**
@@ -135,9 +144,9 @@ export class World<
    * consistent entity creation and recycling.
    *
    * @warning
-   * Performance impact: This operation creates a new array and performs a sort (O(N log N)) on every call.
-   * Frequent access in performance-critical paths will increase GC pressure and may impact frame budget.
-   * It is recommended to use {@link Query} for efficient, cached entity filtering.
+   * **Performance & Memory**: This operation creates a new array and performs a sort (O(N log N)) on every call.
+   * Frequent access in hot paths will significantly increase GC pressure and may impact frame budget.
+   * For efficient, cached entity filtering, it is strongly recommended to use {@link Query}.
    */
   public get entities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);
@@ -148,8 +157,8 @@ export class World<
    *
    * @remarks
    * @warning
-   * Frequent use in performance-critical paths is discouraged due to O(N log N) sorting
-   * and GC pressure.
+   * **Performance & Memory**: Frequent use in performance-critical paths is discouraged due to O(N log N) sorting
+   * and high GC pressure from array allocations.
    */
   public getAllEntities(): ReadonlyArray<Entity> {
     return this.entities;
@@ -165,10 +174,10 @@ export class World<
    * Increments the structure version of the world.
    *
    * @warning
-   * Structural change: Direct entity creation during world update is allowed but may disrupt
-   * ongoing iterations in systems that do not use stable queries. Using the
-   * {@link WorldCommandBuffer} for deferred creation is recommended to maintain
-   * simulation stability during the frame.
+   * **Structural Change**: Direct entity creation during world update can disrupt
+   * active iterations in systems that are not using stable queries. For better simulation
+   * stability and to avoid inconsistent state during a frame, it is recommended to use
+   * {@link WorldCommandBuffer} to defer creation until the end of the update.
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -188,10 +197,10 @@ export class World<
    * Removes an entity and all its associated components from the world.
    *
    * @warning
-   * Structural change: Removing entities during system updates can disrupt
-   * active iterations if not handled carefully. Using {@link WorldCommandBuffer}
-   * to defer entity removal until the end of the frame is recommended to maintain
-   * simulation stability.
+   * **Structural Change**: Removing entities during system updates can disrupt
+   * active iterations and lead to unexpected behavior if not handled carefully.
+   * To maintain simulation stability, it is recommended to use {@link WorldCommandBuffer}
+   * to defer entity removal until the end of the frame.
    */
   removeEntity(entity: Entity): void {
     if (this.activeEntities.delete(entity)) {
@@ -224,6 +233,14 @@ export class World<
     this.systems = [];
   }
 
+  /**
+   * Adds a component to an entity.
+   *
+   * @warning
+   * **Structural Change**: Adding components during an update loop may disrupt
+   * ongoing iterations and triggers query updates. Deferring this through
+   * {@link WorldCommandBuffer} is recommended for complex simulations.
+   */
   addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K]): void {
     const type = (component as any).type as string;
     if (!this.componentMaps.has(type)) {
@@ -268,6 +285,14 @@ export class World<
     return component;
   }
 
+  /**
+   * Removes a component from an entity.
+   *
+   * @warning
+   * **Structural Change**: This operation modifies the entity's composition and
+   * updates queries. To avoid iterator invalidation during system updates,
+   * consider using {@link WorldCommandBuffer}.
+   */
   removeComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): void {
     const map = this.componentMaps.get(type as string);
     if (map && map.delete(entity)) {

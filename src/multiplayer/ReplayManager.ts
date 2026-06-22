@@ -2,9 +2,14 @@
  * System for playback and management of recorded game sessions.
  *
  * This module allows loading historical input streams and replaying them
- * through the simulation engine. It is intended to support reproducible
- * behavior when the simulation is seeded consistently and remains free of
- * unmanaged side effects.
+ * through the simulation engine. It is designed to support approximately
+ * reproducible behavior when the simulation is seeded consistently and
+ * remains free of unmanaged side effects.
+ *
+ * @warning
+ * **Replay Fidelity**: Absolute bit-for-bit identity across different sessions
+ * or environments is not guaranteed due to potential floating-point drift and
+ * differences in JS engine execution. Replays aim for functional consistency.
  *
  * @packageDocumentation
  */

@@ -10,10 +10,10 @@ import { Client, Room } from "@colyseus/sdk";
  * sending messages, and listening for server updates.
  *
  * @warning
- * **Network Latency & Consistency**: Connection and message delivery are subject
- * to network latency and Colyseus's internal synchronization protocol. State
- * synchronization is eventually consistent and may be affected by packet loss
- * or jitter.
+ * **Network Latency & Lifecycle**: Connection and message delivery are subject
+ * to network latency and Colyseus's internal synchronization protocol.
+ * Async lifecycle: Methods like `connect` are asynchronous; state may change
+ * between the call and its completion.
  */
 export class ColyseusTransport implements NetworkTransport {
   private client: Client;

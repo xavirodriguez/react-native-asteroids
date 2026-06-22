@@ -32,10 +32,11 @@ export interface SystemConfig {
  * Systems implement the logic that operates on entities and components.
  * They are executed by the {@link World} during its update loop.
  *
- * Systems should generally be stateless or only maintain limited auxiliary
- * state (like caches) that can be safely discarded or recomputed. Core simulation
- * state must be stored in components within the {@link World} to support
- * features like snapshots, rollback, and replication.
+ * Systems should ideally be stateless or only maintain limited auxiliary
+ * state (like caches or coordination flags) that can be safely discarded or recomputed.
+ * Core simulation state should be stored in components within the {@link World} to support
+ * features like snapshots, rollback, and replication. Systems that maintain internal
+ * simulation state may break these features if that state is not serializable.
  */
 export abstract class System<
   TComponents extends ComponentRegistry = ComponentRegistry,

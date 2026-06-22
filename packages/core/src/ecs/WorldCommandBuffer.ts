@@ -18,8 +18,8 @@ export interface Command<
  * Using the command buffer is the recommended way to modify the world
  * (e.g., spawning/removing entities, adding/removing components) from within systems.
  *
- * This approach aims to maintain a stable world state throughout the frame's update
- * phases and helps reduce issues like iterator invalidation or inconsistent
+ * This approach is designed to help maintain a stable world state throughout the frame's update
+ * phases and minimizes issues like iterator invalidation or inconsistent
  * query results caused by mid-frame structural changes.
  *
  * @warning

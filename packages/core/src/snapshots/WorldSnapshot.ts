@@ -7,10 +7,15 @@
  *
  * @warning
  * **Serializable state only**: Snapshots only capture serializable state (primitive
- * values, plain objects/arrays). Non-serializable properties such as functions,
- * class instances, circular references, or external resources (e.g. GPU buffers,
- * audio handles) are not captured and must be managed or re-initialized manually
- * after restoration.
+ * values, plain objects/arrays). The following are NOT captured and will be lost or
+ * corrupted during snapshot/restore:
+ * - Functions and closures.
+ * - Class instances (unless they are plain objects under the hood).
+ * - Circular references.
+ * - External/native resources (e.g. GPU buffers, DOM elements, AudioContext handles).
+ * - Map and Set instances (must be converted to Objects/Arrays if needed).
+ *
+ * These must be managed, re-initialized, or manually synchronized after restoration.
  */
 export interface WorldSnapshot {
   entities: number[];

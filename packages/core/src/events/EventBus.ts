@@ -18,9 +18,9 @@ export type EventHandler<TPayload> = (payload: TPayload, event: string) => void;
  * Deferred events are processed when `flushDeferred` is called, typically at
  * the end of a simulation step.
  *
- * Note: Handlers are executed in the order they were registered.
+ * Note: Handlers are generally executed in the order they were registered.
  * While the bus itself is synchronous, handlers may trigger side effects
- * (including asynchronous ones) that are not managed or tracked by the bus.
+ * (including asynchronous ones) that are not managed, tracked, or awaited by the bus.
  *
  * @typeParam TEvents - The registry of custom events for this bus.
  */

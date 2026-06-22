@@ -5,8 +5,13 @@ import { World, Renderer, ComponentRegistry } from "@tiny-aster/core";
  *
  * @remarks
  * This is a reference implementation of the {@link Renderer} interface using
- * the standard HTML5 Canvas API. It is intended for simple 2D rendering and
- * may not be optimized for large numbers of entities.
+ * the standard HTML5 Canvas API. It is designed for simple 2D rendering and
+ * performance may degrade with large numbers of entities due to direct draw calls
+ * and lack of batching.
+ *
+ * @warning
+ * **Visual State Only**: The renderer only processes visual components and transforms.
+ * It does not maintain logical simulation state.
  */
 export class CanvasRenderer<TRegistry extends ComponentRegistry = any> implements Renderer<TRegistry> {
   public render(world: World<TRegistry>, ctx: CanvasRenderingContext2D): void {

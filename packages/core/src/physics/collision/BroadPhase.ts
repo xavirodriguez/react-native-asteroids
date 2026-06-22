@@ -46,12 +46,16 @@ export class BroadPhase {
   }
 
   /**
-   * Implementation of the Sweep and Prune algorithm (1D) designed to minimize per-frame allocations
-   * by reusing an internal object pool for entity bounds.
+   * Implementation of the Sweep and Prune algorithm (1D) designed to reduce per-frame
+   * allocations by reusing an internal object pool for entity bounds.
+   *
+   * @remarks
+   * While this implementation minimizes per-entity object creation, it still performs
+   * temporary allocations during sorting and when returning the result pairs.
    */
   static sweepAndPrune(entities: Entity[], world: World<CoreComponentRegistry>): Array<[Entity, Entity]> {
-    // Re-use or expand boundsPool to reduce object allocation overhead.
-    // Note: slice() and sort() still perform temporary allocations.
+    // Re-use or expand boundsPool to minimize object allocation overhead.
+    // Note: slice(), sort(), and the result array still perform temporary allocations.
     const count = entities.length;
     for (let i = 0; i < count; i++) {
       const entity = entities[i];
