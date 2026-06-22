@@ -34,11 +34,11 @@ export interface GameLoopConfig {
  * (fixed timestep target) independent of the rendering framerate.
  *
  * @warning
- * **Spiral of Death Mitigation**: Under heavy load, if the simulation takes longer
+ * **Spiral of Death Mitigation**: Under heavy load, if the simulation (update) takes longer
  * than the available frame time, the loop will clamp `deltaTime` to `maxDelta`.
- * In such cases, the simulation update may be limited, causing the simulation to appear
- * to slow down relative to real-time. This helps prevent an unrecoverable
- * accumulation of lag (spiral of death) but may disrupt temporal consistency with the wall clock.
+ * In such cases, the simulation will not catch up with real-time, causing a "slow-motion"
+ * effect relative to the wall clock. This prevents an unrecoverable lag accumulation
+ * (spiral of death) but means that the simulation tick count will fall behind real-time.
  */
 export class GameLoop {
   private renderSubscribers: Set<RenderCallback> = new Set();

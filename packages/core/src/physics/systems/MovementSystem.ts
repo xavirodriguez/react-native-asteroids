@@ -11,9 +11,9 @@ import { CoreComponentRegistry } from "../../ecs/CoreComponents";
  * reproducible behavior under consistent conditions.
  *
  * @warning
- * As this system relies on standard floating-point arithmetic, small precision
- * errors will accumulate over time. The exact movement may vary slightly across
- * different JavaScript engines or platforms.
+ * **Floating-Point Drift**: As this system relies on standard floating-point arithmetic,
+ * small precision errors will accumulate over time. The exact trajectory may vary slightly
+ * across different JavaScript engines, WASM runtimes, or platforms.
  */
 export class MovementSystem extends System<CoreComponentRegistry> {
   update(world: World<CoreComponentRegistry>, deltaTime: number): void {

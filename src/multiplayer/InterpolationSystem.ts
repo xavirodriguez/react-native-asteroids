@@ -5,6 +5,11 @@
  * It allows the client to calculate an interpolated visual position for an entity
  * by blending between two snapshots based on the current wall-clock time.
  *
+ * @warning
+ * **Visual Smoothing Only**: This system is intended for presentation and does not
+ * affect the underlying logical simulation state. Interpolated positions are
+ * "delayed" relative to the latest server state to ensure a smooth transition.
+ *
  * @packageDocumentation
  */
 
@@ -38,6 +43,11 @@ export class InterpolationBuffer {
   /**
    * Adds a new authoritative snapshot to the buffer.
    * Maintains the buffer sorted by timestamp to facilitate lookups.
+   *
+   * @warning
+   * **Performance**: Calling `sort()` on every push adds O(N log N) overhead.
+   * While `maxSize` is typically small, frequent updates in a high-entity
+   * environment may impact performance.
    */
   public push(snapshot: EntitySnapshot): void {
     this.snapshots.push(snapshot);

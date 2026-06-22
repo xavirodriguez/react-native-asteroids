@@ -1,9 +1,15 @@
 /**
  * Sliding window buffer for storing predicted client states.
  *
+ * @remarks
  * This buffer is used during client-side reconciliation. When an authoritative
  * server state arrives, the client looks up the predicted state for that same tick
  * to check for divergences.
+ *
+ * @warning
+ * **State Reconciliation**: This buffer only stores what it's given. It does not
+ * guarantee that reconciliation will be seamless; if the prediction logic differs
+ * significantly from the server, large "corrections" (snapping) may occur.
  *
  * @packageDocumentation
  */
@@ -76,7 +82,6 @@ export class PredictionBuffer {
 
   /**
    * Retrieves a predicted state for a specific tick.
-   * @performance Aims for efficient access
    */
   public getAt(tick: number): PredictedState | undefined {
     const index = tick & this.mask;

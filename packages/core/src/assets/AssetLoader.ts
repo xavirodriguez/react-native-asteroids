@@ -11,6 +11,19 @@ export interface IAssetProvider {
   load?(path: string): Promise<unknown>;
 }
 
+/**
+ * Platform-agnostic coordinator for asset loading and caching.
+ *
+ * @remarks
+ * This class delegates the actual loading of platform-specific resources
+ * (e.g. browser `Image` or React Native assets) to an injected `IAssetProvider`.
+ * It provides a unified interface for queuing and retrieving loaded assets.
+ *
+ * @warning
+ * **Resource Management**: The `AssetLoader` caches resources indefinitely.
+ * Manual clearing may be required for long-running sessions to prevent
+ * excessive memory usage.
+ */
 export class AssetLoader {
   private cache = new Map<string, unknown>();
   private queue: AssetDescriptor[] = [];
