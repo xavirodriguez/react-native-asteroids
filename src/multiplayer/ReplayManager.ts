@@ -8,8 +8,8 @@
  *
  * @warning
  * **Replay Fidelity**: Absolute bit-for-bit identity across different sessions
- * or environments is not guaranteed due to potential floating-point drift and
- * differences in JS engine execution. Replays aim for functional consistency.
+ * or environments is generally not expected due to potential floating-point drift and
+ * differences in JS engine execution. Replays are intended to support functional consistency.
  *
  * @packageDocumentation
  */

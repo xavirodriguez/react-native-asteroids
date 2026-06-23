@@ -13,11 +13,11 @@ export class SnapshotRestore {
    * operation intended for scene transitions, rollback, or game loading.
    *
    * @warning
-   * - **Restores serializable state**: This only restores the serializable state captured in
-   *   the snapshot (primitive values, plain objects/arrays).
-   * - **Manual state management**: Any transient state, non-serializable resources (e.g. textures,
-   *   audio buffers), or external subscriptions are not captured and should be managed
-   *   or re-initialized manually after this call.
+   * - **Restores serializable state**: This operation is intended to restore only the serializable
+   *   state captured in the snapshot (primitive values, plain objects/arrays).
+   * - **Manual state management**: Transient state, non-serializable resources (e.g., textures,
+   *   audio buffers), or external subscriptions are generally not captured and should be managed
+   *   or re-initialized manually as needed.
    *
    * @param world - The world instance to restore.
    * @param state - The snapshot to restore.

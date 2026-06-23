@@ -19,7 +19,7 @@ export interface Command<
  * (e.g., spawning/removing entities, adding/removing components) from within systems.
  *
  * This approach is designed to help maintain a stable world state throughout the frame's update
- * phases and minimizes issues like iterator invalidation or inconsistent
+ * phases and helps minimize issues like iterator invalidation or inconsistent
  * query results caused by mid-frame structural changes.
  *
  * @warning

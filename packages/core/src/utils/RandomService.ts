@@ -4,11 +4,12 @@
  * @remarks
  * This service uses a Linear Congruential Generator (LCG) designed to provide
  * consistent results across platforms when provided with the same seed,
- * supporting reproducible simulations under controlled conditions.
+ * intended to support reproducible simulations under controlled conditions.
  *
- * Note: It is not cryptographically secure and may show patterns over
- * large sequences. The generator is optimized for speed and
- * reproducibility under controlled conditions rather than high-quality randomness.
+ * @warning
+ * **Non-Cryptographic**: This generator is not cryptographically secure and is expected to
+ * show patterns over large sequences. It is optimized for speed and reproducibility
+ * rather than high-quality randomness.
  */
 export class RandomService {
   private seed: number;

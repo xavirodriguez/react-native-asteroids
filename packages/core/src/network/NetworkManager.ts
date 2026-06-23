@@ -8,9 +8,10 @@ import { WorldSnapshot } from "../snapshots/WorldSnapshot";
  * input history, authoritative snapshots, and re-simulation (rollback).
  *
  * @warning
- * **Synchronization Guarantees**: Perfect synchronization is not guaranteed due to
- * network jitter, packet loss, and floating-point differences. The system aims for
- * "eventual consistency" through state reconciliation and interpolation.
+ * **Synchronization**: This system is designed for eventual consistency through state reconciliation
+ * and interpolation. However, bit-identical synchronization across clients is generally not
+ * expected due to network jitter, varying latencies, packet loss, and potential floating-point
+ * drift across different platforms.
  */
 export class NetworkManager {
   public static registerGame(gameId: string, game: any, options: any): NetworkManager {

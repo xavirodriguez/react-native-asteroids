@@ -18,7 +18,7 @@ export class MutatorService {
 
   /**
    * Locks the current seed for the duration of a game session.
-   * This ensures mutators don't change if the server week transitions during a match.
+   * Intended to help ensure mutators don't change if the server week transitions during a match.
    */
   public static lockSessionSeed(forceSeed?: string | number): void {
     if (forceSeed !== undefined) {

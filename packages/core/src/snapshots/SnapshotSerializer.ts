@@ -13,14 +13,14 @@ export class SnapshotSerializer {
    * of component data.
    *
    * @warning
-   * **Serialization limits**: Only serializable properties (primitive values, plain
-   * objects/arrays) are included. Functions, circular references, and complex
+   * **Serialization limits**: This operation is intended to capture only serializable properties
+   * (primitive values, plain objects/arrays). Functions, circular references, and complex
    * class instances without a custom cloning path (like Map, Set, or custom classes)
-   * will be skipped, partially captured, or may cause issues during restoration.
+   * may be skipped, partially captured, or result in incomplete state restoration.
    *
-   * **Performance & Memory**: This operation is computationally expensive and
-   * generates significant GC pressure due to deep cloning. Frequent use in
-   * performance-critical paths (e.g., every frame) should be avoided.
+   * **Performance & Memory**: This operation is computationally expensive and is expected to
+   * increase GC pressure due to deep cloning. Frequent use in performance-critical paths
+   * (e.g., every frame) should be carefully considered against the frame budget.
    *
    * @param world - The world to snapshot.
    * @param target - Optional snapshot object to reuse.
