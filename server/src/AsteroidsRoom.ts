@@ -20,8 +20,9 @@ import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../../src/ga
  * @warning
  * **Replication & Bandwidth**: Large numbers of entities or frequent state
  * updates may exceed the network budget. The room uses different replication
- * modes (interest management, delta compression) to mitigate this, but
- * consistency depends on the configured patch rate and client ACK stability.
+ * modes (interest management, delta compression) intended to help mitigate this;
+ * however, consistency remains dependent on the configured patch rate, network
+ * conditions, and client ACK stability.
  */
 export class AsteroidsRoom extends (Room as any) {
   maxClients = 4;

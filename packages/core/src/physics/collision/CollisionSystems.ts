@@ -26,9 +26,9 @@ export class CollisionSystem2D<TRegistry extends ComponentRegistry = CoreCompone
    *
    * @warning
    * **Mutation during callbacks**: Mutating the world (e.g., creating/removing entities)
-   * within collision callbacks is supported but should be done with care to avoid
-   * disrupting the current iteration or causing inconsistent frame state. Using
-   * {@link WorldCommandBuffer} is the recommended way to handle structural changes.
+   * within collision callbacks may disrupt the current iteration or lead to inconsistent frame state.
+   * To help maintain simulation stability, it is recommended to use {@link WorldCommandBuffer}
+   * to defer structural changes until the end of the frame.
    */
   public update(world: World<TRegistry>, deltaTime: number): void {
     const query = world.query("Transform" as ComponentType<TRegistry>, "Collider" as ComponentType<TRegistry>);

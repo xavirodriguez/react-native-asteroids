@@ -23,13 +23,13 @@ export type BlueprintRegistryMap<
  * It manages entities, components, systems, and resources.
  *
  * @remarks
- * This implementation is intended to support reproducible simulations when provided with consistent
- * initial states and stable inputs. It aims to minimize non-deterministic factors; however,
- * bit-for-bit determinism is not guaranteed and depends on external constraints such as:
- * - Floating-point precision differences across different JS engines, WASM runtimes, or platforms.
- * - Non-deterministic behavior in user-defined systems, hooks, or callbacks.
- * - External state mutations or side effects during the update loop.
- * - Reliance on non-serializable resource state or external volatile state.
+ * This implementation is designed to support reproducible simulations when provided with consistent
+ * initial states and stable inputs. It aims to minimize non-deterministic factors in the core
+ * simulation logic; however, reproducibility is conditional and depends on several factors:
+ * - Floating-point precision: Behavior may vary across different JS engines, WASM runtimes, or hardware platforms.
+ * - User-defined logic: Non-deterministic behavior in systems, hooks, or callbacks will propagate.
+ * - Side effects: External state mutations or asynchronous side effects during the update loop can break consistency.
+ * - State coverage: Features like rollback and snapshots rely on all relevant state being stored in serializable components.
  *
  * @typeParam TComponents - The registry of components allowed in this world.
  * @typeParam TEvents - The registry of events handled by the world's event bus.
@@ -140,13 +140,13 @@ export class World<
    * Returns a list of all active entities, sorted by ID.
    *
    * @remarks
-   * Iterating over this list provides a stable order based on entity IDs, assuming
-   * consistent entity creation and recycling.
+   * Iterating over this list provides a stable order based on entity IDs, provided
+   * entity creation and recycling remain consistent.
    *
    * @warning
    * **Performance & Memory**: This operation creates a new array and performs a sort (O(N log N)) on every call.
-   * Frequent access in hot paths will significantly increase GC pressure and may impact frame budget.
-   * For efficient, cached entity filtering, it is strongly recommended to use {@link Query}.
+   * Frequent access in hot paths is expected to increase GC pressure and may impact frame budget.
+   * For efficient, cached entity filtering, it is recommended to use {@link Query}.
    */
   public get entities(): ReadonlyArray<Entity> {
     return Array.from(this.activeEntities).sort((a, b) => a - b);
@@ -174,10 +174,10 @@ export class World<
    * Increments the structure version of the world.
    *
    * @warning
-   * **Structural Change**: Direct entity creation during world update can disrupt
-   * active iterations in systems that are not using stable queries. For better simulation
-   * stability and to avoid inconsistent state during a frame, it is recommended to use
-   * {@link WorldCommandBuffer} to defer creation until the end of the update.
+   * **Structural Change**: Direct entity creation during world update may disrupt
+   * active iterations in systems that are not using stable queries. To help maintain
+   * simulation stability and avoid inconsistent state during a frame, it is recommended
+   * to use {@link WorldCommandBuffer} to defer creation until the end of the update.
    */
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -197,9 +197,9 @@ export class World<
    * Removes an entity and all its associated components from the world.
    *
    * @warning
-   * **Structural Change**: Removing entities during system updates can disrupt
+   * **Structural Change**: Removing entities during system updates may disrupt
    * active iterations and lead to unexpected behavior if not handled carefully.
-   * To maintain simulation stability, it is recommended to use {@link WorldCommandBuffer}
+   * To help maintain simulation stability, it is recommended to use {@link WorldCommandBuffer}
    * to defer entity removal until the end of the frame.
    */
   removeEntity(entity: Entity): void {
@@ -238,8 +238,8 @@ export class World<
    *
    * @warning
    * **Structural Change**: Adding components during an update loop may disrupt
-   * ongoing iterations and triggers query updates. Deferring this through
-   * {@link WorldCommandBuffer} is recommended for complex simulations.
+   * ongoing iterations and triggers immediate query updates. Deferring this through
+   * {@link WorldCommandBuffer} is recommended to ensure consistency across all systems.
    */
   addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K]): void {
     const type = (component as any).type as string;
@@ -290,8 +290,8 @@ export class World<
    *
    * @warning
    * **Structural Change**: This operation modifies the entity's composition and
-   * updates queries. To avoid iterator invalidation during system updates,
-   * consider using {@link WorldCommandBuffer}.
+   * triggers immediate query updates. To help avoid iterator invalidation during
+   * system updates, it is recommended to use {@link WorldCommandBuffer}.
    */
   removeComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): void {
     const map = this.componentMaps.get(type as string);
@@ -369,14 +369,14 @@ export class World<
    * within each phase. After all phases, the {@link WorldCommandBuffer} is flushed.
    *
    * This method is synchronous. The core update loop is designed for synchronous execution;
-   * asynchronous side effects (like `await`) within systems are avoided in core logic
-   * to prevent race conditions, inconsistent state, and non-deterministic behavior.
+   * asynchronous side effects (like `await`) within systems should be avoided in core logic
+   * to help prevent race conditions, inconsistent state, and non-deterministic behavior.
    *
    * @warning
    * **Structural changes during iteration**: Direct structural changes (like adding/removing
-   * components or entities) during this call can disrupt active iterations in systems
-   * that do not use stable queries. It is strongly recommended to use {@link WorldCommandBuffer}
-   * to defer these changes until the end of the update for better simulation stability.
+   * components or entities) during this call may disrupt active iterations in systems
+   * that do not use stable queries. It is recommended to use {@link WorldCommandBuffer}
+   * to defer these changes until the end of the update to help preserve simulation stability.
    */
   update(deltaTime: number): void {
     this._tick++;
@@ -459,7 +459,7 @@ export class World<
   /**
    * Captures the current serializable state of the world.
    *
-   * @param target - Optional snapshot object to reuse and minimize allocations.
+   * @param target - Optional snapshot object to reuse and help minimize allocations.
    * @returns A snapshot of the world's entities, components, and RNG state.
    *
    * @remarks
@@ -468,10 +468,10 @@ export class World<
    *
    * @warning
    * - **Serialization limits**: Functions, non-serializable objects (e.g., class instances without
-   *   a custom cloner), and circular references are not supported and may lead to incomplete
+   *   a custom cloner), and circular references are not supported and may result in incomplete
    *   state restoration.
    * - **Performance impact**: Snapshotting involves deep cloning; frequent use in performance-critical
-   *   hot paths is discouraged to minimize GC pressure and maintain frame budget.
+   *   hot paths is expected to increase GC pressure and may impact frame budget.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     return SnapshotSerializer.snapshot(this, target);

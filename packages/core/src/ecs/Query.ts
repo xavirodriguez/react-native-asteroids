@@ -53,12 +53,12 @@ export class Query<TComponents extends ComponentRegistry> {
    *
    * @warning
    * **Stable Iteration Order**: The list is sorted by entity ID to support stable
-   * iteration across frames. This stability depends on entity IDs being
+   * iteration across frames. This stability relies on entity IDs being
    * created and recycled consistently within the {@link World}.
    *
    * **Performance & Memory**: The first access after a structural change (add/remove)
    * incurs an O(N log N) sorting cost and creates a new array. Frequent structural
-   * changes combined with query access in hot paths will increase GC pressure.
+   * changes combined with query access in hot paths is expected to increase GC pressure.
    */
   public getEntities(): ReadonlyArray<Entity> {
     if (this.isDirty) {

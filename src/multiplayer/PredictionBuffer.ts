@@ -7,9 +7,9 @@
  * to check for divergences.
  *
  * @warning
- * **State Reconciliation**: This buffer only stores what it's given. It does not
- * guarantee that reconciliation will be seamless; if the prediction logic differs
- * significantly from the server, large "corrections" (snapping) may occur.
+ * **State Reconciliation**: This buffer stores the provided predicted states.
+ * Seamless reconciliation is not guaranteed; if the prediction logic differs
+ * significantly from the server, "corrections" (snapping) may occur.
  *
  * @packageDocumentation
  */
