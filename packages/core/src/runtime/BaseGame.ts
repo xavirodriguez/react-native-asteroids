@@ -2,6 +2,9 @@ import { World, BlueprintRegistryMap } from "../ecs/World";
 import { ComponentRegistry } from "../ecs/Component";
 import { EventRegistry, EventBus } from "../events/EventBus";
 import { BlueprintRegistry } from "../ecs/BlueprintRegistry";
+import { IGame } from "./IGame";
+import { GameLoop } from "../loop/GameLoop";
+import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
 
 export interface BaseGameConfig {
   /** [KeyboardEvent.code] Key to toggle pause. */
@@ -19,24 +22,46 @@ export interface BaseGameConfig {
 /**
  * Base class for game implementations using the TinyAster engine.
  *
+ * @typeParam TState - The representation of the game state.
+ * @typeParam TInput - The representation of the input state.
  * @typeParam TComponents - The registry of components available in this game.
  * @typeParam TEvents - The registry of events that can be emitted.
  * @typeParam TBlueprints - The registry of blueprints that can be spawned.
  */
 export abstract class BaseGame<
+  TState = unknown,
+  TInput extends Record<string, unknown> = Record<string, unknown>,
   TComponents extends ComponentRegistry = ComponentRegistry,
   TEvents extends EventRegistry = EventRegistry,
   TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
-> {
+> implements IGame<TState> {
   public world: World<TComponents, TEvents, TBlueprints>;
   public eventBus: EventBus<TEvents>;
   public blueprints: BlueprintRegistry<TComponents, TBlueprints>;
+  protected loop: GameLoop;
+  protected unifiedInput: UnifiedInputSystem;
+  protected _config: BaseGameConfig;
+  private isPaused = false;
 
-  constructor() {
+  constructor(config: BaseGameConfig = {}) {
+    this._config = config;
     this.world = new World<TComponents, TEvents, TBlueprints>();
     this.eventBus = new EventBus<TEvents>();
     this.blueprints = new BlueprintRegistry<TComponents, TBlueprints>();
+    this.loop = new GameLoop();
+    this.unifiedInput = new UnifiedInputSystem();
 
+    this.registerInternalResources();
+
+    // Subscribe loop to update
+    this.loop.subscribeUpdate((dt) => {
+      if (!this.isPaused) {
+        this.update(dt);
+      }
+    });
+  }
+
+  private registerInternalResources(): void {
     // Register the blueprint registry as a world resource for the command buffer
     this.world.setResource("BlueprintRegistry", this.blueprints);
     this.world.setResource("EventBus", this.eventBus);
@@ -57,9 +82,86 @@ export abstract class BaseGame<
   }
 
   /**
+   * Returns the input system instance.
+   */
+  getInputSystem(): UnifiedInputSystem {
+    return this.unifiedInput;
+  }
+
+  /**
    * Called during game initialization.
    */
+  public async init(): Promise<void> {
+    await this.initialize();
+  }
+
+  /**
+   * Internal initialization logic.
+   */
   public abstract initialize(): Promise<void>;
+
+  /**
+   * Starts the game loop.
+   */
+  public start(): void {
+    this.loop.start();
+  }
+
+  /**
+   * Pauses the game.
+   */
+  public pause(): void {
+    this.isPaused = true;
+  }
+
+  /**
+   * Resumes the game.
+   */
+  public resume(): void {
+    this.isPaused = false;
+  }
+
+  /**
+   * Returns whether the game is currently paused.
+   */
+  public isPausedState(): boolean {
+    return this.isPaused;
+  }
+
+  /**
+   * Stops the loop and cleans up resources.
+   */
+  public destroy(): void {
+    this.loop.stop();
+  }
+
+  /**
+   * Restarts the game.
+   */
+  public async restart(seed?: number): Promise<void> {
+    if (seed !== undefined) {
+      this._config.gameOptions = { ...this._config.gameOptions, seed };
+    }
+    this.destroy();
+
+    // Reset world and re-register resources
+    this.world = new World<TComponents, TEvents, TBlueprints>();
+    this.registerInternalResources();
+
+    // Re-initialize entities and start
+    this.initializeEntities();
+    this.start();
+  }
+
+  /**
+   * Subscribes to state updates.
+   * Note: For now, we use the loop's render subscription to notify the state.
+   */
+  public subscribe(cb: (state: TState) => void): () => void {
+    return this.loop.subscribeRender(() => {
+      cb(this.getGameState());
+    });
+  }
 
   /**
    * Updates the game simulation.
@@ -79,7 +181,7 @@ export abstract class BaseGame<
   /**
    * Returns a representation of the current game state.
    */
-  public abstract getGameState(): any;
+  public abstract getGameState(): TState;
 
   /**
    * Returns whether the game has ended.

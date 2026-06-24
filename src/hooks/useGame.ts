@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useKeepAwake } from "./useKeepAwake";
 import type { BaseGame, BaseGameConfig } from "@tiny-aster/core";
-import type { DebugManager } from "@tiny-aster/core";
 
 export type GameConfig = BaseGameConfig & {
   seed?: number;
@@ -15,10 +14,10 @@ export interface GameOptions<TState> {
 }
 
 // Constructor type - accepts any class that extends BaseGame
-type GameConstructor<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, unknown>> =
+type GameConstructor<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, any>> =
   new (config: GameConfig) => TGame;
 
-export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, unknown>> {
+export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, TInput extends Record<string, any>> {
   game: TGame | null;
   gameState: TState | null;
   isPaused: boolean;
@@ -46,7 +45,7 @@ export interface UseGameResult<TGame extends BaseGame<TState, TInput>, TState, T
 export function useGame<
   TGame extends BaseGame<TState, TInput>,
   TState,
-  TInput extends Record<string, unknown>
+  TInput extends Record<string, any>
 >(
   GameClass: GameConstructor<TGame, TState, TInput> | null,
   isMultiplayer: boolean = false,
@@ -153,30 +152,3 @@ export function useGame<
     restart,
   };
 }
-
-/**
- * Hook to manage the DebugManager lifecycle.
- */
-export function useDebugManager(game: BaseGame<Record<string, unknown>, Record<string, boolean>> | null): DebugManager | null {
-  const [manager, setManager] = useState<DebugManager | null>(null);
-
-  useEffect(() => {
-    if (!game || !__DEV__) {
-      setManager(null);
-      return;
-    }
-
-    const { DebugManager: DebugManagerClass } = require("../engine/debug/DebugManager");
-    const debugManager = DebugManagerClass.getInstance();
-    debugManager.attach(game);
-    setManager(debugManager);
-
-    return () => {
-      debugManager.detach();
-    };
-  }, [game]);
-
-  return manager;
-}
-
-const __DEV__ = process.env.NODE_ENV !== "production";
