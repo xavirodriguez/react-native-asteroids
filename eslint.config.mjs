@@ -80,6 +80,12 @@ export default tseslint.config(
           "../engine/debug/DebugManager"
         ]
       }],
+      "no-restricted-imports": ["warn", {
+        "patterns": [{
+          "group": ["**/engine/**", "!**/engine/index", "!**/engine/index.ts"],
+          "message": "Please import from '@tiny-aster/core' instead of legacy 'src/engine'."
+        }]
+      }],
     },
   },
   {
