@@ -17,8 +17,8 @@
 
 #### FASE 1: Completar packages/renderer-skia
 
-* [ ] Tarea 1.1: `packages/renderer-skia/src/SkiaRenderer.ts` es actualmente un stub (`console.log`). Implementar la interfaz `Renderer<TRegistry, SkiaCanvas>` del core utilizando `@shopify/react-native-skia` para el dibujado real.
-* [ ] Tarea 1.2: Configurar `packages/renderer-skia/package.json` para empaquetar con `tsup` (añadir script `build` idéntico al de `@tiny-aster/core`).
+* [x] Tarea 1.1: `packages/renderer-skia/src/SkiaRenderer.ts` es actualmente un stub (`console.log`). Implementar la interfaz `Renderer<TRegistry, SkiaCanvas>` del core utilizando `@shopify/react-native-skia` para el dibujado real.
+* [x] Tarea 1.2: Configurar `packages/renderer-skia/package.json` para empaquetar con `tsup` (añadir script `build` idéntico al de `@tiny-aster/core`).
 
 * **Criterio de éxito:** Ejecutar `pnpm --filter @tiny-aster/renderer-skia build` con éxito.
 
@@ -32,7 +32,7 @@
 
 #### FASE 3: Implementar packages/network-colyseus
 
-* [ ] Tarea 3.1: Hacer que `packages/network-colyseus/src/ColyseusTransport.ts` implemente formalmente la interfaz `NetworkTransport` del core mapeando los métodos `connect`, `send`, `onMessage` y `disconnect`.
+* [x] Tarea 3.1: Hacer que `packages/network-colyseus/src/ColyseusTransport.ts` implemente formalmente la interfaz `NetworkTransport` del core mapeando los métodos `connect`, `send`, `onMessage` y `disconnect`.
 
 * **Criterio de éxito:** Ejecutar `pnpm --filter @tiny-aster/network-colyseus typecheck` sin errores.
 
