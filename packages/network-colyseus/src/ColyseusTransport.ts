@@ -37,7 +37,10 @@ export class ColyseusTransport implements NetworkTransport {
   }
 
   onMessage(type: string, callback: (message: any) => void): () => void {
-    return this.room?.onMessage(type, callback) ?? (() => {});
+    const unsub = this.room?.onMessage(type, callback);
+    return () => {
+        unsub?.();
+    };
   }
 
   getSessionId(): string | undefined {
