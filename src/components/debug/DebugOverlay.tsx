@@ -13,11 +13,10 @@ import {
 } from 'react-native';
 import { BaseGame } from "@tiny-aster/core";
 import type { EventLogEntry, FrameStats, ColliderShapeInfo } from "@tiny-aster/core";
-import { useDebugManager } from '../../hooks/useGame';
 import Svg, { Circle, Rect } from 'react-native-svg';
 
 interface DebugOverlayProps {
-  game: BaseGame<Record<string, unknown>, Record<string, unknown>> | null;
+  game: BaseGame<any, any> | null;
 }
 
 type TabType = 'Frame' | 'Systems' | 'Entities' | 'Events' | 'Colliders' | 'Replay';
@@ -27,7 +26,7 @@ type TabType = 'Frame' | 'Systems' | 'Entities' | 'Events' | 'Colliders' | 'Repl
  * Designed to be tree-shakeable and only active in development environments.
  */
 export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
-  const debugManager = useDebugManager(game);
+  const debugManager = (game as any)?.debugManager;
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('Frame');
   const [_lastUpdate, setLastUpdate] = useState(0);
