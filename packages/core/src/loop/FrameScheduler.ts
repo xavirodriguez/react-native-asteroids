@@ -31,22 +31,22 @@ export interface FrameScheduler {
  */
 export const browserFrameScheduler: FrameScheduler = {
   now: () => {
-    const gt = globalThis as any;
-    return (gt.performance?.now?.() ?? Date.now());
+    if (typeof performance !== "undefined" && performance.now) {
+      return performance.now();
+    }
+    return Date.now();
   },
   requestFrame: (callback) => {
-    const gt = globalThis as any;
-    if (gt.requestAnimationFrame) {
-      return gt.requestAnimationFrame(callback);
+    if (typeof requestAnimationFrame !== "undefined") {
+      return requestAnimationFrame(callback);
     }
     return setTimeout(() => callback(Date.now()), 16);
   },
   cancelFrame: (handle) => {
-    const gt = globalThis as any;
-    if (gt.cancelAnimationFrame) {
-      gt.cancelAnimationFrame(handle as number);
+    if (typeof cancelAnimationFrame !== "undefined") {
+      cancelAnimationFrame(handle as number);
     } else {
-      clearTimeout(handle as any);
+      clearTimeout(handle as ReturnType<typeof setTimeout>);
     }
   },
 };

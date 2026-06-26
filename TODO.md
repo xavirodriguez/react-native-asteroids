@@ -6,13 +6,13 @@
 - [x] Tarea 0.3: Implementar un "Smoke Test de Tipado" en `packages/core` que inicialice un mundo ficticio con 2 componentes y 1 sistema para validar la inferencia de tipos sin verbosidad.
 
 #### FASE 1: El Core Mínimo Viable (MVP Core)
-- [ ] Tarea 1.1: Portar `FrameScheduler` básico (unificar loops de juego) a `packages/core`.
-- [ ] Tarea 1.2: Portar lógica física de movimiento lineal elemental (sin fricciones complejas ni colisiones avanzadas).
-- [ ] Tarea 1.3: Definir interfaces y contratos mínimos de renderizado (`Renderer<T>`) en el core.
-- [ ] Tarea 1.4: Configurar `src/engine/index.ts` como un pasamanos (re-export) exclusivo de los módulos migrados en esta fase.
+- [x] Tarea 1.1: Portar `FrameScheduler` básico (unificar loops de juego) a `packages/core`.
+- [x] Tarea 1.2: Portar lógica física de movimiento lineal elemental (sin fricciones complejas ni colisiones avanzadas).
+- [x] Tarea 1.3: Definir interfaces y contratos mínimos de renderizado (`Renderer<T>`) en el core.
+- [x] Tarea 1.4: Configurar `src/engine/index.ts` como un pasamanos (re-export) exclusivo de los módulos migrados en esta fase.
 
 #### FASE 2: Primera Cabeza de Playa (Migración Vertical del Primer Juego)
-- [ ] Tarea 2.1: Crear el paquete `packages/react-native` y extraer los hooks esenciales (`useGameLoop`, `useWorld`) consumiendo solo `@tiny-aster/core`.
+- [x] Tarea 2.1: Crear el paquete `packages/react-native` y extraer los hooks esenciales (`useGameLoop`, `useWorld`) consumiendo solo `@tiny-aster/core`.
 - [ ] Tarea 2.2: Desconectar el juego más simple (ej: PongGame) de `src/engine` y reescribir sus sistemas usando el nuevo `@tiny-aster/core`.
 - [ ] Tarea 2.3: Extraer el primer adaptador de renderizado a su propio paquete (ej: `packages/renderer-canvas` o similar).
 - [ ] Tarea 2.4: Ejecutar test de estrés temprano en el juego migrado para asegurar que el ECS genérico no degrada los FPS respecto al Benchmark Cero.
