@@ -55,7 +55,7 @@ export class WorldCommandBuffer<
 
   public addComponent<K extends ComponentType<TComponents>>(
     entity: number,
-    component: TComponents[K]
+    component: TComponents[K] & { type: K }
   ): void {
     this.commands.push({
       execute: (world) => world.addComponent(entity, component)

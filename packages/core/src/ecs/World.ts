@@ -241,7 +241,7 @@ export class World<
    * ongoing iterations and triggers immediate query updates. Deferring this through
    * {@link WorldCommandBuffer} is recommended to ensure consistency across all systems.
    */
-  addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K]): void {
+  addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K] & { type: K }): void {
     const type = (component as any).type as string;
     if (!this.componentMaps.has(type)) {
       this.componentMaps.set(type, new Map());
