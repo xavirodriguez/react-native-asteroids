@@ -1,6 +1,7 @@
 import { World } from "../ecs/World";
 import { EventBus } from "../events/EventBus";
 import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
+import { GameLoop } from "../loop/GameLoop";
 
 /**
  * Interface representing a runnable game.
@@ -8,8 +9,10 @@ import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
 export interface IGame<TState = unknown> {
   getWorld(): World<any, any, any>;
   getEventBus(): EventBus<any>;
+  getGameLoop(): GameLoop;
   getGameState(): TState;
   isGameOver(): boolean;
+  getSeed(): number;
   init(): Promise<void>;
   start(): void;
   pause(): void;

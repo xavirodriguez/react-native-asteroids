@@ -89,6 +89,13 @@ export abstract class BaseGame<
   }
 
   /**
+   * Returns the game loop instance.
+   */
+  public getGameLoop(): GameLoop {
+    return this.loop;
+  }
+
+  /**
    * Called during game initialization.
    */
   public async init(): Promise<void> {
@@ -148,7 +155,8 @@ export abstract class BaseGame<
     this.world = new World<TComponents, TEvents, TBlueprints>();
     this.registerInternalResources();
 
-    // Re-initialize entities and start
+    // Re-register systems and initialize entities
+    this.registerSystems();
     this.initializeEntities();
     this.start();
   }
@@ -182,6 +190,13 @@ export abstract class BaseGame<
    * Returns a representation of the current game state.
    */
   public abstract getGameState(): TState;
+
+  /**
+   * Returns the seed used for the game session.
+   */
+  public getSeed(): number {
+    return (this._config.gameOptions?.seed as number) ?? 0;
+  }
 
   /**
    * Returns whether the game has ended.

@@ -2,16 +2,16 @@
 
 #### FASE 0: Alinear BaseGame con useGame.ts
 
-* [x] Tarea 0.1: Extender `packages/core/src/runtime/BaseGame.ts` (o crear `RunnableGame.ts` si es arquitectónicamente mejor) para implementar los métodos que `useGame.ts` requiere:
-    * `init(): Promise<void>` (debe invocar internamente a `initialize()`)
-    * `start(): void` (debe arrancar el `GameLoop`)
-    * `destroy(): void` (detiene el loop y limpia recursos)
-    * `subscribe(cb: (state: TState) => void): () => void`
-    * `isPausedState(): boolean`
-    * `restart(seed?: number): Promise<void>`
-    * `getInputSystem(): InputSystem`
+* [x] Tarea 0.1: Extender `packages/core/src/runtime/BaseGame.ts` (o crear `RunnableGame.ts` si es arquitectónicamente mejor) para implementar los métodos que `useGame.ts` requiere: [x]
+    * `init(): Promise<void>` (debe invocar internamente a `initialize()`) [x]
+    * `start(): void` (debe arrancar el `GameLoop`) [x]
+    * `destroy(): void` (detiene el loop y limpia recursos) [x]
+    * `subscribe(cb: (state: TState) => void): () => void` [x]
+    * `isPausedState(): boolean` [x]
+    * `restart(seed?: number): Promise<void>` [x]
+    * `getInputSystem(): InputSystem` [x]
 
-* [x] Tarea 0.2: Eliminar la dependencia legacy `require("../engine/debug/DebugManager")` en la línea 169 de `src/hooks/useGame.ts`. Mover la lógica necesaria o limpiar la llamada.
+* [x] Tarea 0.2: Eliminar la dependencia legacy `require("../engine/debug/DebugManager")` en la línea 169 de `src/hooks/useGame.ts`. Mover la lógica necesaria o limpiar la llamada. [x]
 
 * **Criterio de éxito:** Ejecutar `pnpm --filter @tiny-aster/core typecheck` y que termine con código 0.
 

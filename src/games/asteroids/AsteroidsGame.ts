@@ -1,4 +1,4 @@
-import { World, GameLoop, BaseGame, AssetLoader } from "@tiny-aster/core";
+import { World, GameLoop, BaseGame, AssetLoader, BaseGameConfig } from "@tiny-aster/core";
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "./types/AsteroidRegistry";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
@@ -19,7 +19,7 @@ import { TTLSystem } from "@tiny-aster/core";
 import { CollisionSystem2D } from "@tiny-aster/core";
 import { CCDSystem } from "@tiny-aster/core";
 import { FeedbackSystem } from "@tiny-aster/core";
-import { type GameStateComponent, INITIAL_GAME_STATE } from "./types/AsteroidTypes";
+import { INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { MutatorService } from "../../services/MutatorService";
 import { InputFrame } from "../../multiplayer/NetTypes";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
@@ -32,6 +32,7 @@ import { INetworkGame } from "@tiny-aster/core";
 import { ConfigService } from "@tiny-aster/core";
 import { AsteroidConfigSchema, AsteroidConfig } from "./types/AsteroidConfigSchema";
 import { SystemPhase } from "@tiny-aster/core";
+import { GameStateComponent, InputState } from "./types/AsteroidTypes";
 
 const __DEV__ = process.env.NODE_ENV !== "production";
 
@@ -40,7 +41,7 @@ const __DEV__ = process.env.NODE_ENV !== "production";
  * Manages the ECS world, systems, and lifecycle.
  */
 export class AsteroidsGame
-  extends BaseGame<AsteroidsComponentRegistry, AsteroidsEventRegistry>
+  extends BaseGame<GameStateComponent, InputState, AsteroidsComponentRegistry, AsteroidsEventRegistry>
   implements IAsteroidsGame, INetworkGame {
 
   private gameStateSystem!: AsteroidGameStateSystem;
@@ -55,8 +56,8 @@ export class AsteroidsGame
   private isHeadless: boolean;
   private isMultiplayer: boolean;
 
-  constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown>, headless?: boolean } = {}) {
-    super();
+  constructor(config: BaseGameConfig = {}) {
+    super(config);
     this.isHeadless = config.headless || false;
     this.isMultiplayer = config.isMultiplayer || false;
     const rawConfig = require("./config/asteroids.json");
@@ -70,7 +71,7 @@ export class AsteroidsGame
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
-      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...baseConfig })
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...baseConfig } as any)
       : { ...baseConfig };
 
     this.world.setResource("GameConfig", this.config);
@@ -279,15 +280,13 @@ export class AsteroidsGame
     return this.gameStateSystem.isGameOver();
   }
 
-  public start(): void {
+  public override start(): void {
+    super.start();
     if (__DEV__) console.log("[AsteroidsGame] Simulation started");
   }
 
-  public stop(): void {
-    if (__DEV__) console.log("[AsteroidsGame] Simulation stopped");
-  }
-
-  public destroy(): void {
+  public override destroy(): void {
+    super.destroy();
     if (typeof window !== "undefined" && this.resizeListener) {
         window.removeEventListener("resize", this.resizeListener);
     }
@@ -295,12 +294,14 @@ export class AsteroidsGame
     this.particlePool?.clear();
   }
 
-  public pause(): void {
+  public override pause(): void {
+    super.pause();
     this.world.setResource("IsPaused", true);
     if (__DEV__) console.log("[AsteroidsGame] Simulation paused");
   }
 
-  public resume(): void {
+  public override resume(): void {
+    super.resume();
     this.world.setResource("IsPaused", false);
     if (__DEV__) console.log("[AsteroidsGame] Simulation resumed");
   }
