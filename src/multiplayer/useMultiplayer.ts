@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { ColyseusConnection } from "./ColyseusConnection";
+import { ColyseusTransport } from "@tiny-aster/network-colyseus";
 import { Room } from "@colyseus/sdk";
 import { InputFrame } from "./NetTypes";
 import { BinaryCompression } from "@tiny-aster/core";
@@ -36,11 +36,13 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
     if (!active || !playerName) return;
 
     cancelledRef.current = false;
-    const connection = new ColyseusConnection();
+    const connection = new ColyseusTransport();
 
     async function setup() {
       try {
-        const joinedRoom = await connection.connect(roomName, { name: playerName });
+        const endpoint = process.env.EXPO_PUBLIC_COLYSEUS_URL ?? "ws://127.0.0.1:2567";
+        await connection.connect(endpoint, roomName, { name: playerName });
+        const joinedRoom = connection.getRoom();
         if (cancelledRef.current) {
           connection.disconnect();
           return;
