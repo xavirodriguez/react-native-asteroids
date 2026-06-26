@@ -2,48 +2,56 @@ import { NetworkTransport } from "@tiny-aster/core";
 import { Client, Room } from "@colyseus/sdk";
 
 /**
- * Colyseus-based implementation of {@link NetworkTransport}.
- *
- * @remarks
- * This transport provides a wrapper around the Colyseus SDK to handle
- * room-based networking. It facilitates joining/creating rooms,
- * sending messages, and listening for server updates.
- *
- * @warning
- * **Network Latency & Lifecycle**: Connection and message delivery are subject
- * to network latency and Colyseus's internal synchronization protocol.
- * Async lifecycle: Methods like `connect` are asynchronous; state may change
- * between the call and its completion.
+ * Network transport implementation using Colyseus.
  */
 export class ColyseusTransport implements NetworkTransport {
-  private client: Client;
+  private client: Client | null = null;
   private room: Room | null = null;
+  private messageHandlers = new Map<string, Set<(message: unknown) => void>>();
 
-  constructor(endpoint: string) {
-    this.client = new Client(endpoint);
-  }
-
-  async connect(roomName: string, options: any = {}): Promise<void> {
+  public async connect(url: string, roomName: string = "game", options: Record<string, unknown> = {}): Promise<void> {
+    this.client = new Client(url);
     this.room = await this.client.joinOrCreate(roomName, options);
+
+    this.room.onMessage("*", (type, message) => {
+      const typeStr = typeof type === "string" ? type : String(type);
+      const handlers = this.messageHandlers.get(typeStr);
+      if (handlers) {
+        handlers.forEach((handler) => handler(message));
+      }
+    });
   }
 
-  disconnect(): void {
-    this.room?.leave();
-    this.room = null;
+  public send(type: string, message: unknown): void {
+    if (this.room) {
+      this.room.send(type, message);
+    }
   }
 
-  send(type: string, message: any): void {
-    this.room?.send(type, message);
-  }
+  public onMessage(type: string, handler: (message: unknown) => void): () => void {
+    if (!this.messageHandlers.has(type)) {
+      this.messageHandlers.set(type, new Set());
+    }
+    this.messageHandlers.get(type)!.add(handler);
 
-  onMessage(type: string, callback: (message: any) => void): () => void {
-    const unsub = this.room?.onMessage(type, callback);
     return () => {
-        unsub?.();
+      const handlers = this.messageHandlers.get(type);
+      if (handlers) {
+        handlers.delete(handler);
+      }
     };
   }
 
-  getSessionId(): string | undefined {
-    return this.room?.sessionId;
+  public disconnect(): void {
+    if (this.room) {
+      this.room.leave();
+      this.room = null;
+    }
+    this.client = null;
+    this.messageHandlers.clear();
+  }
+
+  public getRoom(): Room | null {
+    return this.room;
   }
 }

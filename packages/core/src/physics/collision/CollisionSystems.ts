@@ -1,17 +1,17 @@
-import { World, ComponentType } from "../../ecs/World";
+import { World } from "../../ecs/World";
 import { System } from "../../ecs/System";
 import { ComponentRegistry } from "../../ecs/Component";
 import { Entity } from "../../ecs/Entity";
-import { CollisionManifold, Collision } from "./CollisionTypes";
+import { CollisionManifold } from "./CollisionTypes";
 import { BroadPhase } from "./BroadPhase";
 import { NarrowPhase } from "./NarrowPhase";
-import { ColliderComponent, TransformComponent, VelocityComponent, CollisionEventsComponent, CoreComponentRegistry } from "../../ecs/CoreComponents";
-import { ShapeType, CircleShape, BoxShape } from "../shapes/Shapes";
+import { CoreComponentRegistry } from "../../ecs/CoreComponents";
+import { ShapeType } from "../shapes/Shapes";
 
 export type CollisionCallback<TRegistry extends ComponentRegistry = CoreComponentRegistry> = (world: World<TRegistry>, entityA: Entity, entityB: Entity, manifold: CollisionManifold) => void;
 export type TriggerCallback<TRegistry extends ComponentRegistry = CoreComponentRegistry> = (world: World<TRegistry>, entityA: Entity, entityB: Entity) => void;
 
-export class CollisionSystem2D<TRegistry extends ComponentRegistry = CoreComponentRegistry> extends System<TRegistry> {
+export class CollisionSystem2D<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> extends System<TRegistry> {
   private onCollisionCallbacks: CollisionCallback<TRegistry>[] = [];
   private onTriggerEnterCallbacks: TriggerCallback<TRegistry>[] = [];
   private onTriggerExitCallbacks: TriggerCallback<TRegistry>[] = [];
@@ -21,42 +21,33 @@ export class CollisionSystem2D<TRegistry extends ComponentRegistry = CoreCompone
   public onTriggerEnter(callback: TriggerCallback<TRegistry>): void { this.onTriggerEnterCallbacks.push(callback); }
   public onTriggerExit(callback: TriggerCallback<TRegistry>): void { this.onTriggerExitCallbacks.push(callback); }
 
-  /**
-   * Updates the collision system, detecting overlaps and notifying listeners.
-   *
-   * @warning
-   * **Mutation during callbacks**: Mutating the world (e.g., creating/removing entities)
-   * within collision callbacks may disrupt the current iteration or lead to inconsistent frame state.
-   * To help maintain simulation stability, it is recommended to use {@link WorldCommandBuffer}
-   * to defer structural changes until the end of the frame.
-   */
-  public update(world: World<TRegistry>, deltaTime: number): void {
-    const query = world.query("Transform" as ComponentType<TRegistry>, "Collider" as ComponentType<TRegistry>);
+  public update(world: World<TRegistry>, _deltaTime: number): void {
+    // Cast to access core components reliably while maintaining generic TRegistry if needed by subclasses
+    const w = world as unknown as World<CoreComponentRegistry>;
+    const query = w.query("Transform", "Collider");
     const currentFramePairs = new Set<string>();
 
-    const eventQuery = world.query("CollisionEvents" as ComponentType<TRegistry>);
+    const eventQuery = w.query("CollisionEvents");
     for (const entity of eventQuery) {
-      world.mutateComponent(entity, "CollisionEvents" as ComponentType<TRegistry>, (component) => {
-        const events = component as unknown as CollisionEventsComponent;
-        events.collisions.length = 0;
-        events.triggersEntered.length = 0;
-        events.triggersExited.length = 0;
+      w.mutateComponent(entity, "CollisionEvents", (component) => {
+        component.collisions.length = 0;
+        component.triggersEntered.length = 0;
+        component.triggersExited.length = 0;
       });
     }
 
-    const candidates = BroadPhase.sweepAndPrune([...query], world as unknown as World<CoreComponentRegistry>);
+    const candidates = BroadPhase.sweepAndPrune([...query], w);
 
     for (const [entityA, entityB] of candidates) {
-      const colA = world.getComponent(entityA, "Collider" as ComponentType<TRegistry>) as unknown as ColliderComponent;
-      const colB = world.getComponent(entityB, "Collider" as ComponentType<TRegistry>) as unknown as ColliderComponent;
+      const colA = w.getComponent(entityA, "Collider")!;
+      const colB = w.getComponent(entityB, "Collider")!;
 
-      if (!colA || !colB || !colA.enabled || !colB.enabled) continue;
-      if (!this.shouldCollide(colA, colB)) continue;
+      if (!colA.enabled || !colB.enabled) continue;
+      if (!this.shouldCollide(colA.layer, colB.mask, colB.layer, colA.mask)) continue;
 
-      const transA = world.getComponent(entityA, "Transform" as ComponentType<TRegistry>) as unknown as TransformComponent;
-      const transB = world.getComponent(entityB, "Transform" as ComponentType<TRegistry>) as unknown as TransformComponent;
+      const transA = w.getComponent(entityA, "Transform")!;
+      const transB = w.getComponent(entityB, "Transform")!;
 
-      // Implement collision detection using NarrowPhase
       const manifold = NarrowPhase.test(
         colA.shape,
         (transA.worldX ?? transA.x) + (colA.offsetX ?? 0),
@@ -75,11 +66,11 @@ export class CollisionSystem2D<TRegistry extends ComponentRegistry = CoreCompone
         if (colA.isTrigger || colB.isTrigger) {
           if (!this.activePairs.has(pairId)) {
             this.onTriggerEnterCallbacks.forEach(cb => cb(world, entityA, entityB));
-            this.notifyTriggerEvent(world, entityA, entityB, "enter");
+            this.notifyTriggerEvent(w, entityA, entityB, "enter");
           }
         } else {
           this.onCollisionCallbacks.forEach(cb => cb(world, entityA, entityB, manifold));
-          this.notifyCollisionEvent(world, entityA, entityB, manifold);
+          this.notifyCollisionEvent(w, entityA, entityB, manifold);
         }
       }
     }
@@ -88,32 +79,28 @@ export class CollisionSystem2D<TRegistry extends ComponentRegistry = CoreCompone
       if (!currentFramePairs.has(pairId)) {
         const [idA, idB] = pairId.split(",").map(Number);
         this.onTriggerExitCallbacks.forEach(cb => cb(world, idA, idB));
-        this.notifyTriggerEvent(world, idA, idB, "exit");
+        this.notifyTriggerEvent(w, idA, idB, "exit");
       }
     });
 
     this.activePairs = currentFramePairs;
   }
 
-  private shouldCollide(a: ColliderComponent, b: ColliderComponent): boolean {
-    return (a.layer & b.mask) !== 0 && (b.layer & a.mask) !== 0;
+  private shouldCollide(layerA: number, maskB: number, layerB: number, maskA: number): boolean {
+    return (layerA & maskB) !== 0 && (layerB & maskA) !== 0;
   }
 
   private getPairId(a: Entity, b: Entity): string {
     return a < b ? `${a},${b}` : `${b},${a}`;
   }
 
-  private notifyCollisionEvent(world: World<TRegistry>, a: Entity, b: Entity, manifold: CollisionManifold): void {
+  private notifyCollisionEvent(world: World<CoreComponentRegistry>, a: Entity, b: Entity, manifold: CollisionManifold): void {
     this.addCollisionToComponent(world, a, b, manifold, false);
     this.addCollisionToComponent(world, b, a, manifold, true);
   }
 
-  private addCollisionToComponent(world: World<TRegistry>, entity: Entity, other: Entity, manifold: CollisionManifold, flipNormal: boolean): void {
-    const events = world.getComponent(entity, "CollisionEvents" as ComponentType<TRegistry>);
-    if (!events) return;
-
-    world.mutateComponent(entity, "CollisionEvents" as ComponentType<TRegistry>, (component) => {
-      const eComp = component as unknown as CollisionEventsComponent;
+  private addCollisionToComponent(world: World<CoreComponentRegistry>, entity: Entity, other: Entity, manifold: CollisionManifold, flipNormal: boolean): void {
+    world.mutateComponent(entity, "CollisionEvents", (eComp) => {
       eComp.collisions.push({
         otherEntity: other,
         normalX: flipNormal ? -manifold.normalX : manifold.normalX,
@@ -124,17 +111,13 @@ export class CollisionSystem2D<TRegistry extends ComponentRegistry = CoreCompone
     });
   }
 
-  private notifyTriggerEvent(world: World<TRegistry>, a: Entity, b: Entity, phase: "enter" | "exit"): void {
+  private notifyTriggerEvent(world: World<CoreComponentRegistry>, a: Entity, b: Entity, phase: "enter" | "exit"): void {
     this.addTriggerToComponent(world, a, b, phase);
     this.addTriggerToComponent(world, b, a, phase);
   }
 
-  private addTriggerToComponent(world: World<TRegistry>, entity: Entity, other: Entity, phase: "enter" | "exit"): void {
-    const events = world.getComponent(entity, "CollisionEvents" as ComponentType<TRegistry>);
-    if (!events) return;
-
-    world.mutateComponent(entity, "CollisionEvents" as ComponentType<TRegistry>, (component) => {
-      const eComp = component as unknown as CollisionEventsComponent;
+  private addTriggerToComponent(world: World<CoreComponentRegistry>, entity: Entity, other: Entity, phase: "enter" | "exit"): void {
+    world.mutateComponent(entity, "CollisionEvents", (eComp) => {
       if (phase === "enter") {
         eComp.triggersEntered.push(other);
         if (!eComp.activeTriggers.includes(other)) eComp.activeTriggers.push(other);
@@ -146,61 +129,51 @@ export class CollisionSystem2D<TRegistry extends ComponentRegistry = CoreCompone
   }
 }
 
-export class CCDSystem<TRegistry extends ComponentRegistry = CoreComponentRegistry> extends System<TRegistry> {
+export class CCDSystem<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> extends System<TRegistry> {
   public update(world: World<TRegistry>, deltaTime: number): void {
-    const query = world.query(
-      "Transform" as ComponentType<TRegistry>,
-      "Velocity" as ComponentType<TRegistry>,
-      "Collider" as ComponentType<TRegistry>
-    );
-    const collidables = world.query(
-      "Transform" as ComponentType<TRegistry>,
-      "Collider" as ComponentType<TRegistry>
-    );
+    const w = world as unknown as World<CoreComponentRegistry>;
+    const query = w.query("Transform", "Velocity", "Collider");
+    const collidables = w.query("Transform", "Collider");
 
     for (const entity of query) {
-      const trans = world.getComponent(entity, "Transform" as ComponentType<TRegistry>) as unknown as TransformComponent;
-      const vel = world.getComponent(entity, "Velocity" as ComponentType<TRegistry>) as unknown as VelocityComponent;
-      const col = world.getComponent(entity, "Collider" as ComponentType<TRegistry>) as unknown as ColliderComponent;
+      const trans = w.getComponent(entity, "Transform")!;
+      const vel = w.getComponent(entity, "Velocity")!;
+      const col = w.getComponent(entity, "Collider")!;
 
       if (!col.enabled || (vel.vx === 0 && vel.vy === 0)) continue;
 
       const p0x = (trans.worldX ?? trans.x);
       const p0y = (trans.worldY ?? trans.y);
-      const p1x = p0x + vel.vx * (deltaTime / 1000);
-      const p1y = p0y + vel.vy * (deltaTime / 1000);
+      const p1x = p0x + vel.vx * deltaTime;
+      const p1y = p0y + vel.vy * deltaTime;
 
       for (const other of collidables) {
         if (entity === other) continue;
-        const otherCol = world.getComponent(other, "Collider" as ComponentType<TRegistry>) as unknown as ColliderComponent;
+        const otherCol = w.getComponent(other, "Collider")!;
         if (!otherCol.enabled || otherCol.isTrigger) continue;
-        if (!this.shouldCollide(col, otherCol)) continue;
+        if (!this.shouldCollide(col.layer, otherCol.mask, otherCol.layer, col.mask)) continue;
 
-        const otherTrans = world.getComponent(other, "Transform" as ComponentType<TRegistry>) as unknown as TransformComponent;
+        const otherTrans = w.getComponent(other, "Transform")!;
         const ox = (otherTrans.worldX ?? otherTrans.x);
         const oy = (otherTrans.worldY ?? otherTrans.y);
 
-        // Continuous Collision Detection (CCD) logic
-        // We use a linear raycasting approach between current position and next position
         if (otherCol.shape.type === ShapeType.Circle) {
-          const circle = otherCol.shape as CircleShape;
-          // P(t) = P0 + (P1 - P0) * t
-          if (this.rayIntersectsCircle(p0x, p0y, p1x, p1y, ox + (otherCol.offsetX ?? 0), oy + (otherCol.offsetY ?? 0), circle.radius)) {
-             this.notifyCollision(world, entity, other);
+          const radius = otherCol.shape.radius;
+          if (this.rayIntersectsCircle(p0x, p0y, p1x, p1y, ox + (otherCol.offsetX ?? 0), oy + (otherCol.offsetY ?? 0), radius)) {
+             this.notifyCollision(w, entity, other);
           }
         } else if (otherCol.shape.type === ShapeType.Box) {
-          const box = otherCol.shape as BoxShape;
-          // Using Slab Method for ray/box intersection
-          if (this.rayIntersectsBox(p0x, p0y, p1x, p1y, ox + (otherCol.offsetX ?? 0), oy + (otherCol.offsetY ?? 0), box.width, box.height)) {
-            this.notifyCollision(world, entity, other);
+          const { width, height } = otherCol.shape;
+          if (this.rayIntersectsBox(p0x, p0y, p1x, p1y, ox + (otherCol.offsetX ?? 0), oy + (otherCol.offsetY ?? 0), width, height)) {
+            this.notifyCollision(w, entity, other);
           }
         }
       }
     }
   }
 
-  private shouldCollide(a: ColliderComponent, b: ColliderComponent): boolean {
-    return (a.layer & b.mask) !== 0 && (b.layer & a.mask) !== 0;
+  private shouldCollide(layerA: number, maskB: number, layerB: number, maskA: number): boolean {
+    return (layerA & maskB) !== 0 && (layerB & maskA) !== 0;
   }
 
   private rayIntersectsCircle(p0x: number, p0y: number, p1x: number, p1y: number, cx: number, cy: number, radius: number): boolean {
@@ -244,8 +217,8 @@ export class CCDSystem<TRegistry extends ComponentRegistry = CoreComponentRegist
     return tmax >= tmin && tmax >= 0 && tmin <= 1;
   }
 
-  private notifyCollision(world: World<TRegistry>, entityA: Entity, entityB: Entity): void {
-     world.mutateComponent(entityA, "CollisionEvents" as ComponentType<TRegistry>, (comp: any) => {
+  private notifyCollision(world: World<CoreComponentRegistry>, entityA: Entity, entityB: Entity): void {
+     world.mutateComponent(entityA, "CollisionEvents", (comp) => {
         comp.collisions.push({ otherEntity: entityB, normalX: 0, normalY: 0, depth: 0, contactPoints: [] });
      });
   }

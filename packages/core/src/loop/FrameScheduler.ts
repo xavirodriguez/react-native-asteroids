@@ -31,22 +31,28 @@ export interface FrameScheduler {
  */
 export const browserFrameScheduler: FrameScheduler = {
   now: () => {
-    const gt = globalThis as any;
-    return (gt.performance?.now?.() ?? Date.now());
+    const gt = globalThis as Record<string, unknown>;
+    const perf = gt.performance as { now?: () => number } | undefined;
+    if (perf && perf.now) {
+      return perf.now();
+    }
+    return Date.now();
   },
   requestFrame: (callback) => {
-    const gt = globalThis as any;
-    if (gt.requestAnimationFrame) {
-      return gt.requestAnimationFrame(callback);
+    const gt = globalThis as Record<string, unknown>;
+    const raf = gt.requestAnimationFrame as ((cb: (t: number) => void) => number) | undefined;
+    if (raf) {
+      return raf(callback);
     }
     return setTimeout(() => callback(Date.now()), 16);
   },
   cancelFrame: (handle) => {
-    const gt = globalThis as any;
-    if (gt.cancelAnimationFrame) {
-      gt.cancelAnimationFrame(handle as number);
+    const gt = globalThis as Record<string, unknown>;
+    const caf = gt.cancelAnimationFrame as ((h: number) => void) | undefined;
+    if (caf) {
+      caf(handle as number);
     } else {
-      clearTimeout(handle as any);
+      clearTimeout(handle as ReturnType<typeof setTimeout>);
     }
   },
 };

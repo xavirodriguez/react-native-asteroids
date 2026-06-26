@@ -1,4 +1,4 @@
-import { World, Renderer, ComponentRegistry } from "@tiny-aster/core";
+import { World, Renderer, CoreComponentRegistry, ShapeType, Entity } from "@tiny-aster/core";
 
 /**
  * Basic 2D Canvas renderer.
@@ -13,28 +13,75 @@ import { World, Renderer, ComponentRegistry } from "@tiny-aster/core";
  * **Visual State Only**: The renderer only processes visual components and transforms.
  * It does not maintain logical simulation state.
  */
-export class CanvasRenderer<TRegistry extends ComponentRegistry = any> implements Renderer<TRegistry> {
+export class CanvasRenderer<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> implements Renderer<TRegistry, CanvasRenderingContext2D> {
+  private sortedEntities: Entity[] = [];
+
   public render(world: World<TRegistry>, ctx: CanvasRenderingContext2D): void {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    const canvas = ctx.canvas;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const renderables = world.query("Render" as any);
-    for (const entity of renderables) {
-        const render = world.getComponent(entity, "Render" as any) as any;
-        const transform = world.getComponent(entity, "Transform" as any) as any;
+    // Use core components for rendering
+    const w = world as unknown as World<CoreComponentRegistry>;
+    const entities = w.query("Transform", "Render");
 
-        if (!render || !render.visible || !transform) continue;
+    // Maintain a stable sorted list to reduce allocations if count hasn't changed (simplistic optimization)
+    if (this.sortedEntities.length !== entities.length) {
+      this.sortedEntities = [...entities];
+    } else {
+      for (let i = 0; i < entities.length; i++) {
+        this.sortedEntities[i] = entities[i];
+      }
+    }
 
-        ctx.save();
-        ctx.globalAlpha = render.opacity;
-        ctx.translate(transform.x, transform.y);
-        ctx.rotate(transform.rotation + render.rotation);
+    this.sortedEntities.sort((a, b) => {
+      const renderA = w.getComponent(a, "Render")!;
+      const renderB = w.getComponent(b, "Render")!;
+      return (renderA.order || 0) - (renderB.order || 0);
+    });
 
-        if (render.color) {
-            ctx.fillStyle = render.color;
-            ctx.fillRect(-10, -10, 20, 20);
+    for (const entity of this.sortedEntities) {
+      const render = w.getComponent(entity, "Render")!;
+      const transform = w.getComponent(entity, "Transform")!;
+
+      if (!render.visible || render.opacity === 0) continue;
+
+      ctx.save();
+
+      const x = transform.worldX ?? transform.x;
+      const y = transform.worldY ?? transform.y;
+      const rotation = (transform.worldRotation ?? transform.rotation ?? 0) + (render.rotation ?? 0);
+      const scaleX = transform.worldScaleX ?? transform.scaleX ?? 1;
+      const scaleY = transform.worldScaleY ?? transform.scaleY ?? 1;
+
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.scale(scaleX, scaleY);
+      ctx.globalAlpha = render.opacity;
+
+      if (render.color) {
+        ctx.fillStyle = render.color;
+      }
+
+      const collider = w.getComponent(entity, "Collider");
+      if (collider && collider.enabled) {
+        const shape = collider.shape;
+        const offsetX = collider.offsetX ?? 0;
+        const offsetY = collider.offsetY ?? 0;
+
+        if (shape.type === ShapeType.Circle) {
+          ctx.beginPath();
+          ctx.arc(offsetX, offsetY, shape.radius, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (shape.type === ShapeType.Box) {
+          ctx.fillRect(offsetX - shape.width / 2, offsetY - shape.height / 2, shape.width, shape.height);
         }
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
-        ctx.restore();
+      ctx.restore();
     }
   }
 }

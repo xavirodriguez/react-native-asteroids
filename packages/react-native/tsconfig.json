@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
+    "jsx": "react-jsx",
     "composite": false,
     "incremental": false,
     "skipLibCheck": true,
