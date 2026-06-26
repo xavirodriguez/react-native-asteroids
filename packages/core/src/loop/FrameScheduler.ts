@@ -31,20 +31,26 @@ export interface FrameScheduler {
  */
 export const browserFrameScheduler: FrameScheduler = {
   now: () => {
-    if (typeof performance !== "undefined" && performance.now) {
-      return performance.now();
+    const gt = globalThis as Record<string, unknown>;
+    const perf = gt.performance as { now?: () => number } | undefined;
+    if (perf && perf.now) {
+      return perf.now();
     }
     return Date.now();
   },
   requestFrame: (callback) => {
-    if (typeof requestAnimationFrame !== "undefined") {
-      return requestAnimationFrame(callback);
+    const gt = globalThis as Record<string, unknown>;
+    const raf = gt.requestAnimationFrame as ((cb: (t: number) => void) => number) | undefined;
+    if (raf) {
+      return raf(callback);
     }
     return setTimeout(() => callback(Date.now()), 16);
   },
   cancelFrame: (handle) => {
-    if (typeof cancelAnimationFrame !== "undefined") {
-      cancelAnimationFrame(handle as number);
+    const gt = globalThis as Record<string, unknown>;
+    const caf = gt.cancelAnimationFrame as ((h: number) => void) | undefined;
+    if (caf) {
+      caf(handle as number);
     } else {
       clearTimeout(handle as ReturnType<typeof setTimeout>);
     }

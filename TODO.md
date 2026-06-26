@@ -14,14 +14,14 @@
 #### FASE 2: Primera Cabeza de Playa (Migración Vertical del Primer Juego)
 - [x] Tarea 2.1: Crear el paquete `packages/react-native` y extraer los hooks esenciales (`useGameLoop`, `useWorld`) consumiendo solo `@tiny-aster/core`.
 - [ ] Tarea 2.2: Desconectar el juego más simple (ej: PongGame) de `src/engine` y reescribir sus sistemas usando el nuevo `@tiny-aster/core`.
-- [ ] Tarea 2.3: Extraer el primer adaptador de renderizado a su propio paquete (ej: `packages/renderer-canvas` o similar).
-- [ ] Tarea 2.4: Ejecutar test de estrés temprano en el juego migrado para asegurar que el ECS genérico no degrada los FPS respecto al Benchmark Cero.
+- [x] Tarea 2.3: Extraer el primer adaptador de renderizado a su propio paquete (ej: `packages/renderer-canvas` o similar).
+- [x] Tarea 2.4: Ejecutar test de estrés temprano en el juego migrado para asegurar que el ECS genérico no degrada los FPS respecto al Benchmark Cero.
 
 #### FASE 3: Migración en Masa y Desacoplamiento
-- [ ] Tarea 3.1: Portar al core los sistemas complejos rezagados: colisiones circulares/poligonales deterministas y sistema de límites (`Boundary`).
+- [x] Tarea 3.1: Portar al core los sistemas complejos rezagados: colisiones circulares/poligonales deterministas y sistema de límites (`Boundary`).
 - [ ] Tarea 3.2: Migrar por completo `AsteroidsGame` al nuevo `@tiny-aster/core`.
 - [ ] Tarea 3.3: Extraer `packages/renderer-skia` de forma limpia y aislada.
-- [ ] Tarea 3.4: Extraer `packages/network-colyseus` para la lógica multiplayer.
+- [x] Tarea 3.4: Extraer `packages/network-colyseus` para la lógica multiplayer.
 - [ ] Tarea 3.5: Migrar `useMultiplayer` y los providers globales de la app para consumir los nuevos adaptadores.
 
 #### FASE 4: El Apagón del Legacy

@@ -242,7 +242,7 @@ export class World<
    * {@link WorldCommandBuffer} is recommended to ensure consistency across all systems.
    */
   addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K] & { type: K }): void {
-    const type = (component as any).type as string;
+    const type = component.type as string;
     if (!this.componentMaps.has(type)) {
       this.componentMaps.set(type, new Map());
       this.componentIndex.set(type, new Set());
