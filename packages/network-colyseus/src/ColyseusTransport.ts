@@ -9,6 +9,12 @@ export class ColyseusTransport implements NetworkTransport {
   private room: Room | null = null;
   private messageHandlers = new Map<string, Set<(message: unknown) => void>>();
 
+  /**
+   * Establishes a connection to a remote server.
+   * @param url - The server URL.
+   * @param roomName - Optional room name (defaults to "game").
+   * @param options - Optional connection options.
+   */
   public async connect(url: string, roomName: string = "game", options: Record<string, unknown> = {}): Promise<void> {
     this.client = new Client(url);
     this.room = await this.client.joinOrCreate(roomName, options);
