@@ -77,7 +77,6 @@ export default tseslint.config(
           "expo-audio",
           "react-native",
           "../../../../assets/ship.png",
-          "../engine/debug/DebugManager"
         ]
       }],
       "no-restricted-imports": ["warn", {
