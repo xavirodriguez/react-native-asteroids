@@ -15,14 +15,23 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
     // Cast to core world to access standard components safely in generics context
     const w = world as unknown as World<CoreComponentRegistry>;
 
-    // Handle Camera
+    // Handle Camera - Optimized lookup to avoid lambda allocations and extra arrays
     const cameras = w.query("Camera2D");
-    const mainCameraEntity = Array.from(cameras).find(c => w.getComponent(c, "Camera2D")?.isMain);
+    let mainCameraEntity: number | undefined;
+
+    for (let i = 0; i < cameras.length; i++) {
+      const cam = w.getComponent(cameras[i], "Camera2D");
+      if (cam?.isMain) {
+        mainCameraEntity = cameras[i];
+        break;
+      }
+    }
 
     canvas.save();
 
     if (mainCameraEntity !== undefined) {
       const cam = w.getComponent(mainCameraEntity, "Camera2D")!;
+      // Center camera and apply zoom
       canvas.translate(-cam.x, -cam.y);
       canvas.scale(cam.zoom, cam.zoom);
     }
@@ -30,13 +39,16 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
     const entities = w.query("Transform", "Render");
 
     // Sort by order to handle layering
-    const sortedEntities = Array.from(entities).sort((a, b) => {
+    // Note: In a high-performance scenario, sorting should be handled by a persistent
+    // render list updated only when 'order' components change or entities are added/removed.
+    const sortedEntities = [...entities].sort((a, b) => {
       const renderA = w.getComponent(a, "Render")!;
       const renderB = w.getComponent(b, "Render")!;
       return (renderA.order || 0) - (renderB.order || 0);
     });
 
-    for (const entity of sortedEntities) {
+    for (let i = 0; i < sortedEntities.length; i++) {
+      const entity = sortedEntities[i];
       const transform = w.getComponent(entity, "Transform")!;
       const render = w.getComponent(entity, "Render")!;
 
