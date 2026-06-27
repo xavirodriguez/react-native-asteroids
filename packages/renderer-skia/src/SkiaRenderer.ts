@@ -14,6 +14,19 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
   public render(world: World<TRegistry>, canvas: SkCanvas, _interpolation?: number): void {
     // Cast to core world to access standard components safely in generics context
     const w = world as unknown as World<CoreComponentRegistry>;
+
+    // Handle Camera
+    const cameras = w.query("Camera2D");
+    const mainCameraEntity = Array.from(cameras).find(c => w.getComponent(c, "Camera2D")?.isMain);
+
+    canvas.save();
+
+    if (mainCameraEntity !== undefined) {
+      const cam = w.getComponent(mainCameraEntity, "Camera2D")!;
+      canvas.translate(-cam.x, -cam.y);
+      canvas.scale(cam.zoom, cam.zoom);
+    }
+
     const entities = w.query("Transform", "Render");
 
     // Sort by order to handle layering
@@ -31,13 +44,17 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
 
       canvas.save();
 
-      const x = transform.worldX ?? transform.x;
-      const y = transform.worldY ?? transform.y;
-      const rotation = (transform.worldRotation ?? transform.rotation ?? 0) + (render.rotation ?? 0);
-      const scaleX = transform.worldScaleX ?? transform.scaleX ?? 1;
-      const scaleY = transform.worldScaleY ?? transform.scaleY ?? 1;
+      const visualOffset = w.getComponent(entity, "VisualOffset");
+      const offsetX = visualOffset?.offsetX ?? 0;
+      const offsetY = visualOffset?.offsetY ?? 0;
 
-      canvas.translate(x, y);
+      const x = (transform.worldX ?? transform.x) ?? 0;
+      const y = (transform.worldY ?? transform.y) ?? 0;
+      const rotation = (transform.worldRotation ?? transform.rotation ?? 0) + (render.rotation ?? 0);
+      const scaleX = (transform.worldScaleX ?? transform.scaleX ?? 1);
+      const scaleY = (transform.worldScaleY ?? transform.scaleY ?? 1);
+
+      canvas.translate(x + offsetX, y + offsetY);
       canvas.rotate((rotation * 180) / Math.PI, 0, 0);
       canvas.scale(scaleX, scaleY);
 
@@ -47,14 +64,14 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
       const collider = w.getComponent(entity, "Collider");
       if (collider && collider.enabled) {
         const shape = collider.shape;
-        const offsetX = collider.offsetX ?? 0;
-        const offsetY = collider.offsetY ?? 0;
+        const colOffsetX = collider.offsetX ?? 0;
+        const colOffsetY = collider.offsetY ?? 0;
 
         if (shape.type === ShapeType.Circle) {
-          canvas.drawCircle(offsetX, offsetY, shape.radius, this.paint);
+          canvas.drawCircle(colOffsetX, colOffsetY, shape.radius, this.paint);
         } else if (shape.type === ShapeType.Box) {
           canvas.drawRect(
-            Skia.XYWHRect(offsetX - shape.width / 2, offsetY - shape.height / 2, shape.width, shape.height),
+            Skia.XYWHRect(colOffsetX - shape.width / 2, colOffsetY - shape.height / 2, shape.width, shape.height),
             this.paint
           );
         }
@@ -64,5 +81,7 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
 
       canvas.restore();
     }
+
+    canvas.restore();
   }
 }
