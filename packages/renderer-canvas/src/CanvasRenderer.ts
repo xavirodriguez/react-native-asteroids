@@ -1,4 +1,4 @@
-import { World, Renderer, CoreComponentRegistry, ShapeType, Entity } from "@tiny-aster/core";
+import { World, Renderer, CoreComponentRegistry, ShapeType, Entity, ShapeDrawer } from "@tiny-aster/core";
 
 /**
  * Basic 2D Canvas renderer.
@@ -16,12 +16,17 @@ import { World, Renderer, CoreComponentRegistry, ShapeType, Entity } from "@tiny
 export class CanvasRenderer<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> implements Renderer<TRegistry, CanvasRenderingContext2D> {
   private sortedEntities: Entity[] = [];
 
+  constructor(
+    private readonly shapeDrawers: Map<string, ShapeDrawer<CanvasRenderingContext2D, TRegistry>>
+  ) {}
+
   public render(world: World<TRegistry>, ctx: CanvasRenderingContext2D): void {
     const canvas = ctx.canvas;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Use core components for rendering
-    const w = world as unknown as World<CoreComponentRegistry>;
+    // We cast to a world that definitely has core components to avoid 'as any'
+    const w = world as World<CoreComponentRegistry>;
     const entities = w.query("Transform", "Render");
 
     // Maintain a stable sorted list to reduce allocations if count hasn't changed (simplistic optimization)
@@ -64,16 +69,11 @@ export class CanvasRenderer<TRegistry extends CoreComponentRegistry = CoreCompon
 
       const collider = w.getComponent(entity, "Collider");
       if (collider && collider.enabled) {
-        const shape = collider.shape;
-        const offsetX = collider.offsetX ?? 0;
-        const offsetY = collider.offsetY ?? 0;
-
-        if (shape.type === ShapeType.Circle) {
-          ctx.beginPath();
-          ctx.arc(offsetX, offsetY, shape.radius, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (shape.type === ShapeType.Box) {
-          ctx.fillRect(offsetX - shape.width / 2, offsetY - shape.height / 2, shape.width, shape.height);
+        const shapeTypeStr = ShapeType[collider.shape.type];
+        const drawer = this.shapeDrawers.get(shapeTypeStr);
+        if (drawer) {
+          // Draw using the original world and entity to maintain generic safety
+          drawer.draw(ctx, world, entity);
         }
       } else {
         ctx.beginPath();
