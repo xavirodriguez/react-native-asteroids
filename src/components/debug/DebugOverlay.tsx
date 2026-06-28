@@ -25,8 +25,23 @@ type TabType = 'Frame' | 'Systems' | 'Entities' | 'Events' | 'Colliders' | 'Repl
  * DebugOverlay component that renders a floating panel with real-time engine metrics.
  * Designed to be tree-shakeable and only active in development environments.
  */
+interface GameWithDebug {
+  debugManager?: {
+    getFrameStats(): FrameStats;
+    getSystemTimings(): Record<string, number>;
+    getEntitySnapshot(): Array<{ id: number; components: Record<string, unknown> }>;
+    getEventLog(): EventLogEntry[];
+    getColliderShapes(): ColliderShapeInfo[];
+    clearEventLog(): void;
+  };
+  replayRecorder?: {
+    stopRecording(): unknown;
+    startRecording(): void;
+  };
+}
+
 export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
-  const debugManager = (game as any)?.debugManager;
+  const debugManager = (game as unknown as GameWithDebug)?.debugManager;
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('Frame');
   const [_lastUpdate, setLastUpdate] = useState(0);
@@ -179,7 +194,11 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
   const exportReplay = () => {
     if (!game) return;
     try {
-      const recorder = (game as unknown as { replayRecorder: import('../../engine/debug/ReplayRecorder').ReplayRecorder }).replayRecorder;
+      const recorder = (game as unknown as GameWithDebug).replayRecorder;
+      if (!recorder) {
+          Alert.alert('Not Supported', 'Replay recorder is not available in this game instance.');
+          return;
+      }
       const data = recorder.stopRecording();
       const json = JSON.stringify(data, null, 2);
 
