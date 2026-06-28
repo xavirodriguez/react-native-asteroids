@@ -1,4 +1,4 @@
-import { World, Renderer, CoreComponentRegistry, ShapeType } from "@tiny-aster/core";
+import { World, Renderer, CoreComponentRegistry, ShapeType, ShapeDrawer } from "@tiny-aster/core";
 import { SkCanvas, SkPaint, Skia } from "@shopify/react-native-skia";
 
 /**
@@ -7,13 +7,15 @@ import { SkCanvas, SkPaint, Skia } from "@shopify/react-native-skia";
 export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> implements Renderer<TRegistry, SkCanvas> {
   private paint: SkPaint;
 
-  constructor() {
+  constructor(
+    private readonly shapeDrawers: Map<string, ShapeDrawer<SkCanvas, TRegistry>>
+  ) {
     this.paint = Skia.Paint();
   }
 
   public render(world: World<TRegistry>, canvas: SkCanvas, _interpolation?: number): void {
     // Cast to core world to access standard components safely in generics context
-    const w = world as unknown as World<CoreComponentRegistry>;
+    const w = world as World<CoreComponentRegistry>;
 
     // Handle Camera - Optimized lookup to avoid lambda allocations and extra arrays
     const cameras = w.query("Camera2D");
@@ -75,17 +77,10 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
 
       const collider = w.getComponent(entity, "Collider");
       if (collider && collider.enabled) {
-        const shape = collider.shape;
-        const colOffsetX = collider.offsetX ?? 0;
-        const colOffsetY = collider.offsetY ?? 0;
-
-        if (shape.type === ShapeType.Circle) {
-          canvas.drawCircle(colOffsetX, colOffsetY, shape.radius, this.paint);
-        } else if (shape.type === ShapeType.Box) {
-          canvas.drawRect(
-            Skia.XYWHRect(colOffsetX - shape.width / 2, colOffsetY - shape.height / 2, shape.width, shape.height),
-            this.paint
-          );
+        const shapeTypeStr = ShapeType[collider.shape.type];
+        const drawer = this.shapeDrawers.get(shapeTypeStr);
+        if (drawer) {
+          drawer.draw(canvas, world, entity);
         }
       } else {
         canvas.drawCircle(0, 0, 5, this.paint);
