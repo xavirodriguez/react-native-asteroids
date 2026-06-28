@@ -1,6 +1,7 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
 import { ComponentRegistry } from "../ecs/Component";
+import { InputSystem } from "./InputSystem";
 
 /**
  * System that unifies input from various sources (keyboard, gamepad, touch).
@@ -15,7 +16,7 @@ import { ComponentRegistry } from "../ecs/Component";
  * at the start of the simulation update and may not be perfectly
  * synchronized with the exact moment of physical input.
  */
-export class UnifiedInputSystem extends System<ComponentRegistry> {
+export class UnifiedInputSystem extends System<ComponentRegistry> implements InputSystem {
   private overrides: Record<string, boolean> = {};
 
   public bind(_action: string, _keys: string[]): void {}

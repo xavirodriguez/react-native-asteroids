@@ -1,6 +1,6 @@
 import { World } from "../ecs/World";
 import { EventBus } from "../events/EventBus";
-import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
+import { InputSystem } from "../input/InputSystem";
 import { GameLoop } from "../loop/GameLoop";
 
 /**
@@ -21,5 +21,5 @@ export interface IGame<TState = unknown> {
   restart(seed?: number): Promise<void>;
   subscribe(callback: (state: TState) => void): () => void;
   isPausedState(): boolean;
-  getInputSystem(): UnifiedInputSystem;
+  getInputSystem(): InputSystem;
 }
