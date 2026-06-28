@@ -149,6 +149,13 @@ export default tseslint.config(
       ],
     },
   },
+  // Añadir a tu configuración:
+  {
+    files: ["packages/core/src/tests/**/*.ts", "packages/core/tests/**/*.ts"],
+    rules: {
+      "no-console": "off",
+    },
+  },
   {
     files: ["**/*.config.mjs", "eslint.config.mjs", "postcss.config.mjs"],
     languageOptions: {
