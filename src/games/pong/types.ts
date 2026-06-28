@@ -1,7 +1,11 @@
-import { Component } from "@tiny-aster/core";
-import { BallComponent } from "@/src/games/pong/components/BallComponent";
+import { Component, CoreComponentRegistry } from "@tiny-aster/core";
 
-export { BallComponent };
+export interface BallComponent extends Component {
+  type: "Ball";
+  spinFactor: number;
+  spinDecay: number;
+  visibilityTimer?: number;
+}
 
 export interface PaddleComponent extends Component {
   type: "Paddle";
@@ -10,7 +14,7 @@ export interface PaddleComponent extends Component {
   lastVelocityY: number;
 }
 
-export interface PongState {
+export interface PongState extends Component {
   type: "PongState";
   scoreP1: number;
   scoreP2: number;
@@ -38,6 +42,12 @@ export interface PongRoomState {
   p1Connected: boolean;
   p2Connected: boolean;
   seed: number;
+}
+
+export interface PongComponentRegistry extends CoreComponentRegistry {
+  Ball: BallComponent;
+  Paddle: PaddleComponent;
+  PongState: PongState;
 }
 
 export const PONG_CONFIG = {

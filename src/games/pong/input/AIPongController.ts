@@ -1,77 +1,70 @@
 import { World } from "@tiny-aster/core";
 import { TransformComponent } from "@tiny-aster/core";
-import { PongInput } from "../types";
-
-export type AIDifficulty = "easy" | "medium" | "hard";
+import { type PongInput } from "../types";
 
 /**
- * AI Agent for Pong.
- * Follows the ball vertically with configurable difficulty.
- * Refactored to avoid legacy InputController dependency.
+ * IA extremadamente básica para Pong.
+ * Intenta seguir la posición Y de la bola con un retraso y error aleatorio.
  */
 export class AIPongController {
-  private difficulty: AIDifficulty;
-  private lastUpdate = 0;
-  private reactionDelay = 0; // ms
-  private errorMargin = 0;   // pixels
-  private lastInputs: Partial<PongInput> = { p2Up: false, p2Down: false };
+  private difficulty: "easy" | "medium" | "hard";
+  private lastUpdateTime = 0;
+  private targetY = 300;
+  private reactionDelay: number;
+  private errorMargin: number;
 
-  constructor(difficulty: AIDifficulty = "medium") {
+  constructor(difficulty: "easy" | "medium" | "hard" = "medium") {
     this.difficulty = difficulty;
-    this.applyDifficultySettings();
-  }
 
-  private applyDifficultySettings() {
-    switch (this.difficulty) {
+    switch (difficulty) {
       case "easy":
-        this.reactionDelay = 200;
-        this.errorMargin = 40;
+        this.reactionDelay = 300;
+        this.errorMargin = 50;
         break;
       case "medium":
-        this.reactionDelay = 100;
-        this.errorMargin = 15;
+        this.reactionDelay = 150;
+        this.errorMargin = 20;
         break;
       case "hard":
-        this.reactionDelay = 0;
+        this.reactionDelay = 50;
         this.errorMargin = 5;
         break;
     }
   }
 
-  setup(): void {}
-  cleanup(): void {}
-
-  /**
-   * AI perceives the world and decides inputs.
-   * Note: In a real game loop, we'd pass the world or a snapshot.
-   * For this ECS, we'll assume the update method will be called by the game.
-   */
   public update(world: World, currentTime: number): Partial<PongInput> {
-    if (currentTime - this.lastUpdate < this.reactionDelay) return this.lastInputs;
-    this.lastUpdate = currentTime;
+    const input: Partial<PongInput> = {
+      p2Up: false,
+      p2Down: false
+    };
 
-    const ball = world.query("Ball", "Transform", "Velocity")[0];
-    const paddle = world.query("Paddle", "Transform", "Tag").find(e => {
-        const tags = world.getComponent<import("../../../engine/types/EngineTypes").TagComponent>(e, "Tag")!.tags;
-        return tags.includes("right"); // AI usually controls P2
-    });
-
-    if (!ball || !paddle) return this.lastInputs;
-
-    const ballPos = world.getComponent<TransformComponent>(ball, "Transform")!;
-    const paddlePos = world.getComponent<TransformComponent>(paddle, "Transform")!;
-
-    const newState: Partial<PongInput> = { p2Up: false, p2Down: false };
-
-    const targetY = ballPos.y;
-    const diff = targetY - paddlePos.y;
-
-    if (Math.abs(diff) > this.errorMargin) {
-      if (diff < 0) newState.p2Up = true;
-      else newState.p2Down = true;
+    // Solo actualizar el objetivo cada X ms para simular tiempo de reacción
+    if (currentTime - this.lastUpdateTime > this.reactionDelay) {
+      const balls = world.query("Ball" as any, "Transform" as any);
+      if (balls.length > 0) {
+        const ballPos = world.getComponent(balls[0], "Transform" as any) as TransformComponent;
+        this.targetY = ballPos.y + (world.gameplayRandom.next() - 0.5) * this.errorMargin * 2;
+      }
+      this.lastUpdateTime = currentTime;
     }
 
-    this.lastInputs = newState;
-    return newState;
+    const paddles = world.query("Paddle" as any, "Tag" as any, "Transform" as any);
+    const rightPaddle = paddles.find(p => {
+        const tags = world.getComponent(p, "Tag" as any) as any;
+        return tags.tags.includes("right");
+    });
+
+    if (rightPaddle !== undefined) {
+      const paddlePos = world.getComponent(rightPaddle, "Transform" as any) as TransformComponent;
+      const threshold = 10;
+
+      if (paddlePos.y < this.targetY - threshold) {
+        input.p2Down = true;
+      } else if (paddlePos.y > this.targetY + threshold) {
+        input.p2Up = true;
+      }
+    }
+
+    return input;
   }
 }

@@ -1,36 +1,38 @@
-import { ShapeDrawer } from "@tiny-aster/core";
+import { World, TransformComponent } from "@tiny-aster/core";
 import { BallComponent } from "../types";
 
 /**
- * Drawer especializado para la pelota de Pong que incluye efectos de rotación (spin).
- *
- * @responsibility Renderizar la pelota y su indicador visual de efecto físico.
- * @queries BallComponent - Para obtener el factor de rotación actual.
+ * Visuales personalizados para la bola de Pong.
+ * Implementa una rotación visual basada en el spin factor.
  */
-export const drawPongBall: ShapeDrawer<CanvasRenderingContext2D> = (ctx, entity, _pos, _elapsedTime, render, world) => {
-  const { size, color } = render;
-  const ballComp = world.getComponent<BallComponent>(entity, "Ball");
+export const drawPongBall = (
+  ctx: CanvasRenderingContext2D,
+  entity: number,
+  _pos: TransformComponent,
+  _elapsedTime: number,
+  render: any,
+  world: World
+): void => {
+  const ballComp = world.getComponent(entity, "Ball" as any) as BallComponent;
+  const rotation = ballComp ? ballComp.spinFactor * 5 : 0;
 
-  if (ballComp && ballComp.visibilityTimer !== undefined && ballComp.visibilityTimer > 0) {
-    return;
-  }
+  ctx.save();
+  ctx.rotate(rotation);
 
-  // Draw core ball
-  ctx.fillStyle = color;
+  // Cuerpo de la bola
+  ctx.fillStyle = render.color || "white";
+  const size = render.size || 10;
+
+  // Dibujar un cuadrado rotado para dar sensación de giro
+  ctx.fillRect(-size / 2, -size / 2, size, size);
+
+  // Detalle visual (línea central)
+  ctx.strokeStyle = "rgba(0,0,0,0.5)";
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(0, 0, size, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.moveTo(-size / 2, 0);
+  ctx.lineTo(size / 2, 0);
+  ctx.stroke();
 
-  // Draw spin arc
-  if (ballComp && ballComp.spinFactor !== 0) {
-    ctx.save();
-    ctx.strokeStyle = ballComp.spinFactor > 0 ? "#FF8800" : "#0088FF";
-    ctx.lineWidth = Math.abs(ballComp.spinFactor) * 3;
-    ctx.beginPath();
-    // Arc indicating rotation direction
-    const startAngle = ballComp.spinFactor > 0 ? 0 : Math.PI;
-    ctx.arc(0, 0, size + 4, startAngle, startAngle + Math.PI * Math.abs(ballComp.spinFactor));
-    ctx.stroke();
-    ctx.restore();
-  }
+  ctx.restore();
 };

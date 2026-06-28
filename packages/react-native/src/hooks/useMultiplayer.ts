@@ -23,7 +23,7 @@ import { BinaryCompression } from "@tiny-aster/core";
 export function useMultiplayer(roomName: string, playerName: string, active: boolean) {
   const [room, setRoom] = useState<Room | null>(null);
   const [connected, setConnected] = useState(false);
-  const [serverState, setServerState] = useState<unknown>(null);
+  const [serverState, setServerState] = useState<any>(null);
   const cancelledRef = useRef(false);
 
   const localTickRef = useRef(0);
@@ -48,11 +48,13 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
           return;
         }
 
+        if (!joinedRoom) return;
+
         setRoom(joinedRoom);
         setConnected(true);
         setServerState(joinedRoom.state);
 
-        joinedRoom.onStateChange((state) => {
+        joinedRoom.onStateChange((state: any) => {
           setServerState({ ...state }); // Spread ensures React re-renders even if object reference is reused
           if (state.serverTick) {
             serverTickRef.current = state.serverTick;
@@ -148,7 +150,7 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
             lastAckedVersion: lastAckedVersionRef.current
         });
 
-        joinedRoom.onLeave((_code) => {
+        joinedRoom.onLeave((_code: any) => {
           setConnected(false);
           setRoom(null);
         });

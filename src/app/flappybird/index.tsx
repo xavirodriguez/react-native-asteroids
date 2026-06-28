@@ -10,7 +10,7 @@ import { VirtualJoystick } from "../../components/controls/VirtualJoystick";
 import { ShootButton } from "../../components/ShootButton";
 import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { useFlappyBirdGame } from "@/hooks/useFlappyBirdGame";
-import { useMultiplayer } from "@/multiplayer/useMultiplayer";
+import { useMultiplayer } from "@tiny-aster/react-native";
 import { SeedWidget } from "@/components/SeedWidget";
 import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
 import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";

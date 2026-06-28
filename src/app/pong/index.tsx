@@ -6,7 +6,7 @@ import { CanvasRenderer } from "@/components/CanvasRenderer";
 import { PongControls } from "@/components/PongControls";
 import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { usePongGame } from "@/hooks/usePongGame";
-import { useMultiplayer } from "@/multiplayer/useMultiplayer";
+import { useMultiplayer } from "@tiny-aster/react-native";
 import { SeedWidget } from "@/components/SeedWidget";
 import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
 import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";

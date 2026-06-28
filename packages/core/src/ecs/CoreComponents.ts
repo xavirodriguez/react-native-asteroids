@@ -228,6 +228,7 @@ export interface CoreComponentRegistry extends ComponentRegistry {
   CollisionEvents: CollisionEventsComponent;
   Collider: ColliderComponent;
   Trail: TrailComponent;
+  Tag: import("./TagComponent").TagComponent;
 }
 
 export { Entity };

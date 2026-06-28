@@ -7,7 +7,7 @@ import { ComboDisplay } from "@/components/ComboDisplay";
 import { GameUI } from "@/components/GameUI";
 import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { useAsteroidsGame } from "@/hooks/useAsteroidsGame";
-import { useMultiplayer } from "@/multiplayer/useMultiplayer";
+import { useMultiplayer } from "@tiny-aster/react-native";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useCallback } from "react";
 import { VirtualJoystick } from "../../components/controls/VirtualJoystick";

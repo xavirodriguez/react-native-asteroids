@@ -1,5 +1,6 @@
-import { World, BlueprintRegistryMap } from "../ecs/World";
-import { ComponentRegistry } from "../ecs/Component";
+import { World, ComponentRegistry, BlueprintRegistryMap } from "../ecs/World";
+import { Component } from "../ecs/Component";
+import { Entity } from "../ecs/Entity";
 import { EventRegistry, EventBus } from "../events/EventBus";
 import { BlueprintRegistry } from "../ecs/BlueprintRegistry";
 import { IGame } from "./IGame";
@@ -202,4 +203,30 @@ export abstract class BaseGame<
    * Returns whether the game has ended.
    */
   public abstract isGameOver(): boolean;
+
+  /**
+   * Helper to handle deferred or immediate entity creation and component attachment.
+   */
+  protected createBaseEntity(deferred?: boolean): { entity: Entity, add: (comp: Component) => void } {
+    const isUpdating = this.world.isUpdating;
+    const isDeferred = !!(deferred || isUpdating);
+    const commands = this.world.getCommandBuffer();
+
+    if (isDeferred) {
+        const entity = (this.world as any).reserveEntityId();
+        (commands as any).createEntity(entity);
+        return {
+            entity,
+            add: (comp: Component) => {
+                (commands as any).addComponent(entity, comp as any);
+            }
+        };
+    }
+
+    const entity = (this.world as any).createEntity();
+    return {
+        entity,
+        add: (comp: Component) => (this.world as any).addComponent(entity, comp as any)
+    };
+  }
 }

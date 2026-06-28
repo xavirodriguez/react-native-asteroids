@@ -1,9 +1,8 @@
-import { System } from "@tiny-aster/core";
 import { World } from "@tiny-aster/core";
+import { System } from "@tiny-aster/core";
 import { VelocityComponent, TagComponent, InputStateComponent } from "@tiny-aster/core";
-import { type PongInput } from "../types";
+import { type PongInput, type PongComponentRegistry } from "../types";
 import { PongConfig, DEFAULT_PONG_CONFIG } from "../types/PongConfigSchema";
-import { InputUtils } from "@tiny-aster/core";
 import { AIPongController } from "../input/AIPongController";
 import { NetworkController } from "../input/NetworkController";
 
@@ -11,7 +10,7 @@ import { NetworkController } from "../input/NetworkController";
  * System that translates aggregated input into paddle movement.
  * Includes AI support for the right paddle if configured.
  */
-export class PongInputSystem extends System {
+export class PongInputSystem extends System<PongComponentRegistry> {
   private aiController?: AIPongController;
   private networkController?: NetworkController;
   private config?: PongConfig;
@@ -27,14 +26,14 @@ export class PongInputSystem extends System {
   public currentTick = 0;
   private currentTime = 0;
 
-  public update(world: World, deltaTime: number): void {
+  public update(world: World<PongComponentRegistry>, deltaTime: number): void {
     if (!this.config) {
         this.config = world.getResource<PongConfig>("GameConfig") || DEFAULT_PONG_CONFIG;
     }
     this.currentTick++;
     this.currentTime += deltaTime;
 
-    const inputState = world.getSingleton<InputStateComponent>("InputState");
+    const inputState = world.getSingleton("InputState");
     const paddles = world.query("Paddle", "Velocity", "Tag");
 
     let aiInputs: Partial<PongInput> | undefined;
@@ -43,14 +42,14 @@ export class PongInputSystem extends System {
     }
 
     paddles.forEach(entity => {
-      const tags = world.getComponent<TagComponent>(entity, "Tag")!;
+      const tags = world.getComponent(entity, "Tag")!;
 
       let moveDir = 0;
 
       if (tags.tags.includes("left")) {
         if (inputState) {
-          if (InputUtils.isPressed(inputState, "p1Up")) moveDir -= 1;
-          if (InputUtils.isPressed(inputState, "p1Down")) moveDir += 1;
+          if (inputState.buttons["p1Up"]) moveDir -= 1;
+          if (inputState.buttons["p1Down"]) moveDir += 1;
         }
       } else if (tags.tags.includes("right")) {
         if (this.networkController) {
@@ -63,13 +62,13 @@ export class PongInputSystem extends System {
           if (aiInputs.p2Up) moveDir -= 1;
           if (aiInputs.p2Down) moveDir += 1;
         } else if (inputState) {
-          if (InputUtils.isPressed(inputState, "p2Up")) moveDir -= 1;
-          if (InputUtils.isPressed(inputState, "p2Down")) moveDir += 1;
+          if (inputState.buttons["p2Up"]) moveDir -= 1;
+          if (inputState.buttons["p2Down"]) moveDir += 1;
         }
       }
 
-      world.mutateComponent<VelocityComponent>(entity, "Velocity", vel => {
-        vel.dy = moveDir * (this.config?.PADDLE_SPEED ?? DEFAULT_PONG_CONFIG.PADDLE_SPEED);
+      world.mutateComponent(entity, "Velocity", (vel: VelocityComponent) => {
+        vel.vy = moveDir * (this.config?.PADDLE_SPEED ?? DEFAULT_PONG_CONFIG.PADDLE_SPEED);
       });
     });
   }
