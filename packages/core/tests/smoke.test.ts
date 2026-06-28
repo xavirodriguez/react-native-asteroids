@@ -1,4 +1,4 @@
-import { World, System, Component, ComponentRegistry } from "../src";
+import { World, System, ComponentRegistry } from "../src";
 
 interface SmokeRegistry extends ComponentRegistry {
   Position: { type: "Position"; x: number; y: number };

@@ -1,8 +1,7 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
-import { GameStateComponent, ShipComponent, BulletComponent } from "../../src/games/asteroids/types/AsteroidTypes";
-import { World, TransformComponent, VelocityComponent, HealthComponent, RenderComponent, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot } from "@tiny-aster/core";
+import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot } from "@tiny-aster/core";
 import { AsteroidsGame } from "../../src/games/asteroids/AsteroidsGame";
 import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
 import { leaderboardStore } from "./DailyLeaderboardStore";

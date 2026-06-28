@@ -1,7 +1,6 @@
 import { World, ComponentType } from "../ecs/World";
 import { System } from "../ecs/System";
 import { ComponentRegistry } from "../ecs/Component";
-import { Entity } from "../ecs/Entity";
 
 export class ReplicationSystem<TRegistry extends ComponentRegistry = ComponentRegistry> extends System<TRegistry> {
     private inputQueue: any[] = [];
