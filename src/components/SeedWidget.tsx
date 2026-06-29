@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import React, { useState } from "react";
+import { StyleSheet, View, TextInput, TouchableOpacity, Text, ViewStyle } from "react-native";
 
 interface SeedWidgetProps {
   seed: number;
@@ -8,28 +8,27 @@ interface SeedWidgetProps {
 }
 
 export const SeedWidget: React.FC<SeedWidgetProps> = ({ seed, onSeedEnter, style }) => {
-  const [inputValue, setInputValue] = useState(seed.toString());
+  const [value, setValue] = useState(seed.toString());
 
   const handleApply = () => {
-    const newSeed = parseInt(inputValue, 10);
-    if (!isNaN(newSeed)) {
-      onSeedEnter(newSeed);
+    const num = parseInt(value, 10);
+    if (!isNaN(num)) {
+      onSeedEnter(num);
     }
   };
 
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.label}>Semilla:</Text>
       <TextInput
         style={styles.input}
-        value={inputValue}
-        onChangeText={setInputValue}
-        keyboardType="numeric"
-        placeholder="0"
+        value={value}
+        onChangeText={setValue}
+        placeholder="SEED"
         placeholderTextColor="#666"
+        keyboardType="numeric"
       />
       <TouchableOpacity style={styles.button} onPress={handleApply}>
-        <Text style={styles.buttonText}>APLICAR</Text>
+        <Text style={styles.buttonText}>APLICAR SEED</Text>
       </TouchableOpacity>
     </View>
   );
@@ -37,37 +36,28 @@ export const SeedWidget: React.FC<SeedWidgetProps> = ({ seed, onSeedEnter, style
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#111',
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  label: {
-    color: '#AAA',
-    fontFamily: 'monospace',
-    marginRight: 10,
+    flexDirection: "row",
+    alignItems: "center",
   },
   input: {
-    flex: 1,
-    color: 'white',
-    fontFamily: 'monospace',
-    fontSize: 16,
-    padding: 5,
+    backgroundColor: "#222",
+    color: "white",
+    padding: 10,
+    borderRadius: 8,
+    width: 100,
+    marginRight: 10,
+    fontFamily: "monospace",
+    textAlign: "center",
   },
   button: {
-    backgroundColor: '#333',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    marginLeft: 10,
+    backgroundColor: "#444",
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 8,
   },
   buttonText: {
-    color: 'white',
-    fontFamily: 'monospace',
-    fontSize: 12,
-    fontWeight: 'bold',
+    color: "white",
+    fontFamily: "monospace",
+    fontWeight: "bold",
   },
 });

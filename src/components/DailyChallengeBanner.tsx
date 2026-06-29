@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { DailyChallengeService } from "../services/DailyChallengeService";
 
 interface DailyChallengeBannerProps {
   gameId: string;
@@ -7,17 +8,26 @@ interface DailyChallengeBannerProps {
 }
 
 export const DailyChallengeBanner: React.FC<DailyChallengeBannerProps> = ({ gameId, onPlay }) => {
-  // Simple deterministic seed based on date for the stub
-  const dailySeed = new Date().getFullYear() * 10000 + (new Date().getMonth() + 1) * 100 + new Date().getDate();
+  const [seed, setSeed] = useState<number | null>(null);
+  const [hasPlayed, setHasPlayed] = useState(false);
+
+  useEffect(() => {
+    const fetchChallenge = async () => {
+      const currentSeed = DailyChallengeService.getCurrentSeed();
+      const status = await DailyChallengeService.getChallengeStatus(gameId, currentSeed);
+      setSeed(currentSeed);
+      setHasPlayed(status.hasUsedAttempt);
+    };
+    fetchChallenge();
+  }, [gameId]);
+
+  if (seed === null || hasPlayed) return null;
 
   return (
     <View style={styles.container}>
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>DESAFÍO DIARIO</Text>
-        <Text style={styles.subtitle}>Compite con todos en el mismo nivel</Text>
-      </View>
-      <TouchableOpacity style={styles.button} onPress={() => onPlay(dailySeed)}>
-        <Text style={styles.buttonText}>JUGAR</Text>
+      <Text style={styles.title}>¡DESAFÍO DIARIO DISPONIBLE!</Text>
+      <TouchableOpacity style={styles.button} onPress={() => onPlay(seed)}>
+        <Text style={styles.buttonText}>JUGAR AHORA</Text>
       </TouchableOpacity>
     </View>
   );
@@ -25,41 +35,29 @@ export const DailyChallengeBanner: React.FC<DailyChallengeBannerProps> = ({ game
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1a1a1a',
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: "#FFD700",
     padding: 15,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#FFD700',
+    borderRadius: 8,
+    alignItems: "center",
     marginBottom: 20,
-    width: '90%',
-    maxWidth: 400,
-  },
-  textContainer: {
-    flex: 1,
+    width: "80%",
   },
   title: {
-    color: '#FFD700',
-    fontFamily: 'monospace',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    color: '#888',
-    fontFamily: 'monospace',
-    fontSize: 12,
+    color: "black",
+    fontWeight: "bold",
+    fontFamily: "monospace",
+    marginBottom: 10,
+    textAlign: "center",
   },
   button: {
-    backgroundColor: '#FFD700',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 6,
+    backgroundColor: "black",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
   },
   buttonText: {
-    color: 'black',
-    fontFamily: 'monospace',
-    fontSize: 14,
-    fontWeight: 'bold',
+    color: "#FFD700",
+    fontWeight: "bold",
+    fontFamily: "monospace",
   },
 });
