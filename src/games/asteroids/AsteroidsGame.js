@@ -47,7 +47,7 @@ class AsteroidsGame extends core_1.BaseGame {
     isHeadless;
     isMultiplayer;
     constructor(config = {}) {
-        super();
+        super(config);
         this.isHeadless = config.headless || false;
         this.isMultiplayer = config.isMultiplayer || false;
         const rawConfig = require("./config/asteroids.json");
@@ -240,14 +240,12 @@ class AsteroidsGame extends core_1.BaseGame {
         return this.gameStateSystem.isGameOver();
     }
     start() {
+        super.start();
         if (__DEV__)
             console.log("[AsteroidsGame] Simulation started");
     }
-    stop() {
-        if (__DEV__)
-            console.log("[AsteroidsGame] Simulation stopped");
-    }
     destroy() {
+        super.destroy();
         if (typeof window !== "undefined" && this.resizeListener) {
             window.removeEventListener("resize", this.resizeListener);
         }
@@ -255,11 +253,13 @@ class AsteroidsGame extends core_1.BaseGame {
         this.particlePool?.clear();
     }
     pause() {
+        super.pause();
         this.world.setResource("IsPaused", true);
         if (__DEV__)
             console.log("[AsteroidsGame] Simulation paused");
     }
     resume() {
+        super.resume();
         this.world.setResource("IsPaused", false);
         if (__DEV__)
             console.log("[AsteroidsGame] Simulation resumed");
