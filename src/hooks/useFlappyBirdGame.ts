@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useGame } from "./useGame";
+import { useGame } from "@tiny-aster/react-native";
 import { useHighScore } from "./useHighScore";
 import { FlappyBirdGame } from "../games/flappybird/FlappyBirdGame";
 import { MutatorService } from "../services/MutatorService";

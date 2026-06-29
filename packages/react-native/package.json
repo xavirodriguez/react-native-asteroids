@@ -18,7 +18,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@tiny-aster/core": "workspace:*"
+    "@tiny-aster/core": "workspace:*",
+    "@tiny-aster/network-colyseus": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18",

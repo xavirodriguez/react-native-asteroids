@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useGame } from "./useGame";
+import { useGame } from "@tiny-aster/react-native";
 import { useHighScore } from "./useHighScore";
 import { AsteroidsGame } from "../games/asteroids/AsteroidsGame";
 import { INITIAL_GAME_STATE } from "../types/GameTypes";
