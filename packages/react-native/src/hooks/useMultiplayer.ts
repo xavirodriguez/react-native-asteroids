@@ -36,12 +36,12 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
     if (!active || !playerName) return;
 
     cancelledRef.current = false;
-    const connection = new ColyseusTransport();
+    const connection = new ColyseusTransport(roomName, { name: playerName });
 
     async function setup() {
       try {
         const endpoint = process.env.EXPO_PUBLIC_COLYSEUS_URL ?? "ws://127.0.0.1:2567";
-        await connection.connect(endpoint, roomName, { name: playerName });
+        await connection.connect(endpoint);
         const joinedRoom = connection.getRoom();
         if (cancelledRef.current) {
           connection.disconnect();

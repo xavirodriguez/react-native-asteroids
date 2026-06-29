@@ -1,4 +1,4 @@
-import { World, ShapeDrawer, CoreComponentRegistry, ShapeType, CircleShape, BoxShape } from "@tiny-aster/core";
+import { World, ShapeDrawer, CoreComponentRegistry, ShapeType, CircleShape, BoxShape, ColliderComponent } from "@tiny-aster/core";
 import { SkCanvas, SkPaint, Skia } from "@shopify/react-native-skia";
 
 /**
@@ -8,7 +8,8 @@ export class SkiaCircleDrawer<TRegistry extends CoreComponentRegistry = CoreComp
   constructor(private readonly paint: SkPaint) {}
 
   public draw(canvas: SkCanvas, world: World<TRegistry>, entity: number): void {
-    const collider = (world as World<CoreComponentRegistry>).getComponent(entity, "Collider");
+    const colliderType = "Collider" as Extract<keyof TRegistry, string>;
+    const collider = world.getComponent(entity, colliderType) as unknown as ColliderComponent | undefined;
     if (!collider || !collider.enabled || collider.shape.type !== ShapeType.Circle) return;
 
     const shape = collider.shape as CircleShape;
@@ -26,7 +27,8 @@ export class SkiaBoxDrawer<TRegistry extends CoreComponentRegistry = CoreCompone
   constructor(private readonly paint: SkPaint) {}
 
   public draw(canvas: SkCanvas, world: World<TRegistry>, entity: number): void {
-    const collider = (world as World<CoreComponentRegistry>).getComponent(entity, "Collider");
+    const colliderType = "Collider" as Extract<keyof TRegistry, string>;
+    const collider = world.getComponent(entity, colliderType) as unknown as ColliderComponent | undefined;
     if (!collider || !collider.enabled || collider.shape.type !== ShapeType.Box) return;
 
     const shape = collider.shape as BoxShape;

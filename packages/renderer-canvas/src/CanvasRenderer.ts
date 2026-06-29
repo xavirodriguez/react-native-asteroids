@@ -1,17 +1,7 @@
-import { World, Renderer, CoreComponentRegistry, ShapeType, Entity, ShapeDrawer } from "@tiny-aster/core";
+import { World, Renderer, CoreComponentRegistry, ShapeType, Entity, ShapeDrawer, TransformComponent, RenderComponent, ColliderComponent } from "@tiny-aster/core";
 
 /**
  * Basic 2D Canvas renderer.
- *
- * @remarks
- * This is a reference implementation of the {@link Renderer} interface using
- * the standard HTML5 Canvas API. It is designed for simple 2D rendering;
- * however, performance is expected to degrade with large numbers of entities
- * due to direct draw calls and lack of automatic batching.
- *
- * @warning
- * **Visual State Only**: The renderer only processes visual components and transforms.
- * It does not maintain logical simulation state.
  */
 export class CanvasRenderer<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> implements Renderer<TRegistry, CanvasRenderingContext2D> {
   private sortedEntities: Entity[] = [];
@@ -24,12 +14,12 @@ export class CanvasRenderer<TRegistry extends CoreComponentRegistry = CoreCompon
     const canvas = ctx.canvas;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Use core components for rendering
-    // We cast to a world that definitely has core components to avoid 'as any'
-    const w = world as World<CoreComponentRegistry>;
-    const entities = w.query("Transform", "Render");
+    const transformType = "Transform" as Extract<keyof TRegistry, string>;
+    const renderType = "Render" as Extract<keyof TRegistry, string>;
+    const colliderType = "Collider" as Extract<keyof TRegistry, string>;
 
-    // Maintain a stable sorted list to reduce allocations if count hasn't changed (simplistic optimization)
+    const entities = world.query(transformType, renderType);
+
     if (this.sortedEntities.length !== entities.length) {
       this.sortedEntities = [...entities];
     } else {
@@ -39,16 +29,17 @@ export class CanvasRenderer<TRegistry extends CoreComponentRegistry = CoreCompon
     }
 
     this.sortedEntities.sort((a, b) => {
-      const renderA = w.getComponent(a, "Render")!;
-      const renderB = w.getComponent(b, "Render")!;
-      return (renderA.order || 0) - (renderB.order || 0);
+      const renderA = world.getComponent(a, renderType) as unknown as RenderComponent | undefined;
+      const renderB = world.getComponent(b, renderType) as unknown as RenderComponent | undefined;
+      return (renderA?.order || 0) - (renderB?.order || 0);
     });
 
     for (const entity of this.sortedEntities) {
-      const render = w.getComponent(entity, "Render")!;
-      const transform = w.getComponent(entity, "Transform")!;
+      const render = world.getComponent(entity, renderType) as unknown as RenderComponent | undefined;
+      const transform = world.getComponent(entity, transformType) as unknown as TransformComponent | undefined;
 
-      if (!render.visible || render.opacity === 0) continue;
+      if (!render || !render.visible || render.opacity === 0) continue;
+      if (!transform) continue;
 
       ctx.save();
 
@@ -67,12 +58,11 @@ export class CanvasRenderer<TRegistry extends CoreComponentRegistry = CoreCompon
         ctx.fillStyle = render.color;
       }
 
-      const collider = w.getComponent(entity, "Collider");
+      const collider = world.getComponent(entity, colliderType) as unknown as ColliderComponent | undefined;
       if (collider && collider.enabled) {
         const shapeTypeStr = ShapeType[collider.shape.type];
         const drawer = this.shapeDrawers.get(shapeTypeStr);
         if (drawer) {
-          // Draw using the original world and entity to maintain generic safety
           drawer.draw(ctx, world, entity);
         }
       } else {

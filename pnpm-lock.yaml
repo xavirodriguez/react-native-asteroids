@@ -318,6 +318,19 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
+  packages/network:
+    dependencies:
+      '@tiny-aster/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(@microsoft/api-extractor@7.58.8(@types/node@25.9.3))(jiti@2.7.0)(postcss@8.5.15)(tsx@4.22.4)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   packages/network-colyseus:
     dependencies:
       '@colyseus/sdk':
@@ -342,6 +355,9 @@ importers:
       '@tiny-aster/core':
         specifier: workspace:*
         version: link:../core
+      '@tiny-aster/network-colyseus':
+        specifier: workspace:*
+        version: link:../network-colyseus
     devDependencies:
       '@types/react':
         specifier: ^19.0.0

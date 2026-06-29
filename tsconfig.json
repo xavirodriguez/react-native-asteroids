@@ -18,6 +18,12 @@
       ],
       "@tiny-aster/renderer-canvas": [
         "./packages/renderer-canvas/src/index.ts"
+      ],
+      "@tiny-aster/react-native": [
+        "./packages/react-native/src/index.ts"
+      ],
+      "@tiny-aster/network-colyseus": [
+        "./packages/network-colyseus/src/index.ts"
       ]
     }
   },
