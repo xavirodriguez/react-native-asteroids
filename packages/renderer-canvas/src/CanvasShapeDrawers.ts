@@ -1,11 +1,12 @@
-import { World, ShapeDrawer, CoreComponentRegistry, ShapeType, CircleShape, BoxShape } from "@tiny-aster/core";
+import { World, ShapeDrawer, CoreComponentRegistry, ShapeType, CircleShape, BoxShape, ColliderComponent } from "@tiny-aster/core";
 
 /**
  * Drawer for circle shapes in HTML5 Canvas.
  */
 export class CanvasCircleDrawer<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> implements ShapeDrawer<CanvasRenderingContext2D, TRegistry> {
   public draw(ctx: CanvasRenderingContext2D, world: World<TRegistry>, entity: number): void {
-    const collider = (world as World<CoreComponentRegistry>).getComponent(entity, "Collider");
+    const colliderType = "Collider" as Extract<keyof TRegistry, string>;
+    const collider = world.getComponent(entity, colliderType) as ColliderComponent | undefined;
     if (!collider || !collider.enabled || collider.shape.type !== ShapeType.Circle) return;
 
     const shape = collider.shape as CircleShape;
@@ -23,7 +24,8 @@ export class CanvasCircleDrawer<TRegistry extends CoreComponentRegistry = CoreCo
  */
 export class CanvasBoxDrawer<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> implements ShapeDrawer<CanvasRenderingContext2D, TRegistry> {
   public draw(ctx: CanvasRenderingContext2D, world: World<TRegistry>, entity: number): void {
-    const collider = (world as World<CoreComponentRegistry>).getComponent(entity, "Collider");
+    const colliderType = "Collider" as Extract<keyof TRegistry, string>;
+    const collider = world.getComponent(entity, colliderType) as ColliderComponent | undefined;
     if (!collider || !collider.enabled || collider.shape.type !== ShapeType.Box) return;
 
     const shape = collider.shape as BoxShape;
