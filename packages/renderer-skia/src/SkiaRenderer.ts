@@ -1,4 +1,4 @@
-import { World, Renderer, CoreComponentRegistry, ShapeType, ShapeDrawer } from "@tiny-aster/core";
+import { World, Renderer, CoreComponentRegistry, ShapeType, ShapeDrawer, TransformComponent, RenderComponent, ColliderComponent, Camera2DComponent, VisualOffsetComponent } from "@tiny-aster/core";
 import { SkCanvas, SkPaint, Skia } from "@shopify/react-native-skia";
 
 /**
@@ -14,15 +14,18 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
   }
 
   public render(world: World<TRegistry>, canvas: SkCanvas, _interpolation?: number): void {
-    // Cast to core world to access standard components safely in generics context
-    const w = world as World<CoreComponentRegistry>;
+    const cameraType = "Camera2D" as Extract<keyof TRegistry, string>;
+    const transformType = "Transform" as Extract<keyof TRegistry, string>;
+    const renderType = "Render" as Extract<keyof TRegistry, string>;
+    const visualOffsetType = "VisualOffset" as Extract<keyof TRegistry, string>;
+    const colliderType = "Collider" as Extract<keyof TRegistry, string>;
 
     // Handle Camera - Optimized lookup to avoid lambda allocations and extra arrays
-    const cameras = w.query("Camera2D");
+    const cameras = world.query(cameraType);
     let mainCameraEntity: number | undefined;
 
     for (let i = 0; i < cameras.length; i++) {
-      const cam = w.getComponent(cameras[i], "Camera2D");
+      const cam = world.getComponent(cameras[i], cameraType) as unknown as Camera2DComponent | undefined;
       if (cam?.isMain) {
         mainCameraEntity = cameras[i];
         break;
@@ -32,33 +35,31 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
     canvas.save();
 
     if (mainCameraEntity !== undefined) {
-      const cam = w.getComponent(mainCameraEntity, "Camera2D")!;
+      const cam = world.getComponent(mainCameraEntity, cameraType) as unknown as Camera2DComponent;
       // Center camera and apply zoom
       canvas.translate(-cam.x, -cam.y);
       canvas.scale(cam.zoom, cam.zoom);
     }
 
-    const entities = w.query("Transform", "Render");
+    const entities = world.query(transformType, renderType);
 
     // Sort by order to handle layering
-    // Note: In a high-performance scenario, sorting should be handled by a persistent
-    // render list updated only when 'order' components change or entities are added/removed.
     const sortedEntities = [...entities].sort((a, b) => {
-      const renderA = w.getComponent(a, "Render")!;
-      const renderB = w.getComponent(b, "Render")!;
+      const renderA = world.getComponent(a, renderType) as unknown as RenderComponent;
+      const renderB = world.getComponent(b, renderType) as unknown as RenderComponent;
       return (renderA.order || 0) - (renderB.order || 0);
     });
 
     for (let i = 0; i < sortedEntities.length; i++) {
       const entity = sortedEntities[i];
-      const transform = w.getComponent(entity, "Transform")!;
-      const render = w.getComponent(entity, "Render")!;
+      const transform = world.getComponent(entity, transformType) as unknown as TransformComponent;
+      const render = world.getComponent(entity, renderType) as unknown as RenderComponent;
 
       if (!render.visible || render.opacity === 0) continue;
 
       canvas.save();
 
-      const visualOffset = w.getComponent(entity, "VisualOffset");
+      const visualOffset = world.getComponent(entity, visualOffsetType) as unknown as VisualOffsetComponent | undefined;
       const offsetX = visualOffset?.offsetX ?? 0;
       const offsetY = visualOffset?.offsetY ?? 0;
 
@@ -75,7 +76,7 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
       this.paint.setColor(Skia.Color(render.color || "white"));
       this.paint.setAlphaf(render.opacity ?? 1);
 
-      const collider = w.getComponent(entity, "Collider");
+      const collider = world.getComponent(entity, colliderType) as unknown as ColliderComponent | undefined;
       if (collider && collider.enabled) {
         const shapeTypeStr = ShapeType[collider.shape.type];
         const drawer = this.shapeDrawers.get(shapeTypeStr);
