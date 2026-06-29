@@ -1,6 +1,5 @@
 import { World } from "../ecs/World";
 import { System } from "../ecs/System";
-import { BaseGame } from "../runtime/BaseGame";
 import { ComponentRegistry } from "../ecs/Component";
 import { EventRegistry } from "../events/EventBus";
 
@@ -11,7 +10,7 @@ export abstract class BaseGameStateSystem<
 > extends System<TComponents, TEvents> {
   protected _world?: World<TComponents, TEvents>;
 
-  constructor(protected game: BaseGame<TComponents, TEvents>) {
+  constructor(protected singletonType: string) {
     super();
   }
 

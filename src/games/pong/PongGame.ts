@@ -13,9 +13,8 @@ import { PongInputSystem } from "./systems/PongInputSystem";
 import { CollisionSystem2D } from "@tiny-aster/core";
 import { PongSpinSystem } from "./systems/PongSpinSystem";
 import { PongEntityFactory } from "./EntityFactory";
-import { AIPongController } from "./input/AIPongController";
 import { NetworkController } from "./input/NetworkController";
-import { type PongState, type PongInput } from "./types";
+import { type PongState, type PongInput, type PongComponentRegistry } from "./types";
 import { PongConfigSchema, PongConfig } from "./types/PongConfigSchema";
 import { ConfigService } from "@tiny-aster/core";
 import { Renderer } from "@tiny-aster/core";
@@ -33,13 +32,12 @@ export type PongMode = "local" | "ai" | "online";
  * Implementa una física de rebotes basada en el ángulo de incidencia y el movimiento
  * relativo de las paletas (spin). Gestiona modos de juego contra IA o multijugador local.
  */
-export class PongGame extends BaseGame<PongState, PongInput> {
+export class PongGame extends BaseGame<PongState, PongInput, PongComponentRegistry> {
   private stateSystem!: PongGameStateSystem;
   private assetLoader: AssetLoader;
-  private aiController?: AIPongController;
   private networkController?: NetworkController;
   public readonly gameId = "pong";
-  private config: PongConfig;
+  private config!: PongConfig;
 
   constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown>, mode?: PongMode } | PongMode = "local") {
     const isConfig = typeof config === "object" && config !== null;
@@ -57,14 +55,14 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     this.assetLoader = new AssetLoader();
   }
 
-  public override async init(): Promise<void> {
+  public override async initialize(): Promise<void> {
     const rawConfig = require("./config/pong.json");
-    const baseConfig = ConfigService.load(this.gameId, PongConfigSchema, rawConfig);
+    const baseConfig = ConfigService.load<PongConfig>(this.gameId, PongConfigSchema, rawConfig);
 
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
-      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...baseConfig }) as PongConfig
+      ? mutators.reduce((cfg, m) => (m as any).apply(cfg), { ...baseConfig }) as PongConfig
       : { ...baseConfig };
 
     this.world.setResource("GameConfig", this.config);
@@ -72,21 +70,17 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     await this.onPreloadAssets();
-    await super.init();
+
+    this.registerSystems();
+    this.initializeEntities();
+  }
+
+  public override update(dt: number): void {
+      this.world.update(dt);
   }
 
   private async onPreloadAssets(): Promise<void> {
-    const audio = this.audio;
-    try {
-      await Promise.all([
-        audio.loadSFX("hit", "/audio/hit.mp3"),
-        audio.loadSFX("score", "/audio/hit.mp3"),
-        audio.loadSFX("wall", "/audio/hit.mp3"),
-        audio.loadSFX("game_over", "/audio/game_over.mp3"),
-      ]);
-    } catch (e) {
-      console.warn("[Pong] Asset preloading failed.", e);
-    }
+    // Audio preloading moved to game logic or specific service if needed
   }
 
   protected registerSystems(): void {
@@ -100,13 +94,13 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     this.unifiedInput.bind("p2Down", ["ArrowDown"]);
 
     this.stateSystem = new PongGameStateSystem(this.config);
-    this.world.addSystem(this.unifiedInput, { phase: SystemPhase.Input });
+    this.world.addSystem(this.unifiedInput as any, { phase: SystemPhase.Input });
 
     if (mode === "online") {
       this.networkController = new NetworkController();
       this.world.addSystem(new PongInputSystem(undefined, this.networkController), { phase: SystemPhase.Simulation });
     } else {
-      this.world.addSystem(new PongInputSystem(aiDifficulty), { phase: SystemPhase.Simulation });
+      this.world.addSystem(new PongInputSystem(aiDifficulty as any), { phase: SystemPhase.Simulation });
     }
 
     this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
@@ -120,7 +114,7 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     this.world.addSystem(this.stateSystem, { phase: SystemPhase.GameRules });
 
     const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
-    this.world.addSystem(new MutatorSystem(activeMutators), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new MutatorSystem(activeMutators as any), { phase: SystemPhase.Simulation });
 
     // Visual / Presentation
     this.world.addSystem(new JuiceSystem(), { phase: SystemPhase.Presentation });
@@ -135,14 +129,14 @@ export class PongGame extends BaseGame<PongState, PongInput> {
     PongEntityFactory.createGameState(this.world);
   }
 
-  public initializeRenderer(renderer: Renderer<unknown>): void {
-    if (renderer.type === "canvas") {
-      renderer.registerShape("circle", drawPongBall); // Override default circle with spinning ball
+  public initializeRenderer(renderer: Renderer<PongComponentRegistry>): void {
+    if ((renderer as any).type === "canvas") {
+      (renderer as any).registerShape("circle", drawPongBall); // Override default circle with spinning ball
     }
   }
 
   public getGameState(): PongState {
-    const state = this.world.getSingleton<PongState>("PongState");
+    const state = this.world.getSingleton("PongState");
     return state ? { ...state } : { type: "PongState", scoreP1: 0, scoreP2: 0, isGameOver: false, comboMultiplier: 1, gameOverLogged: false };
   }
 
@@ -156,11 +150,8 @@ export class PongGame extends BaseGame<PongState, PongInput> {
 
   protected shouldStallSimulation(): boolean {
     if (this.networkController) {
-      // Accessing the internal tick of PongInputSystem is the intended approach,
-      // but for simplicity we check if any future input is missing.
-      // A more robust implementation would pass the current simulation tick.
-      const inputSystem = (this.world as unknown as { systems: unknown[] }).systems?.find((s): s is PongInputSystem => s instanceof PongInputSystem);
-      return !this.networkController.hasInputForTick((inputSystem as unknown as { currentTick: number })?.currentTick + 1 || 0);
+      const inputSystem = (this.world as any).systems?.find((s: any) => s.system instanceof PongInputSystem)?.system as PongInputSystem;
+      return !this.networkController.hasInputForTick(inputSystem?.currentTick + 1 || 0);
     }
     return false;
   }

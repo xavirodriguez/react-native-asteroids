@@ -1,23 +1,21 @@
-import { System } from "@tiny-aster/core";
-import { World } from "@tiny-aster/core";
-import { TransformComponent, VelocityComponent } from "@tiny-aster/core";
-import { BallComponent, PaddleComponent } from "../types";
+import { System, World, TransformComponent, VelocityComponent } from "@tiny-aster/core";
+import { BallComponent, PaddleComponent, PongComponentRegistry } from "../types";
 
-export class PongSpinSystem extends System {
-  public update(world: World, deltaTime: number): void {
+export class PongSpinSystem extends System<PongComponentRegistry> {
+  public update(world: World<PongComponentRegistry>, deltaTime: number): void {
     const balls = world.query("Ball", "Velocity");
     const dtSeconds = deltaTime / 1000;
 
     balls.forEach(entity => {
-      const ball = world.getComponent<BallComponent>(entity, "Ball")!;
+      const ball = world.getComponent(entity, "Ball")!;
 
-      if (ball.spinFactor !== 0) {
-        world.mutateComponent<VelocityComponent>(entity, "Velocity", vel => {
+      if (ball && ball.spinFactor !== 0) {
+        world.mutateComponent(entity, "Velocity", (vel: VelocityComponent) => {
           // Apply curve effect
-          vel.dy += ball.spinFactor * 500 * dtSeconds;
+          vel.vy += ball.spinFactor * 500 * dtSeconds;
         });
 
-        world.mutateComponent(entity, "Ball", b => {
+        world.mutateComponent(entity, "Ball", (b: BallComponent) => {
           b.spinFactor *= (1 - b.spinDecay);
           if (Math.abs(b.spinFactor) < 0.01) {
             b.spinFactor = 0;
@@ -28,10 +26,9 @@ export class PongSpinSystem extends System {
 
     const paddles = world.query("Paddle", "Transform");
     paddles.forEach(entity => {
-      const pos = world.getComponent<TransformComponent>(entity, "Transform")!;
+      const pos = world.getComponent(entity, "Transform")!;
 
-      // Paddle no está en el registro central aún
-      world.mutateComponent<PaddleComponent>(entity, "Paddle", paddle => {
+      world.mutateComponent(entity, "Paddle", (paddle: PaddleComponent) => {
         paddle.lastVelocityY = (pos.y - paddle.previousY) / dtSeconds;
         paddle.previousY = pos.y;
       });

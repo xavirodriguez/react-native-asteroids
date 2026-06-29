@@ -19,6 +19,7 @@ export * from "./ecs/System";
 export * from "./ecs/WorldCommandBuffer";
 export * from "./ecs/BlueprintRegistry";
 export * from "./ecs/CoreComponents";
+export * from "./ecs/TagComponent";
 export * from "./snapshots/WorldSnapshot";
 export * from "./ecs/ComponentCloner";
 
@@ -83,6 +84,7 @@ export * from "./network/MultiplayerSystems";
 
 // Config
 export * from "./config/ConfigService";
+export * from "./config/BaseConfigSchema";
 
 // Utils
 export * from "./utils/RandomService";
