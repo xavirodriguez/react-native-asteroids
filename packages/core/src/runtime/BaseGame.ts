@@ -5,6 +5,7 @@ import { EventRegistry, EventBus } from "../events/EventBus";
 import { BlueprintRegistry } from "../ecs/BlueprintRegistry";
 import { IGame } from "./IGame";
 import { GameLoop } from "../loop/GameLoop";
+import { InputSystem } from "../input/InputSystem";
 import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
 
 export interface BaseGameConfig {
@@ -85,7 +86,7 @@ export abstract class BaseGame<
   /**
    * Returns the input system instance.
    */
-  getInputSystem(): UnifiedInputSystem {
+  getInputSystem(): InputSystem {
     return this.unifiedInput;
   }
 
@@ -98,6 +99,7 @@ export abstract class BaseGame<
 
   /**
    * Called during game initialization.
+   * Invokes internal initialize().
    */
   public async init(): Promise<void> {
     await this.initialize();

@@ -22,7 +22,7 @@ export default tseslint.config(
       "**/*.min.js",
       "web-report/**",
       "expo-env.d.ts",
-      "assets/**"
+      "assets/**",
     ],
   },
   js.configs.recommended,
@@ -64,35 +64,44 @@ export default tseslint.config(
           varsIgnorePattern: "^_",
           args: "after-used",
           argsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_"
-        }
+          caughtErrorsIgnorePattern: "^_",
+        },
       ],
-      "@typescript-eslint/no-require-imports": ["error", {
-        "allow": [
-          "../src/engine/rendering/SkiaRenderer",
-          "@shopify/react-native-skia",
-          "./EntityFactory",
-          "./AsteroidsSkiaVisuals",
-          "./AsteroidSkiaDrawers",
-          "expo-audio",
-          "react-native",
-          "../../../../assets/ship.png",
-        ]
-      }],
-      "no-restricted-imports": ["warn", {
-        "patterns": [{
-          "group": ["**/engine/**", "!**/engine/index", "!**/engine/index.ts"],
-          "message": "Please import from '@tiny-aster/core' instead of legacy 'src/engine'."
-        }]
-      }],
+      "@typescript-eslint/no-require-imports": [
+        "error",
+        {
+          allow: [
+            "../src/engine/rendering/SkiaRenderer",
+            "@shopify/react-native-skia",
+            "./EntityFactory",
+            "./AsteroidsSkiaVisuals",
+            "./AsteroidSkiaDrawers",
+            "expo-audio",
+            "react-native",
+            "../../../../assets/ship.png",
+          ],
+        },
+      ],
+      "no-restricted-imports": [
+        "warn",
+        {
+          patterns: [
+            {
+              group: [
+                "**/engine/**",
+                "!**/engine/index",
+                "!**/engine/index.ts",
+              ],
+              message:
+                "Please import from '@tiny-aster/core' instead of legacy 'src/engine'.",
+            },
+          ],
+        },
+      ],
     },
   },
   {
-    files: [
-      "**/*.config.{js,cjs}",
-      "metro.config.js",
-      "babel.config.js"
-    ],
+    files: ["**/*.config.{js,cjs}", "metro.config.js", "babel.config.js"],
     languageOptions: {
       sourceType: "commonjs",
       globals: {
@@ -103,12 +112,52 @@ export default tseslint.config(
       "@typescript-eslint/no-require-imports": "off",
     },
   },
+  // Override estricto para el core (Librería limpia)
   {
-    files: [
-      "**/*.config.mjs",
-      "eslint.config.mjs",
-      "postcss.config.mjs"
-    ],
+    files: ["packages/core/src/**/*.ts"],
+    rules: {
+      "no-console": "error",
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-require-imports": "error",
+      // EL GUARDIÁN DE FRONTERAS:
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "react",
+                "react-native",
+                "expo*",
+                "@shopify/react-native-skia",
+              ],
+              message:
+                "💥 FRONTERA ROTA: El Core no puede depender de librerías de UI/Plataforma.",
+            },
+            {
+              group: ["@colyseus/*", "colyseus"],
+              message:
+                "💥 FRONTERA ROTA: El Core no puede depender de implementaciones de red específicas. Usa NetworkTransport.",
+            },
+            {
+              group: ["../../../src/games/*", "**/*Asteroid*", "**/*Pong*"],
+              message:
+                "💥 FRONTERA ROTA: El Core es agnóstico. No puede importar lógica específica de los juegos.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Añadir a tu configuración:
+  {
+    files: ["packages/core/src/tests/**/*.ts", "packages/core/tests/**/*.ts"],
+    rules: {
+      "no-console": "off",
+    },
+  },
+  {
+    files: ["**/*.config.mjs", "eslint.config.mjs", "postcss.config.mjs"],
     languageOptions: {
       sourceType: "module",
       globals: {

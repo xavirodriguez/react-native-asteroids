@@ -1,6 +1,5 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
-import { CoreComponentRegistry } from "../ecs/CoreComponents";
 
 /**
  * System that organizes entities into spatial structures to optimize queries.

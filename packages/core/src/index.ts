@@ -26,6 +26,10 @@ export * from "./ecs/ComponentCloner";
 // Events
 export * from "./events/EventBus";
 
+// Input
+export * from "./input/InputSystem";
+export * from "./input/UnifiedInputSystem";
+
 // Loop & Runtime
 export * from "./loop/GameLoop";
 export * from "./loop/FrameScheduler";

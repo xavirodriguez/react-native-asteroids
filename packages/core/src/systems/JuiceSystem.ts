@@ -1,6 +1,6 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
-import { JuiceComponent, VisualOffsetComponent, RenderComponent, CoreComponentRegistry } from "../ecs/CoreComponents";
+import { VisualOffsetComponent, RenderComponent, CoreComponentRegistry } from "../ecs/CoreComponents";
 
 export class JuiceSystem extends System<CoreComponentRegistry> {
     public update(world: World<CoreComponentRegistry>, deltaTime: number): void {

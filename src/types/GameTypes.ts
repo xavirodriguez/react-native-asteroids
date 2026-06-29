@@ -1,4 +1,4 @@
-import { Entity, WorldSnapshot, IEntityPool, World } from "@tiny-aster/core";
+import { Entity, WorldSnapshot, IEntityPool } from "@tiny-aster/core";
 
 export type { Entity, WorldSnapshot, IEntityPool };
 

@@ -1,6 +1,6 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
-import { AnimatorComponent, CoreComponentRegistry } from "../ecs/CoreComponents";
+import { CoreComponentRegistry } from "../ecs/CoreComponents";
 
 export class AnimationSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, deltaTime: number): void {
