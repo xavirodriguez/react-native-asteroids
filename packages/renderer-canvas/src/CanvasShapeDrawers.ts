@@ -6,7 +6,7 @@ import { World, ShapeDrawer, CoreComponentRegistry, ShapeType, CircleShape, BoxS
 export class CanvasCircleDrawer<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> implements ShapeDrawer<CanvasRenderingContext2D, TRegistry> {
   public draw(ctx: CanvasRenderingContext2D, world: World<TRegistry>, entity: number): void {
     const colliderType = "Collider" as Extract<keyof TRegistry, string>;
-    const collider = world.getComponent(entity, colliderType) as ColliderComponent | undefined;
+    const collider = world.getComponent(entity, colliderType) as unknown as ColliderComponent | undefined;
     if (!collider || !collider.enabled || collider.shape.type !== ShapeType.Circle) return;
 
     const shape = collider.shape as CircleShape;
@@ -25,7 +25,7 @@ export class CanvasCircleDrawer<TRegistry extends CoreComponentRegistry = CoreCo
 export class CanvasBoxDrawer<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> implements ShapeDrawer<CanvasRenderingContext2D, TRegistry> {
   public draw(ctx: CanvasRenderingContext2D, world: World<TRegistry>, entity: number): void {
     const colliderType = "Collider" as Extract<keyof TRegistry, string>;
-    const collider = world.getComponent(entity, colliderType) as ColliderComponent | undefined;
+    const collider = world.getComponent(entity, colliderType) as unknown as ColliderComponent | undefined;
     if (!collider || !collider.enabled || collider.shape.type !== ShapeType.Box) return;
 
     const shape = collider.shape as BoxShape;

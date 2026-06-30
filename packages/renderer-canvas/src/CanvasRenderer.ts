@@ -1,4 +1,4 @@
-import { World, Renderer, CoreComponentRegistry, ShapeType, Entity, ShapeDrawer, TransformComponent, RenderComponent, ColliderComponent } from "@tiny-aster/core";
+import { World, Renderer, CoreComponentRegistry, Entity, ShapeDrawer, ShapeType, RenderComponent, TransformComponent, ColliderComponent } from "@tiny-aster/core";
 
 /**
  * Basic 2D Canvas renderer.
