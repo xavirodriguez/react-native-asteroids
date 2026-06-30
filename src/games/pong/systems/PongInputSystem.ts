@@ -1,6 +1,6 @@
 import { World } from "@tiny-aster/core";
 import { System } from "@tiny-aster/core";
-import { VelocityComponent, TagComponent, InputStateComponent } from "@tiny-aster/core";
+import { VelocityComponent } from "@tiny-aster/core";
 import { type PongInput, type PongComponentRegistry } from "../types";
 import { PongConfig, DEFAULT_PONG_CONFIG } from "../types/PongConfigSchema";
 import { AIPongController } from "../input/AIPongController";

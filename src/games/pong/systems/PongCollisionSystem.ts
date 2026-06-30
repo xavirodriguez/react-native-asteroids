@@ -1,11 +1,11 @@
 import { World, ComponentType } from "@tiny-aster/core";
 import { System } from "@tiny-aster/core";
-import { TransformComponent, VelocityComponent, CollisionEventsComponent } from "@tiny-aster/core";
+import { TransformComponent, VelocityComponent } from "@tiny-aster/core";
 import { PongConfig } from "../types/PongConfigSchema";
 import { Juice } from "@tiny-aster/core";
 import { createEmitter } from "@tiny-aster/core";
 import { EventBus } from "@tiny-aster/core";
-import { type PaddleComponent, type BallComponent, type PongComponentRegistry } from "../types";
+import { type BallComponent, type PongComponentRegistry } from "../types";
 
 export class PongCollisionSystem extends System<PongComponentRegistry> {
   private config?: PongConfig;

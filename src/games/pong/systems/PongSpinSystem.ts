@@ -1,4 +1,4 @@
-import { System, World, TransformComponent, VelocityComponent } from "@tiny-aster/core";
+import { System, World, VelocityComponent } from "@tiny-aster/core";
 import { BallComponent, PaddleComponent, PongComponentRegistry } from "../types";
 
 export class PongSpinSystem extends System<PongComponentRegistry> {

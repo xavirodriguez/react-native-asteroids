@@ -1,7 +1,7 @@
 import { World } from "@tiny-aster/core";
-import { PongState, BallComponent, PaddleComponent, PONG_CONFIG } from "./types";
+import { PONG_CONFIG } from "./types";
 import { PongConfig } from "./types/PongConfigSchema";
-import { TransformComponent, VelocityComponent, RenderComponent, ColliderComponent, BoundaryComponent, Entity } from "@tiny-aster/core";
+import { TransformComponent, VelocityComponent, ColliderComponent } from "@tiny-aster/core";
 import { CollisionLayers } from "../shared/types/CollisionLayers";
 
 /**

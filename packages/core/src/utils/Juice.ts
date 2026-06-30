@@ -1,6 +1,6 @@
 import { World } from "../ecs/World";
 import { Entity } from "../ecs/Entity";
-import { RenderComponent, JuiceComponent, VisualOffsetComponent } from "../ecs/CoreComponents";
+import { RenderComponent, JuiceComponent } from "../ecs/CoreComponents";
 
 /**
  * Static utility for applying juice effects (squash, stretch, shake, flash).
