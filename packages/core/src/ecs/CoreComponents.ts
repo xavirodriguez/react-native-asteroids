@@ -79,14 +79,21 @@ export interface InputStateComponent extends Component {
   buttons: Record<string, boolean>;
 }
 
+export interface AnimationDefinition {
+  frames: number[];
+  frameRate: number;
+  loop?: boolean;
+  onCompleteEvent?: string;
+}
+
 export interface AnimatorComponent extends Component {
   type: "Animator";
   currentAnimation?: string;
   frameIndex: number;
   elapsedTime: number;
   isPlaying: boolean;
-  animations: any;
-  current: any;
+  animations: Record<string, AnimationDefinition>;
+  current: string | null;
   elapsed: number;
   frame: number;
 }
@@ -95,7 +102,7 @@ export interface StateMachineComponent extends Component {
   type: "StateMachine";
   currentState: string;
   elapsedInState: number;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   machineId: string;
   elapsedMs: number;
   previousState?: string;
@@ -167,10 +174,23 @@ export interface HapticRequestComponent<TPattern extends string = string> extend
   intensity?: number;
 }
 
+export interface JuiceAnimation {
+  type: string;
+  property?: string;
+  duration: number;
+  elapsed: number;
+  target?: number;
+  startValue?: number;
+  endValue?: number;
+  delay?: number;
+  easing?: string;
+  repeat?: number;
+}
+
 export interface JuiceComponent extends Component {
     type: "Juice";
     active: boolean;
-    animations: any[];
+    animations: JuiceAnimation[];
 }
 
 export interface CollisionEventsComponent extends Component {

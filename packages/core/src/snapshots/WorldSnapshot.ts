@@ -37,4 +37,4 @@ export type ComponentDataSnapshot = Record<string, Record<number, SerializedComp
 /**
  * A serialized representation of a component, containing only its serializable properties.
  */
-export type SerializedComponent = Record<string, any>;
+export type SerializedComponent = Record<string, unknown>;

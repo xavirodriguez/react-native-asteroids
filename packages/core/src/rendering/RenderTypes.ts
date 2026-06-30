@@ -1,6 +1,6 @@
 export type RenderCommand = {
   type: string;
-  data: any;
+  data: unknown;
 };
 
 export interface RenderCommandBuffer {
