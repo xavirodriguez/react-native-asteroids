@@ -1,4 +1,4 @@
-import { World, Renderer, CoreComponentRegistry, ShapeType, ShapeDrawer, TransformComponent, RenderComponent, ColliderComponent, Camera2DComponent, VisualOffsetComponent } from "@tiny-aster/core";
+import { World, Renderer, CoreComponentRegistry, ShapeType, ShapeDrawer, Entity, Camera2DComponent, RenderComponent, TransformComponent, VisualOffsetComponent, ColliderComponent } from "@tiny-aster/core";
 import { SkCanvas, SkPaint, Skia } from "@shopify/react-native-skia";
 
 /**
@@ -20,9 +20,9 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
     const visualOffsetType = "VisualOffset" as Extract<keyof TRegistry, string>;
     const colliderType = "Collider" as Extract<keyof TRegistry, string>;
 
-    // Handle Camera - Optimized lookup to avoid lambda allocations and extra arrays
+    // Handle Camera
     const cameras = world.query(cameraType);
-    let mainCameraEntity: number | undefined;
+    let mainCameraEntity: Entity | undefined;
 
     for (let i = 0; i < cameras.length; i++) {
       const cam = world.getComponent(cameras[i], cameraType) as unknown as Camera2DComponent | undefined;
@@ -35,27 +35,29 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
     canvas.save();
 
     if (mainCameraEntity !== undefined) {
-      const cam = world.getComponent(mainCameraEntity, cameraType) as unknown as Camera2DComponent;
-      // Center camera and apply zoom
-      canvas.translate(-cam.x, -cam.y);
-      canvas.scale(cam.zoom, cam.zoom);
+      const cam = world.getComponent(mainCameraEntity, cameraType) as unknown as Camera2DComponent | undefined;
+      if (cam) {
+        // Center camera and apply zoom
+        canvas.translate(-cam.x, -cam.y);
+        canvas.scale(cam.zoom, cam.zoom);
+      }
     }
 
     const entities = world.query(transformType, renderType);
 
     // Sort by order to handle layering
     const sortedEntities = [...entities].sort((a, b) => {
-      const renderA = world.getComponent(a, renderType) as unknown as RenderComponent;
-      const renderB = world.getComponent(b, renderType) as unknown as RenderComponent;
-      return (renderA.order || 0) - (renderB.order || 0);
+      const renderA = world.getComponent(a, renderType) as unknown as RenderComponent | undefined;
+      const renderB = world.getComponent(b, renderType) as unknown as RenderComponent | undefined;
+      return (renderA?.order || 0) - (renderB?.order || 0);
     });
 
     for (let i = 0; i < sortedEntities.length; i++) {
       const entity = sortedEntities[i];
-      const transform = world.getComponent(entity, transformType) as unknown as TransformComponent;
-      const render = world.getComponent(entity, renderType) as unknown as RenderComponent;
+      const transform = world.getComponent(entity, transformType) as unknown as TransformComponent | undefined;
+      const render = world.getComponent(entity, renderType) as unknown as RenderComponent | undefined;
 
-      if (!render.visible || render.opacity === 0) continue;
+      if (!render || !transform || !render.visible || render.opacity === 0) continue;
 
       canvas.save();
 
@@ -63,11 +65,11 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
       const offsetX = visualOffset?.offsetX ?? 0;
       const offsetY = visualOffset?.offsetY ?? 0;
 
-      const x = (transform.worldX ?? transform.x) ?? 0;
-      const y = (transform.worldY ?? transform.y) ?? 0;
+      const x = transform.worldX ?? transform.x;
+      const y = transform.worldY ?? transform.y;
       const rotation = (transform.worldRotation ?? transform.rotation ?? 0) + (render.rotation ?? 0);
-      const scaleX = (transform.worldScaleX ?? transform.scaleX ?? 1);
-      const scaleY = (transform.worldScaleY ?? transform.scaleY ?? 1);
+      const scaleX = transform.worldScaleX ?? transform.scaleX ?? 1;
+      const scaleY = transform.worldScaleY ?? transform.scaleY ?? 1;
 
       canvas.translate(x + offsetX, y + offsetY);
       canvas.rotate((rotation * 180) / Math.PI, 0, 0);
