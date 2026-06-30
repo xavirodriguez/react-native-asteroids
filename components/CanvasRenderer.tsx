@@ -1,17 +1,21 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { View, StyleSheet, Platform } from "react-native";
-import { World, GameLoop } from "@tiny-aster/core";
+import { World, GameLoop, CoreComponentRegistry } from "@tiny-aster/core";
 import { CanvasRenderer as EngineCanvasRenderer } from "@tiny-aster/renderer-canvas";
 
-interface CanvasRendererProps {
-  world: World<any>;
+interface CanvasRendererProps<TRegistry extends CoreComponentRegistry> {
+  world: World<TRegistry>;
   gameLoop?: GameLoop;
-  onInitialize?: (renderer: EngineCanvasRenderer) => void;
+  onInitialize?: (renderer: EngineCanvasRenderer<TRegistry>) => void;
 }
 
-export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, gameLoop, onInitialize }) => {
+export const CanvasRenderer = <TRegistry extends CoreComponentRegistry>({
+  world,
+  gameLoop,
+  onInitialize,
+}: CanvasRendererProps<TRegistry>) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rendererRef = useRef<EngineCanvasRenderer | null>(null);
+  const rendererRef = useRef<EngineCanvasRenderer<TRegistry> | null>(null);
 
   useEffect(() => {
     if (Platform.OS !== "web" || !canvasRef.current) return;
@@ -27,7 +31,7 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({ world, gameLoop,
       }
     }
 
-    const unsub = gameLoop?.subscribeRender((alpha) => {
+    const unsub = gameLoop?.subscribeRender((_alpha) => {
       if (rendererRef.current && ctx) {
         rendererRef.current.render(world, ctx);
       }
