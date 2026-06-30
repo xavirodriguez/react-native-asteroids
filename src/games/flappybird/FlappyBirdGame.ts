@@ -1,4 +1,4 @@
-import { BaseGame } from "@tiny-aster/core";
+import { BaseGame, WorldSnapshot, UpdateListener, GameLoop, World } from "@tiny-aster/core";
 import { FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE, FlappyBirdState, BirdComponent, PipeComponent } from "./types/FlappyBirdTypes";
 import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
 import { FlappyBirdInputSystem } from "./systems/FlappyBirdInputSystem";
@@ -6,8 +6,6 @@ import { FlappyBirdCollisionSystem } from "./systems/FlappyBirdCollisionSystem";
 import { FlappyBirdGlideSystem } from "./systems/FlappyBirdGlideSystem";
 import { FlappyBirdRenderSystem } from "./systems/FlappyBirdRenderSystem";
 import { IFlappyBirdGame } from "./types/GameInterfaces";
-import { GameLoop } from "@tiny-aster/core";
-import { World } from "@tiny-aster/core";
 import { InputBufferSystem } from "@tiny-aster/core";
 import { MovementSystem } from "@tiny-aster/core";
 import { CollisionSystem2D } from "@tiny-aster/core";
@@ -178,7 +176,7 @@ export class FlappyBirdGame
     }
 
     // Sync with NetworkManager for interpolation
-    const snapshot: import("../../engine/types/EngineTypes").WorldSnapshot = {
+    const snapshot: WorldSnapshot = {
         tick: (state.tick as number) || 0,
         entities: [],
         componentData: { Transform: {} },
@@ -266,6 +264,6 @@ export class NullFlappyBirdGame implements IFlappyBirdGame {
   public getGameState() { return INITIAL_FLAPPY_STATE; }
   public getSeed() { return 0; }
   public setInput() {}
-  public subscribe(_listener: import("../../engine/core/IGame").UpdateListener<unknown>) { return () => {}; }
+  public subscribe(_listener: UpdateListener<unknown>) { return () => {}; }
   public initializeRenderer() {}
 }

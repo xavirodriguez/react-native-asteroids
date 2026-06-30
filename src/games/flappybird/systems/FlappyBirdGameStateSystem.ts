@@ -1,5 +1,4 @@
-import { World } from "@tiny-aster/core";
-import { TransformComponent } from "@tiny-aster/core";
+import { World, BaseGame, TransformComponent } from "@tiny-aster/core";
 import {
   PipeComponent,
   FLAPPY_CONFIG,
@@ -15,7 +14,7 @@ import { BaseGameStateSystem } from "@tiny-aster/core";
  */
 export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdState> implements IFlappyStateSystem {
   constructor(game: IFlappyBirdGame, private config: typeof FLAPPY_CONFIG = FLAPPY_CONFIG) {
-    super(game as unknown as IFlappyBirdGame & import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, boolean>>);
+    super(game as unknown as IFlappyBirdGame & BaseGame<unknown, Record<string, boolean>>);
   }
 
   protected updateGameState(world: World, gameState: FlappyBirdState, deltaTime: number): void {

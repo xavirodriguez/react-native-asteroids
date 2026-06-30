@@ -15,16 +15,16 @@
 - [x] Tarea 2.1: Crear el paquete `packages/react-native` y extraer los hooks esenciales (`useGameLoop`, `useWorld`) consumiendo solo `@tiny-aster/core`.
 - [x] Tarea 2.2: Desconectar el juego más simple (ej: PongGame) de `src/engine` y reescribir sus sistemas usando el nuevo `@tiny-aster/core`.
 - [x] Tarea 2.3: Extraer el primer adaptador de renderizado a su propio paquete (ej: `packages/renderer-canvas` o similar).
-- [ ] Tarea 2.4: Ejecutar test de estrés temprano en el juego migrado para asegurar que el ECS genérico no degrada los FPS respecto al Benchmark Cero.
+- [x] Tarea 2.4: Ejecutar test de estrés temprano en el juego migrado para asegurar que el ECS genérico no degrada los FPS respecto al Benchmark Cero.
 
 #### FASE 3: Migración en Masa y Desacoplamiento
 - [x] Tarea 3.1: Portar al core los sistemas complejos rezagados: colisiones circulares/poligonales deterministas y sistema de límites (`Boundary`).
-- [ ] Tarea 3.2: Migrar por completo `AsteroidsGame` al nuevo `@tiny-aster/core`.
+- [x] Tarea 3.2: Migrar por completo `AsteroidsGame` al nuevo `@tiny-aster/core`.
 - [x] Tarea 3.3: Extraer `packages/renderer-skia` de forma limpia y aislada.
 - [x] Tarea 3.4: Extraer `packages/network-colyseus` para la lógica multiplayer.
 - [x] Tarea 3.5: Migrar `useMultiplayer` y los providers globales de la app para consumir los nuevos adaptadores.
 
 #### FASE 4: El Apagón del Legacy
-- [ ] Tarea 4.1: Cambiar la regla de ESLint/Biome de WARNING a ERROR para imports de `src/engine/`. El CI debe fallar si alguien la usa.
-- [ ] Tarea 4.2: Eliminar físicamente la carpeta `src/engine/`.
-- [ ] Tarea 4.3: Limpiar configuraciones del monorepo, alias en `tsconfig.json` y dependencias muertas en `package.json`.
+- [x] Tarea 4.1: Cambiar la regla de ESLint/Biome de WARNING a ERROR para imports de `src/engine/`. El CI debe fallar si alguien la usa.
+- [x] Tarea 4.2: Eliminar físicamente la carpeta `src/engine/`.
+- [x] Tarea 4.3: Limpiar configuraciones del monorepo, alias en `tsconfig.json` y dependencias muertas en `package.json`.
