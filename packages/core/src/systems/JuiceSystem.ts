@@ -26,12 +26,14 @@ export class JuiceSystem extends System<CoreComponentRegistry> {
                 const progress = Math.min(1, effectiveElapsed / anim.duration);
                 const easedProgress = this.getEasedValue(progress, anim.easing);
 
-                if (anim.startValue === undefined) {
+                if (anim.startValue === undefined && anim.property) {
                     anim.startValue = this.getCurrentValue(anim.property, offset, render);
                 }
 
-                const value = anim.startValue + (anim.target - anim.startValue) * easedProgress;
-                this.applyValue(world, entity, anim.property, value);
+                if (anim.target !== undefined && anim.startValue !== undefined && anim.property) {
+                    const value = anim.startValue + (anim.target - anim.startValue) * easedProgress;
+                    this.applyValue(world, entity, anim.property, value);
+                }
                 hasChanges = true;
 
                 if (progress >= 1) {

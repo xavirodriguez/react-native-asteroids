@@ -89,14 +89,20 @@ export class WorldCommandBuffer<
   }
 
   /**
-   * @deprecated
-   * Directly creating entities via the command buffer is not supported as it
-   * cannot return a valid entity ID immediately.
-   * Use {@link WorldCommandBuffer.spawnFromBlueprint} for deferred spawning, or create entities directly in the world
-   * if the ID is needed immediately.
+   * Schedules a specific entity ID to be activated in the world.
+   *
+   * @remarks
+   * This is useful when an ID has been pre-reserved via {@link World.reserveEntityId}.
    */
-  public createEntity(): number {
-      console.warn("WorldCommandBuffer.createEntity() is not recommended. Use spawnFromBlueprint if possible.");
-      return -1;
+  public createEntity(entity: number): void {
+    this.commands.push({
+      execute: (world) => {
+        // Since the ID is already reserved, we just need to ensure it's marked as active.
+        // If the ID was NOT reserved, this might cause issues if not careful.
+        const w = world as unknown as { activeEntities: Set<number>, _structureVersion: number };
+        w.activeEntities.add(entity);
+        w._structureVersion++;
+      }
+    });
   }
 }

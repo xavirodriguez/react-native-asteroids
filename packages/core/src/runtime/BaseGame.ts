@@ -1,4 +1,4 @@
-import { World, ComponentRegistry, BlueprintRegistryMap } from "../ecs/World";
+import { World, ComponentRegistry, BlueprintRegistryMap, ComponentType } from "../ecs/World";
 import { Component } from "../ecs/Component";
 import { Entity } from "../ecs/Entity";
 import { EventRegistry, EventBus } from "../events/EventBus";
@@ -209,26 +209,26 @@ export abstract class BaseGame<
   /**
    * Helper to handle deferred or immediate entity creation and component attachment.
    */
-  protected createBaseEntity(deferred?: boolean): { entity: Entity, add: (comp: Component) => void } {
+  protected createBaseEntity(deferred?: boolean): { entity: Entity; add: <K extends ComponentType<TComponents>>(comp: TComponents[K] & { type: K }) => void } {
     const isUpdating = this.world.isUpdating;
     const isDeferred = !!(deferred || isUpdating);
     const commands = this.world.getCommandBuffer();
 
     if (isDeferred) {
-        const entity = (this.world as any).reserveEntityId();
-        (commands as any).createEntity(entity);
-        return {
-            entity,
-            add: (comp: Component) => {
-                (commands as any).addComponent(entity, comp as any);
-            }
-        };
+      const entity = this.world.reserveEntityId();
+      commands.createEntity(entity);
+      return {
+        entity,
+        add: <K extends ComponentType<TComponents>>(comp: TComponents[K] & { type: K }) => {
+          commands.addComponent(entity, comp);
+        }
+      };
     }
 
-    const entity = (this.world as any).createEntity();
+    const entity = this.world.createEntity();
     return {
-        entity,
-        add: (comp: Component) => (this.world as any).addComponent(entity, comp as any)
+      entity,
+      add: <K extends ComponentType<TComponents>>(comp: TComponents[K] & { type: K }) => this.world.addComponent(entity, comp)
     };
   }
 }

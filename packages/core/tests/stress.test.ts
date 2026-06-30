@@ -1,4 +1,4 @@
-import { World, MovementSystem, CollisionSystem2D, SystemPhase, TransformComponent, VelocityComponent, Collider2DComponent } from "../src";
+import { World, MovementSystem, CollisionSystem2D, SystemPhase, TransformComponent, VelocityComponent, ColliderComponent, ShapeType } from "../src";
 
 /**
  * Basic Stress Test for TinyAster Core ECS.
@@ -31,12 +31,13 @@ describe("TinyAster Core Stress Test", () => {
       } as VelocityComponent);
 
       world.addComponent(entity, {
-        type: "Collider2D",
-        shape: { type: "circle", radius: 5 },
-        isStatic: false,
+        type: "Collider",
+        shape: { type: ShapeType.Circle, radius: 5 },
+        enabled: true,
+        isTrigger: false,
         layer: 1,
         mask: 1
-      } as Collider2DComponent);
+      } as ColliderComponent);
     }
 
     const start = Date.now();
