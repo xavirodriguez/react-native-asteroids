@@ -1,7 +1,14 @@
-import { World } from "@tiny-aster/core";
-import { GameLoop } from "@tiny-aster/core";
+import {
+  World,
+  GameLoop,
+  BaseGame,
+  WorldSnapshot,
+  Component,
+  TransformComponent,
+  RenderComponent,
+  UpdateListener,
+} from "@tiny-aster/core";
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { BaseGame } from "@tiny-aster/core";
 import { GameStateComponent, InputState, INITIAL_GAME_STATE } from "./types/SpaceInvadersTypes";
 import { SpaceInvadersConfigSchema, SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
 import { ConfigService } from "@tiny-aster/core";
@@ -133,7 +140,7 @@ export class SpaceInvadersGame
     const currentServerEntities = new Set<string>();
 
     // Sync with NetworkManager for interpolation
-    const snapshot: import("../../engine/types/EngineTypes").WorldSnapshot = {
+    const snapshot: WorldSnapshot = {
         tick: (state.tick as number) || 0,
         entities: [],
         componentData: { Transform: {} },
@@ -151,15 +158,15 @@ export class SpaceInvadersGame
 
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
-          commands.addComponent(entity, { type: "Player" } as import("../../engine/types/EngineTypes").Component);
-          commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "player_ship", size: 20, color: "green", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+          commands.addComponent(entity, { type: "Player" } as Component);
+          commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "player_ship", size: 20, color: "green", rotation: 0 } as RenderComponent);
         }
 
         snapshot.entities.push(entity);
         snapshot.componentData["Transform"][entity] = { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 };
 
-        world.mutateComponent<import("../../engine/types/EngineTypes").RenderComponent>(entity, "Render", render => {
+        world.mutateComponent<RenderComponent>(entity, "Render", render => {
           render.color = playerState.alive ? "green" : "red";
         });
       });
@@ -176,8 +183,8 @@ export class SpaceInvadersGame
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
           commands.addComponent(entity, { type: "Invader", row: 0, col: 0, points: 10 } as import("./types/SpaceInvadersTypes").InvaderComponent);
-          commands.addComponent(entity, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+          commands.addComponent(entity, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 } as RenderComponent);
         }
 
         snapshot.entities.push(entity);
@@ -194,9 +201,9 @@ export class SpaceInvadersGame
 
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
-          commands.addComponent(entity, { type: "PlayerBullet" } as import("../../engine/types/EngineTypes").Component);
-          commands.addComponent(entity, { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1 } as import("../../engine/types/EngineTypes").TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "player_bullet", size: 5, color: "yellow", rotation: 0 } as import("../../engine/types/EngineTypes").RenderComponent);
+          commands.addComponent(entity, { type: "PlayerBullet" } as Component);
+          commands.addComponent(entity, { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "player_bullet", size: 5, color: "yellow", rotation: 0 } as RenderComponent);
         }
 
         snapshot.entities.push(entity);
@@ -300,6 +307,6 @@ export class NullSpaceInvadersGame implements ISpaceInvadersGame {
   public isGameOver() { return false; }
   public getGameState() { return INITIAL_GAME_STATE; }
   public getSeed() { return 0; }
-  public subscribe(_listener: import("../../engine/core/IGame").UpdateListener<unknown>) { return () => {}; }
+  public subscribe(_listener: UpdateListener<unknown>) { return () => {}; }
   public initializeRenderer() {}
 }

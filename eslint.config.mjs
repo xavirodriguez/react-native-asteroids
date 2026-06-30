@@ -71,7 +71,6 @@ export default tseslint.config(
         "error",
         {
           allow: [
-            "../src/engine/rendering/SkiaRenderer",
             "@shopify/react-native-skia",
             "./EntityFactory",
             "./AsteroidsSkiaVisuals",
@@ -83,14 +82,12 @@ export default tseslint.config(
         },
       ],
       "no-restricted-imports": [
-        "warn",
+        "error",
         {
           patterns: [
             {
               group: [
                 "**/engine/**",
-                "!**/engine/index",
-                "!**/engine/index.ts",
               ],
               message:
                 "Please import from '@tiny-aster/core' instead of legacy 'src/engine'.",

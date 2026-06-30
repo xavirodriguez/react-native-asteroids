@@ -1,5 +1,4 @@
-import { Scene } from "@tiny-aster/core";
-import { World } from "@tiny-aster/core";
+import { Scene, World, EventBus, BaseGame } from "@tiny-aster/core";
 import { MovementSystem } from "@tiny-aster/core";
 import { TTLSystem } from "@tiny-aster/core";
 import { JuiceSystem } from "@tiny-aster/core";
@@ -61,7 +60,7 @@ export class SpaceInvadersGameScene extends Scene {
   public onEnter(): void {
     // Inject resources into the scene world
     this.world.setResource("GameConfig", this.config);
-    const eventBus = (this.game as unknown as { eventBus: import("../../../engine/core/EventBus").EventBus }).eventBus;
+    const eventBus = (this.game as unknown as { eventBus: EventBus }).eventBus;
     if (eventBus) {
       this.world.setResource("EventBus", eventBus);
     }
@@ -70,7 +69,7 @@ export class SpaceInvadersGameScene extends Scene {
     const inputSys = new SpaceInvadersInputSystem(this.playerBulletPool);
     if (this.game.isMultiplayer) inputSys.setMultiplayerMode(true);
 
-    this.world.addSystem((this.game as unknown as import("../../../engine/core/BaseGame").BaseGame<unknown, Record<string, unknown>>).unifiedInput, { phase: SystemPhase.Input });
+    this.world.addSystem((this.game as unknown as BaseGame<unknown, Record<string, unknown>>).unifiedInput, { phase: SystemPhase.Input });
     this.world.addSystem(inputSys, { phase: SystemPhase.Simulation });
     this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(new BoundarySystem(), { phase: SystemPhase.Simulation });
