@@ -28,3 +28,9 @@
 - [x] Tarea 4.1: Cambiar la regla de ESLint/Biome de WARNING a ERROR para imports de `src/engine/`. El CI debe fallar si alguien la usa.
 - [x] Tarea 4.2: Eliminar físicamente la carpeta `src/engine/`.
 - [x] Tarea 4.3: Limpiar configuraciones del monorepo, alias en `tsconfig.json` y dependencias muertas en `package.json`.
+
+#### FASE 5: Excelencia Técnica y Hardening
+- [x] Tarea 5.1: Eliminar residuos de compilación (`index.js`) y corregir scripts de `typecheck` en el core.
+- [x] Tarea 5.2: Refactorizar `BaseGame.createBaseEntity` para eliminar `as any` y usar propagación de genéricos correcta.
+- [x] Tarea 5.3: Limpieza de `any` en `CoreComponents.ts` (Animator, StateMachine, Juice).
+- [x] Tarea 5.4: Asegurar CERO tipos `any` en contratos de `Renderer` y `SnapshotSerializer`.
