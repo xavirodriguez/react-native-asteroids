@@ -1,30 +1,43 @@
-### 📋 LISTA MAESTRA DE TAREAS (ROADMAP EVOLUTIVO)
+### 📋 LISTA MAESTRA DE TAREAS (TODO.md)
 
-#### FASE 0: Diagnóstico y Alertas Pasivas
-- [x] Tarea 0.1: Configurar regla de ESLint/Biome para lanzar WARNINGS (no error) al importar desde `src/engine/` en la app.
-- [x] Tarea 0.2: Crear un script básico de telemetría o documentar el "Benchmark Cero" (FPS, uso de memoria estimado en el JS Thread para Asteroids/Pong legacy).
-- [x] Tarea 0.3: Implementar un "Smoke Test de Tipado" en `packages/core` que inicialice un mundo ficticio con 2 componentes y 1 sistema para validar la inferencia de tipos sin verbosidad.
+#### FASE 0: Alinear BaseGame con useGame.ts
 
-#### FASE 1: El Core Mínimo Viable (MVP Core)
-- [x] Tarea 1.1: Portar `FrameScheduler` básico (unificar loops de juego) a `packages/core`.
-- [x] Tarea 1.2: Portar lógica física de movimiento lineal elemental (sin fricciones complejas ni colisiones avanzadas).
-- [x] Tarea 1.3: Definir interfaces y contratos mínimos de renderizado (`Renderer<T>`) en el core.
-- [x] Tarea 1.4: Configurar `src/engine/index.ts` como un pasamanos (re-export) exclusivo de los módulos migrados en esta fase.
+* [ ] Tarea 0.1: Extender `packages/core/src/runtime/BaseGame.ts` (o crear `RunnableGame.ts` si es arquitectónicamente mejor) para implementar los métodos que `useGame.ts` requiere:
+    * `init(): Promise<void>` (debe invocar internamente a `initialize()`)
+    * `start(): void` (debe arrancar el `GameLoop`)
+    * `destroy(): void` (detiene el loop y limpia recursos)
+    * `subscribe(cb: (state: TState) => void): () => void`
+    * `isPausedState(): boolean`
+    * `restart(seed?: number): Promise<void>`
+    * `getInputSystem(): InputSystem`
 
-#### FASE 2: Primera Cabeza de Playa (Migración Vertical del Primer Juego)
-- [x] Tarea 2.1: Crear el paquete `packages/react-native` y extraer los hooks esenciales (`useGameLoop`, `useWorld`) consumiendo solo `@tiny-aster/core`.
-- [x] Tarea 2.2: Desconectar el juego más simple (ej: PongGame) de `src/engine` y reescribir sus sistemas usando el nuevo `@tiny-aster/core`.
-- [x] Tarea 2.3: Extraer el primer adaptador de renderizado a su propio paquete (ej: `packages/renderer-canvas` o similar).
-- [x] Tarea 2.4: Ejecutar test de estrés temprano en el juego migrado para asegurar que el ECS genérico no degrada los FPS respecto al Benchmark Cero.
+* [ ] Tarea 0.2: Eliminar la dependencia legacy `require("../engine/debug/DebugManager")` en la línea 169 de `src/hooks/useGame.ts`. Mover la lógica necesaria o limpiar la llamada.
 
-#### FASE 3: Migración en Masa y Desacoplamiento
-- [x] Tarea 3.1: Portar al core los sistemas complejos rezagados: colisiones circulares/poligonales deterministas y sistema de límites (`Boundary`).
-- [x] Tarea 3.2: Migrar por completo `AsteroidsGame` al nuevo `@tiny-aster/core`.
-- [x] Tarea 3.3: Extraer `packages/renderer-skia` de forma limpia y aislada.
-- [x] Tarea 3.4: Extraer `packages/network-colyseus` para la lógica multiplayer.
-- [x] Tarea 3.5: Migrar `useMultiplayer` y los providers globales de la app para consumir los nuevos adaptadores.
+* **Criterio de éxito:** Ejecutar `pnpm --filter @tiny-aster/core typecheck` y que termine con código 0.
 
-#### FASE 4: El Apagón del Legacy
-- [x] Tarea 4.1: Cambiar la regla de ESLint/Biome de WARNING a ERROR para imports de `src/engine/`. El CI debe fallar si alguien la usa.
-- [x] Tarea 4.2: Eliminar físicamente la carpeta `src/engine/`.
-- [x] Tarea 4.3: Limpiar configuraciones del monorepo, alias en `tsconfig.json` y dependencias muertas en `package.json`.
+#### FASE 1: Completar packages/renderer-skia
+
+* [ ] Tarea 1.1: `packages/renderer-skia/src/SkiaRenderer.ts` es actualmente un stub (`console.log`). Implementar la interfaz `Renderer<TRegistry, SkiaCanvas>` del core utilizando `@shopify/react-native-skia` para el dibujado real.
+* [ ] Tarea 1.2: Configurar `packages/renderer-skia/package.json` para empaquetar con `tsup` (añadir script `build` idéntico al de `@tiny-aster/core`).
+
+* **Criterio de éxito:** Ejecutar `pnpm --filter @tiny-aster/renderer-skia build` con éxito.
+
+#### FASE 2: Completar los Juegos (Uno a la vez)
+
+* [ ] Tarea 2.1: Migrar **Pong** (`src/games/pong/`). Crear su propio `ComponentRegistry` real (eliminar `ExampleRegistration`), extender el nuevo `BaseGame` adaptado y conectarlo con `SkiaRenderer` en `src/app/pong/index.tsx`.
+* [ ] Tarea 2.2: Migrar **FlappyBird** (`src/games/flappybird/`). Crear la carpeta `components/`, definir `FlappyBirdComponentRegistry`, mapear entidades (pájaro/tuberías) y conectar su vista nativa.
+* [ ] Tarea 2.3: Migrar **Space Invaders** (`src/games/space-invaders/`). Conectar el directorio `scenes/` al `SceneManager` del core mediante el `StateMachineSystem`.
+
+* **Criterio de éxito por juego:** El typecheck general pasa y la pantalla del juego inicializa en Expo Go sin crashear.
+
+#### FASE 3: Implementar packages/network-colyseus
+
+* [ ] Tarea 3.1: Hacer que `packages/network-colyseus/src/ColyseusTransport.ts` implemente formalmente la interfaz `NetworkTransport` del core mapeando los métodos `connect`, `send`, `onMessage` y `disconnect`.
+
+* **Criterio de éxito:** Ejecutar `pnpm --filter @tiny-aster/network-colyseus typecheck` sin errores.
+
+#### FASE 4: Guardrail e Inmunidad Arquitectónica
+
+* [ ] Tarea 4.1: Crear el script bash automatizado en `scripts/check-core-boundaries.sh` que analice `packages/core/src` y falle (exit 1) si encuentra imports prohibidos como `react-native`, `expo-*`, `@colyseus` o referencias directas a componentes de juegos específicos.
+
+* **Criterio de éxito:** El script corre localmente y pasa de forma exitosa en una estructura limpia.
