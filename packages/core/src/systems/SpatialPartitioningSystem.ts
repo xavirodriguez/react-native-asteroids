@@ -1,5 +1,6 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
+import { CoreComponentRegistry } from "../ecs/CoreComponents";
 
 /**
  * System that organizes entities into spatial structures to optimize queries.
@@ -17,8 +18,8 @@ import { World } from "../ecs/World";
  * the next update, any behavior relying on historical cache state may be inconsistent
  * after a world restoration or rollback.
  */
-export class SpatialPartitioningSystem extends System<any> {
-  public update(world: World<any>, _deltaTime: number): void {
+export class SpatialPartitioningSystem extends System<CoreComponentRegistry> {
+  public update(world: World<CoreComponentRegistry>, _deltaTime: number): void {
       // Spatial logic
   }
 }

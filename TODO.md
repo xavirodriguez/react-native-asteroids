@@ -34,3 +34,7 @@
 - [x] Tarea 5.2: Refactorizar `BaseGame.createBaseEntity` para eliminar `as any` y usar propagación de genéricos correcta.
 - [x] Tarea 5.3: Limpieza de `any` en `CoreComponents.ts` (Animator, StateMachine, Juice).
 - [x] Tarea 5.4: Asegurar CERO tipos `any` en contratos de `Renderer` y `SnapshotSerializer`.
+- [x] Tarea 5.5: Eliminar `any` en sistemas core (Physics, Camera, SpatialPartitioning).
+- [x] Tarea 5.6: Refactorizar `JuiceSystem` y utilidad `Juice` para eliminar `as any`.
+- [x] Tarea 5.7: Hardenizar tipos en `SnapshotSerializer` eliminando `@ts-ignore` y `any`.
+- [x] Tarea 5.8: Limpieza de `any` y `as any` en componentes y sistemas restantes (Tilemap, TTL, Animation).

@@ -3,6 +3,17 @@ import { ComponentRegistry } from "../ecs/Component";
 import { World } from "../ecs/World";
 import { WorldSnapshot, ComponentDataSnapshot, SerializedComponent } from "./WorldSnapshot";
 
+/**
+ * Internal interface to access private world state for serialization.
+ */
+interface InternalWorldAccess<TComponents extends ComponentRegistry> {
+  activeEntities: Set<number>;
+  entityComponentSets: Map<number, Set<string>>;
+  componentMaps: Map<string, Map<number, unknown>>;
+  nextEntityId: number;
+  freeEntities: number[];
+}
+
 export class SnapshotSerializer {
   /**
    * Captures the current serializable state of the world.
@@ -31,13 +42,11 @@ export class SnapshotSerializer {
     target?: WorldSnapshot
   ): WorldSnapshot {
     const componentData: ComponentDataSnapshot = target?.componentData ?? {};
+    const internal = world as unknown as InternalWorldAccess<TComponents>;
 
-    // @ts-ignore
-    const activeEntities = world["activeEntities"] as Set<number>;
-    // @ts-ignore
-    const entityComponentSets = world["entityComponentSets"] as Map<number, Set<string>>;
-    // @ts-ignore
-    const componentMaps = world["componentMaps"] as Map<string, Map<number, any>>;
+    const activeEntities = internal.activeEntities;
+    const entityComponentSets = internal.entityComponentSets;
+    const componentMaps = internal.componentMaps;
 
     activeEntities.forEach(entity => {
       const componentSet = entityComponentSets.get(entity);
@@ -70,8 +79,8 @@ export class SnapshotSerializer {
     return {
       entities: Array.from(activeEntities).sort((a, b) => a - b),
       componentData,
-      nextEntityId: world["nextEntityId"],
-      freeEntities: [...world["freeEntities"]],
+      nextEntityId: internal.nextEntityId,
+      freeEntities: [...internal.freeEntities],
       structureVersion: world.structureVersion,
       stateVersion: world.stateVersion,
       seed: world.gameplayRandom.getSeed(),
@@ -99,10 +108,9 @@ export class SnapshotSerializer {
     sinceVersion: number
   ): Partial<WorldSnapshot> {
     const componentData: ComponentDataSnapshot = {};
-    // @ts-ignore
-    const componentMaps = world["componentMaps"] as Map<string, Map<number, any>>;
-    // @ts-ignore
-    const componentVersions = world["componentVersions"] as Map<string, Map<number, number>>;
+    const internal = world as unknown as InternalWorldAccess<TComponents> & { componentVersions: Map<string, Map<number, number>> };
+    const componentMaps = internal.componentMaps;
+    const componentVersions = internal.componentVersions;
 
     componentMaps.forEach((map, type) => {
       const typeVersions = componentVersions.get(type);
