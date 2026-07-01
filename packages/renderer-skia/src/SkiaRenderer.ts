@@ -25,7 +25,7 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
     let mainCameraEntity: Entity | undefined;
 
     for (let i = 0; i < cameras.length; i++) {
-      const cam = world.getComponent(cameras[i], cameraType) as unknown as Camera2DComponent | undefined;
+      const cam = world.getComponent(cameras[i], cameraType) as Camera2DComponent | undefined;
       if (cam?.isMain) {
         mainCameraEntity = cameras[i];
         break;
@@ -35,7 +35,7 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
     canvas.save();
 
     if (mainCameraEntity !== undefined) {
-      const cam = world.getComponent(mainCameraEntity, cameraType) as unknown as Camera2DComponent | undefined;
+      const cam = world.getComponent(mainCameraEntity, cameraType) as Camera2DComponent | undefined;
       if (cam) {
         // Center camera and apply zoom
         canvas.translate(-cam.x, -cam.y);
@@ -47,21 +47,21 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
 
     // Sort by order to handle layering
     const sortedEntities = [...entities].sort((a, b) => {
-      const renderA = world.getComponent(a, renderType) as unknown as RenderComponent | undefined;
-      const renderB = world.getComponent(b, renderType) as unknown as RenderComponent | undefined;
+      const renderA = world.getComponent(a, renderType) as RenderComponent | undefined;
+      const renderB = world.getComponent(b, renderType) as RenderComponent | undefined;
       return (renderA?.order || 0) - (renderB?.order || 0);
     });
 
     for (let i = 0; i < sortedEntities.length; i++) {
       const entity = sortedEntities[i];
-      const transform = world.getComponent(entity, transformType) as unknown as TransformComponent | undefined;
-      const render = world.getComponent(entity, renderType) as unknown as RenderComponent | undefined;
+      const transform = world.getComponent(entity, transformType) as TransformComponent | undefined;
+      const render = world.getComponent(entity, renderType) as RenderComponent | undefined;
 
       if (!render || !transform || !render.visible || render.opacity === 0) continue;
 
       canvas.save();
 
-      const visualOffset = world.getComponent(entity, visualOffsetType) as unknown as VisualOffsetComponent | undefined;
+      const visualOffset = world.getComponent(entity, visualOffsetType) as VisualOffsetComponent | undefined;
       const offsetX = visualOffset?.offsetX ?? 0;
       const offsetY = visualOffset?.offsetY ?? 0;
 
@@ -78,7 +78,7 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
       this.paint.setColor(Skia.Color(render.color || "white"));
       this.paint.setAlphaf(render.opacity ?? 1);
 
-      const collider = world.getComponent(entity, colliderType) as unknown as ColliderComponent | undefined;
+      const collider = world.getComponent(entity, colliderType) as ColliderComponent | undefined;
       if (collider && collider.enabled) {
         const shapeTypeStr = ShapeType[collider.shape.type];
         const drawer = this.shapeDrawers.get(shapeTypeStr);

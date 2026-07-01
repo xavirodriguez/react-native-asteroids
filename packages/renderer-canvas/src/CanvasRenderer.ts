@@ -29,14 +29,14 @@ export class CanvasRenderer<TRegistry extends CoreComponentRegistry = CoreCompon
     }
 
     this.sortedEntities.sort((a, b) => {
-      const renderA = world.getComponent(a, renderType) as unknown as RenderComponent | undefined;
-      const renderB = world.getComponent(b, renderType) as unknown as RenderComponent | undefined;
+      const renderA = world.getComponent(a, renderType) as RenderComponent | undefined;
+      const renderB = world.getComponent(b, renderType) as RenderComponent | undefined;
       return (renderA?.order || 0) - (renderB?.order || 0);
     });
 
     for (const entity of this.sortedEntities) {
-      const render = world.getComponent(entity, renderType) as unknown as RenderComponent | undefined;
-      const transform = world.getComponent(entity, transformType) as unknown as TransformComponent | undefined;
+      const render = world.getComponent(entity, renderType) as RenderComponent | undefined;
+      const transform = world.getComponent(entity, transformType) as TransformComponent | undefined;
 
       if (!render || !render.visible || render.opacity === 0) continue;
       if (!transform) continue;
@@ -58,7 +58,7 @@ export class CanvasRenderer<TRegistry extends CoreComponentRegistry = CoreCompon
         ctx.fillStyle = render.color;
       }
 
-      const collider = world.getComponent(entity, colliderType) as unknown as ColliderComponent | undefined;
+      const collider = world.getComponent(entity, colliderType) as ColliderComponent | undefined;
       if (collider && collider.enabled) {
         const shapeTypeStr = ShapeType[collider.shape.type];
         const drawer = this.shapeDrawers.get(shapeTypeStr);
