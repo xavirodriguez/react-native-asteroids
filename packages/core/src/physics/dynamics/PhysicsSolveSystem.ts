@@ -5,8 +5,8 @@ import { ComponentRegistry } from "../../ecs/Component";
 /**
  * System that solves collision constraints.
  */
-export class PhysicsSolveSystem<TRegistry extends ComponentRegistry = any> extends System<TRegistry> {
-  public update(world: World<TRegistry>, deltaTime: number): void {
+export class PhysicsSolveSystem<TRegistry extends ComponentRegistry = ComponentRegistry> extends System<TRegistry> {
+  public update(world: World<TRegistry>, _deltaTime: number): void {
     // Collision resolution and constraint solving logic
   }
 }

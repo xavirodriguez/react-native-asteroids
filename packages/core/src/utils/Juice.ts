@@ -68,7 +68,7 @@ export class Juice {
   /**
    * Simple squash and stretch animation.
    */
-  public static squash(world: World<any>, entity: Entity, sx: number, sy: number, duration: number): void {
+  public static squash(world: World<CoreComponentRegistry>, entity: Entity, sx: number, sy: number, duration: number): void {
     this.add(world, entity, {
         property: "scaleX",
         target: sx,

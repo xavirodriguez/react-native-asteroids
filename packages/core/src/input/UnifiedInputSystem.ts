@@ -28,7 +28,7 @@ export class UnifiedInputSystem extends System<ComponentRegistry> implements Inp
     this.overrides[action] = pressed;
   }
 
-  public update(world: World<any>, _deltaTime: number): void {
+  public update(world: World<ComponentRegistry>, _deltaTime: number): void {
       // Input logic
       // In a real implementation, this would combine raw inputs with overrides
   }

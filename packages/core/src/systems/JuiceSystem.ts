@@ -48,26 +48,32 @@ export class JuiceSystem extends System<CoreComponentRegistry> {
 
             if (hasChanges) {
                 world.mutateComponent(entity, "Juice", j => {
-                    j.animations = animations as any;
+                    j.animations = animations;
                 });
             }
         }
     }
 
     private getCurrentValue(prop: string, offset?: import("../index").DeepReadonly<VisualOffsetComponent>, render?: import("../index").DeepReadonly<RenderComponent>): number {
-        if (offset && prop in offset) return (offset as any)[prop];
-        if (render && prop in render) return (render as any)[prop];
+        if (offset && (prop === "offsetX" || prop === "offsetY" || prop === "x" || prop === "y" || prop === "scaleX" || prop === "scaleY")) {
+            const key = (prop === "x" || prop === "y") ? (prop === "x" ? "offsetX" : "offsetY") : prop;
+            return (offset as unknown as Record<string, number>)[key] ?? 0;
+        }
+        if (render && (prop === "opacity" || prop === "rotation")) {
+            return (render as unknown as Record<string, number>)[prop] ?? 0;
+        }
         return 0;
     }
 
     private applyValue(world: World<CoreComponentRegistry>, entity: number, prop: string, value: number): void {
         if (prop === "scaleX" || prop === "scaleY" || prop === "x" || prop === "y") {
             world.mutateComponent(entity, "VisualOffset", o => {
-                (o as any)[prop] = value;
+                const key = (prop === "x" || prop === "y") ? (prop === "x" ? "offsetX" : "offsetY") : prop;
+                (o as unknown as Record<string, number>)[key] = value;
             });
         } else if (prop === "opacity" || prop === "rotation") {
             world.mutateComponent(entity, "Render", r => {
-                (r as any)[prop] = value;
+                (r as unknown as Record<string, number>)[prop] = value;
             });
         }
     }

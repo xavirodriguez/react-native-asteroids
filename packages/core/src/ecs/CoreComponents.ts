@@ -135,7 +135,12 @@ export interface TilemapComponent extends Component {
   type: "Tilemap";
   data: number[][];
   tileSize: number;
-  visibleRange?: any;
+  visibleRange?: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  };
 }
 
 export interface Camera2DComponent extends Component {

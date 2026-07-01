@@ -1,7 +1,7 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
 import { IEntityPool, CoreComponentRegistry } from "../ecs/CoreComponents";
-import { EventBus } from "../events/EventBus";
+import { EventBus, EventRegistry } from "../events/EventBus";
 
 /**
  * System responsible for managing the lifetime (Time To Live) of entities.
@@ -30,8 +30,10 @@ export class TTLSystem extends System<CoreComponentRegistry> {
         const reclaimable = world.getComponent(entity, "Reclaimable");
 
         if (ttl?.onCompleteEvent) {
-          const bus = world.getResource<EventBus>("EventBus");
-          if (bus) bus.emitDeferred(ttl.onCompleteEvent as any, { entity });
+          const bus = world.getEventBus();
+          if (bus) {
+            bus.emitDeferred(ttl.onCompleteEvent as string & keyof EventRegistry, { entity } as never);
+          }
         }
 
         if (reclaimable) {

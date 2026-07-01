@@ -1,6 +1,7 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
 import { CoreComponentRegistry } from "../ecs/CoreComponents";
+import { EventRegistry } from "../events/EventBus";
 
 export class AnimationSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, deltaTime: number): void {
@@ -27,7 +28,7 @@ export class AnimationSystem extends System<CoreComponentRegistry> {
             } else {
               a.frame = anim.frames.length - 1;
               if (anim.onCompleteEvent) {
-                world.getEventBus().emitDeferred(anim.onCompleteEvent as any, { entity });
+                world.getEventBus().emitDeferred(anim.onCompleteEvent as string & keyof EventRegistry, { entity } as never);
               }
             }
           }
