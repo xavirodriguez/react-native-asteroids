@@ -9,7 +9,7 @@ export class SkiaCircleDrawer<TRegistry extends CoreComponentRegistry = CoreComp
 
   public draw(canvas: SkCanvas, world: World<TRegistry>, entity: number): void {
     const colliderType = "Collider" as Extract<keyof TRegistry, string>;
-    const collider = world.getComponent(entity, colliderType) as unknown as ColliderComponent | undefined;
+    const collider = world.getComponent(entity, colliderType) as ColliderComponent | undefined;
     if (!collider || !collider.enabled || collider.shape.type !== ShapeType.Circle) return;
 
     const shape = collider.shape as CircleShape;
@@ -28,7 +28,7 @@ export class SkiaBoxDrawer<TRegistry extends CoreComponentRegistry = CoreCompone
 
   public draw(canvas: SkCanvas, world: World<TRegistry>, entity: number): void {
     const colliderType = "Collider" as Extract<keyof TRegistry, string>;
-    const collider = world.getComponent(entity, colliderType) as unknown as ColliderComponent | undefined;
+    const collider = world.getComponent(entity, colliderType) as ColliderComponent | undefined;
     if (!collider || !collider.enabled || collider.shape.type !== ShapeType.Box) return;
 
     const shape = collider.shape as BoxShape;

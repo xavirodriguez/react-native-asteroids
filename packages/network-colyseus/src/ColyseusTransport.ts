@@ -23,21 +23,29 @@ export class ColyseusTransport implements NetworkTransport {
    * @param url - The server URL.
    */
   public async connect(url: string): Promise<void> {
-    this.client = new Client(url);
-
+    let connectionUrl = url;
     let targetRoom = this.roomName;
+
     try {
       const urlObj = new URL(url);
       const pathSegments = urlObj.pathname.split("/").filter(Boolean);
+
       if (pathSegments.length > 0) {
+        // Use the last segment as room name if present
         targetRoom = pathSegments[pathSegments.length - 1];
+
+        // Strip the room name from the URL to get the base Colyseus server URL
+        urlObj.pathname = pathSegments.slice(0, -1).join("/");
+        connectionUrl = urlObj.toString().replace(/\/$/, "");
       }
     } catch {
-      // Use default roomName if URL parsing fails
+      // Fallback to defaults if URL parsing fails
     }
 
+    this.client = new Client(connectionUrl);
     this.room = await this.client.joinOrCreate(targetRoom, this.options);
 
+    // Register a wildcard listener to dispatch messages to local handlers
     this.room.onMessage("*", (type, message) => {
       const typeStr = typeof type === "string" ? type : String(type);
       const handlers = this.messageHandlers.get(typeStr);
@@ -58,6 +66,7 @@ export class ColyseusTransport implements NetworkTransport {
 
   /**
    * Registers a message handler.
+   * Discards Colyseus' unsubscribe return to match NetworkTransport signature.
    */
   public onMessage(type: string, handler: (message: any) => void): void {
     if (!this.messageHandlers.has(type)) {
