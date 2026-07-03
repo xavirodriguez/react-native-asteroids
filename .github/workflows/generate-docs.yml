@@ -1,0 +1,42 @@
+name: Generate Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create etc directory
+        run: mkdir -p etc
+
+      - name: Build documentation
+        run: pnpm run docs:build
+
+      - name: Upload API Reference
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-reference
+          path: docs/api-reference
