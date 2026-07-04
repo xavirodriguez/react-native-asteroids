@@ -1,4 +1,6 @@
 import { WorldSnapshot } from "../snapshots/WorldSnapshot";
+import { NetworkTransport } from "./NetworkTransport";
+import { NullTransport } from "./NullTransport";
 
 /**
  * Coordinator for network synchronization, prediction, and state reconciliation.
@@ -14,17 +16,27 @@ import { WorldSnapshot } from "../snapshots/WorldSnapshot";
  * drift across different platforms.
  */
 export class NetworkManager {
-  public static registerGame(gameId: string, game: any, options: any): NetworkManager {
-    return new NetworkManager();
+  private transport: NetworkTransport;
+
+  constructor(transport?: NetworkTransport) {
+    this.transport = transport || new NullTransport();
+  }
+
+  public static registerGame(_gameId: string, _game: any, options: any = {}): NetworkManager {
+    return new NetworkManager(options.transport);
+  }
+
+  public getTransport(): NetworkTransport {
+    return this.transport;
   }
 
   public getStrategy(): any {
     return {
-      recordPrediction: (input: any, world: any) => {}
+      recordPrediction: (_input: any, _world: any) => {}
     };
   }
 
-  public processServerUpdate(tick: number, snapshot: WorldSnapshot, sessionId?: string): void {}
+  public processServerUpdate(_tick: number, _snapshot: WorldSnapshot, _sessionId?: string): void {}
   public reset(): void {}
 }
 
@@ -33,5 +45,5 @@ export interface INetworkGame {
 }
 
 export class NetworkReplicationUtils {
-  public static applyDelta(snapshot: WorldSnapshot, delta: any): void {}
+  public static applyDelta(_snapshot: WorldSnapshot, _delta: any): void {}
 }
