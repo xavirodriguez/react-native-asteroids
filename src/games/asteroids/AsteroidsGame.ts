@@ -217,7 +217,7 @@ export class AsteroidsGame
     if (!this.particlePool) this.particlePool = new ParticlePool();
     if (!this.assetLoader) this.assetLoader = new AssetLoader();
 
-    if (this.isMultiplayer && !this.networkManager) {
+    if (!this.networkManager) {
       this.networkManager = NetworkManager.registerGame(this.gameId, this, {
         strategy: 'full',
         interpolationDelay: 100
@@ -254,7 +254,7 @@ export class AsteroidsGame
       this.world.addSystem(new RenderUpdateSystem(), { phase: SystemPhase.Presentation });
     }
 
-    if (this.isMultiplayer && this.networkManager) {
+    if (this.networkManager) {
       this.world.addSystem(new ReplicationSystem(this.networkManager), { phase: SystemPhase.Presentation });
     }
   }

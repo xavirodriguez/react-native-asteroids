@@ -283,15 +283,13 @@ export class SpaceInvadersGame
     sceneWorld.addSystem(new LootSystem());
     sceneWorld.addSystem(new PowerUpSystem());
 
-    if (this.isMultiplayer) {
-      if (!this.networkManager) {
-        this.networkManager = NetworkManager.registerGame(this.gameId, this, {}, {
-            strategy: 'hybrid',
-            interpolationDelay: 100
-        });
-      }
-      sceneWorld.addSystem(new ReplicationSystem(this.networkManager));
+    if (!this.networkManager) {
+      this.networkManager = NetworkManager.registerGame(this.gameId, this, {
+          strategy: 'hybrid',
+          interpolationDelay: 100
+      });
     }
+    sceneWorld.addSystem(new ReplicationSystem(this.networkManager));
 
     await this.sceneManager.transitionTo(gameScene);
   }
