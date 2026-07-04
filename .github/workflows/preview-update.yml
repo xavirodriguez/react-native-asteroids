@@ -13,14 +13,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
@@ -29,6 +34,6 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Publish Update to Preview
-        run: eas update --branch preview --message "$COMMIT_MESSAGE" --non-interactive
+        run: pnpm exec eas update --branch preview --message "$COMMIT_MESSAGE" --non-interactive
         env:
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
