@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Create etc directory
+        run: mkdir -p etc
+
       - name: Generate documentation
         run: pnpm run docs:build
 
