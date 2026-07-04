@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "src/index.ts",
   "scripts": {
-    "start": "npx tsx src/index.ts",
-    "build": "tsc",
+    "start": "pnpm exec tsx src/index.ts",
+    "build": "pnpm exec tsc",
     "test": "jest"
   },
   "dependencies": {

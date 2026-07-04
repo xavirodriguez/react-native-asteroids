@@ -1,4 +1,4 @@
-name: Generate Documentation
+name: Documentation CI
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  docs:
+  build-docs:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,7 +32,7 @@ jobs:
       - name: Create etc directory
         run: mkdir -p etc
 
-      - name: Build documentation
+      - name: Generate documentation
         run: pnpm run docs:build
 
       - name: Upload API Reference
