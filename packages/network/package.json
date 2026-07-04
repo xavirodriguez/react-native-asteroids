@@ -14,8 +14,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap --clean",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "build": "pnpm exec tsup src/index.ts --format esm,cjs --dts --sourcemap --clean",
+    "typecheck": "pnpm exec tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@tiny-aster/core": "workspace:*"
