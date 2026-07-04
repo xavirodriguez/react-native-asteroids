@@ -9,16 +9,19 @@ on:
 
 jobs:
   build-docs:
+    name: Build API Reference
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          run_install: false
+          version: 10
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -29,8 +32,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create etc directory
-        run: mkdir -p etc
+      - name: Create required directories
+        run: mkdir -p etc temp docs/api-reference
 
       - name: Generate documentation
         run: pnpm run docs:build
@@ -40,3 +43,4 @@ jobs:
         with:
           name: api-reference
           path: docs/api-reference
+          retention-days: 7

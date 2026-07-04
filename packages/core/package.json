@@ -13,9 +13,9 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap --clean",
+    "build": "pnpm exec tsup src/index.ts --format esm,cjs --dts --sourcemap --clean",
     "typecheck": "pnpm exec tsc -p tsconfig.json --noEmit",
-    "test": "jest"
+    "test": "pnpm exec jest"
   },
   "dependencies": {
     "msgpackr": "^1.11.12"
