@@ -107,15 +107,13 @@ export class FlappyBirdGame
     this.world.addSystem(new JuiceSystem(), { phase: SystemPhase.Presentation });
     this.world.addSystem(new FlappyBirdRenderSystem(), { phase: SystemPhase.Presentation });
 
-    if (this.isMultiplayer) {
-      if (!this.networkManager) {
-        this.networkManager = NetworkManager.registerGame(this.gameId, this, {}, {
-          strategy: 'snapshot',
-          interpolationDelay: 100
-        });
-      }
-      this.world.addSystem(new ReplicationSystem(this.networkManager), { phase: SystemPhase.Presentation });
+    if (!this.networkManager) {
+      this.networkManager = NetworkManager.registerGame(this.gameId, this, {
+        strategy: 'snapshot',
+        interpolationDelay: 100
+      });
     }
+    this.world.addSystem(new ReplicationSystem(this.networkManager), { phase: SystemPhase.Presentation });
   }
 
   public setMultiplayerMode(active: boolean) {

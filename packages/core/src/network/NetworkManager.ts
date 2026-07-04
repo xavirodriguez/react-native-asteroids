@@ -30,6 +30,18 @@ export class NetworkManager {
     return this.transport;
   }
 
+  /**
+   * Compatibility stub for games expecting a replicator.
+   */
+  public getReplicator(): any {
+    return {
+        resolveEntity: (_id: string, _world: any) => 0,
+        getLocalId: (_serverId: string) => undefined,
+        getMappings: () => new Map(),
+        removeMapping: (_serverId: string) => {}
+    };
+  }
+
   public getStrategy(): any {
     return {
       recordPrediction: (_input: any, _world: any) => {}
