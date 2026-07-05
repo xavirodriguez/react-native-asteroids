@@ -24,14 +24,11 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Create required directories
-        run: mkdir -p etc temp docs/api-reference
 
       - name: Generate documentation
         run: pnpm run docs:build
