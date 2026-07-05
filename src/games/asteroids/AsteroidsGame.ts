@@ -26,7 +26,7 @@ import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "@tiny-aster/core";
 import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManager";
-import { NetworkManager } from "@tiny-aster/core";
+import { NetworkManager, NullTransport } from "@tiny-aster/core";
 import { ReplicationSystem } from "@tiny-aster/core";
 import { INetworkGame } from "@tiny-aster/core";
 import { ConfigService } from "@tiny-aster/core";
@@ -220,7 +220,8 @@ export class AsteroidsGame
     if (!this.networkManager) {
       this.networkManager = NetworkManager.registerGame(this.gameId, this, {
         strategy: 'full',
-        interpolationDelay: 100
+        interpolationDelay: 100,
+        transport: this.isMultiplayer ? undefined : new NullTransport()
       });
     }
 

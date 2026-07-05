@@ -23,7 +23,7 @@ export class NetworkManager {
   }
 
   public static registerGame(_gameId: string, _game: any, options: any = {}): NetworkManager {
-    return new NetworkManager(options.transport);
+    return new NetworkManager(options.transport || new NullTransport());
   }
 
   public getTransport(): NetworkTransport {
