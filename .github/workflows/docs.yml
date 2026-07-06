@@ -20,6 +20,8 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
+        with:
+          run_install: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -28,10 +30,11 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
+        # We use --frozen-lockfile to ensure reproducible builds in CI
         run: pnpm install --frozen-lockfile
 
       - name: Generate documentation
-        run: pnpm run docs:build
+        run: pnpm docs:build
 
       - name: Upload API Reference
         uses: actions/upload-artifact@v4
