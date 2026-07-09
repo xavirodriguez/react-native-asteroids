@@ -7,6 +7,7 @@
  * connection management, and message serialization.
  */
 export interface NetworkTransport {
+    readonly isOffline: boolean;
     /**
      * Establishes a connection to a remote server.
      */

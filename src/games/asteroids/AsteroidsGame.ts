@@ -133,6 +133,9 @@ export class AsteroidsGame
 
   public setMultiplayerMode(active: boolean) {
     this.isMultiplayer = active;
+    if (!active) {
+      this.networkManager?.setTransport(new NullTransport());
+    }
   }
 
   /**
@@ -223,6 +226,8 @@ export class AsteroidsGame
         interpolationDelay: 100,
         transport: this.isMultiplayer ? undefined : new NullTransport()
       });
+    } else if (!this.isMultiplayer) {
+      this.networkManager.setTransport(new NullTransport());
     }
 
     this.world.setResource("BulletPool", this.bulletPool);

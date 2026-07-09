@@ -30,6 +30,10 @@ export class NetworkManager {
     return this.transport;
   }
 
+  public setTransport(transport: NetworkTransport): void {
+    this.transport = transport;
+  }
+
   /**
    * Compatibility stub for games expecting a replicator.
    */
@@ -48,7 +52,11 @@ export class NetworkManager {
     };
   }
 
-  public processServerUpdate(_tick: number, _snapshot: WorldSnapshot, _sessionId?: string): void {}
+  public processServerUpdate(_tick: number, _snapshot: WorldSnapshot, _sessionId?: string): void {
+    if (this.transport.isOffline) {
+      return;
+    }
+  }
   public reset(): void {}
 }
 

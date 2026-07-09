@@ -5,6 +5,7 @@ import { Client, Room } from "@colyseus/sdk";
  * Network transport implementation using Colyseus.
  */
 export class ColyseusTransport implements NetworkTransport {
+  public readonly isOffline = false;
   private client: Client | null = null;
   private room: Room | null = null;
   private messageHandlers = new Map<string, Set<(message: any) => void>>();
