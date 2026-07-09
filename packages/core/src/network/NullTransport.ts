@@ -8,6 +8,7 @@ import { NetworkTransport } from "./NetworkTransport";
  * without requiring a real network connection or throwing errors.
  */
 export class NullTransport implements NetworkTransport {
+  public readonly isOffline = true;
   /**
    * Immediately resolves without establishing a connection.
    */
