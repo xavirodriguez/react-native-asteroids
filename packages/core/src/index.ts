@@ -16,6 +16,7 @@ export * from "./ecs/Component";
 export * from "./ecs/World";
 export * from "./ecs/Query";
 export * from "./ecs/System";
+export * from "./ecs/Schedule";
 export * from "./ecs/WorldCommandBuffer";
 export * from "./ecs/BlueprintRegistry";
 export * from "./ecs/CoreComponents";
