@@ -12,25 +12,25 @@ An arcade engine built with React Native, ECS, and dual-renderer support (Canvas
 ### Installation
 ```bash
 # Install dependencies
-npm install --legacy-peer-deps
+pnpm install
 
 # Start the client (Expo)
-npm start
+pnpm start
 
 # Start the server (Colyseus)
 cd server
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 ## 🛠️ Testing
 
 ```bash
 # Run client tests
-npm test
+pnpm test
 
 # Run server tests
 cd server
-npm test
+pnpm test
 ```
 
 ## 📜 License

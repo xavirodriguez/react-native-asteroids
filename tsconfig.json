@@ -1,6 +1,7 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
+    "outDir": "./dist",
     "strict": true,
     "strictPropertyInitialization": false,
     "noImplicitAny": true,
