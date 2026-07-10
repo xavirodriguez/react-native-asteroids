@@ -3,6 +3,7 @@ import { Entity } from "./Entity";
 import { EventRegistry, EventBus } from "../events/EventBus";
 import { Query } from "./Query";
 import { System, SystemPhase, SystemConfig } from "./System";
+import { Schedule } from "./Schedule";
 import { RandomService } from "../utils/RandomService";
 import { WorldSnapshot } from "../snapshots/WorldSnapshot";
 import { SnapshotSerializer } from "../snapshots/SnapshotSerializer";
@@ -83,10 +84,9 @@ export class World<
   private queriesByComponent = new Map<string, Set<Query<TComponents>>>();
 
   /**
-   * Internal systems list.
-   * @internal
+   * Default schedule for handling ECS systems.
    */
-  private systems: { system: System<TComponents, TEvents>; phase: string; priority: number }[] = [];
+  private defaultSchedule = new Schedule<TComponents, TEvents>();
 
   /** @internal */
   private nextEntityId = 1;
@@ -229,8 +229,7 @@ export class World<
   }
 
   public clearSystems(): void {
-    this.systems.forEach(s => s.system.dispose());
-    this.systems = [];
+    this.defaultSchedule.clearSystems();
   }
 
   /**
@@ -351,12 +350,7 @@ export class World<
   }
 
   addSystem(system: System<TComponents, TEvents>, config: SystemConfig = {}): void {
-    this.systems.push({
-      system,
-      phase: (config.phase as string) ?? SystemPhase.Simulation,
-      priority: config.priority ?? 0
-    });
-    system.onRegister(this);
+    this.defaultSchedule.addSystem(system, config, this);
   }
 
   /**
@@ -380,32 +374,7 @@ export class World<
    */
   update(deltaTime: number): void {
     this._tick++;
-    this.isUpdating = true;
-    RandomService.lockGameplayContext = true;
-    try {
-      const phases = [
-        SystemPhase.Input,
-        SystemPhase.Simulation,
-        SystemPhase.Transform,
-        SystemPhase.Collision,
-        SystemPhase.GameRules,
-        SystemPhase.Presentation
-      ];
-
-      for (const phase of phases) {
-        const systems = this.systems
-          .filter(s => s.phase === phase)
-          .sort((a, b) => b.priority - a.priority);
-
-        for (const reg of systems) {
-          reg.system.update(this, deltaTime);
-        }
-      }
-    } finally {
-      this.isUpdating = false;
-      RandomService.lockGameplayContext = false;
-    }
-    this.flush();
+    this.defaultSchedule.update(this, deltaTime);
   }
 
   public flush(): void {
