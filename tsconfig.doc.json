@@ -3,7 +3,7 @@
   "compilerOptions": {
     "declaration": true,
     "emitDeclarationOnly": true,
-    "outDir": "temp/declarations"
+    "outDir": "./dist"
   },
   "include": ["packages/core/src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
