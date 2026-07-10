@@ -1,96 +1,82 @@
-# React Native Integration Audit - TinyAster
+# React & Expo Audit - Tiny Aster Engine
 
-This document audits the integration layer between React Native/Expo and the synchronous Entity Component System (ECS) engine.
-
----
-
-## Technical Audit Findings
-
-### 1. High-Frequency React State Updates From Custom Hooks
-
-## Título
-Inundación de Re-renders: El Hook `useGame` Fuerza Actualizaciones de Estado en Cada Tick
-
-## Severidad
-High
-
-## Categoría
-React
-
-## Ubicación
-`packages/react-native/src/hooks/useGame.ts` o su equivalente `src/hooks/useAsteroidsGame.ts`
-
-## Descripción
-El motor de juego corre a un paso de simulación fijo (por lo general, a 60 ticks por segundo). Si el hook puente de React (`useGame` o similar) se suscribe de manera directa a los ticks del ciclo de juego para actualizar un estado de React (`useState`), forzará a todo el árbol de componentes React de la pantalla a re-renderizarse 60 veces por segundo. React no está diseñado para gestionar flujos de datos a 60Hz a través de su reconciliador virtual de DOM/Fibra, lo que provoca una enorme sobrecarga de CPU en la interfaz táctil y ralentiza la tasa general de frames del juego.
-
-## Evidencia
-En `src/hooks/useAsteroidsGame.ts`:
-```typescript
-  const { game, gameState, isPaused, isReady, handleInput, togglePause, restart } =
-    useGame<AsteroidsGame, GameStateComponent, InputState>(
-      AsteroidsGame,
-      isMultiplayer,
-      { initialState: INITIAL_GAME_STATE }
-    );
-```
-Si el estado `gameState` se actualiza de manera constante a través de React, cualquier componente visual (como botones de control, marcadores o el canvas en sí) se renderizará de forma redundante y pesada.
-
-## Consecuencias
-- **Picos de Consumo de Hilo de UI**: El hilo de UI de React Native se satura procesando de manera innecesaria el marcado XML/React de elementos estáticos, degradando los FPS y provocando retraso en la detección de gestos de los botones de disparo/empuje.
-- **Micro-stutters**: El motor físico puede correr fluidamente a 60Hz, pero la visualización se verá entrecortada porque React detiene el motor de renderizado al intentar reconciliar nodos del árbol de UI.
-
-## Solución propuesta
-1. **Separar UI estática de UI dinámica**: No propagar todo el estado del juego (`gameState`) a través del mecanismo de estado convencional de React.
-2. **Uso de Referencias y Suscripciones Directas (Refs)**: Los valores numéricos de alta frecuencia (como el puntaje actual, las coordenadas del jugador o la barra de salud) deben actualizarse mediante manipulación directa de nodos (empleando `useImperativeHandle`, `refs`, o componentes optimizados como `Animated` de Reanimated o `Skia` Canvas que no dependan del re-renderizado global del árbol de React).
-
-## Dificultad
-Alta
-
-## Prioridad
-P1
-
-## Dependencias
-Ninguna.
-
----
-
-### 2. Duplicación de Estado en los Puentes de Inicialización de Juegos
-
-## Título
-Inconsistencia de Datos: Redundancia entre el Estado del World ECS y el Estado del Wrapper React
-
+## UI Throttling and State Desync
 ## Severidad
 Medium
-
 ## Categoría
-Duplicación
-
+React
 ## Ubicación
-`src/hooks/useAsteroidsGame.ts` y `src/types/GameTypes.ts`
-
+`packages/react-native/src/hooks/useGame.ts`
+`unsubscribe` callback
 ## Descripción
-Existe una duplicación evidente entre los esquemas de estado utilizados por la simulación pura ECS del juego (`world.getSingleton("GameState")`) y las definiciones de estado de React (`GameStateComponent`). La aplicación móvil mantiene estructuras de datos paralelas que actúan como clones intermedios. Copiar datos del mundo del ECS hacia estados de React e interconectar constantemente ambas fuentes de verdad abre la puerta a que queden fuera de sincronía, especialmente durante ciclos rápidos de reinicio, pausas o reconexión de red.
-
+El hook `useGame` limita las actualizaciones del estado de React a 15 FPS para mejorar el rendimiento del hilo principal.
 ## Evidencia
-En `src/hooks/useAsteroidsGame.ts`:
 ```typescript
-export function useAsteroidsGame(isMultiplayer: boolean = false) {
-  const { game, gameState, ... } =
-    useGame<AsteroidsGame, GameStateComponent, InputState>(...);
+    const UI_UPDATE_INTERVAL = 1000 / 15; // Throttled to 15 FPS for UI components
+
+    const unsubscribe = gameInstance.subscribe((state) => {
+      gameStateRef.current = state as TState;
+
+      const now = performance.now();
+      const isPausedNow = gameInstance.isPausedState();
+      if (isPausedNow !== isPausedRef.current || now - lastUpdateTime >= UI_UPDATE_INTERVAL) {
+        // ...
+        setGameState({ ...(state as TState) });
+        // ...
+      }
+    });
 ```
-El objeto `gameState` devuelto es una copia de sólo lectura del estado del singleton ECS, la cual se recrea de forma sistemática y pesada en cada ciclo de actualización.
-
 ## Consecuencias
-- **Fallas de Sincronismo al Pausar/Reiniciar**: Durante un ciclo rápido de reinicio, el estado visual de la UI de React puede seguir mostrando un marcador de "Game Over" o el puntaje de la partida anterior porque el wrapper de React no ha completado su ciclo de reconciliación asíncrono, mientras que el mundo físico del ECS ya se encuentra simulando la nueva ronda.
-
+- **Lag en la UI**: Elementos de la interfaz que dependen del `gameState` (ej: puntuación, combo, barras de vida) pueden sentirse lentos o dar saltos.
+- **Desincronización**: La lógica de React puede estar operando con un estado que tiene hasta 66ms de antigüedad, lo cual es problemático para componentes interactivos o condicionales de renderizado.
 ## Solución propuesta
-Consolidar el estado en una única fuente de verdad. El World de ECS debe reinar como el único custodio del estado activo. Los componentes visuales de React Native que requieran interactuar con él deben leer directamente los valores en demanda mediante selectores optimizados, o suscribirse de forma granular a eventos puntuales (ej. `"score:changed"`, `"game:over"`) del `EventBus` en lugar de estar clonando y propagando de forma ciega todo el estado de juego en cada cuadro.
-
+Diferenciar entre "Estado de Alta Frecuencia" (Game World) y "Estado de Baja Frecuencia" (UI Meta). Usar referencias para valores que cambian rápido o animaciones controladas por el Game Loop (ej: Reanimated shared values).
 ## Dificultad
 Media
-
 ## Prioridad
 P2
 
-## Dependencias
-Ninguna.
+---
+
+## Heavy Object Recreation in useGame
+## Severidad
+Low
+## Categoría
+React
+## Ubicación
+`packages/react-native/src/hooks/useGame.ts`
+`setGameState({ ...(state as TState) });`
+## Descripción
+En cada actualización del estado de la UI (cada 15 FPS), se crea una copia superficial del objeto de estado completo.
+## Evidencia
+`setGameState({ ...(state as TState) });`
+## Consecuencias
+Presión innecesaria en el GC, especialmente si el objeto de estado es grande o anidado.
+## Solución propuesta
+Utilizar actualizaciones granulares o selectores para que solo los componentes que realmente necesitan una parte del estado se re-rendericen.
+## Dificultad
+Baja
+## Prioridad
+P3
+
+---
+
+## Multiple KeepAwake Hooks
+## Severidad
+Low
+## Categoría
+Expo
+## Ubicación
+`packages/react-native/src/hooks/useGame.ts`
+## Descripción
+Cada vez que se usa `useGame`, se activa un hook de `KeepAwake`. Si hay varios juegos o componentes usando este hook en una misma pantalla (o transiciones rápidas), puede haber conflictos o comportamientos inesperados en la gestión del brillo/bloqueo de pantalla.
+## Evidencia
+`useKeepAwake(!isPaused && isReady);`
+## Consecuencias
+Consumo excesivo de batería si no se limpia correctamente.
+## Solución propuesta
+Mover la gestión de `KeepAwake` a un nivel superior (Provider) o asegurar una gestión centralizada del estado "In-Game".
+## Dificultad
+Baja
+## Prioridad
+P3
