@@ -1,3 +1,4 @@
+export * from "./NetTypes";
 export * from "./InputRingBuffer";
 export * from "./InputSerializer";
 export * from "./InterpolationSystem";

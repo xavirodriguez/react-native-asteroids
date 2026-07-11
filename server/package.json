@@ -5,7 +5,8 @@
   "scripts": {
     "start": "pnpm exec tsx src/index.ts",
     "build": "pnpm exec tsc",
-    "test": "pnpm exec jest"
+    "test": "pnpm exec jest",
+    "clean:artifacts": "[ -d src ] && find src -type f \\( -name \"*.js\" -o -name \"*.js.map\" \\) -exec rm -f {} + || true"
   },
   "dependencies": {
     "@colyseus/core": "^0.17.0",
