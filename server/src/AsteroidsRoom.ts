@@ -1,7 +1,7 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
-import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot } from "@tiny-aster/core";
+import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase } from "@tiny-aster/core";
 import { AsteroidsGame } from "../../src/games/asteroids/AsteroidsGame";
 import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
 import { leaderboardStore } from "./DailyLeaderboardStore";
@@ -59,10 +59,19 @@ export class AsteroidsRoom extends (Room as any) {
     this.setState(new AsteroidsState());
     this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
 
+    const serverSchedule = new Schedule<AsteroidsComponentRegistry, AsteroidsEventRegistry>([
+      SystemPhase.Input,
+      SystemPhase.Simulation,
+      SystemPhase.Transform,
+      SystemPhase.Collision,
+      SystemPhase.GameRules
+    ]);
+
     this.gameSimulation = new AsteroidsGame({
         headless: true,
         isMultiplayer: true,
-        seed: this.state.seed
+        seed: this.state.seed,
+        schedule: serverSchedule
     });
     await this.gameSimulation.initialize();
     this.world = this.gameSimulation.getWorld();

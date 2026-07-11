@@ -7,8 +7,12 @@ import { IGame } from "./IGame";
 import { GameLoop } from "../loop/GameLoop";
 import { InputSystem } from "../input/InputSystem";
 import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
+import { Schedule } from "../ecs/Schedule";
 
-export interface BaseGameConfig {
+export interface BaseGameConfig<
+  TComponents extends ComponentRegistry = ComponentRegistry,
+  TEvents extends EventRegistry = EventRegistry
+> {
   /** [KeyboardEvent.code] Key to toggle pause. */
   pauseKey?: string;
   /** [KeyboardEvent.code] Key to restart the game. */
@@ -19,6 +23,10 @@ export interface BaseGameConfig {
   gameOptions?: Record<string, unknown>;
   /** Runs the game without visual systems or asset loading. Suitable for server-side execution. */
   headless?: boolean;
+  /** Optional schedule injection */
+  schedule?: Schedule<TComponents, TEvents>;
+  /** Initial simulation seed (for backward compatibility). */
+  seed?: number;
 }
 
 /**
@@ -42,12 +50,12 @@ export abstract class BaseGame<
   public blueprints: BlueprintRegistry<TComponents, TBlueprints>;
   protected loop: GameLoop;
   protected unifiedInput: UnifiedInputSystem;
-  protected _config: BaseGameConfig;
+  protected _config: BaseGameConfig<TComponents, TEvents>;
   private isPaused = false;
 
-  constructor(config: BaseGameConfig = {}) {
+  constructor(config: BaseGameConfig<TComponents, TEvents> = {}) {
     this._config = config;
-    this.world = new World<TComponents, TEvents, TBlueprints>();
+    this.world = new World<TComponents, TEvents, TBlueprints>(config.schedule);
     this.eventBus = new EventBus<TEvents>();
     this.blueprints = new BlueprintRegistry<TComponents, TBlueprints>();
     this.loop = new GameLoop();
@@ -155,7 +163,7 @@ export abstract class BaseGame<
     this.destroy();
 
     // Reset world and re-register resources
-    this.world = new World<TComponents, TEvents, TBlueprints>();
+    this.world = new World<TComponents, TEvents, TBlueprints>(this._config.schedule);
     this.registerInternalResources();
 
     // Re-register systems and initialize entities

@@ -1,5 +1,7 @@
 export interface InputFrame {
+  protocolVersion?: number;
   tick: number;
+  timestamp?: number;
   actions: string[];
   axes: Record<string, number>;
 }
