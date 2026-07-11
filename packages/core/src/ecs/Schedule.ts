@@ -1,7 +1,7 @@
 import { ComponentRegistry } from "./Component";
 import { EventRegistry } from "../events/EventBus";
 import { System, SystemPhase, SystemConfig } from "./System";
-import { World } from "./World";
+import { World, BlueprintRegistryMap } from "./World";
 import { RandomService } from "../utils/RandomService";
 
 /**
@@ -28,10 +28,10 @@ export class Schedule<
   /**
    * Registers a system with the schedule and triggers its onRegister callback.
    */
-  public addSystem(
+  public addSystem<TBlueprints extends BlueprintRegistryMap<TComponents, TEvents>>(
     system: System<TComponents, TEvents>,
     config: SystemConfig = {},
-    world: World<TComponents, TEvents, any>
+    world: World<TComponents, TEvents, TBlueprints>
   ): void {
     this.systems.push({
       system,
@@ -52,7 +52,10 @@ export class Schedule<
   /**
    * Updates all registered systems sequentially through execution phases.
    */
-  public update(world: World<TComponents, TEvents, any>, deltaTime: number): void {
+  public update<TBlueprints extends BlueprintRegistryMap<TComponents, TEvents>>(
+    world: World<TComponents, TEvents, TBlueprints>,
+    deltaTime: number
+  ): void {
     world.isUpdating = true;
     RandomService.lockGameplayContext = true;
     try {
