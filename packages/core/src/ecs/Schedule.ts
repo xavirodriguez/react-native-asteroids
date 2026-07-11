@@ -12,6 +12,18 @@ export class Schedule<
   TEvents extends EventRegistry = EventRegistry
 > {
   private systems: { system: System<TComponents, TEvents>; phase: string; priority: number }[] = [];
+  private phases: string[];
+
+  constructor(phases?: string[]) {
+    this.phases = phases ?? [
+      SystemPhase.Input,
+      SystemPhase.Simulation,
+      SystemPhase.Transform,
+      SystemPhase.Collision,
+      SystemPhase.GameRules,
+      SystemPhase.Presentation
+    ];
+  }
 
   /**
    * Registers a system with the schedule and triggers its onRegister callback.
@@ -44,16 +56,7 @@ export class Schedule<
     world.isUpdating = true;
     RandomService.lockGameplayContext = true;
     try {
-      const phases = [
-        SystemPhase.Input,
-        SystemPhase.Simulation,
-        SystemPhase.Transform,
-        SystemPhase.Collision,
-        SystemPhase.GameRules,
-        SystemPhase.Presentation
-      ];
-
-      for (const phase of phases) {
+      for (const phase of this.phases) {
         const systems = this.systems
           .filter(s => s.phase === phase)
           .sort((a, b) => b.priority - a.priority);
