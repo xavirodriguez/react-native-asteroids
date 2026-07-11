@@ -8,8 +8,11 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<
   AsteroidsComponentRegistry,
   AsteroidsEventRegistry
 > {
+  private game: IAsteroidsGame;
+
   constructor(game: IAsteroidsGame) {
-    super(game as any);
+    super("GameState");
+    this.game = game;
   }
 
   protected getGameState(world: World<AsteroidsComponentRegistry>): GameStateComponent | undefined {

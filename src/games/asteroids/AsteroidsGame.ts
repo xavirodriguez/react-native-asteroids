@@ -21,7 +21,7 @@ import { CCDSystem } from "@tiny-aster/core";
 import { FeedbackSystem } from "@tiny-aster/core";
 import { INITIAL_GAME_STATE } from "./types/AsteroidTypes";
 import { MutatorService } from "../../services/MutatorService";
-import { InputFrame } from "@tiny-aster/react-native";
+import { InputFrame } from "@tiny-aster/network";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
 import { Renderer } from "@tiny-aster/core";
