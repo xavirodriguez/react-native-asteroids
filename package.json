@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "clean:artifacts": "find packages/*/src server/src src -type f \\( -name \"*.js\" -o -name \"*.js.map\" \\) -exec rm -f {} +",
+    "clean:artifacts": "pnpm -r --parallel run clean:artifacts && [ -d src ] && find src -type f \\( -name \"*.js\" -o -name \"*.js.map\" \\) -exec rm -f {} + || true",
     "start": "pnpm exec expo start",
     "android": "pnpm exec expo start --android",
     "ios": "pnpm exec expo start --ios",
