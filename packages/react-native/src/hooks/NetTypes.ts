@@ -12,11 +12,11 @@
  */
 export interface InputFrame {
   /** Network protocol version. */
-  protocolVersion: number;
+  protocolVersion?: number;
   /** The simulation tick this input belongs to. */
   tick: number;
   /** Wall-clock time when the input was captured. */
-  timestamp: number;
+  timestamp?: number;
   /** List of semantic actions active (e.g., "shoot", "thrust"). */
   actions: string[];
   /** Continuous input values (e.g., joystick coordinates). */

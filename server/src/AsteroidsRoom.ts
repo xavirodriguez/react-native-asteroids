@@ -62,7 +62,7 @@ export class AsteroidsRoom extends (Room as any) {
     this.gameSimulation = new AsteroidsGame({
         headless: true,
         isMultiplayer: true,
-        seed: this.state.seed
+        gameOptions: { seed: this.state.seed }
     });
     await this.gameSimulation.initialize();
     this.world = this.gameSimulation.getWorld();

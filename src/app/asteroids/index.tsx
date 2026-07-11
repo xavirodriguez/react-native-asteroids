@@ -130,9 +130,9 @@ export default function AsteroidsScreen() {
         // The ECS systems will process this in the next tick.
         const world = game?.getWorld();
         // Finding the player entity (usually tagged as LocalPlayer or simply the Ship entity)
-        const localPlayer = world?.query("LocalPlayer" as any)[0];
+        const localPlayer = world?.query("LocalPlayer")[0];
         if (localPlayer !== undefined && world) {
-          world.mutateComponent(localPlayer, "InputState" as any, (inputComp: any) => {
+          world.mutateComponent(localPlayer, "InputState", (inputComp: any) => {
             if (input.thrust !== undefined) inputComp.buttons["thrust"] = input.thrust;
             if (input.shoot !== undefined) inputComp.buttons["shoot"] = input.shoot;
             if (input.rotateLeft !== undefined) inputComp.buttons["left"] = input.rotateLeft;
