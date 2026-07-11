@@ -15,7 +15,15 @@
  */
 
 import { ReplayData, InputFrame } from "./NetTypes";
-import { AsteroidsGame } from "../games/asteroids/AsteroidsGame";
+
+export interface IReplayableGame {
+  getWorld(): {
+    query(type: string): any[];
+    getComponent<T>(entity: any, type: string): T | undefined;
+  };
+  applyInputToEntity(entity: any, inputFrame: InputFrame): void;
+  runSimulationStep(deltaTime: number, isReconciliation: boolean): void;
+}
 
 /**
  * Manages the state and execution of a game replay.
@@ -34,7 +42,7 @@ export class ReplayManager {
     this.isPlaying = true;
   }
 
-  public update(game: AsteroidsGame, deltaTime: number) {
+  public update(game: IReplayableGame, deltaTime: number) {
     if (!this.isPlaying || !this.replayData) return;
 
     if (this.currentFrameIndex >= this.replayData.frames.length) {
@@ -49,7 +57,7 @@ export class ReplayManager {
       // Find the entity for this sessionId
       const ships = game.getWorld().query("Ship");
       const entity = ships.find(e => {
-        const ship = game.getWorld().getComponent<import("../engine/core/CoreComponents").ShipComponent>(e, "Ship");
+        const ship = game.getWorld().getComponent<{ sessionId?: string }>(e, "Ship");
         return ship && ship.sessionId === sessionId;
       });
 

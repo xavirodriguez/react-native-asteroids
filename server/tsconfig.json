@@ -1,27 +1,21 @@
 {
-    "compilerOptions": {
-        "outDir": "./dist",
-        "target": "esnext",
-        "module": "commonjs",
-        "lib": [
-            "esnext",
-            "dom"
-        ],
-        "strict": false,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true,
-        "moduleResolution": "node",
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-        "baseUrl": ".",
-        "paths": {
-            "@tiny-aster/core": [
-                "../packages/core/src/index.ts"
-            ]
-        }
-    },
-    "include": [
-        "src/**/*.ts"
-    ]
+  "compilerOptions": {
+    "outDir": "./dist",
+    "target": "esnext",
+    "module": "commonjs",
+    "lib": ["esnext", "dom"],
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": ".",
+    "paths": {
+      "@tiny-aster/core": ["../packages/core/src/index.ts"],
+      "@tiny-aster/network": ["../packages/network/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"]
 }
