@@ -49,6 +49,7 @@ export interface ReclaimableComponent extends Component {
   type: "Reclaimable";
   poolName: string;
   poolId: string;
+  onReclaim?: (world: any, entity: Entity) => void;
 }
 
 export interface IEntityPool {
@@ -230,6 +231,17 @@ export interface IHierarchicalComponent extends Component {
     children: Entity[];
 }
 
+export interface Collider2DComponent extends Component {
+  type: "Collider2D";
+  shape: { type: "circle"; radius: number } | { type: "aabb"; halfWidth: number; halfHeight: number };
+  layer: number;
+  mask: number;
+  offsetX: number;
+  offsetY: number;
+  isTrigger: boolean;
+  enabled: boolean;
+}
+
 export interface CoreComponentRegistry extends ComponentRegistry {
   Transform: TransformComponent;
   Velocity: VelocityComponent;
@@ -252,6 +264,7 @@ export interface CoreComponentRegistry extends ComponentRegistry {
   Juice: JuiceComponent;
   CollisionEvents: CollisionEventsComponent;
   Collider: ColliderComponent;
+  Collider2D: Collider2DComponent;
   Trail: TrailComponent;
   Tag: import("./TagComponent").TagComponent;
 }

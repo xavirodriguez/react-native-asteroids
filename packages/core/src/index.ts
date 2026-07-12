@@ -23,6 +23,8 @@ export * from "./ecs/CoreComponents";
 export * from "./ecs/TagComponent";
 export * from "./snapshots/WorldSnapshot";
 export * from "./ecs/ComponentCloner";
+export * from "./scenes/Scene";
+export * from "./scenes/SceneManager";
 
 // Events
 export * from "./events/EventBus";
@@ -91,5 +93,9 @@ export * from "./config/BaseConfigSchema";
 // Utils
 export * from "./utils/RandomService";
 export * from "./utils/Juice";
+export * from "./utils/ObjectPool";
+export * from "./utils/ComponentSetPool";
+export * from "./utils/PrefabPool";
+export * from "./utils/ProjectilePool";
 
 export type { DeepReadonly } from "./ecs/Component";
