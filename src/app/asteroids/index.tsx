@@ -96,7 +96,7 @@ export default function AsteroidsScreen() {
 
   useEffect(() => {
     if (isMulti && connected && game) {
-      (game as unknown as AsteroidsGame).setMultiplayerMode(true);
+      game.setMultiplayerMode(true);
     }
   }, [isMulti, connected, game]);
 
@@ -105,12 +105,12 @@ export default function AsteroidsScreen() {
         const sessionId = room?.sessionId;
         const pendingInputs = inputBufferRef.current;
 
-        (game as unknown as AsteroidsGame).updateFromServer(serverState, sessionId);
+        game.updateFromServer(serverState, sessionId);
 
         // Re-apply pending inputs for reconciliation
         if (sessionId && pendingInputs.length > 0) {
             pendingInputs.forEach(frame => {
-                (game as unknown as AsteroidsGame).predictLocalPlayer(frame, 16.66);
+                game.predictLocalPlayer(frame, 16.66);
             });
         }
     }
@@ -120,7 +120,7 @@ export default function AsteroidsScreen() {
     if (isMulti && room) {
         const frame = sendInput(input as Record<string, boolean>);
         if (frame) {
-            (game as unknown as AsteroidsGame).predictLocalPlayer(frame, 16.66);
+            game.predictLocalPlayer(frame, 16.66);
         }
     } else {
         handleInput(input);

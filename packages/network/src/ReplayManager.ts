@@ -16,16 +16,13 @@
 
 import { ReplayData, InputFrame } from "./NetTypes";
 
-/**
- * Generic interface representing a game simulation that can be replayed.
- */
-export interface IReplayGame {
+export interface IReplayableGame {
   getWorld(): {
-    query(type: string): ReadonlyArray<number>;
-    getComponent<T = any>(entity: number, type: string): T | undefined;
+    query(type: string): any[];
+    getComponent<T>(entity: any, type: string): T | undefined;
   };
-  applyInputToEntity(entity: number, input: any): void;
-  runSimulationStep(deltaTime: number, isResimulating: boolean): void;
+  applyInputToEntity(entity: any, inputFrame: InputFrame): void;
+  runSimulationStep(deltaTime: number, isReconciliation: boolean): void;
 }
 
 /**
@@ -45,7 +42,7 @@ export class ReplayManager {
     this.isPlaying = true;
   }
 
-  public update(game: IReplayGame, deltaTime: number) {
+  public update(game: IReplayableGame, deltaTime: number) {
     if (!this.isPlaying || !this.replayData) return;
 
     if (this.currentFrameIndex >= this.replayData.frames.length) {
@@ -60,7 +57,7 @@ export class ReplayManager {
       // Find the entity for this sessionId
       const ships = game.getWorld().query("Ship");
       const entity = ships.find(e => {
-        const ship = game.getWorld().getComponent<{ sessionId: string }>(e, "Ship");
+        const ship = game.getWorld().getComponent<{ sessionId?: string }>(e, "Ship");
         return ship && ship.sessionId === sessionId;
       });
 
