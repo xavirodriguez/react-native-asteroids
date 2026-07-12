@@ -58,3 +58,7 @@ study/
 # Explicitly stop contamination of .js and .js.map files in src/
 **/src/**/*.js
 **/src/**/*.js.map
+
+# Turborepo
+.turbo/
+**/_turbo/
