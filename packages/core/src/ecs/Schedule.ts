@@ -1,14 +1,14 @@
 import { ComponentRegistry } from "./Component";
 import { EventRegistry } from "../events/EventBus";
 import { System, SystemPhase, SystemConfig } from "./System";
-import { World, BlueprintRegistryMap } from "./World";
+import { World } from "./World";
 import { RandomService } from "../utils/RandomService";
 
 /**
  * Orchestrates and executes ECS systems grouped by phases.
  */
 export class Schedule<
-  TComponents extends ComponentRegistry = ComponentRegistry,
+  TComponents extends ComponentRegistry,
   TEvents extends EventRegistry = EventRegistry
 > {
   private systems: { system: System<TComponents, TEvents>; phase: string; priority: number }[] = [];
@@ -28,10 +28,10 @@ export class Schedule<
   /**
    * Registers a system with the schedule and triggers its onRegister callback.
    */
-  public addSystem<TBlueprints extends BlueprintRegistryMap<TComponents, TEvents>>(
+  public addSystem(
     system: System<TComponents, TEvents>,
     config: SystemConfig = {},
-    world: World<TComponents, TEvents, TBlueprints>
+    world: World<TComponents, TEvents, any>
   ): void {
     this.systems.push({
       system,
@@ -52,19 +52,19 @@ export class Schedule<
   /**
    * Updates all registered systems sequentially through execution phases.
    */
-  public update<TBlueprints extends BlueprintRegistryMap<TComponents, TEvents>>(
-    world: World<TComponents, TEvents, TBlueprints>,
+  public update(
+    world: World<TComponents, TEvents, any>,
     deltaTime: number
   ): void {
     world.isUpdating = true;
     RandomService.lockGameplayContext = true;
     try {
       for (const phase of this.phases) {
-        const systems = this.systems
+        const phaseSystems = this.systems
           .filter(s => s.phase === phase)
           .sort((a, b) => b.priority - a.priority);
 
-        for (const reg of systems) {
+        for (const reg of phaseSystems) {
           reg.system.update(world, deltaTime);
         }
       }

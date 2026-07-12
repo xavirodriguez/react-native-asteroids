@@ -2,7 +2,7 @@ import { ComponentRegistry, ComponentType } from "./Component";
 import { Entity } from "./Entity";
 import { EventRegistry, EventBus } from "../events/EventBus";
 import { Query } from "./Query";
-import { System, SystemPhase, SystemConfig } from "./System";
+import { System, SystemConfig } from "./System";
 import { Schedule } from "./Schedule";
 import { RandomService } from "../utils/RandomService";
 import { WorldSnapshot } from "../snapshots/WorldSnapshot";
