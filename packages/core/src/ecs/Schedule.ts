@@ -1,7 +1,7 @@
 import { ComponentRegistry } from "./Component";
 import { EventRegistry } from "../events/EventBus";
 import { System, SystemPhase, SystemConfig } from "./System";
-import { World } from "./World";
+import { World, BlueprintRegistryMap } from "./World";
 import { RandomService } from "../utils/RandomService";
 
 /**
@@ -9,7 +9,8 @@ import { RandomService } from "../utils/RandomService";
  */
 export class Schedule<
   TComponents extends ComponentRegistry,
-  TEvents extends EventRegistry = EventRegistry
+  TEvents extends EventRegistry = EventRegistry,
+  TBlueprints extends BlueprintRegistryMap<TComponents, TEvents> = BlueprintRegistryMap<TComponents, TEvents>
 > {
   private systems: { system: System<TComponents, TEvents>; phase: string; priority: number }[] = [];
   private phases: string[];
@@ -31,7 +32,7 @@ export class Schedule<
   public addSystem(
     system: System<TComponents, TEvents>,
     config: SystemConfig = {},
-    world: World<TComponents, TEvents, any>
+    world: World<TComponents, TEvents, TBlueprints>
   ): void {
     this.systems.push({
       system,
@@ -53,7 +54,7 @@ export class Schedule<
    * Updates all registered systems sequentially through execution phases.
    */
   public update(
-    world: World<TComponents, TEvents, any>,
+    world: World<TComponents, TEvents, TBlueprints>,
     deltaTime: number
   ): void {
     world.isUpdating = true;
