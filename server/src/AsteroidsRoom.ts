@@ -1,13 +1,10 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
-import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase } from "@tiny-aster/core";
-import { AsteroidsGame } from "../../src/games/asteroids/AsteroidsGame";
-import { createShip, createAsteroid } from "../../src/games/asteroids/EntityFactory";
+import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase, AsteroidsGame, createShip, createAsteroid, AsteroidsComponentRegistry, AsteroidsEventRegistry } from "@tiny-aster/core";
 import { leaderboardStore } from "./DailyLeaderboardStore";
 import { getDateKey } from "./utils/DateUtils";
 import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
-import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../../src/games/asteroids/types/AsteroidRegistry";
 
 /**
  * Authoritative game room for the Asteroids simulation.
