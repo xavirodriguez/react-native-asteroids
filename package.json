@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "clean:artifacts": "pnpm -r --parallel run clean:artifacts && [ -d src ] && find src -type f \\( -name \"*.js\" -o -name \"*.js.map\" \\) -exec rm -f {} + || true",
+    "clean:artifacts": "find . -type f -path \"*/src/*\" \\( -name \"*.js\" -o -name \"*.js.map\" \\) -not -path \"*/node_modules/*\" -not -path \"*/dist/*\" -delete",
     "start": "pnpm exec expo start",
     "android": "pnpm exec expo start --android",
     "ios": "pnpm exec expo start --ios",
@@ -81,7 +81,7 @@
     "react-day-picker": "^9.9.0",
     "react-dom": "19.2.0",
     "react-hook-form": "^7.62.0",
-    "react-native": "0.83.6",
+    "react-native": "0.83.2",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-reanimated": "4.2.1",
     "react-native-safe-area-context": "~5.6.2",
@@ -138,7 +138,7 @@
     "overrides": {
       "react": "19.2.0",
       "react-dom": "19.2.0",
-      "react-native": "0.83.6"
+      "react-native": "0.83.2"
     }
   }
 }

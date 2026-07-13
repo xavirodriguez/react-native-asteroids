@@ -1,4 +1,5 @@
-import { World, TransformComponent, VelocityComponent, RenderComponent, HealthComponent } from "@tiny-aster/core";
+import { World } from "../../ecs/World";
+import { TransformComponent, VelocityComponent, RenderComponent, HealthComponent } from "../../ecs/CoreComponents";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "./types/AsteroidRegistry";
 
 export const createShip = (config: { world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, x: number, y: number }): number => {

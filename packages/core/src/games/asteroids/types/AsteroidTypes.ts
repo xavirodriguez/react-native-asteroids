@@ -1,4 +1,4 @@
-import { Component } from "@tiny-aster/core";
+import { Component } from "../../../ecs/Component";
 
 export interface GameStateComponent extends Component {
   type: "GameState";

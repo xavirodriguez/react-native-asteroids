@@ -1,7 +1,7 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "outDir": "./dist",
+    "outDir": "./dist", // OutDir configured to "./dist" to stop contamination of src/
     "strict": true,
     "strictPropertyInitialization": false,
     "noImplicitAny": true,

@@ -7,5 +7,6 @@ export type { Entity, WorldSnapshot, IEntityPool };
  * Note: Game-specific types are increasingly located in their respective game folders.
  */
 
-// Re-export Asteroids types for backward compatibility
-export * from "../games/asteroids/types/AsteroidTypes";
+// Re-export Asteroids types for backward compatibility from core
+export { INITIAL_GAME_STATE } from "@tiny-aster/core";
+export type { GameStateComponent, InputState, ShipComponent, BulletComponent, UfoComponent, InputComponent } from "@tiny-aster/core";

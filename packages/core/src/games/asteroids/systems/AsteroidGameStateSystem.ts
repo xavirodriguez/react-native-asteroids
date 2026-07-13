@@ -1,4 +1,5 @@
-import { World, BaseGameStateSystem } from "@tiny-aster/core";
+import { World } from "../../../ecs/World";
+import { BaseGameStateSystem } from "../../../systems/BaseGameStateSystem";
 import { GameStateComponent } from "../types/AsteroidTypes";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
 import { IAsteroidsGame } from "../types/GameInterfaces";

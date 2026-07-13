@@ -1,37 +1,39 @@
-import { World, GameLoop, BaseGame, AssetLoader, BaseGameConfig } from "@tiny-aster/core";
+import { World } from "../../ecs/World";
+import { GameLoop } from "../../loop/GameLoop";
+import { BaseGame, BaseGameConfig } from "../../runtime/BaseGame";
+import { AssetLoader } from "../../assets/AssetLoader";
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "./types/AsteroidRegistry";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { LootSystem } from "../arcade/systems/LootSystem";
 import { PowerUpSystem } from "../arcade/systems/PowerUpSystem";
-import { JuiceSystem } from "@tiny-aster/core";
-import { MutatorSystem } from "@tiny-aster/core";
-import { SpatialPartitioningSystem } from "@tiny-aster/core";
-import { RenderUpdateSystem } from "@tiny-aster/core";
-import { MovementSystem } from "@tiny-aster/core";
-import { BoundarySystem } from "@tiny-aster/core";
-import { FrictionSystem } from "@tiny-aster/core";
-import { ScreenShakeSystem } from "@tiny-aster/core";
-import { JoystickSystem } from "@tiny-aster/core";
+import { JuiceSystem } from "../../systems/JuiceSystem";
+import { MutatorSystem } from "../../systems/MutatorSystem";
+import { SpatialPartitioningSystem } from "../../systems/SpatialPartitioningSystem";
+import { RenderUpdateSystem } from "../../systems/RenderUpdateSystem";
+import { MovementSystem } from "../../physics/systems/MovementSystem";
+import { BoundarySystem } from "../../physics/systems/BoundarySystem";
+import { FrictionSystem } from "../../physics/systems/FrictionSystem";
+import { ScreenShakeSystem } from "../../systems/ScreenShakeSystem";
+import { JoystickSystem } from "../../systems/JoystickSystem";
 import { AsteroidCollisionSystem } from "./systems/AsteroidCollisionSystem";
-import { TTLSystem } from "@tiny-aster/core";
-import { CollisionSystem2D } from "@tiny-aster/core";
-import { CCDSystem } from "@tiny-aster/core";
-import { FeedbackSystem } from "@tiny-aster/core";
+import { TTLSystem } from "../../systems/TTLSystem";
+import { CollisionSystem2D, CCDSystem } from "../../physics/collision/CollisionSystems";
+import { FeedbackSystem } from "../../systems/FeedbackSystem";
 import { INITIAL_GAME_STATE } from "./types/AsteroidTypes";
-import { MutatorService } from "../../services/MutatorService";
-import { InputFrame } from "@tiny-aster/network";
+import { InputFrame } from "../../network/NetTypes";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
-import { Renderer } from "@tiny-aster/core";
+import { Renderer } from "../../rendering/Renderer";
 import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManager";
-import { NetworkManager, NullTransport } from "@tiny-aster/core";
-import { ReplicationSystem } from "@tiny-aster/core";
-import { INetworkGame } from "@tiny-aster/core";
-import { ConfigService } from "@tiny-aster/core";
+import { NetworkManager } from "../../network/NetworkManager";
+import { NullTransport } from "../../network/NullTransport";
+import { ReplicationSystem } from "../../network/ReplicationSystem";
+import { INetworkGame } from "../../network/NetworkManager";
+import { ConfigService } from "../../config/ConfigService";
 import { AsteroidConfigSchema, AsteroidConfig } from "./types/AsteroidConfigSchema";
-import { SystemPhase } from "@tiny-aster/core";
+import { SystemPhase } from "../../ecs/System";
 import { GameStateComponent, InputState } from "./types/AsteroidTypes";
 
 const __DEV__ = process.env.NODE_ENV !== "production";
@@ -68,11 +70,8 @@ export class AsteroidsGame
     const rawConfig = require("./config/asteroids.json");
     const baseConfig = ConfigService.load<AsteroidConfig>(this.gameId, AsteroidConfigSchema, rawConfig);
 
-    const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
-    const enabled = await MutatorService.isMutatorModeEnabled();
-    this.config = enabled
-      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...baseConfig } as any)
-      : { ...baseConfig };
+    const mutators = (this._config.gameOptions?.mutators as any[]) || [];
+    this.config = mutators.reduce((cfg, m) => m.apply(cfg), { ...baseConfig } as any);
 
     this.world.setResource("GameConfig", this.config);
     this.updateScreenConfig();
@@ -250,7 +249,7 @@ export class AsteroidsGame
     this.world.addSystem(new LootSystem(), { phase: SystemPhase.GameRules });
     this.world.addSystem(new PowerUpSystem(), { phase: SystemPhase.Simulation });
 
-    const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
+    const activeMutators = (this._config.gameOptions?.mutators as any[]) || [];
     this.world.addSystem(new MutatorSystem(activeMutators), { phase: SystemPhase.Simulation });
 
     if (!this.isHeadless) {

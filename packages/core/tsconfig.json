@@ -4,12 +4,13 @@
         "module": "ESNext",
         "moduleResolution": "node",
         "lib": [
-            "ESNext"
+            "ESNext",
+            "dom"
         ],
         "strict": true,
         "declaration": true,
         "sourceMap": true,
-        "outDir": "./dist",
+        "outDir": "./dist", // OutDir configured to "./dist" to stop contamination of src/
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true
