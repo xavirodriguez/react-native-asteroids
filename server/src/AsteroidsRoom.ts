@@ -2,6 +2,20 @@ import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
 import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase, AsteroidsGame, createShip, createAsteroid, AsteroidsComponentRegistry, AsteroidsEventRegistry } from "@tiny-aster/core";
+import { z } from "zod";
+
+const RoomOptionsSchema = z.object({
+  seed: z.number().int().optional(),
+  replicationMode: z.enum(['legacy', 'interest', 'delta', 'budget', 'binary']).optional()
+});
+
+const InputFrameSchema = z.object({
+  protocolVersion: z.number().optional(),
+  tick: z.number().int().nonnegative(),
+  timestamp: z.number().optional(),
+  actions: z.array(z.string()),
+  axes: z.record(z.string(), z.number())
+});
 import { leaderboardStore } from "./DailyLeaderboardStore";
 import { getDateKey } from "./utils/DateUtils";
 import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
@@ -48,13 +62,16 @@ export class AsteroidsRoom extends (Room as any) {
     }
   }
 
-  async onCreate(options: { seed?: number, replicationMode?: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' }) {
-    if (options.replicationMode) {
-        this.REPLICATION_MODE = options.replicationMode;
+  async onCreate(options: any) {
+    const parsedOptions = RoomOptionsSchema.safeParse(options);
+    const validOptions = parsedOptions.success ? parsedOptions.data : {};
+
+    if (validOptions.replicationMode) {
+        this.REPLICATION_MODE = validOptions.replicationMode;
     }
     this.newClients.clear();
     this.setState(new AsteroidsState());
-    this.state.seed = options.seed || Math.floor(Math.random() * 0xFFFFFFFF);
+    this.state.seed = validOptions.seed || Math.floor(Math.random() * 0xFFFFFFFF);
 
     const serverSchedule = new Schedule<AsteroidsComponentRegistry, AsteroidsEventRegistry>([
       SystemPhase.Input,
@@ -82,9 +99,15 @@ gameOptions: { seed: this.state.seed },
     this.setPatchRate(50);
     this.setSimulationInterval((dt: any) => this.update(dt));
 
-    this.onMessage("input", (client: any, frame: InputFrame) => {
+    this.onMessage("input", (client: any, frame: any) => {
+      const parsedFrame = InputFrameSchema.safeParse(frame);
+      if (!parsedFrame.success) {
+        console.warn(`[AsteroidsRoom] Invalid input frame from client ${client.sessionId}:`, parsedFrame.error.issues);
+        return;
+      }
+      const validFrame = parsedFrame.data as unknown as InputFrame;
       const buffer = this.inputBuffers.get(client.sessionId) || [];
-      buffer.push(frame);
+      buffer.push(validFrame);
       this.inputBuffers.set(client.sessionId, buffer);
     });
 
