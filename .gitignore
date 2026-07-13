@@ -62,3 +62,11 @@ study/
 # Turborepo
 .turbo/
 **/_turbo/
+
+# Guard for TS-compiled artifacts
+src/**/*.js
+src/**/*.js.map
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+server/src/**/*.js
+server/src/**/*.js.map

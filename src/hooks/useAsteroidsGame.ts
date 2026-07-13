@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useGame } from "@tiny-aster/react-native";
 import { useHighScore } from "./useHighScore";
-import { AsteroidsGame } from "../games/asteroids/AsteroidsGame";
+import { AsteroidsGame } from "@tiny-aster/core";
 import { INITIAL_GAME_STATE } from "../types/GameTypes";
 import type { GameStateComponent, InputState } from "../types/GameTypes";
+import { MutatorService } from "../services/MutatorService";
 
 /**
  * Hook especializado para gestionar la instancia del juego Asteroids.
@@ -15,11 +16,27 @@ import type { GameStateComponent, InputState } from "../types/GameTypes";
  */
 
 export function useAsteroidsGame(isMultiplayer: boolean = false) {
+  const [mutators, setMutators] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    async function loadOptions() {
+      const enabled = await MutatorService.isMutatorModeEnabled();
+      const weekly = enabled ? MutatorService.getActiveMutatorsForGame("asteroids") : [];
+      setMutators(weekly);
+    }
+    loadOptions();
+  }, []);
+
   const { game, gameState, isPaused, isReady, handleInput, togglePause, restart } =
     useGame<AsteroidsGame, GameStateComponent, InputState>(
-      AsteroidsGame,
+      mutators !== null ? AsteroidsGame : null,
       isMultiplayer,
-      { initialState: INITIAL_GAME_STATE }
+      {
+        initialState: INITIAL_GAME_STATE,
+        gameOptions: {
+          mutators: mutators || []
+        }
+      }
     );
 
   const { highScore, updateHighScore } = useHighScore();

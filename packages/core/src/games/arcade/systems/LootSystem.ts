@@ -1,4 +1,6 @@
-import { System, World, CoreComponentRegistry } from "@tiny-aster/core";
+import { System } from "../../../ecs/System";
+import { World } from "../../../ecs/World";
+import { CoreComponentRegistry } from "../../../ecs/CoreComponents";
 import { LootTableComponent } from "../types/ArcadeTypes";
 
 export class LootSystem extends System<CoreComponentRegistry & { LootTable: LootTableComponent }> {

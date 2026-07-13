@@ -1,4 +1,5 @@
-import { CoreComponentRegistry, CoreEvents } from "@tiny-aster/core";
+import { CoreComponentRegistry } from "../../../ecs/CoreComponents";
+import { CoreEvents } from "../../../events/EventBus";
 import {
   GameStateComponent,
   InputComponent,

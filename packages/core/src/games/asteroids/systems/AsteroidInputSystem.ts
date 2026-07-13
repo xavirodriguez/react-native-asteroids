@@ -1,4 +1,5 @@
-import { World, System } from "@tiny-aster/core";
+import { World } from "../../../ecs/World";
+import { System } from "../../../ecs/System";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";

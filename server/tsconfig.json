@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
-    "outDir": "./dist",
+    "outDir": "./dist", // OutDir configured to "./dist" to stop contamination of src/
     "target": "esnext",
     "module": "commonjs",
     "lib": ["esnext", "dom"],
-    "strict": false,
+    "strict": true,
+    "strictPropertyInitialization": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
