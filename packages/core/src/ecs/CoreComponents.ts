@@ -2,6 +2,7 @@ import { Component, ComponentRegistry } from "./Component";
 import { Entity } from "./Entity";
 import { Shape } from "../physics/shapes/Shapes";
 import { CollisionLayer, CollisionMask, Collision } from "../physics/collision/CollisionTypes";
+import { World } from "./World";
 
 export interface TransformComponent extends Component {
   type: "Transform";
@@ -49,7 +50,7 @@ export interface ReclaimableComponent extends Component {
   type: "Reclaimable";
   poolName: string;
   poolId: string;
-  onReclaim?: (world: any, entity: Entity) => void;
+  onReclaim?: (world: World<any, any, any>, entity: Entity) => void;
 }
 
 export interface IEntityPool {
