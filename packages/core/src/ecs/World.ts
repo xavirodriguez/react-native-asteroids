@@ -87,10 +87,10 @@ export class World<
   /**
    * Default schedule for handling ECS systems.
    */
-  private defaultSchedule: Schedule<TComponents, TEvents>;
+  private defaultSchedule: Schedule<TComponents, TEvents, TBlueprints>;
 
-  constructor(schedule?: Schedule<TComponents, TEvents>) {
-    this.defaultSchedule = schedule ?? new Schedule<TComponents, TEvents>();
+  constructor(schedule?: Schedule<TComponents, TEvents, TBlueprints>) {
+    this.defaultSchedule = schedule ?? new Schedule<TComponents, TEvents, TBlueprints>();
   }
 
   /** @internal */
