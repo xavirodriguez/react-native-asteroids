@@ -1,7 +1,7 @@
 {
     "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "outDir": "./dist",
+        "outDir": "./dist", // OutDir configured to "./dist" to stop contamination of src/
         "jsx": "react-jsx",
         "composite": false,
         "incremental": false,

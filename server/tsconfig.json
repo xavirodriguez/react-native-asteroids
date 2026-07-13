@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "./dist",
+    "outDir": "./dist", // OutDir configured to "./dist" to stop contamination of src/
     "target": "esnext",
     "module": "commonjs",
     "lib": ["esnext", "dom"],
