@@ -427,6 +427,10 @@ export class World<
     return this.resources.get(name) as T;
   }
 
+  deleteResource(name: string): void {
+    this.resources.delete(name);
+  }
+
   private updateComponentVersion(entity: Entity, type: string): void {
     let typeMap = this.componentVersions.get(type);
     if (!typeMap) {
