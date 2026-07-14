@@ -12,6 +12,7 @@ export default function RootLayout() {
       <Stack.Screen name="asteroids" options={{ title: "Asteroides" }} />
       <Stack.Screen name="space-invaders" options={{ title: "Space Invaders" }} />
       <Stack.Screen name="flappybird" options={{ title: "Flappy Bird" }} />
+      <Stack.Screen name="pong" options={{ title: "Pong" }} />
     </Stack>
     </GestureHandlerRootView>
   );
