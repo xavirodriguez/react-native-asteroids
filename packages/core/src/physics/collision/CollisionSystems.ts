@@ -62,9 +62,9 @@ export class CollisionSystem2D<TRegistry extends CoreComponentRegistry = CoreCom
       });
     }
 
-    const candidates = BroadPhase.sweepAndPrune([...query], w);
+    const broadPhasePairs = BroadPhase.sweepAndPrune([...query], w);
 
-    for (const [entityA, entityB] of candidates) {
+    for (const [entityA, entityB] of broadPhasePairs) {
       const colA = w.getComponent(entityA, "Collider")!;
       const colB = w.getComponent(entityB, "Collider")!;
 
