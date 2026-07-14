@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useGame } from "@tiny-aster/react-native";
 import { useHighScore } from "./useHighScore";
 import { AsteroidsGame } from "@tiny-aster/core";
@@ -27,15 +27,17 @@ export function useAsteroidsGame(isMultiplayer: boolean = false) {
     loadOptions();
   }, []);
 
+  const memoizedGameOptions = useMemo(() => ({
+    mutators: mutators || []
+  }), [mutators]);
+
   const { game, gameState, isPaused, isReady, handleInput, togglePause, restart } =
     useGame<AsteroidsGame, GameStateComponent, InputState>(
       mutators !== null ? AsteroidsGame : null,
       isMultiplayer,
       {
         initialState: INITIAL_GAME_STATE,
-        gameOptions: {
-          mutators: mutators || []
-        }
+        gameOptions: memoizedGameOptions
       }
     );
 

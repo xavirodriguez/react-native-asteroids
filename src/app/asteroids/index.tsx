@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "react-native";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput, ActivityIndicator } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { CanvasRenderer } from "@/components/CanvasRenderer";
@@ -9,7 +9,6 @@ import { DebugOverlay } from "@/components/debug/DebugOverlay";
 import { useAsteroidsGame } from "@/hooks/useAsteroidsGame";
 import { useMultiplayer } from "@tiny-aster/react-native";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useCallback } from "react";
 import { VirtualJoystick } from "../../components/controls/VirtualJoystick";
 import { ShootButton } from "../../components/ShootButton";
 import { HyperspaceButton } from "../../components/HyperspaceButton";
@@ -22,9 +21,8 @@ import { PlayerProfileService } from "@/services/PlayerProfileService";
 import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
-import { AsteroidsGame } from "@/games/asteroids/AsteroidsGame";
 import { GameErrorBoundary } from "@/components/GameErrorBoundary";
-import { InputState } from "@/games/asteroids/types/AsteroidTypes";
+import { InputState } from "@tiny-aster/core";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 
 export default function AsteroidsScreen() {
@@ -210,7 +208,16 @@ export default function AsteroidsScreen() {
     );
   }
 
-  if (!game || !isReady) return null;
+  if (!game || !isReady) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="white" />
+        <Text style={{ color: "white", marginTop: 20, fontFamily: "monospace", fontSize: 18 }}>
+          Cargando motor físico...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <GameErrorBoundary gameId="asteroids">
