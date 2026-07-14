@@ -1,6 +1,7 @@
 import { System } from "../../ecs/System";
 import { World } from "../../ecs/World";
 import { CoreComponentRegistry } from "../../ecs/CoreComponents";
+import { SpatialCullingSystem } from "../../systems/SpatialCullingSystem";
 
 /**
  * System that applies friction to entity velocity.
@@ -12,7 +13,11 @@ import { CoreComponentRegistry } from "../../ecs/CoreComponents";
  */
 export class FrictionSystem extends System<CoreComponentRegistry> {
   update(world: World<CoreComponentRegistry>, deltaTime: number): void {
-    const entities = world.query("Velocity", "Friction");
+    let entities = world.query("Velocity", "Friction");
+    if (world.getResource("SpatialCullingEnabled") === true) {
+      const margin = world.getResource<number>("SpatialCullingMargin") ?? 100;
+      entities = SpatialCullingSystem.filterInViewport(world, [...entities], margin);
+    }
     for (const entity of entities) {
       const f = world.getComponent(entity, "Friction")!;
       world.mutateComponent(entity, "Velocity", (v) => {

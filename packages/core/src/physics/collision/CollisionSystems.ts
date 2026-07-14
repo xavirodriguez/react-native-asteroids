@@ -7,6 +7,7 @@ import { BroadPhase } from "./BroadPhase";
 import { NarrowPhase } from "./NarrowPhase";
 import { CoreComponentRegistry } from "../../ecs/CoreComponents";
 import { ShapeType } from "../shapes/Shapes";
+import { SpatialCullingSystem } from "../../systems/SpatialCullingSystem";
 
 export type CollisionCallback<TRegistry extends ComponentRegistry = CoreComponentRegistry> = (world: World<TRegistry>, entityA: Entity, entityB: Entity, manifold: CollisionManifold) => void;
 export type TriggerCallback<TRegistry extends ComponentRegistry = CoreComponentRegistry> = (world: World<TRegistry>, entityA: Entity, entityB: Entity) => void;
@@ -21,10 +22,16 @@ export class CollisionSystem2D<TRegistry extends CoreComponentRegistry = CoreCom
   public onTriggerEnter(callback: TriggerCallback<TRegistry>): void { this.onTriggerEnterCallbacks.push(callback); }
   public onTriggerExit(callback: TriggerCallback<TRegistry>): void { this.onTriggerExitCallbacks.push(callback); }
 
-  public update(world: World<TRegistry>, _deltaTime: number): void {
+  public update(world: World<TRegistry>, _deltaTime: number, candidateEntities?: Entity[]): void {
     // Cast to access core components reliably while maintaining generic TRegistry if needed by subclasses
     const w = world as unknown as World<CoreComponentRegistry>;
-    const query = w.query("Transform", "Collider");
+    let query = candidateEntities ?? w.query("Transform", "Collider");
+
+    if (!candidateEntities && w.getResource("SpatialCullingEnabled") === true) {
+      const margin = w.getResource<number>("SpatialCullingMargin") ?? 100;
+      query = SpatialCullingSystem.filterInViewport(w, [...query], margin);
+    }
+
     const currentFramePairs = new Set<string>();
 
     const eventQuery = w.query("CollisionEvents");
@@ -132,8 +139,14 @@ export class CollisionSystem2D<TRegistry extends CoreComponentRegistry = CoreCom
 export class CCDSystem<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> extends System<TRegistry> {
   public update(world: World<TRegistry>, deltaTime: number): void {
     const w = world as unknown as World<CoreComponentRegistry>;
-    const query = w.query("Transform", "Velocity", "Collider");
-    const collidables = w.query("Transform", "Collider");
+    let query = w.query("Transform", "Velocity", "Collider");
+    let collidables = w.query("Transform", "Collider");
+
+    if (w.getResource("SpatialCullingEnabled") === true) {
+      const margin = w.getResource<number>("SpatialCullingMargin") ?? 100;
+      query = SpatialCullingSystem.filterInViewport(w, [...query], margin);
+      collidables = SpatialCullingSystem.filterInViewport(w, [...collidables], margin);
+    }
 
     for (const entity of query) {
       const trans = w.getComponent(entity, "Transform")!;

@@ -1,6 +1,7 @@
 import { System } from "../../ecs/System";
 import { World } from "../../ecs/World";
 import { CoreComponentRegistry } from "../../ecs/CoreComponents";
+import { SpatialCullingSystem } from "../../systems/SpatialCullingSystem";
 
 /**
  * System that applies velocity to entity transforms.
@@ -17,7 +18,11 @@ import { CoreComponentRegistry } from "../../ecs/CoreComponents";
  */
 export class MovementSystem extends System<CoreComponentRegistry> {
   update(world: World<CoreComponentRegistry>, deltaTime: number): void {
-    const entities = world.query("Transform", "Velocity");
+    let entities = world.query("Transform", "Velocity");
+    if (world.getResource("SpatialCullingEnabled") === true) {
+      const margin = world.getResource<number>("SpatialCullingMargin") ?? 100;
+      entities = SpatialCullingSystem.filterInViewport(world, [...entities], margin);
+    }
     for (const entity of entities) {
       const v = world.getComponent(entity, "Velocity")!;
       world.mutateComponent(entity, "Transform", (t) => {
