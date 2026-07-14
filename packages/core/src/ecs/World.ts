@@ -8,6 +8,8 @@ import { RandomService } from "../utils/RandomService";
 import { WorldSnapshot } from "../snapshots/WorldSnapshot";
 import { SnapshotSerializer } from "../snapshots/SnapshotSerializer";
 import { SnapshotRestore } from "../snapshots/SnapshotRestore";
+import { SnapshotSerializerSoA } from "../snapshots/SnapshotSerializerSoA";
+import { SnapshotRestoreSoA } from "../snapshots/SnapshotRestoreSoA";
 import { WorldCommandBuffer } from "./WorldCommandBuffer";
 import { BlueprintDefinition } from "./BlueprintRegistry";
 
@@ -458,6 +460,9 @@ export class World<
    *   hot paths is expected to increase GC pressure and may impact frame budget.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
+    if (this.getResource("UseSoASnapshots") === true) {
+      return SnapshotSerializerSoA.snapshot(this);
+    }
     return SnapshotSerializer.snapshot(this, target);
   }
 
@@ -479,6 +484,10 @@ export class World<
    *   or re-initialized manually after this call.
    */
   public restore(state: WorldSnapshot): void {
+    if (state.isSoA) {
+      SnapshotRestoreSoA.restore(this, state);
+      return;
+    }
     SnapshotRestore.restore(this, state);
   }
 
