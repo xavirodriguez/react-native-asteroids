@@ -4,8 +4,8 @@ Here is the ongoing roadmap of performance, technical debt, and architecture imp
 
 ## Phase 1: Architecture and Boundaries
 - [x] Align package dependencies and fix workspace builds for headless server and client core.
-- [ ] Implement an "Input Bridge" to decouple React UI from ECS.
-- [ ] Remove `as unknown as AsteroidsGame` casts in React components.
+- [x] Implement an "Input Bridge" to decouple React UI from ECS.
+- [x] Remove `as unknown as AsteroidsGame` casts in React components.
 - [ ] Centralize `KeepAwake` and audio services in a Provider.
 
 ## Phase 2: Core Performance

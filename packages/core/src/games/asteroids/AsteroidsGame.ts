@@ -285,6 +285,21 @@ export class AsteroidsGame
     return this.gameStateSystem.isGameOver();
   }
 
+  /**
+   * Decoupled Input Bridge: Sets the state of the local player inputs in the ECS World.
+   */
+  public setInputState(input: Partial<InputState>): void {
+    const localPlayer = this.world.query("LocalPlayer")[0];
+    if (localPlayer !== undefined) {
+      this.world.mutateComponent(localPlayer, "InputState", (inputComp: any) => {
+        if (input.thrust !== undefined) inputComp.buttons["thrust"] = input.thrust;
+        if (input.shoot !== undefined) inputComp.buttons["shoot"] = input.shoot;
+        if (input.rotateLeft !== undefined) inputComp.buttons["left"] = input.rotateLeft;
+        if (input.rotateRight !== undefined) inputComp.buttons["right"] = input.rotateRight;
+      });
+    }
+  }
+
   public override start(): void {
     super.start();
     if (__DEV__) console.log("[AsteroidsGame] Simulation started");
@@ -324,4 +339,5 @@ export class NullAsteroidsGame implements IAsteroidsGame {
   public getSeed() { return 0; }
   public subscribe(_listener: any) { return () => {}; }
   public initializeRenderer() {}
+  public setInputState(_input: Partial<InputState>) {}
 }
