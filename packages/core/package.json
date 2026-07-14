@@ -16,7 +16,7 @@
     "build": "pnpm exec tsup src/index.ts --format esm,cjs --dts --sourcemap --clean",
     "typecheck": "pnpm exec tsc -p tsconfig.json --noEmit",
     "test": "pnpm exec jest",
-    "clean:artifacts": "[ -d src ] && find src -type f \\( -name \"*.js\" -o -name \"*.js.map\" \\) -exec rm -f {} + || true"
+    "clean:artifacts": "[ -d src ] && find src -type f \\( -name \"*.js\" -o -name \"*.js.map\" \\) -delete || true"
   },
   "dependencies": {
     "msgpackr": "^1.11.12"

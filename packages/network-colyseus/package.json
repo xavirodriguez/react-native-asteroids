@@ -15,7 +15,7 @@
   "scripts": {
     "build": "pnpm exec tsup src/index.ts --format esm,cjs --dts --sourcemap --clean",
     "typecheck": "pnpm exec tsc -p tsconfig.json --noEmit",
-    "clean:artifacts": "[ -d src ] && find src -type f \\( -name \"*.js\" -o -name \"*.js.map\" \\) -exec rm -f {} + || true"
+    "clean:artifacts": "[ -d src ] && find src -type f \\( -name \"*.js\" -o -name \"*.js.map\" \\) -delete || true"
   },
   "dependencies": {
     "@colyseus/sdk": "^0.17.37",

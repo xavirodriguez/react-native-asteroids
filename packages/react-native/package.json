@@ -16,7 +16,7 @@
   "scripts": {
     "build": "pnpm exec tsup src/index.ts --format esm,cjs --dts --sourcemap --clean",
     "typecheck": "pnpm exec tsc -p tsconfig.json --noEmit",
-    "clean:artifacts": "[ -d src ] && find src -type f \\( -name \"*.js\" -o -name \"*.js.map\" \\) -exec rm -f {} + || true"
+    "clean:artifacts": "[ -d src ] && find src -type f \\( -name \"*.js\" -o -name \"*.js.map\" \\) -delete || true"
   },
   "dependencies": {
     "@tiny-aster/core": "workspace:*",
@@ -27,9 +27,9 @@
     "react-native": "*"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "react": "19.2.0",
-    "react-native": "0.83.2",
+    "@types/react": "^18.3.12",
+    "react": "18.3.1",
+    "react-native": "0.76.6",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0"
   }
