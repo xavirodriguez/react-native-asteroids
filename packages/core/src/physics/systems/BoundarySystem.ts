@@ -1,6 +1,7 @@
 import { World } from "../../ecs/World";
 import { System } from "../../ecs/System";
 import { CoreComponentRegistry } from "../../ecs/CoreComponents";
+import { SpatialCullingSystem } from "../../systems/SpatialCullingSystem";
 
 /**
  * System that enforces world boundaries on entities.
@@ -13,7 +14,11 @@ import { CoreComponentRegistry } from "../../ecs/CoreComponents";
  */
 export class BoundarySystem extends System<CoreComponentRegistry> {
   update(world: World<CoreComponentRegistry>, _deltaTime: number): void {
-    const entities = world.query("Transform", "Boundary");
+    let entities = world.query("Transform", "Boundary");
+    if (world.getResource("SpatialCullingEnabled") === true) {
+      const margin = world.getResource<number>("SpatialCullingMargin") ?? 100;
+      entities = SpatialCullingSystem.filterInViewport(world, [...entities], margin);
+    }
     for (const entity of entities) {
       const b = world.getComponent(entity, "Boundary")!;
       world.mutateComponent(entity, "Transform", (t) => {
