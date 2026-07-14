@@ -27,11 +27,18 @@ export class CollisionSystem2D<TRegistry extends CoreComponentRegistry = CoreCom
     this.candidateEntities = entities;
   }
 
-  public update(world: World<TRegistry>, _deltaTime: number): void {
+  public update(world: World<TRegistry>, _deltaTime: number, candidatesOverride?: Entity[]): void {
     // Cast to access core components reliably while maintaining generic TRegistry if needed by subclasses
     const w = world as unknown as World<CoreComponentRegistry>;
     const resourceCandidates = world.getResource<Entity[]>("SpatialCullingCandidates");
-    const candidatesList = this.candidateEntities !== null ? this.candidateEntities : (resourceCandidates !== undefined ? resourceCandidates : null);
+    const candidatesInput = candidatesOverride !== undefined ? candidatesOverride : this.candidateEntities;
+    let candidatesList = candidatesInput !== null ? candidatesInput : (resourceCandidates !== undefined ? resourceCandidates : null);
+
+    if (candidatesList === null && world.getResource("SpatialCullingEnabled") === true) {
+      const margin = world.getResource<number>("SpatialCullingMargin") ?? 100;
+      const entities = w.query("Transform", "Collider");
+      candidatesList = SpatialCullingSystem.filterInViewport(world, [...entities], margin);
+    }
 
     let query: Entity[];
     if (candidatesList !== null) {
