@@ -68,6 +68,7 @@ export * from "./systems/SpatialCullingSystem";
 export * from "./systems/JuiceSystem";
 export * from "./systems/TTLSystem";
 export * from "./systems/SpatialPartitioningSystem";
+export * from "./systems/SpatialCullingSystem";
 export * from "./systems/RenderUpdateSystem";
 export * from "./systems/ParticleSystem";
 export * from "./systems/JoystickSystem";

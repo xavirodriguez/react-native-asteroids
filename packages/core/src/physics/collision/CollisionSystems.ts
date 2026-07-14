@@ -7,6 +7,7 @@ import { BroadPhase } from "./BroadPhase";
 import { NarrowPhase } from "./NarrowPhase";
 import { CoreComponentRegistry } from "../../ecs/CoreComponents";
 import { ShapeType } from "../shapes/Shapes";
+import { SpatialCullingSystem } from "../../systems/SpatialCullingSystem";
 
 export type CollisionCallback<TRegistry extends ComponentRegistry = CoreComponentRegistry> = (world: World<TRegistry>, entityA: Entity, entityB: Entity, manifold: CollisionManifold) => void;
 export type TriggerCallback<TRegistry extends ComponentRegistry = CoreComponentRegistry> = (world: World<TRegistry>, entityA: Entity, entityB: Entity) => void;
