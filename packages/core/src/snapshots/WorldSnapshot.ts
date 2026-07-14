@@ -27,10 +27,16 @@ export interface WorldSnapshot {
   seed: number;
   rngState?: number;
   tick: number;
+
+  /**
+   * Structure of Arrays (SoA) optimization flags and payload.
+   */
+  isSoA?: boolean;
+  soaComponentData?: Record<string, SoAComponentTypeData>;
 }
 
 /**
- * Flat storage of component data organized by type and entity ID.
+ * Flat storage of component data organized by type and entity ID (classic AoS representation).
  */
 export type ComponentDataSnapshot = Record<string, Record<number, SerializedComponent>>;
 
@@ -38,3 +44,44 @@ export type ComponentDataSnapshot = Record<string, Record<number, SerializedComp
  * A serialized representation of a component, containing only its serializable properties.
  */
 export type SerializedComponent = Record<string, unknown>;
+
+/**
+ * Structure of Arrays (SoA) layout for component storage inside snapshots.
+ *
+ * @remarks
+ * Groups components of the same type together into TypedArrays to prevent object allocation
+ * overhead and reduce GC pressure.
+ */
+export interface SoAComponentTypeData {
+  /**
+   * Names of the serialized keys for this component type in a stable order.
+   */
+  keys: string[];
+
+  /**
+   * Flat array of entity IDs that possess this component type.
+   */
+  entities: Int32Array;
+
+  /**
+   * Flat Float64Array storing numeric and boolean properties.
+   *
+   * @remarks
+   * Stored at index `entityIndex * keys.length + keyIndex`.
+   * Boolean values are stored as 1 (true) or 0 (false).
+   */
+  values: Float64Array;
+
+  /**
+   * Flat array storing non-numeric properties (e.g. nested objects, arrays, strings).
+   *
+   * @remarks
+   * Stored at index `entityIndex * keys.length + keyIndex` corresponding to values.
+   */
+  nonNumericValues?: any[];
+
+  /**
+   * Keys that are boolean values and should be converted back to true/false.
+   */
+  booleanKeys?: string[];
+}
