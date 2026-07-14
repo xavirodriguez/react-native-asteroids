@@ -1,4 +1,4 @@
-# Design Decisions - Tiny Aster Engine
+# ADR
 
 ## DECISION-001: Cached World.entities Sorting
 
