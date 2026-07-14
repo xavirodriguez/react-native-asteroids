@@ -27,11 +27,17 @@ export class CollisionSystem2D<TRegistry extends CoreComponentRegistry = CoreCom
     this.candidateEntities = entities;
   }
 
-  public update(world: World<TRegistry>, _deltaTime: number): void {
+  public update(world: World<TRegistry>, _deltaTime: number, candidates?: Entity[] | null): void {
     // Cast to access core components reliably while maintaining generic TRegistry if needed by subclasses
     const w = world as unknown as World<CoreComponentRegistry>;
     const resourceCandidates = world.getResource<Entity[]>("SpatialCullingCandidates");
-    const candidatesList = this.candidateEntities !== null ? this.candidateEntities : (resourceCandidates !== undefined ? resourceCandidates : null);
+    let candidatesList = candidates !== undefined ? candidates : (this.candidateEntities !== null ? this.candidateEntities : (resourceCandidates !== undefined ? resourceCandidates : null));
+
+    if (candidatesList === null && world.getResource("SpatialCullingEnabled") === true) {
+      const margin = world.getResource<number>("SpatialCullingMargin") ?? 100;
+      const allEntities = w.query("Transform", "Collider");
+      candidatesList = SpatialCullingSystem.filterInViewport(w, [...allEntities], margin);
+    }
 
     let query: Entity[];
     if (candidatesList !== null) {
@@ -55,9 +61,9 @@ export class CollisionSystem2D<TRegistry extends CoreComponentRegistry = CoreCom
       });
     }
 
-    const candidates = BroadPhase.sweepAndPrune([...query], w);
+    const broadPhasePairs = BroadPhase.sweepAndPrune([...query], w);
 
-    for (const [entityA, entityB] of candidates) {
+    for (const [entityA, entityB] of broadPhasePairs) {
       const colA = w.getComponent(entityA, "Collider")!;
       const colB = w.getComponent(entityB, "Collider")!;
 

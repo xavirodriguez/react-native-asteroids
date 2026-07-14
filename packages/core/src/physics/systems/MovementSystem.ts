@@ -27,7 +27,13 @@ export class MovementSystem extends System<CoreComponentRegistry> {
 
   update(world: World<CoreComponentRegistry>, deltaTime: number): void {
     const resourceCandidates = world.getResource<Entity[]>("SpatialCullingCandidates");
-    const candidatesList = this.candidateEntities !== null ? this.candidateEntities : (resourceCandidates !== undefined ? resourceCandidates : null);
+    let candidatesList = this.candidateEntities !== null ? this.candidateEntities : (resourceCandidates !== undefined ? resourceCandidates : null);
+
+    if (candidatesList === null && world.getResource("SpatialCullingEnabled") === true) {
+      const margin = world.getResource<number>("SpatialCullingMargin") ?? 100;
+      const allEntities = world.query("Transform", "Velocity");
+      candidatesList = SpatialCullingSystem.filterInViewport(world, [...allEntities], margin);
+    }
 
     if (candidatesList !== null) {
       for (const entity of candidatesList) {
