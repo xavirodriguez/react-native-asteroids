@@ -64,6 +64,7 @@ export * from "./rendering/Camera2D";
 
 // Systems
 export * from "./systems/BaseGameStateSystem";
+export * from "./systems/SpatialCullingSystem";
 export * from "./systems/JuiceSystem";
 export * from "./systems/TTLSystem";
 export * from "./systems/SpatialPartitioningSystem";

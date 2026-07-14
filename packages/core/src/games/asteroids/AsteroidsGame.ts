@@ -11,6 +11,7 @@ import { PowerUpSystem } from "../arcade/systems/PowerUpSystem";
 import { JuiceSystem } from "../../systems/JuiceSystem";
 import { MutatorSystem } from "../../systems/MutatorSystem";
 import { SpatialPartitioningSystem } from "../../systems/SpatialPartitioningSystem";
+import { SpatialCullingSystem } from "../../systems/SpatialCullingSystem";
 import { RenderUpdateSystem } from "../../systems/RenderUpdateSystem";
 import { MovementSystem } from "../../physics/systems/MovementSystem";
 import { BoundarySystem } from "../../physics/systems/BoundarySystem";
@@ -235,6 +236,7 @@ export class AsteroidsGame
     this.gameStateSystem = new AsteroidGameStateSystem(this);
 
     this.world.addSystem(new JoystickSystem(), { phase: SystemPhase.Input });
+    this.world.addSystem(new SpatialCullingSystem({ margin: 100 }), { phase: SystemPhase.Simulation, priority: 100 });
     this.world.addSystem(new AsteroidInputSystem(this.bulletPool, this.particlePool, this.config), { phase: SystemPhase.Simulation });
     this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(new BoundarySystem(), { phase: SystemPhase.Simulation });
