@@ -1,4 +1,5 @@
 import { World } from "../src/ecs/World";
+import { SystemPhase } from "../src/ecs/System";
 import { CoreComponentRegistry } from "../src/ecs/CoreComponents";
 import { MovementSystem } from "../src/physics/systems/MovementSystem";
 import { CollisionSystem2D } from "../src/physics/collision/CollisionSystems";
@@ -163,5 +164,106 @@ describe("AsteroidsHeadless Integration Test", () => {
 
     expect(eventsA1.collisions[0].depth).toBeCloseTo(4, 4);
     expect(eventsB1.collisions[0].depth).toBeCloseTo(4, 4);
+  });
+
+  it("debería ejecutar el bucle completo del World registrando MovementSystem y CollisionSystem2D", () => {
+    // Registrar sistemas de forma explícita en el World de ECS con las fases correctas
+    world.addSystem(movementSystem, { phase: SystemPhase.Simulation });
+    world.addSystem(collisionSystem, { phase: SystemPhase.Collision });
+
+    const entityA = world.createEntity();
+    const entityB = world.createEntity();
+
+    const ASTEROID_LAYER = layer(1);
+    const PROJECTILE_LAYER = layer(2);
+
+    world.addComponent(entityA, {
+      type: "CollisionEvents",
+      collisions: [],
+      activeTriggers: [],
+      triggersEntered: [],
+      triggersExited: [],
+    });
+
+    world.addComponent(entityB, {
+      type: "CollisionEvents",
+      collisions: [],
+      activeTriggers: [],
+      triggersEntered: [],
+      triggersExited: [],
+    });
+
+    // Asteroide quieto en x:0, y:0 (usamos undefined en worldX/worldY para que usen x/y de forma dinámica)
+    world.addComponent(entityA, {
+      type: "Transform",
+      x: 0,
+      y: 0,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+      worldX: undefined as unknown as number,
+      worldY: undefined as unknown as number,
+      worldRotation: 0,
+      worldScaleX: 1,
+      worldScaleY: 1,
+      dirty: false,
+    });
+
+    world.addComponent(entityA, {
+      type: "Collider",
+      shape: { type: ShapeType.Circle, radius: 10 },
+      layer: ASTEROID_LAYER,
+      mask: maskOf(PROJECTILE_LAYER),
+      enabled: true,
+      isTrigger: false,
+    });
+
+    // Proyectil en x: 15 (fuera de colisión inicial) con velocidad hacia el asteroide (vx: -100)
+    world.addComponent(entityB, {
+      type: "Transform",
+      x: 15,
+      y: 0,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+      worldX: undefined as unknown as number,
+      worldY: undefined as unknown as number,
+      worldRotation: 0,
+      worldScaleX: 1,
+      worldScaleY: 1,
+      dirty: false,
+    });
+
+    world.addComponent(entityB, {
+      type: "Velocity",
+      vx: -100,
+      vy: 0,
+      angularVelocity: 0,
+    });
+
+    world.addComponent(entityB, {
+      type: "Collider",
+      shape: { type: ShapeType.Circle, radius: 2 },
+      layer: PROJECTILE_LAYER,
+      mask: maskOf(ASTEROID_LAYER),
+      enabled: true,
+      isTrigger: false,
+    });
+
+    // Primer tick del World: El proyectil se mueve de 15 a 14 (dt = 0.01). Aún no colisiona (distancia = 14, suma radios = 12)
+    world.update(0.01);
+
+    let eventsA = world.getComponent(entityA, "CollisionEvents")!;
+    expect(eventsA.collisions.length).toBe(0);
+
+    // Segundo tick del World: El proyectil se mueve de 14 a 9 (dt = 0.05). Ahora colisiona! (distancia = 9, suma radios = 12)
+    world.update(0.05);
+
+    eventsA = world.getComponent(entityA, "CollisionEvents")!;
+    const eventsB = world.getComponent(entityB, "CollisionEvents")!;
+
+    expect(eventsA.collisions.length).toBe(1);
+    expect(eventsB.collisions.length).toBe(1);
+    expect(eventsA.collisions[0].otherEntity).toBe(entityB);
   });
 });

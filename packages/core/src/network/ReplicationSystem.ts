@@ -1,6 +1,13 @@
 import { World } from "../ecs/World";
 import { System } from "../ecs/System";
 import { CoreComponentRegistry } from "../ecs/CoreComponents";
+import { NetworkManager } from "./NetworkManager";
+
+export interface MultiplayerRegistry extends CoreComponentRegistry {
+    RemotePlayer: { type: "RemotePlayer"; sessionId?: string; targetX?: number; targetY?: number; targetRotation?: number };
+    LocalPlayer: { type: "LocalPlayer" };
+    Input: { type: "Input"; thrust?: boolean };
+}
 
 export interface ReconciledInput<TInput = { thrust?: boolean }> {
     tick: number;
@@ -16,18 +23,19 @@ export interface AuthoritativeServerState {
     vy: number;
 }
 
-export class ReplicationSystem<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> extends System<TRegistry> {
+export class ReplicationSystem<TRegistry extends MultiplayerRegistry = MultiplayerRegistry> extends System<TRegistry> {
     private inputQueue: ReconciledInput[] = [];
     private lastProcessedTick = 0;
 
-    constructor(private networkManager: any) { super(); }
+    constructor(private networkManager: NetworkManager) { super(); }
 
-    public update(world: World<TRegistry, any>, deltaTime: number): void {
-        const w = world as unknown as World<CoreComponentRegistry, any>;
-        const remoteQuery = w.query("Transform", "RemotePlayer" as any);
+    public update(world: World<TRegistry>, deltaTime: number): void {
+        const w = world as unknown as World<MultiplayerRegistry>;
+
+        const remoteQuery = w.query("Transform", "RemotePlayer");
         for (const entity of remoteQuery) {
             const transform = w.getComponent(entity, "Transform");
-            const remote = w.getComponent(entity, "RemotePlayer" as any) as unknown as { targetX?: number; targetY?: number; targetRotation?: number } | undefined;
+            const remote = w.getComponent(entity, "RemotePlayer");
 
             if (transform && remote && remote.targetX !== undefined && remote.targetY !== undefined) {
                 // Implement Linear Interpolation (Lerp) for remote entities
@@ -46,9 +54,9 @@ export class ReplicationSystem<TRegistry extends CoreComponentRegistry = CoreCom
             }
         }
 
-        const localQuery = w.query("Transform", "LocalPlayer" as any, "Velocity", "Input" as any);
+        const localQuery = w.query("Transform", "LocalPlayer", "Velocity", "Input");
         for (const entity of localQuery) {
-            const input = w.getComponent(entity, "Input" as any) as unknown as { thrust?: boolean } | undefined;
+            const input = w.getComponent(entity, "Input");
             const velocity = w.getComponent(entity, "Velocity");
             const transform = w.getComponent(entity, "Transform");
 
@@ -73,21 +81,21 @@ export class ReplicationSystem<TRegistry extends CoreComponentRegistry = CoreCom
         }
     }
 
-    public onRegister(world: World<TRegistry, any>): void {}
-    public dispose(): void {}
+    public override onRegister(_world: World<TRegistry>): void {}
+    public override dispose(): void {}
 
     /**
      * Reconciles local state with the server state.
      * Replays all inputs that haven't been acknowledged by the server yet.
      */
-    public reconcile(world: World<TRegistry, any>, serverTick: number, serverState: AuthoritativeServerState) {
-        const w = world as unknown as World<CoreComponentRegistry, any>;
+    public reconcile(world: World<TRegistry>, serverTick: number, serverState: AuthoritativeServerState): void {
+        const w = world as unknown as World<MultiplayerRegistry>;
 
         // 1. Discard inputs that have already been processed by the server
         this.inputQueue = this.inputQueue.filter(i => i.tick > serverTick);
 
         // 2. Find the local player entity
-        const localQuery = w.query("Transform", "LocalPlayer" as any, "Velocity");
+        const localQuery = w.query("Transform", "LocalPlayer", "Velocity");
         for (const entity of localQuery) {
             const transform = w.getComponent(entity, "Transform");
             const velocity = w.getComponent(entity, "Velocity");

@@ -227,5 +227,105 @@ describe("CollisionSystems (CollisionSystem2D & CCDSystem) Tests", () => {
       expect(projectileEvents.collisions.length).toBe(1);
       expect(projectileEvents.collisions[0].otherEntity).toBe(thinWall);
     });
+
+    it("debería detectar la colisión de un proyectil diagonal muy rápido contra un obstáculo circular delgado evitando el tunneling", () => {
+      const PROJECTILE_LAYER = layer(1);
+      const OBSTACLE_LAYER = layer(2);
+
+      // Crear un proyectil súper rápido viajando en diagonal (vx: 150, vy: 150)
+      const fastProjectile = world.createEntity();
+      world.addComponent(fastProjectile, {
+        type: "Transform",
+        x: 0,
+        y: 0,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+        worldX: 0,
+        worldY: 0,
+        worldRotation: 0,
+        worldScaleX: 1,
+        worldScaleY: 1,
+        dirty: false,
+      });
+      world.addComponent(fastProjectile, {
+        type: "Velocity",
+        vx: 150,
+        vy: 150,
+        angularVelocity: 0,
+      });
+      world.addComponent(fastProjectile, {
+        type: "Collider",
+        shape: { type: ShapeType.Circle, radius: 1 },
+        layer: PROJECTILE_LAYER,
+        mask: maskOf(OBSTACLE_LAYER),
+        enabled: true,
+        isTrigger: false,
+      });
+      world.addComponent(fastProjectile, {
+        type: "CollisionEvents",
+        collisions: [],
+        activeTriggers: [],
+        triggersEntered: [],
+        triggersExited: [],
+      });
+
+      // Obstáculo circular en la trayectoria diagonal (en x: 50, y: 50)
+      const circleObstacle = world.createEntity();
+      world.addComponent(circleObstacle, {
+        type: "Transform",
+        x: 50,
+        y: 50,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+        worldX: 50,
+        worldY: 50,
+        worldRotation: 0,
+        worldScaleX: 1,
+        worldScaleY: 1,
+        dirty: false,
+      });
+      world.addComponent(circleObstacle, {
+        type: "Collider",
+        shape: { type: ShapeType.Circle, radius: 3 }, // Radio delgado de 3
+        layer: OBSTACLE_LAYER,
+        mask: maskOf(PROJECTILE_LAYER),
+        enabled: true,
+        isTrigger: false,
+      });
+      world.addComponent(circleObstacle, {
+        type: "CollisionEvents",
+        collisions: [],
+        activeTriggers: [],
+        triggersEntered: [],
+        triggersExited: [],
+      });
+
+      // Un solo tick de tiempo (deltaTime = 0.5)
+      // El proyectil saltaría de (0,0) a (75,75), cruzando (50,50) en el proceso
+      const deltaTime = 0.5;
+
+      ccdSystem.update(world, deltaTime);
+
+      const projectileEvents = world.getComponent(fastProjectile, "CollisionEvents")!;
+
+      expect(projectileEvents.collisions.length).toBe(1);
+      expect(projectileEvents.collisions[0].otherEntity).toBe(circleObstacle);
+    });
+
+    it("debería verificar que shouldCollide filtre capas y máscaras correctamente", () => {
+      const ASTEROID_LAYER = layer(1);
+      const PROJECTILE_LAYER = layer(2);
+      const PONG_BALL_LAYER = layer(3);
+
+      const systemPrivate = collisionSystem as any;
+      // Capas compatibles (Asteroid & Projectile)
+      // Asteroid tiene layer ASTEROID_LAYER y máscara de PROJECTILE_LAYER. Projectile tiene layer PROJECTILE_LAYER y máscara de ASTEROID_LAYER.
+      expect(systemPrivate.shouldCollide(ASTEROID_LAYER, maskOf(ASTEROID_LAYER), PROJECTILE_LAYER, maskOf(PROJECTILE_LAYER))).toBe(true);
+
+      // Capas incompatibles (Asteroid & PongBall)
+      expect(systemPrivate.shouldCollide(ASTEROID_LAYER, maskOf(PROJECTILE_LAYER), PONG_BALL_LAYER, maskOf(PROJECTILE_LAYER))).toBe(false);
+    });
   });
 });
