@@ -1,7 +1,7 @@
 {
     "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "outDir": "./dist", // OutDir configured to "./dist" to stop contamination of src/
+        "outDir": "./dist", // STOP CONTAMINATION: Output directory configured to "./dist" for compiled artifacts
         "rootDir": "./src"
     },
     "include": [

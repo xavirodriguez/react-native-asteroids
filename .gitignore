@@ -70,3 +70,7 @@ packages/*/src/**/*.js
 packages/*/src/**/*.js.map
 server/src/**/*.js
 server/src/**/*.js.map
+
+# Phase 1: Prevent contamination of compiled JS and JS map files under src/
+**/src/**/*.js
+**/src/**/*.js.map
