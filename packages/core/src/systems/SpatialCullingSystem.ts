@@ -186,6 +186,7 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
     }
 
     // 6. Save the list of active simulation candidate entities
+    // SpatialCullingSystem verified and consolidated
     world.setResource("SpatialCullingCandidates", candidates);
   }
 }
