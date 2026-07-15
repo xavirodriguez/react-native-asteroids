@@ -40,10 +40,10 @@ export class FlappyBirdGame
   extends BaseGame<FlappyBirdState, FlappyBirdInput>
   implements IFlappyBirdGame {
 
-  private gameStateSystem: FlappyBirdGameStateSystem;
-  private networkManager: NetworkManager;
+  private gameStateSystem!: FlappyBirdGameStateSystem;
+  private networkManager!: NetworkManager;
   public readonly gameId = "flappybird";
-  private config: typeof FLAPPY_CONFIG;
+  private config!: typeof FLAPPY_CONFIG;
 
   constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown> } = {}) {
     const seed = config.gameOptions?.seed as number || config.seed;
@@ -55,7 +55,7 @@ export class FlappyBirdGame
     });
   }
 
-  public override async init(): Promise<void> {
+  protected override async onRegisterSystems(): Promise<void> {
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
@@ -65,24 +65,7 @@ export class FlappyBirdGame
     this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     await this.onPreloadAssets();
-    await super.init();
-  }
 
-  private async onPreloadAssets(): Promise<void> {
-    const audio = this.audio;
-    try {
-      await Promise.all([
-        audio.loadSFX("flap", "/audio/flap.mp3"),
-        audio.loadSFX("hit", "/audio/hit.mp3"),
-        audio.loadSFX("score", "/audio/score.mp3"),
-        audio.loadSFX("game_over", "/audio/game_over.mp3"),
-      ]);
-    } catch (e) {
-      console.warn("[FlappyBird] Asset preloading failed.", e);
-    }
-  }
-
-  protected registerSystems(): void {
     // Bind inputs for UnifiedInputSystem
     this.unifiedInput.bind("flap", [FLAPPY_CONFIG.KEYS.FLAP]);
 
@@ -114,6 +97,38 @@ export class FlappyBirdGame
       });
     }
     this.world.addSystem(new ReplicationSystem(this.networkManager), { phase: SystemPhase.Presentation });
+  }
+
+  protected override async onInitializeEntities(): Promise<void> {
+    if (this.isMultiplayer) return;
+    createGameState(this.world);
+    createBird({ world: this.world, x: FLAPPY_CONFIG.BIRD_X, y: FLAPPY_CONFIG.BIRD_START_Y });
+    createGround(this.world);
+  }
+
+  protected override async onBeforeRestart(): Promise<void> {
+    this.gameStateSystem?.resetGameOverState(this.world);
+    if (this.isMultiplayer) {
+      this.networkManager?.reset();
+    }
+  }
+
+  public override update(dt: number): void {
+      this.world.update(dt);
+  }
+
+  private async onPreloadAssets(): Promise<void> {
+    const audio = this.audio;
+    try {
+      await Promise.all([
+        audio.loadSFX("flap", "/audio/flap.mp3"),
+        audio.loadSFX("hit", "/audio/hit.mp3"),
+        audio.loadSFX("score", "/audio/score.mp3"),
+        audio.loadSFX("game_over", "/audio/game_over.mp3"),
+      ]);
+    } catch (e) {
+      console.warn("[FlappyBird] Asset preloading failed.", e);
+    }
   }
 
   public setMultiplayerMode(active: boolean) {
@@ -217,13 +232,6 @@ export class FlappyBirdGame
     }
   }
 
-  protected initializeEntities(): void {
-    if (this.isMultiplayer) return;
-    createGameState(this.world);
-    createBird({ world: this.world, x: FLAPPY_CONFIG.BIRD_X, y: FLAPPY_CONFIG.BIRD_START_Y });
-    createGround(this.world);
-  }
-
   public initializeRenderer(renderer: Renderer<unknown>): void {
     if (renderer.type === "canvas") {
       renderer.registerShape("bird", drawFlappyBird);
@@ -240,13 +248,6 @@ export class FlappyBirdGame
 
   public isGameOver(): boolean {
     return this.getGameState().isGameOver;
-  }
-
-  protected _onBeforeRestart(): void {
-    this.gameStateSystem.resetGameOverState(this.world);
-    if (this.isMultiplayer) {
-      this.networkManager.reset();
-    }
   }
 }
 

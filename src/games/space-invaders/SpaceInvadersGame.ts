@@ -59,7 +59,7 @@ export class SpaceInvadersGame
     });
   }
 
-  public override async init(): Promise<void> {
+  protected override async onRegisterSystems(): Promise<void> {
     const rawConfig = require("./config/space-invaders.json");
     const baseConfig = ConfigService.load(this.gameId, SpaceInvadersConfigSchema, rawConfig);
 
@@ -74,8 +74,46 @@ export class SpaceInvadersGame
     this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     await this.onPreloadAssets();
-    await super.init();
-    await this.registerSystemsAsync();
+
+    if (!this.playerBulletPool) this.playerBulletPool = new PlayerBulletPool();
+    if (!this.enemyBulletPool) this.enemyBulletPool = new EnemyBulletPool();
+    if (!this.particlePool) this.particlePool = new ParticlePool();
+
+    // Bind inputs for UnifiedInputSystem
+    this.unifiedInput.bind("moveLeft", [this.config.KEYS.LEFT]);
+    this.unifiedInput.bind("moveRight", [this.config.KEYS.RIGHT]);
+    this.unifiedInput.bind("shoot", [this.config.KEYS.SHOOT]);
+
+    const gameScene = new SpaceInvadersGameScene(
+      this,
+      this.playerBulletPool,
+      this.enemyBulletPool,
+      this.particlePool,
+      this.config
+    );
+
+    // Register Power-up systems in the scene world
+    const sceneWorld = gameScene.getWorld();
+    sceneWorld.addSystem(new LootSystem());
+    sceneWorld.addSystem(new PowerUpSystem());
+
+    if (!this.networkManager) {
+      this.networkManager = NetworkManager.registerGame(this.gameId, this, {
+          strategy: 'hybrid',
+          interpolationDelay: 100
+      });
+    }
+    sceneWorld.addSystem(new ReplicationSystem(this.networkManager));
+
+    await this.sceneManager.transitionTo(gameScene);
+  }
+
+  protected override async onBeforeRestart(): Promise<void> {
+    this.sceneManager?.destroy();
+  }
+
+  public override update(dt: number): void {
+      this.world.update(dt);
   }
 
   private async onPreloadAssets(): Promise<void> {
@@ -90,14 +128,6 @@ export class SpaceInvadersGame
     } catch (e) {
       console.warn("[SpaceInvaders] Asset preloading failed.", e);
     }
-  }
-
-  protected registerSystems(): void {
-    // Systems are registered asynchronously in init() via registerSystemsAsync()
-  }
-
-  protected initializeEntities(): void {
-    // Handled by SpaceInvadersGameScene.onEnter()
   }
 
   public initializeRenderer(renderer: Renderer<unknown>): void {
@@ -119,7 +149,7 @@ export class SpaceInvadersGame
 
   public getWorld(): World {
     // Priority 1: Scene-specific world (active gameplay)
-    const scene = this.sceneManager.getCurrentScene();
+    const scene = this.sceneManager?.getCurrentScene();
     if (scene) {
       return scene.getWorld();
     }
@@ -250,48 +280,6 @@ export class SpaceInvadersGame
     super.resume();
     this.getWorld().setResource("IsPaused", false);
     if (__DEV__) console.log("[SpaceInvadersGame] Simulation resumed");
-  }
-
-  protected async _onBeforeRestart(): Promise<void> {
-    // During restart, we DO want to await the full transition
-    await this.registerSystemsAsync();
-  }
-
-  /**
-   * Async version of registerSystems for use in restart()
-   */
-  private async registerSystemsAsync(): Promise<void> {
-    if (!this.playerBulletPool) this.playerBulletPool = new PlayerBulletPool();
-    if (!this.enemyBulletPool) this.enemyBulletPool = new EnemyBulletPool();
-    if (!this.particlePool) this.particlePool = new ParticlePool();
-
-    // Bind inputs for UnifiedInputSystem
-    this.unifiedInput.bind("moveLeft", [this.config.KEYS.LEFT]);
-    this.unifiedInput.bind("moveRight", [this.config.KEYS.RIGHT]);
-    this.unifiedInput.bind("shoot", [this.config.KEYS.SHOOT]);
-
-    const gameScene = new SpaceInvadersGameScene(
-      this,
-      this.playerBulletPool,
-      this.enemyBulletPool,
-      this.particlePool,
-      this.config
-    );
-
-    // Register Power-up systems in the scene world
-    const sceneWorld = gameScene.getWorld();
-    sceneWorld.addSystem(new LootSystem());
-    sceneWorld.addSystem(new PowerUpSystem());
-
-    if (!this.networkManager) {
-      this.networkManager = NetworkManager.registerGame(this.gameId, this, {
-          strategy: 'hybrid',
-          interpolationDelay: 100
-      });
-    }
-    sceneWorld.addSystem(new ReplicationSystem(this.networkManager));
-
-    await this.sceneManager.transitionTo(gameScene);
   }
 }
 

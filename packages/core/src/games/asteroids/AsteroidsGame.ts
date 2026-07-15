@@ -67,7 +67,7 @@ export class AsteroidsGame
     this.config = rawConfig;
   }
 
-  public override async initialize(): Promise<void> {
+  protected override async onRegisterSystems(): Promise<void> {
     const rawConfig = require("./config/asteroids.json");
     const baseConfig = ConfigService.load<AsteroidConfig>(this.gameId, AsteroidConfigSchema, rawConfig);
 
@@ -86,8 +86,60 @@ export class AsteroidsGame
         await this.onPreloadAssets();
     }
 
-    this.registerSystems();
-    this.initializeEntities();
+    if (!this.bulletPool) this.bulletPool = new BulletPool();
+    if (!this.particlePool) this.particlePool = new ParticlePool();
+    if (!this.assetLoader) this.assetLoader = new AssetLoader();
+
+    if (!this.networkManager) {
+      this.networkManager = NetworkManager.registerGame(this.gameId, this, {
+        strategy: 'full',
+        interpolationDelay: 100,
+        transport: this.isMultiplayer ? undefined : new NullTransport()
+      });
+    } else if (!this.isMultiplayer) {
+      this.networkManager.setTransport(new NullTransport());
+    }
+
+    this.world.setResource("BulletPool", this.bulletPool);
+    this.world.setResource("AssetLoader", this.assetLoader);
+
+    this.gameStateSystem = new AsteroidGameStateSystem(this);
+
+    this.world.setResource("SpatialCullingEnabled", true);
+
+    this.world.addSystem(new JoystickSystem(), { phase: SystemPhase.Input });
+    this.world.addSystem(new SpatialCullingSystem({ margin: 100 }), { phase: SystemPhase.Simulation, priority: 100 });
+    this.world.addSystem(new AsteroidInputSystem(this.bulletPool, this.particlePool, this.config), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new BoundarySystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new FrictionSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new CCDSystem(), { phase: SystemPhase.Simulation, priority: -10 });
+    this.world.addSystem(new CollisionSystem2D(), { phase: SystemPhase.Collision });
+    this.world.addSystem(new AsteroidCollisionSystem(this.particlePool), { phase: SystemPhase.GameRules });
+    this.world.addSystem(new TTLSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(this.gameStateSystem, { phase: SystemPhase.GameRules });
+
+    this.world.addSystem(new SpatialPartitioningSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new LootSystem(), { phase: SystemPhase.GameRules });
+    this.world.addSystem(new PowerUpSystem(), { phase: SystemPhase.Simulation });
+
+    const activeMutators = (this._config.gameOptions?.mutators as any[]) || [];
+    this.world.addSystem(new MutatorSystem(activeMutators), { phase: SystemPhase.Simulation });
+
+    if (!this.isHeadless) {
+      this.world.addSystem(new ScreenShakeSystem(), { phase: SystemPhase.Presentation });
+      this.world.addSystem(new FeedbackSystem(), { phase: SystemPhase.Presentation });
+      this.world.addSystem(new JuiceSystem(), { phase: SystemPhase.Presentation });
+      this.world.addSystem(new RenderUpdateSystem(), { phase: SystemPhase.Presentation });
+    }
+
+    if (this.networkManager) {
+      this.world.addSystem(new ReplicationSystem(this.networkManager), { phase: SystemPhase.Presentation });
+    }
+  }
+
+  protected override async onInitializeEntities(): Promise<void> {
+    if (this.isMultiplayer) return;
   }
 
   public update(dt: number): void {
@@ -213,63 +265,6 @@ export class AsteroidsGame
 
     const serverTick = serverState.serverTick as number;
     this.networkManager.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
-  }
-
-  protected registerSystems(): void {
-    if (!this.bulletPool) this.bulletPool = new BulletPool();
-    if (!this.particlePool) this.particlePool = new ParticlePool();
-    if (!this.assetLoader) this.assetLoader = new AssetLoader();
-
-    if (!this.networkManager) {
-      this.networkManager = NetworkManager.registerGame(this.gameId, this, {
-        strategy: 'full',
-        interpolationDelay: 100,
-        transport: this.isMultiplayer ? undefined : new NullTransport()
-      });
-    } else if (!this.isMultiplayer) {
-      this.networkManager.setTransport(new NullTransport());
-    }
-
-    this.world.setResource("BulletPool", this.bulletPool);
-    this.world.setResource("AssetLoader", this.assetLoader);
-
-    this.gameStateSystem = new AsteroidGameStateSystem(this);
-
-    this.world.setResource("SpatialCullingEnabled", true);
-
-    this.world.addSystem(new JoystickSystem(), { phase: SystemPhase.Input });
-    this.world.addSystem(new SpatialCullingSystem({ margin: 100 }), { phase: SystemPhase.Simulation, priority: 100 });
-    this.world.addSystem(new AsteroidInputSystem(this.bulletPool, this.particlePool, this.config), { phase: SystemPhase.Simulation });
-    this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
-    this.world.addSystem(new BoundarySystem(), { phase: SystemPhase.Simulation });
-    this.world.addSystem(new FrictionSystem(), { phase: SystemPhase.Simulation });
-    this.world.addSystem(new CCDSystem(), { phase: SystemPhase.Simulation, priority: -10 });
-    this.world.addSystem(new CollisionSystem2D(), { phase: SystemPhase.Collision });
-    this.world.addSystem(new AsteroidCollisionSystem(this.particlePool), { phase: SystemPhase.GameRules });
-    this.world.addSystem(new TTLSystem(), { phase: SystemPhase.Simulation });
-    this.world.addSystem(this.gameStateSystem, { phase: SystemPhase.GameRules });
-
-    this.world.addSystem(new SpatialPartitioningSystem(), { phase: SystemPhase.Simulation });
-    this.world.addSystem(new LootSystem(), { phase: SystemPhase.GameRules });
-    this.world.addSystem(new PowerUpSystem(), { phase: SystemPhase.Simulation });
-
-    const activeMutators = (this._config.gameOptions?.mutators as any[]) || [];
-    this.world.addSystem(new MutatorSystem(activeMutators), { phase: SystemPhase.Simulation });
-
-    if (!this.isHeadless) {
-      this.world.addSystem(new ScreenShakeSystem(), { phase: SystemPhase.Presentation });
-      this.world.addSystem(new FeedbackSystem(), { phase: SystemPhase.Presentation });
-      this.world.addSystem(new JuiceSystem(), { phase: SystemPhase.Presentation });
-      this.world.addSystem(new RenderUpdateSystem(), { phase: SystemPhase.Presentation });
-    }
-
-    if (this.networkManager) {
-      this.world.addSystem(new ReplicationSystem(this.networkManager), { phase: SystemPhase.Presentation });
-    }
-  }
-
-  protected initializeEntities(): void {
-    if (this.isMultiplayer) return;
   }
 
   /**

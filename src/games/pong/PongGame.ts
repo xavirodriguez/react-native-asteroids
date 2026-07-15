@@ -55,7 +55,7 @@ export class PongGame extends BaseGame<PongState, PongInput, PongComponentRegist
     this.assetLoader = new AssetLoader();
   }
 
-  public override async initialize(): Promise<void> {
+  protected override async onRegisterSystems(): Promise<void> {
     const rawConfig = require("./config/pong.json");
     const baseConfig = ConfigService.load<PongConfig>(this.gameId, PongConfigSchema, rawConfig);
 
@@ -71,19 +71,6 @@ export class PongGame extends BaseGame<PongState, PongInput, PongComponentRegist
 
     await this.onPreloadAssets();
 
-    this.registerSystems();
-    this.initializeEntities();
-  }
-
-  public override update(dt: number): void {
-      this.world.update(dt);
-  }
-
-  private async onPreloadAssets(): Promise<void> {
-    // Audio preloading moved to game logic or specific service if needed
-  }
-
-  protected registerSystems(): void {
     const mode = this._config.gameOptions?.mode || "local";
     const aiDifficulty = mode === "ai" ? "medium" : undefined;
 
@@ -122,11 +109,23 @@ export class PongGame extends BaseGame<PongState, PongInput, PongComponentRegist
     this.world.addSystem(new RenderUpdateSystem(), { phase: SystemPhase.Presentation });
   }
 
-  protected initializeEntities(): void {
+  protected override async onInitializeEntities(): Promise<void> {
     PongEntityFactory.createBall(this.world);
     PongEntityFactory.createPaddle(this.world, "left");
     PongEntityFactory.createPaddle(this.world, "right");
     PongEntityFactory.createGameState(this.world);
+  }
+
+  protected override async onBeforeRestart(): Promise<void> {
+    this.stateSystem?.resetGameOverState(this.world);
+  }
+
+  public override update(dt: number): void {
+      this.world.update(dt);
+  }
+
+  private async onPreloadAssets(): Promise<void> {
+    // Audio preloading moved to game logic or specific service if needed
   }
 
   public initializeRenderer(renderer: Renderer<PongComponentRegistry>): void {
@@ -141,11 +140,7 @@ export class PongGame extends BaseGame<PongState, PongInput, PongComponentRegist
   }
 
   public isGameOver(): boolean {
-    return this.stateSystem.isGameOver();
-  }
-
-  protected _onBeforeRestart(): void {
-    this.stateSystem.resetGameOverState(this.world);
+    return this.stateSystem?.isGameOver() ?? false;
   }
 
   protected shouldStallSimulation(): boolean {
