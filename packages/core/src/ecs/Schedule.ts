@@ -8,7 +8,7 @@ import { RandomService } from "../utils/RandomService";
  * Orchestrates and executes ECS systems grouped by phases.
  */
 export class Schedule<
-  TComponents extends ComponentRegistry,
+  TComponents extends ComponentRegistry = ComponentRegistry,
   TEvents extends EventRegistry = EventRegistry,
   TBlueprints extends BlueprintRegistryMap<TComponents, TEvents> = BlueprintRegistryMap<TComponents, TEvents>
 > {

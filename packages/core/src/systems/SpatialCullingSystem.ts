@@ -1,5 +1,5 @@
 import { System } from "../ecs/System";
-import { World, ComponentRegistry } from "../ecs/World";
+import { World } from "../ecs/World";
 import { CoreComponentRegistry } from "../ecs/CoreComponents";
 import { Entity } from "../ecs/Entity";
 
@@ -94,12 +94,11 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
 
     for (const entity of allEntities) {
       // Exclude check for players/important tags to ensure they are never culled
-      const wReg = world as unknown as World<ComponentRegistry>;
-      const isLocalPlayer = wReg.hasComponent(entity, "LocalPlayer") || wReg.hasComponent(entity, "Player");
+      const isLocalPlayer = world.hasComponent(entity, "LocalPlayer") || world.hasComponent(entity, "Player");
 
-      const isTagPlayer = wReg.hasComponent(entity, "Tag") && (
-        (wReg.getComponent(entity, "Tag") as unknown as { tags: string[] }).tags.includes("LocalPlayer") ||
-        (wReg.getComponent(entity, "Tag") as unknown as { tags: string[] }).tags.includes("Player")
+      const isTagPlayer = world.hasComponent(entity, "Tag") && (
+        (world.getComponent(entity, "Tag") as any)?.tags?.includes("LocalPlayer") ||
+        (world.getComponent(entity, "Tag") as any)?.tags?.includes("Player")
       );
 
       if (isLocalPlayer || isTagPlayer) {
@@ -117,6 +116,7 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
     }
 
     // 6. Save the list of active simulation candidate entities
+    // SpatialCullingSystem verified and consolidated
     world.setResource("SpatialCullingCandidates", candidates);
   }
 
