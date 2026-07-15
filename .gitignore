@@ -55,7 +55,7 @@ etc/
 docs/api-reference/
 study/
 
-# Explicitly stop contamination of .js and .js.map files in src/
+# PHASE 1.1: Explicitly stop contamination of .js and .js.map files in src/
 **/src/**/*.js
 **/src/**/*.js.map
 

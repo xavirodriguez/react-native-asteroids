@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "./dist", // STOP CONTAMINATION: Output directory configured to "./dist" for compiled artifacts
+    "outDir": "./dist", // PHASE 1.1: Ensure outDir is configured to ./dist to stop contamination
     "target": "esnext",
     "module": "commonjs",
     "lib": ["esnext", "dom"],

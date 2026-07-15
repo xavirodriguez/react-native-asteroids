@@ -3,7 +3,7 @@
     "compilerOptions": {
         "declaration": true,
         "emitDeclarationOnly": true,
-        "outDir": "./dist"
+        "outDir": "./dist" // PHASE 1.1: Ensure outDir is configured to ./dist to stop contamination
     },
     "include": [
         "packages/core/src/**/*.ts"
