@@ -45,6 +45,7 @@ export class World<
 > {
   private activeEntities = new Set<Entity>();
   private cachedEntities: ReadonlyArray<Entity> | null = null;
+  private isDirty = true;
 
   /**
    * Indicates if the world is currently executing its update loop.
@@ -156,8 +157,9 @@ export class World<
    * For efficient, cached entity filtering, it is recommended to use {@link Query}.
    */
   public get entities(): ReadonlyArray<Entity> {
-    if (!this.cachedEntities) {
+    if (this.isDirty || !this.cachedEntities) {
       this.cachedEntities = Array.from(this.activeEntities).sort((a, b) => a - b);
+      this.isDirty = false;
     }
     return this.cachedEntities;
   }
@@ -192,7 +194,7 @@ export class World<
   createEntity(): Entity {
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
     this.activeEntities.add(id);
-    this.cachedEntities = null;
+    this.isDirty = true;
     this._structureVersion++;
     return id;
   }
@@ -221,7 +223,7 @@ export class World<
       this.componentIndex.forEach(set => set.delete(entity));
       this.componentVersions.forEach(map => map.delete(entity));
       this.queries.forEach(query => query.remove(entity));
-      this.cachedEntities = null;
+      this.isDirty = true;
       this._structureVersion++;
     }
   }
@@ -238,7 +240,7 @@ export class World<
     this._tick = 0;
     this._stateVersion = 0;
     this._structureVersion = 0;
-    this.cachedEntities = null;
+    this.isDirty = true;
   }
 
   public clearSystems(): void {

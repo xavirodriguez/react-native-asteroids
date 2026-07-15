@@ -1,7 +1,6 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
-import { InputFrame, ReplayFrame } from "./NetTypes";
-import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase, AsteroidsGame, createShip, createAsteroid, AsteroidsComponentRegistry, AsteroidsEventRegistry, filterSoASnapshot } from "@tiny-aster/core";
+import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase, AsteroidsGame, createShip, createAsteroid, AsteroidsComponentRegistry, AsteroidsEventRegistry, filterSoASnapshot, InputFrame, ReplayFrame } from "@tiny-aster/core";
 import { z } from "zod";
 
 const RoomOptionsSchema = z.object({
@@ -15,6 +14,17 @@ const InputFrameSchema = z.object({
   timestamp: z.number().optional(),
   actions: z.array(z.string()),
   axes: z.record(z.string(), z.number())
+});
+
+const SyncTickSchema = z.object({
+  protocolVersion: z.number().optional(),
+  timestamp: z.number().optional(),
+  lastAckedVersion: z.number().optional(),
+  sequence: z.number().optional()
+});
+
+const JoinOptionsSchema = z.object({
+  name: z.string().optional()
 });
 import { leaderboardStore } from "./DailyLeaderboardStore";
 import { getDateKey } from "./utils/DateUtils";
@@ -34,6 +44,7 @@ import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
  * however, consistency remains dependent on the configured patch rate, network
  * conditions, and client ACK stability.
  */
+// PHASE 2.1 Decoupling Server/Client: Pure simulation run on server with zero React Native dependencies.
 export class AsteroidsRoom extends (Room as any) {
   maxClients = 4;
   private fixedTimeStep = 16.66;
@@ -63,6 +74,7 @@ export class AsteroidsRoom extends (Room as any) {
   }
 
   async onCreate(options: any) {
+    // PHASE 3.2: Validate room options using Zod schema
     const parsedOptions = RoomOptionsSchema.safeParse(options);
     const validOptions = parsedOptions.success ? parsedOptions.data : {};
 
@@ -87,7 +99,7 @@ export class AsteroidsRoom extends (Room as any) {
 gameOptions: { seed: this.state.seed },
         schedule: serverSchedule
     });
-    await this.gameSimulation.initialize();
+    await this.gameSimulation.init();
     this.world = this.gameSimulation.getWorld();
     if (this.REPLICATION_MODE === 'binary') {
         this.world.setResource("UseSoASnapshots", true);
@@ -103,6 +115,7 @@ gameOptions: { seed: this.state.seed },
     this.setSimulationInterval((dt: any) => this.update(dt));
 
     this.onMessage("input", (client: any, frame: any) => {
+      // PHASE 3.2: Validate client input frame using Zod schema
       const parsedFrame = InputFrameSchema.safeParse(frame);
       if (!parsedFrame.success) {
         console.warn(`[AsteroidsRoom] Invalid input frame from client ${client.sessionId}:`, parsedFrame.error.issues);
@@ -115,16 +128,22 @@ gameOptions: { seed: this.state.seed },
     });
 
     this.onMessage("sync_tick", (client: any, data: any) => {
-      if (data?.lastAckedVersion !== undefined) {
-        this.clientAcks.set(client.sessionId, data.lastAckedVersion);
+      const parsedData = SyncTickSchema.safeParse(data);
+      if (!parsedData.success) {
+        console.warn(`[AsteroidsRoom] Invalid sync_tick from client ${client.sessionId}:`, parsedData.error.issues);
+        return;
       }
-      if (data?.sequence !== undefined) {
-        this.ackTracker.recordAck(client.sessionId, data.sequence, this.state.serverTick);
+      const validData = parsedData.data;
+      if (validData.lastAckedVersion !== undefined) {
+        this.clientAcks.set(client.sessionId, validData.lastAckedVersion);
+      }
+      if (validData.sequence !== undefined) {
+        this.ackTracker.recordAck(client.sessionId, validData.sequence, this.state.serverTick);
       }
       client.send("sync_tick", {
         protocolVersion: this.state.protocolVersion,
         serverTick: this.state.serverTick,
-        timestamp: (data?.timestamp && data.timestamp > 0) ? data.timestamp : Date.now()
+        timestamp: (validData.timestamp && validData.timestamp > 0) ? validData.timestamp : Date.now()
       });
     });
 
@@ -149,11 +168,13 @@ gameOptions: { seed: this.state.seed },
     this.world.addSystem(new InterestManagerSystem());
   }
 
-  onJoin(client: Client, options: { name?: string }) {
+  onJoin(client: Client, options: any) {
+    const parsedOptions = JoinOptionsSchema.safeParse(options);
+    const validOptions = parsedOptions.success ? parsedOptions.data : {};
     const gameplayRandom = this.world.gameplayRandom;
     const player = new Player();
     player.sessionId = client.sessionId;
-    player.name = options.name || `Player ${this.nextPlayerNumber++}`;
+    player.name = validOptions.name || `Player ${this.nextPlayerNumber++}`;
     player.x = gameplayRandom.nextRange(100, 700);
     player.y = gameplayRandom.nextRange(100, 500);
     player.angle = 0;

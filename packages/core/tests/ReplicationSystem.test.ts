@@ -53,21 +53,21 @@ describe("ReplicationSystem Tests", () => {
       thrust: true,
     });
 
-    // Tick 1: deltaTime = 20ms
-    replicationSystem.update(world, 20);
+    // Tick 1: deltaTime = 20ms (0.02s)
+    replicationSystem.update(world, 0.02);
 
     const velocity = world.getComponent(localPlayer, "Velocity")!;
     // El thrust aplica una aceleración (power = 150) modificando la velocidad
-    // vx = ax * (20 / 1000) = cos(0) * 150 * 0.02 = 3
+    // vx = ax * 0.02 = cos(0) * 150 * 0.02 = 3
     expect(velocity.vx).toBeCloseTo(3, 4);
     expect(velocity.vy).toBe(0);
 
-    // Tick 2: deltaTime = 30ms con thrust desactivado
+    // Tick 2: deltaTime = 30ms (0.03s) con thrust desactivado
     world.mutateComponent(localPlayer, "Input", (input) => {
       input.thrust = false;
     });
 
-    replicationSystem.update(world, 30);
+    replicationSystem.update(world, 0.03);
 
     // La velocidad no debería aumentar en este tick
     expect(velocity.vx).toBeCloseTo(3, 4);
@@ -108,14 +108,14 @@ describe("ReplicationSystem Tests", () => {
     });
 
     // Simulamos 2 updates del cliente locales con distintos deltas de tiempo
-    // Tick 0: dt = 16ms, thrust = true
-    replicationSystem.update(world, 16);
-    // Tick 1: dt = 25ms, thrust = true
-    replicationSystem.update(world, 25);
+    // Tick 0: dt = 0.016s, thrust = true
+    replicationSystem.update(world, 0.016);
+    // Tick 1: dt = 0.025s, thrust = true
+    replicationSystem.update(world, 0.025);
 
     // Posición estimada actual del cliente:
-    // En tick 0 (dt=16): vx se convierte en cos(0) * 150 * 0.016 = 2.4
-    // En tick 1 (dt=25): vx se convierte en 2.4 + cos(0) * 150 * 0.025 = 2.4 + 3.75 = 6.15
+    // En tick 0 (dt=0.016): vx se convierte en cos(0) * 150 * 0.016 = 2.4
+    // En tick 1 (dt=0.025): vx se convierte en 2.4 + cos(0) * 150 * 0.025 = 2.4 + 3.75 = 6.15
 
     // Ahora recibimos una actualización autoritativa del servidor para el Tick 0
     // El servidor dice que en Tick 0 el jugador estaba en x = 5, y = 0 con vx = 2.4, vy = 0
@@ -126,15 +126,15 @@ describe("ReplicationSystem Tests", () => {
       vy: 0,
     };
 
-    // Reconciliamos el Tick 0 (lo que descarta la entrada del Tick 0 y hace replay de la entrada de Tick 1 con dt = 25ms)
+    // Reconciliamos el Tick 0 (lo que descarta la entrada del Tick 0 y hace replay de la entrada de Tick 1 con dt = 0.025s)
     replicationSystem.reconcile(world, 0, serverState);
 
     const transform = world.getComponent(localPlayer, "Transform")!;
     const velocity = world.getComponent(localPlayer, "Velocity")!;
 
-    // Esperado tras el replay del Tick 1 (dt = 25ms) partiendo del estado del servidor (x=5, vx=2.4):
+    // Esperado tras el replay del Tick 1 (dt = 0.025s) partiendo del estado del servidor (x=5, vx=2.4):
     // 1. Reset al estado del servidor: x = 5, vx = 2.4
-    // 2. Replay Tick 1 (thrust = true, dt = 25ms):
+    // 2. Replay Tick 1 (thrust = true, dt = 0.025s):
     //    vx_final = 2.4 + (cos(0) * 150 * 0.025) = 2.4 + 3.75 = 6.15
     //    x_final = 5 + (vx_final * 0.025) = 5 + (6.15 * 0.025) = 5 + 0.15375 = 5.15375
     expect(velocity.vx).toBeCloseTo(6.15, 4);

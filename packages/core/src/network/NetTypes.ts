@@ -1,5 +1,5 @@
 /**
- * Network protocol and synchronization data structures.
+ * PHASE 2.2: Network protocol and synchronization data structures relocated to agnostics core.
  *
  * This module defines the common interfaces used for authoritative server updates,
  * client-side prediction, and visual interpolation.

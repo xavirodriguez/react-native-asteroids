@@ -6,6 +6,9 @@ import { SkCanvas, SkPaint, Skia } from "@shopify/react-native-skia";
  */
 export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> implements Renderer<TRegistry, SkCanvas> {
   private paint: SkPaint;
+  private sortedEntities: Entity[] = [];
+  private lastStructureVersion = -1;
+  private lastOrders = new Map<Entity, number>();
 
   constructor(
     private readonly shapeDrawers: Map<string, ShapeDrawer<SkCanvas, TRegistry>>
@@ -45,15 +48,36 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
 
     const entities = world.query(transformType, renderType);
 
-    // Sort by order to handle layering
-    const sortedEntities = [...entities].sort((a, b) => {
-      const renderA = world.getComponent(a, renderType) as RenderComponent | undefined;
-      const renderB = world.getComponent(b, renderType) as RenderComponent | undefined;
-      return (renderA?.order || 0) - (renderB?.order || 0);
-    });
+    let needsResort = world.structureVersion !== this.lastStructureVersion || this.sortedEntities.length !== entities.length;
 
-    for (let i = 0; i < sortedEntities.length; i++) {
-      const entity = sortedEntities[i];
+    if (!needsResort) {
+      for (const entity of this.sortedEntities) {
+        const render = world.getComponent(entity, renderType) as RenderComponent | undefined;
+        const currentOrder = render?.order || 0;
+        if (this.lastOrders.get(entity) !== currentOrder) {
+          needsResort = true;
+          break;
+        }
+      }
+    }
+
+    if (needsResort) {
+      this.sortedEntities = [...entities];
+      this.sortedEntities.sort((a, b) => {
+        const renderA = world.getComponent(a, renderType) as RenderComponent | undefined;
+        const renderB = world.getComponent(b, renderType) as RenderComponent | undefined;
+        return (renderA?.order || 0) - (renderB?.order || 0);
+      });
+      this.lastOrders.clear();
+      for (const entity of this.sortedEntities) {
+        const render = world.getComponent(entity, renderType) as RenderComponent | undefined;
+        this.lastOrders.set(entity, render?.order || 0);
+      }
+      this.lastStructureVersion = world.structureVersion;
+    }
+
+    for (let i = 0; i < this.sortedEntities.length; i++) {
+      const entity = this.sortedEntities[i];
       const transform = world.getComponent(entity, transformType) as TransformComponent | undefined;
       const render = world.getComponent(entity, renderType) as RenderComponent | undefined;
 

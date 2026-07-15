@@ -66,8 +66,8 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
                     const power = 150;
                     const ax = Math.cos(transform.rotation) * power;
                     const ay = Math.sin(transform.rotation) * power;
-                    velocity.vx += ax * (deltaTime / 1000);
-                    velocity.vy += ay * (deltaTime / 1000);
+                    velocity.vx += ax * deltaTime;
+                    velocity.vy += ay * deltaTime;
                 }
 
                 // Save input in a queue for future reconciliation
@@ -118,13 +118,13 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
                         const power = 150;
                         const ax = Math.cos(transform.rotation) * power;
                         const ay = Math.sin(transform.rotation) * power;
-                        velocity.vx += ax * (dt / 1000);
-                        velocity.vy += ay * (dt / 1000);
+                        velocity.vx += ax * dt;
+                        velocity.vy += ay * dt;
                     }
 
                     // Update position based on replayed velocity
-                    transform.x += velocity.vx * (dt / 1000);
-                    transform.y += velocity.vy * (dt / 1000);
+                    transform.x += velocity.vx * dt;
+                    transform.y += velocity.vy * dt;
                 }
             }
         }

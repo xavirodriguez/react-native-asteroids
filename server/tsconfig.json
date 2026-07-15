@@ -4,7 +4,7 @@
     "target": "esnext",
     "module": "commonjs",
     "lib": ["esnext", "dom"],
-    "strict": true,
+    "strict": true, // PHASE 3.1: Strict typechecking activated
     "strictPropertyInitialization": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
