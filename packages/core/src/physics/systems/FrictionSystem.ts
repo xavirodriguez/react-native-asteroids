@@ -1,7 +1,6 @@
 import { System } from "../../ecs/System";
 import { World } from "../../ecs/World";
 import { CoreComponentRegistry } from "../../ecs/CoreComponents";
-import { SpatialCullingSystem } from "../../systems/SpatialCullingSystem";
 
 /**
  * System that applies friction to entity velocity.

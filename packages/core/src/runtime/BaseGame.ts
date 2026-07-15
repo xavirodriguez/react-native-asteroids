@@ -1,5 +1,4 @@
 import { World, ComponentRegistry, BlueprintRegistryMap, ComponentType } from "../ecs/World";
-import { Component } from "../ecs/Component";
 import { Entity } from "../ecs/Entity";
 import { EventRegistry, EventBus } from "../events/EventBus";
 import { BlueprintRegistry } from "../ecs/BlueprintRegistry";
