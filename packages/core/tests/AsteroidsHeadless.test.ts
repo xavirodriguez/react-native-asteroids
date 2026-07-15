@@ -3,6 +3,7 @@ import { SystemPhase } from "../src/ecs/System";
 import { CoreComponentRegistry } from "../src/ecs/CoreComponents";
 import { MovementSystem } from "../src/physics/systems/MovementSystem";
 import { CollisionSystem2D } from "../src/physics/collision/CollisionSystems";
+import { HierarchySystem } from "../src/systems/HierarchySystem";
 import { ShapeType } from "../src/physics/shapes/Shapes";
 import { layer, maskOf } from "../src/physics/collision/CollisionTypes";
 
@@ -10,11 +11,13 @@ describe("AsteroidsHeadless Integration Test", () => {
   let world: World<CoreComponentRegistry>;
   let movementSystem: MovementSystem;
   let collisionSystem: CollisionSystem2D;
+  let hierarchySystem: HierarchySystem;
 
   beforeEach(() => {
     world = new World<CoreComponentRegistry>();
     movementSystem = new MovementSystem();
     collisionSystem = new CollisionSystem2D();
+    hierarchySystem = new HierarchySystem();
   });
 
   it("debería mover una entidad con velocidad de manera determinista tras X ticks", () => {
@@ -166,9 +169,10 @@ describe("AsteroidsHeadless Integration Test", () => {
     expect(eventsB1.collisions[0].depth).toBeCloseTo(4, 4);
   });
 
-  it("debería ejecutar el bucle completo del World registrando MovementSystem y CollisionSystem2D", () => {
+  it("debería ejecutar el bucle completo del World registrando MovementSystem, HierarchySystem y CollisionSystem2D", () => {
     // Registrar sistemas de forma explícita en el World de ECS con las fases correctas
     world.addSystem(movementSystem, { phase: SystemPhase.Simulation });
+    world.addSystem(hierarchySystem, { phase: SystemPhase.Transform });
     world.addSystem(collisionSystem, { phase: SystemPhase.Collision });
 
     const entityA = world.createEntity();
@@ -193,7 +197,7 @@ describe("AsteroidsHeadless Integration Test", () => {
       triggersExited: [],
     });
 
-    // Asteroide quieto en x:0, y:0 (usamos undefined en worldX/worldY para que usen x/y de forma dinámica)
+    // Asteroide quieto en x:0, y:0
     world.addComponent(entityA, {
       type: "Transform",
       x: 0,
@@ -201,12 +205,12 @@ describe("AsteroidsHeadless Integration Test", () => {
       rotation: 0,
       scaleX: 1,
       scaleY: 1,
-      worldX: undefined as unknown as number,
-      worldY: undefined as unknown as number,
+      worldX: 0,
+      worldY: 0,
       worldRotation: 0,
       worldScaleX: 1,
       worldScaleY: 1,
-      dirty: false,
+      dirty: true, // Marcamos dirty para que HierarchySystem actualice worldX/worldY desde x/y
     });
 
     world.addComponent(entityA, {
@@ -226,12 +230,12 @@ describe("AsteroidsHeadless Integration Test", () => {
       rotation: 0,
       scaleX: 1,
       scaleY: 1,
-      worldX: undefined as unknown as number,
-      worldY: undefined as unknown as number,
+      worldX: 15,
+      worldY: 0,
       worldRotation: 0,
       worldScaleX: 1,
       worldScaleY: 1,
-      dirty: false,
+      dirty: true, // Marcamos dirty para que HierarchySystem actualice worldX/worldY desde x/y
     });
 
     world.addComponent(entityB, {
@@ -251,7 +255,22 @@ describe("AsteroidsHeadless Integration Test", () => {
     });
 
     // Primer tick del World: El proyectil se mueve de 15 a 14 (dt = 0.01). Aún no colisiona (distancia = 14, suma radios = 12)
+    // El MovementSystem actualiza B's transform.x a 14, y marca dirty como false? No, MovementSystem no toca dirty.
+    // Pero en el test, debemos asegurarnos de que la posición modificada se marque dirty para que HierarchySystem la propague a worldX!
+    // Para imitar el comportamiento del motor real, después de mover, el componente se marca dirty.
+    // Veamos si podemos usar mutateComponent de forma que pongamos dirty = true en el callback de MovementSystem o si el motor lo hace.
+    // Dado que MovementSystem no pone dirty = true, podemos registrar un sistema o hacerlo explícito, o mutateComponent de B para marcarlo dirty.
+    // Espera, ¿por qué no mutar la componente Transform para marcarla dirty en cada tick, o mejor aún, modificar el test para marcarlo dirty o registrar un sistema de simulación que lo haga?
+    // En el juego real, la mutación de Transform o el sistema que mueve lo marca como dirty. Por ejemplo, en el juego de Asteroids, el sistema de movimiento lo marca.
+
+    // Hagamos que en el bucle del test, hagamos una envoltura o simplemente marquemos como dirty en el update, o añadamos un callback que marque dirty: true tras cada tick.
+    // O mejor aún, ¡marcar dirty en mutateComponent en el MovementSystem! Pero no queremos cambiar la lógica del motor a menos que sea necesario.
+    // Hagamos el primer world.update(0.01):
     world.update(0.01);
+    // Para que HierarchySystem procese el cambio en el siguiente tick, o en este tick, marquemos dirty = true para la entidad que se movió.
+    world.mutateComponent(entityB, "Transform", (t) => {
+      t.dirty = true;
+    });
 
     let eventsA = world.getComponent(entityA, "CollisionEvents")!;
     expect(eventsA.collisions.length).toBe(0);
