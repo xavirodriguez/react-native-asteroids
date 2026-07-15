@@ -1,7 +1,7 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
-import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase, AsteroidsGame, createShip, createAsteroid, AsteroidsComponentRegistry, AsteroidsEventRegistry } from "@tiny-aster/core";
+import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase, AsteroidsGame, createShip, createAsteroid, AsteroidsComponentRegistry, AsteroidsEventRegistry, filterSoASnapshot } from "@tiny-aster/core";
 import { z } from "zod";
 
 const RoomOptionsSchema = z.object({
@@ -89,6 +89,9 @@ gameOptions: { seed: this.state.seed },
     });
     await this.gameSimulation.initialize();
     this.world = this.gameSimulation.getWorld();
+    if (this.REPLICATION_MODE === 'binary') {
+        this.world.setResource("UseSoASnapshots", true);
+    }
 
     this.state.gameWidth = 800;
     this.state.gameHeight = 600;
@@ -281,10 +284,13 @@ gameOptions: { seed: this.state.seed },
                 );
 
                 if (this.REPLICATION_MODE === 'binary') {
-                    const binaryPacket = BinaryCompression.pack(deltaPacket);
+                    const snapshot = this.world.snapshot();
+                    const filteredSnapshot = isNew ? snapshot : filterSoASnapshot(snapshot, interestIds);
+                    const binaryPacket = BinaryCompression.pack(filteredSnapshot);
                     totalSerializationMs += (Date.now() - serializationStart);
                     totalBytesSentThisTick += binaryPacket.length;
                     client.send("world_delta_bin", binaryPacket);
+                    if (isNew) this.newClients.delete(client.sessionId);
                 } else {
                     const serialized = JSON.stringify(deltaPacket);
                     totalSerializationMs += (Date.now() - serializationStart);

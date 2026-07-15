@@ -2,6 +2,27 @@
 
 Historial de sesiones de agentes. Última entrada primero.
 
+## Sesión 2025-02-21 20:00 UTC
+
+**Objetivo trabajado:** Compresión de Red binaria para Snapshots SoA
+**Estado:** completado
+**PR abierto:** ninguno (rama lista para mergear / review)
+**Rama:** feature/soa-snapshots-binary-compression-20250221
+
+### Qué se hizo
+- Diseñado e implementado el empaquetado/desempaquetado binario nativo para snapshots SoA utilizando `Packr` de `msgpackr` con las opciones `useRecords: false` y `structuredClone: true` para conservar `TypedArrays` (`Float64Array`, `Int32Array`) sin serialización JSON intermedia.
+- Implementado el helper `filterSoASnapshot` en `packages/core/src/snapshots/WorldSnapshot.ts` para realizar culling y filtrado espacial eficiente de snapshots SoA de acuerdo con las entidades de interés en el servidor antes de transmitirlos.
+- Integrado el recurso `UseSoASnapshots` en el servidor (`AsteroidsRoom.ts`) activándose automáticamente cuando la replicación es binaria (`binary`).
+- Robustecido el deserializador de snapshots SoA (`SnapshotRestoreSoA.ts` y `WorldSnapshot.ts`) para soportar de forma nativa desajustes de tipos en entornos sandbox (como Jest / React Native) mediante aserciones seguras que manejan TypedArrays, Arrays y Objetos indexados sin pérdida de datos.
+- Creado y validado una suite de pruebas unitarias robustas en `snapshots.test.ts` con cobertura de éxito para la serialización binaria SoA y restauración del estado.
+
+### Qué queda pendiente
+- Ninguno (Objetivo completamente completado y verificado sin regresiones).
+
+### Decisiones técnicas tomadas
+- **Preservación de Tipos en Sandbox (Jest/React Native):** Introducido un fallback para leer la longitud y los elementos del array de entidades utilizando iteración de claves de objeto cuando Jest des-serializa TypedArrays como objetos indexados, previniendo errores de VM en el cliente.
+- **Filtrado Eficiente en Red:** En lugar de enviar snapshots pesados o realizar costosos filtrados JSON, se pre-filtran los snapshots SoA preservando los buffers continuos usando `filterSoASnapshot`.
+
 ## Sesión 2025-02-21 18:00 UTC
 
 **Objetivo trabajado:** Estructura de Arrays (SoA) para Snapshots

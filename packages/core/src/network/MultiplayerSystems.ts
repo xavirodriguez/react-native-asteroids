@@ -1,3 +1,10 @@
+import { Packr } from "msgpackr";
+
+const packr = new Packr({
+    useRecords: false,
+    structuredClone: true
+});
+
 export class ReplicationStateTracker {}
 export class ClientAckTracker {
     public recordAck(sessionId: string, sequence: number, tick: number): void {}
@@ -13,8 +20,13 @@ export class NetworkBudgetManager {
     public prioritize(sessionId: string, interest: any[], selfEntityId?: string): any[] { return interest; }
 }
 export class BinaryCompression {
-    public static pack(packet: any): any { return packet; }
-    public static unpack<T = any>(packet: any): T { return packet as T; }
+    public static pack(packet: any): Uint8Array {
+        return packr.pack(packet);
+    }
+    public static unpack<T = any>(packet: Uint8Array | ArrayBuffer | Buffer): T {
+        const buf = packet instanceof Uint8Array ? packet : new Uint8Array(packet);
+        return packr.unpack(buf) as T;
+    }
 }
 
 import { System } from "../ecs/System";
