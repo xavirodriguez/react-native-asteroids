@@ -7,6 +7,8 @@ import { GameLoop } from "../loop/GameLoop";
 import { InputSystem } from "../input/InputSystem";
 import { UnifiedInputSystem } from "../input/UnifiedInputSystem";
 import { Schedule } from "../ecs/Schedule";
+import { SceneManager } from "../scenes/SceneManager";
+import { IAudioPlayer, NullAudioPlayer } from "../audio/IAudioPlayer";
 
 export interface BaseGameConfig<
   TComponents extends ComponentRegistry = ComponentRegistry,
@@ -26,6 +28,8 @@ export interface BaseGameConfig<
   schedule?: Schedule<TComponents, TEvents>;
   /** Initial simulation seed (for backward compatibility). */
   seed?: number;
+  /** Optional audio player injection */
+  audio?: IAudioPlayer;
 }
 
 /**
@@ -52,6 +56,9 @@ export abstract class BaseGame<
   protected _config: BaseGameConfig<TComponents, TEvents>;
   private isPaused = false;
 
+  public sceneManager: SceneManager;
+  public audio: IAudioPlayer;
+
   constructor(config: BaseGameConfig<TComponents, TEvents> = {}) {
     this._config = config;
     this.world = new World<TComponents, TEvents, TBlueprints>(config.schedule);
@@ -59,6 +66,8 @@ export abstract class BaseGame<
     this.blueprints = new BlueprintRegistry<TComponents, TBlueprints>();
     this.loop = new GameLoop();
     this.unifiedInput = new UnifiedInputSystem();
+    this.sceneManager = new SceneManager(this.world);
+    this.audio = config.audio || new NullAudioPlayer();
 
     this.registerInternalResources();
 
@@ -106,16 +115,13 @@ export abstract class BaseGame<
 
   /**
    * Called during game initialization.
-   * Invokes internal initialize().
+   * Runs the Template Method cycle: registers systems, initializes entities, and starts the game loop.
    */
   public async init(): Promise<void> {
-    await this.initialize();
+    await this.onRegisterSystems();
+    await this.onInitializeEntities();
+    this.start();
   }
-
-  /**
-   * Internal initialization logic.
-   */
-  public abstract initialize(): Promise<void>;
 
   /**
    * Starts the game loop.
@@ -153,12 +159,16 @@ export abstract class BaseGame<
   }
 
   /**
-   * Restarts the game.
+   * Restarts the game asynchronously.
+   * Calls onBeforeRestart(), cleans up resources, resets world & sceneManager,
+   * then re-runs onRegisterSystems() and onInitializeEntities() before starting the loop.
    */
   public async restart(seed?: number): Promise<void> {
     if (seed !== undefined) {
       this._config.gameOptions = { ...this._config.gameOptions, seed };
     }
+
+    await this.onBeforeRestart();
     this.destroy();
 
     // Clear event handlers and deferred events to avoid listener accumulation
@@ -167,10 +177,11 @@ export abstract class BaseGame<
     // Reset world and re-register resources
     this.world = new World<TComponents, TEvents, TBlueprints>(this._config.schedule);
     this.registerInternalResources();
+    this.sceneManager = new SceneManager(this.world);
 
     // Re-register systems and initialize entities
-    this.registerSystems();
-    this.initializeEntities();
+    await this.onRegisterSystems();
+    await this.onInitializeEntities();
     this.start();
   }
 
@@ -190,14 +201,25 @@ export abstract class BaseGame<
   public abstract update(dt: number): void;
 
   /**
-   * Subclasses should implement this to register all necessary ECS systems.
+   * Hook for subclasses to register their ECS systems.
    */
-  protected abstract registerSystems(): void;
+  protected async onRegisterSystems(): Promise<void> {
+    // Overridden by subclasses to register systems
+  }
 
   /**
-   * Subclasses should implement this to initialize the starting entities.
+   * Hook for subclasses to initialize entities.
    */
-  protected abstract initializeEntities(): void;
+  protected async onInitializeEntities(): Promise<void> {
+    // Overridden by subclasses to initialize entities
+  }
+
+  /**
+   * Hook for subclasses to execute cleanup or custom logic before restarting.
+   */
+  protected async onBeforeRestart(): Promise<void> {
+    // Overridden by subclasses if needed
+  }
 
   /**
    * Returns a representation of the current game state.
