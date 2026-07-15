@@ -20,9 +20,7 @@
     "test": "pnpm exec jest",
     "clean:artifacts": "[ -d src ] && find src -type f \\( -name \"*.js\" -o -name \"*.js.map\" \\) -delete || true"
   },
-  "dependencies": {
-    "msgpackr": "^1.11.12"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "^25.9.3",
