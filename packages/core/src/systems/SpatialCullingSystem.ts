@@ -1,5 +1,5 @@
 import { System } from "../ecs/System";
-import { World, ComponentRegistry } from "../ecs/World";
+import { World } from "../ecs/World";
 import { CoreComponentRegistry } from "../ecs/CoreComponents";
 import { Entity } from "../ecs/Entity";
 
@@ -28,7 +28,7 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
   /**
    * Returns the viewport bounding box based on Camera2D or screen configuration.
    */
-  public static getViewport(world: World<CoreComponentRegistry>): { minX: number; minY: number; maxX: number; maxY: number } {
+  public static getViewport(world: World<any>): { minX: number; minY: number; maxX: number; maxY: number } {
     const screen = world.getResource<{ width: number; height: number }>("ScreenConfig");
     const screenWidth = screen?.width ?? 800;
     const screenHeight = screen?.height ?? 600;
@@ -36,33 +36,29 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
     const cameras = world.query("Camera2D");
     let viewX = 0;
     let viewY = 0;
+    let zoom = 1;
     for (const camEntity of cameras) {
       const cam = world.getComponent(camEntity, "Camera2D");
       if (cam?.isMain) {
         viewX = cam.x;
         viewY = cam.y;
-        const zoom = cam.zoom ?? 1;
-        return {
-          minX: viewX,
-          minY: viewY,
-          maxX: viewX + screenWidth / zoom,
-          maxY: viewY + screenHeight / zoom,
-        };
+        zoom = cam.zoom ?? 1;
+        break;
       }
     }
 
     return {
       minX: viewX,
       minY: viewY,
-      maxX: viewX + screenWidth,
-      maxY: viewY + screenHeight,
+      maxX: viewX + screenWidth / zoom,
+      maxY: viewY + screenHeight / zoom,
     };
   }
 
   /**
    * Checks if an entity is within the active viewport bounds plus a margin.
    */
-  public static isEntityInViewport(world: World<CoreComponentRegistry>, entity: Entity, margin: number): boolean {
+  public static isEntityInViewport(world: World<any>, entity: Entity, margin: number = 100): boolean {
     const viewport = this.getViewport(world);
     const minX = viewport.minX - margin;
     const minY = viewport.minY - margin;
@@ -70,12 +66,12 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
     const maxY = viewport.maxY + margin;
 
     // Exclude check for players/important tags to ensure they are never culled
-    const wReg = world as unknown as World<ComponentRegistry>;
-    const isLocalPlayer = wReg.hasComponent(entity, "LocalPlayer") || wReg.hasComponent(entity, "Player");
+    const isLocalPlayer = world.hasComponent(entity, "LocalPlayer") || world.hasComponent(entity, "Player");
 
-    const isTagPlayer = wReg.hasComponent(entity, "Tag") && (
-      (wReg.getComponent(entity, "Tag") as unknown as { tags: string[] }).tags.includes("LocalPlayer") ||
-      (wReg.getComponent(entity, "Tag") as unknown as { tags: string[] }).tags.includes("Player")
+    const tagComponent = world.getComponent(entity, "Tag");
+    const isTagPlayer = tagComponent && (
+      (tagComponent.tags as string[] | undefined)?.includes("LocalPlayer") ||
+      (tagComponent.tags as string[] | undefined)?.includes("Player")
     );
 
     if (isLocalPlayer || isTagPlayer) {
@@ -93,7 +89,7 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
   /**
    * Filters a list of entity IDs, returning only those that reside within the active viewport bounds plus a margin.
    */
-  public static filterInViewport(world: World<CoreComponentRegistry>, entities: Entity[], margin: number): Entity[] {
+  public static filterInViewport(world: World<any>, entities: Entity[], margin: number = 100): Entity[] {
     return entities.filter((entity) => this.isEntityInViewport(world, entity, margin));
   }
 
@@ -166,12 +162,12 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
 
     for (const entity of allEntities) {
       // Exclude check for players/important tags to ensure they are never culled
-      const wReg = world as unknown as World<ComponentRegistry>;
-      const isLocalPlayer = wReg.hasComponent(entity, "LocalPlayer") || wReg.hasComponent(entity, "Player");
+      const isLocalPlayer = world.hasComponent(entity, "LocalPlayer") || world.hasComponent(entity, "Player");
 
-      const isTagPlayer = wReg.hasComponent(entity, "Tag") && (
-        (wReg.getComponent(entity, "Tag") as unknown as { tags: string[] }).tags.includes("LocalPlayer") ||
-        (wReg.getComponent(entity, "Tag") as unknown as { tags: string[] }).tags.includes("Player")
+      const tagComponent = world.getComponent(entity, "Tag");
+      const isTagPlayer = tagComponent && (
+        (tagComponent.tags as string[] | undefined)?.includes("LocalPlayer") ||
+        (tagComponent.tags as string[] | undefined)?.includes("Player")
       );
 
       if (isLocalPlayer || isTagPlayer) {
@@ -190,75 +186,5 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
 
     // 6. Save the list of active simulation candidate entities
     world.setResource("SpatialCullingCandidates", candidates);
-  }
-
-  /**
-   * Gets the active viewport coordinates (minX, minY, maxX, maxY) for culling.
-   */
-  public static getViewport(world: World<any>): { minX: number; minY: number; maxX: number; maxY: number } {
-    const screen = world.getResource<{ width: number; height: number }>("ScreenConfig");
-    const screenWidth = screen?.width ?? 800;
-    const screenHeight = screen?.height ?? 600;
-
-    const cameras = world.query("Camera2D");
-    let viewX = 0;
-    let viewY = 0;
-    let zoom = 1;
-    for (const camEntity of cameras) {
-      const cam = world.getComponent(camEntity, "Camera2D");
-      if (cam?.isMain) {
-        viewX = cam.x;
-        viewY = cam.y;
-        zoom = cam.zoom ?? 1;
-        break;
-      }
-    }
-
-    return {
-      minX: viewX,
-      minY: viewY,
-      maxX: viewX + screenWidth / zoom,
-      maxY: viewY + screenHeight / zoom,
-    };
-  }
-
-  /**
-   * Checks whether an entity is within the active viewport.
-   */
-  public static isEntityInViewport(world: World<any>, entity: number, margin: number = 100): boolean {
-    const viewport = this.getViewport(world);
-    const minX = viewport.minX - margin;
-    const minY = viewport.minY - margin;
-    const maxX = viewport.maxX + margin;
-    const maxY = viewport.maxY + margin;
-
-    const isLocalPlayer = world.hasComponent(entity, "LocalPlayer") || world.hasComponent(entity, "Player");
-
-    const isTagPlayer = world.hasComponent(entity, "Tag") && (
-      world.getComponent(entity, "Tag")?.tags.includes("LocalPlayer") ||
-      world.getComponent(entity, "Tag")?.tags.includes("Player")
-    );
-
-    if (isLocalPlayer || isTagPlayer) {
-      return true;
-    }
-
-    const trans = world.getComponent(entity, "Transform");
-    if (!trans) return false;
-    const x = trans.worldX ?? trans.x;
-    const y = trans.worldY ?? trans.y;
-
-    return x >= minX && x <= maxX && y >= minY && y <= maxY;
-  }
-
-  /**
-   * Helper static method to filter a list of entities that reside within the active viewport.
-   */
-  public static filterInViewport(
-    world: World<any>,
-    entities: number[],
-    margin: number = 100
-  ): number[] {
-    return entities.filter((entity) => this.isEntityInViewport(world, entity, margin));
   }
 }
