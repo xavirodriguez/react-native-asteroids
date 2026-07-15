@@ -85,3 +85,74 @@ export interface SoAComponentTypeData {
    */
   booleanKeys?: string[];
 }
+
+/**
+ * Utility to filter an SoA formatted WorldSnapshot by a Set of interest entity IDs.
+ */
+export function filterSoASnapshot(snapshot: WorldSnapshot, interestIds: Set<number>): WorldSnapshot {
+  if (!snapshot.isSoA || !snapshot.soaComponentData) {
+    return snapshot;
+  }
+
+  const filteredEntities = snapshot.entities.filter(id => interestIds.has(id));
+  const filteredSoaComponentData: Record<string, SoAComponentTypeData> = {};
+
+  for (const type in snapshot.soaComponentData) {
+    const data: SoAComponentTypeData = snapshot.soaComponentData[type];
+    const keys: string[] = data.keys;
+    const numKeys: number = keys.length;
+    const entities = data.entities;
+
+    let numEntities = 0;
+    if (entities) {
+      if (typeof (entities as any).length === "number") {
+        numEntities = (entities as any).length;
+      } else {
+        numEntities = Object.keys(entities).filter(k => !isNaN(Number(k))).length;
+      }
+    }
+
+    // Find indices of matching entities
+    const matchingIndices: number[] = [];
+    for (let i = 0; i < numEntities; i++) {
+      const entityId = (entities as any)[i];
+      if (interestIds.has(entityId)) {
+        matchingIndices.push(i);
+      }
+    }
+
+    if (matchingIndices.length === 0) continue;
+
+    const newEntities = new Int32Array(matchingIndices.length);
+    const newValues = new Float64Array(matchingIndices.length * numKeys);
+    const newNonNumericValues = data.nonNumericValues ? new Array(matchingIndices.length * numKeys) : undefined;
+
+    for (let i = 0; i < matchingIndices.length; i++) {
+      const oldIndex = matchingIndices[i];
+      newEntities[i] = (entities as any)[oldIndex];
+
+      for (let j = 0; j < numKeys; j++) {
+        const oldOffset = oldIndex * numKeys + j;
+        const newOffset = i * numKeys + j;
+        newValues[newOffset] = (data.values as any)[oldOffset];
+        if (newNonNumericValues && data.nonNumericValues) {
+          newNonNumericValues[newOffset] = data.nonNumericValues[oldOffset];
+        }
+      }
+    }
+
+    filteredSoaComponentData[type] = {
+      keys,
+      entities: newEntities,
+      values: newValues,
+      nonNumericValues: newNonNumericValues,
+      booleanKeys: data.booleanKeys
+    };
+  }
+
+  return {
+    ...snapshot,
+    entities: filteredEntities,
+    soaComponentData: filteredSoaComponentData
+  };
+}

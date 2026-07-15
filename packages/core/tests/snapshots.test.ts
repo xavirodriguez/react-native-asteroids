@@ -84,5 +84,45 @@ describe("World Snapshots", () => {
       world.restore(snapshot);
       expect(world.getComponent(entity, "Transform")?.x).toBe(10);
     });
+
+    it("should serialize and deserialize SoA snapshots via BinaryCompression without data loss", () => {
+      const { BinaryCompression } = require("../src");
+      const world = new World<CoreComponentRegistry>();
+      world.setResource("UseSoASnapshots", true);
+      const entity = world.createEntity();
+
+      const transform: TransformComponent = {
+        type: "Transform",
+        x: 42.5, y: -99.9, rotation: Math.PI / 4, scaleX: 1, scaleY: 1,
+        worldX: 42.5, worldY: -99.9, worldRotation: Math.PI / 4, worldScaleX: 1, worldScaleY: 1,
+        dirty: true
+      };
+      world.addComponent(entity, transform);
+
+      const snapshot = world.snapshot();
+      expect(snapshot.isSoA).toBe(true);
+
+      // Serialize and deserialize to binary
+      const binary = BinaryCompression.pack(snapshot);
+      expect(binary).toBeInstanceOf(Uint8Array);
+
+      const unpacked = BinaryCompression.unpack(binary);
+      expect(unpacked.isSoA).toBe(true);
+      expect(unpacked.soaComponentData).toBeDefined();
+
+      const transformData = unpacked.soaComponentData["Transform"];
+      expect(transformData.entities[0]).toBe(entity);
+      expect(transformData.values).toBeDefined();
+
+      // Restore the world state from the unpacked binary snapshot
+      const restoreWorld = new World<CoreComponentRegistry>();
+      restoreWorld.restore(unpacked);
+
+      const restoredComp = restoreWorld.getComponent(entity, "Transform");
+      expect(restoredComp).toBeDefined();
+      expect(restoredComp?.x).toBe(42.5);
+      expect(restoredComp?.y).toBe(-99.9);
+      expect(restoredComp?.dirty).toBe(true);
+    });
   });
 });

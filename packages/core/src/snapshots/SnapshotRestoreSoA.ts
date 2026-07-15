@@ -68,13 +68,22 @@ export class SnapshotRestoreSoA {
       const keys = soaData.keys;
       const numKeys = keys.length;
       const entities = soaData.entities;
-      const numEntities = entities.length;
+
+      let numEntities = 0;
+      if (entities) {
+        if (typeof (entities as any).length === "number") {
+          numEntities = (entities as any).length;
+        } else {
+          numEntities = Object.keys(entities).filter(k => !isNaN(Number(k))).length;
+        }
+      }
+
       const values = soaData.values;
       const nonNumericValues = soaData.nonNumericValues;
       const booleanKeys = soaData.booleanKeys ? new Set(soaData.booleanKeys) : null;
 
       for (let i = 0; i < numEntities; i++) {
-        const entityId = entities[i];
+        const entityId = (entities as any)[i];
 
         // Reconstruct component instance dynamically
         const component: Record<string, any> = { type };
