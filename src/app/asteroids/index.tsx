@@ -15,15 +15,13 @@ import { HyperspaceButton } from "../../components/HyperspaceButton";
 import { SeedWidget } from "@/components/SeedWidget";
 import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
 import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
-import { DailyChallengeService } from "@/services/DailyChallengeService";
-import { LeaderboardService } from "@/services/LeaderboardService";
-import { PlayerProfileService } from "@/services/PlayerProfileService";
 import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
 import { GameErrorBoundary } from "@/components/GameErrorBoundary";
 import { InputState } from "@tiny-aster/core";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
+import { useGameSession } from "@/hooks/useGameSession";
 
 export default function AsteroidsScreen() {
   const { t } = useTranslation();
@@ -56,7 +54,7 @@ export default function AsteroidsScreen() {
         restartWithSeed(initialSeed);
     }
   }, [started, isDaily, initialSeed, isReady, seed, restartWithSeed]);
-  const [showDailyResults, setShowDailyResults] = useState(false);
+
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
   const { room, connected, serverState, sendInput, inputBufferRef } = useMultiplayer("asteroids", playerName, isMulti && started);
@@ -69,28 +67,12 @@ export default function AsteroidsScreen() {
     });
   }, []);
 
-  const dailySubmittedRef = useRef(false);
-  useEffect(() => {
-    if (gameState?.isGameOver && isDaily && seed !== undefined && !dailySubmittedRef.current) {
-      const score = gameState.score;
-      dailySubmittedRef.current = true;
-      DailyChallengeService.markAttemptAsUsed("asteroids", score, seed, 0);
-      PlayerProfileService.getProfile().then(profile => {
-        LeaderboardService.submitDailyScore(
-          "asteroids",
-          DailyChallengeService.getDateKey(),
-          score,
-          profile.playerId,
-          profile.displayName,
-          seed
-        );
-      });
-      setShowDailyResults(true);
-    }
-    if (!gameState?.isGameOver) {
-      dailySubmittedRef.current = false;
-    }
-  }, [gameState?.isGameOver, isDaily, seed, gameState?.score, playerName]);
+  const { showDailyResults, setShowDailyResults } = useGameSession({
+    gameId: "asteroids",
+    isDaily,
+    seed,
+    gameState,
+  });
 
   useEffect(() => {
     if (isMulti && connected && game) {

@@ -14,9 +14,6 @@ import { useMultiplayer } from "@tiny-aster/react-native";
 import { SeedWidget } from "@/components/SeedWidget";
 import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
 import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
-import { DailyChallengeService } from "@/services/DailyChallengeService";
-import { LeaderboardService } from "@/services/LeaderboardService";
-import { PlayerProfileService } from "@/services/PlayerProfileService";
 import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
@@ -24,6 +21,7 @@ import { FlappyBirdGame } from "@/games/flappybird/FlappyBirdGame";
 import { GameErrorBoundary } from "@/components/GameErrorBoundary";
 import { FlappyBirdInput } from "@/games/flappybird/types/FlappyBirdTypes";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
+import { useGameSession } from "@/hooks/useGameSession";
 
 export default function FlappyBirdScreen() {
   const params = useLocalSearchParams<{ seed?: string; isDaily?: string }>();
@@ -53,7 +51,7 @@ export default function FlappyBirdScreen() {
         restartWithSeed(initialSeed);
     }
   }, [started, isDaily, initialSeed, isReady, seed, restartWithSeed]);
-  const [showDailyResults, setShowDailyResults] = useState(false);
+
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
   const { room, connected, serverState } = useMultiplayer("flappybird", playerName, isMulti && started);
@@ -66,28 +64,12 @@ export default function FlappyBirdScreen() {
     });
   }, []);
 
-  const dailySubmittedRef = useRef(false);
-  useEffect(() => {
-    if (gameState?.isGameOver && isDaily && seed !== undefined && !dailySubmittedRef.current) {
-      const score = gameState.score;
-      dailySubmittedRef.current = true;
-      DailyChallengeService.markAttemptAsUsed("flappybird", score, seed, 0);
-      PlayerProfileService.getProfile().then(profile => {
-        LeaderboardService.submitDailyScore(
-          "flappybird",
-          DailyChallengeService.getDateKey(),
-          score,
-          profile.playerId,
-          profile.displayName,
-          seed
-        );
-      });
-      setShowDailyResults(true);
-    }
-    if (!gameState?.isGameOver) {
-      dailySubmittedRef.current = false;
-    }
-  }, [gameState?.isGameOver, isDaily, seed, gameState?.score, playerName]);
+  const { showDailyResults, setShowDailyResults } = useGameSession({
+    gameId: "flappybird",
+    isDaily,
+    seed,
+    gameState,
+  });
 
   useEffect(() => {
     if (isMulti && connected && game) {
