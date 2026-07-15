@@ -10,14 +10,12 @@ import { useMultiplayer } from "@tiny-aster/react-native";
 import { SeedWidget } from "@/components/SeedWidget";
 import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
 import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
-import { DailyChallengeService } from "@/services/DailyChallengeService";
-import { LeaderboardService } from "@/services/LeaderboardService";
-import { PlayerProfileService } from "@/services/PlayerProfileService";
 import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
 import { GameErrorBoundary } from "@/components/GameErrorBoundary";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
+import { useGameSession } from "@/hooks/useGameSession";
 
 export default function PongScreen() {
   const params = useLocalSearchParams<{ seed?: string; isDaily?: string }>();
@@ -27,7 +25,6 @@ export default function PongScreen() {
   const [mode, setMode] = useState<"local" | "ai" | "online">("local");
   const [isDaily, setIsDaily] = useState(false);
 
-  const [showDailyResults, setShowDailyResults] = useState(false);
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
   const isMulti = mode === "online";
@@ -75,29 +72,12 @@ export default function PongScreen() {
     });
   }, []);
 
-  const dailySubmittedRef = useRef(false);
-  useEffect(() => {
-    if (gameState?.isGameOver && isDaily && game?.getSeed() !== undefined && !dailySubmittedRef.current) {
-      const score = Math.max(gameState.scoreP1, gameState.scoreP2);
-      const seedVal = game.getSeed()!;
-      dailySubmittedRef.current = true;
-      DailyChallengeService.markAttemptAsUsed("pong", score, seedVal, 0);
-      PlayerProfileService.getProfile().then(profile => {
-        LeaderboardService.submitDailyScore(
-          "pong",
-          DailyChallengeService.getDateKey(),
-          score,
-          profile.playerId,
-          profile.displayName,
-          seedVal
-        );
-      });
-      setShowDailyResults(true);
-    }
-    if (!gameState?.isGameOver) {
-      dailySubmittedRef.current = false;
-    }
-  }, [gameState?.isGameOver, isDaily, game, gameState?.scoreP1, gameState?.scoreP2, playerName]);
+  const { showDailyResults, setShowDailyResults } = useGameSession({
+    gameId: "pong",
+    isDaily,
+    seed: game?.getSeed(),
+    gameState: gameState ?? { isGameOver: false },
+  });
 
   if (!started) {
     return (

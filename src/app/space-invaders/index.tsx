@@ -14,15 +14,13 @@ import { useMultiplayer } from "@tiny-aster/react-native";
 import { SeedWidget } from "@/components/SeedWidget";
 import { DailyChallengeBanner } from "@/components/DailyChallengeBanner";
 import { DailyResultsOverlay } from "@/components/DailyResultsOverlay";
-import { DailyChallengeService } from "@/services/DailyChallengeService";
-import { LeaderboardService } from "@/services/LeaderboardService";
-import { PlayerProfileService } from "@/services/PlayerProfileService";
 import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
 import { SpaceInvadersGame } from "@/games/space-invaders/SpaceInvadersGame";
 import { GameErrorBoundary } from "@/components/GameErrorBoundary";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
+import { useGameSession } from "@/hooks/useGameSession";
 
 export default function SpaceInvadersScreen() {
   const params = useLocalSearchParams<{ seed?: string; isDaily?: string }>();
@@ -37,7 +35,6 @@ export default function SpaceInvadersScreen() {
   const [isMulti, setIsMulti] = useState(false);
   const [isDaily, setIsDaily] = useState(isDailyFromParams);
   const { game, gameState, handleInput, isPaused, isReady, togglePause, highScore, seed, restartWithSeed } = useSpaceInvadersGame(isMulti && started, initialSeed);
-  const [showDailyResults, setShowDailyResults] = useState(false);
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
   const { room, connected, serverState } = useMultiplayer("spaceinvaders", playerName, isMulti && started);
@@ -50,28 +47,12 @@ export default function SpaceInvadersScreen() {
     });
   }, []);
 
-  const dailySubmittedRef = useRef(false);
-  useEffect(() => {
-    if (gameState?.isGameOver && isDaily && seed !== undefined && !dailySubmittedRef.current) {
-      const score = gameState.score;
-      dailySubmittedRef.current = true;
-      DailyChallengeService.markAttemptAsUsed("spaceinvaders", score, seed, 0);
-      PlayerProfileService.getProfile().then(profile => {
-        LeaderboardService.submitDailyScore(
-          "spaceinvaders",
-          DailyChallengeService.getDateKey(),
-          score,
-          profile.playerId,
-          profile.displayName,
-          seed
-        );
-      });
-      setShowDailyResults(true);
-    }
-    if (!gameState?.isGameOver) {
-      dailySubmittedRef.current = false;
-    }
-  }, [gameState?.isGameOver, isDaily, seed, gameState?.score, playerName]);
+  const { showDailyResults, setShowDailyResults } = useGameSession({
+    gameId: "spaceinvaders",
+    isDaily,
+    seed,
+    gameState: gameState ?? { isGameOver: false },
+  });
 
   useEffect(() => {
     if (isMulti && connected && game) {
