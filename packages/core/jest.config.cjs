@@ -11,4 +11,14 @@ module.exports = {
     }],
   },
   extensionsToTreatAsEsm: ['.ts'],
+  collectCoverageFrom: [
+    'src/**/*.ts'
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 40,
+      functions: 40,
+      lines: 40
+    }
+  }
 };

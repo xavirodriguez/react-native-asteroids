@@ -87,7 +87,7 @@ export class AsteroidsRoom extends (Room as any) {
 gameOptions: { seed: this.state.seed },
         schedule: serverSchedule
     });
-    await this.gameSimulation.initialize();
+    await this.gameSimulation.init();
     this.world = this.gameSimulation.getWorld();
     if (this.REPLICATION_MODE === 'binary') {
         this.world.setResource("UseSoASnapshots", true);

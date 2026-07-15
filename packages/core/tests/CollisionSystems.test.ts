@@ -328,4 +328,61 @@ describe("CollisionSystems (CollisionSystem2D & CCDSystem) Tests", () => {
       expect(systemPrivate.shouldCollide(ASTEROID_LAYER, maskOf(PROJECTILE_LAYER), PONG_BALL_LAYER, maskOf(PROJECTILE_LAYER))).toBe(false);
     });
   });
+
+  describe("Scenario 3: Candidate Entities and Spatial Culling Fallbacks", () => {
+    it("should use candidatesOverride if provided in update", () => {
+      const asteroid = world.createEntity();
+      world.addComponent(asteroid, {
+        type: "Transform", x: 10, y: 10, rotation: 0, scaleX: 1, scaleY: 1,
+        worldX: 10, worldY: 10, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false
+      });
+      world.addComponent(asteroid, {
+        type: "Collider", shape: { type: ShapeType.Circle, radius: 10 },
+        layer: layer(1), mask: maskOf(layer(2)), enabled: true, isTrigger: false
+      });
+      world.addComponent(asteroid, {
+        type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: []
+      });
+
+      // Update with explicit candidate override (only includes asteroid)
+      expect(() => collisionSystem.update(world, 0.016, [asteroid])).not.toThrow();
+    });
+
+    it("should fallback to SpatialCullingCandidates resource if candidateEntities is null", () => {
+      const asteroid = world.createEntity();
+      world.addComponent(asteroid, {
+        type: "Transform", x: 10, y: 10, rotation: 0, scaleX: 1, scaleY: 1,
+        worldX: 10, worldY: 10, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false
+      });
+      world.addComponent(asteroid, {
+        type: "Collider", shape: { type: ShapeType.Circle, radius: 10 },
+        layer: layer(1), mask: maskOf(layer(2)), enabled: true, isTrigger: false
+      });
+      world.addComponent(asteroid, {
+        type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: []
+      });
+
+      world.setResource("SpatialCullingCandidates", [asteroid]);
+      collisionSystem.setCandidates(null);
+      expect(() => collisionSystem.update(world, 0.016)).not.toThrow();
+    });
+
+    it("should use candidateEntities if defined when calling setCandidates", () => {
+      const asteroid = world.createEntity();
+      world.addComponent(asteroid, {
+        type: "Transform", x: 10, y: 10, rotation: 0, scaleX: 1, scaleY: 1,
+        worldX: 10, worldY: 10, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false
+      });
+      world.addComponent(asteroid, {
+        type: "Collider", shape: { type: ShapeType.Circle, radius: 10 },
+        layer: layer(1), mask: maskOf(layer(2)), enabled: true, isTrigger: false
+      });
+      world.addComponent(asteroid, {
+        type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: []
+      });
+
+      collisionSystem.setCandidates([asteroid]);
+      expect(() => collisionSystem.update(world, 0.016)).not.toThrow();
+    });
+  });
 });

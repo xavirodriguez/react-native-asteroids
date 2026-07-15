@@ -50,6 +50,7 @@
         "projectId": "73fa3f33-9fb8-472b-a676-868aaac4e963"
       }
     },
-    "owner": "ensable"
+    "owner": "ensable",
+    "newArchEnabled": true
   }
 }
