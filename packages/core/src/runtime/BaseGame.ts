@@ -161,6 +161,9 @@ export abstract class BaseGame<
     }
     this.destroy();
 
+    // Clear event handlers and deferred events to avoid listener accumulation
+    this.eventBus.clear();
+
     // Reset world and re-register resources
     this.world = new World<TComponents, TEvents, TBlueprints>(this._config.schedule);
     this.registerInternalResources();
