@@ -1,7 +1,7 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
-import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase, AsteroidsGame, createShip, createAsteroid, AsteroidsComponentRegistry, AsteroidsEventRegistry, filterSoASnapshot } from "@tiny-aster/core";
+import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase, AsteroidsGame, createShip, createAsteroid, AsteroidsComponentRegistry, AsteroidsEventRegistry, filterSoASnapshot, SnapshotSerializer } from "@tiny-aster/core";
 import { z } from "zod";
 
 const RoomOptionsSchema = z.object({
@@ -289,6 +289,29 @@ gameOptions: { seed: this.state.seed },
                     const binaryPacket = BinaryCompression.pack(filteredSnapshot);
                     totalSerializationMs += (Date.now() - serializationStart);
                     totalBytesSentThisTick += binaryPacket.length;
+
+                    // Compute AoS equivalent size to record compression statistics (sampled once every 120 ticks (~2s) to avoid performance regression)
+                    const shouldSampleCompression = this.state.serverTick % 120 === 0;
+                    if (shouldSampleCompression) {
+                        try {
+                            const aosSnapshot = SnapshotSerializer.snapshot(this.world);
+                            if (!isNew) {
+                                aosSnapshot.entities = aosSnapshot.entities.filter(id => interestIds.has(id));
+                                for (const type in aosSnapshot.componentData) {
+                                    for (const id in aosSnapshot.componentData[type]) {
+                                        if (!interestIds.has(parseInt(id))) {
+                                            delete aosSnapshot.componentData[type][id];
+                                        }
+                                    }
+                                }
+                            }
+                            const aosSerialized = JSON.stringify(aosSnapshot);
+                            this.networkMetrics.recordCompression(binaryPacket.length, aosSerialized.length);
+                        } catch (err) {
+                            console.warn("[AsteroidsRoom] Failed to compute AoS comparison for metrics:", err);
+                        }
+                    }
+
                     client.send("world_delta_bin", binaryPacket);
                     if (isNew) this.newClients.delete(client.sessionId);
                 } else {
@@ -366,6 +389,9 @@ gameOptions: { seed: this.state.seed },
     this.replayFrames = [];
     if (this.gameSimulation) {
         this.gameSimulation.destroy();
+    }
+    if (this.networkMetrics) {
+        this.networkMetrics.destroy();
     }
   }
 
