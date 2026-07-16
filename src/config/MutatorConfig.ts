@@ -1,8 +1,27 @@
+import { z } from "zod";
+
 /**
  * Definitions and configurations for game mutators.
  */
 
 export type GameId = 'asteroids' | 'flappybird' | 'pong' | 'spaceinvaders';
+
+/**
+ * Schema to enforce strict, safe physical boundaries on mutated parameters,
+ * preventing division-by-zero, numerical overflow, or drift in collision/CCD systems.
+ */
+export const PhysicsSafetySchema = z.object({
+  SHIP_THRUST: z.number().min(0).max(10000).optional(),
+  FRICTION: z.number().min(0).max(1).optional(),
+  GRAVITY: z.number().min(0).max(10000).optional(),
+  SHIP_SIZE: z.number().gt(0).max(1000).optional(),
+  BALL_SIZE: z.number().gt(0).max(1000).optional(),
+  ASTEROID_SPEED: z.number().min(0).max(5000).optional(),
+  PIPE_SPEED: z.number().min(0).max(5000).optional(),
+  INVADER_SPEED: z.number().min(0).max(5000).optional(),
+  GLOBAL_SPEED_MULTIPLIER: z.number().min(0).max(10).optional(),
+  BALL_INVISIBLE_AFTER_HIT_TICKS: z.number().min(0).max(600).optional()
+}).catchall(z.any());
 
 export interface Mutator {
   id: string;
@@ -12,7 +31,7 @@ export interface Mutator {
   apply: (config: Record<string, unknown>) => Record<string, unknown>;
 }
 
-export const MUTATORS: Mutator[] = [
+const rawMutators: Mutator[] = [
   {
     id: 'heavy_gravity',
     name: 'Heavy Gravity',
@@ -78,3 +97,16 @@ export const MUTATORS: Mutator[] = [
     })
   },
 ];
+
+// Wrap each mutator's apply function with safety validation
+export const MUTATORS: Mutator[] = rawMutators.map(mutator => ({
+  ...mutator,
+  apply: (config) => {
+    const mutated = mutator.apply(config);
+    const parsed = PhysicsSafetySchema.safeParse(mutated);
+    if (!parsed.success) {
+      throw new Error(`Physics safety validation failed after applying mutator "${mutator.id}": ${parsed.error.message}`);
+    }
+    return parsed.data as Record<string, unknown>;
+  }
+}));
