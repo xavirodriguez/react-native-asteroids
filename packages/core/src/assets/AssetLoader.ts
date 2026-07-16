@@ -1,8 +1,12 @@
-export interface AssetDescriptor {
-  id: string;
-  path: string;
-  type: "image" | "audio" | "font" | "texture" | "json";
-}
+import { z } from "zod";
+
+export const AssetDescriptorSchema = z.object({
+  id: z.string(),
+  path: z.string(),
+  type: z.enum(["image", "audio", "font", "texture", "json"])
+});
+
+export type AssetDescriptor = z.infer<typeof AssetDescriptorSchema>;
 
 export interface IAssetProvider {
   loadImage(path: string): Promise<unknown>;
@@ -35,12 +39,18 @@ export class AssetLoader {
   }
 
   public queueAssets(assets: AssetDescriptor[]) {
+    for (const asset of assets) {
+      AssetDescriptorSchema.parse(asset);
+    }
     this.queue.push(...assets);
   }
 
   public async load(assets: AssetDescriptor[]): Promise<void> {
+    for (const asset of assets) {
+      AssetDescriptorSchema.parse(asset);
+    }
+
     if (!this.provider) {
-      console.warn("No AssetProvider set for AssetLoader");
       return;
     }
 

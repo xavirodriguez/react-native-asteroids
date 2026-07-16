@@ -9,6 +9,10 @@ const RoomOptionsSchema = z.object({
   replicationMode: z.enum(['legacy', 'interest', 'delta', 'budget', 'binary']).optional()
 });
 
+const JoinOptionsSchema = z.object({
+  name: z.string().max(32).optional()
+});
+
 const InputFrameSchema = z.object({
   protocolVersion: z.number().optional(),
   tick: z.number().int().nonnegative(),
@@ -84,7 +88,7 @@ export class AsteroidsRoom extends (Room as any) {
     this.gameSimulation = new AsteroidsGame({
         headless: true,
         isMultiplayer: true,
-gameOptions: { seed: this.state.seed },
+        gameOptions: { seed: this.state.seed },
         schedule: serverSchedule
     });
     await this.gameSimulation.init();
@@ -149,11 +153,14 @@ gameOptions: { seed: this.state.seed },
     this.world.addSystem(new InterestManagerSystem());
   }
 
-  onJoin(client: Client, options: { name?: string }) {
+  onJoin(client: Client, options: any) {
+    const parsedOptions = JoinOptionsSchema.safeParse(options);
+    const validOptions = parsedOptions.success ? parsedOptions.data : {};
+
     const gameplayRandom = this.world.gameplayRandom;
     const player = new Player();
     player.sessionId = client.sessionId;
-    player.name = options.name || `Player ${this.nextPlayerNumber++}`;
+    player.name = validOptions.name || `Player ${this.nextPlayerNumber++}`;
     player.x = gameplayRandom.nextRange(100, 700);
     player.y = gameplayRandom.nextRange(100, 500);
     player.angle = 0;
