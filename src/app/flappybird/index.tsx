@@ -178,7 +178,7 @@ export default function FlappyBirdScreen() {
           />
         </View>
 
-        <DebugOverlay game={game} />
+        <DebugOverlay game={game} room={room} />
 
         {showDailyResults && seed !== undefined && (
           <View style={styles.overlay}>

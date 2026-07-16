@@ -243,7 +243,7 @@ export default function AsteroidsScreen() {
           </View>
         </View>
 
-        <DebugOverlay game={game} />
+        <DebugOverlay game={game} room={room} />
 
         {showDailyResults && seed !== undefined && (
           <View style={styles.overlay}>
