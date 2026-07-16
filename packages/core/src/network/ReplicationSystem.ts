@@ -3,12 +3,14 @@ import { System } from "../ecs/System";
 import { CoreComponentRegistry } from "../ecs/CoreComponents";
 import { NetworkManager } from "./NetworkManager";
 
+/** @public */
 export interface MultiplayerRegistry extends CoreComponentRegistry {
     RemotePlayer: { type: "RemotePlayer"; sessionId?: string; targetX?: number; targetY?: number; targetRotation?: number };
     LocalPlayer: { type: "LocalPlayer" };
     Input: { type: "Input"; thrust?: boolean };
 }
 
+/** @public */
 export interface ReconciledInput<TInput = { thrust?: boolean }> {
     tick: number;
     input: TInput;
@@ -16,6 +18,7 @@ export interface ReconciledInput<TInput = { thrust?: boolean }> {
     dt: number;
 }
 
+/** @public */
 export interface AuthoritativeServerState {
     x: number;
     y: number;
@@ -23,6 +26,7 @@ export interface AuthoritativeServerState {
     vy: number;
 }
 
+/** @public */
 export class ReplicationSystem<TRegistry extends MultiplayerRegistry = MultiplayerRegistry> extends System<TRegistry> {
     private inputQueue: ReconciledInput[] = [];
     private lastProcessedTick = 0;

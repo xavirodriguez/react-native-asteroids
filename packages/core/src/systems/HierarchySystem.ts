@@ -4,6 +4,7 @@ import { AbstractHierarchySystem } from "./AbstractHierarchySystem";
 
 type Mat3 = [number, number, number, number, number, number];
 
+/** @public */
 export class HierarchySystem extends AbstractHierarchySystem<CoreComponentRegistry> {
   public override update(world: World<CoreComponentRegistry>, _deltaTime: number): void {
     this.wasDirty.clear();

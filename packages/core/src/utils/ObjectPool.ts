@@ -8,6 +8,7 @@
  *
  * @warning **Stale Data**: Failure to correctly implement the `reset` function may
  * lead to "memory" effects where recycled objects retain state from previous usages.
+ * @public
  */
 export class ObjectPool<T> {
   private pool: T[] = [];

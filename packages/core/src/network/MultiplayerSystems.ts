@@ -5,20 +5,25 @@ const packr = new Packr({
     structuredClone: true
 });
 
+/** @public */
 export class ReplicationStateTracker {}
+/** @public */
 export class ClientAckTracker {
     public recordAck(sessionId: string, sequence: number, tick: number): void {}
     public nextSequence(sessionId: string): number { return 0; }
     public getLastAckedSequence(sessionId: string): number { return 0; }
     public getIdleTime(sessionId: string): number { return 0; }
 }
+/** @public */
 export class NetworkDeltaSystem {
     constructor(tracker: ReplicationStateTracker) {}
     public generateDelta(world: any, sessionId: string, sequence: number, baselineAck: number, interestIds: Set<number>, forceFull: boolean): any { return {}; }
 }
+/** @public */
 export class NetworkBudgetManager {
     public prioritize(sessionId: string, interest: any[], selfEntityId?: string): any[] { return interest; }
 }
+/** @public */
 export class BinaryCompression {
     public static pack(packet: any): Uint8Array {
         return packr.pack(packet);
@@ -31,6 +36,7 @@ export class BinaryCompression {
 
 import { System } from "../ecs/System";
 
+/** @public */
 export class InterestManagerSystem extends System<any, any> {
     public update(world: any, deltaTime: number): void {}
     public override onRegister(world: any): void {}

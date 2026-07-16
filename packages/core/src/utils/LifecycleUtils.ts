@@ -14,6 +14,7 @@
  * @remarks
  * Designed for immediate execution without microtask delay.
  * Recommended for synchronous functions to favor a predictable execution order.
+ * @public
  */
 export function runLifecycleSync(fn: () => void): void {
   fn();
@@ -25,6 +26,7 @@ export function runLifecycleSync(fn: () => void): void {
  * @remarks
  * Explicitly designed for hooks that require I/O or resource loading.
  * Returns a Promise that resolves once the hook is complete.
+ * @public
  */
 export async function runLifecycleAsync(fn: () => Promise<void>): Promise<void> {
   return fn();

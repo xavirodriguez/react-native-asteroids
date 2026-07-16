@@ -1,10 +1,13 @@
 import { FrameScheduler, browserFrameScheduler } from "./FrameScheduler";
 
+/** @public */
 export type RenderCallback = (alpha: number) => void;
+/** @public */
 export type UpdateCallback = (dt: number) => void;
 
 /**
  * Configuration options for the GameLoop.
+ * @public
  */
 export interface GameLoopConfig {
   /**
@@ -39,6 +42,7 @@ export interface GameLoopConfig {
  * In such cases, the simulation will not catch up with real-time, resulting in a "slow-motion"
  * effect relative to the wall clock. This is intended to prevent unrecoverable lag accumulation
  * (spiral of death), but it means the simulation tick count will fall behind real-time.
+ * @public
  */
 export class GameLoop {
   private renderSubscribers: Set<RenderCallback> = new Set();

@@ -10,6 +10,7 @@ import { Schedule } from "../ecs/Schedule";
 import { SceneManager } from "../scenes/SceneManager";
 import { IAudioPlayer, NullAudioPlayer } from "../audio/IAudioPlayer";
 
+/** @public */
 export interface BaseGameConfig<
   TComponents extends ComponentRegistry = ComponentRegistry,
   TEvents extends EventRegistry = EventRegistry
@@ -40,6 +41,7 @@ export interface BaseGameConfig<
  * @typeParam TComponents - The registry of components available in this game.
  * @typeParam TEvents - The registry of events that can be emitted.
  * @typeParam TBlueprints - The registry of blueprints that can be spawned.
+ * @public
  */
 export abstract class BaseGame<
   TState = unknown,

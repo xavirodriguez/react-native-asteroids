@@ -11,6 +11,7 @@ import { SpatialCullingSystem } from "../../systems/SpatialCullingSystem";
  * - `wrap`: Teleports the entity to the opposite side of the boundary.
  * - `destroy`: Schedules the entity for removal via the {@link WorldCommandBuffer}.
  * - `bounce`: Reverses velocity when hitting a boundary.
+ * @public
  */
 export class BoundarySystem extends System<CoreComponentRegistry> {
   update(world: World<CoreComponentRegistry>, _deltaTime: number): void {

@@ -9,6 +9,7 @@ import { WorldSnapshot } from "./WorldSnapshot";
  * @remarks
  * Restores world component state from structured SoA snapshots, rebuilding
  * internal ECS maps and index indices with high performance.
+ * @public
  */
 export class SnapshotRestoreSoA {
   /**

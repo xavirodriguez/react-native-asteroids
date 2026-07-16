@@ -16,6 +16,7 @@
  * - Map and Set instances (must be converted to Objects/Arrays if needed).
  *
  * These must be managed, re-initialized, or manually synchronized after restoration.
+ * @public
  */
 export interface WorldSnapshot {
   entities: number[];
@@ -37,11 +38,13 @@ export interface WorldSnapshot {
 
 /**
  * Flat storage of component data organized by type and entity ID (classic AoS representation).
+ * @public
  */
 export type ComponentDataSnapshot = Record<string, Record<number, SerializedComponent>>;
 
 /**
  * A serialized representation of a component, containing only its serializable properties.
+ * @public
  */
 export type SerializedComponent = Record<string, unknown>;
 
@@ -51,6 +54,7 @@ export type SerializedComponent = Record<string, unknown>;
  * @remarks
  * Groups components of the same type together into TypedArrays to prevent object allocation
  * overhead and reduce GC pressure.
+ * @public
  */
 export interface SoAComponentTypeData {
   /**
@@ -88,6 +92,7 @@ export interface SoAComponentTypeData {
 
 /**
  * Utility to filter an SoA formatted WorldSnapshot by a Set of interest entity IDs.
+ * @public
  */
 export function filterSoASnapshot(snapshot: WorldSnapshot, interestIds: Set<number>): WorldSnapshot {
   if (!snapshot.isSoA || !snapshot.soaComponentData) {

@@ -14,6 +14,7 @@ import { NullTransport } from "./NullTransport";
  * and interpolation. However, bit-identical synchronization across clients is generally not
  * expected due to network jitter, varying latencies, packet loss, and potential floating-point
  * drift across different platforms.
+ * @public
  */
 export class NetworkManager {
   private transport: NetworkTransport;
@@ -60,10 +61,12 @@ export class NetworkManager {
   public reset(): void {}
 }
 
+/** @public */
 export interface INetworkGame {
   readonly gameId: string;
 }
 
+/** @public */
 export class NetworkReplicationUtils {
   public static applyDelta(_snapshot: WorldSnapshot, _delta: any): void {}
 }

@@ -4,6 +4,7 @@ import { EventRegistry } from "../events/EventBus";
 
 /**
  * Execution phases for systems within the World update loop.
+ * @public
  */
 export enum SystemPhase {
   /** Input processing and gathering. */
@@ -20,6 +21,7 @@ export enum SystemPhase {
   Presentation = "Presentation"
 }
 
+/** @public */
 export interface SystemConfig {
   phase?: SystemPhase | string;
   priority?: number;
@@ -37,6 +39,7 @@ export interface SystemConfig {
  * Core simulation state should be stored in components within the {@link World} to support
  * features like snapshots, rollback, and replication. Systems that maintain internal
  * simulation state may break these features if that state is not serializable.
+ * @public
  */
 export abstract class System<
   TComponents extends ComponentRegistry = ComponentRegistry,

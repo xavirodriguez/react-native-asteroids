@@ -1,4 +1,6 @@
+/** @public */
 export const AsteroidConfigSchema = {};
+/** @public */
 export interface AsteroidConfig {
   SCREEN_WIDTH: number;
   SCREEN_HEIGHT: number;

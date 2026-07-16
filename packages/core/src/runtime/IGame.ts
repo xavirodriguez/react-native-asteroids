@@ -5,6 +5,7 @@ import { GameLoop } from "../loop/GameLoop";
 
 /**
  * Interface representing a runnable game.
+ * @public
  */
 export interface IGame<TState = unknown> {
   getWorld(): World<any, any, any>;

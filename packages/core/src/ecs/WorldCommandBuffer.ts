@@ -3,6 +3,7 @@ import { ComponentRegistry, ComponentType } from "./Component";
 import { BlueprintArgs, BlueprintRegistry } from "./BlueprintRegistry";
 import { EventRegistry } from "../events/EventBus";
 
+/** @public */
 export interface Command<
   TComponents extends ComponentRegistry,
   TEvents extends EventRegistry,
@@ -26,6 +27,7 @@ export interface Command<
  * **Deferred execution**: Commands are not executed immediately. Changes will only
  * be reflected in the world state after {@link WorldCommandBuffer.flush} is
  * called (typically at the end of the {@link World.update} cycle).
+ * @public
  */
 export class WorldCommandBuffer<
   TComponents extends ComponentRegistry = ComponentRegistry,

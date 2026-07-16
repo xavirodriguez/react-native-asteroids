@@ -5,6 +5,7 @@
  * Defines the contract for sending and receiving messages over the network.
  * Implementations are responsible for platform-specific socket logic,
  * connection management, and message serialization.
+ * @public
  */
 export interface NetworkTransport {
     readonly isOffline: boolean;

@@ -3,6 +3,7 @@ import { World } from "../ecs/World";
 import { CoreComponentRegistry } from "../ecs/CoreComponents";
 import { EventRegistry } from "../events/EventBus";
 
+/** @public */
 export class AnimationSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, deltaTime: number): void {
     const entities = world.query("Animator");

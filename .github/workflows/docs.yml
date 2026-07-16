@@ -36,6 +36,13 @@ jobs:
       - name: Generate documentation
         run: pnpm docs:build
 
+      - name: Verify API reference output
+        run: |
+          if [ ! -d "docs/api-reference" ] || [ -z "$(ls -A docs/api-reference)" ]; then
+            echo "ERROR: docs/api-reference is empty or missing"
+            exit 1
+          fi
+
       - name: Upload API Reference
         uses: actions/upload-artifact@v4
         with:

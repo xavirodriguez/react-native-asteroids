@@ -2,10 +2,12 @@ import { System } from "../ecs/System";
 import { World } from "../ecs/World";
 import { CoreComponentRegistry } from "../ecs/CoreComponents";
 
+/** @public */
 export interface StateMachineDefinition {
   states: Record<string, StateDefinition>;
 }
 
+/** @public */
 export interface StateDefinition {
   onUpdate?: (world: World<CoreComponentRegistry>, entity: number, data: any, elapsed: number) => string | void;
   onEnter?: (world: World<CoreComponentRegistry>, entity: number, data: any) => void;
@@ -22,6 +24,7 @@ export interface StateDefinition {
  * Warning: State transitions and hook execution may involve complex logic.
  * Ensure that hooks do not perform unauthorized structural changes to the world
  * while the system is iterating over entities.
+ * @public
  */
 export class StateMachineSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, deltaTime: number): void {

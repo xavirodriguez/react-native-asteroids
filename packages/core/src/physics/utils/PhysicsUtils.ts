@@ -1,5 +1,6 @@
 /**
  * Collection of generic physics and collision utility functions.
+ * @public
  */
 export class PhysicsUtils {
   /**

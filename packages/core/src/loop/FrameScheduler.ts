@@ -4,6 +4,7 @@
  * @remarks
  * Decouples the GameLoop from browser-specific APIs like requestAnimationFrame
  * and performance.now, allowing it to run in headless or custom environments.
+ * @public
  */
 export interface FrameScheduler {
   /**
@@ -28,6 +29,7 @@ export interface FrameScheduler {
 /**
  * A FrameScheduler implementation that uses browser/DOM APIs when available,
  * falling back to setTimeout and Date.now for Node.js or headless environments.
+ * @public
  */
 export const browserFrameScheduler: FrameScheduler = {
   now: () => {

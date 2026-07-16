@@ -5,6 +5,7 @@ import { RenderComponent, JuiceComponent, CoreComponentRegistry, ScreenShakeComp
 /**
  * Static utility for applying juice effects (squash, stretch, shake, flash).
  * Works in tandem with the JuiceSystem.
+ * @public
  */
 export class Juice {
   /**

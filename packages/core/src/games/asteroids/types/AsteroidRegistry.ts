@@ -8,6 +8,7 @@ import {
 
 import { LootTableComponent, PowerUpComponent } from "../../arcade/types/ArcadeTypes";
 
+/** @public */
 export interface AsteroidsComponentRegistry extends CoreComponentRegistry {
   LootTable: LootTableComponent;
   PowerUp: PowerUpComponent;
@@ -21,6 +22,7 @@ export interface AsteroidsComponentRegistry extends CoreComponentRegistry {
   RemotePlayer: { type: "RemotePlayer"; sessionId: string };
 }
 
+/** @public */
 export interface AsteroidsEventRegistry extends CoreEvents, Record<string, unknown> {
   "game:start": { seed: number };
   "game:over": { score: number; level: number };

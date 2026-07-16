@@ -18,6 +18,7 @@ interface EntityBounds {
 
 const boundsPool: EntityBounds[] = [];
 
+/** @public */
 export class BroadPhase {
   static getShapeBounds(transform: Readonly<TransformComponent>, collider: Readonly<ColliderComponent>): AABB {
     const worldX = transform.worldX ?? transform.x;

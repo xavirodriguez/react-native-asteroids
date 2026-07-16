@@ -42,6 +42,7 @@ const __DEV__ = process.env.NODE_ENV !== "production";
 /**
  * Main game controller for Asteroids.
  * Manages the ECS world, systems, and lifecycle.
+ * @public
  */
 export class AsteroidsGame
   extends BaseGame<GameStateComponent, InputState, AsteroidsComponentRegistry, AsteroidsEventRegistry>
@@ -327,6 +328,7 @@ export class AsteroidsGame
 
 }
 
+/** @public */
 export class NullAsteroidsGame implements IAsteroidsGame {
   private _world = new World<AsteroidsComponentRegistry, AsteroidsEventRegistry>();
   private _loop = new GameLoop();

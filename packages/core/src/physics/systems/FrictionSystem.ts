@@ -12,6 +12,7 @@ import { CoreComponentRegistry } from "../../ecs/CoreComponents";
  */
 import { Entity } from "../../ecs/Entity";
 
+/** @public */
 export class FrictionSystem extends System<CoreComponentRegistry> {
   private candidateEntities: Entity[] | null = null;
 

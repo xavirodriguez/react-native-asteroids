@@ -4,6 +4,7 @@ import { GameStateComponent } from "../types/AsteroidTypes";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
 import { IAsteroidsGame } from "../types/GameInterfaces";
 
+/** @public */
 export class AsteroidGameStateSystem extends BaseGameStateSystem<
   GameStateComponent,
   AsteroidsComponentRegistry,

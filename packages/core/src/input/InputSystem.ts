@@ -1,5 +1,6 @@
 /**
  * Interface representing an input system.
+ * @public
  */
 export interface InputSystem {
   /**

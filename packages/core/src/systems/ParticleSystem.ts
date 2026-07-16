@@ -2,6 +2,7 @@ import { System } from "../ecs/System";
 import { World } from "../ecs/World";
 import { ParticleEmitterComponent, ParticleEmitterConfig, Entity, CoreComponentRegistry } from "../ecs/CoreComponents";
 
+/** @public */
 export interface ParticleParams {
   x: number;
   y: number;
@@ -12,10 +13,12 @@ export interface ParticleParams {
   ttl: number;
 }
 
+/** @public */
 export interface IPrefabPool<TParams> {
     acquire(world: any, params: TParams): Entity;
 }
 
+/** @public */
 export class ParticleSystem extends System<CoreComponentRegistry> {
   private particlePool: IPrefabPool<ParticleParams>;
 
@@ -121,6 +124,7 @@ export class ParticleSystem extends System<CoreComponentRegistry> {
   }
 }
 
+/** @public */
 export function createEmitter(world: World<CoreComponentRegistry>, config: ParticleEmitterConfig): Entity {
   const commands = world.getCommandBuffer();
   const entity = world.createEntity();

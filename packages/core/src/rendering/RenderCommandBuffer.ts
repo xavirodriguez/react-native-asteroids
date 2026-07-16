@@ -1,5 +1,6 @@
 import { RenderCommand } from "./RenderTypes";
 
+/** @public */
 export class RenderCommandBufferImpl {
   private commands: RenderCommand[] = [];
   push(command: RenderCommand) { this.commands.push(command); }

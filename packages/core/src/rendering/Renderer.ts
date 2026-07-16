@@ -6,6 +6,7 @@ import { ComponentRegistry } from "../ecs/Component";
  *
  * @typeParam TRegistry - The component registry used by the world.
  * @typeParam TContext - The specific rendering context (e.g., CanvasRenderingContext2D, Skia Canvas).
+ * @public
  */
 export interface Renderer<TRegistry extends ComponentRegistry = ComponentRegistry, TContext = unknown> {
   /**
@@ -19,6 +20,7 @@ export interface Renderer<TRegistry extends ComponentRegistry = ComponentRegistr
 
 /**
  * Interface for drawing individual shapes or entities.
+ * @public
  */
 export interface ShapeDrawer<TContext = unknown, TRegistry extends ComponentRegistry = ComponentRegistry> {
   /**
@@ -32,6 +34,7 @@ export interface ShapeDrawer<TContext = unknown, TRegistry extends ComponentRegi
 
 /**
  * Interface for drawing global screen effects.
+ * @public
  */
 export interface EffectDrawer<TContext = unknown, TRegistry extends ComponentRegistry = ComponentRegistry> {
   /**
