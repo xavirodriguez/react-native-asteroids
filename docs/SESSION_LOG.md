@@ -2,6 +2,29 @@
 
 Historial de sesiones de agentes. Última entrada primero.
 
+## Sesión 2025-02-21 23:00 UTC
+
+**Objetivo trabajado:** Visualizador e Interfaz Gráfica para Métricas de Telemetría (Dashboard)
+**Estado:** completado
+**PR abierto:** ninguno (rama lista para mergear / review)
+**Rama:** feature/telemetry-dashboard-20250221
+
+### Qué se hizo
+- Diseñado y desarrollado un panel de control interactivo de telemetría en tiempo real ("Metrics") dentro del componente `DebugOverlay` de React Native.
+- Pasado el objeto de sala de Colyseus (`room`) como un prop opcional a `DebugOverlay` en las pantallas principales de los 4 minijuegos (Asteroids, Flappy Bird, Pong y Space Invaders).
+- Implementado el ciclo de vida de suscripción y petición periódica (polling cada 2 segundos) de métricas mediante el mensaje `"metrics"` de Colyseus.
+- Desarrollado un calculador dinámico de latencia Round-Trip Time (RTT) en base al tiempo de ida y vuelta de la petición de métricas.
+- Diseñado un layout responsivo con ScrollView horizontal para soportar las 7 pestañas de depuración sin desbordamiento ni encogimiento visual en pantallas móviles de cualquier resolución.
+- Incorporado indicadores de calidad de latencia por código de color (verde, amarillo, rojo), formateador de bytes dinámico y medidores de progreso para el espacio guardado por compresión binaria SoA y para el uso de memoria heap.
+- Verificado el build del espacio de trabajo de Turbo y confirmada la correcta compilación de todo el código de TypeScript.
+
+### Qué queda pendiente
+- Fusionar (merge) el PR de la rama `feature/telemetry-dashboard-20250221` hacia `master`.
+
+### Decisiones técnicas tomadas
+- **UI Integrada en DebugOverlay**: Al integrar el Dashboard directamente como una pestaña de `DebugOverlay`, se evitan dependencias visuales extrañas que sobrecarguen la vista normal de juego para los jugadores, facilitando enormemente la labor de depuración para los desarrolladores de forma limpia y tree-shakeable.
+- **Polling Throttling Seguro**: Al limitar la tasa de actualización de telemetría de red a 2000 ms, se mitiga cualquier posible impacto de rendimiento del servidor o ancho de banda sobre el loop de simulación del juego, manteniendo la precisión de las métricas históricas del Garbage Collector.
+
 ## Sesión 2025-02-21 22:00 UTC
 
 **Objetivo trabajado:** Monitoreo Avanzado de Rendimiento de Red y Garbage Collection

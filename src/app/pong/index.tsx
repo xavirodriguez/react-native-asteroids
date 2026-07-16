@@ -156,7 +156,7 @@ export default function PongScreen() {
           showP2Controls={mode === "local"}
         />
 
-        <DebugOverlay game={game} />
+        <DebugOverlay game={game} room={room} />
 
         {gameState?.isGameOver && !isDaily && (
             <View style={styles.overlay}>

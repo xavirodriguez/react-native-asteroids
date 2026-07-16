@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -9,7 +9,8 @@ import {
   TextInput,
   Platform,
   Alert,
-  Clipboard
+  Clipboard,
+  ActivityIndicator
 } from 'react-native';
 import { BaseGame } from "@tiny-aster/core";
 import type { EventLogEntry, FrameStats, ColliderShapeInfo } from "@tiny-aster/core";
@@ -17,9 +18,10 @@ import Svg, { Circle, Rect } from 'react-native-svg';
 
 interface DebugOverlayProps {
   game: BaseGame<any, any> | null;
+  room?: any;
 }
 
-type TabType = 'Frame' | 'Systems' | 'Entities' | 'Events' | 'Colliders' | 'Replay';
+type TabType = 'Frame' | 'Systems' | 'Entities' | 'Events' | 'Colliders' | 'Replay' | 'Metrics';
 
 /**
  * DebugOverlay component that renders a floating panel with real-time engine metrics.
@@ -40,7 +42,7 @@ interface GameWithDebug {
   };
 }
 
-export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
+export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game, room }) => {
   const debugManager = (game as unknown as GameWithDebug)?.debugManager;
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('Frame');
@@ -54,6 +56,63 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
   const [colliders, setColliders] = useState<ColliderShapeInfo[]>([]);
   const [showCollidersOverlay, setShowCollidersOverlay] = useState(false);
   const [entityFilter, setEntityFilter] = useState('');
+
+  // Telemetry states
+  const [metrics, setMetrics] = useState<any>(null);
+  const [latency, setLatency] = useState<number | null>(null);
+  const lastRequestTimeRef = useRef<number>(0);
+
+  // Update loop for Telemetry Metrics
+  useEffect(() => {
+    if (!room || !isOpen || activeTab !== 'Metrics') return;
+
+    const handleMetrics = (data: any) => {
+      setMetrics(data);
+      if (lastRequestTimeRef.current > 0) {
+        setLatency(Date.now() - lastRequestTimeRef.current);
+      }
+    };
+
+    let listener: any = null;
+    try {
+      listener = room.onMessage("metrics", handleMetrics);
+    } catch (e) {
+      console.warn("[DebugOverlay] Failed to register metrics message handler:", e);
+    }
+
+    // Request metrics immediately
+    lastRequestTimeRef.current = Date.now();
+    try {
+      room.send("metrics");
+    } catch (e) {
+      console.warn("[DebugOverlay] Failed to send metrics request:", e);
+    }
+
+    // Poll every 2 seconds
+    const interval = setInterval(() => {
+      lastRequestTimeRef.current = Date.now();
+      try {
+        room.send("metrics");
+      } catch (e) {
+        // Ignore send errors if connection is closed/closing
+      }
+    }, 2000);
+
+    return () => {
+      clearInterval(interval);
+      if (listener) {
+        try {
+          if (typeof listener === "function") {
+            listener();
+          } else if (typeof listener.clear === "function") {
+            listener.clear();
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    };
+  }, [room, isOpen, activeTab]);
 
   // Update loop throttled to 10 FPS (100ms interval) to minimize performance impact
   useEffect(() => {
@@ -90,6 +149,215 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
       </Text>
     </TouchableOpacity>
   );
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const renderMetricsTab = () => {
+    if (!room) {
+      return (
+        <View style={styles.tabContent}>
+          <Text style={styles.statText}>Telemetría Fuera de Línea</Text>
+          <Text style={styles.statLabel}>
+            La telemetría en tiempo real y el análisis de Garbage Collection están disponibles únicamente en el modo multijugador activo.
+          </Text>
+          <Text style={[styles.statLabel, { marginTop: 15, color: '#00ff00', lineHeight: 18 }]}>
+            Inicie una sesión "MULTI" desde el menú principal para conectar con el servidor Colyseus y visualizar las métricas de red, GC, compresión SoA vs AoS y memoria del heap.
+          </Text>
+        </View>
+      );
+    }
+
+    if (!metrics) {
+      return (
+        <View style={styles.tabContent}>
+          <ActivityIndicator size="small" color="#00ff00" style={{ marginVertical: 20 }} />
+          <Text style={[styles.statLabel, { textAlign: 'center' }]}>
+            Conectando con el endpoint de telemetría de Colyseus...
+          </Text>
+        </View>
+      );
+    }
+
+    // Network stats
+    const net = metrics.network || {};
+    const compression = metrics.compression || {};
+    const mem = metrics.memory || {};
+    const gc = metrics.gc || {};
+
+    // Calculate latency indicator color
+    let latencyColor = '#00ff00';
+    if (latency !== null) {
+      if (latency > 200) latencyColor = '#ff4444';
+      else if (latency > 100) latencyColor = '#ffbb00';
+    }
+
+    // Space saved visual percentage
+    let spaceSavedVal = 0;
+    if (typeof compression.percentSpaceSaved === 'string') {
+      spaceSavedVal = parseFloat(compression.percentSpaceSaved) || 0;
+    } else if (typeof compression.percentSpaceSaved === 'number') {
+      spaceSavedVal = compression.percentSpaceSaved;
+    }
+
+    // Memory usage percentage
+    const heapUsed = mem.heapUsedBytes || 0;
+    const heapTotal = mem.heapTotalBytes || 0;
+    const heapPercent = heapTotal > 0 ? (heapUsed / heapTotal) * 100 : 0;
+
+    return (
+      <ScrollView style={styles.tabContent} contentContainerStyle={{ paddingBottom: 30 }}>
+        {/* NETWORK & LATENCY SECTION */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionHeader}>📡 Latencia y Red</Text>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Latencia RTT (Cliente-Servidor):</Text>
+            <Text style={[styles.metricValue, { color: latencyColor, fontWeight: 'bold' }]}>
+              {latency !== null ? `${latency} ms` : 'Estimando...'}
+            </Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Clientes Conectados:</Text>
+            <Text style={styles.metricValue}>{net.activeClients ?? 1}</Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Entidades Activas:</Text>
+            <Text style={styles.metricValue}>{net.activeEntities ?? 0}</Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Velocidad de Transferencia (Avg):</Text>
+            <Text style={styles.metricValue}>{formatBytes(net.avgBytesPerTick ?? 0)} / tick</Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Transferencia Total:</Text>
+            <Text style={styles.metricValue}>{formatBytes(net.totalBytesSent ?? 0)} ({net.totalTicks ?? 0} ticks)</Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Culling Espacial (Descartados Avg):</Text>
+            <Text style={styles.metricValue}>{Number(net.avgEntitiesFiltered ?? 0).toFixed(1)} / tick</Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Tiempo de Serialización (Avg):</Text>
+            <Text style={styles.metricValue}>{Number(net.avgSerializationMs ?? 0).toFixed(3)} ms</Text>
+          </View>
+        </View>
+
+        {/* COMPRESSION SECTION */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionHeader}>🗜️ Compresión de Red (SoA vs AoS)</Text>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Ratio de Compresión:</Text>
+            <Text style={[styles.metricValue, { color: '#00ff00', fontWeight: 'bold' }]}>
+              {compression.compressionRatio ?? 0}x
+            </Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Espacio Ahorrado en Red:</Text>
+            <Text style={[styles.metricValue, { color: '#00ff00', fontWeight: 'bold' }]}>
+              {compression.percentSpaceSaved ?? '0%'}
+            </Text>
+          </View>
+
+          <View style={[styles.progressContainer, { marginVertical: 8 }]}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${Math.min(spaceSavedVal, 100)}%`, backgroundColor: '#00ff00' }]} />
+            </View>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Tamaño Total Binario (SoA):</Text>
+            <Text style={styles.metricValue}>{formatBytes(compression.totalSoABytes ?? 0)}</Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Tamaño Equivalente JSON (AoS):</Text>
+            <Text style={styles.metricValue}>{formatBytes(compression.totalAoSBytes ?? 0)}</Text>
+          </View>
+
+          <Text style={[styles.statLabel, { fontSize: 10, fontStyle: 'italic', marginTop: 4, lineHeight: 12 }]}>
+            * Compara el pipeline de replicación continua binaria (SoA Msgpack) contra el formato clásico JSON (AoS).
+          </Text>
+        </View>
+
+        {/* GARBAGE COLLECTION SECTION */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionHeader}>🧹 Garbage Collection (Servidor)</Text>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Número de Pausas del GC:</Text>
+            <Text style={styles.metricValue}>{gc.gcPauseCount ?? 0}</Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Frecuencia (Pausas / 1k ticks):</Text>
+            <Text style={styles.metricValue}>{gc.gcPausesPer1000Ticks ?? 0}</Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Pausa Máxima Detectada:</Text>
+            <Text style={[styles.metricValue, { color: '#ff4444' }]}>{gc.gcMaxPauseMs ?? 0} ms</Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Pausa Total del GC:</Text>
+            <Text style={styles.metricValue}>{gc.gcTotalPauseMs ?? 0} ms</Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Ratio de Pausa GC:</Text>
+            <Text style={styles.metricValue}>{gc.gcPauseRatePercent ?? '0%'}</Text>
+          </View>
+        </View>
+
+        {/* MEMORY USAGE SECTION */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionHeader}>💾 Memoria del Servidor (Heap)</Text>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Uso de Memoria Heap:</Text>
+            <Text style={styles.metricValue}>
+              {formatBytes(heapUsed)} / {formatBytes(heapTotal)} ({heapPercent.toFixed(1)}%)
+            </Text>
+          </View>
+
+          <View style={[styles.progressContainer, { marginVertical: 8 }]}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${Math.min(heapPercent, 100)}%`, backgroundColor: heapPercent > 80 ? '#ff4444' : (heapPercent > 50 ? '#ffbb00' : '#4a90e2') }]} />
+            </View>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Límite Máximo del Heap:</Text>
+            <Text style={styles.metricValue}>{formatBytes(mem.heapLimitBytes ?? 0)}</Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Asignación Total Histórica:</Text>
+            <Text style={[styles.metricValue, { color: '#4a90e2' }]}>{formatBytes(mem.totalAllocatedBytes ?? 0)}</Text>
+          </View>
+
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Liberación Total Histórica:</Text>
+            <Text style={[styles.metricValue, { color: '#00ff00' }]}>{formatBytes(mem.totalFreedBytes ?? 0)}</Text>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  };
 
   const renderFrameTab = () => {
     if (!frameStats) return null;
@@ -285,13 +553,16 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
 
       {isOpen && (
         <View style={styles.panel}>
-          <View style={styles.tabBar}>
-            {renderTabButton('Frame')}
-            {renderTabButton('Systems')}
-            {renderTabButton('Entities')}
-            {renderTabButton('Events')}
-            {renderTabButton('Colliders')}
-            {renderTabButton('Replay')}
+          <View style={styles.tabBarContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabBar}>
+              {renderTabButton('Frame')}
+              {renderTabButton('Systems')}
+              {renderTabButton('Entities')}
+              {renderTabButton('Events')}
+              {renderTabButton('Colliders')}
+              {renderTabButton('Replay')}
+              {renderTabButton('Metrics')}
+            </ScrollView>
           </View>
           <View style={styles.content}>
             {activeTab === 'Frame' && renderFrameTab()}
@@ -300,6 +571,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ game }) => {
             {activeTab === 'Events' && renderEventsTab()}
             {activeTab === 'Colliders' && renderCollidersTab()}
             {activeTab === 'Replay' && renderReplayTab()}
+            {activeTab === 'Metrics' && renderMetricsTab()}
           </View>
         </View>
       )}
@@ -370,21 +642,56 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
   },
-  tabBar: {
-    flexDirection: 'row',
+  tabBarContainer: {
     backgroundColor: '#111',
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
+  tabBar: {
+    flexDirection: 'row',
+  },
   tabButton: {
-    flex: 1,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   activeTabButton: {
     backgroundColor: '#222',
     borderBottomWidth: 2,
     borderBottomColor: '#00ff00',
+  },
+  sectionContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  sectionHeader: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    paddingBottom: 4,
+  },
+  metricRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  metricLabel: {
+    color: '#aaa',
+    fontSize: 12,
+  },
+  metricValue: {
+    color: '#fff',
+    fontSize: 12,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   tabButtonText: {
     color: '#888',
