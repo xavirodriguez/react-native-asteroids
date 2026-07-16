@@ -13,6 +13,7 @@ import {
 
 /**
  * Standard component set for a projectile.
+ * @public
  */
 export interface ProjectileComponents extends Record<string, Component> {
   position: TransformComponent;
@@ -25,6 +26,7 @@ export interface ProjectileComponents extends Record<string, Component> {
 
 /**
  * Standard parameters for initializing a projectile.
+ * @public
  */
 export interface ProjectileParams {
   x: number;

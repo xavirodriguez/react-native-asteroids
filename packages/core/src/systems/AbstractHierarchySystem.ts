@@ -5,6 +5,7 @@ import { IHierarchicalComponent, CoreComponentRegistry } from "../ecs/CoreCompon
 import { ComponentRegistry, ComponentType } from "../ecs/Component";
 import { EventRegistry } from "../events/EventBus";
 
+/** @public */
 export abstract class AbstractHierarchySystem<
   TComponents extends ComponentRegistry = CoreComponentRegistry,
   TEvents extends EventRegistry = any

@@ -6,6 +6,7 @@ import { NetworkTransport } from "./NetworkTransport";
  * @remarks
  * This implementation allows the game to function in a disconnected state
  * without requiring a real network connection or throwing errors.
+ * @public
  */
 export class NullTransport implements NetworkTransport {
   public readonly isOffline = true;

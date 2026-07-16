@@ -5,6 +5,7 @@ import { CoreComponentRegistry } from "../../ecs/CoreComponents";
 
 /**
  * System that integrates forces and velocities.
+ * @public
  */
 export class PhysicsIntegrateSystem<TRegistry extends ComponentRegistry = CoreComponentRegistry> extends System<TRegistry> {
   public update(world: World<TRegistry>, deltaTime: number): void {

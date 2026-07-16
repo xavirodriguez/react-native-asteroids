@@ -6,6 +6,7 @@ import { RandomService } from "../utils/RandomService";
 
 /**
  * Orchestrates and executes ECS systems grouped by phases.
+ * @public
  */
 export class Schedule<
   TComponents extends ComponentRegistry = ComponentRegistry,

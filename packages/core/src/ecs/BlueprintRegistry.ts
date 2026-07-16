@@ -1,11 +1,13 @@
 import { World, BlueprintRegistryMap, ComponentRegistry } from "./World";
 import { EventRegistry } from "../events/EventBus";
 
+/** @public */
 export type BlueprintArgs<TBlueprints, TId extends keyof TBlueprints> =
   TBlueprints[TId] extends BlueprintDefinition<any, any, infer TArgs>
     ? TArgs
     : never;
 
+/** @public */
 export interface BlueprintDefinition<
   TComponents extends ComponentRegistry,
   TEvents extends EventRegistry,
@@ -14,6 +16,7 @@ export interface BlueprintDefinition<
   spawn(world: World<TComponents, TEvents, BlueprintRegistryMap<TComponents>>, entity: number, args: TArgs): void;
 }
 
+/** @public */
 export class BlueprintRegistry<
   TComponents extends ComponentRegistry = ComponentRegistry,
   TEvents extends EventRegistry = EventRegistry,

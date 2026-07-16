@@ -12,6 +12,7 @@ import { ComponentRegistry } from "./Component";
  * structural changes occur in the world.
  *
  * @typeParam TComponents - The component registry this query operates on.
+ * @public
  */
 export class Query<TComponents extends ComponentRegistry> {
   private entities: Set<Entity> = new Set();

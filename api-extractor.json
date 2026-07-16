@@ -1,7 +1,9 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
   "mainEntryPointFilePath": "<projectFolder>/packages/core/dist/index.d.ts",
-  "bundledPackages": [],
+  "bundledPackages": [
+    // Checked: packages/core/src/ has no re-exports of msgpackr types, so msgpackr is not listed here
+  ],
   "compiler": {
     "skipLibCheck": true
   },
@@ -10,14 +12,16 @@
     "reportFolder": "<projectFolder>/etc/"
   },
   "docModel": {
-    "enabled": true
+    "enabled": true,
+    "apiJsonFilePath": "<projectFolder>/temp/<unscopedPackageName>.api.json"
   },
   "dtsRollup": {
     "enabled": true,
-    "untrimmedFilePath": "<projectFolder>/dist/asteroides.d.ts"
+    "untrimmedFilePath": "<projectFolder>/dist/asteroids.d.ts"
   },
   "tsdocMetadata": {
-    "enabled": false
+    "enabled": true,
+    "tsdocMetadataFilePath": "<projectFolder>/etc/tsdoc-metadata.json"
   },
   "messages": {
     "extractorMessageReporting": {
@@ -25,7 +29,7 @@
         "logLevel": "none"
       },
       "ae-missing-release-tag": {
-        "logLevel": "none"
+        "logLevel": "warning"
       }
     },
     "compilerMessageReporting": {

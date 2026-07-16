@@ -9,9 +9,12 @@ import { CoreComponentRegistry } from "../../ecs/CoreComponents";
 import { ShapeType } from "../shapes/Shapes";
 import { SpatialCullingSystem } from "../../systems/SpatialCullingSystem";
 
+/** @public */
 export type CollisionCallback<TRegistry extends ComponentRegistry = CoreComponentRegistry> = (world: World<TRegistry>, entityA: Entity, entityB: Entity, manifold: CollisionManifold) => void;
+/** @public */
 export type TriggerCallback<TRegistry extends ComponentRegistry = CoreComponentRegistry> = (world: World<TRegistry>, entityA: Entity, entityB: Entity) => void;
 
+/** @public */
 export class CollisionSystem2D<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> extends System<TRegistry> {
   private onCollisionCallbacks: CollisionCallback<TRegistry>[] = [];
   private onTriggerEnterCallbacks: TriggerCallback<TRegistry>[] = [];
@@ -155,6 +158,7 @@ export class CollisionSystem2D<TRegistry extends CoreComponentRegistry = CoreCom
   }
 }
 
+/** @public */
 export class CCDSystem<TRegistry extends CoreComponentRegistry = CoreComponentRegistry> extends System<TRegistry> {
   private candidateEntities: Entity[] | null = null;
 

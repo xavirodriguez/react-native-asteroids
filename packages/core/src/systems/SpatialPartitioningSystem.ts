@@ -17,6 +17,7 @@ import { CoreComponentRegistry } from "../ecs/CoreComponents";
  * that are NOT captured in world snapshots. While these are typically rebuilt during
  * the next update, any behavior relying on historical cache state may be inconsistent
  * after a world restoration or rollback.
+ * @public
  */
 export class SpatialPartitioningSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, _deltaTime: number): void {

@@ -20,6 +20,7 @@ import { Entity } from "../ecs/Entity";
  * To prevent crucial gameplay objects from being culled (e.g., player ships), entities
  * with components like `"LocalPlayer"` or `"Player"` are always preserved as candidates regardless
  * of their screen coordinates.
+ * @public
  */
 export class SpatialCullingSystem extends System<CoreComponentRegistry> {
   private margin: number;

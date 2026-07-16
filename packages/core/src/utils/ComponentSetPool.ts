@@ -11,6 +11,7 @@ import { ObjectPool } from "./ObjectPool";
  * entities in high-churn scenarios.
  *
  * Type parameter T: T - A record of component types that form the pooled entity.
+ * @public
  */
 export class ComponentSetPool<T extends Record<string, Component>> {
   private pool: ObjectPool<T>;

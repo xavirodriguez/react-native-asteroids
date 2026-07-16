@@ -3,6 +3,7 @@ import { System } from "../ecs/System";
 import { ComponentRegistry } from "../ecs/Component";
 import { EventRegistry } from "../events/EventBus";
 
+/** @public */
 export abstract class BaseGameStateSystem<
   TGameState = any,
   TComponents extends ComponentRegistry = any,

@@ -3,6 +3,7 @@ import { ComponentRegistry } from "../ecs/Component";
 import { World } from "../ecs/World";
 import { WorldSnapshot } from "./WorldSnapshot";
 
+/** @public */
 export class SnapshotRestore {
   /**
    * Restores the world state from a snapshot.

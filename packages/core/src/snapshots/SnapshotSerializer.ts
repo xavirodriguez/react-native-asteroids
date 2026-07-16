@@ -14,6 +14,7 @@ interface InternalWorldAccess<TComponents extends ComponentRegistry> {
   freeEntities: number[];
 }
 
+/** @public */
 export class SnapshotSerializer {
   /**
    * Captures the current serializable state of the world.

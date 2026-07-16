@@ -3,6 +3,7 @@ import { System } from "../../../ecs/System";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
 import { ParticlePool } from "../EntityPool";
 
+/** @public */
 export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, AsteroidsEventRegistry> {
   constructor(particlePool: ParticlePool) {
     super();

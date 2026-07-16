@@ -8,6 +8,7 @@ export const AssetDescriptorSchema = z.object({
 
 export type AssetDescriptor = z.infer<typeof AssetDescriptorSchema>;
 
+/** @public */
 export interface IAssetProvider {
   loadImage(path: string): Promise<unknown>;
   loadAudio(path: string): Promise<unknown>;
@@ -27,6 +28,7 @@ export interface IAssetProvider {
  * **Resource Management**: The `AssetLoader` caches resources indefinitely.
  * Manual clearing may be required for long-running sessions to prevent
  * excessive memory usage.
+ * @public
  */
 export class AssetLoader {
   private cache = new Map<string, unknown>();

@@ -1,13 +1,17 @@
+/** @public */
 export type EventRegistry = Record<string, unknown>;
 
+/** @public */
 export interface CoreEvents {
   "engine:paused": { tick: number; timestamp: number };
   "engine:resumed": { tick: number; timestamp: number };
   "engine:destroyed": { timestamp: number };
 }
 
+/** @public */
 export type CombinedEvents<TEvents extends EventRegistry> = CoreEvents & TEvents;
 
+/** @public */
 export type EventHandler<TPayload> = (payload: TPayload, event: string) => void;
 
 /**
@@ -23,6 +27,7 @@ export type EventHandler<TPayload> = (payload: TPayload, event: string) => void;
  * (including asynchronous ones) that are not managed, tracked, or awaited by the bus.
  *
  * @typeParam TEvents - The registry of custom events for this bus.
+ * @public
  */
 export class EventBus<TEvents extends EventRegistry = EventRegistry> {
   private handlers = new Map<string, Set<EventHandler<unknown>>>();

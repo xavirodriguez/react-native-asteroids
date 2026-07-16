@@ -15,6 +15,7 @@ import { InputSystem } from "./InputSystem";
  * loop and OS-level latency. Captured state reflects the latest available data
  * at the start of the simulation update and may not be perfectly
  * synchronized with the exact moment of physical input.
+ * @public
  */
 export class UnifiedInputSystem extends System<ComponentRegistry> implements InputSystem {
   private overrides: Record<string, boolean> = {};

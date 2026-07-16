@@ -4,6 +4,7 @@ import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/Ast
 import { BulletPool, ParticlePool } from "../EntityPool";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 
+/** @public */
 export class AsteroidInputSystem extends System<AsteroidsComponentRegistry, AsteroidsEventRegistry> {
   constructor(bulletPool: BulletPool, particlePool: ParticlePool, config: AsteroidConfig) {
     super();

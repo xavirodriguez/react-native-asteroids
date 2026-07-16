@@ -8,6 +8,7 @@ import { World } from "../ecs/World";
  * This system provides a general-purpose update hook. Care should be taken
  * when performing structural changes (adding/removing components or entities)
  * directly; use the {@link WorldCommandBuffer} for safer modifications.
+ * @public
  */
 export class MutatorSystem extends System<any> {
   constructor(mutators?: any[]) {

@@ -2,6 +2,7 @@ import { World } from "../../ecs/World";
 import { TransformComponent, VelocityComponent, RenderComponent, HealthComponent } from "../../ecs/CoreComponents";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "./types/AsteroidRegistry";
 
+/** @public */
 export const createShip = (config: { world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, x: number, y: number }): number => {
     const entity = config.world.createEntity();
 
@@ -46,6 +47,7 @@ export const createShip = (config: { world: World<AsteroidsComponentRegistry, As
     return entity;
 };
 
+/** @public */
 export const createAsteroid = (config: { world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, x: number, y: number, size: string }): number => {
     const entity = config.world.createEntity();
 

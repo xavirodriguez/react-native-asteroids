@@ -13,6 +13,7 @@ import { CoreComponentRegistry } from "../ecs/CoreComponents";
  *
  * Note: This system skips updates during re-simulation (e.g., network rollback)
  * to avoid visual glitches in transient states.
+ * @public
  */
 export class RenderUpdateSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, deltaTime: number): void {

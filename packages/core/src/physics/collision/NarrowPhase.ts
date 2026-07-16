@@ -18,6 +18,7 @@ function resetManifold(): CollisionManifold {
   return manifoldCache;
 }
 
+/** @public */
 export class NarrowPhase {
   public static test(
     shapeA: Shape, ax: number, ay: number, ar: number,

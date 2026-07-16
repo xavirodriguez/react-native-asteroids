@@ -15,6 +15,7 @@ import { BlueprintDefinition } from "./BlueprintRegistry";
 
 /**
  * Map type for blueprint definitions.
+ * @public
  */
 export type BlueprintRegistryMap<
   TComponents extends ComponentRegistry,
@@ -37,6 +38,7 @@ export type BlueprintRegistryMap<
  * @typeParam TComponents - The registry of components allowed in this world.
  * @typeParam TEvents - The registry of events handled by the world's event bus.
  * @typeParam TBlueprints - The registry of blueprints available for spawning entities.
+ * @public
  */
 export class World<
   TComponents extends ComponentRegistry = ComponentRegistry,

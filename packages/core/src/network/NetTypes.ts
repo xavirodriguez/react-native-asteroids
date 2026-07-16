@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 /**
- * Represents a single tick of validated user input.
+ * Represents a single tick of user input.
+ * @public
  */
 export const InputFrameSchema = z.object({
   /** Network protocol version. */
@@ -20,6 +21,7 @@ export type InputFrame = z.infer<typeof InputFrameSchema>;
 
 /**
  * Historical state of an entity used for reconciliation.
+ * @public
  */
 export interface PredictedState {
   /** The simulation tick for this state. */
@@ -40,6 +42,7 @@ export interface PredictedState {
 
 /**
  * Captured visual state for interpolation.
+ * @public
  */
 export interface EntitySnapshot {
   /** The server or simulation tick this snapshot represents. */
@@ -54,12 +57,14 @@ export interface EntitySnapshot {
   timestamp: number;
 }
 
+/** @public */
 export interface ReplayFrame {
   tick: number;
   inputs: Record<string, InputFrame[]>;
   events: string[];
 }
 
+/** @public */
 export interface ReplayData {
   version: number;
   roomId: string;

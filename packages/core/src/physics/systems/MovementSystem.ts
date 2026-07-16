@@ -18,6 +18,7 @@ import { SpatialCullingSystem } from "../../systems/SpatialCullingSystem";
  */
 import { Entity } from "../../ecs/Entity";
 
+/** @public */
 export class MovementSystem extends System<CoreComponentRegistry> {
   private candidateEntities: Entity[] | null = null;
 

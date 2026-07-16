@@ -4,6 +4,7 @@ import { Shape } from "../physics/shapes/Shapes";
 import { CollisionLayer, CollisionMask, Collision } from "../physics/collision/CollisionTypes";
 import { World } from "./World";
 
+/** @public */
 export interface TransformComponent extends Component {
   type: "Transform";
   x: number;
@@ -20,6 +21,7 @@ export interface TransformComponent extends Component {
   parentEntity?: Entity;
 }
 
+/** @public */
 export interface VelocityComponent extends Component {
   type: "Velocity";
   vx: number;
@@ -27,11 +29,13 @@ export interface VelocityComponent extends Component {
   angularVelocity: number;
 }
 
+/** @public */
 export interface FrictionComponent extends Component {
   type: "Friction";
   value: number;
 }
 
+/** @public */
 export interface BoundaryComponent extends Component {
   type: "Boundary";
   width: number;
@@ -39,6 +43,7 @@ export interface BoundaryComponent extends Component {
   mode: "wrap" | "bounce" | "destroy";
 }
 
+/** @public */
 export interface TTLComponent extends Component {
   type: "TTL";
   timeLeft: number;
@@ -46,6 +51,7 @@ export interface TTLComponent extends Component {
   onCompleteEvent?: string;
 }
 
+/** @public */
 export interface ReclaimableComponent extends Component {
   type: "Reclaimable";
   poolName: string;
@@ -53,10 +59,12 @@ export interface ReclaimableComponent extends Component {
   onReclaim?: (world: World<any, any, any>, entity: Entity) => void;
 }
 
+/** @public */
 export interface IEntityPool {
   release(entity: Entity): void;
 }
 
+/** @public */
 export interface RenderComponent extends Component {
   type: "Render";
   spriteId?: string;
@@ -69,18 +77,21 @@ export interface RenderComponent extends Component {
   hitFlashFrames: number;
 }
 
+/** @public */
 export interface HealthComponent extends Component {
   type: "Health";
   current: number;
   max: number;
 }
 
+/** @public */
 export interface InputStateComponent extends Component {
   type: "InputState";
   axes: Record<string, number>;
   buttons: Record<string, boolean>;
 }
 
+/** @public */
 export interface AnimationDefinition {
   frames: number[];
   frameRate: number;
@@ -88,6 +99,7 @@ export interface AnimationDefinition {
   onCompleteEvent?: string;
 }
 
+/** @public */
 export interface AnimatorComponent extends Component {
   type: "Animator";
   currentAnimation?: string;
@@ -100,6 +112,7 @@ export interface AnimatorComponent extends Component {
   frame: number;
 }
 
+/** @public */
 export interface StateMachineComponent extends Component {
   type: "StateMachine";
   currentState: string;
@@ -110,6 +123,7 @@ export interface StateMachineComponent extends Component {
   previousState?: string;
 }
 
+/** @public */
 export interface ParticleEmitterConfig {
     type: string;
     x: number;
@@ -126,6 +140,7 @@ export interface ParticleEmitterConfig {
     loop?: boolean;
 }
 
+/** @public */
 export interface ParticleEmitterComponent extends Component {
   type: "ParticleEmitter";
   config: ParticleEmitterConfig;
@@ -133,6 +148,7 @@ export interface ParticleEmitterComponent extends Component {
   elapsed: number;
 }
 
+/** @public */
 export interface TilemapComponent extends Component {
   type: "Tilemap";
   data: number[][];
@@ -145,6 +161,7 @@ export interface TilemapComponent extends Component {
   };
 }
 
+/** @public */
 export interface Camera2DComponent extends Component {
   type: "Camera2D";
   zoom: number;
@@ -155,6 +172,7 @@ export interface Camera2DComponent extends Component {
   y: number;
 }
 
+/** @public */
 export interface ScreenShakeComponent extends Component {
   type: "ScreenShake";
   intensity: number;
@@ -162,12 +180,14 @@ export interface ScreenShakeComponent extends Component {
   remaining: number;
 }
 
+/** @public */
 export interface VisualOffsetComponent extends Component {
   type: "VisualOffset";
   offsetX: number;
   offsetY: number;
 }
 
+/** @public */
 export interface SpatialNodeComponent extends Component {
   type: "SpatialNode";
   gridX: number;
@@ -175,12 +195,14 @@ export interface SpatialNodeComponent extends Component {
   active?: boolean;
 }
 
+/** @public */
 export interface HapticRequestComponent<TPattern extends string = string> extends Component {
   type: "HapticRequest";
   pattern: TPattern;
   intensity?: number;
 }
 
+/** @public */
 export interface JuiceAnimation {
   type: string;
   property?: string;
@@ -194,12 +216,14 @@ export interface JuiceAnimation {
   repeat?: number;
 }
 
+/** @public */
 export interface JuiceComponent extends Component {
     type: "Juice";
     active: boolean;
     animations: JuiceAnimation[];
 }
 
+/** @public */
 export interface CollisionEventsComponent extends Component {
     type: "CollisionEvents";
     collisions: Collision[];
@@ -208,6 +232,7 @@ export interface CollisionEventsComponent extends Component {
     triggersExited: Entity[];
 }
 
+/** @public */
 export interface ColliderComponent extends Component {
   type: "Collider";
   shape: Shape;
@@ -219,6 +244,7 @@ export interface ColliderComponent extends Component {
   offsetY?: number;
 }
 
+/** @public */
 export interface TrailComponent extends Component {
     type: "Trail";
     points: {x: number, y: number}[];
@@ -227,11 +253,13 @@ export interface TrailComponent extends Component {
     count: number;
 }
 
+/** @public */
 export interface IHierarchicalComponent extends Component {
     parentEntity?: Entity;
     children: Entity[];
 }
 
+/** @public */
 export interface Collider2DComponent extends Component {
   type: "Collider2D";
   shape: { type: "circle"; radius: number } | { type: "aabb"; halfWidth: number; halfHeight: number };
@@ -243,6 +271,7 @@ export interface Collider2DComponent extends Component {
   enabled: boolean;
 }
 
+/** @public */
 export interface CoreComponentRegistry extends ComponentRegistry {
   Transform: TransformComponent;
   Velocity: VelocityComponent;

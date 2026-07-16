@@ -20,6 +20,7 @@ interface InternalWorldAccess<TComponents extends ComponentRegistry> {
  * @remarks
  * serializes world component state into continuous TypedArrays (Float64Array and Int32Array)
  * to avoid allocations of thousands of separate object and key-value maps.
+ * @public
  */
 export class SnapshotSerializerSoA {
   /**

@@ -12,6 +12,7 @@ import { EventBus, EventRegistry } from "../events/EventBus";
  * and release entities back to designated object pools.
  *
  * Note: Entity removal is deferred through the {@link WorldCommandBuffer}.
+ * @public
  */
 export class TTLSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, deltaTime: number): void {
