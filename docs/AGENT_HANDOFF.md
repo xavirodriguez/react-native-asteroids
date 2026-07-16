@@ -1,20 +1,21 @@
-# Handoff — 2025-02-21 20:00 UTC
+# Agent Handoff — 2025-02-21 22:00 UTC
 
 ## Estado del objetivo en curso
-Nombre: Compresión de Red binaria para Snapshots SoA
+Nombre: Monitoreo Avanzado de Rendimiento de Red y Garbage Collection
 Estado: listo para review
 
 ## Contexto necesario para continuar
-El objetivo de **Compresión de Red binaria para Snapshots SoA** ha sido completamente implementado, optimizado, integrado en el servidor headless (`AsteroidsRoom.ts`) y el transporte cliente (`useMultiplayer.ts`), y validado exhaustivamente mediante pruebas unitarias (`snapshots.test.ts`) y de regresión general (`pnpm test`).
+El objetivo de **Monitoreo Avanzado de Rendimiento de Red y Garbage Collection** ha sido completamente implementado, optimizado, probado y documentado.
 
 La arquitectura implementada:
-1. Define `BinaryCompression` utilizando `msgpackr` con soporte nativo de TypedArrays en SoA.
-2. Introduce la utilidad `filterSoASnapshot` para culling espacial eficiente de snapshots antes de empaquetar de forma binaria.
-3. Integra transparentemente en el servidor la optimización `UseSoASnapshots` en modo binario de replicación.
-4. Resuelve de forma robusta cualquier aserción de tipos en entornos con VM sandboxing (como Jest).
+1. Define `NetworkMetricsCollector` en `server/src/metrics/NetworkMetrics.ts` utilizando `PerformanceObserver` con `entryTypes: ['gc']` de Node para medir pausabilidad y frecuencia del GC de forma nativa.
+2. Añade un fallback impecable que estima la asignación de memoria mediante la fluctuación de `process.memoryUsage().heapUsed` en entornos sin observador de GC nativo.
+3. Instrumenta la serialización binaria en `AsteroidsRoom.ts` para realizar la comparación de tamaño en bytes contra un snapshot AoS tradicional (JSON stringify) y generar estadísticas precisas sobre la compresión (ahorro, ratio de reducción).
+4. Expone la telemetría en Colyseus de forma estructurada a través del manejador del mensaje `"metrics"`.
+5. Valida todo con pruebas unitarias exhaustivas en `server/src/metrics/__tests__/NetworkMetrics.test.ts`.
 
 ## Bloqueos activos
 Ninguno.
 
 ## Próximo paso concreto
-Revisar y fusionar (merge) el PR de la rama `feature/soa-snapshots-binary-compression-20250221` hacia `master`.
+Revisar y fusionar (merge) el PR de la rama `feature/performance-monitoring-gc-20250221` hacia `master`.

@@ -1,28 +1,23 @@
-/**
- * Network protocol and synchronization data structures.
- *
- * This module defines the common interfaces used for authoritative server updates,
- * client-side prediction, and visual interpolation.
- *
- * @packageDocumentation
- */
+import { z } from "zod";
 
 /**
  * Represents a single tick of user input.
  * @public
  */
-export interface InputFrame {
+export const InputFrameSchema = z.object({
   /** Network protocol version. */
-  protocolVersion?: number;
+  protocolVersion: z.number().optional(),
   /** The simulation tick this input belongs to. */
-  tick: number;
+  tick: z.number().int().nonnegative(),
   /** Wall-clock time when the input was captured. */
-  timestamp?: number;
+  timestamp: z.number().optional(),
   /** List of semantic actions active (e.g., "shoot", "thrust"). */
-  actions: string[];
+  actions: z.array(z.string()),
   /** Continuous input values (e.g., joystick coordinates). */
-  axes: Record<string, number>;
-}
+  axes: z.record(z.string(), z.number())
+});
+
+export type InputFrame = z.infer<typeof InputFrameSchema>;
 
 /**
  * Historical state of an entity used for reconciliation.

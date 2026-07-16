@@ -2,6 +2,28 @@
 
 Historial de sesiones de agentes. Última entrada primero.
 
+## Sesión 2025-02-21 22:00 UTC
+
+**Objetivo trabajado:** Monitoreo Avanzado de Rendimiento de Red y Garbage Collection
+**Estado:** completado
+**PR abierto:** ninguno
+**Rama:** feature/performance-monitoring-gc-20250221
+
+### Qué se hizo
+- Diseñado e implementado `NetworkMetricsCollector` en `server/src/metrics/NetworkMetrics.ts` utilizando `PerformanceObserver` de Node con `entryTypes: ['gc']` para recolectar de forma nativa la latencia, frecuencia y ratio de pausa del Garbage Collector.
+- Incorporado fallback resiliente en `NetworkMetricsCollector` basado en el diferencial de `process.memoryUsage().heapUsed` para rastrear tasas de asignación y desasignación de memoria en entornos donde no se expongan estadísticas nativas de GC.
+- Instrumentado el empaquetado binario SoA (`UseSoASnapshots` / `msgpackr`) en `AsteroidsRoom.ts` para capturar el equivalente en formato AoS (JSON stringify) y calcular en tiempo real métricas de compresión (bytes originales, bytes comprimidos, ratio de compresión y ahorro de espacio).
+- Expuesto todas las métricas mediante el handler del evento de red `"metrics"` en Colyseus de manera estructurada (`network`, `compression`, `memory`, `gc`).
+- Creada una suite de tests unitarios robustos en `server/src/metrics/__tests__/NetworkMetrics.test.ts` con cobertura total de los cálculos matemáticos, promedios e inicialización/limpieza del recolector.
+- Verificado el build y la suite de pruebas completa del monorepo (`pnpm test`), confirmando que todo pasa con éxito.
+
+### Qué queda pendiente
+- Revisar y fusionar los cambios de rendimiento de red y GC a la rama principal `master`.
+
+### Decisiones técnicas tomadas
+- **Comparación Dinámica de Formato AoS vs SoA:** En el pipeline de transmisión binaria de `AsteroidsRoom`, se genera de forma segura un snapshot AoS usando `SnapshotSerializer.snapshot` para determinar la diferencia exacta de bytes que se habrían enviado por la red en modo JSON tradicional vs binario msgpack.
+- **Evitar fugas de observers:** Se implementó el método `destroy` en `NetworkMetricsCollector` y se llama desde `onDispose` en `AsteroidsRoom` para desconectar los observadores de rendimiento nativos al desechar una sala de juego.
+
 ## Sesión 2025-02-21 21:00 UTC
 
 **Objetivo trabajado:** Centralización de Lógica de Progresión y Retos Diarios ("Game Bridge" / Sprint 3)

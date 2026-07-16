@@ -22,6 +22,7 @@ export * from "./ecs/BlueprintRegistry";
 export * from "./ecs/CoreComponents";
 export * from "./ecs/TagComponent";
 export * from "./snapshots/WorldSnapshot";
+export * from "./snapshots/SnapshotSerializer";
 export * from "./snapshots/SnapshotSerializerSoA";
 export * from "./snapshots/SnapshotRestoreSoA";
 export * from "./ecs/ComponentCloner";
