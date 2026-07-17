@@ -1,7 +1,8 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
-import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase, AsteroidsGame, createShip, createAsteroid, AsteroidsComponentRegistry, AsteroidsEventRegistry, filterSoASnapshot, SnapshotSerializer } from "@tiny-aster/core";
+import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase, filterSoASnapshot, SnapshotSerializer } from "@tiny-aster/core";
+import { AsteroidsGame, createShip, createAsteroid, AsteroidsComponentRegistry, AsteroidsEventRegistry } from "@tiny-aster/core/games/asteroids";
 import { z } from "zod";
 
 const RoomOptionsSchema = z.object({
