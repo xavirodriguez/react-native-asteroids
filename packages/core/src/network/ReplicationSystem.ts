@@ -38,23 +38,24 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
 
         const remoteQuery = w.query("Transform", "RemotePlayer");
         for (const entity of remoteQuery) {
-            const transform = w.getComponent(entity, "Transform");
             const remote = w.getComponent(entity, "RemotePlayer");
 
-            if (transform && remote && remote.targetX !== undefined && remote.targetY !== undefined) {
+            if (remote && remote.targetX !== undefined && remote.targetY !== undefined) {
                 // Implement Linear Interpolation (Lerp) for remote entities
                 // P_visual = P_old + (P_new - P_old) * alpha
                 const alpha = 0.15; // Interpolation factor
-                transform.x += (remote.targetX - transform.x) * alpha;
-                transform.y += (remote.targetY - transform.y) * alpha;
+                w.mutateComponent(entity, "Transform", (t) => {
+                    t.x += (remote.targetX! - t.x) * alpha;
+                    t.y += (remote.targetY! - t.y) * alpha;
 
-                // Angle interpolation (handling wrap-around)
-                if (remote.targetRotation !== undefined) {
-                    let diffRot = remote.targetRotation - transform.rotation;
-                    while (diffRot > Math.PI) diffRot -= Math.PI * 2;
-                    while (diffRot < -Math.PI) diffRot += Math.PI * 2;
-                    transform.rotation += diffRot * alpha;
-                }
+                    // Angle interpolation (handling wrap-around)
+                    if (remote.targetRotation !== undefined) {
+                        let diffRot = remote.targetRotation - t.rotation;
+                        while (diffRot > Math.PI) diffRot -= Math.PI * 2;
+                        while (diffRot < -Math.PI) diffRot += Math.PI * 2;
+                        t.rotation += diffRot * alpha;
+                    }
+                });
             }
         }
 
@@ -70,15 +71,18 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
                     const power = 150;
                     const ax = Math.cos(transform.rotation) * power;
                     const ay = Math.sin(transform.rotation) * power;
-                    velocity.vx += ax * (deltaTime / 1000);
-                    velocity.vy += ay * (deltaTime / 1000);
+                    w.mutateComponent(entity, "Velocity", (v) => {
+                        v.vx += ax * (deltaTime / 1000);
+                        v.vy += ay * (deltaTime / 1000);
+                    });
                 }
 
+                const finalVelocity = w.getComponent(entity, "Velocity")!;
                 // Save input in a queue for future reconciliation
                 this.inputQueue.push({
                     tick: this.lastProcessedTick++,
                     input: { ...input },
-                    state: { x: transform.x, y: transform.y, vx: velocity.vx, vy: velocity.vy },
+                    state: { x: transform.x, y: transform.y, vx: finalVelocity.vx, vy: finalVelocity.vy },
                     dt: deltaTime
                 });
             }
@@ -106,10 +110,14 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
 
             // 3. Reset local state to the last authoritative state from server
             if (transform && velocity && serverState) {
-                transform.x = serverState.x;
-                transform.y = serverState.y;
-                velocity.vx = serverState.vx;
-                velocity.vy = serverState.vy;
+                w.mutateComponent(entity, "Transform", (t) => {
+                    t.x = serverState.x;
+                    t.y = serverState.y;
+                });
+                w.mutateComponent(entity, "Velocity", (v) => {
+                    v.vx = serverState.vx;
+                    v.vy = serverState.vy;
+                });
             }
 
             if (transform && velocity) {
@@ -122,13 +130,20 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
                         const power = 150;
                         const ax = Math.cos(transform.rotation) * power;
                         const ay = Math.sin(transform.rotation) * power;
-                        velocity.vx += ax * (dt / 1000);
-                        velocity.vy += ay * (dt / 1000);
+                        w.mutateComponent(entity, "Velocity", (v) => {
+                            v.vx += ax * (dt / 1000);
+                            v.vy += ay * (dt / 1000);
+                        });
                     }
 
                     // Update position based on replayed velocity
-                    transform.x += velocity.vx * (dt / 1000);
-                    transform.y += velocity.vy * (dt / 1000);
+                    const currentVelocity = w.getComponent(entity, "Velocity");
+                    if (currentVelocity) {
+                        w.mutateComponent(entity, "Transform", (t) => {
+                            t.x += currentVelocity.vx * (dt / 1000);
+                            t.y += currentVelocity.vy * (dt / 1000);
+                        });
+                    }
                 }
             }
         }

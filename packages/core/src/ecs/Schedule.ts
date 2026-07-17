@@ -44,6 +44,13 @@ export class Schedule<
   }
 
   /**
+   * Returns all registered systems in this schedule.
+   */
+  public getSystems(): System<TComponents, TEvents>[] {
+    return this.systems.map(s => s.system);
+  }
+
+  /**
    * Disposes and clears all registered systems in this schedule.
    */
   public clearSystems(): void {

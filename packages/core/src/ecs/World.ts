@@ -12,6 +12,7 @@ import { SnapshotSerializerSoA } from "../snapshots/SnapshotSerializerSoA";
 import { SnapshotRestoreSoA } from "../snapshots/SnapshotRestoreSoA";
 import { WorldCommandBuffer } from "./WorldCommandBuffer";
 import { BlueprintDefinition } from "./BlueprintRegistry";
+import { ComponentCloner } from "./ComponentCloner";
 
 /**
  * Map type for blueprint definitions.
@@ -144,6 +145,11 @@ export class World<
   public get gameplayRandom(): RandomService { return this._gameplayRandom; }
   public getEventBus(): EventBus<TEvents> { return this.getResource<EventBus<TEvents>>("EventBus")!; }
   public getCommandBuffer(): WorldCommandBuffer<TComponents, TEvents, TBlueprints> { return this.commandBuffer; }
+
+  /** Returns the world schedule instance. */
+  public get schedule(): Schedule<TComponents, TEvents, TBlueprints> {
+    return this.defaultSchedule;
+  }
 
   /**
    * Returns a list of all active entities, sorted by ID.
@@ -286,13 +292,34 @@ export class World<
     return this.componentIndex.get(type as string)?.has(entity) ?? false;
   }
 
+  /**
+   * Returns the component of the specified type associated with an entity.
+   *
+   * @remarks
+   * Object.freeze is applied shallowly to the returned component in DEV mode (__DEV__ === true) to prevent silent mutations.
+   * Wrapping is NOT deep-freezing for performance reasons. Direct mutations on nested objects might not throw TypeError at runtime.
+   * Under production mode (__DEV__ === false or NODE_ENV === 'production'), Object.freeze is a complete no-op and returns the component directly to avoid any runtime overhead.
+   *
+   * @param entity - The entity to retrieve the component for.
+   * @param type - The component type.
+   */
   getComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): TComponents[K] | undefined {
-    return this.componentMaps.get(type as string)?.get(entity) as TComponents[K] | undefined;
+    const component = this.componentMaps.get(type as string)?.get(entity) as TComponents[K] | undefined;
+    const globalDev = (globalThis as any).__DEV__;
+    const isDev = typeof globalDev !== "undefined" ? globalDev : process.env.NODE_ENV !== "production";
+    if (isDev && component !== undefined) {
+      return Object.freeze(component) as TComponents[K];
+    }
+    return component;
   }
 
   getMutableComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): TComponents[K] | undefined {
-    const component = this.getComponent(entity, type);
+    let component = this.componentMaps.get(type as string)?.get(entity) as TComponents[K] | undefined;
     if (component) {
+      if (Object.isFrozen(component)) {
+        component = ComponentCloner.cloneComponent(component);
+        this.componentMaps.get(type as string)!.set(entity, component);
+      }
       this._stateVersion++;
       this.updateComponentVersion(entity, type as string);
     }
