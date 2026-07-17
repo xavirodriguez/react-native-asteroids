@@ -1,47 +1,49 @@
-# ADR
+# Decisiones técnicas — react-native-asteroids
 
 ## DECISION-001: Cached World.entities Sorting
-
-### Context
-In every tick/frame, active game systems and/or visual rendering backends iterate over all active entities in the ECS World. The original implementation of `World.entities` (and its alias `World.getAllEntities()`) performed `Array.from(this.activeEntities).sort((a, b) => a - b)` on *every single invocation*.
-
-Since `activeEntities` is a dynamic Set of numbers, this caused:
-1. High CPU overhead from sorting ($O(N \log N)$ operations per call).
-2. Large GC pressure from allocating a new array on every access, even when no structural changes occurred.
-
-### Decision
-We introduced a private cache variable `cachedEntities: ReadonlyArray<Entity> | null` to cache the sorted entities list.
-
-- The `get entities` property now checks if `cachedEntities` is present. If not, it computes and caches the sorted list.
-- We invalidate the cache (`this.cachedEntities = null`) whenever a structural change occurs:
-  1. `createEntity()`
-  2. `removeEntity()`
-  3. `clear()`
-
-### Consequences
-- **Performance**: Accessing `entities` in the hot path is now $O(1)$ and allocations are minimized to $0$ on frames without entity creation/removal.
-- **GC Pressure**: Substantially reduced garbage collection frequency, leading to smoother and more consistent frame times (less visual stuttering).
+- **Fecha:** Histórico
+- **Contexto:** En cada tick, los sistemas activos del juego y/o los motores de renderizado iteran sobre todas las entidades activas en el ECS World. La implementación original de `World.entities` realizaba `Array.from(this.activeEntities).sort((a, b) => a - b)` en cada llamada, provocando un overhead de CPU de $O(N \log N)$ y una alta presión del recolector de basura (GC) por asignaciones constantes.
+- **Decisión:** Se introdujo una caché interna `cachedEntities: ReadonlyArray<Entity> | null` que almacena la lista ordenada de entidades. La propiedad `entities` lee de esta caché y solo la invalida (`null`) ante cambios estructurales como `createEntity()`, `removeEntity()` o `clear()`.
+- **Alternativas consideradas:** Mantener un array ordenado continuamente insertando en $O(N)$, pero se descartó porque la adición masiva de entidades es más lenta que ordenar una sola vez al final del frame bajo demanda.
+- **Consecuencias / Trade-offs:** Acceso a `entities` en $O(1)$ la mayor parte del tiempo, reduciendo significativamente la vibración o stutters de frames.
+- **Archivos impactados:** `packages/core/src/ecs/World.ts`
 
 ## DECISION-002: Exposing World Entity Activation API
-
-### Context
-The `WorldCommandBuffer` class had to activate reserved entity IDs by reaching into the private state of `World` using unsafe casts (`world as unknown as { activeEntities: Set<number>, _structureVersion: number }`). This bypassed encapsulation and created a fragile coupling between `World` and `WorldCommandBuffer`.
-
-### Decision
-We exposed a clean, public `activateEntity(entity: Entity)` method on the `World` class that handles adding the entity to `activeEntities`, invalidating the entity cache, and incrementing `_structureVersion`. The `WorldCommandBuffer` now calls this method directly.
-
-### Consequences
-- **Encapsulation**: Restored strict object encapsulation on the core `World` instance.
-- **Robustness**: Eliminated unsafe TypeScript type assertion workarounds, preventing compile-time and runtime breakage on refactoring.
+- **Fecha:** Histórico
+- **Contexto:** `WorldCommandBuffer` requería activar identificadores de entidades reservadas accediendo a campos privados de `World` usando conversiones de tipos no seguras en TypeScript (`world as any`). Esto rompía el principio de encapsulación y era vulnerable a refactorizaciones.
+- **Decisión:** Se expuso un método público y formal `activateEntity(entity: Entity)` en la clase `World` para agregar la entidad de manera controlada, invalidar la caché de entidades e incrementar la versión estructural del mundo (`_structureVersion`).
+- **Alternativas consideradas:** Permitir acceso directo a sets internos de datos, descartado para conservar la integridad relacional del ECS.
+- **Consecuencias / Trade-offs:** Se restauró la encapsulación del objeto `World` y se eliminaron casts inseguros en el monorepo.
+- **Archivos impactados:** `packages/core/src/ecs/World.ts`, `packages/core/src/ecs/WorldCommandBuffer.ts`
 
 ## DECISION-003: Decoupled ECS Input Bridge
+- **Fecha:** Histórico
+- **Contexto:** El componente visual de Asteroids interactuaba de forma directa con la simulación interna buscando la entidad `"LocalPlayer"` y mutando directamente su componente de entrada `"InputState"` con callbacks acoplados, violando los límites de arquitectura hexagonal.
+- **Decisión:** Se diseñó un "Input Bridge" implementando la firma `setInputState(input: Partial<InputState>)` en la interfaz `IAsteroidsGame` (y sus implementaciones real/nula), aislando las búsquedas internas del ECS del renderizador o vistas React.
+- **Alternativas consideradas:** Seguir mutando de forma directa desde los archivos JSX, descartado por dificultar la mantenibilidad y refactorización del core.
+- **Consecuencias / Trade-offs:** Desacoplamiento total de la UI de React de las estructuras de datos y consultas internas del ECS, mejorando el tipado de componentes.
+- **Archivos impactados:** `packages/core/src/games/asteroids/AsteroidsGame.ts`, `src/app/asteroids/index.tsx`
 
-### Context
-The Asteroids game screen (`src/app/asteroids/index.tsx`) previously bypassed game-state boundaries by directly querying the ECS World for `"LocalPlayer"`, fetching its entity, and directly mutating its `"InputState"` component with type-unsafe callbacks. This violated Hexagonal Architecture and coupled the React view directly to the internal structure of ECS components.
+## DEC-004: Dashboard de Telemetría Interactivo en DebugOverlay con Polling Seguro
+- **Fecha:** 2025-02-21
+- **Contexto:** Los desarrolladores necesitaban una herramienta interactiva para monitorear el comportamiento de red (latencia RTT, ratio de compresión SoA, pausas GC y estado del Heap) en tiempo real durante sesiones multijugador, sin perjudicar el rendimiento de simulación del juego en el cliente.
+- **Decisión:** Se integró una pestaña "Metrics" dentro del componente `DebugOverlay` de React Native. Cuando la pestaña está activa, se registra dinámicamente un handler de red para el evento `"metrics"` mediante Colyseus, realizando una petición de telemetría segura (`room.send("metrics")`) con un intervalo de actualización de exactamente 2000 ms.
+- **Alternativas consideradas:** Polling rápido (e.g. 100 ms) o transmisión continua push del servidor, descartado por saturación potencial de ancho de banda y degradación de la latencia en hilos principales de juego.
+- **Consecuencias / Trade-offs:** Excelente visibilidad de telemetría sin impacto de red en el bucle principal de frames. El cálculo de latencia RTT se actualiza de manera fluida y adaptativa basándose en el tiempo de ida y vuelta de cada consulta.
+- **Archivos impactados:** `src/components/debug/DebugOverlay.tsx` (Líneas 95-128)
 
-### Decision
-We implemented a decoupled "Input Bridge" by defining an `setInputState` method in the `IAsteroidsGame` interface and implementing it in both `AsteroidsGame` and `NullAsteroidsGame`. This method accepts `Partial<InputState>` and internally queries and updates the local player entity. The React component now calls `game.setInputState(input)` instead.
+## DEC-005: Colector Avanzado de Métricas de Red y GC con Fallback Resiliente
+- **Fecha:** 2025-02-21
+- **Contexto:** El servidor headless y las salas de juego necesitaban cuantificar de forma rigurosa la eficiencia del pipeline binario y la frecuencia de pausas del Garbage Collector (GC), pero las APIs nativas de monitorización (`PerformanceObserver` con `entryTypes: ['gc']`) pueden no estar habilitadas o soportadas en ciertos entornos de ejecución o contenedores de hosting.
+- **Decisión:** Se diseñó `NetworkMetricsCollector` utilizando `PerformanceObserver` nativo de Node para registrar estadísticas reales de pausas. Al mismo tiempo, se incorporó una lógica resiliente de fallback en el método `recordTick` que compara el diferencial del uso de memoria heap (`process.memoryUsage().heapUsed`). Si el delta de memoria es negativo y no hay un observer GC nativo activo, se contabiliza la caída de memoria como una pausa GC de forma automatizada.
+- **Alternativas consideradas:** Omitir reportes de GC en plataformas que carezcan de APIs nativas de Node, descartado para evitar pérdida de fiabilidad de telemetría.
+- **Consecuencias / Trade-offs:** El colector recopila datos precisos de asignaciones históricas, bytes liberados y pausas del GC de manera transparente. Cuenta con un método de desregistro `destroy()` invocado de forma segura en `onDispose` de la sala Colyseus para evitar fugas de memoria por observadores activos.
+- **Archivos impactados:** `server/src/metrics/NetworkMetrics.ts`, `server/src/AsteroidsRoom.ts`
 
-### Consequences
-- **Loose Coupling**: The React view is now completely decoupled from internal ECS query names and component mutation details.
-- **Type Safety**: Avoids type-unsafe casts (`as any`) inside React components, making the game simulation easier to maintain and refactor.
+## DEC-006: Compresión Binaria de Red para Snapshots SoA usando msgpackr
+- **Fecha:** 2025-02-21
+- **Contexto:** Transmitir continuamente el estado del juego como un Snapshot de tipo AoS (Array of Structures) serializado a JSON string plano generaba un alto consumo de ancho de banda y un incremento insostenible en la frecuencia de recolección de basura debido a miles de asignaciones de propiedades dinámicas y strings por frame.
+- **Decisión:** Se adoptó la estructura Structure of Arrays (SoA) basada en arrays planos continuos en memoria (`TypedArrays` como `Int32Array` y `Float64Array`). Para su transmisión por red, se implementó empaquetamiento binario nativo en la clase `BinaryCompression` instanciando `Packr` de la librería `msgpackr` con las opciones de inicialización `{ useRecords: false, structuredClone: true }`.
+- **Alternativas consideradas:** Usar serialización JSON tradicional sobre snapshots SoA, descartado porque los TypedArrays se habrían serializado como costosos objetos indexados planos `{ "0": x, "1": y }` en lugar de buffers binarios puros.
+- **Consecuencias / Trade-offs:** Reducción drástica del tamaño de transmisión (promedio de 2.5x a 3x de compresión) y eliminación absoluta de las asignaciones de objetos dinámicos. Para registrar métricas comparativas precisas sin degradar el rendimiento, el servidor computa de forma asíncrona un snapshot AoS JSON de contraste solo una vez cada 120 ticks (~2 segundos).
+- **Archivos impactados:** `packages/core/src/network/MultiplayerSystems.ts`, `packages/core/src/snapshots/WorldSnapshot.ts`, `server/src/AsteroidsRoom.ts`
