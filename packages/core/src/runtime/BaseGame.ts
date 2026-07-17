@@ -67,6 +67,7 @@ export abstract class BaseGame<
   protected unifiedInput: UnifiedInputSystem;
   protected _config: BaseGameConfig<TComponents, TEvents>;
   private lifecycleState: GameLifecycleState = GameLifecycleState.RUNNING;
+  private isPaused = false;
 
   public sceneManager: SceneManager;
   public audio: IAudioPlayer;
@@ -146,7 +147,8 @@ export abstract class BaseGame<
    * Pauses the game.
    */
   public pause(): void {
-    if (this.lifecycleState !== GameLifecycleState.RUNNING) return;
+    if (this.isPaused) return;
+    this.isPaused = true;
     this.lifecycleState = GameLifecycleState.PAUSED;
     this.loop.pause();
   }
@@ -155,7 +157,8 @@ export abstract class BaseGame<
    * Resumes the game.
    */
   public resume(): void {
-    if (this.lifecycleState !== GameLifecycleState.PAUSED) return;
+    if (!this.isPaused) return;
+    this.isPaused = false;
     this.lifecycleState = GameLifecycleState.RUNNING;
     this.loop.resume();
   }
@@ -164,7 +167,7 @@ export abstract class BaseGame<
    * Returns whether the game is currently paused.
    */
   public isPausedState(): boolean {
-    return this.lifecycleState === GameLifecycleState.PAUSED;
+    return this.isPaused;
   }
 
   /**
@@ -181,12 +184,10 @@ export abstract class BaseGame<
     this.lifecycleState = GameLifecycleState.DESTROYED;
     this.loop.stop();
 
-    // Iterate over Schedule.getSystems() and call system.cleanup?.() on each one
-    this.world.schedule.getSystems().forEach(s => (s as any).cleanup?.());
-
     this.world.schedule.clearSystems();
     this.eventBus.clear();
-    if (this.unifiedInput && typeof this.unifiedInput.dispose === "function") {
+
+    if (typeof this.unifiedInput?.dispose === "function") {
       this.unifiedInput.dispose();
     }
   }
@@ -203,8 +204,10 @@ export abstract class BaseGame<
 
     await this.onBeforeRestart();
     this.destroy();
+    this.eventBus.clear();
 
     this.lifecycleState = GameLifecycleState.RUNNING;
+    this.isPaused = false;
 
     // Reset world and re-register resources
     this.world = new World<TComponents, TEvents, TBlueprints>(this._config.schedule);

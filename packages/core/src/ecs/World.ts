@@ -14,6 +14,12 @@ import { WorldCommandBuffer } from "./WorldCommandBuffer";
 import { BlueprintDefinition } from "./BlueprintRegistry";
 import { ComponentCloner } from "./ComponentCloner";
 
+declare const __DEV__: boolean;
+
+if (typeof (globalThis as any).__DEV__ === "undefined") {
+  (globalThis as any).__DEV__ = process.env.NODE_ENV !== "production";
+}
+
 /**
  * Map type for blueprint definitions.
  * @public
@@ -303,11 +309,15 @@ export class World<
    * @param entity - The entity to retrieve the component for.
    * @param type - The component type.
    */
-  getComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): TComponents[K] | undefined {
-    const component = this.componentMaps.get(type as string)?.get(entity) as TComponents[K] | undefined;
-    const globalDev = (globalThis as any).__DEV__;
-    const isDev = typeof globalDev !== "undefined" ? globalDev : process.env.NODE_ENV !== "production";
-    if (isDev && component !== undefined) {
+  getComponent<K extends ComponentType<TComponents>>(
+    entity: Entity,
+    type: K
+  ): TComponents[K] | undefined {
+    const component = this.componentMaps
+      .get(type as string)
+      ?.get(entity) as TComponents[K] | undefined;
+
+    if (__DEV__ && component !== undefined) {
       return Object.freeze(component) as TComponents[K];
     }
     return component;
