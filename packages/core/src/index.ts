@@ -91,12 +91,8 @@ export * from "./network/ReplicationSystem";
 export * from "./network/MultiplayerSystems";
 export * from "./network/NetTypes";
 
-// Games
-export * from "./games/asteroids/AsteroidsGame";
-export * from "./games/asteroids/EntityFactory";
-export * from "./games/asteroids/types/AsteroidRegistry";
-export * from "./games/asteroids/types/AsteroidTypes";
-export * from "./games/asteroids/types/AsteroidConfigSchema";
+// Arcade Games Core
+export * from "./games/arcade/index";
 
 // Config
 export * from "./config/ConfigService";

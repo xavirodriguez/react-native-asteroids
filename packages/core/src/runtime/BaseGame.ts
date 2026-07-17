@@ -10,6 +10,16 @@ import { Schedule } from "../ecs/Schedule";
 import { SceneManager } from "../scenes/SceneManager";
 import { IAudioPlayer, NullAudioPlayer } from "../audio/IAudioPlayer";
 
+/**
+ * Representation of the game lifecycle states.
+ * @public
+ */
+export enum GameLifecycleState {
+  RUNNING = "RUNNING",
+  PAUSED = "PAUSED",
+  DESTROYED = "DESTROYED"
+}
+
 /** @public */
 export interface BaseGameConfig<
   TComponents extends ComponentRegistry = ComponentRegistry,
@@ -56,7 +66,7 @@ export abstract class BaseGame<
   protected loop: GameLoop;
   protected unifiedInput: UnifiedInputSystem;
   protected _config: BaseGameConfig<TComponents, TEvents>;
-  private isPaused = false;
+  private lifecycleState: GameLifecycleState = GameLifecycleState.RUNNING;
 
   public sceneManager: SceneManager;
   public audio: IAudioPlayer;
@@ -75,7 +85,7 @@ export abstract class BaseGame<
 
     // Subscribe loop to update
     this.loop.subscribeUpdate((dt) => {
-      if (!this.isPaused) {
+      if (this.lifecycleState === GameLifecycleState.RUNNING) {
         this.update(dt);
       }
     });
@@ -136,28 +146,49 @@ export abstract class BaseGame<
    * Pauses the game.
    */
   public pause(): void {
-    this.isPaused = true;
+    if (this.lifecycleState !== GameLifecycleState.RUNNING) return;
+    this.lifecycleState = GameLifecycleState.PAUSED;
+    this.loop.pause();
   }
 
   /**
    * Resumes the game.
    */
   public resume(): void {
-    this.isPaused = false;
+    if (this.lifecycleState !== GameLifecycleState.PAUSED) return;
+    this.lifecycleState = GameLifecycleState.RUNNING;
+    this.loop.resume();
   }
 
   /**
    * Returns whether the game is currently paused.
    */
   public isPausedState(): boolean {
-    return this.isPaused;
+    return this.lifecycleState === GameLifecycleState.PAUSED;
+  }
+
+  /**
+   * Returns the current lifecycle state of the game.
+   */
+  public getLifecycleState(): GameLifecycleState {
+    return this.lifecycleState;
   }
 
   /**
    * Stops the loop and cleans up resources.
    */
   public destroy(): void {
+    this.lifecycleState = GameLifecycleState.DESTROYED;
     this.loop.stop();
+
+    // Iterate over Schedule.getSystems() and call system.cleanup?.() on each one
+    this.world.schedule.getSystems().forEach(s => (s as any).cleanup?.());
+
+    this.world.schedule.clearSystems();
+    this.eventBus.clear();
+    if (this.unifiedInput && typeof this.unifiedInput.dispose === "function") {
+      this.unifiedInput.dispose();
+    }
   }
 
   /**
@@ -173,8 +204,7 @@ export abstract class BaseGame<
     await this.onBeforeRestart();
     this.destroy();
 
-    // Clear event handlers and deferred events to avoid listener accumulation
-    this.eventBus.clear();
+    this.lifecycleState = GameLifecycleState.RUNNING;
 
     // Reset world and re-register resources
     this.world = new World<TComponents, TEvents, TBlueprints>(this._config.schedule);

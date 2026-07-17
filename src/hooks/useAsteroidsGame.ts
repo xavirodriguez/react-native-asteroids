@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useGame } from "@tiny-aster/react-native";
 import { useHighScore } from "./useHighScore";
-import { AsteroidsGame } from "@tiny-aster/core";
+import { AsteroidsGame } from "@tiny-aster/core/games/asteroids";
 import { INITIAL_GAME_STATE } from "../types/GameTypes";
 import type { GameStateComponent, InputState } from "../types/GameTypes";
 import { MutatorService } from "../services/MutatorService";

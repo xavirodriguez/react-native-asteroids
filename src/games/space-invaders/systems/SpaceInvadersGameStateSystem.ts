@@ -39,15 +39,17 @@ export class SpaceInvadersGameStateSystem extends BaseGameStateSystem<GameStateC
       });
     }
 
-    // 4. Update Combo Timer
-    if (gameState.comboTimerRemaining > 0) {
-      world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
-          gs.comboTimerRemaining -= deltaTime;
-          if (gs.comboTimerRemaining <= 0) {
-            gs.combo = 0;
-            gs.multiplier = 1;
-          }
-      });
+    // Sync generic Combo component values with GameState component for rendering / backwards compatibility
+    const comboEntity = world.query("GameState")[0];
+    if (comboEntity !== undefined) {
+      const comboComp = world.getComponent(comboEntity, "Combo" as any) as any;
+      if (comboComp) {
+        world.mutateSingleton<GameStateComponent>("GameState", (gs) => {
+          gs.combo = comboComp.combo;
+          gs.multiplier = comboComp.multiplier;
+          gs.comboTimerRemaining = comboComp.timerRemaining;
+        });
+      }
     }
   }
 

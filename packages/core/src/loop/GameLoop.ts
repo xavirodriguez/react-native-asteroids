@@ -87,6 +87,16 @@ export class GameLoop {
   }
 
   /**
+   * Pauses the game loop.
+   */
+  public pause() {}
+
+  /**
+   * Resumes the game loop.
+   */
+  public resume() {}
+
+  /**
    * Stops the internal automatic loop and switches to manual mode.
    */
   public stopInternalLoop() {

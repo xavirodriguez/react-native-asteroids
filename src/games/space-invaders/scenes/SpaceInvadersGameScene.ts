@@ -1,5 +1,5 @@
 import { Scene, World, EventBus, BaseGame } from "@tiny-aster/core";
-import { MovementSystem } from "@tiny-aster/core";
+import { MovementSystem, ComboSystem } from "@tiny-aster/core";
 import { TTLSystem } from "@tiny-aster/core";
 import { JuiceSystem } from "@tiny-aster/core";
 import { RenderUpdateSystem } from "@tiny-aster/core";
@@ -72,6 +72,7 @@ export class SpaceInvadersGameScene extends Scene {
     this.world.addSystem((this.game as unknown as BaseGame<unknown, Record<string, unknown>>).unifiedInput, { phase: SystemPhase.Input });
     this.world.addSystem(inputSys, { phase: SystemPhase.Simulation });
     this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new ComboSystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(new BoundarySystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(new SpaceInvadersFormationSystem(this.enemyBulletPool), { phase: SystemPhase.Simulation });
     this.world.addSystem(new InvulnerabilitySystem(), { phase: SystemPhase.Simulation });

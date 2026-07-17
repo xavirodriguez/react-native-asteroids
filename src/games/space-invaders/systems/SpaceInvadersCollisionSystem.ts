@@ -100,10 +100,21 @@ export class SpaceInvadersCollisionSystem extends System {
       const { PlayerBullet: bullet, Invader: invader } = invaderBullet;
       const invaderComp = world.getComponent<InvaderComponent>(invader, "Invader");
 
-      // Lógica de Combo - Cálculos fuera
-      const nextCombo = gameState.combo + 1;
-      const nextMultiplier = Math.min(this.config!.MAX_MULTIPLIER, 1 + Math.floor(nextCombo / 5));
-      const nextComboTimer = this.config!.COMBO_TIMEOUT;
+      // Mutate generic Combo component on the GameState entity
+      const comboEntity = world.query("GameState")[0];
+      let nextCombo = 0;
+      let nextMultiplier = 1;
+
+      if (comboEntity !== undefined) {
+        world.mutateComponent(comboEntity, "Combo" as any, (c: any) => {
+          c.combo++;
+          c.timerRemaining = c.timerDuration;
+          c.multiplier = Math.min(this.config!.MAX_MULTIPLIER, 1 + Math.floor(c.combo / 5));
+          nextCombo = c.combo;
+          nextMultiplier = c.multiplier;
+        });
+      }
+
       let scoreGain = 0;
       if (invaderComp) {
         scoreGain = invaderComp.points * nextMultiplier;
@@ -111,9 +122,6 @@ export class SpaceInvadersCollisionSystem extends System {
       const nextScore = gameState.score + scoreGain;
 
       world.mutateSingleton<GameStateComponent>("GameState", gs => {
-          gs.combo = nextCombo;
-          gs.multiplier = nextMultiplier;
-          gs.comboTimerRemaining = nextComboTimer;
           gs.score = nextScore;
       });
 
