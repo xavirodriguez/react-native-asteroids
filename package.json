@@ -33,9 +33,6 @@
     "ci": "pnpm run build:core && pnpm run check:core-boundaries && pnpm run typecheck:app",
     "test:ci": "pnpm exec jest --runInBand"
   },
-  "jest": {
-    "preset": "jest-expo"
-  },
   "dependencies": {
     "@colyseus/sdk": "^0.17.37",
     "@expo/dom-webview": "^0.1.5",

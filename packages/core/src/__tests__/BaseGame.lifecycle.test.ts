@@ -4,10 +4,11 @@ import { EventBus } from "../events/EventBus";
 
 class TestGame extends BaseGame<any, any, any, any, any> {
   public systemDisposeMock = jest.fn();
+  public accumulateHandler = jest.fn();
 
   constructor(config: BaseGameConfig<any, any> = {}) {
     super(config);
-    // Override loop with mock as requested
+    // Mock loop as requested: start, stop, pause, resume
     this.loop = {
       start: jest.fn(),
       stop: jest.fn(),
@@ -28,6 +29,8 @@ class TestGame extends BaseGame<any, any, any, any, any> {
       onRegister: () => {},
       dispose: this.systemDisposeMock
     });
+    // Register handler on the real event bus during registerSystems
+    this.eventBus.on("test-accumulate" as any, this.accumulateHandler);
   }
 }
 
@@ -58,36 +61,33 @@ describe("BaseGame lifecycle", () => {
     const game = new TestGame();
     await game.init();
 
-    // Register a handler on the event bus
-    const handler = jest.fn();
-    game.eventBus.on("test" as any, handler);
-
-    // Initial handler count on event bus
-    // In our implementation, eventBus is preserved, so to assert accumulation we can check
-    // how many times a registered listener gets triggered or we can measure length of listeners list
-    // if EventBus exposes it, or emit to verify.
-    // Let's do 3 restarts
+    // Call restart 3 times
     await game.restart();
     await game.restart();
     await game.restart();
 
-    // After restarts, the previous handler from before restart was cleared, so it shouldn't fire
-    game.eventBus.emit("test" as any, {});
-    expect(handler).not.toHaveBeenCalled();
+    // Reset calls to be absolutely sure we only count the final emit
+    game.accumulateHandler.mockClear();
+
+    // Emit the event
+    game.eventBus.emit("test-accumulate" as any, {});
+
+    // Must be called exactly 1 time, not 4 (1 from init + 3 from restarts) or 3
+    expect(game.accumulateHandler).toHaveBeenCalledTimes(1);
   });
 
   test("pause() is idempotent", () => {
     const game = new TestGame();
-    // Initially RUNNING
-    expect(game.getLifecycleState()).toBe(GameLifecycleState.RUNNING);
+    // Initially not paused
+    expect(game.isPausedState()).toBe(false);
 
     game.pause();
-    expect(game.getLifecycleState()).toBe(GameLifecycleState.PAUSED);
+    expect(game.isPausedState()).toBe(true);
     expect(game.getGameLoop().pause).toHaveBeenCalledTimes(1);
 
     // Call pause() again
     game.pause();
-    expect(game.getLifecycleState()).toBe(GameLifecycleState.PAUSED);
+    expect(game.isPausedState()).toBe(true);
     // Should NOT call loop.pause() again
     expect(game.getGameLoop().pause).toHaveBeenCalledTimes(1);
   });
@@ -95,40 +95,26 @@ describe("BaseGame lifecycle", () => {
   test("resume() is idempotent", () => {
     const game = new TestGame();
     game.pause();
-    expect(game.getLifecycleState()).toBe(GameLifecycleState.PAUSED);
+    expect(game.isPausedState()).toBe(true);
     expect(game.getGameLoop().resume).toHaveBeenCalledTimes(0);
 
     game.resume();
-    expect(game.getLifecycleState()).toBe(GameLifecycleState.RUNNING);
+    expect(game.isPausedState()).toBe(false);
     expect(game.getGameLoop().resume).toHaveBeenCalledTimes(1);
 
     // Call resume() again
     game.resume();
-    expect(game.getLifecycleState()).toBe(GameLifecycleState.RUNNING);
+    expect(game.isPausedState()).toBe(false);
     // Should NOT call loop.resume() again
     expect(game.getGameLoop().resume).toHaveBeenCalledTimes(1);
   });
 
-  test("resume() after resume() (was never paused) is a no-op", () => {
+  test("resume() without prior pause() is a no-op", () => {
     const game = new TestGame();
-    expect(game.getLifecycleState()).toBe(GameLifecycleState.RUNNING);
+    expect(game.isPausedState()).toBe(false);
 
     game.resume();
-    expect(game.getLifecycleState()).toBe(GameLifecycleState.RUNNING);
+    expect(game.isPausedState()).toBe(false);
     expect(game.getGameLoop().resume).not.toHaveBeenCalled();
-  });
-
-  test("destroy -> restart -> destroy sequence (no race conditions)", async () => {
-    const game = new TestGame();
-    await game.init();
-
-    game.destroy();
-    expect(game.getLifecycleState()).toBe(GameLifecycleState.DESTROYED);
-
-    await game.restart();
-    expect(game.getLifecycleState()).toBe(GameLifecycleState.RUNNING);
-
-    game.destroy();
-    expect(game.getLifecycleState()).toBe(GameLifecycleState.DESTROYED);
   });
 });

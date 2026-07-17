@@ -5,7 +5,7 @@ import { CoreComponentRegistry } from "../../../ecs/CoreComponents";
 /** @public */
 export class ComboSystem extends System<CoreComponentRegistry> {
   public update(world: World<CoreComponentRegistry>, deltaTime: number): void {
-    world.query("GameState" as any).forEach((entity) => {
+    world.query("Combo" as any).forEach((entity) => {
       const combo = world.getComponent(entity, "Combo" as any) as any;
       if (!combo || combo.timerRemaining <= 0) return;
 
