@@ -1,6 +1,4 @@
-import { BaseGame, BaseGameConfig, GameLifecycleState } from "../runtime/BaseGame";
-import { World } from "../ecs/World";
-import { EventBus } from "../events/EventBus";
+import { BaseGame, BaseGameConfig } from "../runtime/BaseGame";
 
 class TestGame extends BaseGame<any, any, any, any, any> {
   public systemDisposeMock = jest.fn();
