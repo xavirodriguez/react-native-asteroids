@@ -8,6 +8,7 @@ import {
   RenderComponent,
   EventBus,
   UnifiedInputSystem,
+  InputSystem,
 } from "@tiny-aster/core";
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { GameStateComponent, InputState, INITIAL_GAME_STATE, SpaceInvadersComponentRegistry, GAME_CONFIG } from "./types/SpaceInvadersTypes";
@@ -314,5 +315,5 @@ export class NullSpaceInvadersGame implements ISpaceInvadersGame {
   public subscribe(cb: (state: GameStateComponent) => void) { return () => {}; }
   public setInput(input: Partial<InputState>) {}
   public initializeRenderer() {}
-  public getInputSystem() { return new UnifiedInputSystem() as any; }
+  public getInputSystem(): InputSystem { return new UnifiedInputSystem(); }
 }

@@ -1,4 +1,4 @@
-import { BaseGame, WorldSnapshot, GameLoop, World } from "@tiny-aster/core";
+import { BaseGame, WorldSnapshot, GameLoop, World, System, InputSystem } from "@tiny-aster/core";
 import { FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE, FlappyBirdState, BirdComponent, PipeComponent, FlappyBirdComponentRegistry } from "./types/FlappyBirdTypes";
 import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
 import { FlappyBirdInputSystem } from "./systems/FlappyBirdInputSystem";
@@ -76,20 +76,20 @@ export class FlappyBirdGame
     const inputSys = new FlappyBirdInputSystem(this.config);
     if (this.isMultiplayer) inputSys.setMultiplayerMode(true);
 
-    this.world.addSystem(this.unifiedInput, { phase: SystemPhase.Input });
+    this.world.addSystem(this.unifiedInput as System<FlappyBirdComponentRegistry>, { phase: SystemPhase.Input });
     this.world.addSystem(new InputBufferSystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(inputSys, { phase: SystemPhase.Simulation });
     this.world.addSystem(new FlappyBirdGlideSystem(), { phase: SystemPhase.Simulation });
-    this.world.addSystem(new MovementSystem() as any, { phase: SystemPhase.Simulation });
-    this.world.addSystem(new CollisionSystem2D() as any, { phase: SystemPhase.Collision });
+    this.world.addSystem(new MovementSystem() as System<FlappyBirdComponentRegistry>, { phase: SystemPhase.Simulation });
+    this.world.addSystem(new CollisionSystem2D() as System<FlappyBirdComponentRegistry>, { phase: SystemPhase.Collision });
     this.world.addSystem(new FlappyBirdCollisionSystem(this), { phase: SystemPhase.GameRules });
     this.world.addSystem(this.gameStateSystem, { phase: SystemPhase.GameRules });
 
     const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
-    this.world.addSystem(new MutatorSystem(activeMutators) as any, { phase: SystemPhase.Simulation });
+    this.world.addSystem(new MutatorSystem(activeMutators) as System<FlappyBirdComponentRegistry>, { phase: SystemPhase.Simulation });
 
     // Visual / Presentation
-    this.world.addSystem(new JuiceSystem() as any, { phase: SystemPhase.Presentation });
+    this.world.addSystem(new JuiceSystem() as System<FlappyBirdComponentRegistry>, { phase: SystemPhase.Presentation });
     this.world.addSystem(new FlappyBirdRenderSystem(), { phase: SystemPhase.Presentation });
 
     if (!this.networkManager) {
@@ -98,14 +98,14 @@ export class FlappyBirdGame
         interpolationDelay: 100
       });
     }
-    this.world.addSystem(new ReplicationSystem(this.networkManager) as any, { phase: SystemPhase.Presentation });
+    this.world.addSystem(new ReplicationSystem(this.networkManager) as System<any>, { phase: SystemPhase.Presentation });
   }
 
   protected override async onInitializeEntities(): Promise<void> {
     if (this.isMultiplayer) return;
-    createGameState(this.world as any);
-    createBird({ world: this.world as any, x: FLAPPY_CONFIG.BIRD_X, y: FLAPPY_CONFIG.BIRD_START_Y });
-    createGround(this.world as any);
+    createGameState(this.world);
+    createBird({ world: this.world, x: FLAPPY_CONFIG.BIRD_X, y: FLAPPY_CONFIG.BIRD_START_Y });
+    createGround(this.world);
   }
 
   protected override async onBeforeRestart(): Promise<void> {
@@ -283,5 +283,5 @@ export class NullFlappyBirdGame implements IFlappyBirdGame {
   public setInput(input: Partial<FlappyBirdInput>) {}
   public subscribe(cb: (state: FlappyBirdState) => void) { return () => {}; }
   public initializeRenderer() {}
-  public getInputSystem() { return new UnifiedInputSystem() as any; }
+  public getInputSystem(): InputSystem { return new UnifiedInputSystem(); }
 }
