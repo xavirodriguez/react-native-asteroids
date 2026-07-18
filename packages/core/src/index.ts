@@ -94,6 +94,22 @@ export * from "./network/NetTypes";
 // Arcade Games Core
 export * from "./games/arcade/index";
 
+// Migrated Games
+export * from "./games/flappybird/FlappyBirdGame";
+export * from "./games/flappybird/types/FlappyBirdTypes";
+export * from "./games/flappybird/types/GameInterfaces";
+
+export * from "./games/pong/PongGame";
+export * from "./games/pong/types";
+export * from "./games/pong/types/PongConfigSchema";
+
+export * from "./games/space-invaders/SpaceInvadersGame";
+export * from "./games/space-invaders/types/SpaceInvadersTypes";
+export * from "./games/space-invaders/types/SpaceInvadersConfigSchema";
+export * from "./games/space-invaders/types/GameInterfaces";
+
+export * from "./games/shared/types/CollisionLayers";
+
 // Config
 export * from "./config/ConfigService";
 export * from "./config/BaseConfigSchema";

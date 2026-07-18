@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useGame } from "@tiny-aster/react-native";
-import { PongGame } from "../games/pong/PongGame";
-import type { PongState, PongInput } from "../games/pong/types";
+import { PongGame, PongState, PongInput } from "@tiny-aster/core";
 
 export const usePongGame = (mode: "local" | "ai" | "online" | null, seed?: number) => {
   const gameOptions = useMemo(

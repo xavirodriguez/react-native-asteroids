@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useGame } from "@tiny-aster/react-native";
 import { useHighScore } from "./useHighScore";
-import { FlappyBirdGame } from "../games/flappybird/FlappyBirdGame";
+import { FlappyBirdGame, INITIAL_FLAPPY_STATE, FlappyBirdState, FlappyBirdInput } from "@tiny-aster/core";
 import { MutatorService } from "../services/MutatorService";
 import type { Mutator } from "../config/MutatorConfig";
-import { INITIAL_FLAPPY_STATE } from "../games/flappybird/types/FlappyBirdTypes";
-import type { FlappyBirdState, FlappyBirdInput } from "../games/flappybird/types/FlappyBirdTypes";
 
 /**
  * Custom hook to manage the lifecycle of the Flappy Bird game engine.
