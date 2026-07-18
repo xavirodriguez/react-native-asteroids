@@ -6,10 +6,11 @@ import {
   Component,
   TransformComponent,
   RenderComponent,
-  UpdateListener,
+  EventBus,
+  UnifiedInputSystem,
 } from "@tiny-aster/core";
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { GameStateComponent, InputState, INITIAL_GAME_STATE } from "./types/SpaceInvadersTypes";
+import { GameStateComponent, InputState, INITIAL_GAME_STATE, SpaceInvadersComponentRegistry, GAME_CONFIG } from "./types/SpaceInvadersTypes";
 import { SpaceInvadersConfigSchema, SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
 import { ConfigService } from "@tiny-aster/core";
 import { ISpaceInvadersGame } from "./types/GameInterfaces";
@@ -38,9 +39,10 @@ import { MutatorService } from "../../services/MutatorService";
  * of one entity affects the whole group (Swarm movement).
  */
 export class SpaceInvadersGame
-  extends BaseGame<GameStateComponent, InputState>
+  extends BaseGame<GameStateComponent, InputState, SpaceInvadersComponentRegistry>
   implements ISpaceInvadersGame {
 
+  public isMultiplayer = false;
   private playerBulletPool!: PlayerBulletPool;
   private enemyBulletPool!: EnemyBulletPool;
   private particlePool!: ParticlePool;
@@ -57,20 +59,21 @@ export class SpaceInvadersGame
       isMultiplayer: config.isMultiplayer,
       gameOptions: { ...config.gameOptions, seed }
     });
+    this.isMultiplayer = !!config.isMultiplayer;
   }
 
   protected override async onRegisterSystems(): Promise<void> {
     const rawConfig = require("./config/space-invaders.json");
-    const baseConfig = ConfigService.load(this.gameId, SpaceInvadersConfigSchema, rawConfig);
+    const baseConfig = ConfigService.load(this.gameId, SpaceInvadersConfigSchema, rawConfig) as any;
 
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
-      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...baseConfig }) as SpaceInvadersConfig
-      : { ...baseConfig };
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...(baseConfig as any) }) as SpaceInvadersConfig
+      : { ...(baseConfig as any) } as SpaceInvadersConfig;
 
     this.world.setResource("GameConfig", this.config);
-    this.world.setResource("ScreenConfig", { width: this.config.SCREEN_WIDTH, height: this.config.SCREEN_HEIGHT });
+    this.world.setResource("ScreenConfig", { width: GAME_CONFIG.SCREEN_WIDTH, height: GAME_CONFIG.SCREEN_HEIGHT });
     this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
 
     await this.onPreloadAssets();
@@ -130,28 +133,28 @@ export class SpaceInvadersGame
     }
   }
 
-  public initializeRenderer(renderer: Renderer<unknown>): void {
-    if (renderer.type === "canvas") {
-      renderer.registerShape("player_ship", drawSpaceInvadersPlayer);
-      renderer.registerShape("invader", drawSpaceInvadersInvader);
-      renderer.registerShape("player_bullet", drawSpaceInvadersBullet);
-      renderer.registerShape("enemy_bullet", drawSpaceInvadersBullet); // Reuse bullet drawer
-      renderer.registerShape("shield_block", drawSpaceInvadersShield);
-      renderer.registerShape("particle", drawSpaceInvadersParticle);
+  public initializeRenderer(renderer: Renderer<any>): void {
+    if ((renderer as any).type === "canvas") {
+      (renderer as any).registerShape("player_ship", drawSpaceInvadersPlayer);
+      (renderer as any).registerShape("invader", drawSpaceInvadersInvader);
+      (renderer as any).registerShape("player_bullet", drawSpaceInvadersBullet);
+      (renderer as any).registerShape("enemy_bullet", drawSpaceInvadersBullet); // Reuse bullet drawer
+      (renderer as any).registerShape("shield_block", drawSpaceInvadersShield);
+      (renderer as any).registerShape("particle", drawSpaceInvadersParticle);
     }
   }
 
   public getGameState(): GameStateComponent {
     const world = this.getWorld();
-    const state = world.getSingleton<GameStateComponent>("GameState");
+    const state = world.getSingleton("GameState");
     return state ? { ...state } : INITIAL_GAME_STATE;
   }
 
-  public getWorld(): World {
+  public getWorld(): World<SpaceInvadersComponentRegistry> {
     // Priority 1: Scene-specific world (active gameplay)
     const scene = this.sceneManager?.getCurrentScene();
     if (scene) {
-      return scene.getWorld();
+      return scene.getWorld() as World<SpaceInvadersComponentRegistry>;
     }
     // Priority 2: Base world (loading/initialization)
     return this.world;
@@ -159,6 +162,12 @@ export class SpaceInvadersGame
 
   public setMultiplayerMode(active: boolean) {
     this.isMultiplayer = active;
+  }
+
+  public setInput(input: Partial<InputState>) {
+    Object.entries(input).forEach(([key, value]) => {
+      this.unifiedInput.setOverride(key, !!value);
+    });
   }
 
   public updateFromServer(state: Record<string, unknown>) {
@@ -175,6 +184,8 @@ export class SpaceInvadersGame
         entities: [],
         componentData: { Transform: {} },
         stateVersion: 0,
+        structureVersion: 0,
+        seed: 0,
         nextEntityId: 0,
         freeEntities: []
     };
@@ -188,15 +199,15 @@ export class SpaceInvadersGame
 
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
-          commands.addComponent(entity, { type: "Player" } as Component);
-          commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "player_ship", size: 20, color: "green", rotation: 0 } as RenderComponent);
+          commands.addComponent(entity, { type: "Player" } as any);
+          commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1, worldX: playerState.x, worldY: playerState.y, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false } as any);
+          commands.addComponent(entity, { type: "Render", shape: "player_ship", size: 20, color: "green", rotation: 0, visible: true, opacity: 1, order: 0, hitFlashFrames: 0, angularVelocity: 0 } as any);
         }
 
         snapshot.entities.push(entity);
-        snapshot.componentData["Transform"][entity] = { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 };
+        snapshot.componentData["Transform"][entity] = { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1, worldX: playerState.x, worldY: playerState.y, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false };
 
-        world.mutateComponent<RenderComponent>(entity, "Render", render => {
+        world.mutateComponent(entity, "Render", render => {
           render.color = playerState.alive ? "green" : "red";
         });
       });
@@ -212,13 +223,13 @@ export class SpaceInvadersGame
 
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
-          commands.addComponent(entity, { type: "Invader", row: 0, col: 0, points: 10 } as import("./types/SpaceInvadersTypes").InvaderComponent);
-          commands.addComponent(entity, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0 } as RenderComponent);
+          commands.addComponent(entity, { type: "Invader", row: 0, col: 0, points: 10 } as any);
+          commands.addComponent(entity, { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1, worldX: invaderState.x, worldY: invaderState.y, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false } as any);
+          commands.addComponent(entity, { type: "Render", shape: "invader", size: 15, color: "white", rotation: 0, visible: true, opacity: 1, order: 0, hitFlashFrames: 0, angularVelocity: 0 } as any);
         }
 
         snapshot.entities.push(entity);
-        snapshot.componentData["Transform"][entity] = { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1 };
+        snapshot.componentData["Transform"][entity] = { type: "Transform", x: invaderState.x, y: invaderState.y, rotation: 0, scaleX: 1, scaleY: 1, worldX: invaderState.x, worldY: invaderState.y, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false };
       });
     }
 
@@ -231,20 +242,20 @@ export class SpaceInvadersGame
 
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
-          commands.addComponent(entity, { type: "PlayerBullet" } as Component);
-          commands.addComponent(entity, { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "player_bullet", size: 5, color: "yellow", rotation: 0 } as RenderComponent);
+          commands.addComponent(entity, { type: "PlayerBullet" } as any);
+          commands.addComponent(entity, { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1, worldX: bulletState.x, worldY: bulletState.y, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false } as any);
+          commands.addComponent(entity, { type: "Render", shape: "player_bullet", size: 5, color: "yellow", rotation: 0, visible: true, opacity: 1, order: 0, hitFlashFrames: 0, angularVelocity: 0 } as any);
         }
 
         snapshot.entities.push(entity);
-        snapshot.componentData["Transform"][entity] = { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1 };
+        snapshot.componentData["Transform"][entity] = { type: "Transform", x: bulletState.x, y: bulletState.y, rotation: 0, scaleX: 1, scaleY: 1, worldX: bulletState.x, worldY: bulletState.y, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false };
       });
     }
 
     this.networkManager.processServerUpdate(snapshot.tick, snapshot);
 
     // Cleanup removed entities
-    replicator.getMappings().forEach((entity, serverId) => {
+    replicator.getMappings().forEach((entity: number, serverId: string) => {
       if (!currentServerEntities.has(serverId)) {
         commands.removeEntity(entity);
         replicator.removeMapping(serverId);
@@ -265,8 +276,7 @@ export class SpaceInvadersGame
     if (__DEV__) console.log("[SpaceInvadersGame] Simulation started");
   }
 
-  public override stop(): void {
-    super.stop();
+  public stop(): void {
     if (__DEV__) console.log("[SpaceInvadersGame] Simulation stopped");
   }
 
@@ -285,14 +295,24 @@ export class SpaceInvadersGame
 
 export class NullSpaceInvadersGame implements ISpaceInvadersGame {
   public isMultiplayer = false;
-  private _world = new World();
+  public gameId = "spaceinvaders";
+  private _world = new World<SpaceInvadersComponentRegistry>();
   private _loop = new GameLoop();
   public getWorld() { return this._world; }
   public getGameLoop() { return this._loop; }
+  public getEventBus() { return new EventBus(); }
   public isPausedState() { return false; }
   public isGameOver() { return false; }
   public getGameState() { return INITIAL_GAME_STATE; }
   public getSeed() { return 0; }
-  public subscribe(_listener: UpdateListener<unknown>) { return () => {}; }
+  public async init() {}
+  public start() {}
+  public pause() {}
+  public resume() {}
+  public destroy() {}
+  public async restart() {}
+  public subscribe(cb: (state: GameStateComponent) => void) { return () => {}; }
+  public setInput(input: Partial<InputState>) {}
   public initializeRenderer() {}
+  public getInputSystem() { return new UnifiedInputSystem() as any; }
 }

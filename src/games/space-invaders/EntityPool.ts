@@ -2,6 +2,7 @@ import { World } from "@tiny-aster/core";
 import { CollisionLayers } from "@/src/games/shared/types/CollisionLayers";
 import { Entity, Component, BoundaryComponent, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, ReclaimableComponent } from "@tiny-aster/core";
 import { SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
+import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 import { ProjectilePool, ProjectileComponents, ProjectileParams } from "@tiny-aster/core";
 
 interface InvaderBulletComponents extends ProjectileComponents {
@@ -16,9 +17,9 @@ export class PlayerBulletPool extends ProjectilePool<InvaderBulletComponents, Pr
   constructor() {
     super({
       factory: () => ({
-        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: null } as TransformComponent,
-        velocity: { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent,
-        render: { type: "Render", shape: "player_bullet", size: 0, color: "", rotation: 0 } as RenderComponent,
+        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, worldX: 0, worldY: 0, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false } as TransformComponent,
+        velocity: { type: "Velocity", vx: 0, vy: 0, angularVelocity: 0 } as VelocityComponent,
+        render: { type: "Render", shape: "player_bullet", size: 0, color: "", rotation: 0, visible: true, opacity: 1, order: 0, hitFlashFrames: 0, angularVelocity: 0 } as RenderComponent,
         collider: {
           type: "Collider2D",
           shape: { type: "circle", radius: 0 },
@@ -28,12 +29,12 @@ export class PlayerBulletPool extends ProjectilePool<InvaderBulletComponents, Pr
         } as Collider2DComponent,
         boundary: {
           type: "Boundary",
-          width: 800,
-          height: 600,
-          behavior: "destroy"
+          width: GAME_CONFIG.SCREEN_WIDTH,
+          height: GAME_CONFIG.SCREEN_HEIGHT,
+          mode: "destroy"
         } as BoundaryComponent,
-        ttl: { type: "TTL", remaining: 0, total: 0 },
-        reclaimable: { type: "Reclaimable", poolId: "PlayerBulletPool" } as ReclaimableComponent,
+        ttl: { type: "TTL", remaining: 0, timeLeft: 0 },
+        reclaimable: { type: "Reclaimable", poolId: "PlayerBulletPool", poolName: "PlayerBulletPool" } as ReclaimableComponent,
         bullet: { type: "PlayerBullet" }
       }),
       reset: (data) => {
@@ -41,22 +42,19 @@ export class PlayerBulletPool extends ProjectilePool<InvaderBulletComponents, Pr
         data.position.y = 0;
       },
       initializer: (data, p, world) => {
-        const config = world.getResource<SpaceInvadersConfig>("GameConfig");
         data.position.x = p.x;
         data.position.y = p.y;
-        data.velocity.dx = p.dx;
-        data.velocity.dy = p.dy;
+        data.velocity.vx = p.dx;
+        data.velocity.vy = p.dy;
         data.render.size = p.size;
         data.render.color = p.color;
         if (data.collider.shape.type === "circle") {
             data.collider.shape.radius = p.size;
         }
-        if (config) {
-            data.boundary.width = config.SCREEN_WIDTH;
-            data.boundary.height = config.SCREEN_HEIGHT;
-        }
+        data.boundary.width = GAME_CONFIG.SCREEN_WIDTH;
+        data.boundary.height = GAME_CONFIG.SCREEN_HEIGHT;
         data.ttl.remaining = p.ttl;
-        data.ttl.total = p.ttl;
+        data.ttl.timeLeft = p.ttl;
       }
     });
   }
@@ -73,9 +71,9 @@ export class EnemyBulletPool extends ProjectilePool<InvaderBulletComponents, Pro
   constructor() {
     super({
       factory: () => ({
-        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: null } as TransformComponent,
-        velocity: { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent,
-        render: { type: "Render", shape: "enemy_bullet", size: 0, color: "", rotation: 0 } as RenderComponent,
+        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, worldX: 0, worldY: 0, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false } as TransformComponent,
+        velocity: { type: "Velocity", vx: 0, vy: 0, angularVelocity: 0 } as VelocityComponent,
+        render: { type: "Render", shape: "enemy_bullet", size: 0, color: "", rotation: 0, visible: true, opacity: 1, order: 0, hitFlashFrames: 0, angularVelocity: 0 } as RenderComponent,
         collider: {
           type: "Collider2D",
           shape: { type: "circle", radius: 0 },
@@ -85,12 +83,12 @@ export class EnemyBulletPool extends ProjectilePool<InvaderBulletComponents, Pro
         } as Collider2DComponent,
         boundary: {
           type: "Boundary",
-          width: 800,
-          height: 600,
-          behavior: "destroy"
+          width: GAME_CONFIG.SCREEN_WIDTH,
+          height: GAME_CONFIG.SCREEN_HEIGHT,
+          mode: "destroy"
         } as BoundaryComponent,
-        ttl: { type: "TTL", remaining: 0, total: 0 },
-        reclaimable: { type: "Reclaimable", poolId: "EnemyBulletPool" } as ReclaimableComponent,
+        ttl: { type: "TTL", remaining: 0, timeLeft: 0 },
+        reclaimable: { type: "Reclaimable", poolId: "EnemyBulletPool", poolName: "EnemyBulletPool" } as ReclaimableComponent,
         bullet: { type: "EnemyBullet" }
       }),
       reset: (data) => {
@@ -98,22 +96,19 @@ export class EnemyBulletPool extends ProjectilePool<InvaderBulletComponents, Pro
         data.position.y = 0;
       },
       initializer: (data, p, world) => {
-        const config = world.getResource<SpaceInvadersConfig>("GameConfig");
         data.position.x = p.x;
         data.position.y = p.y;
-        data.velocity.dx = p.dx;
-        data.velocity.dy = p.dy;
+        data.velocity.vx = p.dx;
+        data.velocity.vy = p.dy;
         data.render.size = p.size;
         data.render.color = p.color;
         if (data.collider.shape.type === "circle") {
             data.collider.shape.radius = p.size;
         }
-        if (config) {
-            data.boundary.width = config.SCREEN_WIDTH;
-            data.boundary.height = config.SCREEN_HEIGHT;
-        }
+        data.boundary.width = GAME_CONFIG.SCREEN_WIDTH;
+        data.boundary.height = GAME_CONFIG.SCREEN_HEIGHT;
         data.ttl.remaining = p.ttl;
-        data.ttl.total = p.ttl;
+        data.ttl.timeLeft = p.ttl;
       }
     });
   }
@@ -130,16 +125,16 @@ export class ParticlePool extends ProjectilePool<ProjectileComponents, Projectil
   constructor() {
     super({
       factory: () => ({
-        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, parentEntity: null } as TransformComponent,
-        velocity: { type: "Velocity", dx: 0, dy: 0 } as VelocityComponent,
-        render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0 } as RenderComponent,
+        position: { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, worldX: 0, worldY: 0, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false } as TransformComponent,
+        velocity: { type: "Velocity", vx: 0, vy: 0, angularVelocity: 0 } as VelocityComponent,
+        render: { type: "Render", shape: "particle", size: 0, color: "", rotation: 0, visible: true, opacity: 1, order: 0, hitFlashFrames: 0, angularVelocity: 0 } as RenderComponent,
         collider: {
             type: "Collider2D",
             shape: { type: "circle", radius: 0 },
             layer: 0, mask: 0, offsetX: 0, offsetY: 0, isTrigger: true, enabled: false
         } as Collider2DComponent,
-        ttl: { type: "TTL", remaining: 0, total: 0 },
-        reclaimable: { type: "Reclaimable", poolId: "ParticlePool" } as ReclaimableComponent
+        ttl: { type: "TTL", remaining: 0, timeLeft: 0 },
+        reclaimable: { type: "Reclaimable", poolId: "ParticlePool", poolName: "ParticlePool" } as ReclaimableComponent
       }),
       reset: (data) => {
         data.position.x = 0;
@@ -148,12 +143,12 @@ export class ParticlePool extends ProjectilePool<ProjectileComponents, Projectil
       initializer: (data, p) => {
         data.position.x = p.x;
         data.position.y = p.y;
-        data.velocity.dx = p.dx;
-        data.velocity.dy = p.dy;
+        data.velocity.vx = p.dx;
+        data.velocity.vy = p.dy;
         data.render.size = p.size;
         data.render.color = p.color;
         data.ttl.remaining = p.ttl;
-        data.ttl.total = p.ttl;
+        data.ttl.timeLeft = p.ttl;
       }
     });
   }

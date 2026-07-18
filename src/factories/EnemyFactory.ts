@@ -56,7 +56,13 @@ export class EnemyFactory {
       y,
       rotation: overrides.rotation ?? 0,
       scaleX: 1,
-      scaleY: 1
+      scaleY: 1,
+      worldX: x,
+      worldY: y,
+      worldRotation: overrides.rotation ?? 0,
+      worldScaleX: 1,
+      worldScaleY: 1,
+      dirty: false
     } as TransformComponent);
 
     // 2. Velocity & Physics
@@ -66,9 +72,9 @@ export class EnemyFactory {
 
       add({
         type: "Velocity",
-        dx,
-        dy,
-        vAngle: 0
+        vx: dx,
+        vy: dy,
+        angularVelocity: 0
       } as VelocityComponent);
 
       if (blueprint.physics.boundaryBehavior) {
@@ -77,7 +83,7 @@ export class EnemyFactory {
             type: "Boundary",
             width: (gameConfig?.SCREEN_WIDTH as number) ?? 800,
             height: (gameConfig?.SCREEN_HEIGHT as number) ?? 600,
-            behavior: blueprint.physics.boundaryBehavior
+            mode: blueprint.physics.boundaryBehavior as any
           } as BoundaryComponent);
       }
 
@@ -92,7 +98,7 @@ export class EnemyFactory {
           add({
               type: "TTL",
               remaining: blueprint.physics.ttl,
-              total: blueprint.physics.ttl
+              timeLeft: blueprint.physics.ttl
           } as TTLComponent);
       }
     }
@@ -104,10 +110,14 @@ export class EnemyFactory {
       size: blueprint.render.size,
       color: overrides.color ?? blueprint.render.color,
       rotation: overrides.rotation ?? 0,
-      zIndex: blueprint.render.zIndex ?? 0,
+      visible: true,
+      opacity: 1,
+      order: blueprint.render.zIndex ?? 0,
+      hitFlashFrames: 0,
+      angularVelocity: 0,
       vertices: overrides.vertices,
       data: overrides.renderData ?? {}
-    } as RenderComponent);
+    } as any as RenderComponent);
 
     // 4. Collision
     add({
@@ -152,8 +162,10 @@ export class EnemyFactory {
     add({
       type: "SpatialNode",
       lastCellKeys: [],
-      active: true
-    } as SpatialNodeComponent);
+      active: true,
+      gridX: 0,
+      gridY: 0
+    } as any as SpatialNodeComponent);
 
     return entity;
   }

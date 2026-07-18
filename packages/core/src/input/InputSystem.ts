@@ -9,6 +9,11 @@ export interface InputSystem {
   setOverride(action: string, pressed: boolean): void;
 
   /**
+   * Clears a manual input action override.
+   */
+  clearOverride(action: string): void;
+
+  /**
    * Returns the state of an action.
    */
   getAction(action: string): boolean;

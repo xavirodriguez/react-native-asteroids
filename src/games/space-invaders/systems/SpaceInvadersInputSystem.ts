@@ -1,16 +1,23 @@
-import { System } from "@tiny-aster/core";
-import { World } from "@tiny-aster/core";
-import { TransformComponent, VelocityComponent, InputStateComponent } from "@tiny-aster/core";
-import { InputComponent } from "../types/SpaceInvadersTypes";
+import { System, World } from "@tiny-aster/core";
+import { TransformComponent, VelocityComponent } from "@tiny-aster/core";
+import { InputComponent, SpaceInvadersComponentRegistry } from "../types/SpaceInvadersTypes";
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { PlayerBulletPool } from "../EntityPool";
 import { createPlayerBullet } from "../EntityFactory";
-import { InputUtils } from "@tiny-aster/core";
+
+const InputUtils = {
+  isPressed(inputState: { buttons: Record<string, boolean> }, button: string): boolean {
+    return !!inputState.buttons[button];
+  },
+  getAxis(inputState: { axes: Record<string, number> }, axis: string): number {
+    return inputState.axes[axis] || 0;
+  }
+};
 
 /**
  * System that handles player input and movement.
  */
-export class SpaceInvadersInputSystem extends System {
+export class SpaceInvadersInputSystem extends System<SpaceInvadersComponentRegistry> {
   private bulletPool: PlayerBulletPool;
   private config?: SpaceInvadersConfig;
 
@@ -25,18 +32,18 @@ export class SpaceInvadersInputSystem extends System {
     this.isMultiplayer = active;
   }
 
-  public update(world: World, deltaTime: number): void {
+  public update(world: World<SpaceInvadersComponentRegistry>, deltaTime: number): void {
     if (!this.config) {
         this.config = world.getResource<SpaceInvadersConfig>("GameConfig")!;
     }
     if (this.isMultiplayer) return;
-    const inputState = world.getSingleton<InputStateComponent>("InputState");
+    const inputState = world.getSingleton("InputState");
     const entities = world.query("Player", "Input", "Transform", "Velocity");
 
     entities.forEach((entity) => {
-      const input = world.getComponent<InputComponent>(entity, "Input");
-      const pos = world.getComponent<TransformComponent>(entity, "Transform");
-      const vel = world.getComponent<VelocityComponent>(entity, "Velocity");
+      const input = world.getComponent(entity, "Input");
+      const pos = world.getComponent(entity, "Transform");
+      const vel = world.getComponent(entity, "Velocity");
 
       if (input && pos && vel) {
         // 1. Cálculos fuera de la mutación
@@ -82,7 +89,7 @@ export class SpaceInvadersInputSystem extends System {
             input.moveRight !== nextMoveRight ||
             input.shoot !== nextShoot ||
             input.shootCooldownRemaining !== nextShootCooldownRemaining) {
-          world.mutateComponent<InputComponent>(entity, "Input", i => {
+          world.mutateComponent(entity, "Input", i => {
             i.moveLeft = nextMoveLeft;
             i.moveRight = nextMoveRight;
             i.shoot = nextShoot;
@@ -90,9 +97,9 @@ export class SpaceInvadersInputSystem extends System {
           });
         }
 
-        if (vel.dx !== targetDx) {
-          world.mutateComponent<VelocityComponent>(entity, "Velocity", v => {
-            v.dx = targetDx;
+        if (vel.vx !== targetDx) {
+          world.mutateComponent(entity, "Velocity", v => {
+            v.vx = targetDx;
           });
         }
       }

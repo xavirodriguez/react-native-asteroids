@@ -47,7 +47,7 @@ export const GameRenderer = <TRegistry extends ComponentRegistry>({
   }, true);
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
+    if ((Platform.OS as string) === "web") return;
 
     // Dynamically import Skia components for native
     const { Canvas } = require("@shopify/react-native-skia");
@@ -60,7 +60,7 @@ export const GameRenderer = <TRegistry extends ComponentRegistry>({
         }
     }
 
-    if (Platform.OS !== "web") {
+    if ((Platform.OS as string) !== "web") {
       gameLoop.stopInternalLoop();
     }
 

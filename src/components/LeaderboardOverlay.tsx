@@ -23,7 +23,7 @@ export const LeaderboardOverlay: React.FC<LeaderboardOverlayProps> = ({ gameId, 
       try {
         const dateKey = new Date().toISOString().split('T')[0].replace(/-/g, '');
         const data = await LeaderboardService.fetchDailyLeaderboard(gameId, dateKey);
-        setScores(data);
+        setScores(data as LeaderboardEntry[]);
       } catch (_e) {
         setError("No se pudo cargar el ranking");
       } finally {

@@ -5,7 +5,7 @@ import { Renderer } from "@tiny-aster/core";
 /**
  * Public interface for the Flappy Bird game controller.
  */
-export interface IFlappyBirdGame extends IGame<IFlappyBirdGame> {
+export interface IFlappyBirdGame extends IGame<FlappyBirdState> {
   isMultiplayer: boolean;
   getGameState(): FlappyBirdState;
   setInput(input: Partial<FlappyBirdInput>): void;

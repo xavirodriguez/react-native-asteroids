@@ -12,14 +12,16 @@ import { BaseGameStateSystem } from "@tiny-aster/core";
 /**
  * System that manages game logic: scores, spawner, and game over condition.
  */
-export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdState> implements IFlappyStateSystem {
+import { FlappyBirdComponentRegistry } from "../types/FlappyBirdTypes";
+
+export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdState, FlappyBirdComponentRegistry> implements IFlappyStateSystem {
   constructor(game: IFlappyBirdGame, private config: typeof FLAPPY_CONFIG = FLAPPY_CONFIG) {
-    super(game as unknown as IFlappyBirdGame & BaseGame<unknown, Record<string, boolean>>);
+    super("FlappyState");
   }
 
-  protected updateGameState(world: World, gameState: FlappyBirdState, deltaTime: number): void {
+  protected updateGameState(world: World<FlappyBirdComponentRegistry>, gameState: FlappyBirdState, deltaTime: number): void {
     // Update Pipe Spawner
-    world.mutateSingleton<FlappyBirdState>("FlappyState", (gs) => {
+    world.mutateSingleton("FlappyState", (gs) => {
         gs.pipeSpawnTimer += deltaTime;
     });
 
@@ -32,7 +34,7 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
         gapY,
         deferred: true
       });
-      world.mutateSingleton<FlappyBirdState>("FlappyState", (gs) => {
+      world.mutateSingleton("FlappyState", (gs) => {
           gs.pipeSpawnTimer = 0;
       });
     }
@@ -40,40 +42,44 @@ export class FlappyBirdGameStateSystem extends BaseGameStateSystem<FlappyBirdSta
     // Remove pipes that are off-screen and update score
     const pipes = world.query("Pipe", "Transform");
     pipes.forEach((entity) => {
-      const pos = world.getComponent<TransformComponent>(entity, "Transform");
-      const pipe = world.getComponent<PipeComponent>(entity, "Pipe");
+      const pos = world.getComponent(entity, "Transform");
+      const pipe = world.getComponent(entity, "Pipe");
       if (pos && pipe) {
         if (pos.x < -this.config.PIPE_WIDTH) {
           world.getCommandBuffer().removeEntity(entity);
         } else if (!pipe.scored && pos.x < this.config.BIRD_X) {
-          world.mutateComponent<PipeComponent>(entity, "Pipe", p => {
+          world.mutateComponent(entity, "Pipe", p => {
              p.scored = true;
           });
-          world.mutateSingleton<FlappyBirdState>("FlappyState", (gs) => {
+          world.mutateSingleton("FlappyState", (gs) => {
               gs.score += gs.comboMultiplier || 1;
               if (gs.score > gs.highScore) {
                 gs.highScore = gs.score;
               }
           });
           const eventBus = world.getResource<EventBus>("EventBus");
-          if (eventBus) eventBus.emitDeferred("pipe:passed");
+          if (eventBus) eventBus.emitDeferred("pipe:passed" as any, {} as any);
         }
       }
     });
   }
 
-  protected getGameState(world: World): FlappyBirdState | undefined {
-    return world.getSingleton<FlappyBirdState>("FlappyState");
+  protected getGameState(world: World<FlappyBirdComponentRegistry>): FlappyBirdState | undefined {
+    return world.getSingleton("FlappyState");
   }
 
   protected evaluateGameOverCondition(state: FlappyBirdState): boolean {
     return state.isGameOver;
   }
 
-  public resetGameOverState(world?: World): void {
-    const w = world || this._world;
+  public isGameOver(): boolean {
+    return this.getGameState(this._world as World<FlappyBirdComponentRegistry>)?.isGameOver ?? false;
+  }
+
+  public resetGameOverState(world?: World<FlappyBirdComponentRegistry>): void {
+    const w = world || (this._world as World<FlappyBirdComponentRegistry>);
     if (w) {
-        w.mutateSingleton<FlappyBirdState>("FlappyState", (state) => {
+        w.mutateSingleton("FlappyState", (state) => {
             state.gameOverLogged = false;
             state.isGameOver = false;
             state.score = 0;

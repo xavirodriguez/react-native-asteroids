@@ -13,8 +13,28 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { BaseGame } from "@tiny-aster/core";
-import type { EventLogEntry, FrameStats, ColliderShapeInfo } from "@tiny-aster/core";
 import Svg, { Circle, Rect } from 'react-native-svg';
+
+export interface EventLogEntry {
+  timestamp: number;
+  event: string;
+  payload: any;
+}
+
+export interface FrameStats {
+  fps: number;
+  frameTime: number;
+  tick: number;
+  alpha: number;
+}
+
+export interface ColliderShapeInfo {
+  type: "circle" | "aabb";
+  x: number;
+  y: number;
+  isTrigger: boolean;
+  shape: any;
+}
 
 interface DebugOverlayProps {
   game: BaseGame<any, any> | null;

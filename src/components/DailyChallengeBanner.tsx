@@ -13,10 +13,10 @@ export const DailyChallengeBanner: React.FC<DailyChallengeBannerProps> = ({ game
 
   useEffect(() => {
     const fetchChallenge = async () => {
-      const currentSeed = DailyChallengeService.getCurrentSeed();
-      const status = await DailyChallengeService.getChallengeStatus(gameId, currentSeed);
+      const currentSeed = DailyChallengeService.getDailySeed(gameId);
+      const hasUsed = await DailyChallengeService.hasTodayAttemptBeenUsed(gameId);
       setSeed(currentSeed);
-      setHasPlayed(status.hasUsedAttempt);
+      setHasPlayed(hasUsed);
     };
     fetchChallenge();
   }, [gameId]);

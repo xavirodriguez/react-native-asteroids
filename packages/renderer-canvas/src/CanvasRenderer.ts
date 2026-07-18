@@ -7,7 +7,7 @@ export class CanvasRenderer<TRegistry extends CoreComponentRegistry = CoreCompon
   private sortedEntities: Entity[] = [];
 
   constructor(
-    private readonly shapeDrawers: Map<string, ShapeDrawer<CanvasRenderingContext2D, TRegistry>>
+    private readonly shapeDrawers: Map<string, ShapeDrawer<CanvasRenderingContext2D, TRegistry>> = new Map()
   ) {}
 
   public render(world: World<TRegistry>, ctx: CanvasRenderingContext2D): void {

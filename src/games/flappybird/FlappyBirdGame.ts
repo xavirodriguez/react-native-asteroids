@@ -1,17 +1,17 @@
-import { BaseGame, WorldSnapshot, UpdateListener, GameLoop, World } from "@tiny-aster/core";
-import { FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE, FlappyBirdState, BirdComponent, PipeComponent } from "./types/FlappyBirdTypes";
+import { BaseGame, WorldSnapshot, GameLoop, World } from "@tiny-aster/core";
+import { FlappyBirdInput, FLAPPY_CONFIG, INITIAL_FLAPPY_STATE, FlappyBirdState, BirdComponent, PipeComponent, FlappyBirdComponentRegistry } from "./types/FlappyBirdTypes";
 import { FlappyBirdGameStateSystem } from "./systems/FlappyBirdGameStateSystem";
 import { FlappyBirdInputSystem } from "./systems/FlappyBirdInputSystem";
 import { FlappyBirdCollisionSystem } from "./systems/FlappyBirdCollisionSystem";
 import { FlappyBirdGlideSystem } from "./systems/FlappyBirdGlideSystem";
 import { FlappyBirdRenderSystem } from "./systems/FlappyBirdRenderSystem";
 import { IFlappyBirdGame } from "./types/GameInterfaces";
-import { InputBufferSystem } from "@tiny-aster/core";
+import { InputBufferSystem } from "./systems/FlappyBirdInputSystem";
 import { MovementSystem } from "@tiny-aster/core";
 import { CollisionSystem2D } from "@tiny-aster/core";
 import { JuiceSystem } from "@tiny-aster/core";
 import { Renderer } from "@tiny-aster/core";
-import { TransformComponent, RenderComponent } from "@tiny-aster/core";
+import { TransformComponent, RenderComponent, EventBus, UnifiedInputSystem } from "@tiny-aster/core";
 import {
   createBird,
   createGameState,
@@ -37,13 +37,14 @@ import { SystemPhase } from "@tiny-aster/core";
  * Utiliza un sistema de gravedad simple y una única acción de entrada ("jump").
  */
 export class FlappyBirdGame
-  extends BaseGame<FlappyBirdState, FlappyBirdInput>
+  extends BaseGame<FlappyBirdState, FlappyBirdInput, FlappyBirdComponentRegistry>
   implements IFlappyBirdGame {
 
   private gameStateSystem!: FlappyBirdGameStateSystem;
   private networkManager!: NetworkManager;
   public readonly gameId = "flappybird";
   private config!: typeof FLAPPY_CONFIG;
+  public isMultiplayer = false;
 
   constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown> } = {}) {
     const seed = config.gameOptions?.seed as number || config.seed;
@@ -53,13 +54,14 @@ export class FlappyBirdGame
       isMultiplayer: config.isMultiplayer,
       gameOptions: { ...config.gameOptions, seed }
     });
+    this.isMultiplayer = !!config.isMultiplayer;
   }
 
   protected override async onRegisterSystems(): Promise<void> {
     const mutators = MutatorService.getActiveMutatorsForGame(this.gameId);
     const enabled = await MutatorService.isMutatorModeEnabled();
     this.config = enabled
-      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...FLAPPY_CONFIG })
+      ? mutators.reduce((cfg, m) => m.apply(cfg), { ...(FLAPPY_CONFIG as any) })
       : { ...FLAPPY_CONFIG };
     this.world.setResource("ScreenConfig", { width: this.config.SCREEN_WIDTH, height: this.config.SCREEN_HEIGHT });
     this._config.gameOptions = { ...this._config.gameOptions, ...this.config };
@@ -78,16 +80,16 @@ export class FlappyBirdGame
     this.world.addSystem(new InputBufferSystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(inputSys, { phase: SystemPhase.Simulation });
     this.world.addSystem(new FlappyBirdGlideSystem(), { phase: SystemPhase.Simulation });
-    this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
-    this.world.addSystem(new CollisionSystem2D(), { phase: SystemPhase.Collision });
+    this.world.addSystem(new MovementSystem() as any, { phase: SystemPhase.Simulation });
+    this.world.addSystem(new CollisionSystem2D() as any, { phase: SystemPhase.Collision });
     this.world.addSystem(new FlappyBirdCollisionSystem(this), { phase: SystemPhase.GameRules });
     this.world.addSystem(this.gameStateSystem, { phase: SystemPhase.GameRules });
 
     const activeMutators = MutatorService.getActiveMutatorsForGame(this.gameId);
-    this.world.addSystem(new MutatorSystem(activeMutators), { phase: SystemPhase.Simulation });
+    this.world.addSystem(new MutatorSystem(activeMutators) as any, { phase: SystemPhase.Simulation });
 
     // Visual / Presentation
-    this.world.addSystem(new JuiceSystem(), { phase: SystemPhase.Presentation });
+    this.world.addSystem(new JuiceSystem() as any, { phase: SystemPhase.Presentation });
     this.world.addSystem(new FlappyBirdRenderSystem(), { phase: SystemPhase.Presentation });
 
     if (!this.networkManager) {
@@ -96,14 +98,14 @@ export class FlappyBirdGame
         interpolationDelay: 100
       });
     }
-    this.world.addSystem(new ReplicationSystem(this.networkManager), { phase: SystemPhase.Presentation });
+    this.world.addSystem(new ReplicationSystem(this.networkManager) as any, { phase: SystemPhase.Presentation });
   }
 
   protected override async onInitializeEntities(): Promise<void> {
     if (this.isMultiplayer) return;
-    createGameState(this.world);
-    createBird({ world: this.world, x: FLAPPY_CONFIG.BIRD_X, y: FLAPPY_CONFIG.BIRD_START_Y });
-    createGround(this.world);
+    createGameState(this.world as any);
+    createBird({ world: this.world as any, x: FLAPPY_CONFIG.BIRD_X, y: FLAPPY_CONFIG.BIRD_START_Y });
+    createGround(this.world as any);
   }
 
   protected override async onBeforeRestart(): Promise<void> {
@@ -135,6 +137,12 @@ export class FlappyBirdGame
     this.isMultiplayer = active;
   }
 
+  public setInput(input: Partial<FlappyBirdInput>) {
+    Object.entries(input).forEach(([key, value]) => {
+      this.unifiedInput.setOverride(key, !!value);
+    });
+  }
+
   public updateFromServer(state: Record<string, unknown>) {
     if (!this.isMultiplayer || !state) return;
     const world = this.getWorld();
@@ -151,8 +159,8 @@ export class FlappyBirdGame
 
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
-          commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "bird", size: 15, color: "yellow", rotation: 0 } as RenderComponent);
+          commands.addComponent(entity, { type: "Transform", x: playerState.x, y: playerState.y, rotation: 0, scaleX: 1, scaleY: 1, worldX: playerState.x, worldY: playerState.y, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false } as TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "bird", size: 15, color: "yellow", rotation: 0, visible: true, opacity: 1, order: 0, hitFlashFrames: 0, angularVelocity: 0 } as RenderComponent);
           commands.addComponent(entity, {
             type: "Bird",
             velocityY: playerState.velocityY,
@@ -162,12 +170,12 @@ export class FlappyBirdGame
           } as BirdComponent);
         }
 
-        world.mutateComponent<BirdComponent>(entity, "Bird", bird => {
+        world.mutateComponent(entity, "Bird", bird => {
           bird.isAlive = playerState.alive;
           bird.velocityY = playerState.velocityY;
         });
 
-        world.mutateComponent<RenderComponent>(entity, "Render", render => {
+        world.mutateComponent(entity, "Render", render => {
           render.color = playerState.alive ? "yellow" : "gray";
         });
       });
@@ -181,8 +189,8 @@ export class FlappyBirdGame
 
         const entity = replicator.resolveEntity(serverId, world);
         if (!world.hasComponent(entity, "Transform")) {
-          commands.addComponent(entity, { type: "Transform", x: pipeState.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } as TransformComponent);
-          commands.addComponent(entity, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0 } as RenderComponent);
+          commands.addComponent(entity, { type: "Transform", x: pipeState.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1, worldX: pipeState.x, worldY: 0, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false } as TransformComponent);
+          commands.addComponent(entity, { type: "Render", shape: "pipe", size: 60, color: "green", rotation: 0, visible: true, opacity: 1, order: 0, hitFlashFrames: 0, angularVelocity: 0 } as RenderComponent);
           commands.addComponent(entity, { type: "Pipe", gapY: pipeState.gapY, gapSize: 140, scored: false } as PipeComponent);
         }
       });
@@ -194,6 +202,8 @@ export class FlappyBirdGame
         entities: [],
         componentData: { Transform: {} },
         stateVersion: 0,
+        structureVersion: 0,
+        seed: 0,
         nextEntityId: 0,
         freeEntities: []
     };
@@ -203,7 +213,7 @@ export class FlappyBirdGame
             const entityId = replicator.getLocalId(`player_${sessionId}`);
             if (entityId !== undefined) {
                 snapshot.entities.push(entityId);
-                snapshot.componentData["Transform"][entityId] = { type: "Transform", x: p.x, y: p.y, rotation: 0, scaleX: 1, scaleY: 1 };
+                snapshot.componentData["Transform"][entityId] = { type: "Transform", x: (p as any).x, y: (p as any).y, rotation: 0, scaleX: 1, scaleY: 1, worldX: (p as any).x, worldY: (p as any).y, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false };
             }
         });
     }
@@ -212,7 +222,7 @@ export class FlappyBirdGame
             const entityId = replicator.getLocalId(`pipe_${id}`);
             if (entityId !== undefined) {
                 snapshot.entities.push(entityId);
-                snapshot.componentData["Transform"][entityId] = { type: "Transform", x: p.x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 };
+                snapshot.componentData["Transform"][entityId] = { type: "Transform", x: (p as any).x, y: 0, rotation: 0, scaleX: 1, scaleY: 1, worldX: (p as any).x, worldY: 0, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false };
             }
         });
     }
@@ -220,7 +230,7 @@ export class FlappyBirdGame
     this.networkManager.processServerUpdate(snapshot.tick, snapshot);
 
     // Cleanup removed entities
-    replicator.getMappings().forEach((entity, serverId) => {
+    replicator.getMappings().forEach((entity: number, serverId: string) => {
       if (!currentServerEntities.has(serverId)) {
         commands.removeEntity(entity);
         replicator.removeMapping(serverId);
@@ -232,37 +242,46 @@ export class FlappyBirdGame
     }
   }
 
-  public initializeRenderer(renderer: Renderer<unknown>): void {
-    if (renderer.type === "canvas") {
-      renderer.registerShape("bird", drawFlappyBird);
-      renderer.registerShape("pipe", drawFlappyPipe);
-      renderer.registerShape("ground", drawFlappyGround);
-      renderer.registerBackgroundEffect("scrollingSky", scrollingBackgroundEffect);
+  public initializeRenderer(renderer: Renderer<any>): void {
+    if ((renderer as any).type === "canvas") {
+      (renderer as any).registerShape("bird", drawFlappyBird);
+      (renderer as any).registerShape("pipe", drawFlappyPipe);
+      (renderer as any).registerShape("ground", drawFlappyGround);
+      (renderer as any).registerBackgroundEffect("scrollingSky", scrollingBackgroundEffect);
     }
   }
 
   public getGameState(): FlappyBirdState {
-    const state = this.getWorld().getSingleton<FlappyBirdState>("FlappyState");
+    const state = this.getWorld().getSingleton("FlappyState");
     return state ? { ...state } : INITIAL_FLAPPY_STATE;
   }
 
   public isGameOver(): boolean {
     return this.getGameState().isGameOver;
   }
+
+  public getWorld(): World<FlappyBirdComponentRegistry> {
+    return this.world;
+  }
 }
 
 export class NullFlappyBirdGame implements IFlappyBirdGame {
-  private _world = new World();
+  public isMultiplayer = false;
+  public gameId = "flappybird";
+  private _world = new World<FlappyBirdComponentRegistry>();
   private _loop = new GameLoop();
+  public async init() {}
   public start() {} public stop() {} public pause() {} public resume() {}
   public async restart() {} public destroy() {}
   public getWorld() { return this._world; }
   public getGameLoop() { return this._loop; }
+  public getEventBus() { return new EventBus(); }
   public isPausedState() { return false; }
   public isGameOver() { return false; }
   public getGameState() { return INITIAL_FLAPPY_STATE; }
   public getSeed() { return 0; }
-  public setInput() {}
-  public subscribe(_listener: UpdateListener<unknown>) { return () => {}; }
+  public setInput(input: Partial<FlappyBirdInput>) {}
+  public subscribe(cb: (state: FlappyBirdState) => void) { return () => {}; }
   public initializeRenderer() {}
+  public getInputSystem() { return new UnifiedInputSystem() as any; }
 }
