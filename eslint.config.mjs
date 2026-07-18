@@ -11,6 +11,7 @@ export default tseslint.config(
     // Global ignores must be the first object in the array for Flat Config
     ignores: [
       "**/node_modules/**",
+      "**/dist/**",
       "dist/**",
       ".expo/**",
       "web-build/**",
