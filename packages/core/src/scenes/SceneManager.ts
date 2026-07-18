@@ -1,6 +1,7 @@
 import { World } from "../ecs/World";
 import { Scene } from "./Scene";
 import { runLifecycleSync, runLifecycleAsync } from "../utils/LifecycleUtils";
+import { EventBus } from "../events/EventBus";
 
 /**
  * Operational states for the Scene Manager.
@@ -43,6 +44,10 @@ export class SceneManager {
   private transitionQueue: (() => Promise<void>)[] = [];
   private isProcessingTransition = false;
   private world: World;
+  private transitionToken = 0;
+
+  /** Timeout for transition loading/onEnter phase in milliseconds. */
+  public transitionTimeout = 5000;
 
   /**
    * Optional hook executed whenever a new world context is established for a scene.
@@ -110,6 +115,7 @@ export class SceneManager {
    * Limpia la pila actual y reemplaza la escena activa.
    *
    * @param scene - La nueva instancia de {@link Scene} a cargar.
+   * @param options - Opciones de configuración para la transición.
    *
    * @remarks
    * 1. Sale de la escena actual (onExit).
@@ -123,42 +129,108 @@ export class SceneManager {
    * la pila y pase a ser la escena activa.
    * @sideEffect Se espera un incremento en la versión del mundo que apoye el re-renderizado.
    */
-  public async transitionTo(scene: Scene): Promise<void> {
+  public async transitionTo(scene: Scene, options?: { timeout?: number }): Promise<void> {
     return this.enqueueTransition(async () => {
-      const previousState = this.state;
+      const eventBus = this.world.getResource<EventBus>("EventBus");
+      if (eventBus) {
+        eventBus.emit("scene:transition:start" as any, { scene } as any);
+      }
+
+      const myToken = ++this.transitionToken;
+      const oldScene = this.currentScene;
+      const oldStack = [...this.sceneStack];
+      const oldState = this.state;
+      const timeoutMs = options?.timeout ?? this.transitionTimeout;
+
       try {
         // 1. Unload current scene if exists
         if (this.currentScene) {
           this.state = SceneState.UNLOADING;
-          const oldScene = this.currentScene;
+          const oldSceneRef = this.currentScene;
           await runLifecycleAsync(async () => {
-            const sceneAsAny = oldScene as unknown as Record<string, unknown>;
+            const sceneAsAny = oldSceneRef as unknown as Record<string, unknown>;
             if (typeof sceneAsAny.onExit === "function") {
-              await (sceneAsAny.onExit as (w: World) => Promise<void>)(oldScene.getWorld());
+              await (sceneAsAny.onExit as (w: World) => Promise<void>)(oldSceneRef.getWorld());
             }
           });
         }
+
+        // Just in case check token after unload
+        if (myToken !== this.transitionToken) return;
 
         // 2. Load new scene
         this.state = SceneState.LOADING;
         this.currentScene = scene;
         this.sceneStack = [scene];
 
-        if (this.onWorldCreated) {
-          await this.onWorldCreated(scene.getWorld());
-        }
-
-        await runLifecycleAsync(async () => {
-          const sceneAsAny = scene as unknown as Record<string, unknown>;
-          if (typeof sceneAsAny.onEnter === "function") {
-            await (sceneAsAny.onEnter as (w: World) => Promise<void>)(scene.getWorld());
-          }
+        let timeoutId: any;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error("Transition timed out"));
+          }, timeoutMs);
         });
 
+        const loadPromise = (async () => {
+          if (this.onWorldCreated) {
+            await this.onWorldCreated(scene.getWorld());
+          }
+
+          // Check token before calling onEnter
+          if (myToken !== this.transitionToken) return;
+
+          await runLifecycleAsync(async () => {
+            const sceneAsAny = scene as unknown as Record<string, unknown>;
+            if (typeof sceneAsAny.onEnter === "function") {
+              await (sceneAsAny.onEnter as (w: World) => Promise<void>)(scene.getWorld());
+            }
+          });
+        })();
+
+        try {
+          await Promise.race([loadPromise, timeoutPromise]);
+        } finally {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+        }
+
+        // Check token again before finalizing
+        if (myToken !== this.transitionToken) return;
+
         this.state = SceneState.ACTIVE;
-      } catch (error) {
+
+        if (eventBus) {
+          eventBus.emit("scene:transition:success" as any, { scene } as any);
+        }
+      } catch (error: any) {
+        if (myToken !== this.transitionToken) return;
+
+        this.transitionToken++; // Obsolete this transition token to prevent any future/delayed execution
+
+        const isTimeout = error?.message === "Transition timed out";
+
+        if (eventBus) {
+          if (isTimeout) {
+            eventBus.emit("scene:transition:timeout" as any, { scene, error } as any);
+          } else {
+            eventBus.emit("scene:transition:error" as any, { scene, error } as any);
+          }
+        }
+
         console.error("SceneManager: Transition failed", error);
-        this.state = previousState;
+
+        // Rollback
+        this.currentScene = oldScene;
+        this.sceneStack = oldStack;
+        this.state = oldState;
+
+        if (oldScene) {
+          const isOldScenePaused = (oldScene as any).isPaused === true || (oldScene as any).paused === true;
+          if (isOldScenePaused) {
+            runLifecycleSync(() => oldScene.onResume());
+          }
+        }
+
         throw error;
       }
     });
@@ -172,6 +244,7 @@ export class SceneManager {
    */
   public async push(scene: Scene): Promise<void> {
     return this.enqueueTransition(async () => {
+      this.transitionToken++;
       const previousState = this.state;
       try {
         if (this.currentScene) {
@@ -215,6 +288,7 @@ export class SceneManager {
         return;
       }
 
+      this.transitionToken++;
       const previousState = this.state;
       const poppedScene = this.sceneStack[this.sceneStack.length - 1];
 
@@ -295,5 +369,6 @@ export class SceneManager {
     this.currentScene = null;
     this.transitionQueue = [];
     this.state = SceneState.IDLE;
+    this.transitionToken++;
   }
 }

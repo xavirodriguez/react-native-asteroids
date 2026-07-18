@@ -31,10 +31,20 @@ export type EventHandler<TPayload> = (payload: TPayload, event: string) => void;
  */
 export class EventBus<TEvents extends EventRegistry = EventRegistry> {
   private handlers = new Map<string, Set<EventHandler<unknown>>>();
-  private deferredEvents: { event: string; payload: unknown }[] = [];
+  private primaryBuffer: { event: string; payload: unknown }[] = [];
+  private secondaryBuffer: { event: string; payload: unknown }[] = [];
   private isProcessing = false;
-  private static MAX_RECURSION = 10;
+  private maxRecursion: number;
   private recursionDepth = 0;
+
+  /**
+   * Public trace stack representing the path of nested synchronously emitted events.
+   */
+  public currentEventChain: string[] = [];
+
+  constructor(config?: { maxRecursion?: number }) {
+    this.maxRecursion = config?.maxRecursion ?? 10;
+  }
 
   /**
    * Subscribes a handler to an event.
@@ -86,22 +96,29 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
     event: K,
     payload: CombinedEvents<TEvents>[K]
   ): void {
-    if (this.recursionDepth > EventBus.MAX_RECURSION) {
+    this.recursionDepth++;
+    if (this.recursionDepth > this.maxRecursion) {
       console.warn(`EventBus: Max recursion depth reached for event ${event}`);
+      this.recursionDepth--;
       return;
     }
 
-    const handlers = this.handlers.get(event);
-    if (handlers) {
-      this.recursionDepth++;
-      const handlersCopy = Array.from(handlers);
-      for (const handler of handlersCopy) {
-        try {
-          handler(payload, event);
-        } catch (e) {
-          console.error(`Error in event handler for ${event}:`, e);
+    this.currentEventChain.push(event);
+
+    try {
+      const handlers = this.handlers.get(event);
+      if (handlers) {
+        const handlersCopy = Array.from(handlers);
+        for (const handler of handlersCopy) {
+          try {
+            handler(payload, event);
+          } catch (e) {
+            console.error(`Error in event handler for ${event}:`, e);
+          }
         }
       }
+    } finally {
+      this.currentEventChain.pop();
       this.recursionDepth--;
     }
   }
@@ -113,7 +130,7 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
     event: K,
     payload: CombinedEvents<TEvents>[K]
   ): void {
-    this.deferredEvents.push({ event, payload });
+    this.primaryBuffer.push({ event, payload });
   }
 
   /**
@@ -122,12 +139,16 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
   flushDeferred(): void {
     if (this.isProcessing) return;
     this.isProcessing = true;
-    const events = [...this.deferredEvents];
-    this.deferredEvents = [];
-    for (const { event, payload } of events) {
-      this.emit(event as keyof CombinedEvents<TEvents> & string, payload as CombinedEvents<TEvents>[keyof CombinedEvents<TEvents> & string]);
+    try {
+      [this.primaryBuffer, this.secondaryBuffer] = [this.secondaryBuffer, this.primaryBuffer];
+      for (let i = 0; i < this.secondaryBuffer.length; i++) {
+        const { event, payload } = this.secondaryBuffer[i];
+        this.emit(event as keyof CombinedEvents<TEvents> & string, payload as CombinedEvents<TEvents>[keyof CombinedEvents<TEvents> & string]);
+      }
+    } finally {
+      this.secondaryBuffer.length = 0;
+      this.isProcessing = false;
     }
-    this.isProcessing = false;
   }
 
   clear(pattern?: string): void {
@@ -141,6 +162,7 @@ export class EventBus<TEvents extends EventRegistry = EventRegistry> {
         }
       }
     }
-    this.deferredEvents = [];
+    this.primaryBuffer.length = 0;
+    this.secondaryBuffer.length = 0;
   }
 }
