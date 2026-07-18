@@ -4,7 +4,7 @@ import { z } from "zod";
  * Definitions and configurations for game mutators.
  */
 
-export type GameId = 'asteroids' | 'flappybird' | 'pong' | 'spaceinvaders';
+export type GameId = 'asteroids' | 'flappybird' | 'pong' | 'space-invaders';
 
 /**
  * Schema to enforce strict, safe physical boundaries on mutated parameters,
@@ -68,14 +68,14 @@ const rawMutators: Mutator[] = [
     id: 'silent_horde',
     name: 'Horda Silenciosa',
     description: 'Los enemigos no emiten sonido. Usa las sombras.',
-    games: ['spaceinvaders'],
+    games: ['space-invaders'],
     apply: (cfg) => ({ ...cfg, ENEMY_SFX_ENABLED: false })
   },
   {
     id: 'speed_run',
     name: 'Speed Run',
     description: 'Todo se mueve un 50% más rápido.',
-    games: ['asteroids', 'spaceinvaders', 'flappybird'],
+    games: ['asteroids', 'space-invaders', 'flappybird'],
     apply: (cfg) => ({
       ...cfg,
       GLOBAL_SPEED_MULTIPLIER: 1.5,

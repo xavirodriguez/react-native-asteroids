@@ -40,7 +40,7 @@ export const es = {
     instructions: "Espacio saltar",
     touch_instructions: "Tocar pantalla para saltar",
   },
-  spaceinvaders: {
+  "space-invaders": {
     instructions: "←→ Mover  Espacio Disparar",
   },
   mutators: {

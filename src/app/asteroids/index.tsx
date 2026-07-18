@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, FC } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput, ActivityIndicator } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
@@ -19,7 +19,8 @@ import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
 import { GameErrorBoundary } from "@/components/GameErrorBoundary";
-import { InputState } from "@tiny-aster/core/games/asteroids";
+import { AsteroidsGame } from "@tiny-aster/core";
+import { InputState } from "../../types/GameTypes";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 import { useGameSession } from "@/hooks/useGameSession";
 
@@ -261,7 +262,7 @@ export default function AsteroidsScreen() {
   );
 }
 
-const StartScreen: React.FC<{
+const StartScreen: FC<{
   title: string;
   highScore: number;
   onStart: () => void;

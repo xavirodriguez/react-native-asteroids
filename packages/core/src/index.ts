@@ -95,6 +95,8 @@ export * from "./network/NetTypes";
 export * from "./games/arcade/index";
 
 // Migrated Games
+export { AsteroidsGame } from "./games/asteroids/AsteroidsGame";
+
 export * from "./games/flappybird/FlappyBirdGame";
 export * from "./games/flappybird/types/FlappyBirdTypes";
 export * from "./games/flappybird/types/GameInterfaces";
