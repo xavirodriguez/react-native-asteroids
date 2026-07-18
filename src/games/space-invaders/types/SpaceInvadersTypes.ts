@@ -1,4 +1,53 @@
-import { Component } from "@tiny-aster/core";
+import { Component, CoreComponentRegistry } from "@tiny-aster/core";
+
+/**
+ * Component for Boss entities.
+ */
+export interface BossComponent extends Component {
+  type: "Boss";
+  hp: number;
+  maxHp: number;
+  timer: number;
+  phase: number;
+}
+
+/**
+ * Component for Kamikaze entities.
+ */
+export interface KamikazeComponent extends Component {
+  type: "Kamikaze";
+  phase: "diving" | "returning";
+  originX: number;
+  originY: number;
+  diveSpeed: number;
+}
+
+/**
+ * Component for UI Text rendering.
+ */
+export interface UITextComponent extends Component {
+  type: "UIText";
+  content: string;
+  wordWrap: boolean;
+  maxLines: number;
+}
+
+/**
+ * Component registry mapping for Space Invaders.
+ */
+export interface SpaceInvadersComponentRegistry extends CoreComponentRegistry {
+  Input: InputComponent;
+  Player: PlayerComponent;
+  Invader: InvaderComponent;
+  EnemyBullet: EnemyBulletComponent;
+  PlayerBullet: PlayerBulletComponent;
+  Shield: ShieldComponent;
+  Formation: FormationComponent;
+  GameState: GameStateComponent;
+  Boss: BossComponent;
+  Kamikaze: KamikazeComponent;
+  UIText: UITextComponent;
+}
 
 /**
  * Represents the current state of user inputs for Space Invaders.

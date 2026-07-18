@@ -206,7 +206,7 @@ export default function AsteroidsScreen() {
             </View>
         )}
 
-        <ComboDisplay multiplier={gameState?.comboMultiplier || 1} isActive={true} />
+        <ComboDisplay multiplier={(gameState as any)?.comboMultiplier || (gameState as any)?.multiplier || 1} isActive={true} />
         <GameUI
           gameState={gameState}
           onRestart={() => isMulti ? room?.send("start_game") : game.restart()}

@@ -1,4 +1,11 @@
-import { Component } from "@tiny-aster/core";
+import { Component, CoreComponentRegistry } from "@tiny-aster/core";
+
+export interface FlappyBirdComponentRegistry extends CoreComponentRegistry {
+  FlappyInput: FlappyBirdInputComponent;
+  Bird: BirdComponent;
+  Pipe: PipeComponent;
+  FlappyState: FlappyBirdState;
+}
 
 /**
  * Represents the current state of user inputs for Flappy Bird.

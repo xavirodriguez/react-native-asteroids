@@ -2,6 +2,34 @@
 
 Historial de sesiones de agentes. Última entrada primero.
 
+## Sesión 2025-02-21 23:45 UTC
+
+**Objetivo trabajado:** Corrección de Errores de Compilación, Tipado Estricto de ECS en Space Invaders/Flappy Bird y Compatibilidad con Servidor
+**Estado:** completado
+**PR abierto:** ninguno (rama lista para mergear / review)
+**Rama:** feature/ecs-typecheck-hardening-20250221
+
+### Qué se hizo
+- Corregida la resolución de rutas para `@tiny-aster/core/games/asteroids` en `server/tsconfig.json` y separadas las importaciones en `server/src/AsteroidsRoom.ts` para resolver el break de compilación de Colyseus.
+- Definidos `SpaceInvadersComponentRegistry` y `FlappyBirdComponentRegistry` extendiendo `CoreComponentRegistry` para tipar estrictamente todos los componentes de los minijuegos.
+- Centralizado y registrado `BossComponent`, `KamikazeComponent` y un nuevo `UITextComponent` en el registro de componentes de Space Invaders.
+- Refactorizados todos los sistemas de simulación de Space Invaders (`BossSystem`, `InvulnerabilitySystem`, `KamikazeSystem`, `SpaceInvadersCollisionSystem`, `SpaceInvadersGameStateSystem`, `SpaceInvadersInputSystem`, `SpaceInvadersRenderSystem`, `SpaceInvadersFormationSystem`) y Flappy Bird (`FlappyBirdCollisionSystem`, `FlappyBirdGameStateSystem`, `FlappyBirdGlideSystem`, `FlappyBirdInputSystem`, `FlappyBirdRenderSystem`) para extender `System<Registry>` y tipar `world` como `World<Registry>`.
+- Removido el uso de parámetros genéricos innecesarios de las llamadas `getComponent`, `getSingleton`, y `mutateComponent` para que se infieran limpiamente a través de los registros tipados de componentes.
+- Corregida la herencia de `ISpaceInvadersGame` y `IFlappyBirdGame` de `IGame` usando su respectivo tipo de estado del juego para resolver incompatibilidades de firma de métodos.
+- Actualizadas las inicializaciones y asignaciones en `EntityFactory.ts` y `EntityPool.ts` para que utilicen propiedades de componentes de core estrictas (`vx`, `vy`, `mode: "destroy"`, `timeLeft`).
+- Resueltos los parámetros implícitos `'any'` en `SpaceInvadersCanvasVisuals.ts` y `FlappyBirdCanvasVisuals.ts` adaptándolos al nuevo formato de interfaz `ShapeDrawer` y `EffectDrawer` con el método `draw(...)`.
+- Solucionadas las llamadas erróneas a constructores sin argumentos (`CanvasRenderer` y `SkiaRenderer`) haciendo sus dependencias de shape drawers opcionales con valores predeterminados seguros (`new Map()`).
+- Ejecutado `pnpm run typecheck:app` comprobando una compilación limpia al 100% con cero errores en toda la aplicación.
+- Ejecutados todos los tests de determinismo (`AsteroidsHeadless`) y la suite completa (`pnpm test:ci`) logrando el 100% de éxito (93 de 93 pruebas pasadas).
+
+### Qué queda pendiente
+- Fusionar (merge) el PR de la rama hacia `master`.
+
+### Decisiones técnicas tomadas
+- **Movimiento de `invulnerableRemaining` a Core `HealthComponent`**: Mover este campo opcional directamente al componente global de core centraliza y estandariza los iframes y el parpadeo de daño para todos los minijuegos sin necesidad de crear propiedades redundantes o duplicadas.
+- **Uso de Opciones Opcionales en Renderers**: Hacer que los mapas de shape drawers sean opcionales en `CanvasRenderer` y `SkiaRenderer` previene crashes de instanciación silenciosa en entornos cliente o stubs de test.
+- **Inlining de `InputUtils` para Simplicidad**: Al inlinear métodos de comprobación de botones en lugar de intentar importar un helper no exportado, se incrementa la legibilidad y rendimiento sin comprometer el encapsulamiento de datos.
+
 ## Sesión 2025-02-21 23:00 UTC
 
 **Objetivo trabajado:** Visualizador e Interfaz Gráfica para Métricas de Telemetría (Dashboard)
@@ -45,7 +73,7 @@ Historial de sesiones de agentes. Última entrada primero.
 
 ### Decisiones técnicas tomadas
 - **Comparación Dinámica de Formato AoS vs SoA:** En el pipeline de transmisión binaria de `AsteroidsRoom`, se genera de forma segura un snapshot AoS usando `SnapshotSerializer.snapshot` para determinar la diferencia exacta de bytes que se habrían enviado por la red en modo JSON tradicional vs binario msgpack.
-- **Evitar fugas de observers:** Se implementó el método `destroy` en `NetworkMetricsCollector` y se llama desde `onDispose` en `AsteroidsRoom` para desconectar los observadores de rendimiento nativos al desechar una sala de juego.
+- **Evitar fugas de observers:** Se implementó el método `destroy` en `NetworkMetricsCollector` and se llama desde `onDispose` en `AsteroidsRoom` para desconectar los observadores de rendimiento nativos al desechar una sala de juego.
 
 ## Sesión 2025-02-21 21:00 UTC
 

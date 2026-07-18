@@ -1,9 +1,10 @@
 import { World } from "@tiny-aster/core";
 import { Entity, Component } from "@tiny-aster/core";
-import { FLAPPY_CONFIG } from "./types/FlappyBirdTypes";
+import { FLAPPY_CONFIG, FlappyBirdComponentRegistry } from "./types/FlappyBirdTypes";
 import { createEmitter } from "@tiny-aster/core";
 import { CollisionLayers } from "@/src/games/shared/types/CollisionLayers";
-import { Collider2DComponent } from "@tiny-aster/core";
+import { Collider2DComponent, TransformComponent, VelocityComponent, RenderComponent, HealthComponent } from "@tiny-aster/core";
+
 /**
  * Entity factory for the Flappy Bird game domain.
  *
@@ -14,12 +15,10 @@ import { Collider2DComponent } from "@tiny-aster/core";
  * @packageDocumentation
  */
 
-import { createInputBufferComponent } from "@tiny-aster/core";
-
 /**
  * Helper to handle deferred or immediate entity creation and component attachment.
  */
-const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, add: (comp: Component) => void } => {
+const createBaseEntity = (world: World<any>, deferred?: boolean): { entity: Entity, add: (comp: any) => void } => {
     const isUpdating = world.isUpdating;
     const isDeferred = !!(deferred || isUpdating);
     const commands = world.getCommandBuffer();
@@ -29,7 +28,7 @@ const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, a
         commands.createEntity(entity);
         return {
             entity,
-            add: (comp: Component) => {
+            add: (comp: any) => {
                 commands.addComponent(entity, comp);
             }
         };
@@ -38,7 +37,7 @@ const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, a
     const entity = world.createEntity();
     return {
         entity,
-        add: (comp: Component) => world.addComponent(entity, comp)
+        add: (comp: any) => world.addComponent(entity, comp)
     };
 };
 
@@ -46,7 +45,7 @@ const createBaseEntity = (world: World, deferred?: boolean): { entity: Entity, a
  * Parameters for creating a bird entity.
  */
 export interface CreateBirdParams {
-  world: World;
+  world: World<any>;
   x: number;
   y: number;
   deferred?: boolean;
@@ -56,7 +55,7 @@ export interface CreateBirdParams {
  * Parameters for creating a pipe entity.
  */
 export interface CreatePipeParams {
-  world: World;
+  world: World<any>;
   x: number;
   gapY: number;
   deferred?: boolean;
@@ -73,15 +72,20 @@ export function createBird(options: CreateBirdParams): Entity {
   const { world, x, y, deferred } = options;
   const { entity: bird, add } = createBaseEntity(world, deferred);
 
-  add({ type: "Transform", x, y });
-  add({ type: "Velocity", dx: 0, dy: 0 });
+  add({ type: "Transform", x, y, rotation: 0, scaleX: 1, scaleY: 1, worldX: x, worldY: y, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false } as TransformComponent);
+  add({ type: "Velocity", vx: 0, vy: 0, angularVelocity: 0 } as VelocityComponent);
   add({
     type: "Render",
     shape: "bird",
     size: FLAPPY_CONFIG.BIRD_RADIUS,
     color: "#FFD700",
     rotation: 0,
-  });
+    visible: true,
+    opacity: 1,
+    order: 0,
+    hitFlashFrames: 0,
+    angularVelocity: 0
+  } as RenderComponent);
   add({
     type: "Collider2D",
     shape: { type: "circle", radius: FLAPPY_CONFIG.BIRD_RADIUS - 2 },
@@ -105,7 +109,6 @@ export function createBird(options: CreateBirdParams): Entity {
     glide: false,
     flapCooldownRemaining: 0,
   });
-  add(createInputBufferComponent(80));
   // Adding HealthComponent as suggested for rendering check
   add({
     type: "Health",
@@ -114,14 +117,17 @@ export function createBird(options: CreateBirdParams): Entity {
     invulnerableRemaining: 0,
   });
 
-  createEmitter(world, {
-    position: { x, y },
+  createEmitter(world as any, {
+    type: "spawn",
+    x,
+    y,
     rate: 0,
-    burst: 3,
-    lifetime: { min: 0.8, max: 1.2 },
-    speed: { min: 20, max: 40 },
-    angle: { min: 260, max: 280 },
-    size: { min: 3, max: 5 },
+    burst: true,
+    count: 3,
+    lifetime: [0.8, 1.2],
+    speed: [20, 40],
+    angle: [260, 280],
+    size: [3, 5],
     color: ["#FFD700"],
     loop: false
   });
@@ -142,15 +148,20 @@ export function createPipe(options: CreatePipeParams): void {
   // Top Pipe
   const { add: addTop } = createBaseEntity(world, deferred);
   const topY = gapY - halfGap;
-  addTop({ type: "Transform", x, y: topY / 2 });
-  addTop({ type: "Velocity", dx: -pipeSpeed, dy: 0 });
+  addTop({ type: "Transform", x, y: topY / 2, rotation: 0, scaleX: 1, scaleY: 1, worldX: x, worldY: topY / 2, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false } as TransformComponent);
+  addTop({ type: "Velocity", vx: -pipeSpeed, vy: 0, angularVelocity: 0 } as VelocityComponent);
   addTop({
     type: "Render",
     shape: "pipe",
     size: pipeWidth,
     color: "#2ecc71",
     rotation: 0,
-  });
+    visible: true,
+    opacity: 1,
+    order: 0,
+    hitFlashFrames: 0,
+    angularVelocity: 0
+  } as RenderComponent);
   addTop({
     type: "Collider2D",
     shape: { type: "aabb", halfWidth: pipeWidth / 2, halfHeight: topY / 2 },
@@ -167,15 +178,20 @@ export function createPipe(options: CreatePipeParams): void {
   const { add: addBottom } = createBaseEntity(world, deferred);
   const bottomY = gapY + halfGap;
   const bottomHeight = FLAPPY_CONFIG.SCREEN_HEIGHT - bottomY;
-  addBottom({ type: "Transform", x, y: bottomY + bottomHeight / 2 });
-  addBottom({ type: "Velocity", dx: -pipeSpeed, dy: 0 });
+  addBottom({ type: "Transform", x, y: bottomY + bottomHeight / 2, rotation: 0, scaleX: 1, scaleY: 1, worldX: x, worldY: bottomY + bottomHeight / 2, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false } as TransformComponent);
+  addBottom({ type: "Velocity", vx: -pipeSpeed, vy: 0, angularVelocity: 0 } as VelocityComponent);
   addBottom({
     type: "Render",
     shape: "pipe",
     size: pipeWidth,
     color: "#2ecc71",
     rotation: 0,
-  });
+    visible: true,
+    opacity: 1,
+    order: 0,
+    hitFlashFrames: 0,
+    angularVelocity: 0
+  } as RenderComponent);
   addBottom({
     type: "Collider2D",
     shape: { type: "aabb", halfWidth: pipeWidth / 2, halfHeight: bottomHeight / 2 },
@@ -192,9 +208,9 @@ export function createPipe(options: CreatePipeParams): void {
 /**
  * Creates the ground entity.
  */
-export function createGround(world: World, deferred?: boolean): Entity {
+export function createGround(world: World<any>, deferred?: boolean): Entity {
   const { entity: ground, add } = createBaseEntity(world, deferred);
-  add({ type: "Transform", x: FLAPPY_CONFIG.SCREEN_WIDTH / 2, y: FLAPPY_CONFIG.GROUND_Y });
+  add({ type: "Transform", x: FLAPPY_CONFIG.SCREEN_WIDTH / 2, y: FLAPPY_CONFIG.GROUND_Y, rotation: 0, scaleX: 1, scaleY: 1, worldX: FLAPPY_CONFIG.SCREEN_WIDTH / 2, worldY: FLAPPY_CONFIG.GROUND_Y, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false } as TransformComponent);
   add({
     type: "Collider2D",
     shape: { type: "aabb", halfWidth: FLAPPY_CONFIG.SCREEN_WIDTH / 2, halfHeight: (FLAPPY_CONFIG.SCREEN_HEIGHT - FLAPPY_CONFIG.GROUND_Y) / 2 },
@@ -212,20 +228,28 @@ export function createGround(world: World, deferred?: boolean): Entity {
     size: FLAPPY_CONFIG.SCREEN_WIDTH,
     color: "#deb887",
     rotation: 0,
-  });
+    visible: true,
+    opacity: 1,
+    order: 0,
+    hitFlashFrames: 0,
+    angularVelocity: 0
+  } as RenderComponent);
   return ground;
 }
 
 /**
  * Creates the global game state entity.
  */
-export function createGameState(world: World, deferred?: boolean): Entity {
+export function createGameState(world: World<any>, deferred?: boolean): Entity {
   const { entity: gameState, add } = createBaseEntity(world, deferred);
   add({
     type: "FlappyState",
     score: 0,
     isGameOver: false,
     highScore: 0,
+    pipeSpawnTimer: 0,
+    gameOverLogged: false,
+    comboMultiplier: 1,
   });
   return gameState;
 }

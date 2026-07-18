@@ -8,7 +8,7 @@ export class SkiaRenderer<TRegistry extends CoreComponentRegistry = CoreComponen
   private paint: SkPaint;
 
   constructor(
-    private readonly shapeDrawers: Map<string, ShapeDrawer<SkCanvas, TRegistry>>
+    private readonly shapeDrawers: Map<string, ShapeDrawer<SkCanvas, TRegistry>> = new Map()
   ) {
     this.paint = Skia.Paint();
   }

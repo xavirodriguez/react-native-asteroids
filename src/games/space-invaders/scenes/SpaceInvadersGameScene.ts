@@ -1,4 +1,5 @@
 import { Scene, World, EventBus, BaseGame } from "@tiny-aster/core";
+import { SpaceInvadersComponentRegistry } from "../types/SpaceInvadersTypes";
 import { MovementSystem, ComboSystem } from "@tiny-aster/core";
 import { TTLSystem } from "@tiny-aster/core";
 import { JuiceSystem } from "@tiny-aster/core";
@@ -24,6 +25,7 @@ import {
   spawnShields
 } from "../EntityFactory";
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
+import { GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";
 import { MutatorSystem } from "@tiny-aster/core";
 import { MutatorService } from "../../../services/MutatorService";
@@ -48,7 +50,7 @@ export class SpaceInvadersGameScene extends Scene {
   ) {
     // Note: in this engine, Scene creates its own World if not provided
     // but the constructor requires a World.
-    const world = new World();
+    const world = new World<SpaceInvadersComponentRegistry>();
     super(world);
     this.game = game;
     this.playerBulletPool = playerBulletPool;
@@ -69,7 +71,7 @@ export class SpaceInvadersGameScene extends Scene {
     const inputSys = new SpaceInvadersInputSystem(this.playerBulletPool);
     if (this.game.isMultiplayer) inputSys.setMultiplayerMode(true);
 
-    this.world.addSystem((this.game as unknown as BaseGame<unknown, Record<string, unknown>>).unifiedInput, { phase: SystemPhase.Input });
+    this.world.addSystem((this.game as any).unifiedInput, { phase: SystemPhase.Input });
     this.world.addSystem(inputSys, { phase: SystemPhase.Simulation });
     this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(new ComboSystem(), { phase: SystemPhase.Simulation });
@@ -90,13 +92,13 @@ export class SpaceInvadersGameScene extends Scene {
 
     // Visual / Presentation Systems
     this.world.addSystem(new JuiceSystem(), { phase: SystemPhase.Presentation });
-    this.world.addSystem(new RenderUpdateSystem(0), { phase: SystemPhase.Presentation }); // No trails
+    this.world.addSystem(new RenderUpdateSystem(), { phase: SystemPhase.Presentation }); // No trails
     this.world.addSystem(new SpaceInvadersRenderSystem(), { phase: SystemPhase.Presentation });
 
     // 2. Initial entities
     if (this.game.isMultiplayer) return; // Wait for server state
     createGameState(this.world);
-    createPlayer(this.world, this.config.SCREEN_CENTER_X, this.config.SCREEN_HEIGHT - 50);
+    createPlayer(this.world, GAME_CONFIG.SCREEN_CENTER_X, GAME_CONFIG.SCREEN_HEIGHT - 50);
     createFormationController(this.world);
     spawnInvaderWave(this.world, 1);
     spawnShields(this.world);

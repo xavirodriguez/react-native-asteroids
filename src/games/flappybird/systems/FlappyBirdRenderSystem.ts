@@ -1,27 +1,26 @@
 import { World } from "@tiny-aster/core";
 import { RenderUpdateSystem } from "@tiny-aster/core";
-import { RenderComponent } from "@tiny-aster/core";
-import { BirdComponent } from "../types/FlappyBirdTypes";
+import { FlappyBirdComponentRegistry } from "../types/FlappyBirdTypes";
 
 /**
  * System that handles specific render updates for Flappy Bird, like bird rotation.
  */
 export class FlappyBirdRenderSystem extends RenderUpdateSystem {
   constructor() {
-    super(8); // Short trail length
+    super(); // No arguments expected
   }
 
-  public update(world: World, deltaTime: number): void {
+  public override update(world: World<FlappyBirdComponentRegistry>, deltaTime: number): void {
     super.update(world, deltaTime);
     this.updateBirdRotation(world, deltaTime);
   }
 
-  private updateBirdRotation(world: World, deltaTime: number): void {
+  private updateBirdRotation(world: World<FlappyBirdComponentRegistry>, deltaTime: number): void {
     const birds = world.query("Bird", "Render");
     for (let i = 0; i < birds.length; i++) {
       const entity = birds[i];
-      const bird = world.getComponent<BirdComponent>(entity, "Bird");
-      const render = world.getComponent<RenderComponent>(entity, "Render");
+      const bird = world.getComponent(entity, "Bird");
+      const render = world.getComponent(entity, "Render");
 
       if (bird && render) {
         // Points up when moving up, points down when falling
@@ -32,7 +31,7 @@ export class FlappyBirdRenderSystem extends RenderUpdateSystem {
         const dtSeconds = deltaTime / 1000;
         const lerpFactor = 1 - Math.exp(-lerpSpeed * dtSeconds);
 
-        world.mutateComponent<RenderComponent>(entity, "Render", r => {
+        world.mutateComponent(entity, "Render", r => {
           r.rotation += (targetRotation - r.rotation) * lerpFactor;
         });
       }

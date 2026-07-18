@@ -7,16 +7,29 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { World } from "@tiny-aster/core";
+import { World, Component, TagComponent } from "@tiny-aster/core";
 import { Entity } from "@tiny-aster/core";
-import { VirtualJoystickComponent, TagComponent } from "@tiny-aster/core";
-import { JoystickType } from "@tiny-aster/core";
+
+export type JoystickType = "movement" | "rotation";
+
+export interface VirtualJoystickComponent extends Component {
+  type: "VirtualJoystick";
+  active: boolean;
+  originX: number;
+  originY: number;
+  currentX: number;
+  currentY: number;
+  radius: number;
+  joystickType: JoystickType;
+  horizontalAxis: string;
+  verticalAxis: string;
+}
 
 export interface VirtualJoystickProps {
   /** Unique ID for identifying the ECS entity. */
-  joystickId: string;
+  joystickId?: string;
   /** Semantic purpose of the joystick. */
-  type: JoystickType;
+  type?: JoystickType;
   /** Radius of the joystick base (default: 60). */
   size?: number;
   /** Radius of the knob (default: 24). */
@@ -33,6 +46,10 @@ export interface VirtualJoystickProps {
   world?: World;
   /** Optional style for the touchable container. */
   containerStyle?: StyleProp<ViewStyle>;
+  /** Optional callback for movement. */
+  onMove?: (x: number, y: number) => void;
+  /** Optional callback for release. */
+  onRelease?: () => void;
 }
 
 /**
@@ -44,8 +61,8 @@ export interface VirtualJoystickProps {
  * - Direct ECS integration via world.getMutableComponent.
  */
 export function VirtualJoystick({
-  joystickId,
-  type,
+  joystickId = "joystick",
+  type = "movement",
   size = 75,
   knobSize = 30,
   color = "rgba(255,255,255,0.3)",
@@ -54,6 +71,8 @@ export function VirtualJoystick({
   showBackgroundRing = true,
   world,
   containerStyle,
+  onMove,
+  onRelease,
 }: VirtualJoystickProps) {
   const BASE_RADIUS = size;
   const KNOB_RADIUS = knobSize;
@@ -89,7 +108,7 @@ export function VirtualJoystick({
       // Default axes based on type if not specified
       horizontalAxis: type === "rotation" ? "rotate_horizontal" : "horizontal",
       verticalAxis: type === "rotation" ? "rotate_vertical" : "vertical",
-    } as VirtualJoystickComponent);
+    } as any);
 
     entityRef.current = entity;
     world.flush();
@@ -113,9 +132,11 @@ export function VirtualJoystick({
       knobX.value = 0;
       knobY.value = 0;
 
+      if (onMove) onMove(0, 0);
+
       if (world && entityRef.current !== null) {
         const entity = entityRef.current;
-        world.getCommandBuffer().mutateComponent<VirtualJoystickComponent>(entity, "VirtualJoystick", joystick => {
+        world.mutateComponent(entity, "VirtualJoystick" as any, (joystick: any) => {
           joystick.active = true;
           joystick.originX = e.x;
           joystick.originY = e.y;
@@ -136,10 +157,16 @@ export function VirtualJoystick({
       knobX.value = clamp * Math.cos(angle);
       knobY.value = clamp * Math.sin(angle);
 
+      if (onMove) {
+        const normX = clamp === 0 ? 0 : (clamp / MAX_OFFSET) * Math.cos(angle);
+        const normY = clamp === 0 ? 0 : (clamp / MAX_OFFSET) * Math.sin(angle);
+        onMove(normX, normY);
+      }
+
       // Write raw absolute coordinates to ECS for simulation
       if (world && entityRef.current !== null) {
         const entity = entityRef.current;
-        world.getCommandBuffer().mutateComponent<VirtualJoystickComponent>(entity, "VirtualJoystick", joystick => {
+        world.mutateComponent(entity, "VirtualJoystick" as any, (joystick: any) => {
           joystick.currentX = e.x;
           joystick.currentY = e.y;
         });
@@ -152,9 +179,11 @@ export function VirtualJoystick({
         isVisible.value = false;
       });
 
+      if (onRelease) onRelease();
+
       if (world && entityRef.current !== null) {
         const entity = entityRef.current;
-        world.getCommandBuffer().mutateComponent<VirtualJoystickComponent>(entity, "VirtualJoystick", joystick => {
+        world.mutateComponent(entity, "VirtualJoystick" as any, (joystick: any) => {
           joystick.active = false;
         });
       }

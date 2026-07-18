@@ -12,7 +12,6 @@ import Animated, {
   useAnimatedStyle,
   withSequence,
 } from "react-native-reanimated";
-import type { GameStateComponent } from "../src/types/GameTypes";
 
 /**
  * Type definition for the @shopify/react-native-skia module.
@@ -66,9 +65,17 @@ if (Platform.OS !== "web") {
 /**
  * Properties for the {@link GameUI} component.
  */
+interface MinimalGameState {
+  score: number;
+  lives?: number;
+  level?: number;
+  isGameOver: boolean;
+  [key: string]: any;
+}
+
 interface GameUIProps {
   /** The current game state component containing lives, score, and level. */
-  gameState: GameStateComponent;
+  gameState: MinimalGameState;
   /** Callback triggered when the restart button is pressed. */
   onRestart?: () => void;
   /** Callback triggered when the pause button is pressed. */
@@ -77,6 +84,10 @@ interface GameUIProps {
   isPaused?: boolean;
   /** The persistent high score. */
   highScore?: number;
+  /** The current game seed. */
+  seed?: number;
+  /** Callback to change/set the game seed. */
+  onSetSeed?: (seed?: number) => void;
 }
 
 /**
@@ -94,7 +105,7 @@ export const GameUI = React.memo(function GameUI({
   const showPauseButton = Platform.OS !== "web" && !gameState.isGameOver;
 
   useEffect(() => {
-    if (gameState.level > 1 && !gameState.isGameOver) {
+    if (gameState.level && gameState.level > 1 && !gameState.isGameOver) {
       setLevelUpText(`NIVEL ${gameState.level}`);
       const timer = setTimeout(() => setLevelUpText(null), 2000);
       return () => clearTimeout(timer);
@@ -104,9 +115,9 @@ export const GameUI = React.memo(function GameUI({
   return (
     <View style={styles.container}>
       <HUD
-        lives={gameState.lives}
+        lives={gameState.lives ?? 0}
         score={gameState.score}
-        level={gameState.level}
+        level={gameState.level ?? 1}
         highScore={highScore ?? 0}
         paddingTop={Math.max(insets.top, 16)}
       />

@@ -1,9 +1,8 @@
-import { World } from "@tiny-aster/core";
+import { World, ComponentType } from "@tiny-aster/core";
 import { System } from "@tiny-aster/core";
 import { Entity, TransformComponent, CollisionEventsComponent, Collider2DComponent, RenderComponent } from "@tiny-aster/core";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
-import { FlappyBirdState, BirdComponent, PipeComponent } from "../types/FlappyBirdTypes";
-import { JuiceSystem } from "@tiny-aster/core";
+import { FlappyBirdState, BirdComponent, PipeComponent, FlappyBirdComponentRegistry } from "../types/FlappyBirdTypes";
 import { Juice } from "@tiny-aster/core";
 import { createEmitter } from "@tiny-aster/core";
 import { EventBus } from "@tiny-aster/core";
@@ -11,7 +10,7 @@ import { EventBus } from "@tiny-aster/core";
 /**
  * System that reacts to collision events between the bird and pipes or ground.
  */
-export class FlappyBirdCollisionSystem extends System {
+export class FlappyBirdCollisionSystem extends System<FlappyBirdComponentRegistry> {
   private _game: IFlappyBirdGame;
 
   constructor(game: IFlappyBirdGame) {
@@ -19,11 +18,11 @@ export class FlappyBirdCollisionSystem extends System {
     this._game = game;
   }
 
-  public override update(world: World, _deltaTime: number): void {
+  public override update(world: World<FlappyBirdComponentRegistry>, _deltaTime: number): void {
     const entitiesWithEvents = world.query("CollisionEvents");
 
     for (const entity of entitiesWithEvents) {
-      const eventsComp = world.getComponent<CollisionEventsComponent>(entity, "CollisionEvents")!;
+      const eventsComp = world.getComponent(entity, "CollisionEvents")!;
 
       for (const event of eventsComp.collisions) {
         // Ensure each collision pair is processed only once
@@ -36,36 +35,36 @@ export class FlappyBirdCollisionSystem extends System {
     this.handleNearMissLogic(world);
   }
 
-  private resolveCollision(world: World, entityA: Entity, entityB: Entity): void {
+  private resolveCollision(world: World<FlappyBirdComponentRegistry>, entityA: Entity, entityB: Entity): void {
     const matchPipe = this.matchPair(world, entityA, entityB, "Bird", "Pipe");
     if (matchPipe) {
         this.triggerGameOver(world);
         return;
     }
 
-    const matchGround = this.matchPair(world, entityA, entityB, "Bird", "Ground");
+    const matchGround = this.matchPair(world, entityA, entityB, "Bird", "Ground" as any);
     if (matchGround) {
         this.triggerGameOver(world);
         return;
     }
   }
 
-  private handleNearMissLogic(world: World): void {
+  private handleNearMissLogic(world: World<FlappyBirdComponentRegistry>): void {
     const birds = world.query("Bird", "Transform", "Collider2D");
     const pipes = world.query("Pipe", "Transform", "Collider2D");
 
     for (const bird of birds) {
-      const birdComp = world.getComponent<BirdComponent>(bird, "Bird")!;
+      const birdComp = world.getComponent(bird, "Bird")!;
       if (!birdComp.isAlive) continue;
 
-      const birdPos = world.getComponent<TransformComponent>(bird, "Transform")!;
-      const birdCol = world.getComponent<Collider2DComponent>(bird, "Collider2D")!; // radius is in shape
+      const birdPos = world.getComponent(bird, "Transform")!;
+      const birdCol = world.getComponent(bird, "Collider2D")!; // radius is in shape
       const birdRadius = birdCol.shape.type === "circle" ? birdCol.shape.radius : 0;
 
       for (const pipe of pipes) {
-        const pipePos = world.getComponent<TransformComponent>(pipe, "Transform")!;
-        const pipeComp = world.getComponent<PipeComponent>(pipe, "Pipe")!;
-        const pipeCol = world.getComponent<Collider2DComponent>(pipe, "Collider2D")!;
+        const pipePos = world.getComponent(pipe, "Transform")!;
+        const pipeComp = world.getComponent(pipe, "Pipe")!;
+        const pipeCol = world.getComponent(pipe, "Collider2D")!;
 
         const pipeWidth = pipeCol.shape.type === "aabb" ? pipeCol.shape.halfWidth * 2 : 0;
         const halfPipeHeight = pipeCol.shape.type === "aabb" ? pipeCol.shape.halfHeight : 0;
@@ -97,26 +96,30 @@ export class FlappyBirdCollisionSystem extends System {
 
         if (dist > 0 && dist < 12) {
            if (birdComp.nearMissTimer <= 0) {
-             world.mutateComponent<BirdComponent>(bird, "Bird", b => {
+             world.mutateComponent(bird, "Bird", b => {
                 b.nearMissTimer = 300;
              });
 
-             world.mutateSingleton<FlappyBirdState>("FlappyState", gs => {
+             world.mutateSingleton("FlappyState", gs => {
                  gs.score += 50;
              });
 
              const eventBus = world.getResource<EventBus>("EventBus");
-             if (eventBus) eventBus.emitDeferred("flappy:near_miss", { points: 50 });
+             if (eventBus) eventBus.emitDeferred("flappy:near_miss" as any, { points: 50 } as any);
 
              Juice.shake(world, 2, 100);
              createEmitter(world, {
-                position: { x: birdPos.x, y: birdPos.y },
-                rate: 0, burst: 5,
+                type: "near_miss",
+                x: birdPos.x,
+                y: birdPos.y,
+                rate: 0,
+                burst: true,
+                count: 5,
                 color: ["#FFD700"],
-                size: {min:2, max:4},
-                speed: {min:40, max:80},
-                angle: {min:0, max:360},
-                lifetime: {min:0.3, max:0.5},
+                size: [2, 4],
+                speed: [40, 80],
+                angle: [0, 360],
+                lifetime: [0.3, 0.5],
                 loop: false
              });
            }
@@ -125,43 +128,43 @@ export class FlappyBirdCollisionSystem extends System {
     }
   }
 
-  private triggerGameOver(world: World): void {
-    const gameState = world.getSingleton<FlappyBirdState>("FlappyState");
+  private triggerGameOver(world: World<FlappyBirdComponentRegistry>): void {
+    const gameState = world.getSingleton("FlappyState");
     if (gameState && !gameState.isGameOver) {
-      world.mutateSingleton<FlappyBirdState>("FlappyState", gs => {
+      world.mutateSingleton("FlappyState", gs => {
           gs.isGameOver = true;
       });
 
       const birds = world.query("Bird");
       birds.forEach(birdEntity => {
-        world.mutateComponent<BirdComponent>(birdEntity, "Bird", b => {
+        world.mutateComponent(birdEntity, "Bird", b => {
             b.isAlive = false;
         });
 
-        world.mutateComponent<RenderComponent>(birdEntity, "Render", render => {
+        world.mutateComponent(birdEntity, "Render", render => {
             render.hitFlashFrames = 8;
         });
 
-        JuiceSystem.add(world, birdEntity, {
+        Juice.add(world, birdEntity, {
           property: "scaleX",
           target: 0.5,
           duration: 100,
           easing: "easeOut"
         });
-        JuiceSystem.add(world, birdEntity, {
+        Juice.add(world, birdEntity, {
           property: "scaleX",
           target: 0,
           duration: 200,
           easing: "elasticOut",
           delay: 100
         });
-        JuiceSystem.add(world, birdEntity, {
+        Juice.add(world, birdEntity, {
           property: "scaleY",
           target: -0.5,
           duration: 100,
           easing: "easeOut"
         });
-        JuiceSystem.add(world, birdEntity, {
+        Juice.add(world, birdEntity, {
           property: "scaleY",
           target: 0,
           duration: 200,
@@ -172,8 +175,8 @@ export class FlappyBirdCollisionSystem extends System {
     }
   }
 
-  private matchPair<T1 extends string, T2 extends string>(
-    world: World,
+  private matchPair<T1 extends ComponentType<FlappyBirdComponentRegistry>, T2 extends ComponentType<FlappyBirdComponentRegistry>>(
+    world: World<FlappyBirdComponentRegistry>,
     entityA: Entity,
     entityB: Entity,
     type1: T1,

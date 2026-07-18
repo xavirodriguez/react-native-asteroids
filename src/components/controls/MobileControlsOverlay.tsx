@@ -2,7 +2,15 @@ import { useCallback, useEffect, useRef } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { VirtualJoystick } from "./VirtualJoystick";
 import { ActionButton } from "./ActionButton";
-import type { MobileInputAdapter } from "@tiny-aster/core";
+export interface MobileInputAdapter {
+  reset(): void;
+  setRotateLeft(pressed: boolean): void;
+  setRotateRight(pressed: boolean): void;
+  setThrust(pressed: boolean): void;
+  setMoveAxis(x: number, y: number): void;
+  setShoot(pressed: boolean): void;
+  setHyperspace(pressed: boolean): void;
+}
 
 export interface MobileControlsOverlayProps {
   adapter: MobileInputAdapter;

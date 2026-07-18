@@ -75,6 +75,8 @@ export interface RenderComponent extends Component {
   rotation: number;
   angularVelocity: number;
   hitFlashFrames: number;
+  shape?: string;
+  size?: number;
 }
 
 /** @public */
@@ -82,6 +84,7 @@ export interface HealthComponent extends Component {
   type: "Health";
   current: number;
   max: number;
+  invulnerableRemaining?: number;
 }
 
 /** @public */

@@ -29,6 +29,13 @@ export class UnifiedInputSystem extends System<ComponentRegistry> implements Inp
     this.overrides[action] = pressed;
   }
 
+  /**
+   * Clears a manual input action override.
+   */
+  public clearOverride(action: string): void {
+    delete this.overrides[action];
+  }
+
   public update(world: World<ComponentRegistry>, _deltaTime: number): void {
       // Input logic
       // In a real implementation, this would combine raw inputs with overrides
