@@ -2,6 +2,30 @@
 
 Historial de sesiones de agentes. Última entrada primero.
 
+## Sesión 2025-02-22 01:15 UTC
+
+**Objetivo trabajado:** ECS Invariants, Lifecycle Correctness, and Architecture Hardening
+**Estado:** completado
+**PR abierto:** ninguno (rama lista para review)
+**Rama:** feature/ecs-invariants-lifecycle-correctness-architecture
+
+### Qué se hizo
+- Resueltos de forma quirúrgica todos los problemas e invariants declarados en `docs/TODO.md`:
+  - **Task 1: ReplicationSystem Direct Mutation**: Corregida la asignación directa en `ReplicationSystem.ts` para que todas las mutaciones físicas (de posición y velocidad) se realicen de forma segura e incremental mediante invocaciones a `world.mutateComponent`. Esto garantiza la propagación e incremento del `stateVersion` para sistemas de sincronización y replicación delta.
+  - **Task 2: Object.freeze guard in getComponent**: Documentado el freeze superficial de componentes devuelto por `getComponent` en `World.ts` bajo el entorno `__DEV__ === true` para garantizar consistencia, O(1) de rendimiento y evitar alocación duplicada en paths calientes.
+  - **Task 3 & 4: BaseGame Lifecycle Cleanups**: Verificado que `destroy()` e `restart()` detienen loops de juego, disponen los sistemas input y limpian las suscripciones de listeners acumulados en el `eventBus`.
+  - **Task 5: pause() / resume() Idempotency**: Confirmado el correcto funcionamiento de los return guards en las transiciones de estado de pausa de simulación.
+  - **Task 6: Modular Engine Architecture**: Separado el barrel principal de core de los exports específicos de Asteroids, moviéndolos a un barrel local a `./src/games/asteroids/index.ts` y exportados bajo el subpath "./games/asteroids" en `package.json`.
+  - **Task 7: ComboSystem and ComboComponent**: Verificada la herencia y el desacoplamiento genérico de los combos y multiplicadores entre `SpaceInvadersCollisionSystem`, `SpaceInvadersGameStateSystem` y el módulo arcade.
+  - **Task 8: Unit Tests for Lifecycle Methods**: Validados y ejecutados los 6 tests integrados de la suite de Jest para BaseGame.
+- Corregida la suite completa del monorepo (`pnpm test`), resultando en el 100% de éxito (96 de 96 pruebas exitosas).
+
+### Qué queda pendiente
+- Revisar y mergear la rama `feature/ecs-invariants-lifecycle-correctness-architecture` a master.
+
+### Decisiones técnicas tomadas
+- **Asegurar mutaciones estrictas**: Mover todos los cálculos físicos en `ReplicationSystem` hacia el callback de `mutateComponent` para prevenir discrepancias en la consistencia de replicación de red.
+
 ## Sesión 2025-02-22 00:30 UTC
 
 **Objetivo trabajado:** Verificación de Estabilidad Final, Auditoría de Código y Sanidad de la Suite de Pruebas
@@ -30,7 +54,7 @@ Historial de sesiones de agentes. Última entrada primero.
 
 ### Qué se hizo
 - Corregida la resolución de rutas para `@tiny-aster/core/games/asteroids` en `server/tsconfig.json` y separadas las importaciones en `server/src/AsteroidsRoom.ts` para resolver el break de compilación de Colyseus.
-- Definidos `SpaceInvadersComponentRegistry` y `FlappyBirdComponentRegistry` extendiendo `CoreComponentRegistry` para tipar estrictamente todos los componentes de los minijuegos.
+- Definidos `SpaceInvadersComponentRegistry` and `FlappyBirdComponentRegistry` extendiendo `CoreComponentRegistry` para tipar estrictamente todos los componentes de los minijuegos.
 - Centralizado y registrado `BossComponent`, `KamikazeComponent` y un nuevo `UITextComponent` en el registro de componentes de Space Invaders.
 - Refactorizados todos los sistemas de simulación de Space Invaders (`BossSystem`, `InvulnerabilitySystem`, `KamikazeSystem`, `SpaceInvadersCollisionSystem`, `SpaceInvadersGameStateSystem`, `SpaceInvadersInputSystem`, `SpaceInvadersRenderSystem`, `SpaceInvadersFormationSystem`) y Flappy Bird (`FlappyBirdCollisionSystem`, `FlappyBirdGameStateSystem`, `FlappyBirdGlideSystem`, `FlappyBirdInputSystem`, `FlappyBirdRenderSystem`) para extender `System<Registry>` y tipar `world` como `World<Registry>`.
 - Removido el uso de parámetros genéricos innecesarios de las llamadas `getComponent`, `getSingleton`, y `mutateComponent` para que se infieran limpiamente a través de los registros tipados de componentes.
