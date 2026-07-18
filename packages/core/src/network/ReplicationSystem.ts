@@ -128,9 +128,9 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
 
                     if (input.thrust) {
                         const power = 150;
-                        const ax = Math.cos(transform.rotation) * power;
-                        const ay = Math.sin(transform.rotation) * power;
                         w.mutateComponent(entity, "Velocity", (v) => {
+                            const ax = Math.cos(transform.rotation) * power;
+                            const ay = Math.sin(transform.rotation) * power;
                             v.vx += ax * (dt / 1000);
                             v.vy += ay * (dt / 1000);
                         });

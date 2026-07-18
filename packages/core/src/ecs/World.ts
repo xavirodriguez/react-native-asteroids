@@ -308,6 +308,8 @@ export class World<
    *
    * @param entity - The entity to retrieve the component for.
    * @param type - The component type.
+   * @remarks
+   * This is a shallow freeze only when __DEV__ is true. Do not deep freeze due to performance reasons.
    */
   getComponent<K extends ComponentType<TComponents>>(
     entity: Entity,
