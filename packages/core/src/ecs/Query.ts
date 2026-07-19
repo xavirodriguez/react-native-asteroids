@@ -1,6 +1,11 @@
 import { Entity } from "./Entity";
 import { ComponentRegistry } from "./Component";
 
+// Resolve environment check safely without free variables
+const isDev = typeof (globalThis as any).__DEV__ !== "undefined"
+  ? (globalThis as any).__DEV__
+  : (process.env.NODE_ENV !== "production");
+
 /**
  * A Query provides a filtered view of entities that possess a specific set of components.
  *
@@ -64,6 +69,9 @@ export class Query<TComponents extends ComponentRegistry> {
   public getEntities(): ReadonlyArray<Entity> {
     if (this.isDirty) {
       this.sortedEntities = Array.from(this.entities).sort((a, b) => a - b);
+      if (isDev) {
+        Object.freeze(this.sortedEntities);
+      }
       this.isDirty = false;
     }
     return this.sortedEntities;

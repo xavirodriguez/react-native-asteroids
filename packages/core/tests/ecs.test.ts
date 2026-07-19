@@ -116,4 +116,40 @@ describe("ECS Core", () => {
     expect(query.length).toBe(1);
     expect(query[0]).toBe(entity2);
   });
+
+  it("should support readComponent with frozen results and checkUpdatingMutation safeguards", () => {
+    const world = new World<CoreComponentRegistry>();
+    const entity = world.createEntity();
+
+    const t: TransformComponent = { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, worldX: 0, worldY: 0, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false };
+    world.addComponent(entity, t);
+
+    // Test readComponent freezes component in DEV
+    const readResult = world.readComponent(entity, "Transform") as any;
+    expect(readResult).toBeDefined();
+    expect(() => {
+      readResult.x = 123;
+    }).toThrow(TypeError);
+
+    // Test checkUpdatingMutation throw on direct mutations during update
+    world.isUpdating = true;
+    expect(() => {
+      world.createEntity();
+    }).toThrow(/Direct structural mutation/);
+
+    expect(() => {
+      world.removeEntity(entity);
+    }).toThrow(/Direct structural mutation/);
+
+    expect(() => {
+      const anotherTransform: TransformComponent = { type: "Transform", x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, worldX: 0, worldY: 0, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false };
+      world.addComponent(entity, anotherTransform);
+    }).toThrow(/Direct structural mutation/);
+
+    expect(() => {
+      world.removeComponent(entity, "Transform");
+    }).toThrow(/Direct structural mutation/);
+
+    world.isUpdating = false;
+  });
 });
