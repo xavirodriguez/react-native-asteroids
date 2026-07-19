@@ -19,7 +19,7 @@ import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
 import { GameErrorBoundary } from "@/components/GameErrorBoundary";
-import { AsteroidsGame } from "@tiny-aster/core";
+import { AsteroidsGame } from "@tiny-aster/core/games/asteroids";
 import { InputState } from "../../types/GameTypes";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 import { useGameSession } from "@/hooks/useGameSession";

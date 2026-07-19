@@ -326,13 +326,11 @@ export class World<
    *
    * @remarks
    * Object.freeze is applied shallowly to the returned component in DEV mode (__DEV__ === true) to prevent silent mutations.
-   * Wrapping is NOT deep-freezing for performance reasons. Direct mutations on nested objects might not throw TypeError at runtime.
-   * Under production mode (__DEV__ === false or NODE_ENV === 'production'), Object.freeze is a complete no-op and returns the component directly to avoid any runtime overhead.
+   * This is a shallow freeze only. It does not protect nested objects due to performance reasons (avoiding deep-freeze allocations).
+   * Under production mode (__DEV__ === false), Object.freeze is a complete no-op and returns the component directly to avoid any runtime overhead.
    *
    * @param entity - The entity to retrieve the component for.
    * @param type - The component type.
-   * @remarks
-   * This is a shallow freeze only when __DEV__ is true. Do not deep freeze due to performance reasons.
    */
   getComponent<K extends ComponentType<TComponents>>(
     entity: Entity,
@@ -342,7 +340,7 @@ export class World<
       .get(type as string)
       ?.get(entity) as TComponents[K] | undefined;
 
-    if (isDev && component !== undefined) {
+    if (__DEV__ && component !== undefined) {
       return Object.freeze(component) as TComponents[K];
     }
     return component;
@@ -352,15 +350,16 @@ export class World<
    * Reads a component in a strictly read-only manner.
    *
    * @remarks
-   * This is a read-only alias for {@link getComponent}. In DEV mode, it returns a shallow-frozen
-   * component to prevent runtime mutations.
+   * Object.freeze is applied shallowly to the returned component in DEV mode (__DEV__ === true) to prevent silent mutations.
+   * This is a shallow freeze only. It does not protect nested objects due to performance reasons (avoiding deep-freeze allocations).
+   * Under production mode (__DEV__ === false), Object.freeze is a complete no-op and returns the component directly to avoid any runtime overhead.
    */
   public readComponent<K extends ComponentType<TComponents>>(
     entity: Entity,
     type: K
   ): TComponents[K] | undefined {
     const component = this.getComponent(entity, type);
-    if (isDev && component !== undefined) {
+    if (__DEV__ && component !== undefined) {
       return Object.freeze(component) as TComponents[K];
     }
     return component;
