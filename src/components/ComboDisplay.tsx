@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Platform, TextStyle, StyleProp } from 'react-native';
+import { View, Text, StyleSheet, Animated, Platform, TextStyle } from 'react-native';
 
 interface ComboDisplayProps {
   multiplier: number;
