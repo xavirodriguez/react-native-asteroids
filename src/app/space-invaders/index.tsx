@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, FC } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
@@ -37,18 +37,18 @@ export default function SpaceInvadersScreen() {
   const { game, gameState, handleInput, isPaused, isReady, togglePause, highScore, seed, restartWithSeed } = useSpaceInvadersGame(isMulti && started, initialSeed);
   const [activeMutators, setActiveMutators] = useState<Mutator[]>([]);
 
-  const { room, connected, serverState } = useMultiplayer("spaceinvaders", playerName, isMulti && started);
+  const { room, connected, serverState } = useMultiplayer("space-invaders", playerName, isMulti && started);
 
   useEffect(() => {
     MutatorService.isMutatorModeEnabled().then(enabled => {
       if (enabled) {
-        setActiveMutators(MutatorService.getActiveMutatorsForGame("spaceinvaders"));
+        setActiveMutators(MutatorService.getActiveMutatorsForGame("space-invaders"));
       }
     });
   }, []);
 
   const { showDailyResults, setShowDailyResults } = useGameSession({
-    gameId: "spaceinvaders",
+    gameId: "space-invaders",
     isDaily,
     seed,
     gameState: gameState ?? { isGameOver: false },
@@ -163,7 +163,7 @@ export default function SpaceInvadersScreen() {
         {showDailyResults && seed !== undefined && (
           <View style={styles.overlay}>
             <DailyResultsOverlay
-              gameId="spaceinvaders"
+              gameId="space-invaders"
               score={gameState.score}
               seed={seed}
               onClose={() => setShowDailyResults(false)}
@@ -176,7 +176,7 @@ export default function SpaceInvadersScreen() {
   );
 }
 
-const StartScreen: React.FC<{
+const StartScreen: FC<{
   title: string;
   highScore: number;
   onStart: () => void;
@@ -221,7 +221,7 @@ const StartScreen: React.FC<{
         <Text style={styles.instructions}>{instructions}</Text>
         <Text style={styles.highScoreText}>Récord: {highScore}</Text>
 
-        {onStartDaily && <DailyChallengeBanner gameId="spaceinvaders" onPlay={onStartDaily} />}
+        {onStartDaily && <DailyChallengeBanner gameId="space-invaders" onPlay={onStartDaily} />}
 
         <MutatorBadge mutators={activeMutators} />
 

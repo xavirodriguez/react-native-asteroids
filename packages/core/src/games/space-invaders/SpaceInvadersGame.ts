@@ -48,7 +48,7 @@ export class SpaceInvadersGame
   private enemyBulletPool!: EnemyBulletPool;
   private particlePool!: ParticlePool;
   private networkManager!: NetworkManager;
-  public readonly gameId = "spaceinvaders";
+  public readonly gameId = "space-invaders";
   private config!: SpaceInvadersConfig;
 
   constructor(config: { isMultiplayer?: boolean, seed?: number, gameOptions?: Record<string, unknown> } = {}) {
@@ -295,7 +295,7 @@ export class SpaceInvadersGame
 
 export class NullSpaceInvadersGame implements ISpaceInvadersGame {
   public isMultiplayer = false;
-  public gameId = "spaceinvaders";
+  public gameId = "space-invaders";
   private _world = new World<SpaceInvadersComponentRegistry>();
   private _loop = new GameLoop();
   public getWorld() { return this._world; }

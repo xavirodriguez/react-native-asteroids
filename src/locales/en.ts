@@ -40,7 +40,7 @@ export const en = {
     instructions: "Space to flap",
     touch_instructions: "Touch screen to flap",
   },
-  spaceinvaders: {
+  "space-invaders": {
     instructions: "←→ Move  Space to Shoot",
   },
   mutators: {

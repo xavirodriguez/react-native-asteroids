@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, FC } from "react";
 import { StyleSheet, View, Text, TouchableOpacity, Platform, TextInput } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
@@ -195,7 +195,7 @@ export default function FlappyBirdScreen() {
   );
 }
 
-const StartScreen: React.FC<{
+const StartScreen: FC<{
   title: string;
   highScore: number;
   onStart: () => void;

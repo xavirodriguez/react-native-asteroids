@@ -16,7 +16,7 @@ export function useSpaceInvadersGame(isMultiplayer: boolean = false, seed?: numb
   useEffect(() => {
     MutatorService.isMutatorModeEnabled().then(enabled => {
       if (enabled) {
-        setActiveMutators(MutatorService.getActiveMutatorsForGame("spaceinvaders"));
+        setActiveMutators(MutatorService.getActiveMutatorsForGame("space-invaders"));
       }
     });
   }, []);
