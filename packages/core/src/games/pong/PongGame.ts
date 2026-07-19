@@ -148,14 +148,17 @@ export class PongGame extends BaseGame<PongState, PongInput, PongComponentRegist
     return false;
   }
 
-  public updateFromServer(state: Record<string, unknown>) {
-    if (this._config.gameOptions?.mode !== "online" || !state) return;
+  public updateFromServer(payload: import("../../network/NetTypes").ServerUpdatePayload) {
+    if (this._config.gameOptions?.mode !== "online" || !payload) return;
 
-    if (this.networkController && state.input_relay) {
-        this.networkController.onInputReceived({
-            tick: state.tick as number,
-            input: state.input as PongInput
-        });
+    if (payload.kind === "delta") {
+      const state = payload as any;
+      if (this.networkController && state.input_relay) {
+          this.networkController.onInputReceived({
+              tick: state.tick as number,
+              input: state.input as PongInput
+          });
+      }
     }
   }
 }

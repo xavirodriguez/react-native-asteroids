@@ -22,9 +22,31 @@ export class CollisionSystem2D<TRegistry extends CoreComponentRegistry = CoreCom
   private activePairs = new Set<string>();
   private candidateEntities: Entity[] | null = null;
 
-  public onCollision(callback: CollisionCallback<TRegistry>): void { this.onCollisionCallbacks.push(callback); }
-  public onTriggerEnter(callback: TriggerCallback<TRegistry>): void { this.onTriggerEnterCallbacks.push(callback); }
-  public onTriggerExit(callback: TriggerCallback<TRegistry>): void { this.onTriggerExitCallbacks.push(callback); }
+  public onCollision(callback: CollisionCallback<TRegistry>): () => void {
+    this.onCollisionCallbacks.push(callback);
+    return () => {
+      this.onCollisionCallbacks = this.onCollisionCallbacks.filter(cb => cb !== callback);
+    };
+  }
+  public onTriggerEnter(callback: TriggerCallback<TRegistry>): () => void {
+    this.onTriggerEnterCallbacks.push(callback);
+    return () => {
+      this.onTriggerEnterCallbacks = this.onTriggerEnterCallbacks.filter(cb => cb !== callback);
+    };
+  }
+  public onTriggerExit(callback: TriggerCallback<TRegistry>): () => void {
+    this.onTriggerExitCallbacks.push(callback);
+    return () => {
+      this.onTriggerExitCallbacks = this.onTriggerExitCallbacks.filter(cb => cb !== callback);
+    };
+  }
+
+  public override dispose(): void {
+    this.onCollisionCallbacks = [];
+    this.onTriggerEnterCallbacks = [];
+    this.onTriggerExitCallbacks = [];
+    this.activePairs.clear();
+  }
 
   public setCandidates(entities: Entity[] | null): void {
     this.candidateEntities = entities;

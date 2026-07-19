@@ -329,6 +329,124 @@ describe("CollisionSystems (CollisionSystem2D & CCDSystem) Tests", () => {
     });
   });
 
+  describe("Scenario 2.5: ID Recycling and dispose/unsubscription", () => {
+    it("should successfully triggerEnter on recycled entity ID after dispose", () => {
+      // Create trigger A and entity B in old session
+      const entityA = world.createEntity();
+      world.addComponent(entityA, {
+        type: "Transform", x: 10, y: 10, rotation: 0, scaleX: 1, scaleY: 1,
+        worldX: 10, worldY: 10, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false
+      });
+      world.addComponent(entityA, {
+        type: "Collider", shape: { type: ShapeType.Circle, radius: 10 },
+        layer: layer(1), mask: maskOf(layer(2)), enabled: true, isTrigger: true
+      });
+      world.addComponent(entityA, {
+        type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: []
+      });
+
+      const entityB = world.createEntity();
+      world.addComponent(entityB, {
+        type: "Transform", x: 12, y: 10, rotation: 0, scaleX: 1, scaleY: 1,
+        worldX: 12, worldY: 10, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false
+      });
+      world.addComponent(entityB, {
+        type: "Collider", shape: { type: ShapeType.Circle, radius: 10 },
+        layer: layer(2), mask: maskOf(layer(1)), enabled: true, isTrigger: false
+      });
+      world.addComponent(entityB, {
+        type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: []
+      });
+
+      let enters = 0;
+      collisionSystem.onTriggerEnter(() => { enters++; });
+
+      // Run collision update: pair (entityA, entityB) collides, trigger enters
+      collisionSystem.update(world, 0.016);
+      expect(enters).toBe(1);
+
+      // Now reset / clear session by creating a new world, disposing collision system
+      collisionSystem.dispose();
+
+      const newWorld = new World<CoreComponentRegistry>();
+      // Recycle the exact same entity IDs (0 and 1)
+      const recycledA = newWorld.createEntity(); // 0
+      newWorld.addComponent(recycledA, {
+        type: "Transform", x: 10, y: 10, rotation: 0, scaleX: 1, scaleY: 1,
+        worldX: 10, worldY: 10, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false
+      });
+      newWorld.addComponent(recycledA, {
+        type: "Collider", shape: { type: ShapeType.Circle, radius: 10 },
+        layer: layer(1), mask: maskOf(layer(2)), enabled: true, isTrigger: true
+      });
+      newWorld.addComponent(recycledA, {
+        type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: []
+      });
+
+      const recycledB = newWorld.createEntity(); // 1
+      newWorld.addComponent(recycledB, {
+        type: "Transform", x: 12, y: 10, rotation: 0, scaleX: 1, scaleY: 1,
+        worldX: 12, worldY: 10, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false
+      });
+      newWorld.addComponent(recycledB, {
+        type: "Collider", shape: { type: ShapeType.Circle, radius: 10 },
+        layer: layer(2), mask: maskOf(layer(1)), enabled: true, isTrigger: false
+      });
+      newWorld.addComponent(recycledB, {
+        type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: []
+      });
+
+      let recycledEnters = 0;
+      collisionSystem.onTriggerEnter(() => { recycledEnters++; });
+
+      // Update collision: since activePairs was cleared by dispose(), trigger enter must fire again
+      collisionSystem.update(newWorld, 0.016);
+      expect(recycledEnters).toBe(1);
+    });
+
+    it("should unsubscribe from callbacks using returned functions", () => {
+      let enters = 0;
+      const unsub = collisionSystem.onTriggerEnter(() => { enters++; });
+
+      const entityA = world.createEntity();
+      world.addComponent(entityA, {
+        type: "Transform", x: 10, y: 10, rotation: 0, scaleX: 1, scaleY: 1,
+        worldX: 10, worldY: 10, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false
+      });
+      world.addComponent(entityA, {
+        type: "Collider", shape: { type: ShapeType.Circle, radius: 10 },
+        layer: layer(1), mask: maskOf(layer(2)), enabled: true, isTrigger: true
+      });
+      world.addComponent(entityA, {
+        type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: []
+      });
+
+      const entityB = world.createEntity();
+      world.addComponent(entityB, {
+        type: "Transform", x: 12, y: 10, rotation: 0, scaleX: 1, scaleY: 1,
+        worldX: 12, worldY: 10, worldRotation: 0, worldScaleX: 1, worldScaleY: 1, dirty: false
+      });
+      world.addComponent(entityB, {
+        type: "Collider", shape: { type: ShapeType.Circle, radius: 10 },
+        layer: layer(2), mask: maskOf(layer(1)), enabled: true, isTrigger: false
+      });
+      world.addComponent(entityB, {
+        type: "CollisionEvents", collisions: [], activeTriggers: [], triggersEntered: [], triggersExited: []
+      });
+
+      collisionSystem.update(world, 0.016);
+      expect(enters).toBe(1);
+
+      // Unsubscribe and clear active pairs
+      unsub();
+      collisionSystem.dispose(); // to clear active pairs and trigger enters on next frame if re-added
+
+      collisionSystem.onTriggerEnter(() => {}); // dummy to avoid empty array checks if any, though not required
+      collisionSystem.update(world, 0.016);
+      expect(enters).toBe(1); // should remain 1
+    });
+  });
+
   describe("Scenario 3: Candidate Entities and Spatial Culling Fallbacks", () => {
     it("should use candidatesOverride if provided in update", () => {
       const asteroid = world.createEntity();

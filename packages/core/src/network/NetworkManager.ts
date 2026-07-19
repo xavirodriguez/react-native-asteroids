@@ -68,5 +68,5 @@ export interface INetworkGame {
 
 /** @public */
 export class NetworkReplicationUtils {
-  public static applyDelta(_snapshot: WorldSnapshot, _delta: any): void {}
+  public static applyDelta(_snapshot: WorldSnapshot, _delta: Partial<WorldSnapshot>): void {}
 }

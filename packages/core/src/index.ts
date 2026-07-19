@@ -90,6 +90,7 @@ export * from "./network/NetworkManager";
 export * from "./network/ReplicationSystem";
 export * from "./network/MultiplayerSystems";
 export * from "./network/NetTypes";
+export * from "./network/NetworkController";
 
 // Arcade Games Core
 export * from "./games/arcade/index";

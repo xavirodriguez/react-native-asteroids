@@ -14,12 +14,7 @@
  */
 export class RandomService {
   private seed: number;
-
-  /**
-   * Global flag to lock the gameplay context, intended to prevent
-   * unintentional use of the gameplay RNG during non-simulation phases.
-   */
-  public static lockGameplayContext = false;
+  private locked = false;
 
   constructor(seed: number = Math.random()) {
     this.seed = seed;
@@ -33,6 +28,18 @@ export class RandomService {
     return this.seed;
   }
 
+  public lock(): void {
+    this.locked = true;
+  }
+
+  public unlock(): void {
+    this.locked = false;
+  }
+
+  public isLocked(): boolean {
+    return this.locked;
+  }
+
   /**
    * Returns a pseudo-random number between 0 and 1.
    *
@@ -40,6 +47,9 @@ export class RandomService {
    * This operation mutates the internal seed.
    */
   public next(): number {
+    if (this.locked) {
+      throw new Error("RandomService: Gameplay context is locked. Random cannot be generated during this phase.");
+    }
     this.seed = (this.seed * 9301 + 49297) % 233280;
     return this.seed / 233280;
   }
