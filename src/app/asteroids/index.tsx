@@ -19,7 +19,6 @@ import { MutatorService } from "@/services/MutatorService";
 import { MutatorBadge } from "@/components/MutatorBadge";
 import { Mutator } from "@/config/MutatorConfig";
 import { GameErrorBoundary } from "@/components/GameErrorBoundary";
-import { AsteroidsGame } from "@tiny-aster/core";
 import { InputState } from "../../types/GameTypes";
 import { MULTIPLAYER_CONFIG } from "@/config/MultiplayerConfig";
 import { useGameSession } from "@/hooks/useGameSession";
@@ -207,7 +206,7 @@ export default function AsteroidsScreen() {
             </View>
         )}
 
-        <ComboDisplay multiplier={(gameState as any)?.comboMultiplier || (gameState as any)?.multiplier || 1} isActive={true} />
+        <ComboDisplay multiplier={(gameState as { comboMultiplier?: number; multiplier?: number })?.comboMultiplier || (gameState as { comboMultiplier?: number; multiplier?: number })?.multiplier || 1} isActive={true} />
         <GameUI
           gameState={gameState}
           onRestart={() => isMulti ? room?.send("start_game") : game.restart()}
