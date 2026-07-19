@@ -1,5 +1,15 @@
 import { System } from "../ecs/System";
 import { World } from "../ecs/World";
+import { ComponentRegistry } from "../ecs/Component";
+
+/**
+ * Interface representing a component mutator.
+ * @public
+ */
+export interface Mutator<TComponents extends ComponentRegistry = ComponentRegistry, K extends keyof TComponents & string = keyof TComponents & string> {
+  componentType: K;
+  mutate: (component: TComponents[K], world: World<TComponents>) => void;
+}
 
 /**
  * System designed to perform arbitrary mutations on entity components.
@@ -10,12 +20,27 @@ import { World } from "../ecs/World";
  * directly; use the {@link WorldCommandBuffer} for safer modifications.
  * @public
  */
-export class MutatorSystem extends System<any> {
-  constructor(mutators?: any[]) {
+export class MutatorSystem<TComponents extends ComponentRegistry = ComponentRegistry> extends System<TComponents> {
+  private mutators: Mutator<TComponents>[];
+
+  constructor(mutators: Mutator<TComponents>[] = []) {
       super();
+      this.mutators = mutators;
   }
-  public update(world: World<any>, _deltaTime: number): void {
+
+  public update(world: World<TComponents>, _deltaTime: number): void {
+    for (const mutator of this.mutators) {
+      if (mutator && mutator.componentType && typeof mutator.mutate === "function") {
+        const entities = world.query(mutator.componentType as any);
+        for (const entity of entities) {
+          world.mutateComponent(entity, mutator.componentType as any, (comp) => {
+            mutator.mutate(comp, world);
+          });
+        }
+      }
+    }
   }
-  public onRegister(world: World<any>): void {}
-  public dispose(): void {}
+
+  public override onRegister(world: World<TComponents>): void {}
+  public override dispose(): void {}
 }

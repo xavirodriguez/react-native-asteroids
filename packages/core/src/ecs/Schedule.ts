@@ -66,7 +66,9 @@ export class Schedule<
     deltaTime: number
   ): void {
     world.isUpdating = true;
-    RandomService.lockGameplayContext = true;
+    if (world.gameplayRandom) {
+      world.gameplayRandom.unlock();
+    }
     try {
       for (const phase of this.phases) {
         const phaseSystems = this.systems
@@ -79,7 +81,9 @@ export class Schedule<
       }
     } finally {
       world.isUpdating = false;
-      RandomService.lockGameplayContext = false;
+      if (world.gameplayRandom) {
+        world.gameplayRandom.lock();
+      }
     }
     world.flush();
   }

@@ -106,6 +106,7 @@ export class World<
 
   constructor(schedule?: Schedule<TComponents, TEvents, TBlueprints>) {
     this.defaultSchedule = schedule ?? new Schedule<TComponents, TEvents, TBlueprints>();
+    this._gameplayRandom.lock();
   }
 
   /** @internal */

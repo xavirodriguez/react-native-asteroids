@@ -72,7 +72,11 @@ describe("MultiplayerSystems", () => {
 
     const replicationTracker = {};
     const deltaSystem = new NetworkDeltaSystem(replicationTracker);
-    expect(deltaSystem.generateDelta({}, "session", 1, 0, new Set(), false)).toEqual({});
+    expect(deltaSystem.generateDelta({}, "session", 1, 0, new Set(), false)).toEqual({
+      kind: "delta",
+      tick: 0,
+      delta: {}
+    });
 
     const budgetManager = new NetworkBudgetManager();
     const interest = [{ id: 1 }];
@@ -167,7 +171,13 @@ describe("RandomService", () => {
     expect(nextIntVal).toBeGreaterThanOrEqual(500);
     expect(nextIntVal).toBeLessThan(600);
 
-    expect(RandomService.lockGameplayContext).toBe(false);
+    expect(rng.isLocked()).toBe(false);
+    rng.lock();
+    expect(rng.isLocked()).toBe(true);
+    expect(() => rng.next()).toThrow();
+    rng.unlock();
+    expect(rng.isLocked()).toBe(false);
+    expect(() => rng.next()).not.toThrow();
   });
 });
 

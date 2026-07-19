@@ -31,6 +31,7 @@ import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManage
 import { NetworkManager } from "../../network/NetworkManager";
 import { NullTransport } from "../../network/NullTransport";
 import { ReplicationSystem } from "../../network/ReplicationSystem";
+import { NetworkController } from "../../network/NetworkController";
 import { INetworkGame } from "../../network/NetworkManager";
 import { ConfigService } from "../../config/ConfigService";
 import { AsteroidConfigSchema, AsteroidConfig } from "./types/AsteroidConfigSchema";
@@ -52,17 +53,23 @@ export class AsteroidsGame
   private assetLoader!: AssetLoader;
   private bulletPool!: BulletPool;
   private particlePool!: ParticlePool;
-  private networkManager?: NetworkManager;
-  private lastProcessedFullStateVersion = -1;
+  private network!: NetworkController<AsteroidsComponentRegistry>;
   public readonly gameId = "asteroids";
   private config: AsteroidConfig;
   private resizeListener?: () => void;
   private isHeadless: boolean;
-  private isMultiplayer: boolean;
+
+  public get networkManager(): NetworkManager | undefined { return this.network.networkManager; }
+  public set networkManager(val: NetworkManager | undefined) { this.network.networkManager = val; }
+  public get lastProcessedFullStateVersion(): number { return this.network.lastProcessedFullStateVersion; }
+  public set lastProcessedFullStateVersion(val: number) { this.network.lastProcessedFullStateVersion = val; }
+  public get isMultiplayer(): boolean { return this.network.isMultiplayer; }
+  public set isMultiplayer(val: boolean) { this.network.isMultiplayer = val; }
 
   constructor(config: BaseGameConfig = {}) {
     super(config);
     this.isHeadless = config.headless || false;
+    this.network = new NetworkController<AsteroidsComponentRegistry>(this.world);
     this.isMultiplayer = config.isMultiplayer || false;
     const rawConfig = require("./config/asteroids.json");
     this.config = rawConfig;
@@ -185,24 +192,14 @@ export class AsteroidsGame
   }
 
   public setMultiplayerMode(active: boolean) {
-    this.isMultiplayer = active;
-    if (!active) {
-      this.networkManager?.setTransport(new NullTransport());
-    }
+    this.network.setMultiplayerMode(active);
   }
 
   /**
    * Applies an input frame to a specific player ship entity.
    */
   public applyInputToEntity(entityId: number, input: InputFrame) {
-    this.world.mutateComponent(entityId, "Input", (inputComp) => {
-      inputComp.rotateLeft = input.actions.includes("rotateLeft");
-      inputComp.rotateRight = input.actions.includes("rotateRight");
-      inputComp.thrust = input.actions.includes("thrust");
-      inputComp.shoot = input.actions.includes("shoot");
-      inputComp.hyperspace = input.actions.includes("hyperspace");
-      inputComp.rotationAmount = input.axes?.horizontal ?? 0;
-    });
+    this.network.applyInputToEntity(entityId, input);
   }
 
 
@@ -210,62 +207,18 @@ export class AsteroidsGame
    * Performs local player movement prediction using the shared simulation.
    */
   public predictLocalPlayer(input: InputFrame, deltaTime: number) {
-    const localPlayer = this.world.query("LocalPlayer")[0];
-    if (localPlayer !== undefined) {
-      this.applyInputToEntity(localPlayer, input);
-    }
-
-    // Actual simulation step
-    this.runSimulationStep(deltaTime, false);
-
-    if (this.isMultiplayer && this.networkManager) {
-      const strategy = this.networkManager.getStrategy();
-      if (strategy.recordPrediction) {
-        strategy.recordPrediction(input, this.world);
-      }
-    }
+    this.network.predictLocalPlayer(input, deltaTime);
   }
 
   /**
    * Runs a single simulation step.
    */
-  public runSimulationStep(deltaTime: number, _isResimulating: boolean) {
-    this.world.update(deltaTime);
+  public runSimulationStep(deltaTime: number, isResimulating: boolean) {
+    this.network.runSimulationStep(deltaTime, isResimulating);
   }
 
-  public updateFromServer(serverState: Record<string, unknown>, localSessionId?: string) {
-    if (!this.isMultiplayer || !serverState || !this.networkManager) return;
-
-    if (serverState.delta) {
-        this.handleDeltaServerUpdate(serverState, localSessionId);
-    } else if (serverState.fullWorldState) {
-        this.handleFullServerUpdate(serverState, localSessionId);
-    }
-  }
-
-  private handleDeltaServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
-    const serverTick = serverState.tick as number;
-    const delta = serverState.delta as any;
-
-    if (!this.networkManager) return;
-
-    this.networkManager.processServerUpdate(serverTick, delta, localSessionId);
-
-    const eventBus = this.world.getEventBus();
-    if (eventBus && (delta as any).stateVersion !== undefined) {
-      eventBus.emit("net:ack_version" as any, { version: (delta as any).stateVersion, tick: serverTick } as any);
-    }
-  }
-
-  private handleFullServerUpdate(serverState: Record<string, unknown>, localSessionId?: string) {
-    if (!this.networkManager) return;
-    const authoritativeSnapshot = serverState.fullWorldState as any;
-
-    if (authoritativeSnapshot.stateVersion === this.lastProcessedFullStateVersion) return;
-    this.lastProcessedFullStateVersion = authoritativeSnapshot.stateVersion;
-
-    const serverTick = serverState.serverTick as number;
-    this.networkManager.processServerUpdate(serverTick, authoritativeSnapshot, localSessionId);
+  public updateFromServer(payload: import("../../network/NetTypes").ServerUpdatePayload, localSessionId?: string) {
+    this.network.updateFromServer(payload, localSessionId);
   }
 
   /**

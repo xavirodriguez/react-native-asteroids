@@ -45,7 +45,7 @@ describe("Schedule Unit Tests", () => {
     ]);
   });
 
-  it("Test de Robustez (Try...Finally): should reset world.isUpdating and RandomService.lockGameplayContext when a system throws an error", () => {
+  it("Test de Robustez (Try...Finally): should reset world.isUpdating and RandomService lock state when a system throws an error", () => {
     class FaultySystem extends System {
       update(world: World, deltaTime: number): void {
         throw new Error("Simulated system failure");
@@ -61,7 +61,7 @@ describe("Schedule Unit Tests", () => {
     }).toThrow("Simulated system failure");
 
     expect(customWorld.isUpdating).toBe(false);
-    expect(RandomService.lockGameplayContext).toBe(false);
+    expect(customWorld.gameplayRandom.isLocked()).toBe(true);
   });
 
   it("Test de Flush: should call world.flush() exactly once after all phases are finished", () => {

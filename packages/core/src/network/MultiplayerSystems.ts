@@ -1,4 +1,6 @@
 import { Packr } from "msgpackr";
+import { ServerUpdatePayload } from "./NetTypes";
+import { WorldSnapshot } from "../snapshots/WorldSnapshot";
 
 const packr = new Packr({
     useRecords: false,
@@ -17,7 +19,13 @@ export class ClientAckTracker {
 /** @public */
 export class NetworkDeltaSystem {
     constructor(tracker: ReplicationStateTracker) {}
-    public generateDelta(world: any, sessionId: string, sequence: number, baselineAck: number, interestIds: Set<number>, forceFull: boolean): any { return {}; }
+    public generateDelta(world: any, sessionId: string, sequence: number, baselineAck: number, interestIds: Set<number>, forceFull: boolean): ServerUpdatePayload {
+        return {
+            kind: "delta",
+            tick: 0,
+            delta: {} as Partial<WorldSnapshot>
+        };
+    }
 }
 /** @public */
 export class NetworkBudgetManager {

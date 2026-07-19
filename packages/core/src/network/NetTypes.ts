@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { WorldSnapshot } from "../snapshots/WorldSnapshot";
 
 /**
  * Represents a single tick of user input.
@@ -72,3 +73,22 @@ export interface ReplayData {
   endTick: number;
   frames: ReplayFrame[];
 }
+
+/** @public */
+export interface FullSnapshotPayload {
+  kind: "full";
+  serverTick: number;
+  fullWorldState: WorldSnapshot;
+  localSessionId?: string;
+}
+
+/** @public */
+export interface DeltaSnapshotPayload {
+  kind: "delta";
+  tick: number;
+  delta: Partial<WorldSnapshot>;
+  localSessionId?: string;
+}
+
+/** @public */
+export type ServerUpdatePayload = FullSnapshotPayload | DeltaSnapshotPayload;
