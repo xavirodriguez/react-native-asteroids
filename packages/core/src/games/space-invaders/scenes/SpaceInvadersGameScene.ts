@@ -4,7 +4,6 @@ import { EventBus } from "../../../events/EventBus";
 import { BaseGame } from "../../../runtime/BaseGame";
 import { SpaceInvadersComponentRegistry } from "../types/SpaceInvadersTypes";
 import { MovementSystem } from "../../../physics/systems/MovementSystem";
-import { ComboSystem } from "../../arcade/systems/ComboSystem";
 import { TTLSystem } from "../../../systems/TTLSystem";
 import { JuiceSystem } from "../../../systems/JuiceSystem";
 import { RenderUpdateSystem } from "../../../systems/RenderUpdateSystem";
@@ -77,7 +76,6 @@ export class SpaceInvadersGameScene extends Scene {
     this.world.addSystem((this.game as any).unifiedInput, { phase: SystemPhase.Input });
     this.world.addSystem(inputSys, { phase: SystemPhase.Simulation });
     this.world.addSystem(new MovementSystem(), { phase: SystemPhase.Simulation });
-    this.world.addSystem(new ComboSystem() as any, { phase: SystemPhase.Simulation });
     this.world.addSystem(new BoundarySystem(), { phase: SystemPhase.Simulation });
     this.world.addSystem(new SpaceInvadersFormationSystem(this.enemyBulletPool), { phase: SystemPhase.Simulation });
     this.world.addSystem(new InvulnerabilitySystem(), { phase: SystemPhase.Simulation });
