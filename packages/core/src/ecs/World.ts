@@ -20,6 +20,10 @@ if (typeof (globalThis as any).__DEV__ === "undefined") {
   (globalThis as any).__DEV__ = process.env.NODE_ENV !== "production";
 }
 
+const isDev = typeof (globalThis as any).__DEV__ !== "undefined"
+  ? (globalThis as any).__DEV__
+  : (process.env.NODE_ENV !== "production");
+
 /**
  * Map type for blueprint definitions.
  * @public
@@ -152,6 +156,13 @@ export class World<
   public getEventBus(): EventBus<TEvents> { return this.getResource<EventBus<TEvents>>("EventBus")!; }
   public getCommandBuffer(): WorldCommandBuffer<TComponents, TEvents, TBlueprints> { return this.commandBuffer; }
 
+  /**
+   * Access the structural CommandBuffer for deferred entity and component mutations.
+   */
+  public get commands(): WorldCommandBuffer<TComponents, TEvents, TBlueprints> {
+    return this.commandBuffer;
+  }
+
   /** Returns the world schedule instance. */
   public get schedule(): Schedule<TComponents, TEvents, TBlueprints> {
     return this.defaultSchedule;
@@ -203,7 +214,17 @@ export class World<
    * simulation stability and avoid inconsistent state during a frame, it is recommended
    * to use {@link WorldCommandBuffer} to defer creation until the end of the update.
    */
+  private checkUpdatingMutation(opName: string, type?: string): void {
+    if (isDev && this.isUpdating) {
+      if (type === "Juice" || type === "VisualOffset") {
+        return;
+      }
+      throw new Error(`Direct structural mutation (${opName}${type ? " of " + type : ""}) during World update is forbidden. Use world.commands instead.`);
+    }
+  }
+
   createEntity(): Entity {
+    this.checkUpdatingMutation("createEntity");
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
     this.activeEntities.add(id);
     this.cachedEntities = null;
@@ -228,6 +249,7 @@ export class World<
    * to defer entity removal until the end of the frame.
    */
   removeEntity(entity: Entity): void {
+    this.checkUpdatingMutation("removeEntity");
     if (this.activeEntities.delete(entity)) {
       this.freeEntities.push(entity);
       this.entityComponentSets.delete(entity);
@@ -268,6 +290,7 @@ export class World<
    * {@link WorldCommandBuffer} is recommended to ensure consistency across all systems.
    */
   addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K] & { type: K }): void {
+    this.checkUpdatingMutation("addComponent", component.type as string);
     const type = component.type as string;
     if (!this.componentMaps.has(type)) {
       this.componentMaps.set(type, new Map());
@@ -319,7 +342,25 @@ export class World<
       .get(type as string)
       ?.get(entity) as TComponents[K] | undefined;
 
-    if (__DEV__ && component !== undefined) {
+    if (isDev && component !== undefined) {
+      return Object.freeze(component) as TComponents[K];
+    }
+    return component;
+  }
+
+  /**
+   * Reads a component in a strictly read-only manner.
+   *
+   * @remarks
+   * This is a read-only alias for {@link getComponent}. In DEV mode, it returns a shallow-frozen
+   * component to prevent runtime mutations.
+   */
+  public readComponent<K extends ComponentType<TComponents>>(
+    entity: Entity,
+    type: K
+  ): TComponents[K] | undefined {
+    const component = this.getComponent(entity, type);
+    if (isDev && component !== undefined) {
       return Object.freeze(component) as TComponents[K];
     }
     return component;
@@ -347,6 +388,7 @@ export class World<
    * system updates, it is recommended to use {@link WorldCommandBuffer}.
    */
   removeComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): void {
+    this.checkUpdatingMutation("removeComponent", type as string);
     const map = this.componentMaps.get(type as string);
     if (map && map.delete(entity)) {
       this.componentIndex.get(type as string)?.delete(entity);

@@ -90,7 +90,7 @@ export class FlappyBirdInputSystem extends System<FlappyBirdComponentRegistry> {
           world.mutateComponent(entity, "Velocity", mutableVel => {
             mutableVel.vy = this.config.FLAP_STRENGTH;
           });
-          world.addComponent(entity, { type: "HapticRequest", pattern: "selection" } as any);
+          world.getCommandBuffer().addComponent(entity, { type: "HapticRequest", pattern: "selection" } as any);
           // Juice: Squash al aletear
           Juice.squash(world as any, entity, 1.2, 0.8, 50);
         }
