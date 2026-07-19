@@ -256,13 +256,6 @@ export function createGameState(world: World<any>, deferred?: boolean): Entity {
     screenShake: null,
     kamikazesActive: 0,
   } as GameStateComponent);
-  add({
-    type: "Combo",
-    combo: 0,
-    multiplier: 1,
-    timerRemaining: 0,
-    timerDuration: config.COMBO_TIMEOUT / 1000,
-  } as any);
   return gameState;
 }
 
