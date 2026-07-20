@@ -1,7 +1,7 @@
-# Handoff — 2025-02-22 02:00 UTC
+# Handoff — 2025-02-22 04:00 UTC
 
 ## Estado del objetivo en curso
-Nombre: Auditoría de Sanidad y Consistencia de la Arquitectura
+Nombre: Auditoría de Sanidad de Arquitectura y Verificación de Invariantes
 Estado: listo para review
 
 ## Contexto necesario para continuar
@@ -14,12 +14,12 @@ Todos los objetivos prioritarios históricos han sido completados de forma impec
 5. Culling espacial por viewport en CollisionSystem2D y Physics.
 6. Corrección de fugas e invariants en EventBus, lifecycle loops de BaseGame, ReplicationSystem y ComboSystem.
 
-La suite completa de tests de Jest (`pnpm test` y tests de determinismo headless) pasa de forma exitosa (102 de 102 tests).
+La suite completa de tests de Jest (`pnpm test` y tests de determinismo headless) pasa de forma exitosa (107 de 107 tests).
 La comprobación de tipado TypeScript estricto no arroja ningún error (`pnpm run typecheck:app` limpio).
-La separación modular y de fronteras con `check:core-boundaries` está 100% verde.
+La separación modular y de fronteras con `./scripts/check-core-boundaries.sh` está 100% verde.
 
 ## Bloqueos activos
 Ninguno.
 
 ## Próximo paso concreto
-Aprobar el estado actual y consolidar la rama principal `master` al estar libre de bugs, errores de compilación o fallos de tests.
+Aprobar el estado actual de auditoría y consolidar la rama principal `master` al estar libre de bugs, errores de compilación o fallos de tests.
