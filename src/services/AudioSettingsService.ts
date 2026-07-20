@@ -8,6 +8,7 @@ const MUTE_KEY = "settings:audio_muted";
 export class AudioSettingsService {
   private static muted: boolean = false;
   private static initialized: boolean = false;
+  private static listeners = new Set<(muted: boolean) => void>();
 
   /**
    * Initializes the service by loading the persisted mute state.
@@ -18,6 +19,7 @@ export class AudioSettingsService {
       const value = await AsyncStorage.getItem(MUTE_KEY);
       this.muted = value === "true";
       this.initialized = true;
+      this.notifyListeners();
     } catch (e) {
       console.warn("[AudioSettingsService] Failed to load mute state", e);
     }
@@ -34,7 +36,9 @@ export class AudioSettingsService {
    * Sets the mute state and persists it.
    */
   public static async setMuted(muted: boolean): Promise<void> {
+    if (this.muted === muted && this.initialized) return;
     this.muted = muted;
+    this.notifyListeners();
     try {
       await AsyncStorage.setItem(MUTE_KEY, String(muted));
     } catch (e) {
@@ -49,5 +53,30 @@ export class AudioSettingsService {
     const newState = !this.muted;
     await this.setMuted(newState);
     return newState;
+  }
+
+  /**
+   * Subscribes to mute state changes.
+   *
+   * @param listener - Callback invoked when the mute state changes.
+   * @returns Unsubscribe function.
+   */
+  public static subscribe(listener: (muted: boolean) => void): () => void {
+    this.listeners.add(listener);
+    // Emit current state on subscribe
+    listener(this.muted);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private static notifyListeners(): void {
+    this.listeners.forEach((listener) => {
+      try {
+        listener(this.muted);
+      } catch (e) {
+        console.error("[AudioSettingsService] Error in listener callback:", e);
+      }
+    });
   }
 }

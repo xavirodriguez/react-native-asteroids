@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { PlayerProfile } from '../services/PlayerProfileService';
 import { LEVEL_THRESHOLDS } from '../config/PassportConfig';
+import { useGameServices } from "@tiny-aster/react-native";
 
 interface PassportOverlayProps {
   profile: PlayerProfile;
@@ -13,15 +14,8 @@ export const PassportOverlay: React.FC<PassportOverlayProps> = ({ profile, onClo
   const prevLevelXP = LEVEL_THRESHOLDS[profile.level - 1] || 0;
   const progress = Math.min(1, (profile.xp - prevLevelXP) / (nextLevelXP - prevLevelXP));
 
-  const [isMuted, setIsMuted] = useState(false);
-
-  useEffect(() => {
-    // We can't easily get the eventBus here without passing it down,
-    // but we can talk to the singleton AudioSystem if we expose it or use a service.
-    // For MVP, we'll emit to a global event bus or just assume the profile handles it.
-    // Actually, we'll use a hack for MVP: access the audio system if available via a resource
-    // but since we are in React, we'll just use AsyncStorage directly or a hook.
-  }, []);
+  const services = useGameServices();
+  const isMuted = services?.isMuted ?? false;
 
   return (
     <View style={styles.container}>
@@ -76,10 +70,7 @@ export const PassportOverlay: React.FC<PassportOverlayProps> = ({ profile, onClo
                 <Switch
                     value={isMuted}
                     onValueChange={(val) => {
-                        setIsMuted(val);
-                        // This is a bit decoupled, but in a real app we'd use a Global Context
-                        // For now we rely on the next game session picking it up or
-                        // manually triggering an update if we had a global audio service.
+                        services?.setMuted(val);
                     }}
                 />
             </View>
