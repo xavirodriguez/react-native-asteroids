@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useKeepAwake } from "./useKeepAwake";
+import { useGameServices } from "../providers/GameServicesProvider";
 import type { BaseGame, BaseGameConfig } from "@tiny-aster/core";
 
 export type GameConfig = BaseGameConfig & {
@@ -66,8 +67,21 @@ export function useGame<
   const [isPaused, setIsPaused] = useState(false);
   const isPausedRef = useRef(false);
 
+  const services = useGameServices();
+
   // Principle 4: Use encapsulated hook for symmetric resource management
-  useKeepAwake(!isPaused && isReady);
+  // Fall back to direct hook only if no centralized GameServicesProvider context is available.
+  useKeepAwake(services ? false : (!isPaused && isReady));
+
+  useEffect(() => {
+    if (services) {
+      const gameId = GameClass ? GameClass.name : "unknown-game";
+      services.requestKeepAwake(gameId, !isPaused && isReady);
+      return () => {
+        services.requestKeepAwake(gameId, false);
+      };
+    }
+  }, [services, GameClass, isPaused, isReady]);
 
   useEffect(() => {
     if (!GameClass) {

@@ -7,6 +7,7 @@ import { PlayerProfileService, PlayerProfile } from "../services/PlayerProfileSe
 import { AudioSettingsService } from "../services/AudioSettingsService";
 import { I18nService } from "../services/I18nService";
 import { useTranslation } from "../hooks/useTranslation";
+import { useGameServices } from "@tiny-aster/react-native";
 import { PassportOverlay } from "../components/PassportOverlay";
 import { DailyChallengeCard } from "../components/DailyChallengeCard";
 import { LeaderboardOverlay } from "../components/LeaderboardOverlay";
@@ -27,7 +28,8 @@ const GAMES: GameEntry[] = [
 export default function HomeScreen() {
   const { t, locale, toggleLanguage } = useTranslation();
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
+  const services = useGameServices();
+  const isMuted = services?.isMuted ?? false;
   const [showPassport, setShowPassport] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState<string | null>(null);
 
@@ -38,9 +40,7 @@ export default function HomeScreen() {
   useEffect(() => {
     refreshProfile();
     I18nService.init();
-    AudioSettingsService.init().then(() => {
-      setIsMuted(AudioSettingsService.isMuted());
-    });
+    AudioSettingsService.init();
 
     // Listen for level up events to refresh the profile summary
     // Since index.tsx is the entry point, we can rely on it being mounted
@@ -53,8 +53,11 @@ export default function HomeScreen() {
   }, []);
 
   const toggleMute = async () => {
-    const newState = await AudioSettingsService.toggleMute();
-    setIsMuted(newState);
+    if (services) {
+      await services.toggleMute();
+    } else {
+      await AudioSettingsService.toggleMute();
+    }
   };
 
   const handlePlayDaily = (gameId: string, seed: number) => {
