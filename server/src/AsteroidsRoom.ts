@@ -1,9 +1,15 @@
 import { Room, type Client, CloseCode } from "@colyseus/core";
 import { AsteroidsState, Player, Asteroid, Bullet } from "./schema/GameState";
 import { InputFrame, ReplayFrame } from "./NetTypes";
-import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, BinaryCompression, WorldSnapshot, Schedule, SystemPhase, filterSoASnapshot, SnapshotSerializer } from "@tiny-aster/core";
+import { World, InterestManagerSystem, ReplicationStateTracker, ClientAckTracker, NetworkDeltaSystem, NetworkBudgetManager, WorldSnapshot, Schedule, SystemPhase } from "@tiny-aster/core";
 import { AsteroidsGame, createShip, createAsteroid, AsteroidsComponentRegistry, AsteroidsEventRegistry } from "@tiny-aster/core/games/asteroids";
 import { z } from "zod";
+import { ReplicationStrategy } from "./replication/ReplicationStrategy";
+import { LegacyReplicationStrategy } from "./replication/LegacyReplicationStrategy";
+import { InterestReplicationStrategy } from "./replication/InterestReplicationStrategy";
+import { DeltaReplicationStrategy } from "./replication/DeltaReplicationStrategy";
+import { BudgetReplicationStrategy } from "./replication/BudgetReplicationStrategy";
+import { BinaryReplicationStrategy } from "./replication/BinaryReplicationStrategy";
 
 const RoomOptionsSchema = z.object({
   seed: z.number().int().optional(),
@@ -57,6 +63,7 @@ export class AsteroidsRoom extends (Room as any) {
   private budgetManager = new NetworkBudgetManager();
   private deltaSystem = new NetworkDeltaSystem(this.replicationTracker);
   private REPLICATION_MODE: 'legacy' | 'interest' | 'delta' | 'budget' | 'binary' = 'binary';
+  private replicationStrategy!: ReplicationStrategy;
 
   private spawnAsteroids(count: number) {
     const gameplayRandom = this.world.gameplayRandom;
@@ -74,6 +81,27 @@ export class AsteroidsRoom extends (Room as any) {
     if (validOptions.replicationMode) {
         this.REPLICATION_MODE = validOptions.replicationMode;
     }
+
+    switch (this.REPLICATION_MODE) {
+        case 'legacy':
+            this.replicationStrategy = new LegacyReplicationStrategy();
+            break;
+        case 'interest':
+            this.replicationStrategy = new InterestReplicationStrategy();
+            break;
+        case 'delta':
+            this.replicationStrategy = new DeltaReplicationStrategy();
+            break;
+        case 'budget':
+            this.replicationStrategy = new BudgetReplicationStrategy();
+            break;
+        case 'binary':
+            this.replicationStrategy = new BinaryReplicationStrategy();
+            break;
+        default:
+            this.replicationStrategy = new BinaryReplicationStrategy();
+    }
+
     this.newClients.clear();
     this.setState(new AsteroidsState());
     this.state.seed = validOptions.seed || Math.floor(Math.random() * 0xFFFFFFFF);
@@ -224,121 +252,12 @@ export class AsteroidsRoom extends (Room as any) {
 
     this.syncWorldToSchema();
 
-    let totalBytesSentThisTick = 0;
-    let totalSerializationMs = 0;
-    let totalEntitiesFiltered = 0;
-    const totalEntitiesInWorld = this.world.entities.length;
+    const { totalBytesSentThisTick, totalSerializationMs, totalEntitiesFiltered } =
+        this.replicationStrategy.replicate(this, this.clients, this.state, this.state.serverTick);
 
-    if (this.REPLICATION_MODE === 'legacy') {
-        const fullSerializationStart = Date.now();
+    if (this.state.serverTick % 60 === 0) {
         const snapshot = this.world.snapshot();
-        const serialized = JSON.stringify(snapshot);
-        totalSerializationMs += (Date.now() - fullSerializationStart);
-        this.state.fullWorldState = serialized;
-        totalBytesSentThisTick = serialized.length;
-    } else {
-        const detailedInterestMap = this.world.getResource<Map<string, any[]>>("DetailedInterestMap");
-        this.clients.forEach((client: any) => {
-            const isNew = this.newClients.has(client.sessionId);
-            const interest = detailedInterestMap?.get(client.sessionId) || [];
-            let interestIds: Set<number>;
-
-            if (this.REPLICATION_MODE === 'interest' || isNew) {
-                interestIds = new Set(interest.map((e: any) => parseInt(e.entityId)));
-            } else {
-                const selfEntityId = this.playerEntities.get(client.sessionId)?.toString();
-                const prioritized = this.budgetManager.prioritize(client.sessionId, interest, selfEntityId);
-                interestIds = new Set(prioritized.map((e: any) => parseInt(e.entityId)));
-            }
-
-            totalEntitiesFiltered += (totalEntitiesInWorld - interestIds.size);
-
-            const serializationStart = Date.now();
-
-            if (this.REPLICATION_MODE === 'interest' || isNew) {
-                const snapshot = this.world.snapshot();
-                if (!isNew) {
-                    snapshot.entities = snapshot.entities.filter(id => interestIds.has(id));
-                    for (const type in snapshot.componentData) {
-                        for (const id in snapshot.componentData[type]) {
-                            if (!interestIds.has(parseInt(id))) {
-                                delete snapshot.componentData[type][id];
-                            }
-                        }
-                    }
-                }
-                const serialized = JSON.stringify(snapshot);
-                totalSerializationMs += (Date.now() - serializationStart);
-                totalBytesSentThisTick += serialized.length;
-                client.send("world_delta", {
-                    protocolVersion: this.state.protocolVersion,
-                    tick: this.state.serverTick,
-                    delta: serialized
-                });
-                if (isNew) this.newClients.delete(client.sessionId);
-            } else {
-                const sequence = this.ackTracker.nextSequence(client.sessionId);
-                const baselineAck = this.ackTracker.getLastAckedSequence(client.sessionId);
-                const idleTime = this.ackTracker.getIdleTime(client.sessionId);
-                const forceFull = idleTime > 3000 || baselineAck === 0;
-
-                const deltaPacket = this.deltaSystem.generateDelta(
-                    this.world,
-                    client.sessionId,
-                    sequence,
-                    baselineAck,
-                    interestIds,
-                    forceFull
-                );
-
-                if (this.REPLICATION_MODE === 'binary') {
-                    const snapshot = this.world.snapshot();
-                    const filteredSnapshot = isNew ? snapshot : filterSoASnapshot(snapshot, interestIds);
-                    const binaryPacket = BinaryCompression.pack(filteredSnapshot);
-                    totalSerializationMs += (Date.now() - serializationStart);
-                    totalBytesSentThisTick += binaryPacket.length;
-
-                    // Compute AoS equivalent size to record compression statistics (sampled once every 120 ticks (~2s) to avoid performance regression)
-                    const shouldSampleCompression = this.state.serverTick % 120 === 0;
-                    if (shouldSampleCompression) {
-                        try {
-                            const aosSnapshot = SnapshotSerializer.snapshot(this.world);
-                            if (!isNew) {
-                                aosSnapshot.entities = aosSnapshot.entities.filter(id => interestIds.has(id));
-                                for (const type in aosSnapshot.componentData) {
-                                    for (const id in aosSnapshot.componentData[type]) {
-                                        if (!interestIds.has(parseInt(id))) {
-                                            delete aosSnapshot.componentData[type][id];
-                                        }
-                                    }
-                                }
-                            }
-                            const aosSerialized = JSON.stringify(aosSnapshot);
-                            this.networkMetrics.recordCompression(binaryPacket.length, aosSerialized.length);
-                        } catch (err) {
-                            console.warn("[AsteroidsRoom] Failed to compute AoS comparison for metrics:", err);
-                        }
-                    }
-
-                    client.send("world_delta_bin", binaryPacket);
-                    if (isNew) this.newClients.delete(client.sessionId);
-                } else {
-                    const serialized = JSON.stringify(deltaPacket);
-                    totalSerializationMs += (Date.now() - serializationStart);
-                    totalBytesSentThisTick += serialized.length;
-                    client.send("world_delta", {
-                        protocolVersion: this.state.protocolVersion,
-                        tick: this.state.serverTick,
-                        delta: serialized
-                    });
-                }
-            }
-        });
-
-        if (this.state.serverTick % 60 === 0) {
-            const snapshot = this.world.snapshot();
-            this.state.fullWorldState = JSON.stringify(snapshot);
-        }
+        this.state.fullWorldState = JSON.stringify(snapshot);
     }
 
     const trackedEntitiesCount = this.state.players.size + this.state.asteroids.size + this.state.bullets.size;
