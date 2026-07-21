@@ -8,7 +8,7 @@ Este documento define de forma precisa y corta los términos que presentan ambig
 
 #### Boundary ⚠️
 *   **En el motor (Core):** Representado por `BoundaryComponent` (tipo `"Boundary"`) y `BoundarySystem`. Controla los límites de pantalla mediante comportamientos genéricos automatizados como envolver (`wrap`), rebotar (`bounce`) o destruir (`destroy`) entidades individuales al salir del viewport.
-*   **En un juego (Space Invaders):** El bloque de invasores en bloque no se gestiona mediante el `BoundarySystem` del core. La lógica reside en `SpaceInvadersFormationSystem`, que calcula dinámicamente la caja de contención (`minX`, `maxX`) del bloque de invasores vivos y realiza un chequeo predictivo de bordes para cambiar de dirección lateral y ordenar el descenso vertical (paso de bajada). Sin embargo, las entidades individuales (balas, jugador) sí pueden usar el `BoundaryComponent` del core.
+*   **En un juego (Space Invaders):** La formación de invasores en bloque no se gestiona mediante el `BoundarySystem` del core. La lógica reside en `SpaceInvadersFormationSystem`, que calcula dinámicamente la caja de contención (`minX`, `maxX`) de los invasores vivos y realiza un chequeo predictivo de bordes para cambiar de dirección lateral y ordenar el descenso vertical (paso de bajada). Sin embargo, entidades individuales (como la nave del jugador, las balas y el enemigo especial `ufo_scout`) sí utilizan el `BoundaryComponent` del core.
 
 #### Collider vs Collider2D ⚠️
 *   **Collider (tipo `"Collider"`):** Componente de colisión del core que trabaja junto con los sistemas centrales `CollisionSystem2D` (Sweep-and-Prune broad-phase y narrow-phase) y `CCDSystem` (Continuous Collision Detection por trazado de rayos). Utilizado en **Pong** y **Asteroids**.
