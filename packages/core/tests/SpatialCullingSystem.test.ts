@@ -260,4 +260,29 @@ describe("SpatialCullingSystem Tests", () => {
     expect(eventsA.collisions.length).toBe(0);
     expect(eventsB.collisions.length).toBe(0);
   });
+
+  it("debería omitir el culling espacial durante la re-simulación de rollback", () => {
+    const entityInside = world.createEntity();
+    world.addComponent(entityInside, {
+      type: "Transform",
+      x: 100,
+      y: 100,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+      worldX: 100,
+      worldY: 100,
+      worldRotation: 0,
+      worldScaleX: 1,
+      worldScaleY: 1,
+      dirty: false,
+    });
+
+    // Colocar el mundo en estado de re-simulación de rollback
+    world.isReSimulating = true;
+    cullingSystem.update(world, 0.016);
+
+    // Debe omitir el culling y limpiar/borrar el recurso "SpatialCullingCandidates"
+    expect(world.getResource("SpatialCullingCandidates")).toBeUndefined();
+  });
 });
