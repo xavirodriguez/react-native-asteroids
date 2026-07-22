@@ -8,10 +8,10 @@ Este documento define de forma precisa y corta los términos que presentan ambig
 
 #### Boundary ⚠️
 *   **En el motor (Core):** Representado por `BoundaryComponent` (tipo `"Boundary"`) y `BoundarySystem`. Controla los límites de pantalla mediante comportamientos genéricos automatizados como envolver (`wrap`), rebotar (`bounce`) o destruir (`destroy`) entidades individuales al salir del viewport.
-*   **En un juego (Space Invaders):** El bloque de invasores en bloque no se gestiona mediante el `BoundarySystem` del core. La lógica reside en `SpaceInvadersFormationSystem`, que calcula dinámicamente la caja de contención (`minX`, `maxX`) del bloque de invasores vivos y realiza un chequeo predictivo de bordes para cambiar de dirección lateral y ordenar el descenso vertical (paso de bajada). Sin embargo, las entidades individuales (balas, jugador) sí pueden usar el `BoundaryComponent` del core.
+*   **En un juego (Space Invaders):** El bloque de invasores no se gestiona mediante el `BoundarySystem` del core. La lógica reside en `SpaceInvadersFormationSystem`, que calcula dinámicamente la caja de contención (`minX`, `maxX`) de los invasores vivos y realiza un chequeo predictivo de bordes para cambiar de dirección lateral y ordenar el descenso vertical (paso de bajada). Sin embargo, las entidades individuales (balas, jugador) sí pueden usar el `BoundaryComponent` del core.
 
 #### Collider vs Collider2D ⚠️
-*   **Collider (tipo `"Collider"`):** Componente de colisión del core que trabaja junto con los sistemas centrales `CollisionSystem2D` (Sweep-and-Prune broad-phase y narrow-phase) y `CCDSystem` (Continuous Collision Detection por trazado de rayos). Utilizado en **Pong** y **Asteroids**.
+*   **Collider (tipo `"Collider"`):** Componente de colisión del core que trabaja junto con los sistemas centrales `CollisionSystem2D` (Sweep-and-Prune broad-phase y narrow-phase) y `CCDSystem` (Continuous Collision Detection por trazado de rayos). Utilizado en **Pong** y **Asteroids** (el cual usa `CollisionSystem2D` para sus interacciones).
 *   **Collider2D (tipo `"Collider2D"`):** Componente independiente del core que es consumido únicamente por sistemas de colisión específicos y personalizados de juegos concretos que implementan su propio cálculo ad-hoc de intersección e impacto, tales como **Space Invaders** (`SpaceInvadersCollisionSystem`) y **Flappy Bird** (`FlappyBirdCollisionSystem`), puenteando y omitiendo el pipeline de colisiones genérico del core.
 
 #### Combo / ComboSystem ⚠️
@@ -20,7 +20,7 @@ Este documento define de forma precisa y corta los términos que presentan ambig
 *   **En un juego (Flappy Bird):** Maneja su propia variable `comboMultiplier` local en el componente `FlappyBirdState` (tipo `"FlappyState"`), de manera 100% independiente del sistema de combos del core.
 *   **En un juego (Pong):** Maneja su propia variable `comboMultiplier` local dentro del componente `PongState` (tipo `"PongState"`), independiente del core.
 
-#### GameState / PongState / FlappyState ⚠️
+#### GameState ⚠️
 *   **En el motor (Core):** `BaseGameStateSystem` es una clase de sistema abstracta para estructurar el control de flujos de juego, victoria/derrota y reinicios de forma genérica. No provee un componente `"GameState"` nativo en el core.
 *   **En un juego (Asteroids / Space Invaders):** El estado se almacena en un componente singleton específico llamado `"GameState"` (tipo `"GameState"`) que guarda vidas, nivel actual, puntaje acumulado y banderas de fin de juego.
 *   **En un juego (Pong):** Define un componente personalizado de estado llamado `PongState` (tipo `"PongState"`).
@@ -38,16 +38,16 @@ Este documento define de forma precisa y corta los términos que presentan ambig
 ## Términos con Cambio de Significado tras Decisiones de Diseño
 
 #### destroy vs dispose
-*   **Significado actual:** La clase base abstracta de ECS `System` define únicamente la firma `dispose(): void {}` como ciclo de vida oficial para liberar recursos, listeners y desregistrar componentes del World. El término `destroy` sobrevive en la literatura antigua, pero en el código real de sistemas se utiliza estrictamente `dispose`.
+*   **Significado actual:** La clase base abstracta de ECS `System` define únicamente la firma `dispose(): void {}` como ciclo de vida oficial para liberar recursos, listeners y desregistrar componentes del World. El término `destroy` sobrevive en la literatura antigua y en la firma de ciclo de vida de los controladores de juego de alto nivel como `BaseGame.destroy()`, pero en el código real de sistemas se utiliza estrictamente `dispose()`.
 
 #### entities
-*   **Significado actual (DECISION-001):** La propiedad `World.entities` devuelve un array de lectura ordenada (`ReadonlyArray<Entity>`) apoyado en una caché interna (`cachedEntities`). No realiza una ordenación dinámica en $O(N \log N)$ en cada frame, invalidándose la caché únicamente ante mutaciones estructurales del mundo.
+*   **Significado actual (DECISION-001):** La propiedad `World.entities` devuelve un array de lectura ordenada (`ReadonlyArray<Entity>`) apoyado en una caché interna (`cachedEntities`). No realiza una ordenación dinámica en $O(N \log N)$ en cada frame, invalidándose la caché únicamente ante mutaciones estructurales del mundo (como creación, eliminación o vaciado de entidades).
 
 #### invulnerableRemaining
 *   **Significado actual:** Este campo de control de daño temporal fue centralizado globalmente en el componente de salud central `HealthComponent` (tipo `"Health"`). Los sistemas específicos de los juegos (ej: `InvulnerabilitySystem` de Space Invaders y la renderización en `FlappyBirdCanvasVisuals.ts`) consumen y decrementan este campo común en lugar de programar contadores de invulnerabilidad customizados.
 
 #### stateVersion
-*   **Significado actual:** Entero incremental asociado al estado de cada componente. En modo `__DEV__`, las propiedades obtenidas vía `getComponent` están congeladas con `Object.freeze()`. Es obligatorio usar `mutateComponent` o `getMutableComponent` (que clona el componente si está congelado), lo cual incrementa `stateVersion` para notificar al serializador binario y evitar desincronizaciones en la red.
+*   **Significado actual:** Entero incremental asociado al estado del `World` que indica mutaciones en el estado de sus componentes. Se incrementa automáticamente cada vez que se llama a `mutateComponent` o `getMutableComponent` de un componente congelado en modo de desarrollo (`__DEV__`). Esto notifica al serializador de red y evita desincronizaciones en la simulación.
 
 ---
 
