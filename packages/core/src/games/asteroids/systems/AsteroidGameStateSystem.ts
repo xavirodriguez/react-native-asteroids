@@ -3,6 +3,7 @@ import { BaseGameStateSystem } from "../../../systems/BaseGameStateSystem";
 import { GameStateComponent } from "../types/AsteroidTypes";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
 import { IAsteroidsGame } from "../types/GameInterfaces";
+import { spawnAsteroidWave } from "../EntityFactory";
 
 /** @public */
 export class AsteroidGameStateSystem extends BaseGameStateSystem<
@@ -21,8 +22,25 @@ export class AsteroidGameStateSystem extends BaseGameStateSystem<
     return world.getSingleton("GameState");
   }
 
-  protected updateGameState(world: World<AsteroidsComponentRegistry>, gameState: GameStateComponent, deltaTime: number): void {
-      // Logic for wave management, score, etc.
+  protected updateGameState(
+    world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>,
+    gameState: GameStateComponent,
+    deltaTime: number
+  ): void {
+      if (gameState.isGameOver) return;
+
+      // Check if all asteroids are destroyed
+      const asteroids = world.query("Asteroid");
+      if (asteroids.length === 0) {
+          // All asteroids cleared! Increment level and spawn the next wave
+          let nextLevel = gameState.level;
+          world.mutateSingleton("GameState", (gs) => {
+              gs.level++;
+              nextLevel = gs.level;
+          });
+
+          spawnAsteroidWave(world as any, nextLevel);
+      }
   }
 
   protected evaluateGameOverCondition(gameState: GameStateComponent): boolean {

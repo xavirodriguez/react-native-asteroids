@@ -7,7 +7,13 @@ export const AsteroidConfigSchema = BaseConfigSchema.extend({
   SCREEN_CENTER_X: z.number().default(400),
   SCREEN_CENTER_Y: z.number().default(300),
   INITIAL_ASTEROID_COUNT: z.number().default(5),
-  TRAIL_MAX_LENGTH: z.number().default(10)
+  TRAIL_MAX_LENGTH: z.number().default(10),
+  SHIP_THRUST: z.number().default(150),
+  SHIP_ROTATION_SPEED: z.number().default(4.0),
+  SHIP_FRICTION: z.number().default(0.5),
+  BULLET_SPEED: z.number().default(300),
+  BULLET_TTL: z.number().default(2.0),
+  SHIP_SHOOT_COOLDOWN: z.number().default(0.25)
 });
 
 export type AsteroidConfig = z.infer<typeof AsteroidConfigSchema>;
