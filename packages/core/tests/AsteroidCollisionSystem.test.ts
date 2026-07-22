@@ -16,7 +16,7 @@ describe("AsteroidCollisionSystem & Bullet Tests", () => {
     eventBus = new EventBus<AsteroidsEventRegistry>();
     world.setResource("EventBus", eventBus);
     particlePool = new ParticlePool();
-    collisionSystem = new AsteroidCollisionSystem(particlePool);
+    collisionSystem = new AsteroidCollisionSystem();
 
     // Setup GameState singleton
     const stateEntity = world.createEntity();
@@ -206,7 +206,8 @@ describe("AsteroidCollisionSystem & Bullet Tests", () => {
     collisionSystem.update(world, 0.016);
 
     world.flush();
-    expect(world.hasEntity(ship)).toBe(false);
+    // Since lives left (3 -> 2), ship should stay alive (be respawned in-place)
+    expect(world.hasEntity(ship)).toBe(true);
     expect(world.hasEntity(asteroid)).toBe(true); // Asteroids are only destroyed by bullets, not ship collision
 
     eventBus.flushDeferred();

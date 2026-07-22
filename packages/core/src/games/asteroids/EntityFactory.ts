@@ -1,5 +1,13 @@
 import { World } from "../../ecs/World";
-import { TransformComponent, VelocityComponent, RenderComponent, HealthComponent, TTLComponent } from "../../ecs/CoreComponents";
+import {
+  TransformComponent,
+  VelocityComponent,
+  RenderComponent,
+  HealthComponent,
+  TTLComponent,
+  ColliderComponent,
+  CollisionEventsComponent
+} from "../../ecs/CoreComponents";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "./types/AsteroidRegistry";
 import { CollisionLayers } from "../shared/types/CollisionLayers";
 import { ShapeType } from "../../physics/shapes/Shapes";
@@ -109,8 +117,10 @@ export function createBullet(
     world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>;
     x: number;
     y: number;
-    rotation: number;
-    speed: number;
+    vx?: number;
+    vy?: number;
+    rotation?: number;
+    speed?: number;
     ownerId?: string;
     ttl?: number;
   },
@@ -124,79 +134,121 @@ export function createBullet(
   let world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>;
   let posX: number;
   let posY: number;
-  let rot: number;
-  let spd: number;
+  let vxVal: number;
+  let vyVal: number;
   let owner: string | undefined;
   let life: number;
+
+  let rotVal = 0;
 
   if (worldOrConfig instanceof World) {
     world = worldOrConfig;
     posX = x!;
     posY = y!;
-    rot = rotation!;
-    spd = speed!;
+    const rot = rotation!;
+    rotVal = rot;
+    const spd = speed!;
+    vxVal = Math.cos(rot) * spd;
+    vyVal = Math.sin(rot) * spd;
     owner = ownerId;
-    life = ttl ?? 2;
+    life = ttl ?? 2.0;
   } else {
     world = worldOrConfig.world;
     posX = worldOrConfig.x;
     posY = worldOrConfig.y;
-    rot = worldOrConfig.rotation;
-    spd = worldOrConfig.speed;
     owner = worldOrConfig.ownerId;
-    life = worldOrConfig.ttl ?? 2;
+
+    if (worldOrConfig.vx !== undefined && worldOrConfig.vy !== undefined) {
+      vxVal = worldOrConfig.vx;
+      vyVal = worldOrConfig.vy;
+      rotVal = worldOrConfig.rotation ?? Math.atan2(vyVal, vxVal);
+    } else {
+      const rot = worldOrConfig.rotation ?? 0;
+      rotVal = rot;
+      const spd = worldOrConfig.speed ?? 0;
+      vxVal = Math.cos(rot) * spd;
+      vyVal = Math.sin(rot) * spd;
+    }
+    const gameConfig = world.getResource<AsteroidConfig>("GameConfig");
+    const bulletTtl = gameConfig?.BULLET_TTL ?? 2.0;
+    life = worldOrConfig.ttl ?? bulletTtl;
   }
 
-  const entity = world.createEntity();
+  const { entity, add } = createBaseEntity(world);
 
-  world.addComponent(entity, {
+  add({
     type: "Transform",
     x: posX,
     y: posY,
-    rotation: rot,
+    rotation: rotVal,
     scaleX: 1,
     scaleY: 1,
     worldX: posX,
     worldY: posY,
-    worldRotation: rot,
+    worldRotation: rotVal,
     worldScaleX: 1,
     worldScaleY: 1,
     dirty: true
   } as TransformComponent);
 
-  world.addComponent(entity, {
+  add({
     type: "Velocity",
-    vx: Math.cos(rot) * spd,
-    vy: Math.sin(rot) * spd,
+    vx: vxVal,
+    vy: vyVal,
     angularVelocity: 0
   } as VelocityComponent);
 
-  world.addComponent(entity, {
+  add({
     type: "Render",
     visible: true,
     opacity: 1,
-    order: 1,
-    rotation: rot,
+    order: 2,
+    rotation: rotVal,
     angularVelocity: 0,
     hitFlashFrames: 0
   } as RenderComponent);
 
-  world.addComponent(entity, {
+  add({
     type: "Bullet",
     ownerId: owner
   } as AsteroidsComponentRegistry["Bullet"]);
 
-  world.addComponent(entity, {
+  add({
     type: "TTL",
-    timeLeft: life,
-    remaining: life
+    remaining: life,
+    timeLeft: life
   } as TTLComponent);
+
+  add({
+    type: "Collider",
+    shape: { type: ShapeType.Circle, radius: 2 },
+    layer: CollisionLayers.PROJECTILE,
+    mask: CollisionLayers.ENEMY,
+    enabled: true,
+    isTrigger: false
+  } as ColliderComponent);
+
+  add({
+    type: "CollisionEvents",
+    collisions: [],
+    activeTriggers: [],
+    triggersEntered: [],
+    triggersExited: []
+  } as CollisionEventsComponent);
 
   return entity;
 }
 
 /** @public */
-export const createAsteroid = (config: { world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, x: number, y: number, size: string }): number => {
+export const createAsteroid = (config: {
+    world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>;
+    x: number;
+    y: number;
+    size: string;
+    vx?: number;
+    vy?: number;
+    angularVelocity?: number;
+}): number => {
     const { entity, add } = createBaseEntity(config.world);
     const screen = config.world.getResource<{ width: number, height: number }>("ScreenConfig") || { width: 800, height: 600 };
 
@@ -215,11 +267,15 @@ export const createAsteroid = (config: { world: World<AsteroidsComponentRegistry
         dirty: true
     } as TransformComponent);
 
+    const randVx = (config.world.gameplayRandom.next() - 0.5) * 100;
+    const randVy = (config.world.gameplayRandom.next() - 0.5) * 100;
+    const randAng = (config.world.gameplayRandom.next() - 0.5) * 2;
+
     add({
         type: "Velocity",
-        vx: (config.world.gameplayRandom.next() - 0.5) * 100,
-        vy: (config.world.gameplayRandom.next() - 0.5) * 100,
-        angularVelocity: (config.world.gameplayRandom.next() - 0.5) * 2
+        vx: config.vx !== undefined ? config.vx : randVx,
+        vy: config.vy !== undefined ? config.vy : randVy,
+        angularVelocity: config.angularVelocity !== undefined ? config.angularVelocity : randAng
     } as VelocityComponent);
 
     add({
@@ -268,83 +324,15 @@ export const createAsteroid = (config: { world: World<AsteroidsComponentRegistry
     return entity;
 };
 
-/** @public */
-export const createBullet = (config: {
-    world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>;
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    ownerId?: string;
-}): number => {
-    const { entity, add } = createBaseEntity(config.world);
-    const gameConfig = config.world.getResource<AsteroidConfig>("GameConfig");
-    const bulletTtl = gameConfig?.BULLET_TTL ?? 2.0;
-
-    add({
-        type: "Transform",
-        x: config.x,
-        y: config.y,
-        rotation: 0,
-        scaleX: 1,
-        scaleY: 1,
-        worldX: config.x,
-        worldY: config.y,
-        worldRotation: 0,
-        worldScaleX: 1,
-        worldScaleY: 1,
-        dirty: true
-    } as TransformComponent);
-
-    add({
-        type: "Velocity",
-        vx: config.vx,
-        vy: config.vy,
-        angularVelocity: 0
-    } as VelocityComponent);
-
-    add({
-        type: "Render",
-        visible: true,
-        opacity: 1,
-        order: 2,
-        rotation: 0,
-        angularVelocity: 0,
-        hitFlashFrames: 0
-    } as RenderComponent);
-
-    add({
-        type: "Bullet",
-        ownerId: config.ownerId
-    } as AsteroidsComponentRegistry["Bullet"]);
-
-    add({
-        type: "TTL",
-        remaining: bulletTtl,
-        timeLeft: bulletTtl
-    } as TTLComponent);
-
-    add({
-        type: "Collider",
-        shape: { type: ShapeType.Circle, radius: 2 },
-        layer: CollisionLayers.PROJECTILE,
-        mask: CollisionLayers.ENEMY,
-        enabled: true,
-        isTrigger: false
-    } as ColliderComponent);
-
-    add({
-        type: "CollisionEvents",
-        collisions: [],
-        activeTriggers: [],
-        triggersEntered: [],
-        triggersExited: []
-    } as CollisionEventsComponent);
-
-    return entity;
-};
-
-/** @public */
+/**
+ * Splits a destroyed asteroid into two smaller asteroids.
+ *
+ * @remarks
+ * The two child asteroids are projected in exactly opposite directions (180 degrees apart)
+ * relative to each other, using a deterministic angle calculated via world.gameplayRandom.
+ *
+ * @public
+ */
 export const fragmentAsteroid = (world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, parentAsteroid: number): void => {
     const asteroid = world.getComponent(parentAsteroid, "Asteroid");
     const transform = world.getComponent(parentAsteroid, "Transform");
@@ -356,11 +344,11 @@ export const fragmentAsteroid = (world: World<AsteroidsComponentRegistry, Astero
     else if (asteroid.size === "medium") nextSize = "small";
 
     if (nextSize) {
-        // Create 2 children
+        // Create 2 children in opposite directions (+Math.PI angle offset)
         // Use gameplayRandom for determinism
         const rand = world.gameplayRandom;
         const angle1 = rand.next() * Math.PI * 2;
-        const angle2 = angle1 + Math.PI; // perpendicular / opposite directions
+        const angle2 = angle1 + Math.PI; // opposite directions
 
         const speed = 80; // speed of fragmentation impulse
 
@@ -368,16 +356,13 @@ export const fragmentAsteroid = (world: World<AsteroidsComponentRegistry, Astero
             const vx = (velocity ? velocity.vx : 0) + Math.cos(angle) * speed;
             const vy = (velocity ? velocity.vy : 0) + Math.sin(angle) * speed;
 
-            const child = createAsteroid({
+            createAsteroid({
                 world,
                 x: transform.x,
                 y: transform.y,
-                size: nextSize
-            });
-
-            world.mutateComponent(child, "Velocity", (v) => {
-                v.vx = vx;
-                v.vy = vy;
+                size: nextSize,
+                vx,
+                vy
             });
         }
     }

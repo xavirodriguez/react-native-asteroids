@@ -1,7 +1,6 @@
 import { World } from "../../../ecs/World";
 import { System } from "../../../ecs/System";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
-import { ParticlePool } from "../EntityPool";
 import { Entity } from "../../../ecs/Entity";
 import { ComponentType } from "../../../ecs/Component";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
@@ -9,7 +8,7 @@ import { fragmentAsteroid } from "../EntityFactory";
 
 /** @public */
 export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, AsteroidsEventRegistry> {
-  constructor(_particlePool: ParticlePool) {
+  constructor() {
     super();
   }
 
@@ -94,17 +93,41 @@ export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, 
 
           if (destroyedEntities.has(ship) || destroyedEntities.has(asteroid)) continue;
 
+          // Ignore collision if ship is invulnerable
+          if (world.hasComponent(ship, "Invulnerable" as any)) {
+            continue;
+          }
+
+          let lives = 0;
           // Decrement lives in game state
           world.mutateSingleton("GameState", (state) => {
             state.lives = Math.max(0, state.lives - 1);
+            lives = state.lives;
             if (state.lives <= 0) {
               state.isGameOver = true;
             }
           });
 
-          // Modificaciones Diferidas: TODA eliminación debe hacerse con world.getCommandBuffer().removeEntity(entity)
-          world.getCommandBuffer().removeEntity(ship);
-          destroyedEntities.add(ship);
+          if (lives > 0) {
+            // Respawn ship at center with invulnerability
+            const screen = world.getResource<{ width: number; height: number }>("ScreenConfig") || { width: 800, height: 600 };
+            world.mutateComponent(ship, "Transform", (t) => {
+              t.x = screen.width / 2;
+              t.y = screen.height / 2;
+            });
+            world.mutateComponent(ship, "Velocity", (v) => {
+              v.vx = 0;
+              v.vy = 0;
+            });
+            world.getCommandBuffer().addComponent(ship, {
+              type: "Invulnerable",
+              remaining: 3.0
+            } as any);
+          } else {
+            // Modificaciones Diferidas: TODA eliminación debe hacerse con world.getCommandBuffer().removeEntity(entity)
+            world.getCommandBuffer().removeEntity(ship);
+            destroyedEntities.add(ship);
+          }
 
           // Eventos Diferidos: Todo evento debe emitirse con eventBus.emitDeferred()
           const eventBus = world.getEventBus();
