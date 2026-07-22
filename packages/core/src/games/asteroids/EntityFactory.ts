@@ -4,45 +4,34 @@ import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "./types/Aste
 import { InputComponent } from "./types/AsteroidTypes";
 import { ShapeType } from "../../physics/shapes/Shapes";
 
-/**
- * Universal helper to create entities and components.
- * Automatically detects whether we are inside a World update phase (world.isUpdating === true)
- * and uses deferred commands accordingly to avoid structural mutation crashes.
- */
-function addEntity(world: World<any, any, any>): {
-    entity: number;
-    addComponent: (comp: any) => void;
-} {
+function createEntity(world: World<any, any, any>): number {
     if (world.isUpdating) {
         const entity = world.reserveEntityId();
         world.getCommandBuffer().createEntity(entity);
-        return {
-            entity,
-            addComponent: (comp: any) => {
-                world.getCommandBuffer().addComponent(entity, comp);
-            }
-        };
+        return entity;
     } else {
-        const entity = world.createEntity();
-        return {
-            entity,
-            addComponent: (comp: any) => {
-                world.addComponent(entity, comp);
-            }
-        };
+        return world.createEntity();
+    }
+}
+
+function addComponent(world: World<any, any, any>, entity: number, component: any) {
+    if (world.isUpdating) {
+        world.getCommandBuffer().addComponent(entity, component);
+    } else {
+        world.addComponent(entity, component);
     }
 }
 
 /** @public */
 export const createShip = (config: { world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, x: number, y: number }): number => {
-    const { entity, addComponent } = addEntity(config.world);
+    const entity = createEntity(config.world);
 
     const screenConfig = config.world.getResource<any>("ScreenConfig") || { width: 800, height: 600 };
     const screenW = screenConfig.width ?? 800;
     const screenH = screenConfig.height ?? 600;
     const gameConfig = config.world.getResource<any>("GameConfig") || { SHIP_FRICTION: 0.5 };
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Transform",
         x: config.x,
         y: config.y,
@@ -57,7 +46,7 @@ export const createShip = (config: { world: World<AsteroidsComponentRegistry, As
         dirty: true
     } as TransformComponent);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Input",
         rotateLeft: false,
         rotateRight: false,
@@ -67,19 +56,19 @@ export const createShip = (config: { world: World<AsteroidsComponentRegistry, As
         rotationAmount: 0
     } as InputComponent);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Velocity",
         vx: 0,
         vy: 0,
         angularVelocity: 0
     } as VelocityComponent);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Friction",
         value: gameConfig.SHIP_FRICTION ?? 0.5
     } as FrictionComponent);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Render",
         visible: true,
         opacity: 1,
@@ -89,20 +78,20 @@ export const createShip = (config: { world: World<AsteroidsComponentRegistry, As
         hitFlashFrames: 0
     } as RenderComponent);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Health",
         current: 3,
         max: 3
     } as HealthComponent);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Boundary",
         width: screenW,
         height: screenH,
         mode: "wrap"
     } as any);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Collider",
         shape: { type: ShapeType.Circle, radius: 10 },
         layer: 1, // PLAYER_LAYER = 1
@@ -111,7 +100,7 @@ export const createShip = (config: { world: World<AsteroidsComponentRegistry, As
         isTrigger: false
     } as any);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "CollisionEvents",
         collisions: [],
         activeTriggers: [],
@@ -124,7 +113,7 @@ export const createShip = (config: { world: World<AsteroidsComponentRegistry, As
 
 /** @public */
 export const createAsteroid = (config: { world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, x: number, y: number, size: string }): number => {
-    const { entity, addComponent } = addEntity(config.world);
+    const entity = createEntity(config.world);
 
     const screenConfig = config.world.getResource<any>("ScreenConfig") || { width: 800, height: 600 };
     const screenW = screenConfig.width ?? 800;
@@ -141,7 +130,7 @@ export const createAsteroid = (config: { world: World<AsteroidsComponentRegistry
 
     if (originallyLocked) rng.lock();
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Transform",
         x: config.x,
         y: config.y,
@@ -156,19 +145,19 @@ export const createAsteroid = (config: { world: World<AsteroidsComponentRegistry
         dirty: true
     } as TransformComponent);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Velocity",
         vx,
         vy,
         angularVelocity
     } as VelocityComponent);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Asteroid",
         size: config.size
     } as AsteroidsComponentRegistry["Asteroid"]);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Render",
         visible: true,
         opacity: 1,
@@ -178,7 +167,7 @@ export const createAsteroid = (config: { world: World<AsteroidsComponentRegistry
         hitFlashFrames: 0
     } as RenderComponent);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Boundary",
         width: screenW,
         height: screenH,
@@ -190,7 +179,7 @@ export const createAsteroid = (config: { world: World<AsteroidsComponentRegistry
     else if (config.size === "medium") radius = 15;
     else if (config.size === "small") radius = 8;
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Collider",
         shape: { type: ShapeType.Circle, radius },
         layer: 2, // ASTEROID_LAYER = 2
@@ -199,7 +188,7 @@ export const createAsteroid = (config: { world: World<AsteroidsComponentRegistry
         isTrigger: false
     } as any);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "CollisionEvents",
         collisions: [],
         activeTriggers: [],
@@ -220,13 +209,13 @@ export const createBullet = (config: {
     ownerId?: string;
     lifetime?: number;
 }): number => {
-    const { entity, addComponent } = addEntity(config.world);
+    const entity = createEntity(config.world);
 
     const screenConfig = config.world.getResource<any>("ScreenConfig") || { width: 800, height: 600 };
     const screenW = screenConfig.width ?? 800;
     const screenH = screenConfig.height ?? 600;
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Transform",
         x: config.x,
         y: config.y,
@@ -241,14 +230,14 @@ export const createBullet = (config: {
         dirty: true,
     } as TransformComponent);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Velocity",
         vx: config.vx,
         vy: config.vy,
         angularVelocity: 0,
     } as VelocityComponent);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Render",
         visible: true,
         opacity: 1,
@@ -260,19 +249,19 @@ export const createBullet = (config: {
         size: 2,
     } as RenderComponent);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Bullet",
         ownerId: config.ownerId,
     } as AsteroidsComponentRegistry["Bullet"]);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Boundary",
         width: screenW,
         height: screenH,
         mode: "wrap"
     } as any);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "Collider",
         shape: { type: ShapeType.Circle, radius: 2 },
         layer: 4, // BULLET_LAYER = 4
@@ -281,7 +270,7 @@ export const createBullet = (config: {
         isTrigger: false
     } as any);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "CollisionEvents",
         collisions: [],
         activeTriggers: [],
@@ -289,7 +278,7 @@ export const createBullet = (config: {
         triggersExited: []
     } as any);
 
-    addComponent({
+    addComponent(config.world, entity, {
         type: "TTL",
         timeLeft: config.lifetime ?? 2.0,
         remaining: config.lifetime ?? 2.0,
