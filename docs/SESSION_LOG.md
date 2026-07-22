@@ -2,6 +2,28 @@
 
 Historial de sesiones de agentes. Última entrada primero.
 
+## Sesión 2026-07-20 16:30 UTC
+
+**Objetivo trabajado:** Extensión de Contratos TSDoc Nivel 1 y Nivel 2 a CollisionSystems.ts y Schedule.ts
+**Estado:** completado
+**PR abierto:** ninguno (rama lista para review)
+**Rama:** feature/tsdoc-level-5-audit-2026-07-20
+
+### Qué se hizo
+- Auditados y extendidos por completo los contratos TSDoc Nivel 1 y Nivel 2 para los componentes críticos del motor de colisiones y de agenda:
+  - `packages/core/src/physics/collision/CollisionSystems.ts`: Documentación completa de las clases `CollisionSystem2D` y `CCDSystem`, detallando precondiciones (`@precondition`), postcondiciones (`@postcondition`), invariantes (`@invariant`), efectos secundarios (`@sideEffect`), riesgos conceptuales (`@conceptualRisk`), parámetros y retornos.
+  - `packages/core/src/ecs/Schedule.ts`: Documentación completa de la clase `Schedule`, detallando su lógica de ciclo de vida (`@precondition`, `@postcondition`, `@invariant`, `@conceptualRisk`, `@sideEffect`) en el ordenamiento y ejecución secuencial de sistemas por fases y prioridades.
+- Verificado el tipado estricto de TypeScript en todo el monorepo mediante `pnpm run typecheck:app` obteniendo un resultado 100% exitoso y libre de advertencias u observaciones.
+- Ejecutada la suite de pruebas unitarias y de integración (`pnpm test`), confirmando el éxito del 100% de los tests (107 de 107 tests exitosos) sin regresión alguna.
+- Verificado el desacoplamiento de fronteras de diseño con `./scripts/check-core-boundaries.sh` en verde.
+
+### Qué queda pendiente
+- Fusionar esta rama de documentación exhaustiva hacia la rama principal `master`.
+
+### Decisiones técnicas tomadas
+- **Idioma Consistente:** Mantener estrictamente el español para descripciones conceptuales y el inglés para los tags de TSDoc estándares (`@precondition`, `@postcondition`, `@invariant`, `@conceptualRisk`, etc.) a fin de mantener una perfecta armonía con las rondas anteriores de auditoría TSDoc.
+- **Transparencia en Riesgos de Rendimiento:** Explicitar los trade-offs de Garbage Collector en las colisiones debido a la asignación en caliente de sets/candidatos de culling espacial y en el schedule al cambiar de World o invocar `flush()` repetidamente.
+
 ## Sesión 2026-07-20 15:30 UTC
 
 **Objetivo trabajado:** Auditoría de Consistencia Definitiva y Validación de Invariantes del Motor
@@ -93,7 +115,7 @@ Historial de sesiones de agentes. Última entrada primero.
 - Auditado el monorepo y verificado de forma exhaustiva la compleción del 100% de los hitos técnicos, invariants y modularización.
 - Ejecutada la suite completa de pruebas unitarias (`pnpm test`), confirmando el paso exitoso de las 102 pruebas en total (97 en core y 5 en server).
 - Ejecutados y validados los tests de determinismo mediante `AsteroidsHeadless`.
-- Verificada la compilación limpia sin errores de tipado de TypeScript en la app y paquetes con `pnpm run typecheck:app` y `tsc --noEmit`.
+- Verificada la compilación limpia sin errores de tipado de TypeScript en la app y paquetes con `pnpm run typecheck:app` and `tsc --noEmit`.
 - Confirmada la correcta y sana implementación idempotente del Game Bridge y desacoplamientos de todos los subsistemas.
 
 ### Qué queda pendiente

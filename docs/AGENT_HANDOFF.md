@@ -1,18 +1,17 @@
-# Handoff — 2026-07-20 15:30 UTC
+# Handoff — 2026-07-20 16:30 UTC
 
 ## Estado del objetivo en curso
-Nombre: Auditoría de Consistencia Definitiva y Validación de Invariantes del Motor
+Nombre: Extensión de Contratos TSDoc Nivel 1 y Nivel 2 a CollisionSystems.ts y Schedule.ts
 Estado: listo para review
 
 ## Contexto necesario para continuar
-Se ha realizado una auditoría definitiva y exhaustiva de toda la arquitectura del monorepo (core, server, react-native y renderizadores).
-Todos los objetivos e hitos planificados en el Technical Roadmap y el ciclo de vida del motor (layers de invariantes y desacoplamiento) están 100% completados e integrados con una estabilidad inmejorable.
-La suite completa de pruebas unitarias y de integración (`pnpm test`) pasa con éxito total (107/107 pruebas exitosas).
-No existen fallos ni advertencias de TypeScript en todo el monorepo (`pnpm run typecheck:app` limpio).
-El desacoplamiento de fronteras de diseño con `./scripts/check-core-boundaries.sh` se encuentra completamente en verde.
+Se han documentado de forma exhaustiva las clases críticas del motor de colisiones y agenda del ECS (`CollisionSystem2D`, `CCDSystem` y `Schedule`) utilizando el estándar estricto de TSDoc Nivel 1 y Nivel 2.
+La suite completa de pruebas unitarias y de integración (`pnpm test`) pasa de forma 100% exitosa (107/107 tests exitosos en total).
+La compilación estricta y tipado estático de TypeScript con `pnpm run typecheck:app` no reporta ningún fallo ni advertencia en todo el monorepo.
+Las fronteras de diseño de paquetes están intactas y validadas con `./scripts/check-core-boundaries.sh` en verde.
 
 ## Bloqueos activos
 Ninguno.
 
 ## Próximo paso concreto
-Aprobar el PR de la rama actual para consolidar la rama principal `master` al estar el repositorio 100% libre de errores de compilación, de tipado o fallos de tests.
+Revisar y fusionar el PR de la rama `feature/tsdoc-level-5-audit-2026-07-20` hacia `master`.
