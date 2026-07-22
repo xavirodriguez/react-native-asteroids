@@ -1,7 +1,6 @@
 import { World } from "../../../ecs/World";
 import { System } from "../../../ecs/System";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
-import { BulletPool, ParticlePool } from "../EntityPool";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { computeShipPhysics } from "../utils/AsteroidPhysics";
 import { createBullet } from "../EntityFactory";
@@ -10,7 +9,7 @@ import { createBullet } from "../EntityFactory";
 export class AsteroidInputSystem extends System<AsteroidsComponentRegistry, AsteroidsEventRegistry> {
   private config: AsteroidConfig;
 
-  constructor(bulletPool: BulletPool, particlePool: ParticlePool, config: AsteroidConfig) {
+  constructor(config: AsteroidConfig) {
     super();
     this.config = config;
   }
@@ -21,6 +20,10 @@ export class AsteroidInputSystem extends System<AsteroidsComponentRegistry, Aste
 
       // Query local player entities
       const entities = world.query("LocalPlayer" as any, "Transform", "Velocity", "Input");
+
+      if (entities.length > 0) {
+          world.setResource("LocalPhysicsProcessedThisFrame", true);
+      }
 
       for (const entity of entities) {
           const transform = world.getComponent(entity, "Transform")!;

@@ -7,7 +7,7 @@
 export function computeShipPhysics(
   transform: { rotation: number },
   velocity: { vx: number; vy: number },
-  input: { thrust?: boolean; rotateLeft?: boolean; rotateRight?: boolean },
+  input: { thrust?: boolean; rotateLeft?: boolean; rotateRight?: boolean; rotationAmount?: number },
   config: { SHIP_THRUST: number; SHIP_ROTATION_SPEED: number; SHIP_FRICTION: number },
   deltaTimeSec: number
 ): { vx: number; vy: number; rotation: number } {
@@ -16,11 +16,15 @@ export function computeShipPhysics(
   let vy = velocity.vy;
 
   // 1. Rotation handling
-  if (input.rotateLeft) {
-    rotation -= config.SHIP_ROTATION_SPEED * deltaTimeSec;
-  }
-  if (input.rotateRight) {
-    rotation += config.SHIP_ROTATION_SPEED * deltaTimeSec;
+  if (input.rotationAmount !== undefined) {
+    rotation += input.rotationAmount * config.SHIP_ROTATION_SPEED * deltaTimeSec;
+  } else {
+    if (input.rotateLeft) {
+      rotation -= config.SHIP_ROTATION_SPEED * deltaTimeSec;
+    }
+    if (input.rotateRight) {
+      rotation += config.SHIP_ROTATION_SPEED * deltaTimeSec;
+    }
   }
 
   // Keep rotation within [-PI, PI]
