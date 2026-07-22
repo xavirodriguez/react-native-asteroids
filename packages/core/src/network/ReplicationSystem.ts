@@ -26,13 +26,42 @@ export interface AuthoritativeServerState {
     vy: number;
 }
 
-/** @public */
+/**
+ * Sistema responsable de la replicación de red de entidades multijugador, predicción del lado cliente y reconciliación de inputs.
+ *
+ * @remarks
+ * Diseñado para soportar interpolación de coordenadas para entidades remotas (LERP) y predicción local
+ * con descarte de inputs confirmados por el servidor para el jugador local, mitigando la percepción de latencia de red.
+ *
+ * @responsibility Replicar el estado de red localmente de forma determinista y reconciliar la física en base a los ticks confirmados del servidor.
+ * @queries ["Transform", "RemotePlayer"], ["Transform", "LocalPlayer", "Velocity", "Input"] — Lee y filtra entidades de red locales y remotas.
+ * @mutates ["Transform"], ["Velocity"] — Actualiza coordenadas físicas tras aplicar predicción, LERP o reconciliación de red.
+ * @emits Ninguno.
+ * @dependsOn Ninguno directamente; suele ejecutarse al inicio de las fases de actualización física.
+ * @executionOrder Al inicio del frame para reconciliar la física con los snapshots autoritativos antes del paso de simulación local.
+ *
+ * @public
+ */
 export class ReplicationSystem<TRegistry extends MultiplayerRegistry = MultiplayerRegistry> extends System<TRegistry> {
     private inputQueue: ReconciledInput[] = [];
     private lastProcessedTick = 0;
 
     constructor(private networkManager: NetworkManager) { super(); }
 
+    /**
+     * Actualiza el estado visual de las entidades remotas interpolando sus posiciones, y registra la predicción local.
+     *
+     * @remarks
+     * Se encarga de aplicar LERP con un factor de suavizado a las entidades remotas, y realiza
+     * client-side prediction acumulando inputs en `inputQueue` para el jugador local.
+     *
+     * @precondition El World debe contener entidades de red registradas correspondientemente con sus componentes.
+     * @postcondition Las posiciones visuales de entidades remotas se aproximan a sus objetivos, y el input local del frame actual se encola para futura reconciliación.
+     * @invariant El buffer de inputs local guarda la secuencia exacta de comandos ejecutados en orden secuencial.
+     * @throws Ninguno.
+     * @sideEffect Modifica componentes `Transform` y `Velocity` en el World de forma directa, incrementando `_stateVersion`.
+     * @conceptualRisk [DETERMINISM] La interpolación visual remota ocurre en caliente en el update físico local, lo que desacopla la simulación determinista pura de los efectos puramente visuales de red.
+     */
     public update(world: World<TRegistry>, deltaTime: number): void {
         const w = world as unknown as World<MultiplayerRegistry>;
 
@@ -93,8 +122,22 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
     public override dispose(): void {}
 
     /**
-     * Reconciles local state with the server state.
-     * Replays all inputs that haven't been acknowledged by the server yet.
+     * Reconcilia el estado lógico del jugador con el estado autoritativo recibido del servidor.
+     *
+     * @remarks
+     * Descarta inputs ya procesados por el servidor, restablece la física local al último tick del servidor,
+     * y vuelve a aplicar (replays) todos los inputs pendientes que aún no han sido confirmados para ponerse al día.
+     *
+     * @precondition El servidor debe haber enviado un tick y estado válidos (`serverState`).
+     * @postcondition El estado local del jugador local coincide exactamente con la simulación del servidor extrapolada con los comandos locales pendientes.
+     * @invariant Los inputs confirmados son removidos por completo de la cola `inputQueue`.
+     * @throws Ninguno.
+     * @sideEffect Restablece y muta `Transform` y `Velocity` del jugador local.
+     * @conceptualRisk [GC_PRESSURE] El rollback continuo y la re-simulación de múltiples ticks acumulados genera allocations frecuentes al mutar componentes, pudiendo causar stutters bajo alta latencia o pérdida de paquetes de red.
+     *
+     * @param world - El World de la simulación.
+     * @param serverTick - El último número de tick procesado y confirmado por el servidor.
+     * @param serverState - El estado autoritativo (posición y velocidad) del jugador remoto en dicho tick del servidor.
      */
     public reconcile(world: World<TRegistry>, serverTick: number, serverState: AuthoritativeServerState): void {
         const w = world as unknown as World<MultiplayerRegistry>;

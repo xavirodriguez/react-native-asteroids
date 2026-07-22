@@ -170,16 +170,21 @@ export class World<
   }
 
   /**
-   * Returns a list of all active entities, sorted by ID.
+   * Devuelve una lista ordenada de todas las entidades activas en el World.
    *
    * @remarks
-   * Iterating over this list provides a stable order based on entity IDs, provided
-   * entity creation and recycling remain consistent.
+   * Diseñado para mitigar allocations en caliente mediante una caché interna (`cachedEntities`)
+   * que se invalida únicamente ante cambios estructurales reales. El ordenamiento estable
+   * ayuda a mantener la reproducibilidad de la simulación.
    *
-   * @warning
-   * **Performance & Memory**: This operation creates a new array and performs a sort (O(N log N)) on every call.
-   * Frequent access in hot paths is expected to increase GC pressure and may impact frame budget.
-   * For efficient, cached entity filtering, it is recommended to use {@link Query}.
+   * @precondition Ninguna.
+   * @postcondition Retorna un array de solo lectura con las entidades activas ordenadas de menor a mayor.
+   * @invariant El array resultante tiene una correspondencia de 1 a 1 con las entidades activas en el World.
+   * @throws Ninguno.
+   * @sideEffect Puede regenerar y ordenar la caché si esta se encontraba invalidada.
+   * @conceptualRisk [GC_PRESSURE] Aunque se implementó caché, la invalidación frecuente (por creación/remoción constante) forzará nuevas asignaciones y ordenamientos O(N log N) en el loop.
+   *
+   * @returns Lista de entidades de solo lectura.
    */
   public get entities(): ReadonlyArray<Entity> {
     if (!this.cachedEntities) {
@@ -189,12 +194,12 @@ export class World<
   }
 
   /**
-   * Alias for {@link World.entities}.
+   * Alias de conveniencia para obtener la lista ordenada de entidades activas.
    *
    * @remarks
-   * @warning
-   * **Performance & Memory**: Frequent use in performance-critical paths is discouraged due to O(N log N) sorting
-   * and high GC pressure from array allocations.
+   * Delegación directa al getter `entities`.
+   *
+   * @see {@link World.entities}
    */
   public getAllEntities(): ReadonlyArray<Entity> {
     return this.entities;
@@ -224,6 +229,21 @@ export class World<
     }
   }
 
+  /**
+   * Crea una nueva entidad o recicla un identificador previamente liberado.
+   *
+   * @remarks
+   * Diseñado para minimizar allocations reutilizando IDs de entidades eliminadas.
+   *
+   * @precondition Ninguna.
+   * @postcondition Devuelve un ID de entidad único y activo. `_structureVersion` se incrementa.
+   * @invariant Los IDs de entidad activos son siempre enteros positivos únicos en el World.
+   * @throws {Error} Si se intenta invocar directamente durante la ejecución del update de sistemas (en desarrollo).
+   * @sideEffect Invalida `cachedEntities` e incrementa `_structureVersion`.
+   * @conceptualRisk [MEMORY] Si las entidades se crean de forma descontrolada sin liberar, el array de entidades libres o activas puede crecer ilimitadamente.
+   *
+   * @returns El identificador de la entidad creada o reciclada.
+   */
   createEntity(): Entity {
     this.checkUpdatingMutation("createEntity");
     const id = this.freeEntities.length > 0 ? this.freeEntities.pop()! : this.nextEntityId++;
@@ -241,13 +261,19 @@ export class World<
   }
 
   /**
-   * Removes an entity and all its associated components from the world.
+   * Elimina una entidad y remueve de forma automática todos sus componentes asociados del World.
    *
-   * @warning
-   * **Structural Change**: Removing entities during system updates may disrupt
-   * active iterations and lead to unexpected behavior if not handled carefully.
-   * To help maintain simulation stability, it is recommended to use {@link WorldCommandBuffer}
-   * to defer entity removal until the end of the frame.
+   * @remarks
+   * El ID de la entidad se guarda en la cola de entidades libres para su posterior reciclaje, ayudando a controlar la fragmentación de memoria.
+   *
+   * @precondition La entidad `entity` debe estar actualmente activa en el World.
+   * @postcondition Todos los componentes asociados son destruidos y removidos de los índices. `_structureVersion` se incrementa.
+   * @invariant Una entidad destruida no puede contener ningún componente ni figurar en consultas activas.
+   * @throws {Error} Si se intenta invocar directamente durante la actualización del World (en desarrollo).
+   * @sideEffect Invalida `cachedEntities`, incrementa `_structureVersion`, limpia colecciones de la entidad y notifica a consultas.
+   * @conceptualRisk [LIFECYCLE] Destruir una entidad directamente en mitad del frame puede causar excepciones en sistemas que aún no se han ejecutado si tenían referencias guardadas.
+   *
+   * @param entity - El identificador de la entidad a remover.
    */
   removeEntity(entity: Entity): void {
     this.checkUpdatingMutation("removeEntity");
@@ -283,12 +309,21 @@ export class World<
   }
 
   /**
-   * Adds a component to an entity.
+   * Adjunta un componente a una entidad activa.
    *
-   * @warning
-   * **Structural Change**: Adding components during an update loop may disrupt
-   * ongoing iterations and triggers immediate query updates. Deferring this through
-   * {@link WorldCommandBuffer} is recommended to ensure consistency across all systems.
+   * @remarks
+   * Registra el componente internamente, actualiza los índices de consultas e invalida las cachés
+   * estructurales y de estado para reflejar el cambio en los sistemas correspondientes.
+   *
+   * @precondition La entidad `entity` debe estar activa en el World.
+   * @postcondition El componente queda registrado para la entidad. `_structureVersion` y `_stateVersion` se incrementan.
+   * @invariant Cada entidad solo puede poseer una instancia de componente por cada tipo.
+   * @throws {Error} Si se intenta realizar una mutación estructural directa durante la actualización del World (en desarrollo).
+   * @sideEffect Incrementa `_structureVersion`, `_stateVersion`, actualiza cachés de consultas y asigna versión del componente.
+   * @conceptualRisk [LIFECYCLE] Adjuntar componentes directamente en el update loop puede invalidar iteradores activos si no se usa el Command Buffer.
+   *
+   * @param entity - ID de la entidad a la que se adjunta el componente.
+   * @param component - Instancia del componente, incluyendo su campo `type`.
    */
   addComponent<K extends ComponentType<TComponents>>(entity: Entity, component: TComponents[K] & { type: K }): void {
     this.checkUpdatingMutation("addComponent", component.type as string);
@@ -323,17 +358,23 @@ export class World<
   }
 
   /**
-   * Returns the component of the specified type associated with an entity.
+   * Devuelve el componente del tipo especificado asociado a una entidad.
    *
    * @remarks
-   * Object.freeze is applied shallowly to the returned component in DEV mode (__DEV__ === true) to prevent silent mutations.
-   * Wrapping is NOT deep-freezing for performance reasons. Direct mutations on nested objects might not throw TypeError at runtime.
-   * Under production mode (__DEV__ === false or NODE_ENV === 'production'), Object.freeze is a complete no-op and returns the component directly to avoid any runtime overhead.
+   * Diseñado para minimizar allocations en producción. En modo desarrollo (`__DEV__` es true),
+   * se aplica `Object.freeze` de forma superficial para prevenir mutaciones silenciosas accidentales.
    *
-   * @param entity - The entity to retrieve the component for.
-   * @param type - The component type.
-   * @remarks
-   * This is a shallow freeze only when __DEV__ is true. Do not deep freeze due to performance reasons.
+   * @precondition La entidad `entity` debe ser válida y estar activa en el World.
+   * @postcondition Devuelve el componente correspondiente o `undefined` si no existe. El componente devuelto en desarrollo es de solo lectura superficial.
+   * @invariant El componente devuelto nunca debe ser mutado de forma directa sin usar `mutateComponent`.
+   * @throws Ninguno.
+   * @sideEffect Ninguno.
+   * @conceptualRisk [MEMORY] Devolver la referencia directa en producción permite mutación silenciosa externa sin actualizar `stateVersion`.
+   * @conceptualRisk [GC_PRESSURE] El congelamiento en desarrollo se hace de forma superficial para no penalizar el rendimiento con deep freezing.
+   *
+   * @param entity - El ID de la entidad de la que se obtendrá el componente.
+   * @param type - El tipo o clave identificadora del componente.
+   * @returns La referencia del componente (congelada superficialmente en desarrollo) o `undefined`.
    */
   getComponent<K extends ComponentType<TComponents>>(
     entity: Entity,
@@ -350,11 +391,15 @@ export class World<
   }
 
   /**
-   * Reads a component in a strictly read-only manner.
+   * Lee un componente de forma estrictamente de solo lectura.
    *
    * @remarks
-   * This is a read-only alias for {@link getComponent}. In DEV mode, it returns a shallow-frozen
-   * component to prevent runtime mutations.
+   * Es un alias de solo lectura para {@link getComponent}. En modo desarrollo, retorna un componente
+   * congelado superficialmente para prevenir mutaciones en tiempo de ejecución.
+   *
+   * @param entity - La entidad para la que se lee el componente.
+   * @param type - El tipo del componente.
+   * @returns El componente de solo lectura o `undefined`.
    */
   public readComponent<K extends ComponentType<TComponents>>(
     entity: Entity,
@@ -367,6 +412,23 @@ export class World<
     return component;
   }
 
+  /**
+   * Obtiene una referencia mutable de un componente, clonándolo si está congelado en desarrollo.
+   *
+   * @remarks
+   * Incrementa automáticamente `_stateVersion` si se encuentra el componente.
+   *
+   * @precondition La entidad `entity` debe existir en el World y poseer el componente `type`.
+   * @postcondition Si el componente estaba congelado, se clona usando `ComponentCloner`. `_stateVersion` se incrementa.
+   * @invariant El componente devuelto es seguro para mutación directa.
+   * @throws Ninguno.
+   * @sideEffect Incrementa `_stateVersion` y actualiza la versión de componente para la entidad.
+   * @conceptualRisk [GC_PRESSURE] Clonar componentes congelados en desarrollo añade allocations en el hot path.
+   *
+   * @param entity - La entidad destino.
+   * @param type - El tipo del componente.
+   * @returns La referencia mutable del componente o `undefined`.
+   */
   getMutableComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): TComponents[K] | undefined {
     let component = this.componentMaps.get(type as string)?.get(entity) as TComponents[K] | undefined;
     if (component) {
@@ -381,12 +443,20 @@ export class World<
   }
 
   /**
-   * Removes a component from an entity.
+   * Elimina un componente de una entidad activa.
    *
-   * @warning
-   * **Structural Change**: This operation modifies the entity's composition and
-   * triggers immediate query updates. To help avoid iterator invalidation during
-   * system updates, it is recommended to use {@link WorldCommandBuffer}.
+   * @remarks
+   * Remueve el componente de las colecciones internas del World y notifica a las consultas activas.
+   *
+   * @precondition La entidad `entity` debe estar activa y poseer el componente del tipo especificado.
+   * @postcondition El componente es eliminado, liberando sus recursos internos. `_structureVersion` se incrementa.
+   * @invariant La entidad deja de coincidir con cualquier consulta que exija dicho componente.
+   * @throws {Error} Si se intenta realizar una mutación estructural directa durante la actualización del World (en desarrollo).
+   * @sideEffect Incrementa `_structureVersion` y actualiza índices de consultas.
+   * @conceptualRisk [LIFECYCLE] La remoción directa durante la ejecución de sistemas puede causar fallos de puntero nulo o alterar iteradores en caliente.
+   *
+   * @param entity - ID de la entidad destino.
+   * @param type - El tipo del componente a eliminar.
    */
   removeComponent<K extends ComponentType<TComponents>>(entity: Entity, type: K): void {
     this.checkUpdatingMutation("removeComponent", type as string);
@@ -403,6 +473,25 @@ export class World<
     }
   }
 
+  /**
+   * Muta de manera segura un componente aplicando una función actualizadora.
+   *
+   * @remarks
+   * Asegura que el estado interno del componente sea clonado si estaba congelado y
+   * actualiza la versión de estado del World (`_stateVersion`) para invalidar cachés de red o serialización.
+   *
+   * @precondition El componente debe existir para la entidad especificada.
+   * @postcondition El componente es modificado según la función `updater`, `_stateVersion` se incrementa en 1, y la versión del componente se actualiza.
+   * @invariant La estructura del componente mutado se mantiene coherente con su tipo.
+   * @throws {TypeError} Si la función `updater` intenta modificar una propiedad de solo lectura y el componente no fue clonado correctamente.
+   * @sideEffect Incrementa `_stateVersion` e invalida cachés de sincronización de red/snapshots.
+   * @conceptualRisk [OWNERSHIP] Múltiples mutaciones en el mismo frame desde sistemas distintos pueden provocar inconsistencia temporal si no se sigue un orden estricto.
+   *
+   * @param entity - El ID de la entidad dueña del componente.
+   * @param type - El tipo del componente a mutar.
+   * @param updater - Callback síncrono encargado de aplicar los cambios en el componente mutable.
+   * @returns `true` si la mutación fue exitosa; `false` si el componente no existe.
+   */
   mutateComponent<K extends ComponentType<TComponents>>(
     entity: Entity,
     type: K,
@@ -527,21 +616,22 @@ export class World<
   }
 
   /**
-   * Captures the current serializable state of the world.
-   *
-   * @param target - Optional snapshot object to reuse and help minimize allocations.
-   * @returns A snapshot of the world's entities, components, and RNG state.
+   * Captura el estado actual serializable del World.
    *
    * @remarks
-   * This operation is designed to capture components and their serializable properties (primitive values,
-   * plain nested objects/arrays).
+   * Diseñado para dar soporte a simulaciones reproducibles y mecánicas de rollback en red.
+   * Captura componentes, entidades activas e internos de servicios RNG.
    *
-   * @warning
-   * - **Serialization limits**: Functions, non-serializable objects (e.g., class instances without
-   *   a custom cloner), and circular references are not supported and may result in incomplete
-   *   state restoration.
-   * - **Performance impact**: Snapshotting involves deep cloning; frequent use in performance-critical
-   *   hot paths is expected to increase GC pressure and may impact frame budget.
+   * @precondition Ninguna.
+   * @postcondition Retorna una instancia de `WorldSnapshot` con el estado lógico serializado.
+   * @invariant El estado capturado no muta el World activo durante la clonación.
+   * @throws Ninguno.
+   * @sideEffect Llama a `SnapshotSerializer` o `SnapshotSerializerSoA` delegando la clonación.
+   * @conceptualRisk [GC_PRESSURE] El snapshot de tipo AoS (Array of Structures) tradicional realiza deep cloning extensivo, generando alta presión de GC si se usa a cada frame. Se recomienda usar snapshots SoA (Structure of Arrays) en su lugar.
+   * @conceptualRisk [MEMORY] No se serializan funciones, instancias complejas de clases sin clonadores, ni referencias circulares.
+   *
+   * @param target - Snapshot opcional a reutilizar para reducir allocations.
+   * @returns Estructura con la captura del estado.
    */
   public snapshot(target?: WorldSnapshot): WorldSnapshot {
     if (this.getResource("UseSoASnapshots") === true) {
@@ -551,21 +641,20 @@ export class World<
   }
 
   /**
-   * Restores the world state from a snapshot.
-   *
-   * @param state - The snapshot to restore.
+   * Restaura por completo el estado del World a partir de un Snapshot guardado.
    *
    * @remarks
-   * This method performs a restoration of entities and components from the snapshot,
-   * rebuilding internal indexes and queries. It is a computationally expensive
-   * operation intended for scene transitions, rollback, or game loading.
+   * Reconstruye índices, entidades activas, componentes y el RNG. Es un método central
+   * para la sincronización y la reconciliación por rollback.
    *
-   * @warning
-   * - **Restores serializable state**: This only restores the serializable state captured in
-   *   the snapshot (primitive values, plain objects/arrays).
-   * - **Manual state management**: Any transient state, non-serializable resources (e.g. textures,
-   *   audio buffers), or external subscriptions are not captured and should be managed
-   *   or re-initialized manually after this call.
+   * @precondition El `state` proporcionado debe ser un `WorldSnapshot` válido de la misma familia de simulación.
+   * @postcondition El estado del World se reemplaza por el del snapshot. `_structureVersion` y `_stateVersion` se incrementan.
+   * @invariant Todas las queries del World se actualizan automáticamente para coincidir con la nueva composición de entidades.
+   * @throws {Error} Si el formato del snapshot es incompatible o corrupto.
+   * @sideEffect Elimina entidades y componentes existentes, recrea la jerarquía de simulación.
+   * @conceptualRisk [LIFECYCLE] Los recursos no serializables como texturas, buffers de audio o listeners externos no se restauran y deben ser gestionados de forma manual.
+   *
+   * @param state - Snapshot origen del cual se obtendrán los datos.
    */
   public restore(state: WorldSnapshot): void {
     if (state.isSoA) {
