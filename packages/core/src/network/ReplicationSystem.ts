@@ -97,7 +97,8 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
             if (input && velocity && transform) {
                 // Client-Side Prediction: apply input locally before server confirmation
                 if (input.thrust) {
-                    const power = 150;
+                    const config = w.getResource<any>("GameConfig") || w.getSingleton<any>("GameConfig");
+                    const power = config?.SHIP_THRUST ?? 150;
                     const ax = Math.cos(transform.rotation) * power;
                     const ay = Math.sin(transform.rotation) * power;
                     w.mutateComponent(entity, "Velocity", (v) => {
@@ -170,7 +171,8 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
                     const dt = item.dt; // Real delta time from the input frame
 
                     if (input.thrust) {
-                        const power = 150;
+                        const config = w.getResource<any>("GameConfig") || w.getSingleton<any>("GameConfig");
+                        const power = config?.SHIP_THRUST ?? 150;
                         w.mutateComponent(entity, "Velocity", (v) => {
                             const ax = Math.cos(transform.rotation) * power;
                             const ay = Math.sin(transform.rotation) * power;

@@ -244,11 +244,24 @@ export class AsteroidsGame
   public setInputState(input: Partial<InputState>): void {
     const localPlayer = this.world.query("LocalPlayer")[0];
     if (localPlayer !== undefined) {
-      this.world.mutateComponent(localPlayer, "InputState", (inputComp: any) => {
-        if (input.thrust !== undefined) inputComp.buttons["thrust"] = input.thrust;
-        if (input.shoot !== undefined) inputComp.buttons["shoot"] = input.shoot;
-        if (input.rotateLeft !== undefined) inputComp.buttons["left"] = input.rotateLeft;
-        if (input.rotateRight !== undefined) inputComp.buttons["right"] = input.rotateRight;
+      if (!this.world.hasComponent(localPlayer, "Input")) {
+        this.world.addComponent(localPlayer, {
+          type: "Input",
+          rotateLeft: false,
+          rotateRight: false,
+          thrust: false,
+          shoot: false,
+          hyperspace: false,
+          rotationAmount: 0
+        });
+      }
+      this.world.mutateComponent(localPlayer, "Input", (inputComp: any) => {
+        if (input.rotateLeft !== undefined) inputComp.rotateLeft = input.rotateLeft;
+        if (input.rotateRight !== undefined) inputComp.rotateRight = input.rotateRight;
+        if (input.thrust !== undefined) inputComp.thrust = input.thrust;
+        if (input.shoot !== undefined) inputComp.shoot = input.shoot;
+        if (input.hyperspace !== undefined) inputComp.hyperspace = input.hyperspace;
+        if (input.rotationAmount !== undefined) inputComp.rotationAmount = input.rotationAmount;
       });
     }
   }
