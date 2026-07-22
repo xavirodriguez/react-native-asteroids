@@ -20,3 +20,9 @@ Here is the ongoing roadmap of performance, technical debt, and architecture imp
 
 ## Phase 4: Semicolon / Code Smells Cleanup
 - [ ] Fix various code smells identified during initial audits.
+
+## Phase 5: Documentation & Invariant Quality
+- [x] Complete TSDoc Audit and precise contracts for Core ECS Container (`World.ts`).
+- [x] Document BaseGame Lifecycle contracts, postconditions, and idempotency rules (`BaseGame.ts`).
+- [x] Document Multiplayer Replication client-prediction & rollback tradeoffs (`ReplicationSystem.ts`).
+- [ ] Extend Level 1 and Level 2 TSDoc contracts to `CollisionSystems.ts` and `Schedule.ts`.

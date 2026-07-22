@@ -144,7 +144,17 @@ export abstract class BaseGame<
   }
 
   /**
-   * Pauses the game.
+   * Pausa de forma idempotente la ejecución del bucle de juego.
+   *
+   * @remarks
+   * Diseñado para evitar que se dupliquen las detenciones o se desincronice el acumulador de delta temporal.
+   *
+   * @precondition El juego debe estar en estado `RUNNING`.
+   * @postcondition El juego cambia a estado `PAUSED` y detiene el ticker del GameLoop.
+   * @invariant El estado `isPaused` coincide exactamente con `lifecycleState === GameLifecycleState.PAUSED`.
+   * @throws Ninguno.
+   * @sideEffect Altera el estado del `GameLoop` y el ciclo de vida del juego.
+   * @conceptualRisk [LIFECYCLE] Detener el GameLoop abruptamente puede pausar la simulación pero no congela necesariamente callbacks externos o efectos de renderizado asíncronos.
    */
   public pause(): void {
     if (this.isPaused) return;
@@ -154,7 +164,16 @@ export abstract class BaseGame<
   }
 
   /**
-   * Resumes the game.
+   * Reanuda de forma idempotente la ejecución del bucle de juego si estaba pausado.
+   *
+   * @remarks
+   * Diseñado para mitigar saltos temporales extremos al restaurar la acumulación de deltas físicos.
+   *
+   * @precondition El juego debe estar actualmente en estado `PAUSED`.
+   * @postcondition El juego vuelve a estado `RUNNING` y reanuda el ticker del GameLoop.
+   * @invariant El estado `isPaused` pasa a ser `false`.
+   * @throws Ninguno.
+   * @sideEffect Altera el estado del `GameLoop` y el ciclo de vida.
    */
   public resume(): void {
     if (!this.isPaused) return;
@@ -178,7 +197,18 @@ export abstract class BaseGame<
   }
 
   /**
-   * Stops the loop and cleans up resources.
+   * Detiene el bucle de juego y libera de forma exhaustiva todos los recursos registrados.
+   *
+   * @remarks
+   * Realiza la limpieza de sistemas en el World, vacía los handlers suscritos al `EventBus` y
+   * desecha el sistema de inputs.
+   *
+   * @precondition Ninguna.
+   * @postcondition El juego queda en estado `DESTROYED`, los sistemas del World y listeners se limpian.
+   * @invariant El World queda huérfano de sistemas de procesamiento activos tras este paso.
+   * @throws Ninguno.
+   * @sideEffect Invoca el método `dispose` de los sistemas y limpia el `EventBus`.
+   * @conceptualRisk [LIFECYCLE] Llamar a cualquier operación que consulte o modifique el estado del World tras `destroy` resultará en operaciones sobre datos obsoletos u huerfanos.
    */
   public destroy(): void {
     this.lifecycleState = GameLifecycleState.DESTROYED;
@@ -193,9 +223,20 @@ export abstract class BaseGame<
   }
 
   /**
-   * Restarts the game asynchronously.
-   * Calls onBeforeRestart(), cleans up resources, resets world & sceneManager,
-   * then re-runs onRegisterSystems() and onInitializeEntities() before starting the loop.
+   * Reinicia de forma asíncrona la partida completa restableciendo el World, sistemas e inicializadores.
+   *
+   * @remarks
+   * Invoca `destroy()`, limpia el `EventBus` para evitar acumulación de listeners duplicados ante reinicios múltiples,
+   * y reconstruye de cero la simulación instanciando un nuevo `World`.
+   *
+   * @precondition Ninguna.
+   * @postcondition El juego vuelve a arrancar de forma limpia en estado `RUNNING` con el estado físico y lógicas re-registradas.
+   * @invariant El contador de listeners en el `EventBus` tras el reinicio es exactamente idéntico al del primer arranque de la aplicación.
+   * @throws Ninguno.
+   * @sideEffect Crea un nuevo `World`, recrea el `SceneManager` y vuelve a llamar a la secuencia de registro e inicialización.
+   * @conceptualRisk [MEMORY] Objetos externos que retengan referencias directas al World anterior no se actualizarán al nuevo World, provocando fugas de memoria o desincronizaciones.
+   *
+   * @param seed - Semilla opcional para inicializar el generador de números pseudoaleatorios del nuevo World.
    */
   public async restart(seed?: number): Promise<void> {
     if (seed !== undefined) {

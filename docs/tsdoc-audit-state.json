@@ -1,0 +1,51 @@
+{
+  "lastRun": "2026-07-20",
+  "filesProcessed": [
+    "packages/core/src/ecs/World.ts",
+    "packages/core/src/runtime/BaseGame.ts",
+    "packages/core/src/network/ReplicationSystem.ts"
+  ],
+  "coverageByLevel": {
+    "level1_contracts": { "done": 15, "total": 87 },
+    "level2_ecs_semantics": { "done": 6, "total": 45 },
+    "level3_risks_found": 8,
+    "level4_public_api": { "done": 8, "total": 32 },
+    "level5_component_fields": { "done": 22, "total": 156 }
+  },
+  "conceptualRisksFound": [
+    {
+      "file": "packages/core/src/ecs/World.ts",
+      "category": "MEMORY",
+      "description": "Devolver la referencia directa de componentes en producción permite mutación silenciosa externa sin actualizar stateVersion"
+    },
+    {
+      "file": "packages/core/src/ecs/World.ts",
+      "category": "GC_PRESSURE",
+      "description": "El congelamiento superficial en desarrollo (Object.freeze) o clonación de componentes congelados añade allocations en el hot path"
+    },
+    {
+      "file": "packages/core/src/runtime/BaseGame.ts",
+      "category": "LIFECYCLE",
+      "description": "Operaciones sobre el World tras destroy resultarán en manipulación de datos huérfanos o stale data"
+    },
+    {
+      "file": "packages/core/src/runtime/BaseGame.ts",
+      "category": "MEMORY",
+      "description": "Referencias retenidas al World anterior por objetos externos tras restart causan fugas de memoria"
+    },
+    {
+      "file": "packages/core/src/network/ReplicationSystem.ts",
+      "category": "DETERMINISM",
+      "description": "La interpolación de red ocurre de forma directa dentro de la simulación local desacoplando lógica física de efectos visuales"
+    },
+    {
+      "file": "packages/core/src/network/ReplicationSystem.ts",
+      "category": "GC_PRESSURE",
+      "description": "El rollback y la re-simulación de múltiples ticks acumulados genera allocations frecuentes al mutar componentes, pudiendo causar micro-stutters"
+    }
+  ],
+  "nextPriority": [
+    "packages/core/src/physics/collision/CollisionSystems.ts",
+    "packages/core/src/ecs/Schedule.ts"
+  ]
+}
