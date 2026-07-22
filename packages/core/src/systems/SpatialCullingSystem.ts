@@ -20,6 +20,10 @@ import { Entity } from "../ecs/Entity";
  * To prevent crucial gameplay objects from being culled (e.g., player ships), entities
  * with components like `"LocalPlayer"` or `"Player"` are always preserved as candidates regardless
  * of their screen coordinates.
+ *
+ * @precondition Las entidades deben poseer el componente `Transform` para ser evaluadas en el culling. Las entidades jugador (`LocalPlayer` / `Player`) se excluyen dinámicamente del culling.
+ * @invariant El recurso de candidatos `"SpatialCullingCandidates"` siempre almacena un conjunto coherente de IDs de entidades válidas que intersecan con el viewport ampliado.
+ * @conceptualRisk [GC_PRESSURE] Retornar arrays filtrados constantemente en paths calientes puede elevar la recolección de basura. Por ende, se guarda el resultado como un recurso reutilizable en el World.
  * @public
  */
 export class SpatialCullingSystem extends System<CoreComponentRegistry> {
@@ -28,6 +32,9 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
 
   /**
    * Returns the viewport bounding box based on Camera2D or screen configuration.
+   *
+   * @precondition El World de la simulación debe estar inicializado y poseer opcionalmente un recurso `ScreenConfig`.
+   * @postcondition Retorna un objeto con las coordenadas del viewport `minX`, `minY`, `maxX`, `maxY`.
    */
   public static getViewport(world: World<any>): { minX: number; minY: number; maxX: number; maxY: number } {
     const screen = world.getResource<{ width: number; height: number }>("ScreenConfig");
@@ -58,6 +65,9 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
 
   /**
    * Checks if an entity is within the active viewport bounds plus a margin.
+   *
+   * @precondition La entidad provista debe ser válida en el World y poseer el componente `Transform` (salvo que sea jugador).
+   * @postcondition Retorna true si la entidad está dentro del viewport con el margen aplicado, o si es un jugador.
    */
   public static isEntityInViewport(world: World<any>, entity: Entity, margin: number = 100): boolean {
     const viewport = this.getViewport(world);
@@ -89,6 +99,9 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
 
   /**
    * Filters a list of entity IDs, returning only those that reside within the active viewport bounds plus a margin.
+   *
+   * @precondition `entities` debe ser un array de IDs de entidades válidas.
+   * @postcondition Retorna un nuevo array filtrado con las entidades visibles.
    */
   public static filterInViewport(world: World<any>, entities: Entity[], margin: number = 100): Entity[] {
     return entities.filter((entity) => this.isEntityInViewport(world, entity, margin));
@@ -126,6 +139,14 @@ export class SpatialCullingSystem extends System<CoreComponentRegistry> {
     return this.enabled;
   }
 
+  /**
+   * Actualiza el recurso `"SpatialCullingCandidates"` filtrando las entidades con `Transform` según su posición relativa al viewport activo.
+   *
+   * @precondition El World debe estar inicializado y no estar en fase de re-simulación de rollback (`world.isReSimulating === false`).
+   * @postcondition El recurso `"SpatialCullingCandidates"` se actualiza con los candidatos válidos o se elimina si el sistema está desactivado.
+   * @invariant Las entidades jugador se mantienen siempre como candidatas para prevenir su desactivación física o visual.
+   * @sideEffect Muta los recursos del World añadiendo o eliminando la lista `"SpatialCullingCandidates"`.
+   */
   public update(world: World<CoreComponentRegistry>, _deltaTime: number): void {
     // 1. If disabled or during rollback resimulation, bypass culling to guarantee absolute determinism!
     if (!this.enabled || world.isReSimulating) {
