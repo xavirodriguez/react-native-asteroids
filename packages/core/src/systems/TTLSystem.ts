@@ -29,22 +29,34 @@ export class TTLSystem extends System<CoreComponentRegistry> {
       if (expired) {
         const ttl = world.getComponent(entity, "TTL");
         const reclaimable = world.getComponent(entity, "Reclaimable");
+        const isInvuln = world.getComponent(entity, "Invulnerable" as any);
 
-        if (ttl?.onCompleteEvent) {
-          const bus = world.getEventBus();
-          if (bus) {
-            bus.emitDeferred(ttl.onCompleteEvent as string & keyof EventRegistry, { entity } as never);
+        if (isInvuln) {
+          world.getCommandBuffer().removeComponent(entity, "Invulnerable" as any);
+          world.getCommandBuffer().removeComponent(entity, "TTL");
+          if (ttl?.onCompleteEvent) {
+            const bus = world.getEventBus();
+            if (bus) {
+              bus.emitDeferred(ttl.onCompleteEvent as string & keyof EventRegistry, { entity } as never);
+            }
           }
-        }
-
-        if (reclaimable) {
-          const pool = world.getResource<IEntityPool>(reclaimable.poolId);
-          if (pool && typeof pool.release === "function") {
-            pool.release(entity);
+        } else {
+          if (ttl?.onCompleteEvent) {
+            const bus = world.getEventBus();
+            if (bus) {
+              bus.emitDeferred(ttl.onCompleteEvent as string & keyof EventRegistry, { entity } as never);
+            }
           }
-        }
 
-        world.getCommandBuffer().removeEntity(entity);
+          if (reclaimable) {
+            const pool = world.getResource<IEntityPool>(reclaimable.poolId);
+            if (pool && typeof pool.release === "function") {
+              pool.release(entity);
+            }
+          }
+
+          world.getCommandBuffer().removeEntity(entity);
+        }
       }
     }
   }

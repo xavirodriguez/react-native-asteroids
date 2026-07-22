@@ -5,6 +5,7 @@ import { AssetLoader } from "../../assets/AssetLoader";
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "./types/AsteroidRegistry";
 import { AsteroidGameStateSystem } from "./systems/AsteroidGameStateSystem";
+import { createShip, createAsteroid } from "./EntityFactory";
 import { AsteroidInputSystem } from "./systems/AsteroidInputSystem";
 import { LootSystem } from "../arcade/systems/LootSystem";
 import { PowerUpSystem } from "../arcade/systems/PowerUpSystem";
@@ -148,6 +149,43 @@ export class AsteroidsGame
 
   protected override async onInitializeEntities(): Promise<void> {
     if (this.isMultiplayer) return;
+
+    // Create the GameState singleton entity
+    const gsEntity = this.world.createEntity();
+    this.world.addComponent(gsEntity, {
+      type: "GameState",
+      score: 0,
+      level: 1,
+      lives: 3,
+      isGameOver: false
+    });
+
+    const screenConfig = this.world.getResource<any>("ScreenConfig") || { width: 800, height: 600 };
+    const width = screenConfig.width ?? 800;
+    const height = screenConfig.height ?? 600;
+
+    // Create the local player ship
+    const ship = createShip({ world: this.world, x: width / 2, y: height / 2 });
+    this.world.addComponent(ship, { type: "LocalPlayer" } as any);
+    this.world.addComponent(ship, { type: "Ship", sessionId: "local" } as any);
+
+    // Spawn the first wave of asteroids
+    const count = this.config?.INITIAL_ASTEROID_COUNT ?? 5;
+    const rng = this.world.gameplayRandom;
+    const originallyLocked = rng.isLocked();
+    if (originallyLocked) rng.unlock();
+
+    for (let i = 0; i < count; i++) {
+       let ax = rng.next() * width;
+       let ay = rng.next() * height;
+       while (Math.hypot(ax - width / 2, ay - height / 2) < 150) {
+         ax = rng.next() * width;
+         ay = rng.next() * height;
+       }
+       createAsteroid({ world: this.world, x: ax, y: ay, size: "large" });
+    }
+
+    if (originallyLocked) rng.lock();
   }
 
   public update(dt: number): void {
@@ -244,11 +282,12 @@ export class AsteroidsGame
   public setInputState(input: Partial<InputState>): void {
     const localPlayer = this.world.query("LocalPlayer")[0];
     if (localPlayer !== undefined) {
-      this.world.mutateComponent(localPlayer, "InputState", (inputComp: any) => {
-        if (input.thrust !== undefined) inputComp.buttons["thrust"] = input.thrust;
-        if (input.shoot !== undefined) inputComp.buttons["shoot"] = input.shoot;
-        if (input.rotateLeft !== undefined) inputComp.buttons["left"] = input.rotateLeft;
-        if (input.rotateRight !== undefined) inputComp.buttons["right"] = input.rotateRight;
+      this.world.mutateComponent(localPlayer, "Input", (inputComp: any) => {
+        if (input.thrust !== undefined) inputComp.thrust = input.thrust;
+        if (input.shoot !== undefined) inputComp.shoot = input.shoot;
+        if (input.rotateLeft !== undefined) inputComp.rotateLeft = input.rotateLeft;
+        if (input.rotateRight !== undefined) inputComp.rotateRight = input.rotateRight;
+        if (input.hyperspace !== undefined) inputComp.hyperspace = input.hyperspace;
       });
     }
   }
