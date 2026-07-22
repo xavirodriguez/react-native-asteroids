@@ -9,11 +9,8 @@ export const AsteroidConfigSchema = BaseConfigSchema.extend({
   INITIAL_ASTEROID_COUNT: z.number().default(5),
   TRAIL_MAX_LENGTH: z.number().default(10),
   SHIP_THRUST: z.number().default(150),
-  SHIP_ROTATION_SPEED: z.number().default(4.0),
-  SHIP_FRICTION: z.number().default(0.5),
-  BULLET_SPEED: z.number().default(300),
-  BULLET_TTL: z.number().default(2.0),
-  SHIP_SHOOT_COOLDOWN: z.number().default(0.25)
+  FRICTION: z.number().default(0.99),
+  SHIP_ROTATION_SPEED: z.number().default(Math.PI)
 });
 
 export type AsteroidConfig = z.infer<typeof AsteroidConfigSchema>;

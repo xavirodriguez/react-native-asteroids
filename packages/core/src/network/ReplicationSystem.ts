@@ -103,20 +103,16 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
 
             if (input && velocity && transform) {
                 // Client-Side Prediction: apply input locally before server confirmation
-                const phys = computeShipPhysics(
-                    transform,
-                    velocity,
-                    input,
-                    config,
-                    deltaTime / 1000
-                );
-                w.mutateComponent(entity, "Velocity", (v) => {
-                    v.vx = phys.vx;
-                    v.vy = phys.vy;
-                });
-                w.mutateComponent(entity, "Transform", (t) => {
-                    t.rotation = phys.rotation;
-                });
+                if (input.thrust) {
+                    const config = w.getResource<any>("GameConfig") || w.getSingleton<any>("GameConfig");
+                    const power = config?.SHIP_THRUST ?? 150;
+                    const ax = Math.cos(transform.rotation) * power;
+                    const ay = Math.sin(transform.rotation) * power;
+                    w.mutateComponent(entity, "Velocity", (v) => {
+                        v.vx += ax * (deltaTime / 1000);
+                        v.vy += ay * (deltaTime / 1000);
+                    });
+                }
 
                 const finalVelocity = w.getComponent(entity, "Velocity")!;
                 const finalTransform = w.getComponent(entity, "Transform")!;
@@ -188,23 +184,16 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
                     const input = item.input;
                     const dt = item.dt; // Real delta time from the input frame
 
-                    const currentT = w.getComponent(entity, "Transform")!;
-                    const currentV = w.getComponent(entity, "Velocity")!;
-
-                    const phys = computeShipPhysics(
-                        currentT,
-                        currentV,
-                        input,
-                        config,
-                        dt / 1000
-                    );
-                    w.mutateComponent(entity, "Velocity", (v) => {
-                        v.vx = phys.vx;
-                        v.vy = phys.vy;
-                    });
-                    w.mutateComponent(entity, "Transform", (t) => {
-                        t.rotation = phys.rotation;
-                    });
+                    if (input.thrust) {
+                        const config = w.getResource<any>("GameConfig") || w.getSingleton<any>("GameConfig");
+                        const power = config?.SHIP_THRUST ?? 150;
+                        w.mutateComponent(entity, "Velocity", (v) => {
+                            const ax = Math.cos(transform.rotation) * power;
+                            const ay = Math.sin(transform.rotation) * power;
+                            v.vx += ax * (dt / 1000);
+                            v.vy += ay * (dt / 1000);
+                        });
+                    }
 
                     // Update position based on replayed velocity
                     const currentVelocity = w.getComponent(entity, "Velocity");

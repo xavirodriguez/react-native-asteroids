@@ -9,169 +9,112 @@ import { fragmentAsteroid } from "../EntityFactory";
 
 /** @public */
 export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, AsteroidsEventRegistry> {
-  constructor(particlePool: ParticlePool) {
+  constructor(_particlePool: ParticlePool) {
     super();
   }
 
-  public update(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, deltaTime: number): void {
-      const gameState = world.getSingleton("GameState");
-      if (!gameState || gameState.isGameOver) return;
+  public update(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, _deltaTime: number): void {
+    const entities = world.query("CollisionEvents");
+    const destroyedEntities = new Set<number>();
 
-      const entitiesWithEvents = world.query("CollisionEvents");
+    for (const entityA of entities) {
+      const colComp = world.getComponent(entityA, "CollisionEvents");
+      if (!colComp) continue;
 
-      for (const entity of entitiesWithEvents) {
-          if (!world.hasEntity(entity)) continue;
+      for (const collision of colComp.collisions) {
+        const entityB = collision.otherEntity;
 
-          const eventsComp = world.getComponent(entity, "CollisionEvents");
-          if (!eventsComp) continue;
+        // Doble Seguridad A: Procesa cada par solo una vez verificando if (entityA < entityB)
+        if (!(entityA < entityB)) continue;
 
-          for (const event of eventsComp.collisions) {
-              const other = event.otherEntity;
-
-              // 1. Ensure each collision pair is processed only once
-              if (entity >= other) continue;
-
-              // 2. Double safety: validate both entities are still alive in the world
-              if (!world.hasEntity(entity) || !world.hasEntity(other)) continue;
-
-              this.handleCollision(world, entity, other);
-
-              // Re-check game over state after each collision
-              const currentGS = world.getSingleton("GameState");
-              if (currentGS?.isGameOver) return;
+        // Doble Seguridad B: Antes de procesar la colisión, verifica que las entidades sigan existiendo
+        const hasEntity = (entity: number): boolean => {
+          if (typeof (world as unknown as { hasEntity?: (entity: number) => boolean }).hasEntity === "function") {
+            return (world as unknown as { hasEntity: (entity: number) => boolean }).hasEntity(entity);
           }
-      }
-  }
+          return world.hasComponent(entity, "Transform");
+        };
 
-  private handleCollision(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, e1: Entity, e2: Entity): void {
-      const gameState = world.getSingleton("GameState");
-      if (!gameState) return;
+        if (!hasEntity(entityA) || !hasEntity(entityB)) continue;
 
-      const config = world.getResource<AsteroidConfig>("GameConfig") || {
-          SCREEN_WIDTH: 800,
-          SCREEN_HEIGHT: 600
-      };
+        // Ensure we don't process if either entity was already destroyed in this system update
+        if (destroyedEntities.has(entityA) || destroyedEntities.has(entityB)) continue;
 
-      // 1. Bullet <-> Asteroid collision
-      const bulletAsteroid = this.matchPair(world, e1, e2, "Bullet", "Asteroid");
-      if (bulletAsteroid) {
-          const { Bullet: bullet, Asteroid: asteroid } = bulletAsteroid;
-          const asteroidComp = world.getComponent(asteroid, "Asteroid")!;
-          const size = asteroidComp.size;
+        const isBulletA = world.hasComponent(entityA, "Bullet");
+        const isBulletB = world.hasComponent(entityB, "Bullet");
+        const isAsteroidA = world.hasComponent(entityA, "Asteroid");
+        const isAsteroidB = world.hasComponent(entityB, "Asteroid");
+        const isShipA = world.hasComponent(entityA, "Ship");
+        const isShipB = world.hasComponent(entityB, "Ship");
 
-          // Fragment the asteroid before destroying it
-          fragmentAsteroid(world, asteroid);
+        // Case 1: Bullet-Asteroid
+        if ((isBulletA && isAsteroidB) || (isBulletB && isAsteroidA)) {
+          const bullet = isBulletA ? entityA : entityB;
+          const asteroid = isBulletA ? entityB : entityA;
 
-          // Calculate score increase
-          let scoreDelta = 20;
-          if (size === "medium") scoreDelta = 50;
-          else if (size === "small") scoreDelta = 100;
+          // Double check neither bullet nor asteroid is already processed/destroyed
+          if (destroyedEntities.has(bullet) || destroyedEntities.has(asteroid)) continue;
 
-          const nextScore = gameState.score + scoreDelta;
+          // Process asteroid score before destroying
+          const asteroidComp = world.getComponent(asteroid, "Asteroid");
+          const size = (asteroidComp?.size || "large") as "large" | "medium" | "small";
 
-          world.mutateSingleton("GameState", (gs) => {
-              gs.score = nextScore;
+          let points = 20;
+          if (size === "medium") points = 50;
+          else if (size === "small") points = 100;
+
+          let newScore = points;
+          world.mutateSingleton("GameState", (state) => {
+            state.score += points;
+            newScore = state.score;
           });
 
-          // Emit deferred events
-          const eventBus = world.getEventBus();
-          if (eventBus) {
-              eventBus.emitDeferred("asteroid:destroyed", { entity: asteroid, size: size as any });
-              eventBus.emitDeferred("score:changed", { newScore: nextScore, delta: scoreDelta });
-          }
-
-          // Deferred removal
+          // Modificaciones Diferidas: TODA eliminación debe hacerse con world.getCommandBuffer().removeEntity(entity)
           world.getCommandBuffer().removeEntity(bullet);
           world.getCommandBuffer().removeEntity(asteroid);
-          return;
-      }
+          destroyedEntities.add(bullet);
+          destroyedEntities.add(asteroid);
 
-      // 2. Ship <-> Asteroid collision
-      const shipAsteroid = this.matchPair(world, e1, e2, "Ship", "Asteroid");
-      if (shipAsteroid) {
-          const { Ship: ship, Asteroid: asteroid } = shipAsteroid;
-
-          // If ship is currently invulnerable, ignore lethal collision
-          if (world.hasComponent(ship, "Invulnerable" as any)) {
-              return;
-          }
-
-          const asteroidComp = world.getComponent(asteroid, "Asteroid")!;
-          const size = asteroidComp.size;
-
-          // Fragment the asteroid
-          fragmentAsteroid(world, asteroid);
-
-          // Emit ship destroyed event
+          // Eventos Diferidos: Todo evento debe emitirse con eventBus.emitDeferred()
           const eventBus = world.getEventBus();
           if (eventBus) {
-              eventBus.emitDeferred("ship:destroyed", { entity: ship });
-              eventBus.emitDeferred("asteroid:destroyed", { entity: asteroid, size: size as any });
+            eventBus.emitDeferred("asteroid:destroyed", { entity: asteroid, size });
+            eventBus.emitDeferred("score:changed", { newScore, delta: points });
           }
 
-          let livesRemaining = 3;
-          world.mutateSingleton("GameState", (gs) => {
-              gs.lives--;
-              livesRemaining = gs.lives;
-              if (gs.lives <= 0) {
-                  gs.isGameOver = true;
-              }
+          // Si una bala colisiona con un asteroide, asegúrate de procesar la destrucción y continuar al siguiente par,
+          // para evitar que una misma bala procese colisiones múltiples y crashee el motor en el mismo tick.
+          continue;
+        }
+
+        // Case 2: Ship-Asteroid
+        if ((isShipA && isAsteroidB) || (isShipB && isAsteroidA)) {
+          const ship = isShipA ? entityA : entityB;
+          const asteroid = isShipA ? entityB : entityA;
+
+          if (destroyedEntities.has(ship) || destroyedEntities.has(asteroid)) continue;
+
+          // Decrement lives in game state
+          world.mutateSingleton("GameState", (state) => {
+            state.lives = Math.max(0, state.lives - 1);
+            if (state.lives <= 0) {
+              state.isGameOver = true;
+            }
           });
 
-          if (livesRemaining > 0) {
-              // Respawn ship at screen center, reset its velocity, and add Invulnerable component
-              const screen = world.getResource<{ width: number; height: number }>("ScreenConfig") || {
-                  width: config.SCREEN_WIDTH ?? 800,
-                  height: config.SCREEN_HEIGHT ?? 600
-              };
+          // Modificaciones Diferidas: TODA eliminación debe hacerse con world.getCommandBuffer().removeEntity(entity)
+          world.getCommandBuffer().removeEntity(ship);
+          destroyedEntities.add(ship);
 
-              world.mutateComponent(ship, "Transform", (t) => {
-                  t.x = screen.width / 2;
-                  t.y = screen.height / 2;
-              });
-
-              world.mutateComponent(ship, "Velocity", (v) => {
-                  v.vx = 0;
-                  v.vy = 0;
-              });
-
-              world.getCommandBuffer().addComponent(ship, {
-                  type: "Invulnerable",
-                  remaining: 3.0 // 3 seconds
-              } as any);
-          } else {
-              // Game Over
-              if (eventBus) {
-                  eventBus.emitDeferred("game:over", { score: gameState.score, level: gameState.level });
-              }
-              world.getCommandBuffer().removeEntity(ship);
+          // Eventos Diferidos: Todo evento debe emitirse con eventBus.emitDeferred()
+          const eventBus = world.getEventBus();
+          if (eventBus) {
+            eventBus.emitDeferred("ship:destroyed", { entity: ship });
           }
-
-          // Deferred removal of the asteroid
-          world.getCommandBuffer().removeEntity(asteroid);
-          return;
+        }
       }
+    }
   }
-
-  private matchPair<
-      T1 extends keyof AsteroidsComponentRegistry,
-      T2 extends keyof AsteroidsComponentRegistry
-  >(
-      world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>,
-      entityA: Entity,
-      entityB: Entity,
-      type1: T1,
-      type2: T2
-  ): Record<T1 | T2, Entity> | undefined {
-      if (world.hasComponent(entityA, type1 as any) && world.hasComponent(entityB, type2 as any)) {
-          return { [type1]: entityA, [type2]: entityB } as Record<T1 | T2, Entity>;
-      }
-      if (world.hasComponent(entityB, type1 as any) && world.hasComponent(entityA, type2 as any)) {
-          return { [type1]: entityB, [type2]: entityA } as Record<T1 | T2, Entity>;
-      }
-      return undefined;
-  }
-
-  public onRegister(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>): void {}
+  public onRegister(_world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>): void {}
   public dispose(): void {}
 }
