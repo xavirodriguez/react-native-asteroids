@@ -47,5 +47,18 @@ export class TTLSystem extends System<CoreComponentRegistry> {
         world.getCommandBuffer().removeEntity(entity);
       }
     }
+
+    // Process Invulnerable components temporal reduction
+    const invulnerables = world.query("Invulnerable" as any);
+    for (const entity of invulnerables) {
+      let expired = false;
+      world.mutateComponent(entity, "Invulnerable" as any, (inv: any) => {
+        inv.remaining -= deltaTime;
+        expired = inv.remaining <= 0;
+      });
+      if (expired) {
+        world.getCommandBuffer().removeComponent(entity, "Invulnerable" as any);
+      }
+    }
   }
 }

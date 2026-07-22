@@ -2,6 +2,7 @@ import { World } from "../ecs/World";
 import { System } from "../ecs/System";
 import { CoreComponentRegistry } from "../ecs/CoreComponents";
 import { NetworkManager } from "./NetworkManager";
+import { computeShipPhysics } from "../games/asteroids/utils/AsteroidPhysics";
 
 /** @public */
 export interface MultiplayerRegistry extends CoreComponentRegistry {
@@ -88,6 +89,12 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
             }
         }
 
+        const config = (world.getResource("GameConfig") || {
+            SHIP_THRUST: 150,
+            SHIP_ROTATION_SPEED: 4.0,
+            SHIP_FRICTION: 0.0
+        }) as any;
+
         const localQuery = w.query("Transform", "LocalPlayer", "Velocity", "Input");
         for (const entity of localQuery) {
             const input = w.getComponent(entity, "Input");
@@ -108,11 +115,12 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
                 }
 
                 const finalVelocity = w.getComponent(entity, "Velocity")!;
+                const finalTransform = w.getComponent(entity, "Transform")!;
                 // Save input in a queue for future reconciliation
                 this.inputQueue.push({
                     tick: this.lastProcessedTick++,
                     input: { ...input },
-                    state: { x: transform.x, y: transform.y, vx: finalVelocity.vx, vy: finalVelocity.vy },
+                    state: { x: finalTransform.x, y: finalTransform.y, vx: finalVelocity.vx, vy: finalVelocity.vy },
                     dt: deltaTime
                 });
             }
@@ -165,6 +173,12 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
             }
 
             if (transform && velocity) {
+                const config = (world.getResource("GameConfig") || {
+                    SHIP_THRUST: 150,
+                    SHIP_ROTATION_SPEED: 4.0,
+                    SHIP_FRICTION: 0.0
+                }) as any;
+
                 // 4. Replay all pending inputs to catch up to the current client tick
                 for (const item of this.inputQueue) {
                     const input = item.input;

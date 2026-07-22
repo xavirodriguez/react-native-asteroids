@@ -2,6 +2,10 @@ import { World } from "../../../ecs/World";
 import { System } from "../../../ecs/System";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
 import { ParticlePool } from "../EntityPool";
+import { Entity } from "../../../ecs/Entity";
+import { ComponentType } from "../../../ecs/Component";
+import { AsteroidConfig } from "../types/AsteroidConfigSchema";
+import { fragmentAsteroid } from "../EntityFactory";
 
 /** @public */
 export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, AsteroidsEventRegistry> {

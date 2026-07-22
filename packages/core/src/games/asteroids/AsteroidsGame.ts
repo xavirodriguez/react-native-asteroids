@@ -23,6 +23,7 @@ import { TTLSystem } from "../../systems/TTLSystem";
 import { CollisionSystem2D, CCDSystem } from "../../physics/collision/CollisionSystems";
 import { FeedbackSystem } from "../../systems/FeedbackSystem";
 import { INITIAL_GAME_STATE } from "./types/AsteroidTypes";
+import { createShip, spawnAsteroidWave } from "./EntityFactory";
 import { InputFrame } from "../../network/NetTypes";
 import type { IAsteroidsGame } from "./types/GameInterfaces";
 import { BulletPool, ParticlePool } from "./EntityPool";
@@ -148,6 +149,46 @@ export class AsteroidsGame
 
   protected override async onInitializeEntities(): Promise<void> {
     if (this.isMultiplayer) return;
+
+    // Temporarily unlock gameplayRandom for spawning initialization
+    this.world.gameplayRandom.unlock();
+
+    try {
+        // Create GameState entity
+        const gameStateEntity = this.world.createEntity();
+        this.world.addComponent(gameStateEntity, {
+            type: "GameState",
+            score: 0,
+            level: 1,
+            lives: 3,
+            isGameOver: false
+        } as GameStateComponent);
+
+        // Create Player Ship
+        const screen = this.world.getResource<{ width: number; height: number }>("ScreenConfig") || { width: 800, height: 600 };
+        const ship = createShip({
+            world: this.world,
+            x: screen.width / 2,
+            y: screen.height / 2
+        });
+
+        // Add LocalPlayer and Input components to the ship
+        this.world.addComponent(ship, { type: "LocalPlayer" } as any);
+        this.world.addComponent(ship, {
+            type: "Input",
+            rotateLeft: false,
+            rotateRight: false,
+            thrust: false,
+            shoot: false,
+            hyperspace: false,
+            rotationAmount: 0
+        } as any);
+
+        // Spawn first wave
+        spawnAsteroidWave(this.world, 1);
+    } finally {
+        this.world.gameplayRandom.lock();
+    }
   }
 
   public update(dt: number): void {
