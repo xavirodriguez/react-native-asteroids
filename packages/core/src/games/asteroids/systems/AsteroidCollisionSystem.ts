@@ -18,6 +18,7 @@ export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, 
       if (!gameState || gameState.isGameOver) return;
 
       const entitiesWithEvents = world.query("CollisionEvents");
+      const processedPairs = new Set<string>();
 
       for (const entity of entitiesWithEvents) {
           if (!world.hasEntity(entity)) continue;
@@ -33,6 +34,10 @@ export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, 
 
               // 2. Double safety: validate both entities are still alive in the world
               if (!world.hasEntity(entity) || !world.hasEntity(other)) continue;
+
+              const pairId = `${entity},${other}`;
+              if (processedPairs.has(pairId)) continue;
+              processedPairs.add(pairId);
 
               this.handleCollision(world, entity, other);
 

@@ -2,24 +2,24 @@
 
 Historial de sesiones de agentes. Última entrada primero.
 
-## Sesión 2026-07-20 17:00 UTC
+## Sesión 2026-07-22 15:00 UTC
 
-**Objetivo trabajado:** Auditoría de Consistencia de Arquitectura y Verificación de Estabilidad
+**Objetivo trabajado:** Resolución de Doble Decremento de Vidas y Auditoría de Consistencia de API Reference
 **Estado:** completado
 **PR abierto:** ninguno (rama lista para review)
 **Rama:** feature/consistency-audit-and-stability
 
 ### Qué se hizo
-- Realizada una auditoría exhaustiva de consistencia de la arquitectura, validando los invariants del ECS, la sincronización de loops y los hooks polimórficos de juego.
-- Validado el tipado estricto en TypeScript mediante `pnpm run typecheck:app` sin errores de compilación ni advertencias.
-- Ejecutada la suite completa de pruebas unitarias e integración (`pnpm test`), confirmando el éxito absoluto del 100% de los tests (116 de 116 tests pasados).
-- Verificado el perfecto desacoplamiento de fronteras de diseño entre paquetes con `./scripts/check-core-boundaries.sh` en verde.
+- **Robustecimiento ante Doble Colisión Física/CCD:** Corregido un sutil fallo en `AsteroidCollisionSystem` por el cual el procesamiento de múltiples colisiones físicas contra la misma entidad en un mismo frame (por ejemplo, reportadas por `CollisionSystem2D` y `CCDSystem` concurrentemente) causaba un doble decremento de vidas (de 3 a 1 en lugar de 3 a 2). Se introdujo un control de unicidad (`processedPairs`) por frame para procesar cada par de entidades una única vez por actualización de simulación.
+- **Auditoría de Sanidad y TSDoc:** Añadidos contratos exhaustivos de TSDoc Nivel 1 y Nivel 2 a `SpatialCullingSystem.ts` con especificación clara de precondiciones (`@precondition`), postcondiciones (`@postcondition`), invariantes (`@invariant`), efectos secundarios (`@sideEffect`) y riesgos conceptuales (`@conceptualRisk`), garantizando máxima consistencia en la documentación del core.
+- **Validación del Pipeline de Compilación de API Reference:** Verificado de forma local el build de la documentación de referencia (`pnpm docs:build`), logrando una compilación 100% exitosa y libre de advertencias del compilador TS.
+- **Suite de Pruebas Unificadas:** Confirmado el paso del 100% de la suite de pruebas del monorepo (`pnpm test`) con 116 de 116 pruebas en verde.
 
 ### Qué queda pendiente
 - Ninguno (Todos los hitos y optimizaciones requeridas han sido validados con éxito).
 
 ### Decisiones técnicas tomadas
-- **Preservación de Estabilidad del Motor**: Al verificar que todo el monorepo y la suite de simulación física y determinismo están en un estado de robustez impecable al 100%, se mantuvo la base de código de producción intacta para garantizar la máxima estabilidad y cero regresiones.
+- **Control de Unicidad de Pares en el Frame:** Al no destruirse las entidades de forma inmediata sino diferida vía CommandBuffer, comprobar si las entidades aún existen (`world.hasEntity`) no es suficiente dentro del mismo tick para evitar re-procesamientos del mismo par si múltiples sistemas añaden eventos de colisión. El uso de un `processedPairs` `Set` local al update del sistema garantiza una idempotencia de detección óptima con impacto O(1).
 
 ## Sesión 2026-07-20 16:30 UTC
 
