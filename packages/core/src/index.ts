@@ -88,6 +88,8 @@ export * from "./network/NetworkTransport";
 export * from "./network/NullTransport";
 export * from "./network/NetworkManager";
 export * from "./network/ReplicationSystem";
+export * from "./network/LocalPredictionSystem";
+export * from "./network/RemoteInterpolationSystem";
 export * from "./network/MultiplayerSystems";
 export * from "./network/NetTypes";
 export * from "./network/NetworkController";
