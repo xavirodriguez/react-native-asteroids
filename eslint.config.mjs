@@ -147,6 +147,40 @@ export default tseslint.config(
       ],
     },
   },
+  // Override estricto para React Native (Fronteras de React Native)
+  {
+    files: ["packages/react-native/src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/server/**", "colyseus-server"],
+              message: "💥 FRONTERA ROTA: El frontend React Native no puede importar lógica del servidor.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Override estricto para Server (Fronteras del Servidor)
+  {
+    files: ["server/src/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["react", "react-native", "expo*"],
+              message: "💥 FRONTERA ROTA: El servidor Colyseus no puede importar librerías de UI o del cliente React Native.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   // Añadir a tu configuración:
   {
     files: ["packages/core/src/tests/**/*.ts", "packages/core/tests/**/*.ts"],

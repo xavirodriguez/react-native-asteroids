@@ -16,6 +16,8 @@ const RoomOptionsSchema = z.object({
   replicationMode: z.enum(['legacy', 'interest', 'delta', 'budget', 'binary']).optional()
 });
 
+export type AsteroidsRoomOptions = z.infer<typeof RoomOptionsSchema>;
+
 const JoinOptionsSchema = z.object({
   name: z.string().max(32).optional()
 });
@@ -45,7 +47,7 @@ import { NetworkMetricsCollector } from "./metrics/NetworkMetrics";
  * however, consistency remains dependent on the configured patch rate, network
  * conditions, and client ACK stability.
  */
-export class AsteroidsRoom extends (Room as any) {
+export class AsteroidsRoom extends Room<{ state: AsteroidsState }> {
   maxClients = 4;
   private fixedTimeStep = 16.66;
   private inputBuffers = new Map<string, InputFrame[]>();
@@ -74,7 +76,7 @@ export class AsteroidsRoom extends (Room as any) {
     }
   }
 
-  async onCreate(options: any) {
+  async onCreate(options: unknown) {
     const parsedOptions = RoomOptionsSchema.safeParse(options);
     const validOptions = parsedOptions.success ? parsedOptions.data : {};
 
@@ -182,7 +184,7 @@ export class AsteroidsRoom extends (Room as any) {
     this.world.addSystem(new InterestManagerSystem());
   }
 
-  onJoin(client: Client, options: any) {
+  onJoin(client: Client, options: unknown) {
     const parsedOptions = JoinOptionsSchema.safeParse(options);
     const validOptions = parsedOptions.success ? parsedOptions.data : {};
 
