@@ -28,7 +28,9 @@ export class NetworkController<TComponents extends ComponentRegistry = Component
   }
 
   public applyInputToEntity(entityId: number, input: InputFrame) {
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     if (!this.world.hasComponent(entityId, "Input" as any)) {
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
       this.world.addComponent(entityId, {
         type: "Input",
         rotateLeft: false,
