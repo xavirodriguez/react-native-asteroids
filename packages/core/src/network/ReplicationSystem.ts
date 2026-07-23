@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-imports, @typescript-eslint/no-explicit-any */
 import { World } from "../ecs/World";
 import { System } from "../ecs/System";
 import { CoreComponentRegistry } from "../ecs/CoreComponents";

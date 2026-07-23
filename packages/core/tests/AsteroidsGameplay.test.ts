@@ -1,7 +1,7 @@
 import { World } from "../src/ecs/World";
 import { AsteroidsGame } from "../src/games/asteroids/AsteroidsGame";
 import { computeShipPhysics } from "../src/games/asteroids/utils/AsteroidPhysics";
-import { createShip, createAsteroid, createBullet, fragmentAsteroid, spawnAsteroidWave } from "../src/games/asteroids/EntityFactory";
+import { createShip, createAsteroid, createBullet, fragmentAsteroid } from "../src/games/asteroids/EntityFactory";
 import { CollisionLayers } from "../src/games/shared/types/CollisionLayers";
 
 describe("Asteroids Gameplay, Physics & Collision Systems", () => {
@@ -51,7 +51,7 @@ describe("Asteroids Gameplay, Physics & Collision Systems", () => {
       const config = { SHIP_THRUST: 100, SHIP_ROTATION_SPEED: 4.0, SHIP_FRICTION: 1.0 };
 
       // Apply thrust for 0.1 seconds
-      let result = computeShipPhysics(transform, velocity, { thrust: true }, config, 0.1);
+      const result = computeShipPhysics(transform, velocity, { thrust: true }, config, 0.1);
       // ax = cos(0)*100 = 100. vx_pre = ax*0.1 = 10. vx_post = 10 * (1 - 1.0*0.1) = 9
       expect(result.vx).toBeCloseTo(9, 4);
       expect(result.vy).toBe(0);
