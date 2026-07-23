@@ -65,50 +65,43 @@ export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, 
 
         // Case 1: Bullet-Asteroid
         if ((isBulletA && isAsteroidB) || (isBulletB && isAsteroidA)) {
-          const bullet = isBulletA ? entityA : entityB;
-          const asteroid = isBulletA ? entityB : entityA;
+            const bullet   = isBulletA ? entityA : entityB;
+            const asteroid = isBulletA ? entityB : entityA;
 
-          // Double check neither bullet nor asteroid is already processed/destroyed
-          if (destroyedEntities.has(bullet) || destroyedEntities.has(asteroid)) {
+            if (destroyedEntities.has(bullet) || destroyedEntities.has(asteroid)) continue;
+
+            const asteroidComp = world.getComponent(asteroid, "Asteroid");
+            const size = (asteroidComp?.size || "large") as "large" | "medium" | "small";
+
+            let points = 20;
+            if (size === "medium") points = 50;
+            else if (size === "small") points = 100;
+
+            let newScore = points;
+            world.mutateSingleton("GameState", (state) => {
+                state.score += points;
+                newScore = state.score;
+            });
+
+            // ✅ PASO 1: Leer componentes y fragmentar ANTES de encolar la destrucción.
+            // fragmentAsteroid lee Transform y Velocity del asteroide padre síncronamente.
+            // createAsteroid internamente usa CommandBuffer si world.isUpdating === true,
+            // por lo que los hijos se crean de forma diferida y segura.
+            fragmentAsteroid(world, asteroid);
+
+            // ✅ PASO 2: Encolar destrucción DESPUÉS de haber leído los datos del padre.
+            world.getCommandBuffer().removeEntity(bullet);
+            world.getCommandBuffer().removeEntity(asteroid);
+            destroyedEntities.add(bullet);
+            destroyedEntities.add(asteroid);
+
+            const eventBus = world.getEventBus();
+            if (eventBus) {
+                eventBus.emitDeferred("asteroid:destroyed", { entity: asteroid, size });
+                eventBus.emitDeferred("score:changed", { newScore, delta: points });
+            }
+
             continue;
-          }
-
-          // Process asteroid score before destroying
-          const asteroidComp = world.getComponent(asteroid, "Asteroid");
-          const size = (asteroidComp?.size || "large") as "large" | "medium" | "small";
-
-          let points = 20;
-          if (size === "medium") {
-            points = 50;
-          } else if (size === "small") {
-            points = 100;
-          }
-
-          let newScore = points;
-          world.mutateSingleton("GameState", (state) => {
-            state.score += points;
-            newScore = state.score;
-          });
-
-          // Fragment the asteroid into smaller pieces upon bullet hit
-          fragmentAsteroid(world, asteroid);
-
-          // Modificaciones Diferidas: TODA eliminación debe hacerse con world.getCommandBuffer().removeEntity(entity)
-          world.getCommandBuffer().removeEntity(bullet);
-          world.getCommandBuffer().removeEntity(asteroid);
-          destroyedEntities.add(bullet);
-          destroyedEntities.add(asteroid);
-
-          // Eventos Diferidos: Todo evento debe emitirse con eventBus.emitDeferred()
-          const eventBus = world.getEventBus();
-          if (eventBus) {
-            eventBus.emitDeferred("asteroid:destroyed", { entity: asteroid, size });
-            eventBus.emitDeferred("score:changed", { newScore, delta: points });
-          }
-
-          // Si una bala colisiona con un asteroide, asegúrate de procesar la destrucción y continuar al siguiente par,
-          // para evitar que una misma bala procese colisiones múltiples y crashee el motor en el mismo tick.
-          continue;
         }
 
         // Case 2: Ship-Asteroid

@@ -31,6 +31,22 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
   const lastAckedVersionRef = useRef(0);
   const inputBufferRef = useRef<InputFrame[]>([]);
 
+  const persistentInputRef = useRef<{
+    thrust: boolean;
+    rotateLeft: boolean;
+    rotateRight: boolean;
+    rotationAmount?: number;
+    shoot: boolean;
+    hyperspace: boolean;
+  }>({
+    thrust: false,
+    rotateLeft: false,
+    rotateRight: false,
+    rotationAmount: undefined,
+    shoot: false,
+    hyperspace: false,
+  });
+
   useEffect(() => {
     if (!active || !playerName) return;
 
@@ -169,10 +185,21 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
     };
   }, [roomName, playerName, active]);
 
-  const sendInput = useCallback((input: Record<string, boolean>) => {
+  const sendInput = useCallback((input: Partial<typeof persistentInputRef.current>) => {
     if (!room || !connected) return null;
 
-    // Periodically sync tick and ack version
+    // 1. Merge: las propiedades continuas se sobreescriben solo si vienen explícitas
+    //    Las discretas (shoot, hyperspace) se acumulan con OR para no perderse
+    persistentInputRef.current = {
+        thrust:         input.thrust         ?? persistentInputRef.current.thrust,
+        rotateLeft:     input.rotateLeft     ?? persistentInputRef.current.rotateLeft,
+        rotateRight:    input.rotateRight    ?? persistentInputRef.current.rotateRight,
+        rotationAmount: input.rotationAmount ?? persistentInputRef.current.rotationAmount,
+        // Discretas: true si ya estaba activo O si llega ahora
+        shoot:          (persistentInputRef.current.shoot      || !!input.shoot),
+        hyperspace:     (persistentInputRef.current.hyperspace || !!input.hyperspace),
+    };
+
     if (localTickRef.current % 10 === 0) {
         room.send("sync_tick", {
             protocolVersion: 1,
@@ -182,12 +209,14 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
     }
 
     localTickRef.current++;
+    const merged = persistentInputRef.current;
+
     const actions: string[] = [];
-    if (input.thrust) actions.push("thrust");
-    if (input.rotateLeft) actions.push("rotateLeft");
-    if (input.rotateRight) actions.push("rotateRight");
-    if (input.shoot) actions.push("shoot");
-    if (input.hyperspace) actions.push("hyperspace");
+    if (merged.thrust)      actions.push("thrust");
+    if (merged.rotateLeft)  actions.push("rotateLeft");
+    if (merged.rotateRight) actions.push("rotateRight");
+    if (merged.shoot)       actions.push("shoot");
+    if (merged.hyperspace)  actions.push("hyperspace");
 
     const frame: InputFrame = {
         protocolVersion: 1,
@@ -195,20 +224,22 @@ export function useMultiplayer(roomName: string, playerName: string, active: boo
         timestamp: Date.now(),
         actions,
         axes: {
-            thrust: input.thrust ? 1 : 0,
-            rotate_left: input.rotateLeft ? 1 : 0,
-            rotate_right: input.rotateRight ? 1 : 0,
-            rotate_x: input.rotateLeft ? -1 : (input.rotateRight ? 1 : 0)
+            thrust:       merged.thrust ? 1 : 0,
+            rotate_left:  merged.rotateLeft ? 1 : 0,
+            rotate_right: merged.rotateRight ? 1 : 0,
+            rotate_x:     merged.rotationAmount
+                            ?? (merged.rotateLeft ? -1 : merged.rotateRight ? 1 : 0),
         }
     };
 
     room.send("input", frame);
-
-    // Store in local buffer for reconciliation later
     inputBufferRef.current.push(frame);
-    if (inputBufferRef.current.length > 120) {
-        inputBufferRef.current.shift();
-    }
+    if (inputBufferRef.current.length > 120) inputBufferRef.current.shift();
+
+    // 2. Limpiar SOLO las acciones discretas tras enviar el frame
+    persistentInputRef.current.shoot      = false;
+    persistentInputRef.current.hyperspace = false;
+
     return frame;
   }, [room, connected]);
 
