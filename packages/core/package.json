@@ -2,19 +2,21 @@
   "name": "@tiny-aster/core",
   "version": "1.0.0",
   "type": "module",
-  "main": "./dist/index.cjs",
+  "main": "./src/index.ts",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.cjs",
+      "default": "./src/index.ts"
     },
     "./games/asteroids": {
       "types": "./dist/games/asteroids/index.d.ts",
       "import": "./dist/games/asteroids/index.js",
-      "require": "./dist/games/asteroids/index.cjs"
+      "require": "./dist/games/asteroids/index.cjs",
+      "default": "./src/games/asteroids/index.ts"
     }
   },
   "scripts": {
