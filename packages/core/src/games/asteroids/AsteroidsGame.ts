@@ -281,11 +281,15 @@ export class AsteroidsGame
 
   /**
    * Decoupled Input Bridge: Sets the state of the local player inputs in the ECS World.
+   * Mapped fields: rotateLeft, rotateRight, thrust, shoot, hyperspace, rotationAmount.
+   * Ensures that the LocalPlayer entity has the "Input" component, adding it if missing.
    */
   public setInputState(input: Partial<InputState>): void {
+    // Paso 1: Unificar el puente de Inputs
     const localPlayer = this.world.query("LocalPlayer")[0];
     if (localPlayer !== undefined) {
       if (!this.world.hasComponent(localPlayer, "Input")) {
+        // Verify that the LocalPlayer entity has the "Input" component, adding it if missing with all flags false and rotationAmount 0.
         this.world.addComponent(localPlayer, {
           type: "Input",
           rotateLeft: false,
@@ -297,12 +301,25 @@ export class AsteroidsGame
         });
       }
       this.world.mutateComponent(localPlayer, "Input", (inputComp: any) => {
-        if (input.rotateLeft !== undefined) inputComp.rotateLeft = input.rotateLeft;
-        if (input.rotateRight !== undefined) inputComp.rotateRight = input.rotateRight;
-        if (input.thrust !== undefined) inputComp.thrust = input.thrust;
-        if (input.shoot !== undefined) inputComp.shoot = input.shoot;
-        if (input.hyperspace !== undefined) inputComp.hyperspace = input.hyperspace;
-        if (input.rotationAmount !== undefined) inputComp.rotationAmount = input.rotationAmount;
+        // Only write fields that are defined in the payload (!== undefined)
+        if (input.rotateLeft !== undefined) {
+          inputComp.rotateLeft = input.rotateLeft;
+        }
+        if (input.rotateRight !== undefined) {
+          inputComp.rotateRight = input.rotateRight;
+        }
+        if (input.thrust !== undefined) {
+          inputComp.thrust = input.thrust;
+        }
+        if (input.shoot !== undefined) {
+          inputComp.shoot = input.shoot;
+        }
+        if (input.hyperspace !== undefined) {
+          inputComp.hyperspace = input.hyperspace;
+        }
+        if (input.rotationAmount !== undefined) {
+          inputComp.rotationAmount = input.rotationAmount;
+        }
       });
     }
   }

@@ -9,10 +9,11 @@ export const AsteroidConfigSchema = BaseConfigSchema.extend({
   SCREEN_CENTER_Y: z.number().default(300),
   INITIAL_ASTEROID_COUNT: z.number().default(5),
   TRAIL_MAX_LENGTH: z.number().default(10),
-  SHIP_THRUST: z.number().default(150),
-  FRICTION: z.number().default(0.99),
-  SHIP_FRICTION: z.number().default(0.99),
-  SHIP_ROTATION_SPEED: z.number().default(Math.PI),
+  // Paso 2: Ship physical parameters extracted and unified
+  SHIP_THRUST: z.number().default(150), // Ship thrust force (default 150)
+  FRICTION: z.number().default(0.99), // General world friction coefficient (default 0.99)
+  SHIP_FRICTION: z.number().default(0.99), // Ship-specific friction coefficient (default 0.99)
+  SHIP_ROTATION_SPEED: z.number().default(Math.PI), // Ship rotation speed (default PI rad/sec)
   BULLET_TTL: z.number().default(2.0),
   SHIP_SHOOT_COOLDOWN: z.number().default(0.25),
   BULLET_SPEED: z.number().default(300)

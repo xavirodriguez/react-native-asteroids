@@ -111,7 +111,11 @@ export const createShip = (config: { world: World<AsteroidsComponentRegistry, As
     return entity;
 };
 
-/** @public */
+/**
+ * Factory function to create and initialize a Bullet entity in the Asteroids game.
+ * Sets up components: Transform, Velocity, Render, Bullet (with ownerId), TTL (timeLeft & remaining), Collider, CollisionEvents.
+ * @public
+ */
 export function createBullet(
   worldOrConfig: World<AsteroidsComponentRegistry, AsteroidsEventRegistry> | {
     world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>;
@@ -176,6 +180,9 @@ export function createBullet(
 
   const { entity, add } = createBaseEntity(world);
 
+  // Paso 3: Bullet initialization:
+
+  // 1. Initialize "Transform" (including all fields worldX/Y/Rotation/Scale and dirty: true)
   add({
     type: "Transform",
     x: posX,
@@ -191,6 +198,7 @@ export function createBullet(
     dirty: true
   } as TransformComponent);
 
+  // 2. Initialize "Velocity" (calculate vx and vy based on direction/rotation and shoot speed)
   add({
     type: "Velocity",
     vx: vxVal,
@@ -198,6 +206,7 @@ export function createBullet(
     angularVelocity: 0
   } as VelocityComponent);
 
+  // 3. Initialize "Render" following the interface of CoreComponents.ts
   add({
     type: "Render",
     visible: true,
@@ -208,11 +217,13 @@ export function createBullet(
     hitFlashFrames: 0
   } as RenderComponent);
 
+  // 4. Initialize "Bullet" (type: "Bullet", ownerId)
   add({
     type: "Bullet",
     ownerId: owner
   } as AsteroidsComponentRegistry["Bullet"]);
 
+  // 5. Initialize "TTL" - setting BOTH remaining and timeLeft to the same initial value
   add({
     type: "TTL",
     remaining: life,
