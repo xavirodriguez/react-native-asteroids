@@ -101,8 +101,9 @@ export class WorldCommandBuffer<
       execute: (world) => {
         // Since the ID is already reserved, we just need to ensure it's marked as active.
         // If the ID was NOT reserved, this might cause issues if not careful.
-        const w = world as unknown as { activeEntities: Set<number>, _structureVersion: number };
+        const w = world as unknown as { activeEntities: Set<number>, _structureVersion: number, cachedEntities: any };
         w.activeEntities.add(entity);
+        w.cachedEntities = null;
         w._structureVersion++;
       }
     });

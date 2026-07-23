@@ -31,7 +31,8 @@ import { Renderer } from "../../rendering/Renderer";
 import { initializeAsteroidsRenderer } from "./rendering/AsteroidsRendererManager";
 import { NetworkManager } from "../../network/NetworkManager";
 import { NullTransport } from "../../network/NullTransport";
-import { ReplicationSystem } from "../../network/ReplicationSystem";
+import { LocalPredictionSystem } from "../../network/LocalPredictionSystem";
+import { RemoteInterpolationSystem } from "../../network/RemoteInterpolationSystem";
 import { NetworkController } from "../../network/NetworkController";
 import { INetworkGame } from "../../network/NetworkManager";
 import { ConfigService } from "../../config/ConfigService";
@@ -143,7 +144,8 @@ export class AsteroidsGame
     }
 
     if (this.networkManager) {
-      this.world.addSystem(new ReplicationSystem(this.networkManager), { phase: SystemPhase.Presentation });
+      this.world.addSystem(new LocalPredictionSystem(this.networkManager), { phase: SystemPhase.Input });
+      this.world.addSystem(new RemoteInterpolationSystem(this.networkManager), { phase: SystemPhase.Presentation });
     }
   }
 

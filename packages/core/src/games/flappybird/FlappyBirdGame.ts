@@ -21,7 +21,8 @@ import { EventBus } from "../../events/EventBus";
 import { UnifiedInputSystem } from "../../input/UnifiedInputSystem";
 import { MutatorSystem } from "../../systems/MutatorSystem";
 import { NetworkManager } from "../../network/NetworkManager";
-import { ReplicationSystem } from "../../network/ReplicationSystem";
+import { LocalPredictionSystem } from "../../network/LocalPredictionSystem";
+import { RemoteInterpolationSystem } from "../../network/RemoteInterpolationSystem";
 import {
   createBird,
   createGameState,
@@ -95,7 +96,8 @@ export class FlappyBirdGame
         interpolationDelay: 100
       });
     }
-    this.world.addSystem(new ReplicationSystem(this.networkManager) as System<any>, { phase: SystemPhase.Presentation });
+    this.world.addSystem(new LocalPredictionSystem(this.networkManager) as System<any>, { phase: SystemPhase.Input });
+    this.world.addSystem(new RemoteInterpolationSystem(this.networkManager) as System<any>, { phase: SystemPhase.Presentation });
   }
 
   protected override async onInitializeEntities(): Promise<void> {

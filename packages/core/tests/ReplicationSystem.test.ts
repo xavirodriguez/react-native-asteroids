@@ -1,22 +1,33 @@
 import { World } from "../src/ecs/World";
 import { CoreComponentRegistry } from "../src/ecs/CoreComponents";
-import { ReplicationSystem, AuthoritativeServerState } from "../src/network/ReplicationSystem";
+import { LocalPredictionSystem } from "../src/network/LocalPredictionSystem";
+import { RemoteInterpolationSystem } from "../src/network/RemoteInterpolationSystem";
+import { AuthoritativeServerState } from "../src/network/types";
 
 interface TestRegistry extends CoreComponentRegistry {
   RemotePlayer: { type: "RemotePlayer"; targetX: number; targetY: number; targetRotation: number; sessionId: string };
   LocalPlayer: { type: "LocalPlayer" };
-  Input: { type: "Input"; thrust?: boolean };
+  Input: { type: "Input"; thrust?: boolean; rotateLeft?: boolean; rotateRight?: boolean; shoot?: boolean; hyperspace?: boolean; rotationAmount?: number };
 }
 
 describe("ReplicationSystem Tests", () => {
   let world: World<TestRegistry>;
-  let replicationSystem: ReplicationSystem<TestRegistry>;
+  let localPredictionSystem: LocalPredictionSystem<TestRegistry>;
+  let remoteInterpolationSystem: RemoteInterpolationSystem<TestRegistry>;
   let mockNetworkManager: any;
 
   beforeEach(() => {
     world = new World<TestRegistry>();
     mockNetworkManager = {};
-    replicationSystem = new ReplicationSystem<TestRegistry>(mockNetworkManager);
+    localPredictionSystem = new LocalPredictionSystem<TestRegistry>(mockNetworkManager);
+    remoteInterpolationSystem = new RemoteInterpolationSystem<TestRegistry>(mockNetworkManager);
+
+    // Explicitly configure GameConfig for tests to have 0.0 friction as assumed by test expectations
+    world.setResource("GameConfig", {
+        SHIP_THRUST: 150,
+        SHIP_ROTATION_SPEED: Math.PI,
+        SHIP_FRICTION: 0.0
+    });
   });
 
   it("debería realizar Client-Side Prediction y almacenar inputs con deltaTime real", () => {
@@ -54,7 +65,7 @@ describe("ReplicationSystem Tests", () => {
     });
 
     // Tick 1: deltaTime = 20ms
-    replicationSystem.update(world, 20);
+    localPredictionSystem.update(world, 20);
 
     const velocity = world.getComponent(localPlayer, "Velocity")!;
     // El thrust aplica una aceleración (power = 150) modificando la velocidad
@@ -67,7 +78,7 @@ describe("ReplicationSystem Tests", () => {
       input.thrust = false;
     });
 
-    replicationSystem.update(world, 30);
+    localPredictionSystem.update(world, 30);
 
     // La velocidad no debería aumentar en este tick
     expect(velocity.vx).toBeCloseTo(3, 4);
@@ -109,9 +120,9 @@ describe("ReplicationSystem Tests", () => {
 
     // Simulamos 2 updates del cliente locales con distintos deltas de tiempo
     // Tick 0: dt = 16ms, thrust = true
-    replicationSystem.update(world, 16);
+    localPredictionSystem.update(world, 16);
     // Tick 1: dt = 25ms, thrust = true
-    replicationSystem.update(world, 25);
+    localPredictionSystem.update(world, 25);
 
     // Posición estimada actual del cliente:
     // En tick 0 (dt=16): vx se convierte en cos(0) * 150 * 0.016 = 2.4
@@ -127,7 +138,7 @@ describe("ReplicationSystem Tests", () => {
     };
 
     // Reconciliamos el Tick 0 (lo que descarta la entrada del Tick 0 y hace replay de la entrada de Tick 1 con dt = 25ms)
-    replicationSystem.reconcile(world, 0, serverState);
+    localPredictionSystem.reconcile(world, 0, serverState);
 
     const transform = world.getComponent(localPlayer, "Transform")!;
     const velocity = world.getComponent(localPlayer, "Velocity")!;
@@ -167,8 +178,8 @@ describe("ReplicationSystem Tests", () => {
       sessionId: "remote-1",
     });
 
-    // Ejecuta una actualización para interpolar (alpha = 0.15)
-    replicationSystem.update(world, 16);
+    // Aseguramos que el test remoto no se vea alterado por el GameConfig
+    remoteInterpolationSystem.update(world, 16);
 
     const transform = world.getComponent(remotePlayer, "Transform")!;
     // x = 10 + (20 - 10) * 0.15 = 11.5

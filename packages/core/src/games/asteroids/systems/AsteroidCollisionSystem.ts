@@ -81,6 +81,44 @@ export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, 
                 newScore = state.score;
             });
 
+            // Score synchronization logic by owner
+            const bulletComp = world.getComponent(bullet, "Bullet");
+            const ownerId = bulletComp?.ownerId;
+            if (ownerId) {
+                let playerEntity: number | undefined;
+                const candidates = [...world.query("RemotePlayer"), ...world.query("LocalPlayer")];
+                for (const ent of candidates) {
+                    let sid: string | undefined;
+                    const remote = world.getComponent(ent, "RemotePlayer");
+                    if (remote && remote.sessionId) {
+                        sid = remote.sessionId;
+                    }
+                    if (!sid) {
+                        const ship = world.getComponent(ent, "Ship");
+                        if (ship && ship.sessionId) {
+                            sid = ship.sessionId;
+                        }
+                    }
+                    if (sid === ownerId) {
+                        playerEntity = ent;
+                        break;
+                    }
+                }
+
+                if (playerEntity !== undefined) {
+                    if (!world.hasComponent(playerEntity, "PlayerScore")) {
+                        world.getCommandBuffer().addComponent(playerEntity, {
+                            type: "PlayerScore",
+                            score: points
+                        });
+                    } else {
+                        world.mutateComponent(playerEntity, "PlayerScore", (ps) => {
+                            ps.score = (ps.score || 0) + points;
+                        });
+                    }
+                }
+            }
+
             // ✅ PASO 1: Leer componentes y fragmentar ANTES de encolar la destrucción.
             // fragmentAsteroid lee Transform y Velocity del asteroide padre síncronamente.
             // createAsteroid internamente usa CommandBuffer si world.isUpdating === true,
