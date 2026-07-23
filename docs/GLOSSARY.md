@@ -8,7 +8,8 @@ Este documento define de forma precisa y corta los términos que presentan ambig
 
 #### Boundary ⚠️
 *   **En el motor (Core):** Representado por `BoundaryComponent` (tipo `"Boundary"`) y `BoundarySystem`. Controla los límites de pantalla mediante comportamientos genéricos automatizados como envolver (`wrap`), rebotar (`bounce`) o destruir (`destroy`) entidades individuales al salir del viewport.
-*   **En un juego (Space Invaders):** El bloque de invasores no se gestiona mediante el `BoundarySystem` del core. La lógica reside en `SpaceInvadersFormationSystem`, que calcula dinámicamente la caja de contención (`minX`, `maxX`) de los invasores vivos y realiza un chequeo predictivo de bordes para cambiar de dirección lateral y ordenar el descenso vertical (paso de bajada). Sin embargo, las entidades individuales (balas, jugador) sí pueden usar el `BoundaryComponent` del core.
+*   **En un juego (Space Invaders):** El bloque de invasores no se gestiona mediante el `BoundarySystem` del core. La lógica reside en `SpaceInvadersFormationSystem`, que calcula dinámicamente la caja de contención (`minX`, `maxX`) de los invasores vivos y realiza un chequeo predictivo de bordes para cambiar de dirección lateral y ordenar el descenso vertical (paso de bajada). Sin embargo, las entidades individuales (balas, jugador) sí usan el `BoundaryComponent` del core.
+*   **En un juego (Pong):** La bola usa `BoundaryComponent` en modo `"bounce"` para los límites superior e inferior (eje Y). Sin embargo, los límites laterales (eje X) no se gestionan mediante el core, sino de manera ad-hoc en `PongGameStateSystem` y `PongCollisionSystem` para registrar anotaciones de puntos y reiniciar la bola.
 
 #### Collider vs Collider2D ⚠️
 *   **Collider (tipo `"Collider"`):** Componente de colisión del core que trabaja junto con los sistemas centrales `CollisionSystem2D` (Sweep-and-Prune broad-phase y narrow-phase) y `CCDSystem` (Continuous Collision Detection por trazado de rayos). Utilizado en **Pong** y **Asteroids** (el cual usa `CollisionSystem2D` para sus interacciones).
@@ -22,9 +23,9 @@ Este documento define de forma precisa y corta los términos que presentan ambig
 
 #### GameState ⚠️
 *   **En el motor (Core):** `BaseGameStateSystem` es una clase de sistema abstracta para estructurar el control de flujos de juego, victoria/derrota y reinicios de forma genérica. No provee un componente `"GameState"` nativo en el core.
-*   **En un juego (Asteroids / Space Invaders):** El estado se almacena en un componente singleton específico llamado `"GameState"` (tipo `"GameState"`) que guarda vidas, nivel actual, puntaje acumulado y banderas de fin de juego.
-*   **En un juego (Pong):** Define un componente personalizado de estado llamado `PongState` (tipo `"PongState"`).
-*   **En un juego (Flappy Bird):** Define un componente personalizado de estado llamado `FlappyBirdState` (tipo `"FlappyState"`).
+*   **En un juego (Asteroids / Space Invaders):** El estado se almacena en un componente singleton específico llamado `"GameState"` (tipo `"GameState"`) que guarda vidas, nivel actual, puntaje acumulado y banderas de fin de juego. A pesar de compartir el mismo tipo `"GameState"`, sus esquemas son distintos y específicos para cada juego.
+*   **En un juego (Pong):** Define un componente de estado llamado `PongState` (tipo `"PongState"`).
+*   **En un juego (Flappy Bird):** Define un componente de estado llamado `FlappyBirdState` (tipo `"FlappyState"`).
 
 #### Input / InputState ⚠️
 *   **En el motor (Core):** El componente `InputStateComponent` (tipo `"InputState"`) actúa como un buffer genérico y de bajo nivel que almacena diccionarios planos de ejes (`axes`) y botones (`buttons`).
