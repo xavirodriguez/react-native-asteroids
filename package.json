@@ -67,6 +67,7 @@
     "expo-updates": "~55.0.25",
     "expo-web-browser": "~55.0.17",
     "geist": "^1.4.2",
+    "hermes-compiler": "^250829098.0.2",
     "input-otp": "^1.4.2",
     "msgpackr": "^1.11.12",
     "postcss": "^8.5.6",
