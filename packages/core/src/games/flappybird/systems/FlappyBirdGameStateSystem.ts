@@ -1,6 +1,5 @@
-import { World, BaseGame, TransformComponent } from "../../../index";
+import { World } from "../../../index";
 import {
-  PipeComponent,
   FLAPPY_CONFIG,
   FlappyBirdState
 } from "../types/FlappyBirdTypes";

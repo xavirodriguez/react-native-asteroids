@@ -1,5 +1,5 @@
-import { System, World, HealthComponent, EventBus, TransformComponent, RenderComponent, Component, Collider2DComponent } from "../../../index";
-import { GameStateComponent, BossComponent, SpaceInvadersComponentRegistry, GAME_CONFIG } from "../types/SpaceInvadersTypes";
+import { System, World, HealthComponent, EventBus, TransformComponent, RenderComponent, Collider2DComponent } from "../../../index";
+import { BossComponent, SpaceInvadersComponentRegistry, GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { createEmitter } from "../../../index";
 import { CollisionLayers } from "../../shared/types/CollisionLayers";

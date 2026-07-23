@@ -2,8 +2,6 @@ import { World } from "../../ecs/World";
 import { GameLoop } from "../../loop/GameLoop";
 import { BaseGame } from "../../runtime/BaseGame";
 import { WorldSnapshot } from "../../snapshots/WorldSnapshot";
-import { Component } from "../../ecs/Component";
-import { TransformComponent, RenderComponent } from "../../ecs/CoreComponents";
 import { EventBus } from "../../events/EventBus";
 import { UnifiedInputSystem } from "../../input/UnifiedInputSystem";
 import { InputSystem } from "../../input/InputSystem";
@@ -26,8 +24,6 @@ import {
   drawSpaceInvadersShield,
   drawSpaceInvadersParticle
 } from "./rendering/SpaceInvadersCanvasVisuals";
-import { MutatorSystem } from "../../systems/MutatorSystem";
-import { SystemPhase } from "../../ecs/System";
 
 const __DEV__ = process.env.NODE_ENV !== "production";
 

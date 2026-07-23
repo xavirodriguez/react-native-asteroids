@@ -1,6 +1,5 @@
 import { System, World } from "../../../index";
-import { TransformComponent, VelocityComponent, RenderComponent, Component } from "../../../index";
-import { GameStateComponent, KamikazeComponent, SpaceInvadersComponentRegistry, GAME_CONFIG } from "../types/SpaceInvadersTypes";
+import { KamikazeComponent, SpaceInvadersComponentRegistry, GAME_CONFIG } from "../types/SpaceInvadersTypes";
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 
 export class KamikazeSystem extends System<SpaceInvadersComponentRegistry> {

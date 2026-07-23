@@ -1,7 +1,7 @@
 import { World, SystemPhase } from "../src";
 import { SpaceInvadersCollisionSystem } from "../src/games/space-invaders/systems/SpaceInvadersCollisionSystem";
 import { SpaceInvadersGameStateSystem } from "../src/games/space-invaders/systems/SpaceInvadersGameStateSystem";
-import { GameStateComponent, SpaceInvadersComponentRegistry } from "../src/games/space-invaders/types/SpaceInvadersTypes";
+import { SpaceInvadersComponentRegistry } from "../src/games/space-invaders/types/SpaceInvadersTypes";
 import { createGameState } from "../src/games/space-invaders/EntityFactory";
 import { ParticlePool } from "../src/games/space-invaders/EntityPool";
 import { CollisionEventsComponent } from "../src/ecs/CoreComponents";

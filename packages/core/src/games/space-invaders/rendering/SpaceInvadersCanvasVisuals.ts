@@ -1,5 +1,5 @@
-import { ShapeDrawer, EffectDrawer, World } from "../../../index";
-import { GameStateComponent, SpaceInvadersComponentRegistry } from "../types/SpaceInvadersTypes";
+import { ShapeDrawer, EffectDrawer } from "../../../index";
+import { SpaceInvadersComponentRegistry } from "../types/SpaceInvadersTypes";
 
 /**
  * Visuals for the player ship.

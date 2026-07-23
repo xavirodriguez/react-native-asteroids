@@ -1,7 +1,6 @@
 import { World } from "../../index";
 import { CollisionLayers } from "../shared/types/CollisionLayers";
 import { Entity, Component, BoundaryComponent, TransformComponent, VelocityComponent, RenderComponent, Collider2DComponent, ReclaimableComponent } from "../../index";
-import { SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
 import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 import { ProjectilePool, ProjectileComponents, ProjectileParams } from "../../utils/ProjectilePool";
 

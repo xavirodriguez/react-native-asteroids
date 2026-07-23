@@ -1,5 +1,5 @@
-import { ShapeDrawer, EffectDrawer, HealthComponent, TransformComponent } from "../../../index";
-import { FLAPPY_CONFIG, FlappyBirdState, BirdComponent, PipeComponent, FlappyBirdComponentRegistry } from "../types/FlappyBirdTypes";
+import { ShapeDrawer, EffectDrawer } from "../../../index";
+import { FLAPPY_CONFIG, FlappyBirdComponentRegistry } from "../types/FlappyBirdTypes";
 
 /**
  * Visuals for the bird.

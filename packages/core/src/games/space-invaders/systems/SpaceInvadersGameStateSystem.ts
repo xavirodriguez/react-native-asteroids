@@ -1,4 +1,4 @@
-import { World, BaseGame, BaseGameStateSystem } from "../../../index";
+import { World, BaseGameStateSystem } from "../../../index";
 import { GameStateComponent, SpaceInvadersComponentRegistry } from "../types/SpaceInvadersTypes";
 import { spawnInvaderWave } from "../EntityFactory";
 import { ISpaceInvadersGame } from "../types/GameInterfaces";

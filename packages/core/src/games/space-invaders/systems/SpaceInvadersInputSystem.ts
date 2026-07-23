@@ -1,6 +1,5 @@
 import { System, World } from "../../../index";
-import { TransformComponent, VelocityComponent } from "../../../index";
-import { InputComponent, SpaceInvadersComponentRegistry } from "../types/SpaceInvadersTypes";
+import { SpaceInvadersComponentRegistry } from "../types/SpaceInvadersTypes";
 import { SpaceInvadersConfig } from "../types/SpaceInvadersConfigSchema";
 import { PlayerBulletPool } from "../EntityPool";
 import { createPlayerBullet } from "../EntityFactory";

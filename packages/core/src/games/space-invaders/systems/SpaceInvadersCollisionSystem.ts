@@ -2,12 +2,9 @@ import { World, ComponentType, Juice } from "../../../index";
 import { System } from "../../../index";
 import { Entity } from "../../../index";
 import { EventBus } from "../../../index";
-import { TransformComponent, HealthComponent, RenderComponent, TTLComponent } from "../../../index";
+import { TransformComponent, RenderComponent, TTLComponent } from "../../../index";
 import {
   GameStateComponent,
-  InvaderComponent,
-  ShieldComponent,
-  BossComponent,
   UITextComponent,
   SpaceInvadersComponentRegistry,
   GAME_CONFIG

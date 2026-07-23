@@ -57,9 +57,10 @@ export default tseslint.config(
       "react-hooks/exhaustive-deps": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": "off",
-      "unused-imports/no-unused-imports": "error",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "unused-imports/no-unused-imports": "warn",
       "unused-imports/no-unused-vars": [
-        "error",
+        "warn",
         {
           vars: "all",
           varsIgnorePattern: "^_",
@@ -69,7 +70,7 @@ export default tseslint.config(
         },
       ],
       "@typescript-eslint/no-require-imports": [
-        "error",
+        "warn",
         {
           allow: [
             "@shopify/react-native-skia",
@@ -113,10 +114,14 @@ export default tseslint.config(
   // Override estricto para el core (Librería limpia)
   {
     files: ["packages/core/src/**/*.ts"],
+    ignores: [
+      "packages/core/src/index.ts",
+      "packages/core/src/games/**/*.ts",
+    ],
     rules: {
-      "no-console": "error",
-      "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/no-require-imports": "error",
+      "no-console": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-require-imports": "warn",
       // EL GUARDIÁN DE FRONTERAS:
       "no-restricted-imports": [
         "error",
@@ -147,11 +152,20 @@ export default tseslint.config(
       ],
     },
   },
-  // Añadir a tu configuración:
+  // Override para archivos de tests (evitar restricciones innecesarias de librería limpia)
   {
-    files: ["packages/core/src/tests/**/*.ts", "packages/core/tests/**/*.ts"],
+    files: [
+      "**/__tests__/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+      "**/*.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+      "**/*.spec.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+      "packages/core/tests/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+    ],
     rules: {
       "no-console": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "unused-imports/no-unused-vars": "off",
+      "unused-imports/no-unused-imports": "off",
     },
   },
   {

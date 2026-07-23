@@ -1,8 +1,8 @@
 import { World, ComponentType } from "../../../index";
 import { System } from "../../../index";
-import { Entity, TransformComponent, CollisionEventsComponent, Collider2DComponent, RenderComponent } from "../../../index";
+import { Entity } from "../../../index";
 import { IFlappyBirdGame } from "../types/GameInterfaces";
-import { FlappyBirdState, BirdComponent, PipeComponent, FlappyBirdComponentRegistry } from "../types/FlappyBirdTypes";
+import { FlappyBirdComponentRegistry } from "../types/FlappyBirdTypes";
 import { Juice } from "../../../index";
 import { createEmitter } from "../../../index";
 import { EventBus } from "../../../index";

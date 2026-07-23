@@ -84,9 +84,10 @@ export class JuiceSystem extends System<CoreComponentRegistry> {
             case "easeIn": return t * t;
             case "easeOut": return t * (2 - t);
             case "easeInOut": return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-            case "elasticOut":
+            case "elasticOut": {
                 const p = 0.3;
                 return Math.pow(2, -10 * t) * Math.sin((t - p / 4) * (2 * Math.PI) / p) + 1;
+            }
             default: return t;
         }
     }

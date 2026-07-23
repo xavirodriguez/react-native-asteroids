@@ -2,7 +2,6 @@ import { ComponentRegistry } from "./Component";
 import { EventRegistry } from "../events/EventBus";
 import { System, SystemPhase, SystemConfig } from "./System";
 import { World, BlueprintRegistryMap } from "./World";
-import { RandomService } from "../utils/RandomService";
 
 /**
  * Orquesta y ejecuta los sistemas registrados del ECS de forma secuencial y ordenada por fases.

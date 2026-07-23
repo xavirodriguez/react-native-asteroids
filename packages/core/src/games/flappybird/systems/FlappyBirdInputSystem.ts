@@ -1,5 +1,5 @@
-import { System, World, VelocityComponent, InputStateComponent, Juice } from "../../../index";
-import { FlappyBirdInputComponent, BirdComponent, FLAPPY_CONFIG, FlappyBirdComponentRegistry } from "../types/FlappyBirdTypes";
+import { System, World, InputStateComponent, Juice } from "../../../index";
+import { FLAPPY_CONFIG, FlappyBirdComponentRegistry } from "../types/FlappyBirdTypes";
 
 const InputUtils = {
   isPressed(inputState: InputStateComponent, button: string): boolean {

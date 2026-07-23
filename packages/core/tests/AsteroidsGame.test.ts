@@ -1,5 +1,4 @@
 import { AsteroidsGame } from "../src/games/asteroids/AsteroidsGame";
-import { WorldSnapshot } from "../src/snapshots/WorldSnapshot";
 import { ServerUpdatePayload } from "../src/network/NetTypes";
 
 describe("AsteroidsGame Network & Prediction Tests", () => {

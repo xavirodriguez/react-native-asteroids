@@ -1,9 +1,8 @@
 import { System } from "../../../index";
 import { World } from "../../../index";
 import { RandomService } from "../../../index";
-import { BirdComponent, FLAPPY_CONFIG, FlappyBirdInputComponent } from "../types/FlappyBirdTypes";
+import { FLAPPY_CONFIG } from "../types/FlappyBirdTypes";
 import { createEmitter } from "../../../index";
-import { TransformComponent, VelocityComponent } from "../../../index";
 
 import { FlappyBirdComponentRegistry } from "../types/FlappyBirdTypes";
 

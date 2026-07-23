@@ -1,7 +1,6 @@
 import { Scene } from "../../../scenes/Scene";
 import { World } from "../../../ecs/World";
 import { EventBus } from "../../../events/EventBus";
-import { BaseGame } from "../../../runtime/BaseGame";
 import { SpaceInvadersComponentRegistry } from "../types/SpaceInvadersTypes";
 import { MovementSystem } from "../../../physics/systems/MovementSystem";
 import { TTLSystem } from "../../../systems/TTLSystem";

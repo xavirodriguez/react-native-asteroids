@@ -1,7 +1,6 @@
 import { World } from "../World";
 import { Schedule } from "../Schedule";
 import { System, SystemPhase } from "../System";
-import { RandomService } from "../../utils/RandomService";
 
 describe("Schedule Unit Tests", () => {
   let world: World;

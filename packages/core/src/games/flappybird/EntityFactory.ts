@@ -1,9 +1,9 @@
 import { World } from "../../index";
-import { Entity, Component } from "../../index";
-import { FLAPPY_CONFIG, FlappyBirdComponentRegistry } from "./types/FlappyBirdTypes";
+import { Entity } from "../../index";
+import { FLAPPY_CONFIG } from "./types/FlappyBirdTypes";
 import { createEmitter } from "../../index";
 import { CollisionLayers } from "../shared/types/CollisionLayers";
-import { Collider2DComponent, TransformComponent, VelocityComponent, RenderComponent, HealthComponent } from "../../index";
+import { Collider2DComponent, TransformComponent, VelocityComponent, RenderComponent } from "../../index";
 
 /**
  * Entity factory for the Flappy Bird game domain.

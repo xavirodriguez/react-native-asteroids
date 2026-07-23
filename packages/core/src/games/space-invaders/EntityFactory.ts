@@ -1,12 +1,11 @@
 import { World } from "../../index";
-import { Entity, Component } from "../../index";
+import { Entity } from "../../index";
 import { SpaceInvadersConfig } from "./types/SpaceInvadersConfigSchema";
-import { GAME_CONFIG, SpaceInvadersComponentRegistry } from "./types/SpaceInvadersTypes";
+import { GAME_CONFIG } from "./types/SpaceInvadersTypes";
 import { PlayerBulletPool, EnemyBulletPool, ParticlePool } from "./EntityPool";
 import { createEmitter } from "../../index";
 import { CollisionLayers } from "../shared/types/CollisionLayers";
-import { Collider2DComponent, BoundaryComponent, TransformComponent, VelocityComponent, RenderComponent, HealthComponent } from "../../index";
-import { LootTableComponent } from "../../index";
+import { Collider2DComponent, TransformComponent, VelocityComponent, RenderComponent, HealthComponent } from "../../index";
 import {
   InputComponent,
   PlayerComponent,
