@@ -47,3 +47,11 @@
 - **Alternativas consideradas:** Usar serialización JSON tradicional sobre snapshots SoA, descartado porque los TypedArrays se habrían serializado como costosos objetos indexados planos `{ "0": x, "1": y }` en lugar de buffers binarios puros.
 - **Consecuencias / Trade-offs:** Reducción drástica del tamaño de transmisión (promedio de 2.5x a 3x de compresión) y eliminación absoluta de las asignaciones de objetos dinámicos. Para registrar métricas comparativas precisas sin degradar el rendimiento, el servidor computa de forma asíncrona un snapshot AoS JSON de contraste solo una vez cada 120 ticks (~2 segundos).
 - **Archivos impactados:** `packages/core/src/network/MultiplayerSystems.ts`, `packages/core/src/snapshots/WorldSnapshot.ts`, `server/src/AsteroidsRoom.ts`
+
+## DEC-007: Priorización del Roadmap de Diseño Creativo (Game Feel)
+- **Fecha:** 2026-07-20
+- **Contexto:** Tras consolidar con éxito la estabilidad y el rendimiento de la arquitectura del motor y las comunicaciones de red, es prioritario definir un plan de diseño de mecánicas y pulido ("juiciness") centrado en el jugador que eleve la diversión y retención de cada minijuego.
+- **Decisión:** Se elaboró un Roadmap Creativo formal (`docs/ROADMAP_CREATIVE.md`) detallando mejoras incrementales, intermedias y disruptivas para cada uno de los cuatro juegos activos (Asteroids, Space Invaders, Flappy Bird y Pong), alineadas con los conceptos de C.C.C. (Character, Camera, Controls) y tutorialización invisible de Scott Rogers.
+- **Alternativas consideradas:** Realizar refactorizaciones espontáneas de jugabilidad directamente en el código, descartado para no comprometer el estado impecable actual de los tests de simulación física y determinismo.
+- **Consecuencias / Trade-offs:** Excelente visibilidad y catalogación de tareas de diseño por costo, impacto y complejidad, listas para ser desarrolladas de manera iterativa y segura.
+- **Archivos impactados:** `docs/ROADMAP_CREATIVE.md`
