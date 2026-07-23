@@ -1,9 +1,7 @@
+/* eslint-disable no-restricted-imports, @typescript-eslint/no-explicit-any */
 import { World } from "../../../ecs/World";
 import { System } from "../../../ecs/System";
 import { AsteroidsComponentRegistry, AsteroidsEventRegistry } from "../types/AsteroidRegistry";
-import { Entity } from "../../../ecs/Entity";
-import { ComponentType } from "../../../ecs/Component";
-import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { fragmentAsteroid } from "../EntityFactory";
 
 /**
