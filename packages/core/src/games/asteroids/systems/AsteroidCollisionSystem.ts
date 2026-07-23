@@ -6,25 +6,38 @@ import { ComponentType } from "../../../ecs/Component";
 import { AsteroidConfig } from "../types/AsteroidConfigSchema";
 import { fragmentAsteroid } from "../EntityFactory";
 
-/** @public */
+/**
+ * System to resolve collision logic for Asteroids.
+ * Handles Bullet-Asteroid and Ship-Asteroid collisions using a double-safety approach:
+ * A) Unique pair processing (entityA < entityB)
+ * B) Verification that entities still exist before processing.
+ * Utilizes the world CommandBuffer for deferred mutations and EventBus for deferred events.
+ * @public
+ */
 export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, AsteroidsEventRegistry> {
   constructor() {
     super();
   }
 
   public update(world: World<AsteroidsComponentRegistry, AsteroidsEventRegistry>, _deltaTime: number): void {
+    // Paso 4: Double-security collision resolution system
     const entities = world.query("CollisionEvents");
     const destroyedEntities = new Set<number>();
 
+    // 1. Iterate over collision pairs
     for (const entityA of entities) {
       const colComp = world.getComponent(entityA, "CollisionEvents");
-      if (!colComp) continue;
+      if (!colComp) {
+        continue;
+      }
 
       for (const collision of colComp.collisions) {
         const entityB = collision.otherEntity;
 
         // Doble Seguridad A: Procesa cada par solo una vez verificando if (entityA < entityB)
-        if (!(entityA < entityB)) continue;
+        if (!(entityA < entityB)) {
+          continue;
+        }
 
         // Doble Seguridad B: Antes de procesar la colisión, verifica que las entidades sigan existiendo
         const hasEntity = (entity: number): boolean => {
@@ -34,10 +47,14 @@ export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, 
           return world.hasComponent(entity, "Transform");
         };
 
-        if (!hasEntity(entityA) || !hasEntity(entityB)) continue;
+        if (!hasEntity(entityA) || !hasEntity(entityB)) {
+          continue;
+        }
 
         // Ensure we don't process if either entity was already destroyed in this system update
-        if (destroyedEntities.has(entityA) || destroyedEntities.has(entityB)) continue;
+        if (destroyedEntities.has(entityA) || destroyedEntities.has(entityB)) {
+          continue;
+        }
 
         const isBulletA = world.hasComponent(entityA, "Bullet");
         const isBulletB = world.hasComponent(entityB, "Bullet");
@@ -52,21 +69,29 @@ export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, 
           const asteroid = isBulletA ? entityB : entityA;
 
           // Double check neither bullet nor asteroid is already processed/destroyed
-          if (destroyedEntities.has(bullet) || destroyedEntities.has(asteroid)) continue;
+          if (destroyedEntities.has(bullet) || destroyedEntities.has(asteroid)) {
+            continue;
+          }
 
           // Process asteroid score before destroying
           const asteroidComp = world.getComponent(asteroid, "Asteroid");
           const size = (asteroidComp?.size || "large") as "large" | "medium" | "small";
 
           let points = 20;
-          if (size === "medium") points = 50;
-          else if (size === "small") points = 100;
+          if (size === "medium") {
+            points = 50;
+          } else if (size === "small") {
+            points = 100;
+          }
 
           let newScore = points;
           world.mutateSingleton("GameState", (state) => {
             state.score += points;
             newScore = state.score;
           });
+
+          // Fragment the asteroid into smaller pieces upon bullet hit
+          fragmentAsteroid(world, asteroid);
 
           // Modificaciones Diferidas: TODA eliminación debe hacerse con world.getCommandBuffer().removeEntity(entity)
           world.getCommandBuffer().removeEntity(bullet);
@@ -91,7 +116,9 @@ export class AsteroidCollisionSystem extends System<AsteroidsComponentRegistry, 
           const ship = isShipA ? entityA : entityB;
           const asteroid = isShipA ? entityB : entityA;
 
-          if (destroyedEntities.has(ship) || destroyedEntities.has(asteroid)) continue;
+          if (destroyedEntities.has(ship) || destroyedEntities.has(asteroid)) {
+            continue;
+          }
 
           // Ignore collision if ship is invulnerable
           if (world.hasComponent(ship, "Invulnerable" as any)) {

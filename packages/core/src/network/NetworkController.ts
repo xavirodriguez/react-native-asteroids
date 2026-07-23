@@ -28,6 +28,17 @@ export class NetworkController<TComponents extends ComponentRegistry = Component
   }
 
   public applyInputToEntity(entityId: number, input: InputFrame) {
+    if (!this.world.hasComponent(entityId, "Input" as any)) {
+      this.world.addComponent(entityId, {
+        type: "Input",
+        rotateLeft: false,
+        rotateRight: false,
+        thrust: false,
+        shoot: false,
+        hyperspace: false,
+        rotationAmount: 0
+      } as any);
+    }
     this.world.mutateComponent(entityId, "Input" as any, (inputComp: any) => {
       inputComp.rotateLeft = input.actions.includes("rotateLeft");
       inputComp.rotateRight = input.actions.includes("rotateRight");
