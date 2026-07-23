@@ -17,6 +17,7 @@ describe("AsteroidCollisionSystem & Bullet Tests", () => {
     world.setResource("EventBus", eventBus);
     particlePool = new ParticlePool();
     collisionSystem = new AsteroidCollisionSystem();
+    world.gameplayRandom.unlock(); // Unlock random for the test simulation
 
     // Setup GameState singleton
     const stateEntity = world.createEntity();

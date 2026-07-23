@@ -104,6 +104,7 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
             if (input && velocity && transform) {
                 // Client-Side Prediction: apply input locally before server confirmation
                 if (input.thrust) {
+                    // Read physical parameters from unified config with a fallback to 150
                     const config = w.getResource<any>("GameConfig") || w.getSingleton<any>("GameConfig");
                     const power = config?.SHIP_THRUST ?? 150;
                     const ax = Math.cos(transform.rotation) * power;
@@ -185,6 +186,7 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
                     const dt = item.dt; // Real delta time from the input frame
 
                     if (input.thrust) {
+                        // Read physical parameters from unified config with a fallback to 150 during reconciliation replay
                         const config = w.getResource<any>("GameConfig") || w.getSingleton<any>("GameConfig");
                         const power = config?.SHIP_THRUST ?? 150;
                         w.mutateComponent(entity, "Velocity", (v) => {
