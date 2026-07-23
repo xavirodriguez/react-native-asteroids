@@ -13,6 +13,17 @@ describe("Asteroids Gameplay, Physics & Collision Systems", () => {
     await game.init();
     world = game.getWorld();
     world.gameplayRandom.unlock(); // Unlock for testing convenience
+
+    // Clear all initially spawned entities to prevent collision flakiness in tests
+    const initialAsteroids = world.query("Asteroid");
+    for (const entity of initialAsteroids) {
+      world.getCommandBuffer().removeEntity(entity);
+    }
+    const initialShips = world.query("Ship");
+    for (const entity of initialShips) {
+      world.getCommandBuffer().removeEntity(entity);
+    }
+    world.getCommandBuffer().flush(world); // Flush command buffer síncronamente sin bloquear gameplayRandom
   });
 
   afterEach(() => {

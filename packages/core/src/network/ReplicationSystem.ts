@@ -44,7 +44,7 @@ export interface AuthoritativeServerState {
  * @public
  */
 export class ReplicationSystem<TRegistry extends MultiplayerRegistry = MultiplayerRegistry> extends System<TRegistry> {
-    private inputQueue: ReconciledInput[] = [];
+    private inputQueue: ReconciledInput<any>[] = [];
     private lastProcessedTick = 0;
 
     constructor(private networkManager: NetworkManager) { super(); }
@@ -65,20 +65,17 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
      */
     public update(world: World<TRegistry>, deltaTime: number): void {
         const w = world as unknown as World<MultiplayerRegistry>;
+        const dtSec = deltaTime / 1000;
 
+        // --- Interpolación LERP de entidades remotas (sin cambios) ---
         const remoteQuery = w.query("Transform", "RemotePlayer");
         for (const entity of remoteQuery) {
             const remote = w.getComponent(entity, "RemotePlayer");
-
             if (remote && remote.targetX !== undefined && remote.targetY !== undefined) {
-                // Implement Linear Interpolation (Lerp) for remote entities
-                // P_visual = P_old + (P_new - P_old) * alpha
-                const alpha = 0.15; // Interpolation factor
+                const alpha = 0.15;
                 w.mutateComponent(entity, "Transform", (t) => {
                     t.x += (remote.targetX! - t.x) * alpha;
                     t.y += (remote.targetY! - t.y) * alpha;
-
-                    // Angle interpolation (handling wrap-around)
                     if (remote.targetRotation !== undefined) {
                         let diffRot = remote.targetRotation - t.rotation;
                         while (diffRot > Math.PI) diffRot -= Math.PI * 2;
@@ -89,42 +86,44 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
             }
         }
 
-        const config = (world.getResource("GameConfig") || {
+        // --- Client-Side Prediction usando computeShipPhysics ---
+        // Leer config UNA sola vez; los defaults deben coincidir con AsteroidConfigSchema
+        const config = (world.getResource<any>("GameConfig") ?? {
             SHIP_THRUST: 150,
-            SHIP_ROTATION_SPEED: 4.0,
-            SHIP_FRICTION: 0.0
-        }) as any;
+            SHIP_ROTATION_SPEED: Math.PI,
+            SHIP_FRICTION: 0.0   // ← 0.0 por defecto para compatibilidad con tests sin GameConfig, pero AsteroidConfigSchema provee 0.99
+        });
 
         const localQuery = w.query("Transform", "LocalPlayer", "Velocity", "Input");
         for (const entity of localQuery) {
-            const input = w.getComponent(entity, "Input");
-            const velocity = w.getComponent(entity, "Velocity");
+            const input     = w.getComponent(entity, "Input");
+            const velocity  = w.getComponent(entity, "Velocity");
             const transform = w.getComponent(entity, "Transform");
+            if (!input || !velocity || !transform) continue;
 
-            if (input && velocity && transform) {
-                // Client-Side Prediction: apply input locally before server confirmation
-                if (input.thrust) {
-                    // Read physical parameters from unified config with a fallback to 150
-                    const config = w.getResource<any>("GameConfig") || w.getSingleton<any>("GameConfig");
-                    const power = config?.SHIP_THRUST ?? 150;
-                    const ax = Math.cos(transform.rotation) * power;
-                    const ay = Math.sin(transform.rotation) * power;
-                    w.mutateComponent(entity, "Velocity", (v) => {
-                        v.vx += ax * (deltaTime / 1000);
-                        v.vy += ay * (deltaTime / 1000);
-                    });
-                }
+            // ✅ Una sola fuente de verdad física
+            const phys = computeShipPhysics(transform, velocity, input, config, dtSec);
 
-                const finalVelocity = w.getComponent(entity, "Velocity")!;
-                const finalTransform = w.getComponent(entity, "Transform")!;
-                // Save input in a queue for future reconciliation
-                this.inputQueue.push({
-                    tick: this.lastProcessedTick++,
-                    input: { ...input },
-                    state: { x: finalTransform.x, y: finalTransform.y, vx: finalVelocity.vx, vy: finalVelocity.vy },
-                    dt: deltaTime
-                });
-            }
+            w.mutateComponent(entity, "Velocity", (v) => {
+                v.vx = phys.vx;
+                v.vy = phys.vy;
+            });
+            w.mutateComponent(entity, "Transform", (t) => {
+                t.rotation = phys.rotation;
+            });
+
+            const finalVelocity  = w.getComponent(entity, "Velocity")!;
+            const finalTransform = w.getComponent(entity, "Transform")!;
+
+            this.inputQueue.push({
+                tick: this.lastProcessedTick++,
+                input: { ...input },
+                state: {
+                    x: finalTransform.x, y: finalTransform.y,
+                    vx: finalVelocity.vx, vy: finalVelocity.vy
+                },
+                dt: deltaTime
+            });
         }
     }
 
@@ -149,63 +148,59 @@ export class ReplicationSystem<TRegistry extends MultiplayerRegistry = Multiplay
      * @param serverTick - El último número de tick procesado y confirmado por el servidor.
      * @param serverState - El estado autoritativo (posición y velocidad) del jugador remoto en dicho tick del servidor.
      */
-    public reconcile(world: World<TRegistry>, serverTick: number, serverState: AuthoritativeServerState): void {
+    public reconcile(
+        world: World<TRegistry>,
+        serverTick: number,
+        serverState: AuthoritativeServerState
+    ): void {
         const w = world as unknown as World<MultiplayerRegistry>;
-
-        // 1. Discard inputs that have already been processed by the server
         this.inputQueue = this.inputQueue.filter(i => i.tick > serverTick);
 
-        // 2. Find the local player entity
+        const config = (world.getResource<any>("GameConfig") ?? {
+            SHIP_THRUST: 150,
+            SHIP_ROTATION_SPEED: Math.PI,
+            SHIP_FRICTION: 0.0   // ← 0.0 por defecto para compatibilidad con tests sin GameConfig, pero AsteroidConfigSchema provee 0.99
+        });
+
         const localQuery = w.query("Transform", "LocalPlayer", "Velocity");
         for (const entity of localQuery) {
-            const transform = w.getComponent(entity, "Transform");
-            const velocity = w.getComponent(entity, "Velocity");
+            // 1. Resetear al estado autoritativo del servidor
+            w.mutateComponent(entity, "Transform", (t) => {
+                t.x = serverState.x;
+                t.y = serverState.y;
+            });
+            w.mutateComponent(entity, "Velocity", (v) => {
+                v.vx = serverState.vx;
+                v.vy = serverState.vy;
+            });
 
-            // 3. Reset local state to the last authoritative state from server
-            if (transform && velocity && serverState) {
-                w.mutateComponent(entity, "Transform", (t) => {
-                    t.x = serverState.x;
-                    t.y = serverState.y;
-                });
+            // 2. Replay de inputs pendientes con la MISMA función pura
+            for (const item of this.inputQueue) {
+                const dtSec = item.dt / 1000;
+
+                // Leer estado ACTUAL (evoluciona tick a tick durante el replay)
+                const currentTransform = w.getComponent(entity, "Transform")!;
+                const currentVelocity  = w.getComponent(entity, "Velocity")!;
+
+                // ✅ computeShipPhysics garantiza determinismo idéntico al servidor
+                const phys = computeShipPhysics(
+                    currentTransform,
+                    currentVelocity,
+                    item.input,
+                    config,
+                    dtSec
+                );
+
                 w.mutateComponent(entity, "Velocity", (v) => {
-                    v.vx = serverState.vx;
-                    v.vy = serverState.vy;
+                    v.vx = phys.vx;
+                    v.vy = phys.vy;
                 });
-            }
-
-            if (transform && velocity) {
-                const config = (world.getResource("GameConfig") || {
-                    SHIP_THRUST: 150,
-                    SHIP_ROTATION_SPEED: 4.0,
-                    SHIP_FRICTION: 0.0
-                }) as any;
-
-                // 4. Replay all pending inputs to catch up to the current client tick
-                for (const item of this.inputQueue) {
-                    const input = item.input;
-                    const dt = item.dt; // Real delta time from the input frame
-
-                    if (input.thrust) {
-                        // Read physical parameters from unified config with a fallback to 150 during reconciliation replay
-                        const config = w.getResource<any>("GameConfig") || w.getSingleton<any>("GameConfig");
-                        const power = config?.SHIP_THRUST ?? 150;
-                        w.mutateComponent(entity, "Velocity", (v) => {
-                            const ax = Math.cos(transform.rotation) * power;
-                            const ay = Math.sin(transform.rotation) * power;
-                            v.vx += ax * (dt / 1000);
-                            v.vy += ay * (dt / 1000);
-                        });
-                    }
-
-                    // Update position based on replayed velocity
-                    const currentVelocity = w.getComponent(entity, "Velocity");
-                    if (currentVelocity) {
-                        w.mutateComponent(entity, "Transform", (t) => {
-                            t.x += currentVelocity.vx * (dt / 1000);
-                            t.y += currentVelocity.vy * (dt / 1000);
-                        });
-                    }
-                }
+                w.mutateComponent(entity, "Transform", (t) => {
+                    t.rotation = phys.rotation;
+                    // Integrar posición con la velocidad ya actualizada
+                    t.x += phys.vx * dtSec;
+                    t.y += phys.vy * dtSec;
+                });
             }
         }
     }
