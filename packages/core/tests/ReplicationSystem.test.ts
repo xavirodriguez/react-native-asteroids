@@ -1,6 +1,7 @@
 import { World } from "../src/ecs/World";
 import { CoreComponentRegistry } from "../src/ecs/CoreComponents";
 import { ReplicationSystem, AuthoritativeServerState } from "../src/network/ReplicationSystem";
+import { computeShipPhysics } from "../src/games/asteroids/utils/AsteroidPhysics";
 
 interface TestRegistry extends CoreComponentRegistry {
   RemotePlayer: { type: "RemotePlayer"; targetX: number; targetY: number; targetRotation: number; sessionId: string };
@@ -16,7 +17,7 @@ describe("ReplicationSystem Tests", () => {
   beforeEach(() => {
     world = new World<TestRegistry>();
     mockNetworkManager = {};
-    replicationSystem = new ReplicationSystem<TestRegistry>(mockNetworkManager);
+    replicationSystem = new ReplicationSystem<TestRegistry>(mockNetworkManager, computeShipPhysics);
   });
 
   it("debería realizar Client-Side Prediction y almacenar inputs con deltaTime real", () => {

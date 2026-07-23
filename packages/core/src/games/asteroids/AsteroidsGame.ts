@@ -33,6 +33,7 @@ import { NetworkManager } from "../../network/NetworkManager";
 import { NullTransport } from "../../network/NullTransport";
 import { ReplicationSystem } from "../../network/ReplicationSystem";
 import { NetworkController } from "../../network/NetworkController";
+import { computeShipPhysics } from "./utils/AsteroidPhysics";
 import { INetworkGame } from "../../network/NetworkManager";
 import { ConfigService } from "../../config/ConfigService";
 import { AsteroidConfigSchema, AsteroidConfig } from "./types/AsteroidConfigSchema";
@@ -143,7 +144,7 @@ export class AsteroidsGame
     }
 
     if (this.networkManager) {
-      this.world.addSystem(new ReplicationSystem(this.networkManager), { phase: SystemPhase.Presentation });
+      this.world.addSystem(new ReplicationSystem(this.networkManager, computeShipPhysics), { phase: SystemPhase.Presentation });
     }
   }
 
