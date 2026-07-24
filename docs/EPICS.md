@@ -31,8 +31,8 @@ Este documento agrupa la hoja de ruta y las tareas pendientes en **Iniciativas A
     <!-- Verificado 2025-02-22: packages/core/src/runtime/BaseGame.ts:153-162, BaseGame.destroy() detiene el loop, limpia el schedule de sistemas y llama explícitamente a this.eventBus.clear(). -->
   - [~] Restaurar e integrar `AsteroidComboSystem` con un patrón limpio de desuscripción mediante `dispose()`.
     <!-- Verificado 2025-02-22: PARCIAL. No existe un archivo físico con el nombre 'AsteroidComboSystem', pero la acumulación se solucionó de raíz en BaseGame.ts:182 al limpiar el eventBus. Además, se implementó ComboSystem con un método dispose() limpio en packages/core/src/games/arcade/systems/ComboSystem.ts, el cual es registrado en SpaceInvadersGameScene.ts. -->
-  - [ ] Implementar una máquina de estados explícita de ciclo de vida en `BaseGame` (`Uninitialized`, `Ready`, `Running`, `Paused`, `Stopped`, `Destroyed`).
-    <!-- Verificado 2025-02-22: NO INICIADO. En packages/core/src/runtime/BaseGame.ts:17-21 solo se definen los estados RUNNING, PAUSED y DESTROYED en el enum GameLifecycleState, y no existe una máquina de estados explícita ni validación estricta de transiciones. -->
+  - [x] Implementar una máquina de estados explícita de ciclo de vida en `BaseGame` (`Uninitialized`, `Ready`, `Running`, `Paused`, `Stopped`, `Destroyed`).
+    <!-- Verificado 2025-02-22: COMPLETO. En packages/core/src/runtime/BaseGame.ts, se agregaron UNINITIALIZED, READY y STOPPED al enum GameLifecycleState con sus transiciones seguras e idempotencia garantizada. -->
   - [~] Validar con tests unitarios la idempotencia de `pause()` / `resume()` y la ejecución serializada de `restart()`.
     <!-- Verificado 2025-02-22: PARCIAL. La idempotencia de pause() y resume() está completamente testeada en packages/core/src/__tests__/BaseGame.lifecycle.test.ts:60-101. Sin embargo, no hay implementación ni validación de la ejecución serializada de restart(). -->
 

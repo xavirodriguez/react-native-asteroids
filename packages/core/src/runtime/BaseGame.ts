@@ -15,8 +15,11 @@ import { IAudioPlayer, NullAudioPlayer } from "../audio/IAudioPlayer";
  * @public
  */
 export enum GameLifecycleState {
+  UNINITIALIZED = "UNINITIALIZED",
+  READY = "READY",
   RUNNING = "RUNNING",
   PAUSED = "PAUSED",
+  STOPPED = "STOPPED",
   DESTROYED = "DESTROYED"
 }
 
@@ -66,7 +69,7 @@ export abstract class BaseGame<
   protected loop: GameLoop;
   protected unifiedInput: UnifiedInputSystem;
   protected _config: BaseGameConfig<TComponents, TEvents>;
-  private lifecycleState: GameLifecycleState = GameLifecycleState.RUNNING;
+  private lifecycleState: GameLifecycleState = GameLifecycleState.UNINITIALIZED;
   private isPaused = false;
 
   public sceneManager: SceneManager;
@@ -131,8 +134,12 @@ export abstract class BaseGame<
    * Runs the Template Method cycle: registers systems, initializes entities, and starts the game loop.
    */
   public async init(): Promise<void> {
+    if (this.lifecycleState !== GameLifecycleState.UNINITIALIZED) {
+      return;
+    }
     await this.onRegisterSystems();
     await this.onInitializeEntities();
+    this.lifecycleState = GameLifecycleState.READY;
     this.start();
   }
 
@@ -140,6 +147,13 @@ export abstract class BaseGame<
    * Starts the game loop.
    */
   public start(): void {
+    if (
+      this.lifecycleState !== GameLifecycleState.READY &&
+      this.lifecycleState !== GameLifecycleState.STOPPED
+    ) {
+      return;
+    }
+    this.lifecycleState = GameLifecycleState.RUNNING;
     this.loop.start();
   }
 
@@ -197,6 +211,15 @@ export abstract class BaseGame<
   }
 
   /**
+   * Stops the game loop and transitions to STOPPED state.
+   */
+  public stop(): void {
+    if (this.lifecycleState !== GameLifecycleState.RUNNING && this.lifecycleState !== GameLifecycleState.PAUSED) return;
+    this.lifecycleState = GameLifecycleState.STOPPED;
+    this.loop.stop();
+  }
+
+  /**
    * Detiene el bucle de juego y libera de forma exhaustiva todos los recursos registrados.
    *
    * @remarks
@@ -247,7 +270,7 @@ export abstract class BaseGame<
     this.destroy();
     this.eventBus.clear();
 
-    this.lifecycleState = GameLifecycleState.RUNNING;
+    this.lifecycleState = GameLifecycleState.UNINITIALIZED;
     this.isPaused = false;
 
     // Reset world and re-register resources
@@ -255,10 +278,8 @@ export abstract class BaseGame<
     this.registerInternalResources();
     this.sceneManager = new SceneManager(this.world);
 
-    // Re-register systems and initialize entities
-    await this.onRegisterSystems();
-    await this.onInitializeEntities();
-    this.start();
+    // Re-register systems and initialize entities by running init()
+    await this.init();
   }
 
   /**
