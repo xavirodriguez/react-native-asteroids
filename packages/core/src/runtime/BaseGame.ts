@@ -58,7 +58,7 @@ export interface BaseGameConfig<
  */
 export abstract class BaseGame<
   TState = unknown,
-  TInput extends Record<string, any> = Record<string, any>,
+  _TInput extends Record<string, unknown> = Record<string, unknown>,
   TComponents extends ComponentRegistry = ComponentRegistry,
   TEvents extends EventRegistry = EventRegistry,
   TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
