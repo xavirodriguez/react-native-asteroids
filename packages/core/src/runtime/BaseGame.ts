@@ -58,7 +58,8 @@ export interface BaseGameConfig<
  */
 export abstract class BaseGame<
   TState = unknown,
-  _TInput extends Record<string, unknown> = Record<string, unknown>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TInput extends Record<string, any> = Record<string, any>,
   TComponents extends ComponentRegistry = ComponentRegistry,
   TEvents extends EventRegistry = EventRegistry,
   TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
