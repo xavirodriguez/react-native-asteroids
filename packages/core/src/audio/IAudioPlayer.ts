@@ -1,7 +1,7 @@
 /** @public */
 export interface IAudioPlayer {
-  loadSFX(id: string, options: any): Promise<void>;
-  playSFX(id: string, options?: any): void;
+  loadSFX(id: string, options: unknown): Promise<void>;
+  playSFX(id: string, options?: unknown): void;
 }
 
 /**
@@ -10,6 +10,6 @@ export interface IAudioPlayer {
  * @public
  */
 export class NullAudioPlayer implements IAudioPlayer {
-  public async loadSFX(id: string, options: any): Promise<void> {}
-  public playSFX(id: string, options?: any): void {}
+  public async loadSFX(_id: string, _options: unknown): Promise<void> {}
+  public playSFX(_id: string, _options?: unknown): void {}
 }
