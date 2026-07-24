@@ -1,58 +1,33 @@
+/* eslint-disable no-restricted-imports, @typescript-eslint/no-explicit-any */
 import { World } from "../ecs/World";
 import { System } from "../ecs/System";
-import { MultiplayerRegistry, ReconciledInput, AuthoritativeServerState } from "./ReplicationSystem";
+import { NetworkManager } from "./NetworkManager";
+import { computeShipPhysics } from "../games/asteroids/utils/AsteroidPhysics";
+import { MultiplayerRegistry, ReconciledInput, AuthoritativeServerState } from "./types";
 
 /**
- * Type representing a game-agnostic physics simulator function for local prediction.
- *
- * @public
- */
-export type LocalPredictionPhysicsSimulator<TInput = Record<string, unknown>> = (
-    transform: { rotation: number },
-    velocity: { vx: number; vy: number },
-    input: TInput,
-    config: { SHIP_THRUST: number; SHIP_ROTATION_SPEED: number; SHIP_FRICTION: number },
-    dtSec: number
-) => { rotation: number; vx: number; vy: number };
-
-/**
- * Sistema responsable de la predicción en el lado del cliente y la reconciliación de inputs del jugador local.
- *
- * @remarks
- * Mantiene un buffer de entradas locales no confirmadas por el servidor (`inputQueue`) y realiza
- * replay/reconciliación cuando el servidor confirma un nuevo tick autoritativo de posición/velocidad.
+ * System responsible for client-side local prediction and input reconciliation.
+ * Runs in SystemPhase.Input phase.
  *
  * @public
  */
 export class LocalPredictionSystem<TRegistry extends MultiplayerRegistry = MultiplayerRegistry> extends System<TRegistry> {
-    private inputQueue: ReconciledInput<TRegistry["Input"]>[] = [];
+    private inputQueue: ReconciledInput<any>[] = [];
     private lastProcessedTick = 0;
 
-    constructor(private simulator: LocalPredictionPhysicsSimulator<TRegistry["Input"]>) {
+    constructor(private networkManager: NetworkManager) {
         super();
-    }
-
-    /**
-     * Devuelve el queue de inputs para facilitar la cobertura de tests de reconciliación/predicción.
-     */
-    public getInputQueue(): ReconciledInput<TRegistry["Input"]>[] {
-        return this.inputQueue;
     }
 
     public update(world: World<TRegistry>, deltaTime: number): void {
         const w = world as unknown as World<MultiplayerRegistry>;
         const dtSec = deltaTime / 1000;
 
-        // --- Client-Side Prediction usando el simulador de física provisto ---
-        const config = world.getResource<{
-            SHIP_THRUST: number;
-            SHIP_ROTATION_SPEED: number;
-            SHIP_FRICTION: number;
-        }>("GameConfig") ?? {
+        const config = (world.getResource<any>("GameConfig") ?? {
             SHIP_THRUST: 150,
             SHIP_ROTATION_SPEED: Math.PI,
-            SHIP_FRICTION: 0.0   // ← 0.0 por defecto para compatibilidad con tests sin GameConfig
-        };
+            SHIP_FRICTION: 0.99
+        });
 
         const localQuery = w.query("Transform", "LocalPlayer", "Velocity", "Input");
         for (const entity of localQuery) {
@@ -61,8 +36,19 @@ export class LocalPredictionSystem<TRegistry extends MultiplayerRegistry = Multi
             const transform = w.getComponent(entity, "Transform");
             if (!input || !velocity || !transform) continue;
 
-            // ✅ Una sola fuente de verdad física delegando al simulador agnóstico
-            const phys = this.simulator(transform, velocity, input, config, dtSec);
+            // Extract to plain objects to satisfy pure function call and avoid frozen/readonly mutations
+            const tPlane = { rotation: transform.rotation };
+            const vPlane = { vx: velocity.vx, vy: velocity.vy };
+            const iPlane = {
+                thrust: input.thrust,
+                rotateLeft: input.rotateLeft,
+                rotateRight: input.rotateRight,
+                rotationAmount: input.rotationAmount,
+                shoot: input.shoot,
+                hyperspace: input.hyperspace
+            };
+
+            const phys = computeShipPhysics(tPlane, vPlane, iPlane, config, dtSec);
 
             w.mutateComponent(entity, "Velocity", (v) => {
                 v.vx = phys.vx;
@@ -87,13 +73,9 @@ export class LocalPredictionSystem<TRegistry extends MultiplayerRegistry = Multi
         }
     }
 
-    /**
-     * Reconcilia el estado lógico del jugador con el estado autoritativo recibido del servidor.
-     *
-     * @remarks
-     * Descarta inputs ya procesados por el servidor, restablece la física local al último tick del servidor,
-     * y vuelve a aplicar (replays) todos los inputs pendientes que aún no han sido confirmados para ponerse al día.
-     */
+    public override onRegister(_world: World<TRegistry>): void {}
+    public override dispose(): void {}
+
     public reconcile(
         world: World<TRegistry>,
         serverTick: number,
@@ -102,19 +84,14 @@ export class LocalPredictionSystem<TRegistry extends MultiplayerRegistry = Multi
         const w = world as unknown as World<MultiplayerRegistry>;
         this.inputQueue = this.inputQueue.filter(i => i.tick > serverTick);
 
-        const config = world.getResource<{
-            SHIP_THRUST: number;
-            SHIP_ROTATION_SPEED: number;
-            SHIP_FRICTION: number;
-        }>("GameConfig") ?? {
+        const config = (world.getResource<any>("GameConfig") ?? {
             SHIP_THRUST: 150,
             SHIP_ROTATION_SPEED: Math.PI,
-            SHIP_FRICTION: 0.0   // ← 0.0 por defecto para compatibilidad con tests sin GameConfig
-        };
+            SHIP_FRICTION: 0.99
+        });
 
         const localQuery = w.query("Transform", "LocalPlayer", "Velocity");
         for (const entity of localQuery) {
-            // 1. Resetear al estado autoritativo del servidor
             w.mutateComponent(entity, "Transform", (t) => {
                 t.x = serverState.x;
                 t.y = serverState.y;
@@ -124,21 +101,30 @@ export class LocalPredictionSystem<TRegistry extends MultiplayerRegistry = Multi
                 v.vy = serverState.vy;
             });
 
-            // 2. Replay de inputs pendientes con la MISMA función pura delegada
             for (const item of this.inputQueue) {
-                const dtSec = item.dt / 1000;
+                const itemDtSec = item.dt / 1000;
 
-                // Leer estado ACTUAL (evoluciona tick a tick durante el replay)
                 const currentTransform = w.getComponent(entity, "Transform")!;
                 const currentVelocity  = w.getComponent(entity, "Velocity")!;
 
-                // ✅ El simulador garantiza determinismo idéntico al servidor
-                const phys = this.simulator(
-                    currentTransform,
-                    currentVelocity,
-                    item.input,
+                // Extract to plain objects
+                const tPlane = { rotation: currentTransform.rotation };
+                const vPlane = { vx: currentVelocity.vx, vy: currentVelocity.vy };
+                const iPlane = {
+                    thrust: item.input.thrust,
+                    rotateLeft: item.input.rotateLeft,
+                    rotateRight: item.input.rotateRight,
+                    rotationAmount: item.input.rotationAmount,
+                    shoot: item.input.shoot,
+                    hyperspace: item.input.hyperspace
+                };
+
+                const phys = computeShipPhysics(
+                    tPlane,
+                    vPlane,
+                    iPlane,
                     config,
-                    dtSec
+                    itemDtSec
                 );
 
                 w.mutateComponent(entity, "Velocity", (v) => {
@@ -147,9 +133,8 @@ export class LocalPredictionSystem<TRegistry extends MultiplayerRegistry = Multi
                 });
                 w.mutateComponent(entity, "Transform", (t) => {
                     t.rotation = phys.rotation;
-                    // Integrar posición con la velocidad ya actualizada
-                    t.x += phys.vx * dtSec;
-                    t.y += phys.vy * dtSec;
+                    t.x += phys.vx * itemDtSec;
+                    t.y += phys.vy * itemDtSec;
                 });
             }
         }

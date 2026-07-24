@@ -20,6 +20,7 @@ export interface AsteroidsComponentRegistry extends CoreComponentRegistry {
   Bullet: { type: "Bullet"; ownerId?: string };
   LocalPlayer: { type: "LocalPlayer" };
   RemotePlayer: { type: "RemotePlayer"; sessionId: string };
+  PlayerScore: { type: "PlayerScore"; score: number };
 }
 
 /** @public */

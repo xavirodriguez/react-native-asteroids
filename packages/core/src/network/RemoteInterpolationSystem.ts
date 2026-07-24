@@ -1,21 +1,23 @@
+/* eslint-disable no-restricted-imports, @typescript-eslint/no-explicit-any */
 import { World } from "../ecs/World";
 import { System } from "../ecs/System";
-import { MultiplayerRegistry } from "./ReplicationSystem";
+import { NetworkManager } from "./NetworkManager";
+import { MultiplayerRegistry } from "./types";
 
 /**
- * Sistema responsable de la interpolación visual de entidades remotas.
- *
- * @remarks
- * Aplica LERP con un factor de suavizado a las coordenadas físicas de las entidades remotas,
- * para mitigar saltos visuales debido a la latencia o jitter de la red.
+ * System responsible for visual interpolation (LERP) on Remote Players.
+ * Runs in SystemPhase.Presentation phase.
  *
  * @public
  */
 export class RemoteInterpolationSystem<TRegistry extends MultiplayerRegistry = MultiplayerRegistry> extends System<TRegistry> {
-    public update(world: World<TRegistry>, _deltaTime: number): void {
+    constructor(private networkManager: NetworkManager) {
+        super();
+    }
+
+    public update(world: World<TRegistry>, deltaTime: number): void {
         const w = world as unknown as World<MultiplayerRegistry>;
 
-        // --- Interpolación LERP de entidades remotas ---
         const remoteQuery = w.query("Transform", "RemotePlayer");
         for (const entity of remoteQuery) {
             const remote = w.getComponent(entity, "RemotePlayer");
@@ -34,4 +36,7 @@ export class RemoteInterpolationSystem<TRegistry extends MultiplayerRegistry = M
             }
         }
     }
+
+    public override onRegister(_world: World<TRegistry>): void {}
+    public override dispose(): void {}
 }

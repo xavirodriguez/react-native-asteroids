@@ -18,7 +18,8 @@ import { Renderer } from "../../rendering/Renderer";
 import { LootSystem } from "../arcade/systems/LootSystem";
 import { PowerUpSystem } from "../arcade/systems/PowerUpSystem";
 import { NetworkManager } from "../../network/NetworkManager";
-import { ReplicationSystem } from "../../network/ReplicationSystem";
+import { LocalPredictionSystem } from "../../network/LocalPredictionSystem";
+import { RemoteInterpolationSystem } from "../../network/RemoteInterpolationSystem";
 import {
   drawSpaceInvadersPlayer,
   drawSpaceInvadersInvader,
@@ -106,7 +107,8 @@ export class SpaceInvadersGame
           interpolationDelay: 100
       });
     }
-    sceneWorld.addSystem(new ReplicationSystem(this.networkManager));
+    sceneWorld.addSystem(new LocalPredictionSystem(this.networkManager), { phase: SystemPhase.Input });
+    sceneWorld.addSystem(new RemoteInterpolationSystem(this.networkManager), { phase: SystemPhase.Presentation });
 
     await this.sceneManager.transitionTo(gameScene);
   }
