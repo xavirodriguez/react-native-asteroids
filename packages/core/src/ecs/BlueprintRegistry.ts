@@ -2,6 +2,7 @@ import { World, BlueprintRegistryMap, ComponentRegistry } from "./World";
 import { EventRegistry } from "../events/EventBus";
 
 /** @public */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type BlueprintArgs<TBlueprints, TId extends keyof TBlueprints> =
   TBlueprints[TId] extends BlueprintDefinition<any, any, infer TArgs>
     ? TArgs
@@ -22,6 +23,7 @@ export class BlueprintRegistry<
   TEvents extends EventRegistry = EventRegistry,
   TBlueprints extends BlueprintRegistryMap<TComponents> = BlueprintRegistryMap<TComponents>
 > {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private blueprints = new Map<string, BlueprintDefinition<TComponents, TEvents, any>>();
 
   register<TId extends keyof TBlueprints & string>(

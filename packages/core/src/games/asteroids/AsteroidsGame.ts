@@ -34,6 +34,7 @@ import { NullTransport } from "../../network/NullTransport";
 import { LocalPredictionSystem } from "../../network/LocalPredictionSystem";
 import { RemoteInterpolationSystem } from "../../network/RemoteInterpolationSystem";
 import { NetworkController } from "../../network/NetworkController";
+import { computeShipPhysics } from "./utils/AsteroidPhysics";
 import { INetworkGame } from "../../network/NetworkManager";
 import { ConfigService } from "../../config/ConfigService";
 import { AsteroidConfigSchema, AsteroidConfig } from "./types/AsteroidConfigSchema";

@@ -104,6 +104,7 @@ export class WorldCommandBuffer<
         const w = world as unknown as { activeEntities: Set<number>, _structureVersion: number, cachedEntities: any };
         w.activeEntities.add(entity);
         w.cachedEntities = null;
+        w.cachedEntities = null;
         w._structureVersion++;
       }
     });

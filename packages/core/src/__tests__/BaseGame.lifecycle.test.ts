@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BaseGame, BaseGameConfig } from "../runtime/BaseGame";
 
 class TestGame extends BaseGame<any, any, any, any, any> {
@@ -17,7 +18,7 @@ class TestGame extends BaseGame<any, any, any, any, any> {
     } as any;
   }
 
-  public update(dt: number): void {}
+  public update(_dt: number): void {}
   public getGameState(): any { return {}; }
   public isGameOver(): boolean { return false; }
 
